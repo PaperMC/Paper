@@ -6,7 +6,7 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 Use the distance map to find candidate players for tracking.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index dadf403ac91887f0fae87889170deb6d5732cbc1..93dea79180ebaef3ffb6abffd47f0026a91406cd 100644
+index dadf403ac91887f0fae87889170deb6d5732cbc1..52d9d0f2366f292c56eee9fe241cb43bc2900b23 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -157,6 +157,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -75,7 +75,7 @@ index dadf403ac91887f0fae87889170deb6d5732cbc1..93dea79180ebaef3ffb6abffd47f0026
      }
      // Paper end
      // Paper start
-@@ -276,6 +314,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -276,6 +314,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
          this.playerMobDistanceMap = this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets) : null; // Paper
@@ -107,6 +107,9 @@ index dadf403ac91887f0fae87889170deb6d5732cbc1..93dea79180ebaef3ffb6abffd47f0026
 +                case ENDERDRAGON:
 +                    configuredSpigotValue = EntityType.ENDER_DRAGON.clientTrackingRange() * 16;
 +                    break;
++                case DISPLAY:
++                    configuredSpigotValue = spigotWorldConfig.displayTrackingRange;
++                    break;
 +                default:
 +                    throw new IllegalStateException("Missing case for enum " + trackingRangeType);
 +            }
@@ -121,7 +124,7 @@ index dadf403ac91887f0fae87889170deb6d5732cbc1..93dea79180ebaef3ffb6abffd47f0026
      }
  
      protected ChunkGenerator generator() {
-@@ -960,17 +1037,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -960,17 +1040,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void move(ServerPlayer player) {
@@ -140,7 +143,7 @@ index dadf403ac91887f0fae87889170deb6d5732cbc1..93dea79180ebaef3ffb6abffd47f0026
  
          int i = SectionPos.blockToSectionCoord(player.getBlockX());
          int j = SectionPos.blockToSectionCoord(player.getBlockZ());
-@@ -1054,7 +1121,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1054,7 +1124,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                      entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
                      this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
@@ -149,7 +152,7 @@ index dadf403ac91887f0fae87889170deb6d5732cbc1..93dea79180ebaef3ffb6abffd47f0026
                      if (entity instanceof ServerPlayer) {
                          ServerPlayer entityplayer = (ServerPlayer) entity;
  
-@@ -1098,7 +1165,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1098,7 +1168,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          entity.tracker = null; // Paper - We're no longer tracked
      }
  
@@ -187,7 +190,7 @@ index dadf403ac91887f0fae87889170deb6d5732cbc1..93dea79180ebaef3ffb6abffd47f0026
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
          ObjectIterator objectiterator = this.entityMap.values().iterator();
-@@ -1205,46 +1302,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1205,46 +1305,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }));
          // Paper end
          DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
@@ -235,7 +238,7 @@ index dadf403ac91887f0fae87889170deb6d5732cbc1..93dea79180ebaef3ffb6abffd47f0026
  
      }
  
-@@ -1299,6 +1357,42 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1299,6 +1360,42 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.lastSectionPos = SectionPos.of((EntityAccess) entity);
          }
  
@@ -330,10 +333,10 @@ index ce4b2ec2ad6138b754ced976521d1c73eb4193a8..c99d24008792b07d5e2984261215de94
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
 diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
-index 172d231adecf043f9f06b7f5e0365ae82327998d..8fca15099952626ee537f5ce3eefdfaa6518dc1b 100644
+index 172d231adecf043f9f06b7f5e0365ae82327998d..ed8378ad022c375b0d18172aeccf65cb026d9d68 100644
 --- a/src/main/java/org/spigotmc/TrackingRange.java
 +++ b/src/main/java/org/spigotmc/TrackingRange.java
-@@ -55,4 +55,45 @@ public class TrackingRange
+@@ -55,4 +55,48 @@ public class TrackingRange
              return config.otherTrackingRange;
          }
      }
@@ -363,6 +366,8 @@ index 172d231adecf043f9f06b7f5e0365ae82327998d..8fca15099952626ee537f5ce3eefdfaa
 +        // Paper end
 +        {
 +            return TrackingRangeType.MISC;
++        } else if (entity instanceof Display) {
++            return TrackingRangeType.DISPLAY;
 +        } else
 +        {
 +            return TrackingRangeType.OTHER;
@@ -375,7 +380,8 @@ index 172d231adecf043f9f06b7f5e0365ae82327998d..8fca15099952626ee537f5ce3eefdfaa
 +        MONSTER,
 +        MISC,
 +        OTHER,
-+        ENDERDRAGON;
++        ENDERDRAGON,
++        DISPLAY;
 +    }
 +    // Paper end - optimise entity tracking
  }
