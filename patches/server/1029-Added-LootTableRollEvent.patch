@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: aerulion <aerulion@gmail.com>
+Date: Tue, 29 Aug 2023 04:52:12 +0200
+Subject: [PATCH] Added LootTableRollEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java b/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
+index e46a0afa45ee771a0114703acc314d7cf8e8ffed..cd22641f3d229bdc209735ab60fbd2d26e175602 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
+@@ -132,7 +132,10 @@ public class LootTable {
+ 
+         Objects.requireNonNull(objectarraylist);
+         this.getRandomItems(context, objectarraylist::add);
+-        return objectarraylist;
++        // Paper start - LootTableRollEvent
++        final io.papermc.paper.event.server.LootTableRollEvent lootTableRollEvent = CraftEventFactory.callLootTableRollEvent(this, context, objectarraylist);
++        return lootTableRollEvent.getLoot().stream().map(CraftItemStack::asNMSCopy).collect(ObjectArrayList.toList());
++        // Paper start - LootTableRollEvent
+     }
+ 
+     public LootContextParamSet getParamSet() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 090b1ee57ddef58ca71469ad860960f66da7d5a2..8d8d02a10d36cc5b9862f17cb581f7cae2ff0e43 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1946,6 +1946,16 @@ public class CraftEventFactory {
+         RaidSpawnWaveEvent event = new RaidSpawnWaveEvent(new CraftRaid(raid), raid.getLevel().getWorld(), craftLeader, craftRaiders);
+         Bukkit.getPluginManager().callEvent(event);
+     }
++    // Paper start - LootTableRollEvent
++    public static io.papermc.paper.event.server.LootTableRollEvent callLootTableRollEvent(final LootTable lootTable, final LootContext lootContext, final List<ItemStack> loot) {
++        final NamespacedKey key = CraftNamespacedKey.fromMinecraft(lootContext.getLevel().getServer().getLootData().lootTableToKey.get(lootTable));
++        final CraftLootTable craftLootTable = new CraftLootTable(key, lootTable);
++        final List<org.bukkit.inventory.ItemStack> bukkitLoot = loot.stream().map(CraftItemStack::asCraftMirror).collect(Collectors.toCollection(ArrayList::new));
++        final io.papermc.paper.event.server.LootTableRollEvent lootTableRollEvent = new io.papermc.paper.event.server.LootTableRollEvent(craftLootTable, CraftLootTable.convertContext(lootContext), bukkitLoot);
++        Bukkit.getPluginManager().callEvent(lootTableRollEvent);
++        return lootTableRollEvent;
++    }
++    // Paper end - LootTableRollEvent
+ 
+     public static LootGenerateEvent callLootGenerateEvent(Container inventory, LootTable lootTable, LootContext lootInfo, List<ItemStack> loot, boolean plugin) {
+         CraftWorld world = lootInfo.getLevel().getWorld();
