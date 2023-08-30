@@ -425,10 +425,10 @@ index 09c13423e055ad414651a5cab43d10be4041e6f3..d91a839819e260e90f810968077c4910
      private static List<String> asList(String... params) {
          return Arrays.asList(params);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
-index b4a19d80bbf71591f25729fd0e98590350cb31d0..e948ec5a573b22645664eb53bc3e9932246544e4 100644
+index c6e8441e299f477ddb22c1ce2618710763978f1a..e8e93538dfd71de86515d9405f728db1631e949a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
-@@ -12,12 +12,28 @@ public class ServerShutdownThread extends Thread {
+@@ -12,11 +12,27 @@ public class ServerShutdownThread extends Thread {
      @Override
      public void run() {
          try {
@@ -443,7 +443,6 @@ index b4a19d80bbf71591f25729fd0e98590350cb31d0..e948ec5a573b22645664eb53bc3e9932
 +            }
 +            // Looks stalled, close async
              org.spigotmc.AsyncCatcher.enabled = false; // Spigot
-             org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
 +            server.forceTicks = true;
              this.server.close();
 +            while (!server.hasFullyShutdown) Thread.sleep(1000);
@@ -459,10 +458,10 @@ index b4a19d80bbf71591f25729fd0e98590350cb31d0..e948ec5a573b22645664eb53bc3e9932
              }
          }
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index a142a56a920e153ed84c08cece993f10d76f7793..92d97a5810a379b427a99b4c63fb9844d823a84f 100644
+index 14eadb0f81dfad072d82d7793cce1a4dd3f2c5f0..29b39dff0aceaa902f701162a42d3f2f881d6d5a 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
-@@ -139,7 +139,7 @@ public class RestartCommand extends Command
+@@ -138,7 +138,7 @@ public class RestartCommand extends Command
      // Paper end
  
      // Paper start - copied from above and modified to return if the hook registered
@@ -472,7 +471,7 @@ index a142a56a920e153ed84c08cece993f10d76f7793..92d97a5810a379b427a99b4c63fb9844
          String[] split = restartScript.split( " " );
          if ( split.length > 0 && new File( split[0] ).isFile() )
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index b47d043144c499b1499f6b4be5a16a3f75c9fcb8..383c52c62f49b17db2fbf58009d6ea132d124bea 100644
+index b47d043144c499b1499f6b4be5a16a3f75c9fcb8..a9bd33b58a6a3296b70eaaaea3adbee74724e448 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -11,6 +11,7 @@ import org.bukkit.Bukkit;
@@ -508,7 +507,7 @@ index b47d043144c499b1499f6b4be5a16a3f75c9fcb8..383c52c62f49b17db2fbf58009d6ea13
                  lastEarlyWarning = currentTime;
                  if (isLongTimeout) {
                  // Paper end
-@@ -137,9 +140,25 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -137,9 +140,24 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
  
                  if ( isLongTimeout )
                  {
@@ -517,7 +516,6 @@ index b47d043144c499b1499f6b4be5a16a3f75c9fcb8..383c52c62f49b17db2fbf58009d6ea13
                  {
 -                    RestartCommand.restart();
 +                    AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
-+                    AsyncCatcher.shuttingDown = true;
 +                    server.forceTicks = true;
 +                    if (restart) {
 +                        RestartCommand.addShutdownHook( SpigotConfig.restartScript );
