@@ -35,13 +35,12 @@
      protected Mob(EntityType<? extends Mob> type, Level world) {
          super(type, world);
          this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
-@@ -157,8 +171,14 @@
-         if (world instanceof ServerLevel) {
+@@ -158,7 +172,13 @@
              this.registerGoals();
          }
-+
-+    }
  
++    }
++
 +    // CraftBukkit start
 +    public void setPersistenceRequired(boolean persistenceRequired) {
 +        this.persistenceRequired = persistenceRequired;
@@ -95,20 +94,19 @@
      }
  
      @Override
-@@ -397,7 +448,13 @@
-     @Nullable
-     protected SoundEvent getAmbientSound() {
+@@ -399,6 +450,12 @@
          return null;
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - Add delegate method
 +    public SoundEvent getAmbientSound0() {
 +        return this.getAmbientSound();
-     }
++    }
 +    // CraftBukkit end
- 
++
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
+         super.addAdditionalSaveData(nbt);
 @@ -473,13 +530,25 @@
              nbt.putBoolean("NoAI", this.isNoAi());
          }
@@ -282,21 +280,47 @@
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("sensing");
-@@ -1009,7 +1115,13 @@
-                 this.onEquipItem(slot, itemstack1, stack);
-         }
+@@ -994,23 +1100,36 @@
  
+     @Override
+     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
++        // Paper start - Fix silent equipment change
++        setItemSlot(slot, stack, false);
 +    }
 +
++    @Override
++    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) {
++        // Paper end - Fix silent equipment change
+         this.verifyEquippedItem(stack);
+         switch (slot.getType()) {
+             case HAND:
+-                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
+                 break;
+             case HUMANOID_ARMOR:
+-                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
+                 break;
+             case ANIMAL_ARMOR:
+                 ItemStack itemstack1 = this.bodyArmorItem;
+ 
+                 this.bodyArmorItem = stack;
+-                this.onEquipItem(slot, itemstack1, stack);
++                this.onEquipItem(slot, itemstack1, stack, silent); // Paper - Fix silent equipment change
+         }
+ 
+     }
+ 
 +    // Paper start
 +    protected boolean shouldSkipLoot(EquipmentSlot slot) { // method to avoid to fallback into the global mob loot logic (i.e fox)
 +        return false;
-     }
++    }
 +    // Paper end
- 
++
      @Override
      protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {
-@@ -1018,6 +1130,7 @@
+         super.dropCustomDeathLoot(world, source, causedByPlayer);
+@@ -1018,6 +1137,7 @@
  
          while (iterator.hasNext()) {
              EquipmentSlot enumitemslot = (EquipmentSlot) iterator.next();
@@ -304,7 +328,7 @@
              ItemStack itemstack = this.getItemBySlot(enumitemslot);
              float f = this.getEquipmentDropChance(enumitemslot);
  
-@@ -1042,7 +1155,13 @@
+@@ -1042,7 +1162,13 @@
                      }
  
                      this.spawnAtLocation(world, itemstack);
@@ -318,7 +342,7 @@
                  }
              }
          }
-@@ -1338,7 +1457,7 @@
+@@ -1338,7 +1464,7 @@
          if (itemstack.getItem() instanceof SpawnEggItem) {
              if (this.level() instanceof ServerLevel) {
                  SpawnEggItem itemmonsteregg = (SpawnEggItem) itemstack.getItem();
@@ -327,7 +351,7 @@
  
                  optional.ifPresent((entityinsentient) -> {
                      this.onOffspringSpawnedFromEgg(player, entityinsentient);
-@@ -1389,28 +1508,51 @@
+@@ -1389,28 +1515,51 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -385,7 +409,7 @@
                  }
  
                  return t0;
-@@ -1420,10 +1562,22 @@
+@@ -1420,10 +1569,22 @@
  
      @Nullable
      public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams context, ConversionParams.AfterConversion<T> finalizer) {
@@ -409,7 +433,7 @@
      @Override
      public Leashable.LeashData getLeashData() {
          return this.leashData;
-@@ -1458,7 +1612,15 @@
+@@ -1458,7 +1619,15 @@
          boolean flag1 = super.startRiding(entity, force);
  
          if (flag1 && this.isLeashed()) {
@@ -426,7 +450,7 @@
          }
  
          return flag1;
-@@ -1542,7 +1704,7 @@
+@@ -1542,7 +1711,7 @@
  
              if (f1 > 0.0F && target instanceof LivingEntity) {
                  entityliving = (LivingEntity) target;
