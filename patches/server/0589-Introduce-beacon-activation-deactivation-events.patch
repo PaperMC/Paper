@@ -4,19 +4,51 @@ Date: Thu, 25 Mar 2021 20:28:04 +0200
 Subject: [PATCH] Introduce beacon activation/deactivation events
 
 
+diff --git a/src/main/java/net/minecraft/world/level/block/BeaconBlock.java b/src/main/java/net/minecraft/world/level/block/BeaconBlock.java
+index 1dc9af04113364f37b6351dd01f542aa22c59767..bec36de3e4c4b4bb154f9b4ffc9f2ae08f299223 100644
+--- a/src/main/java/net/minecraft/world/level/block/BeaconBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BeaconBlock.java
+@@ -69,4 +69,16 @@ public class BeaconBlock extends BaseEntityBlock implements BeaconBeamBlock {
+         }
+ 
+     }
++
++    // Paper start - BeaconDeactivatedEvent
++    @Override
++    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
++        if (!state.is(newState.getBlock()) && world.getBlockEntity(pos) instanceof BeaconBlockEntity beacon && beacon.levels > 0 && !beacon.getBeamSections().isEmpty()) {
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
++            new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
++        }
++
++        super.onRemove(state, world, pos, newState, moved);
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-index f3fb7e07ca65cb1c948b110b7f7edc8b0bd83b21..147e808c7e2b3ed16861c989c1ba4a0b99a5be38 100644
+index f3fb7e07ca65cb1c948b110b7f7edc8b0bd83b21..c63e4dfa6d65c6ce2e1d6ca19c32d266a11bd096 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-@@ -212,6 +212,15 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+@@ -98,6 +98,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         this.effectRange = -1;
+     }
+     // Paper end
++    public boolean justLoadedAndPreviouslyActive; // Paper - consider beacon previously active for first tick to skip activate event/sound
+ 
+     public BeaconBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.BEACON, pos, state);
+@@ -212,6 +213,18 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
                  BeaconBlockEntity.playSound(world, pos, SoundEvents.BEACON_AMBIENT);
              }
          }
 +        // Paper start - beacon activation/deactivation events
-+        if (i1 <= 0 && blockEntity.levels > 0) {
++        final boolean prevActive = i1 > 0 && (!blockEntity.beamSections.isEmpty() || (blockEntity.justLoadedAndPreviouslyActive && !blockEntity.checkingBeamSections.isEmpty()));
++        blockEntity.justLoadedAndPreviouslyActive = false;
++        final boolean newActive = blockEntity.levels > 0 && !blockEntity.checkingBeamSections.isEmpty();
++        if (!prevActive && newActive) {
 +            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
 +            new io.papermc.paper.event.block.BeaconActivatedEvent(block).callEvent();
-+        } else if (i1 > 0 && blockEntity.levels <= 0) {
++        } else if (prevActive && !newActive) {
 +            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
 +            new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
 +        }
@@ -24,14 +56,11 @@ index f3fb7e07ca65cb1c948b110b7f7edc8b0bd83b21..147e808c7e2b3ed16861c989c1ba4a0b
  
          if (blockEntity.lastCheckY >= l) {
              blockEntity.lastCheckY = world.getMinBuildHeight() - 1;
-@@ -269,6 +278,10 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
- 
-     @Override
-     public void setRemoved() {
-+        // Paper start - BeaconDeactivatedEvent
-+        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, worldPosition);
-+        new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
-+        // Paper end
-         BeaconBlockEntity.playSound(this.level, this.worldPosition, SoundEvents.BEACON_DEACTIVATE);
-         super.setRemoved();
-     }
+@@ -396,6 +409,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         this.secondaryPower = MobEffect.byId(nbt.getInt("Secondary"));
+         this.levels = nbt.getInt("Levels"); // SPIGOT-5053, use where available
+         // CraftBukkit end
++        this.justLoadedAndPreviouslyActive = this.levels > 0; // Paper
+         if (nbt.contains("CustomName", 8)) {
+             this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
+         }
