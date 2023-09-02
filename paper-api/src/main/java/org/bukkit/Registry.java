@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
@@ -117,6 +118,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     Registry<EntityType> ENTITY_TYPE = new SimpleRegistry<>(EntityType.class, (entity) -> entity != EntityType.UNKNOWN);
     /**
+     * Server instruments.
+     *
+     * @see MusicInstrument
+     */
+    Registry<MusicInstrument> INSTRUMENT = Objects.requireNonNull(Bukkit.getRegistry(MusicInstrument.class), "No registry present for MusicInstrument. This is a bug.");
+    /**
      * Default server loot tables.
      *
      * @see LootTables
@@ -214,21 +221,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see GameEvent
      */
-    Registry<GameEvent> GAME_EVENT = new Registry<GameEvent>() {
-
-        @NotNull
-        @Override
-        public Iterator iterator() {
-            return GameEvent.values().iterator();
-        }
-
-        @Nullable
-        @Override
-        public GameEvent get(@NotNull NamespacedKey key) {
-            return GameEvent.getByKey(key);
-        }
-    };
-
+    Registry<GameEvent> GAME_EVENT = Objects.requireNonNull(Bukkit.getRegistry(GameEvent.class), "No registry present for GameEvent. This is a bug.");
     /**
      * Get the object by its key.
      *

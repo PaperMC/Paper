@@ -1,19 +1,17 @@
 package org.bukkit;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a generic Mojang game event.
  */
-public final class GameEvent implements Keyed {
+public abstract class GameEvent implements Keyed {
 
-    private static final Map<NamespacedKey, GameEvent> GAME_EVENTS = new HashMap<>();
-    //
     public static final GameEvent BLOCK_ACTIVATE = getEvent("block_activate");
     public static final GameEvent BLOCK_ATTACH = getEvent("block_attach");
     public static final GameEvent BLOCK_CHANGE = getEvent("block_change");
@@ -110,43 +108,39 @@ public final class GameEvent implements Keyed {
     public static final GameEvent RESONATE_13 = getEvent("resonate_13");
     public static final GameEvent RESONATE_14 = getEvent("resonate_14");
     public static final GameEvent RESONATE_15 = getEvent("resonate_15");
-    //
-    private final NamespacedKey key;
-
-    private GameEvent(NamespacedKey key) {
-        this.key = key;
-
-        GAME_EVENTS.put(key, this);
-    }
-
-    @NotNull
-    @Override
-    public NamespacedKey getKey() {
-        return key;
-    }
 
     /**
      * Returns a {@link GameEvent} by a {@link NamespacedKey}.
      *
      * @param namespacedKey the key
      * @return the event or null
+     * @deprecated Use {@link Registry#get(NamespacedKey)} instead.
      */
     @Nullable
+    @Deprecated
     public static GameEvent getByKey(@NotNull NamespacedKey namespacedKey) {
-        return GAME_EVENTS.get(namespacedKey);
+        return Registry.GAME_EVENT.get(namespacedKey);
     }
 
     /**
      * Returns the set of all GameEvents.
      *
      * @return the memoryKeys
+     * @deprecated use {@link Registry#iterator()}.
      */
     @NotNull
+    @Deprecated
     public static Collection<GameEvent> values() {
-        return Collections.unmodifiableCollection(GAME_EVENTS.values());
+        return Collections.unmodifiableCollection(Lists.newArrayList(Registry.GAME_EVENT));
     }
 
-    private static GameEvent getEvent(String vanilla) {
-        return new GameEvent(NamespacedKey.minecraft(vanilla));
+    @NotNull
+    private static GameEvent getEvent(@NotNull String key) {
+        NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
+        GameEvent gameEvent = Registry.GAME_EVENT.get(namespacedKey);
+
+        Preconditions.checkNotNull(gameEvent, "No GameEvent found for %s. This is a bug.", namespacedKey);
+
+        return gameEvent;
     }
 }
