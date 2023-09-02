@@ -22,6 +22,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.junit.Assert;
 
@@ -62,6 +63,8 @@ public abstract class AbstractTestingBase {
 
         DummyServer.setup();
         DummyEnchantments.setup();
+
+        CraftRegistry.setMinecraftRegistry(REGISTRY_CUSTOM);
 
         ImmutableList.Builder<Material> builder = ImmutableList.builder();
         for (Material m : Material.values()) {

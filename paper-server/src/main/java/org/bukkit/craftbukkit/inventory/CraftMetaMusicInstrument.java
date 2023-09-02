@@ -6,6 +6,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.MusicInstrumentMeta;
 
@@ -29,7 +30,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
 
         if (tag.contains(GOAT_HORN_INSTRUMENT.NBT)) {
             String string = tag.getString(GOAT_HORN_INSTRUMENT.NBT);
-            this.instrument = MusicInstrument.getByKey(NamespacedKey.fromString(string));
+            this.instrument = Registry.INSTRUMENT.get(NamespacedKey.fromString(string));
         }
     }
 
@@ -38,7 +39,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
 
         String instrumentString = SerializableMeta.getString(map, GOAT_HORN_INSTRUMENT.BUKKIT, true);
         if (instrumentString != null) {
-            this.instrument = MusicInstrument.getByKey(NamespacedKey.fromString(instrumentString));
+            this.instrument = Registry.INSTRUMENT.get(NamespacedKey.fromString(instrumentString));
         }
     }
 
