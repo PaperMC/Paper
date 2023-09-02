@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DerEchtePilz <81232921+DerEchtePilz@users.noreply.github.com>
+Date: Sat, 2 Sep 2023 12:48:58 +0200
+Subject: [PATCH] Save players before disabling plugins on server shutdown
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index aeae4f8d4ead24db315631c3d2c0b930d0d51e02..93145f9c35e249e4a223109a1b233ffc68e90aac 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1037,6 +1037,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         MinecraftServer.LOGGER.info("Stopping server");
+         Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
+         MinecraftTimings.stopServer(); // Paper
++
++        // Paper start - save players before disabling plugins (matches /restart behaviour)
++        this.isSaving = true;
++        if (this.playerList != null) {
++            MinecraftServer.LOGGER.info("Saving players");
++            this.playerList.saveAll();
++            this.playerList.removeAll(this.isRestarting); // Paper
++            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
++        }
++        this.isSaving = false;
++
+         // CraftBukkit start
+         if (this.server != null) {
+             this.server.disablePlugins();
+@@ -1046,13 +1057,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.shutdown(); // Paper - Plugin remapping
+         this.getConnection().stop();
+         this.isSaving = true;
+-        if (this.playerList != null) {
+-            MinecraftServer.LOGGER.info("Saving players");
+-            this.playerList.saveAll();
+-            this.playerList.removeAll(this.isRestarting); // Paper
+-            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
+-        }
+-
++        // Paper end - save players before disabling plugins (matches /restart behaviour)
+         MinecraftServer.LOGGER.info("Saving worlds");
+         Iterator iterator = this.getAllLevels().iterator();
+ 
