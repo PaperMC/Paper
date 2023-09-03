@@ -6,6 +6,7 @@ plugins {
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
     id("io.papermc.paperweight.core") version "1.5.5"
+    id("com.jeff-media.fix-javadoc-plugin") version("1.4")
 }
 
 allprojects {
