@@ -4,7 +4,6 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         maven("https://repo.papermc.io/repository/maven-public/")
-        maven("https://repo.jeff-media.com/public") // fix-javadoc-plugin
     }
 }
 
