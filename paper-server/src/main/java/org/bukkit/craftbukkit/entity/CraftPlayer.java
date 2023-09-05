@@ -1933,6 +1933,49 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Preconditions.checkArgument(exp >= 0, "Total experience points must not be negative (%s)", exp);
         this.getHandle().totalExperience = exp;
     }
+    // Paper start
+    @Override
+    public int calculateTotalExperiencePoints() {
+        return calculateTotalExperiencePoints(this.getLevel()) + Math.round(this.getExperiencePointsNeededForNextLevel() * getExp());
+    }
+
+    @Override
+    public void setExperienceLevelAndProgress(final int totalExperience) {
+        Preconditions.checkArgument(totalExperience >= 0, "Total experience points must not be negative (%s)", totalExperience);
+        int level = calculateLevelsForExperiencePoints(totalExperience);
+        int remainingPoints = totalExperience - calculateTotalExperiencePoints(level);
+
+        this.getHandle().experienceLevel = level;
+        this.getHandle().experienceProgress = (float) remainingPoints / this.getExperiencePointsNeededForNextLevel();
+        this.getHandle().lastSentExp = -1;
+    }
+
+    @Override
+    public int getExperiencePointsNeededForNextLevel() {
+        return this.getHandle().getXpNeededForNextLevel();
+    }
+
+    // See https://minecraft.wiki/w/Experience#Leveling_up for reference
+    private int calculateTotalExperiencePoints(int level) {
+        if (level <= 16) {
+            return (int) (Math.pow(level, 2) + 6 * level);
+        } else if (level <= 31) {
+            return (int) (2.5 * Math.pow(level, 2) - 40.5 * level + 360.0);
+        } else {
+            return (int) (4.5 * Math.pow(level, 2) - 162.5 * level + 2220.0);
+        }
+    }
+
+    private int calculateLevelsForExperiencePoints(int points) {
+        if (points <= 352) { // Level 0-16
+            return (int) Math.floor(Math.sqrt(points + 9) - 3);
+        } else if (points <= 1507) { // Level 17-31
+            return (int) Math.floor(8.1 + Math.sqrt(0.4 * (points - (7839.0 / 40.0))));
+        } else { // 32+
+            return (int) Math.floor((325.0 / 18.0) + Math.sqrt((2.0 / 9.0) * (points - (54215.0 / 72.0))));
+        }
+    }
+    // Paper end
 
     @Override
     public void sendExperienceChange(float progress) {
