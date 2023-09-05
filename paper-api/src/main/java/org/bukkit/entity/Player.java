@@ -1947,6 +1947,45 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param exp New total experience points
      */
     public void setTotalExperience(int exp);
+    // Paper start
+    /**
+     * Gets the players total amount of experience points he collected to reach the current level and level progress.
+     *
+     * <p>This method differs from {@link #getTotalExperience()} in that this method always returns an
+     * up-to-date value that reflects the players{@link #getLevel() level} and {@link #getExp() level progress}</p>
+     *
+     * @return Current total experience points
+     * @see #getLevel()
+     * @see #getExp()
+     * @see #setExperienceLevelAndProgress(int)
+     */
+    @org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE) int calculateTotalExperiencePoints();
+
+    /**
+     * Updates the players level and level progress to that what would be reached when the total amount of experience
+     * had been collected.
+     *
+     * <p>This method differs from {@link #setTotalExperience(int)} in that this method actually updates the
+     * {@link #getLevel() level} and {@link #getExp() level progress} so that a subsequent call of
+     * {@link #calculateTotalExperiencePoints()} yields the same amount of points that have been set</p>
+     *
+     * @param totalExperience New total experience points
+     * @see #setLevel(int)
+     * @see #setExp(float)
+     * @see #calculateTotalExperiencePoints()
+     */
+    void setExperienceLevelAndProgress(@org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE) int totalExperience);
+
+    /**
+     * Gets the total amount of experience points that are needed to reach the next level from zero progress towards it.
+     *
+     * <p>Can be used with {@link #getExp()} to calculate the current points for the current level and alike</p>
+     *
+     * @return The required experience points
+     * @see #getExp()
+     */
+    int getExperiencePointsNeededForNextLevel();
+    // Paper end
 
     /**
      * Send an experience change.
