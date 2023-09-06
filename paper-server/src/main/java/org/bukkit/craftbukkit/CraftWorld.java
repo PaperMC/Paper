@@ -1097,9 +1097,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize, Predicate<? super Entity> filter) {
+        // Paper start - Add predicate for blocks when raytracing
+        return rayTraceEntities((io.papermc.paper.math.Position) start, direction, maxDistance, raySize, filter);
+    }
+
+    public RayTraceResult rayTraceEntities(io.papermc.paper.math.Position start, Vector direction, double maxDistance, double raySize, Predicate<? super Entity> filter) {
         Preconditions.checkArgument(start != null, "Location start cannot be null");
-        Preconditions.checkArgument(this.equals(start.getWorld()), "Location start cannot be in a different world");
-        start.checkFinite();
+        Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
+        Preconditions.checkArgument(start.isFinite(), "Location start is not finite");
+        // Paper end - Add predicate for blocks when raytracing
 
         Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
         direction.checkFinite();
@@ -1149,9 +1155,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks) {
+        // Paper start - Add predicate for blocks when raytracing
+        return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, null);
+    }
+
+    @Override
+    public RayTraceResult rayTraceBlocks(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, Predicate<? super Block> canCollide) {
         Preconditions.checkArgument(start != null, "Location start cannot be null");
-        Preconditions.checkArgument(this.equals(start.getWorld()), "Location start cannot be in a different world");
-        start.checkFinite();
+        Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
+        Preconditions.checkArgument(start.isFinite(), "Location start is not finite");
+        // Paper end - Add predicate for blocks when raytracing
 
         Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
         direction.checkFinite();
@@ -1164,16 +1177,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         Vector dir = direction.clone().normalize().multiply(maxDistance);
-        Vec3 startPos = CraftLocation.toVec3D(start);
+        Vec3 startPos = io.papermc.paper.util.MCUtil.toVec3(start); // Paper - Add predicate for blocks when raytracing
         Vec3 endPos = startPos.add(dir.getX(), dir.getY(), dir.getZ());
-        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), CollisionContext.empty()));
+        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), CollisionContext.empty()), canCollide); // Paper - Add predicate for blocks when raytracing
 
         return CraftRayTraceResult.fromNMS(this, nmsHitResult);
     }
 
     @Override
     public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter) {
-        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks);
+        // Paper start - Add predicate for blocks when raytracing
+        return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, null);
+    }
+
+    @Override
+    public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter, Predicate<? super Block> canCollide) {
+        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, canCollide);
+        // Paper end - Add predicate for blocks when raytracing
         Vector startVec = null;
         double blockHitDistance = maxDistance;
 
