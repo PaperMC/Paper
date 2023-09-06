@@ -1,5 +1,8 @@
 package org.bukkit.block;
 
+import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a captured state of a sculk shrieker.
  */
@@ -24,4 +27,11 @@ public interface SculkShrieker extends TileState {
      * @param level new warning level
      */
     void setWarningLevel(int level);
+
+    /**
+     * Simulates a player causing a vibration.
+     *
+     * @param player the player that "caused" the shriek
+     */
+    void tryShriek(@Nullable Player player);
 }
