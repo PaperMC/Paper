@@ -1,0 +1,69 @@
+--- a/net/minecraft/world/level/block/SculkSpreader.java
++++ b/net/minecraft/world/level/block/SculkSpreader.java
+@@ -41,6 +41,14 @@
+ import net.minecraft.world.level.block.state.IBlockData;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import net.minecraft.nbt.NBTBase;
++import net.minecraft.world.level.World;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.SculkBloomEvent;
++// CraftBukkit end
++
+ public class SculkSpreader {
+ 
+     public static final int MAX_GROWTH_RATE_RADIUS = 24;
+@@ -56,6 +64,7 @@
+     private final int additionalDecayRate;
+     private List<SculkSpreader.a> cursors = new ArrayList();
+     private static final Logger LOGGER = LogUtils.getLogger();
++    World level; // CraftBukkit
+ 
+     public SculkSpreader(boolean flag, TagKey<Block> tagkey, int i, int j, int k, int l) {
+         this.isWorldGeneration = flag;
+@@ -110,7 +119,7 @@
+     public void load(NBTTagCompound nbttagcompound) {
+         if (nbttagcompound.contains("cursors", 9)) {
+             this.cursors.clear();
+-            DataResult dataresult = SculkSpreader.a.CODEC.listOf().parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getList("cursors", 10)));
++            DataResult<List<SculkSpreader.a>> dataresult = SculkSpreader.a.CODEC.listOf().parse(new Dynamic<>(DynamicOpsNBT.INSTANCE, nbttagcompound.getList("cursors", 10))); // CraftBukkit - decompile error
+             Logger logger = SculkSpreader.LOGGER;
+ 
+             Objects.requireNonNull(logger);
+@@ -125,7 +134,7 @@
+     }
+ 
+     public void save(NBTTagCompound nbttagcompound) {
+-        DataResult dataresult = SculkSpreader.a.CODEC.listOf().encodeStart(DynamicOpsNBT.INSTANCE, this.cursors);
++        DataResult<NBTBase> dataresult = SculkSpreader.a.CODEC.listOf().encodeStart(DynamicOpsNBT.INSTANCE, this.cursors); // CraftBukkit - decompile error
+         Logger logger = SculkSpreader.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+@@ -146,6 +155,16 @@
+ 
+     private void addCursor(SculkSpreader.a sculkspreader_a) {
+         if (this.cursors.size() < 32) {
++            // CraftBukkit start
++            CraftBlock bukkitBlock = CraftBlock.at(level, sculkspreader_a.pos);
++            SculkBloomEvent event = new SculkBloomEvent(bukkitBlock, sculkspreader_a.getCharge());
++            Bukkit.getPluginManager().callEvent(event);
++            if (event.isCancelled())
++                return;
++
++            sculkspreader_a.charge = event.getCharge();
++            // CraftBukkit end
++
+             this.cursors.add(sculkspreader_a);
+         }
+     }
+@@ -241,7 +260,7 @@
+             this.charge = i;
+             this.decayDelay = j;
+             this.updateDelay = k;
+-            this.facings = (Set) optional.orElse((Object) null);
++            this.facings = (Set) optional.orElse(null); // CraftBukkit - decompile error
+         }
+ 
+         public a(BlockPosition blockposition, int i) {
