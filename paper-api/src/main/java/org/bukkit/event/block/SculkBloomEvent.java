@@ -38,7 +38,7 @@ public class SculkBloomEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Returns the charge of the cursor, <1000 by default.
+     * Returns the charge of the cursor, &lt; 1000 by default.
      *
      * @return the charge of the cursor
      */
