@@ -1686,6 +1686,27 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
 
+    // Paper start
+    /**
+     * Performs a ray trace that checks for entity collisions.
+     * <p>
+     * This may not consider entities in currently unloaded chunks. Some
+     * implementations may impose artificial restrictions on the maximum
+     * distance.
+     *
+     * @param start the start position
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param raySize entity bounding boxes will be uniformly expanded (or
+     *     shrinked) by this value before doing collision checks
+     * @param filter only entities that fulfill this predicate are considered,
+     *     or <code>null</code> to consider all entities
+     * @return the closest ray trace hit result, or <code>null</code> if there
+     *     is no hit
+     */
+    @Nullable RayTraceResult rayTraceEntities(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
+    // Paper end
+
     /**
      * Performs a ray trace that checks for block collisions using the blocks'
      * precise collision shapes.
@@ -1749,6 +1770,34 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     public RayTraceResult rayTraceBlocks(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks);
 
+    // Paper start
+    /**
+     * Performs a ray trace that checks for block collisions using the blocks'
+     * precise collision shapes.
+     * <p>
+     * If collisions with passable blocks are ignored, fluid collisions are
+     * ignored as well regardless of the fluid collision mode.
+     * <p>
+     * Portal blocks are only considered passable if the ray starts within
+     * them. Apart from that collisions with portal blocks will be considered
+     * even if collisions with passable blocks are otherwise ignored.
+     * <p>
+     * This may cause loading of chunks! Some implementations may impose
+     * artificial restrictions on the maximum distance.
+     *
+     * @param start the start position
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param fluidCollisionMode the fluid collision mode
+     * @param ignorePassableBlocks whether to ignore passable but collidable
+     *     blocks (ex. tall grass, signs, fluids, ..)
+     * @param canCollide predicate for blocks the ray can potentially collide
+     *     with, or <code>null</code> to consider all blocks
+     * @return the ray trace hit result, or <code>null</code> if there is no hit
+     */
+    @Nullable RayTraceResult rayTraceBlocks(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @Nullable Predicate<? super Block> canCollide);
+    // Paper end
+
     /**
      * Performs a ray trace that checks for both block and entity collisions.
      * <p>
@@ -1781,6 +1830,42 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable
     public RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter);
+
+    // Paper start
+    /**
+     * Performs a ray trace that checks for both block and entity collisions.
+     * <p>
+     * Block collisions use the blocks' precise collision shapes. The
+     * <code>raySize</code> parameter is only taken into account for entity
+     * collision checks.
+     * <p>
+     * If collisions with passable blocks are ignored, fluid collisions are
+     * ignored as well regardless of the fluid collision mode.
+     * <p>
+     * Portal blocks are only considered passable if the ray starts within them.
+     * Apart from that collisions with portal blocks will be considered even if
+     * collisions with passable blocks are otherwise ignored.
+     * <p>
+     * This may cause loading of chunks! Some implementations may impose
+     * artificial restrictions on the maximum distance.
+     *
+     * @param start the start position
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param fluidCollisionMode the fluid collision mode
+     * @param ignorePassableBlocks whether to ignore passable but collidable
+     *     blocks (ex. tall grass, signs, fluids, ..)
+     * @param raySize entity bounding boxes will be uniformly expanded (or
+     *     shrinked) by this value before doing collision checks
+     * @param filter only entities that fulfill this predicate are considered,
+     *     or <code>null</code> to consider all entities
+     * @param canCollide predicate for blocks the ray can potentially collide
+     *     with, or <code>null</code> to consider all blocks
+     * @return the closest ray trace hit result with either a block or an
+     *     entity, or <code>null</code> if there is no hit
+     */
+    @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
+    // Paper end
 
     /**
      * Gets the default spawn {@link Location} of this world
