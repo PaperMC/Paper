@@ -7,6 +7,7 @@ import java.lang.reflect.Proxy;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.SimplePluginManager;
@@ -87,13 +88,19 @@ public final class TestServer implements InvocationHandler {
                                 @NotNull
                                 @Override
                                 public Iterator iterator() {
-                                    return null;
+                                    throw new UnsupportedOperationException();
                                 }
 
                                 @Nullable
                                 @Override
                                 public Keyed get(@NotNull NamespacedKey key) {
                                     return null;
+                                }
+
+                                @NotNull
+                                @Override
+                                public Stream stream() {
+                                    throw new UnsupportedOperationException();
                                 }
                             };
                         }

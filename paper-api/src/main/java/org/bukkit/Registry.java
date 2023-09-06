@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
@@ -50,6 +52,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
 
         @NotNull
         @Override
+        public Stream<Advancement> stream() {
+            return StreamSupport.stream(spliterator(), false);
+        }
+
+        @NotNull
+        @Override
         public Iterator<Advancement> iterator() {
             return Bukkit.advancementIterator();
         }
@@ -88,6 +96,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
 
         @NotNull
         @Override
+        public Stream<KeyedBossBar> stream() {
+            return StreamSupport.stream(spliterator(), false);
+        }
+
+        @NotNull
+        @Override
         public Iterator<KeyedBossBar> iterator() {
             return Bukkit.getBossBars();
         }
@@ -103,6 +117,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public Enchantment get(@NotNull NamespacedKey key) {
             return Enchantment.getByKey(key);
+        }
+
+        @NotNull
+        @Override
+        public Stream<Enchantment> stream() {
+            return StreamSupport.stream(spliterator(), false);
         }
 
         @NotNull
@@ -203,6 +223,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         public MemoryKey get(@NotNull NamespacedKey key) {
             return MemoryKey.getByKey(key);
         }
+
+        @NotNull
+        @Override
+        public Stream<MemoryKey> stream() {
+            return StreamSupport.stream(spliterator(), false);
+        }
     };
     /**
      * Server fluids.
@@ -230,6 +256,14 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     @Nullable
     T get(@NotNull NamespacedKey key);
+
+    /**
+     * Returns a new stream, which contains all registry items, which are registered to the registry.
+     *
+     * @return a stream of all registry items
+     */
+    @NotNull
+    Stream<T> stream();
 
     /**
      * Attempts to match the registered object with the given key.
@@ -273,6 +307,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public T get(@NotNull NamespacedKey key) {
             return map.get(key);
+        }
+
+        @NotNull
+        @Override
+        public Stream<T> stream() {
+            return StreamSupport.stream(spliterator(), false);
         }
 
         @NotNull
