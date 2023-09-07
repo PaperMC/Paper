@@ -5,7 +5,7 @@ Subject: [PATCH] Paper Plugins
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index ba6f0a70ba2442dbe60ed6cc92e4fb91a48d9f3b..22b65c3ad4ed6e19b88a51a2e001f0e5846d9ae6 100644
+index b6b86e41b42a2e205ce2e74faea3f005529229fe..8c93ff28273ef9ddce2fb7a62ac50701fa3cd9a2 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -47,7 +47,7 @@ dependencies {
@@ -1882,10 +1882,18 @@ index a80251eff75430863b37db1c131e22593f3fcd5e..310c4041963a3f1e0a26e39a6da12a9b
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..f594913e6b94f77b26a4a758c447a42d8a25b6ff 100644
+index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..688beae38ddc8837150764bb4f79fa7fe3ea5495 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-@@ -40,6 +40,7 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -14,6 +14,7 @@ import java.net.URLConnection;
+ import java.util.List;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
++import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
+ import org.bukkit.Server;
+ import org.bukkit.command.Command;
+ import org.bukkit.command.CommandSender;
+@@ -40,6 +41,7 @@ public abstract class JavaPlugin extends PluginBase {
      private Server server = null;
      private File file = null;
      private PluginDescriptionFile description = null;
@@ -1893,7 +1901,7 @@ index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..f594913e6b94f77b26a4a758c447a42d
      private File dataFolder = null;
      private ClassLoader classLoader = null;
      private boolean naggable = true;
-@@ -48,13 +49,16 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -48,13 +50,16 @@ public abstract class JavaPlugin extends PluginBase {
      private PluginLogger logger = null;
  
      public JavaPlugin() {
@@ -1914,7 +1922,7 @@ index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..f594913e6b94f77b26a4a758c447a42d
      protected JavaPlugin(@NotNull final JavaPluginLoader loader, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file) {
          final ClassLoader classLoader = this.getClass().getClassLoader();
          if (classLoader instanceof PluginClassLoader) {
-@@ -79,9 +83,12 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -79,9 +84,12 @@ public abstract class JavaPlugin extends PluginBase {
       * Gets the associated PluginLoader responsible for this plugin
       *
       * @return PluginLoader that controls this plugin
@@ -1927,7 +1935,7 @@ index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..f594913e6b94f77b26a4a758c447a42d
      public final PluginLoader getPluginLoader() {
          return loader;
      }
-@@ -122,13 +129,20 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -122,13 +130,20 @@ public abstract class JavaPlugin extends PluginBase {
       * Returns the plugin.yaml file containing the details for this plugin
       *
       * @return Contents of the plugin.yaml file
@@ -1948,7 +1956,7 @@ index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..f594913e6b94f77b26a4a758c447a42d
      @NotNull
      @Override
      public FileConfiguration getConfig() {
-@@ -258,7 +272,8 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -258,7 +273,8 @@ public abstract class JavaPlugin extends PluginBase {
       *
       * @param enabled true if enabled, otherwise false
       */
@@ -1958,7 +1966,7 @@ index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..f594913e6b94f77b26a4a758c447a42d
          if (isEnabled != enabled) {
              isEnabled = enabled;
  
-@@ -270,9 +285,18 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -270,9 +286,18 @@ public abstract class JavaPlugin extends PluginBase {
          }
      }
  
@@ -1980,7 +1988,7 @@ index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..f594913e6b94f77b26a4a758c447a42d
          this.server = server;
          this.file = file;
          this.description = description;
-@@ -280,6 +304,7 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -280,6 +305,7 @@ public abstract class JavaPlugin extends PluginBase {
          this.classLoader = classLoader;
          this.configFile = new File(dataFolder, "config.yml");
          this.logger = new PluginLogger(this);
@@ -1988,7 +1996,26 @@ index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..f594913e6b94f77b26a4a758c447a42d
      }
  
      /**
-@@ -396,10 +421,10 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -309,6 +335,18 @@ public abstract class JavaPlugin extends PluginBase {
+      */
+     @Nullable
+     public PluginCommand getCommand(@NotNull String name) {
++        // Paper start - print warning if paper plugin
++        if (!(pluginMeta instanceof PluginDescriptionFile)) {
++            this.logger.warning("---------------------------------WARNING--------------------------------");
++            this.logger.warning("         Defining commands in paper-plugin.yml is unsupported!          ");
++            this.logger.warning("      Please refer to the docs for proper command initialization!       ");
++            this.logger.warning("https://docs.papermc.io/paper/dev/getting-started/paper-plugins#commands");
++            this.logger.warning("                    Command will not be initialized!                    ");
++            this.logger.warning("---------------------------------WARNING--------------------------------");
++            throw new RuntimeException("Defining commands in paper-plugin.yml is unsupported! - Please refer to the warning above for further details.");
++        }
++        // Paper end
++        
+         String alias = name.toLowerCase(java.util.Locale.ENGLISH);
+         PluginCommand command = getServer().getPluginCommand(alias);
+ 
+@@ -396,10 +434,10 @@ public abstract class JavaPlugin extends PluginBase {
              throw new IllegalArgumentException(clazz + " does not extend " + JavaPlugin.class);
          }
          final ClassLoader cl = clazz.getClassLoader();
@@ -2002,7 +2029,7 @@ index ee100b7ad89ce1eccef0c3bc55885cd78aadd1ec..f594913e6b94f77b26a4a758c447a42d
          if (plugin == null) {
              throw new IllegalStateException("Cannot get plugin for " + clazz + " from a static initializer");
          }
-@@ -422,10 +447,10 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -422,10 +460,10 @@ public abstract class JavaPlugin extends PluginBase {
      public static JavaPlugin getProvidingPlugin(@NotNull Class<?> clazz) {
          Preconditions.checkArgument(clazz != null, "Null class cannot have a plugin");
          final ClassLoader cl = clazz.getClassLoader();
