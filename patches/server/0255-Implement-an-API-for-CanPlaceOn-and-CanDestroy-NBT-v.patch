@@ -4,8 +4,464 @@ Date: Wed, 12 Sep 2018 18:53:55 +0300
 Subject: [PATCH] Implement an API for CanPlaceOn and CanDestroy NBT values
 
 
+diff --git a/src/main/java/net/minecraft/world/item/Item.java b/src/main/java/net/minecraft/world/item/Item.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9ffce5e5940a55bc06a61ac8733d8735a0004b70
+--- /dev/null
++++ b/src/main/java/net/minecraft/world/item/Item.java
+@@ -0,0 +1,429 @@
++package net.minecraft.world.item;
++
++import com.google.common.collect.ImmutableMultimap;
++import com.google.common.collect.Maps;
++import com.google.common.collect.Multimap;
++import com.mojang.logging.LogUtils;
++import java.util.List;
++import java.util.Map;
++import java.util.Optional;
++import java.util.UUID;
++import javax.annotation.Nullable;
++import net.minecraft.SharedConstants;
++import net.minecraft.Util;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.Holder;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.network.chat.Component;
++import net.minecraft.sounds.SoundEvent;
++import net.minecraft.sounds.SoundEvents;
++import net.minecraft.tags.DamageTypeTags;
++import net.minecraft.util.Mth;
++import net.minecraft.world.InteractionHand;
++import net.minecraft.world.InteractionResult;
++import net.minecraft.world.InteractionResultHolder;
++import net.minecraft.world.damagesource.DamageSource;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.EquipmentSlot;
++import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.entity.SlotAccess;
++import net.minecraft.world.entity.ai.attributes.Attribute;
++import net.minecraft.world.entity.ai.attributes.AttributeModifier;
++import net.minecraft.world.entity.item.ItemEntity;
++import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.flag.FeatureElement;
++import net.minecraft.world.flag.FeatureFlag;
++import net.minecraft.world.flag.FeatureFlagSet;
++import net.minecraft.world.flag.FeatureFlags;
++import net.minecraft.world.food.FoodProperties;
++import net.minecraft.world.inventory.ClickAction;
++import net.minecraft.world.inventory.Slot;
++import net.minecraft.world.inventory.tooltip.TooltipComponent;
++import net.minecraft.world.item.context.UseOnContext;
++import net.minecraft.world.level.ClipContext;
++import net.minecraft.world.level.ItemLike;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.phys.BlockHitResult;
++import net.minecraft.world.phys.Vec3;
++import org.slf4j.Logger;
++
++public class Item implements FeatureElement, ItemLike {
++    private static final Logger LOGGER = LogUtils.getLogger();
++    public static final Map<Block, Item> BY_BLOCK = Maps.newHashMap();
++    protected static final UUID BASE_ATTACK_DAMAGE_UUID = UUID.fromString("CB3F55D3-645C-4F38-A497-9C13A33DB5CF");
++    protected static final UUID BASE_ATTACK_SPEED_UUID = UUID.fromString("FA233E1C-4180-4865-B01B-BCCE9785ACA3");
++    public static final int MAX_STACK_SIZE = 64;
++    public static final int EAT_DURATION = 32;
++    public static final int MAX_BAR_WIDTH = 13;
++    private final Holder.Reference<Item> builtInRegistryHolder = BuiltInRegistries.ITEM.createIntrusiveHolder(this);
++    public final Rarity rarity;
++    private final int maxStackSize;
++    private final int maxDamage;
++    private final boolean isFireResistant;
++    @Nullable
++    private final Item craftingRemainingItem;
++    @Nullable
++    private String descriptionId;
++    @Nullable
++    private final FoodProperties foodProperties;
++    private final FeatureFlagSet requiredFeatures;
++
++    public static int getId(Item item) {
++        return item == null ? 0 : BuiltInRegistries.ITEM.getId(item);
++    }
++
++    public static Item byId(int id) {
++        return BuiltInRegistries.ITEM.byId(id);
++    }
++
++    /** @deprecated */
++    @Deprecated
++    public static Item byBlock(Block block) {
++        return BY_BLOCK.getOrDefault(block, Items.AIR);
++    }
++
++    public Item(Item.Properties settings) {
++        this.rarity = settings.rarity;
++        this.craftingRemainingItem = settings.craftingRemainingItem;
++        this.maxDamage = settings.maxDamage;
++        this.maxStackSize = settings.maxStackSize;
++        this.foodProperties = settings.foodProperties;
++        this.isFireResistant = settings.isFireResistant;
++        this.requiredFeatures = settings.requiredFeatures;
++        if (SharedConstants.IS_RUNNING_IN_IDE) {
++            String string = this.getClass().getSimpleName();
++            if (!string.endsWith("Item")) {
++                LOGGER.error("Item classes should end with Item and {} doesn't.", (Object)string);
++            }
++        }
++
++    }
++
++    /** @deprecated */
++    @Deprecated
++    public Holder.Reference<Item> builtInRegistryHolder() {
++        return this.builtInRegistryHolder;
++    }
++
++    public void onUseTick(Level world, LivingEntity user, ItemStack stack, int remainingUseTicks) {
++    }
++
++    public void onDestroyed(ItemEntity entity) {
++    }
++
++    public void verifyTagAfterLoad(CompoundTag nbt) {
++    }
++
++    public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player miner) {
++        return true;
++    }
++
++    @Override
++    public Item asItem() {
++        return this;
++    }
++
++    public InteractionResult useOn(UseOnContext context) {
++        return InteractionResult.PASS;
++    }
++
++    public float getDestroySpeed(ItemStack stack, BlockState state) {
++        return 1.0F;
++    }
++
++    public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
++        if (this.isEdible()) {
++            ItemStack itemStack = user.getItemInHand(hand);
++            if (user.canEat(this.getFoodProperties().canAlwaysEat())) {
++                user.startUsingItem(hand);
++                return InteractionResultHolder.consume(itemStack);
++            } else {
++                return InteractionResultHolder.fail(itemStack);
++            }
++        } else {
++            return InteractionResultHolder.pass(user.getItemInHand(hand));
++        }
++    }
++
++    public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
++        return this.isEdible() ? user.eat(world, stack) : stack;
++    }
++
++    public final int getMaxStackSize() {
++        return this.maxStackSize;
++    }
++
++    public final int getMaxDamage() {
++        return this.maxDamage;
++    }
++
++    public boolean canBeDepleted() {
++        return this.maxDamage > 0;
++    }
++
++    public boolean isBarVisible(ItemStack stack) {
++        return stack.isDamaged();
++    }
++
++    public int getBarWidth(ItemStack stack) {
++        return Math.round(13.0F - (float)stack.getDamageValue() * 13.0F / (float)this.maxDamage);
++    }
++
++    public int getBarColor(ItemStack stack) {
++        float f = Math.max(0.0F, ((float)this.maxDamage - (float)stack.getDamageValue()) / (float)this.maxDamage);
++        return Mth.hsvToRgb(f / 3.0F, 1.0F, 1.0F);
++    }
++
++    public boolean overrideStackedOnOther(ItemStack stack, Slot slot, ClickAction clickType, Player player) {
++        return false;
++    }
++
++    public boolean overrideOtherStackedOnMe(ItemStack stack, ItemStack otherStack, Slot slot, ClickAction clickType, Player player, SlotAccess cursorStackReference) {
++        return false;
++    }
++
++    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
++        return false;
++    }
++
++    public boolean mineBlock(ItemStack stack, Level world, BlockState state, BlockPos pos, LivingEntity miner) {
++        return false;
++    }
++
++    public boolean isCorrectToolForDrops(BlockState state) {
++        return false;
++    }
++
++    public InteractionResult interactLivingEntity(ItemStack stack, Player user, LivingEntity entity, InteractionHand hand) {
++        return InteractionResult.PASS;
++    }
++
++    public Component getDescription() {
++        return Component.translatable(this.getDescriptionId());
++    }
++
++    @Override
++    public String toString() {
++        return BuiltInRegistries.ITEM.getKey(this).getPath();
++    }
++
++    protected String getOrCreateDescriptionId() {
++        if (this.descriptionId == null) {
++            this.descriptionId = Util.makeDescriptionId("item", BuiltInRegistries.ITEM.getKey(this));
++        }
++
++        return this.descriptionId;
++    }
++
++    public String getDescriptionId() {
++        return this.getOrCreateDescriptionId();
++    }
++
++    public String getDescriptionId(ItemStack stack) {
++        return this.getDescriptionId();
++    }
++
++    public boolean shouldOverrideMultiplayerNbt() {
++        return true;
++    }
++
++    @Nullable
++    public final Item getCraftingRemainingItem() {
++        return this.craftingRemainingItem;
++    }
++
++    public boolean hasCraftingRemainingItem() {
++        return this.craftingRemainingItem != null;
++    }
++
++    public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean selected) {
++    }
++
++    public void onCraftedBy(ItemStack stack, Level world, Player player) {
++    }
++
++    public boolean isComplex() {
++        return false;
++    }
++
++    public UseAnim getUseAnimation(ItemStack stack) {
++        return stack.getItem().isEdible() ? UseAnim.EAT : UseAnim.NONE;
++    }
++
++    public int getUseDuration(ItemStack stack) {
++        if (stack.getItem().isEdible()) {
++            return this.getFoodProperties().isFastFood() ? 16 : 32;
++        } else {
++            return 0;
++        }
++    }
++
++    public void releaseUsing(ItemStack stack, Level world, LivingEntity user, int remainingUseTicks) {
++    }
++
++    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
++    }
++
++    public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
++        return Optional.empty();
++    }
++
++    public Component getName(ItemStack stack) {
++        return Component.translatable(this.getDescriptionId(stack));
++    }
++
++    // Paper Start - Add Glow API
++    public boolean isFoil(ItemStack stack) {
++        return stack.isEnchanted() || stack.isFoiled();
++    }
++    // Paper End
++
++    public Rarity getRarity(ItemStack stack) {
++        if (!stack.isEnchanted()) {
++            return this.rarity;
++        } else {
++            switch (this.rarity) {
++                case COMMON:
++                case UNCOMMON:
++                    return Rarity.RARE;
++                case RARE:
++                    return Rarity.EPIC;
++                case EPIC:
++                default:
++                    return this.rarity;
++            }
++        }
++    }
++
++    public boolean isEnchantable(ItemStack stack) {
++        return this.getMaxStackSize() == 1 && this.canBeDepleted();
++    }
++
++    protected static BlockHitResult getPlayerPOVHitResult(Level world, Player player, ClipContext.Fluid fluidHandling) {
++        float f = player.getXRot();
++        float g = player.getYRot();
++        Vec3 vec3 = player.getEyePosition();
++        float h = Mth.cos(-g * ((float)Math.PI / 180F) - (float)Math.PI);
++        float i = Mth.sin(-g * ((float)Math.PI / 180F) - (float)Math.PI);
++        float j = -Mth.cos(-f * ((float)Math.PI / 180F));
++        float k = Mth.sin(-f * ((float)Math.PI / 180F));
++        float l = i * j;
++        float n = h * j;
++        double d = 5.0D;
++        Vec3 vec32 = vec3.add((double)l * 5.0D, (double)k * 5.0D, (double)n * 5.0D);
++        return world.clip(new ClipContext(vec3, vec32, ClipContext.Block.OUTLINE, fluidHandling, player));
++    }
++
++    public int getEnchantmentValue() {
++        return 0;
++    }
++
++    public boolean isValidRepairItem(ItemStack stack, ItemStack ingredient) {
++        return false;
++    }
++
++    public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
++        return ImmutableMultimap.of();
++    }
++
++    public boolean useOnRelease(ItemStack stack) {
++        return false;
++    }
++
++    public ItemStack getDefaultInstance() {
++        return new ItemStack(this);
++    }
++
++    public boolean isEdible() {
++        return this.foodProperties != null;
++    }
++
++    @Nullable
++    public FoodProperties getFoodProperties() {
++        return this.foodProperties;
++    }
++
++    public SoundEvent getDrinkingSound() {
++        return SoundEvents.GENERIC_DRINK;
++    }
++
++    public SoundEvent getEatingSound() {
++        return SoundEvents.GENERIC_EAT;
++    }
++
++    public boolean isFireResistant() {
++        return this.isFireResistant;
++    }
++
++    public boolean canBeHurtBy(DamageSource source) {
++        return !this.isFireResistant || !source.is(DamageTypeTags.IS_FIRE);
++    }
++
++    public boolean canFitInsideContainerItems() {
++        return true;
++    }
++
++    @Override
++    public FeatureFlagSet requiredFeatures() {
++        return this.requiredFeatures;
++    }
++
++    public static class Properties {
++        int maxStackSize = 64;
++        int maxDamage;
++        @Nullable
++        Item craftingRemainingItem;
++        Rarity rarity = Rarity.COMMON;
++        @Nullable
++        FoodProperties foodProperties;
++        boolean isFireResistant;
++        FeatureFlagSet requiredFeatures = FeatureFlags.VANILLA_SET;
++
++        public Item.Properties food(FoodProperties foodComponent) {
++            this.foodProperties = foodComponent;
++            return this;
++        }
++
++        public Item.Properties stacksTo(int maxCount) {
++            if (this.maxDamage > 0) {
++                throw new RuntimeException("Unable to have damage AND stack.");
++            } else {
++                this.maxStackSize = maxCount;
++                return this;
++            }
++        }
++
++        public Item.Properties defaultDurability(int maxDamage) {
++            return this.maxDamage == 0 ? this.durability(maxDamage) : this;
++        }
++
++        public Item.Properties durability(int maxDamage) {
++            this.maxDamage = maxDamage;
++            this.maxStackSize = 1;
++            return this;
++        }
++
++        public Item.Properties craftRemainder(Item recipeRemainder) {
++            this.craftingRemainingItem = recipeRemainder;
++            return this;
++        }
++
++        public Item.Properties rarity(Rarity rarity) {
++            this.rarity = rarity;
++            return this;
++        }
++
++        public Item.Properties fireResistant() {
++            this.isFireResistant = true;
++            return this;
++        }
++
++        public Item.Properties requiredFeatures(FeatureFlag... features) {
++            this.requiredFeatures = FeatureFlags.REGISTRY.subset(features);
++            return this;
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 0caf3eeb7984e842f7a0bdfed3021d0b231a0dd0..1de2416a293d0e8214e281aa7f5de032bcf6ef4b 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -1135,9 +1135,15 @@ public final class ItemStack {
+     }
+ 
+     public boolean isEnchanted() {
+-        return this.tag != null && this.tag.contains("Enchantments", 9) ? !this.tag.getList("Enchantments", 10).isEmpty() : false;
++        return this.tag != null && this.tag.contains("Enchantments", 9) ? !this.tag.getList("Enchantments", 10).isEmpty() : false; // diff on change isFoiled
+     }
+ 
++    // Paper Start
++    public boolean isFoiled() {
++        return this.tag != null && this.tag.contains("Foiled") && this.tag.getBoolean("Foiled");
++    }
++    // Paper End
++
+     public void addTagElement(String key, Tag element) {
+         this.getOrCreateTag().put(key, element);
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270f4ee8b14 100644
+index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..b93fa4d5e2d8e590b585ed359eb990622a151935 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -83,6 +83,12 @@ import org.bukkit.persistence.PersistentDataContainer;
@@ -21,33 +477,35 @@ index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270
  /**
   * Children must include the following:
   *
-@@ -271,6 +277,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -271,6 +277,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      @Specific(Specific.To.NBT)
      static final ItemMetaKey BLOCK_DATA = new ItemMetaKey("BlockStateTag");
      static final ItemMetaKey BUKKIT_CUSTOM_TAG = new ItemMetaKey("PublicBukkitValues");
-+    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++    // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +    static final ItemMetaKey CAN_DESTROY = new ItemMetaKey("CanDestroy");
 +    static final ItemMetaKey CAN_PLACE_ON = new ItemMetaKey("CanPlaceOn");
++    static final ItemMetaKey FOILED = new ItemMetaKey("Foiled");
 +    // Paper end
  
      // We store the raw original JSON representation of all text data. See SPIGOT-5063, SPIGOT-5656, SPIGOT-5304
      private String displayName;
-@@ -284,6 +294,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -284,6 +295,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      private int hideFlag;
      private boolean unbreakable;
      private int damage;
-+    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++    // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +    private Set<Namespaced> placeableKeys = Sets.newHashSet();
 +    private Set<Namespaced> destroyableKeys = Sets.newHashSet();
++    private boolean foiled;
 +    // Paper end
  
      private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
-@@ -321,6 +335,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -321,6 +337,17 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          this.hideFlag = meta.hideFlag;
          this.unbreakable = meta.unbreakable;
          this.damage = meta.damage;
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +        if (meta.hasPlaceableKeys()) {
 +            this.placeableKeys = new java.util.HashSet<>(meta.placeableKeys);
 +        }
@@ -55,15 +513,17 @@ index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270
 +        if (meta.hasDestroyableKeys()) {
 +            this.destroyableKeys = new java.util.HashSet<>(meta.destroyableKeys);
 +        }
++
++        this.foiled = meta.foiled;
 +        // Paper end
          this.unhandledTags.putAll(meta.unhandledTags);
          this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
  
-@@ -384,6 +407,31 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -384,6 +411,35 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                  this.persistentDataContainer.put(key, compound.get(key).copy());
              }
          }
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +        if (tag.contains(CAN_DESTROY.NBT)) {
 +            ListTag list = tag.getList(CAN_DESTROY.NBT, CraftMagicNumbers.NBT.TAG_STRING);
 +            for (int i = 0; i < list.size(); i++) {
@@ -87,15 +547,19 @@ index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270
 +                this.placeableKeys.add(namespaced);
 +            }
 +        }
++
++        if (tag.contains(FOILED.NBT)) {
++            this.foiled = tag.getBoolean(FOILED.NBT);
++        }
 +        // Paper end
  
          Set<String> keys = tag.getAllKeys();
          for (String key : keys) {
-@@ -522,6 +570,34 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -522,6 +578,39 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              this.setDamage(damage);
          }
  
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +        Iterable<?> canPlaceOnSerialized = SerializableMeta.getObject(Iterable.class, map, CAN_PLACE_ON.BUKKIT, true);
 +        if (canPlaceOnSerialized != null) {
 +            for (Object canPlaceOnElement : canPlaceOnSerialized) {
@@ -121,16 +585,21 @@ index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270
 +                this.destroyableKeys.add(value);
 +            }
 +        }
++
++        Boolean foiled = SerializableMeta.getObject(Boolean.class, map, FOILED.BUKKIT, true);
++        if (foiled != null) {
++            this.setFoiled(foiled);
++        }
 +        // Paper end
 +
          String internal = SerializableMeta.getString(map, "internal", true);
          if (internal != null) {
              ByteArrayInputStream buf = new ByteArrayInputStream(Base64.getDecoder().decode(internal));
-@@ -650,6 +726,23 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -650,6 +739,27 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          if (this.hasDamage()) {
              itemTag.putInt(DAMAGE.NBT, damage);
          }
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +        if (hasPlaceableKeys()) {
 +            List<String> items = this.placeableKeys.stream()
 +                .map(this::serializeNamespaced)
@@ -146,14 +615,20 @@ index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270
 +
 +            itemTag.put(CAN_DESTROY.NBT, createNonComponentStringList(items));
 +        }
++
++        if (this.isFoiled()) {
++            itemTag.putBoolean(FOILED.NBT, foiled);
++        }
 +        // Paper end
  
          for (Map.Entry<String, Tag> e : this.unhandledTags.entrySet()) {
              itemTag.put(e.getKey(), e.getValue());
-@@ -666,6 +759,21 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -666,6 +776,23 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
      }
  
++
++
 +    // Paper start
 +    static ListTag createNonComponentStringList(List<String> list) {
 +        if (list == null || list.isEmpty()) {
@@ -172,59 +647,62 @@ index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270
      ListTag createStringList(List<String> list) {
          if (list == null) {
              return null;
-@@ -749,7 +857,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -749,7 +876,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Overridden
      boolean isEmpty() {
 -        return !(this.hasDisplayName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isUnbreakable() || this.hasDamage() || this.hasAttributeModifiers());
-+        return !(this.hasDisplayName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isUnbreakable() || this.hasDamage() || this.hasAttributeModifiers() || this.hasPlaceableKeys() || this.hasDestroyableKeys()); // Paper - Implement an API for CanPlaceOn and CanDestroy NBT values
++        return !(this.hasDisplayName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isUnbreakable() || this.hasDamage() || this.hasAttributeModifiers() || this.hasPlaceableKeys() || this.hasDestroyableKeys() || this.isFoiled()); // Paper - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
      }
  
      // Paper start
-@@ -1181,7 +1289,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1181,7 +1308,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                  && (this.hideFlag == that.hideFlag)
                  && (this.isUnbreakable() == that.isUnbreakable())
                  && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage())
 -                && (this.version == that.version);
 +                && (this.version == that.version)
-+                // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++                // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +                && (this.hasPlaceableKeys() ? that.hasPlaceableKeys() && this.placeableKeys.equals(that.placeableKeys) : !that.hasPlaceableKeys())
-+                && (this.hasDestroyableKeys() ? that.hasDestroyableKeys() && this.destroyableKeys.equals(that.destroyableKeys) : !that.hasDestroyableKeys());
++                && (this.hasDestroyableKeys() ? that.hasDestroyableKeys() && this.destroyableKeys.equals(that.destroyableKeys) : !that.hasDestroyableKeys())
++                && (this.foiled == that.isFoiled());
 +                // Paper end
      }
  
      /**
-@@ -1216,6 +1328,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1216,6 +1348,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
          hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
          hash = 61 * hash + this.version;
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +        hash = 61 * hash + (this.hasPlaceableKeys() ? this.placeableKeys.hashCode() : 0);
 +        hash = 61 * hash + (this.hasDestroyableKeys() ? this.destroyableKeys.hashCode() : 0);
++        hash = 61 * hash + (this.isFoiled() ? 1231 : 1237);
 +        // Paper end
          return hash;
      }
  
-@@ -1240,6 +1356,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1240,6 +1377,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              clone.unbreakable = this.unbreakable;
              clone.damage = this.damage;
              clone.version = this.version;
-+            // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++            // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +            if (this.placeableKeys != null) {
 +                clone.placeableKeys = Sets.newHashSet(this.placeableKeys);
 +            }
 +            if (this.destroyableKeys != null) {
 +                clone.destroyableKeys = Sets.newHashSet(this.destroyableKeys);
 +            }
++            clone.foiled = this.foiled;
 +            // Paper end
              return clone;
          } catch (CloneNotSupportedException e) {
              throw new Error(e);
-@@ -1297,6 +1421,23 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1297,6 +1443,26 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              builder.put(DAMAGE.BUKKIT, damage);
          }
  
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +        if (this.hasPlaceableKeys()) {
 +            List<String> cerealPlaceable = this.placeableKeys.stream()
 +                .map(this::serializeNamespaced)
@@ -240,24 +718,28 @@ index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270
 +
 +            builder.put(CAN_DESTROY.BUKKIT, cerealDestroyable);
 +        }
++        if (this.isFoiled()) {
++            builder.put(FOILED.BUKKIT, foiled);
++        }
 +        // Paper end
          final Map<String, Tag> internalTags = new HashMap<String, Tag>(this.unhandledTags);
          this.serializeInternal(internalTags);
          if (!internalTags.isEmpty()) {
-@@ -1469,6 +1610,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1469,6 +1635,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                          CraftMetaArmorStand.SHOW_ARMS.NBT,
                          CraftMetaArmorStand.SMALL.NBT,
                          CraftMetaArmorStand.MARKER.NBT,
 +                        CAN_DESTROY.NBT,
 +                        CAN_PLACE_ON.NBT,
++                        FOILED.NBT,
                          // Paper end
                          CraftMetaCompass.LODESTONE_DIMENSION.NBT,
                          CraftMetaCompass.LODESTONE_POS.NBT,
-@@ -1498,4 +1641,146 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1498,4 +1667,157 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      }
      // Paper end
  
-+    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++    // Paper start - Implement an API for CanPlaceOn, CanDestroy and Foiled NBT values
 +    @Override
 +    @SuppressWarnings("deprecation")
 +    public Set<Material> getCanDestroy() {
@@ -318,6 +800,16 @@ index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270
 +    @Override
 +    public boolean hasDestroyableKeys() {
 +        return this.destroyableKeys != null && !this.destroyableKeys.isEmpty();
++    }
++
++    @Override
++    public boolean isFoiled() {
++        return this.foiled;
++    }
++
++    @Override
++    public void setFoiled(boolean foiled) {
++        this.foiled = foiled;
 +    }
 +
 +    @Deprecated
@@ -398,5 +890,6 @@ index 8ada3a7c5539293d4e2c1a5b83e00fc2542f10ff..d7102d83bb781b6cf296cf9c637f8270
 +
 +        return true;
 +    }
++
 +    // Paper end
  }
