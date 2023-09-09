@@ -165,8 +165,8 @@ public class Main {
                 System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 17. Check your Java version with the command 'java -version'.");
                 return;
             }
-            if (javaVersion > 64.0) {
-                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 20 is supported.");
+            if (javaVersion > 65.0) {
+                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 21 is supported.");
                 return;
             }
             String javaVersionName = System.getProperty("java.version");
