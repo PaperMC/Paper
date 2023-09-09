@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: pseudospace0 <pseudospace0@proton.me>
+Date: Sat, 9 Sep 2023 23:23:58 +0200
+Subject: [PATCH] Avoid-potentially-unnecessary-block-ack
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 618ab9a2903f6d4139acd4aaa2e6db0a26e88ba9..e62182995b8673ef3804a9d300ef8599dc8462bd 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -181,6 +181,8 @@ public class ServerPlayerGameMode {
+             this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
+             this.debugLogging(pos, false, sequence, "too high");
+         } else {
++            this.player.connection.ackBlockChangesUpTo(sequence);
++
+             BlockState iblockdata;
+ 
+             if (action == ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK) {
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 3c0651fa5a5db880202c9a3805a6455269c5f16d..99865e6ef35f8c268c173baa0d0a14c15f994da8 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1925,7 +1925,6 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                 this.player.gameMode.captureSentBlockEntities = true;
+                 // Paper end - send block entities after prediction
+                 this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level().getMaxBuildHeight(), packet.getSequence());
+-                this.player.connection.ackBlockChangesUpTo(packet.getSequence());
+                 // Paper start - send block entities after prediction
+                 this.player.gameMode.captureSentBlockEntities = false;
+                 // If a block entity was modified speedup the block change ack to avoid the block entity
