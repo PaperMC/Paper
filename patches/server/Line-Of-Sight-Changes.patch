@@ -12,9 +12,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Vec3 vec3d = new Vec3(this.getX(), this.getEyeY(), this.getZ());
              Vec3 vec3d1 = new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
  
--            return vec3d1.distanceTo(vec3d) > 128.0D ? false : this.level().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
+-            return vec3d1.distanceTo(vec3d) > 128.0D ? false : this.level().clipDirect(vec3d, vec3d1, net.minecraft.world.phys.shapes.CollisionContext.of(this)) == HitResult.Type.MISS; // Paper
 +            // Paper - diff on change - used in CraftLivingEntity#hasLineOfSight(Location) and CraftWorld#lineOfSightExists
-+            return vec3d1.distanceToSqr(vec3d) > 128D * 128D ? false : this.level().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
++            return vec3d1.distanceToSqr(vec3d) > 128.0D ? false : this.level().clipDirect(vec3d, vec3d1, net.minecraft.world.phys.shapes.CollisionContext.of(this)) == HitResult.Type.MISS; // Paper
          }
      }
  
@@ -30,12 +30,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public boolean lineOfSightExists(Location from, Location to) {
 +        Preconditions.checkArgument(from != null, "from parameter in lineOfSightExists cannot be null");
 +        Preconditions.checkArgument(to != null, "to parameter in lineOfSightExists cannot be null");
-+        if (from.getWorld() != to.getWorld()) return false;
-+        net.minecraft.world.phys.Vec3 vec3d = new net.minecraft.world.phys.Vec3(from.getX(), from.getY(), from.getZ());
-+        net.minecraft.world.phys.Vec3 vec3d1 = new net.minecraft.world.phys.Vec3(to.getX(), to.getY(), to.getZ());
-+        if (vec3d1.distanceToSqr(vec3d) > 128D * 128D) return false; //Return early if the distance is greater than 128 blocks
++        if (from.getWorld() != to.getWorld()) {
++            return false;
++        }
 +
-+        return this.getHandle().clip(new net.minecraft.world.level.ClipContext(vec3d, vec3d1, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, null)).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
++        net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(from.getX(), from.getY(), from.getZ());
++        net.minecraft.world.phys.Vec3 end = new net.minecraft.world.phys.Vec3(to.getX(), to.getY(), to.getZ());
++        if (end.distanceToSqr(start) > 128D * 128D) {
++            return false; // Return early if the distance is greater than 128 blocks
++        }
++
++        return this.getHandle().clip(new net.minecraft.world.level.ClipContext(start, end, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, null)).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
 +    }
      // Paper end
  }
@@ -50,12 +55,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    @Override
 +    public boolean hasLineOfSight(Location loc) {
-+        if (this.getHandle().level() != ((CraftWorld) loc.getWorld()).getHandle()) return false;
-+        net.minecraft.world.phys.Vec3 vec3d = new net.minecraft.world.phys.Vec3(this.getHandle().getX(), this.getHandle().getEyeY(), this.getHandle().getZ());
-+        net.minecraft.world.phys.Vec3 vec3d1 = new net.minecraft.world.phys.Vec3(loc.getX(), loc.getY(), loc.getZ());
-+        if (vec3d1.distanceToSqr(vec3d) > 128D * 128D) return false; //Return early if the distance is greater than 128 blocks
++        if (this.getHandle().level() != ((CraftWorld) loc.getWorld()).getHandle()) {
++            return false;
++        }
 +
-+        return this.getHandle().level().clip(new net.minecraft.world.level.ClipContext(vec3d, vec3d1, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this.getHandle())).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
++        net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(this.getHandle().getX(), this.getHandle().getEyeY(), this.getHandle().getZ());
++        net.minecraft.world.phys.Vec3 end = new net.minecraft.world.phys.Vec3(loc.getX(), loc.getY(), loc.getZ());
++        if (end.distanceToSqr(start) > 128D * 128D) {
++            return false; // Return early if the distance is greater than 128 blocks
++        }
++
++        return this.getHandle().level().clipDirect(start, end, net.minecraft.world.phys.shapes.CollisionContext.of(this.getHandle())) == net.minecraft.world.phys.HitResult.Type.MISS;
 +    }
 +    // Paper end
 +
