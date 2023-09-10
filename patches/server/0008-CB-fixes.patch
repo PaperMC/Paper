@@ -17,10 +17,10 @@ Subject: [PATCH] CB fixes
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index ad011c4f328129e2e5eb6b1b1f5e1d282d1ec04a..3bcbdf37ad9d76ec97ad3f20e7a683e267441ed9 100644
+index 82435da47f0f7db73556310f84dc538a7c5f0809..ebae711991a3ae35e35c2cffa8d928677c205492 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -294,7 +294,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -298,7 +298,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
          long l = minecraftserver.getWorldData().worldGenOptions().seed();
  
@@ -29,32 +29,17 @@ index ad011c4f328129e2e5eb6b1b1f5e1d282d1ec04a..3bcbdf37ad9d76ec97ad3f20e7a683e2
          this.structureManager = new StructureManager(this, this.serverLevelData.worldGenOptions(), this.structureCheck); // CraftBukkit
          if ((this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
              this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
-diff --git a/src/main/java/net/minecraft/world/entity/Marker.java b/src/main/java/net/minecraft/world/entity/Marker.java
-index 15ec0d085d09d9a70eb6cdd47f9e4587dd1402b5..9cd0f0628a3f533229d25d9ccd0d381364f4957c 100644
---- a/src/main/java/net/minecraft/world/entity/Marker.java
-+++ b/src/main/java/net/minecraft/world/entity/Marker.java
-@@ -49,8 +49,8 @@ public class Marker extends Entity {
-     }
- 
-     @Override
--    protected void addPassenger(Entity passenger) {
--        throw new IllegalStateException("Should never addPassenger without checking couldAcceptPassenger()");
-+    protected boolean addPassenger(Entity passenger) { // Paper - fix return type
-+        return false; // Paper
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-index 36222d2140aa1151c30e095afc557ea7db91911f..9d4a3041ecae2adda40134710eb1edb8571228aa 100644
+index 40cdff9eaa1e78e02060d970e477d96f960cfed3..c853123c451c41beb42209c7edc14a5dcffa2a50 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-@@ -441,9 +441,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
+@@ -446,9 +446,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
      }
  
      @Override
 -    protected void actuallyHurt(DamageSource source, float amount) {
 +    protected boolean damageEntity0(DamageSource source, float amount) { // Paper - fix CB method rename issue
-         this.standUpPanic();
+         this.standUpInstantly();
 -        super.actuallyHurt(source, amount);
 +        return super.damageEntity0(source, amount); // Paper - fix CB method rename issue
      }
@@ -83,20 +68,20 @@ index 161ad6ab1443b2ce33a2d7d91d189c855db0453b..15a9736a870055d639d03063c7cf67fd
          this.registryAccess = registryManager;
          this.structureTemplateManager = structureTemplateManager;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 79ee400968a82aa5eb125d62f0440f926e3298f9..b6ac46929d68207dee5364902a2ba6fa0f1a4a42 100644
+index 3f5d20c65d9980b57f676d56a074c8e34a0e2fc8..b7c6c204795592dd5480338043d0da521a916190 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2306,7 +2306,13 @@ public final class CraftServer implements Server {
-         Validate.notNull(key, "NamespacedKey cannot be null");
+@@ -2355,7 +2355,13 @@ public final class CraftServer implements Server {
+         Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
  
-         LootTables registry = this.getServer().getLootTables();
--        return new CraftLootTable(key, registry.get(CraftNamespacedKey.toMinecraft(key)));
+         LootDataManager registry = this.getServer().getLootData();
+-        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
 +        // Paper start - honor method contract
 +        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
-+        if (!registry.getIds().contains(lootTableKey)) {
++        if (registry.getLootTable(lootTableKey) == net.minecraft.world.level.storage.loot.LootTable.EMPTY) {
 +            return null;
 +        }
-+        return new CraftLootTable(key, registry.get(lootTableKey));
++        return new CraftLootTable(key, registry.getLootTable(lootTableKey));
 +        // Paper end
      }
  

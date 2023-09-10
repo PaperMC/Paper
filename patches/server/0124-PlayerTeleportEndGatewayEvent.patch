@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 31 Dec 2016 21:44:50 -0500
+Subject: [PATCH] PlayerTeleportEndGatewayEvent
+
+Allows you to access the Gateway being used in a teleport event
+Fix the offset used for player teleportation
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+index 97c57619ebcf31f17f8430ffb68043771d1377f9..020314dded2c6305bd5e9013b108bc74be25ccc1 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+@@ -207,11 +207,11 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+                 // CraftBukkit start - Fire PlayerTeleportEvent
+                 if (entity1 instanceof ServerPlayer) {
+                     org.bukkit.craftbukkit.entity.CraftPlayer player = (CraftPlayer) entity1.getBukkitEntity();
+-                    org.bukkit.Location location = CraftLocation.toBukkit(blockposition1, world.getWorld()).add(0.5D, 0.5D, 0.5D);
++                    org.bukkit.Location location = CraftLocation.toBukkit(blockposition1, world.getWorld()).add(0.5D, 0, 0.5D); // Paper - use the right Y offset
+                     location.setPitch(player.getLocation().getPitch());
+                     location.setYaw(player.getLocation().getYaw());
+ 
+-                    PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.END_GATEWAY);
++                    PlayerTeleportEvent teleEvent = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(player, player.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(worldserver.getWorld(), blockEntity)); // Paper
+                     Bukkit.getPluginManager().callEvent(teleEvent);
+                     if (teleEvent.isCancelled()) {
+                         return;
+@@ -226,7 +226,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+                 // CraftBukkit end
+ 
+                 entity1.setPortalCooldown();
+-                entity1.teleportToWithTicket((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D);
++                entity1.teleportToWithTicket((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D); // Paper - diff on change
+             }
+ 
+             TheEndGatewayBlockEntity.triggerCooldown(world, pos, state, blockEntity);

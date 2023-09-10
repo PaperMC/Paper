@@ -5,15 +5,15 @@ Subject: [PATCH] Paper Plugins
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index cff3eb363b17c2a8245b3b2ceb02cbdc1efe3896..03b2fc4c6dd9cbc9f28add7da9420c816f8faa2b 100644
+index ba6f0a70ba2442dbe60ed6cc92e4fb91a48d9f3b..22b65c3ad4ed6e19b88a51a2e001f0e5846d9ae6 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -45,7 +45,7 @@ dependencies {
+@@ -47,7 +47,7 @@ dependencies {
      implementation("org.ow2.asm:asm-commons:9.4")
      // Paper end
  
 -    compileOnly("org.apache.maven:maven-resolver-provider:3.8.5")
-+    api("org.apache.maven:maven-resolver-provider:3.8.5") // Paper, expose
++    api("org.apache.maven:maven-resolver-provider:3.8.5")
      compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
      compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
      compileOnly("com.google.code.findbugs:jsr305:1.3.9") // Paper
@@ -194,9 +194,29 @@ index 0000000000000000000000000000000000000000..cdbc93b317b3bab47bf6552c29cfbb2c
 +    void clearPermissions();
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/BootstrapContext.java b/src/main/java/io/papermc/paper/plugin/bootstrap/BootstrapContext.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..08f2050356acaf74e3210416760e3873c2dafd2c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/bootstrap/BootstrapContext.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.plugin.bootstrap;
++
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * Represents the context provided to a {@link PluginBootstrap} during both the bootstrapping and plugin
++ * instantiation logic.
++ * A boostrap context may be used to access data or logic usually provided to {@link org.bukkit.plugin.Plugin} instances
++ * like the plugin's configuration or logger during the plugins bootstrap.
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface BootstrapContext extends PluginProviderContext {
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrap.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ea84b11e8682e73fcd563fec65e76b707546a99e
+index 0000000000000000000000000000000000000000..288c078da3d3ca78d02caa4e3565ac7cf89f9f9f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrap.java
 @@ -0,0 +1,41 @@
@@ -226,7 +246,7 @@ index 0000000000000000000000000000000000000000..ea84b11e8682e73fcd563fec65e76b70
 +     *
 +     * @param context the server provided context
 +     */
-+    void bootstrap(@NotNull PluginProviderContext context);
++    void bootstrap(@NotNull BootstrapContext context);
 +
 +    /**
 +     * Called by the server to instantiate your main class.
@@ -243,7 +263,7 @@ index 0000000000000000000000000000000000000000..ea84b11e8682e73fcd563fec65e76b70
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a9208254142d270da7bd4815a01b9627c7918c11
+index 0000000000000000000000000000000000000000..2c14693155de3654d5ca011c63e13e4a1abf2080
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java
 @@ -0,0 +1,52 @@
@@ -258,7 +278,7 @@ index 0000000000000000000000000000000000000000..a9208254142d270da7bd4815a01b9627
 +
 +/**
 + * Represents the context provided to a {@link PluginBootstrap} during both the bootstrapping and plugin
-+ * instanciation logic.
++ * instantiation logic.
 + * A boostrap context may be used to access data or logic usually provided to {@link org.bukkit.plugin.Plugin} instances
 + * like the plugin's configuration or logger during the plugins bootstrap.
 + */
@@ -683,7 +703,7 @@ index 0000000000000000000000000000000000000000..0546fa1e9dcd7155086a8650806a8c08
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/library/impl/JarLibrary.java b/src/main/java/io/papermc/paper/plugin/loader/library/impl/JarLibrary.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3327595d154700890c862a2ced5eff93da4bd634
+index 0000000000000000000000000000000000000000..e3da0d67cab01e1233dccde1a12ff25961ee79fb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/loader/library/impl/JarLibrary.java
 @@ -0,0 +1,45 @@
@@ -708,7 +728,7 @@ index 0000000000000000000000000000000000000000..3327595d154700890c862a2ced5eff93
 + * resulting in a jar library that provides the jar at {@code libs/custom-library-1.24.jar} to the plugins classloader
 + * at runtime.
 + * <p>
-+ * The jar library implementation will error if file exists at the specified path.
++ * The jar library implementation will error if the file does not exist at the specified path.
 + */
 +public class JarLibrary implements ClassPathLibrary {
 +
@@ -734,7 +754,7 @@ index 0000000000000000000000000000000000000000..3327595d154700890c862a2ced5eff93
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/library/impl/MavenLibraryResolver.java b/src/main/java/io/papermc/paper/plugin/loader/library/impl/MavenLibraryResolver.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e3e902a708a760be167cb1bba8e845c5fa5b9141
+index 0000000000000000000000000000000000000000..9af07d168beadaa77e4965819200eeb94fe3e092
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/loader/library/impl/MavenLibraryResolver.java
 @@ -0,0 +1,132 @@
@@ -764,12 +784,12 @@ index 0000000000000000000000000000000000000000..e3e902a708a760be167cb1bba8e845c5
 +import org.eclipse.aether.transfer.TransferEvent;
 +import org.eclipse.aether.transport.http.HttpTransporterFactory;
 +import org.jetbrains.annotations.NotNull;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
 +
 +import java.io.File;
 +import java.util.ArrayList;
 +import java.util.List;
-+import java.util.logging.Level;
-+import java.util.logging.Logger;
 +
 +/**
 + * The maven library resolver acts as a resolver for yet to be resolved jar libraries that may be pulled from a
@@ -790,7 +810,7 @@ index 0000000000000000000000000000000000000000..e3e902a708a760be167cb1bba8e845c5
 + */
 +public class MavenLibraryResolver implements ClassPathLibrary {
 +
-+    private static final Logger logger = Logger.getLogger("MavenLibraryResolver");
++    private static final Logger logger = LoggerFactory.getLogger("MavenLibraryResolver");
 +
 +    private final RepositorySystem repository;
 +    private final DefaultRepositorySystemSession session;
@@ -818,7 +838,7 @@ index 0000000000000000000000000000000000000000..e3e902a708a760be167cb1bba8e845c5
 +        this.session.setTransferListener(new AbstractTransferListener() {
 +            @Override
 +            public void transferInitiated(@NotNull TransferEvent event) throws TransferCancelledException {
-+                logger.log(Level.INFO, "Downloading {0}", event.getResource().getRepositoryUrl() + event.getResource().getResourceName());
++                logger.info("Downloading {}", event.getResource().getRepositoryUrl() + event.getResource().getResourceName());
 +            }
 +        });
 +        this.session.setReadOnly();
@@ -1318,13 +1338,13 @@ index 0000000000000000000000000000000000000000..6bf3d212a6156ad9ab0e82d1ca0a04f8
 +
 +}
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 876072a6c91bd02c9c7de53556419b8e1ac48f27..dc9a4f12d9f05a3ae7c9f1c7648123e4b3dfd115 100644
+index fd0ae07b8a19f6b628601a487329a929f3a26c91..2042e3fb0ea347148814d9838cd7bb475bd23984 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -96,4 +96,14 @@ public interface UnsafeValues {
-     String getTranslationKey(EntityType entityType);
+@@ -101,4 +101,14 @@ public interface UnsafeValues {
  
-     String getTranslationKey(ItemStack itemStack);
+     @Nullable
+     FeatureFlag getFeatureFlag(@NotNull NamespacedKey key);
 +
 +    // Paper start
 +    @Deprecated(forRemoval = true)
@@ -1421,10 +1441,10 @@ index 94f8ceb965cecb5669a84a0ec61c0f706c2a2673..e773db6da357ad210eb24d4c389af2dc
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
-index 77a380537b338fdd0aa2f6777ff775056cc6b221..028805bcdb1d2bb0d11387db165b7376579e5f60 100644
+index 0eae1c027cab0444a125ae4efed7f9fcb1b9934f..07e8908d25fcd4e5eabadc9f019b54acff3b5e3c 100644
 --- a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
 +++ b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
-@@ -195,7 +195,7 @@ import org.yaml.snakeyaml.nodes.Tag;
+@@ -197,7 +197,7 @@ import org.yaml.snakeyaml.representer.Representer;
   *      inferno.burningdeaths: true
   *</pre></blockquote>
   */
@@ -1433,7 +1453,7 @@ index 77a380537b338fdd0aa2f6777ff775056cc6b221..028805bcdb1d2bb0d11387db165b7376
      private static final Pattern VALID_NAME = Pattern.compile("^[A-Za-z0-9 _.-]+$");
      private static final ThreadLocal<Yaml> YAML = new ThreadLocal<Yaml>() {
          @Override
-@@ -255,6 +255,70 @@ public final class PluginDescriptionFile {
+@@ -258,6 +258,70 @@ public final class PluginDescriptionFile {
      private Set<PluginAwareness> awareness = ImmutableSet.of();
      private String apiVersion = null;
      private List<String> libraries = ImmutableList.of();

@@ -7,26 +7,26 @@ Changed to use upstream's heightmap API - Machine_Maker
 
 diff --git a/src/main/java/com/destroystokyo/paper/HeightmapType.java b/src/main/java/com/destroystokyo/paper/HeightmapType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..709e44ea1b14ab6917501c928e689cc6cbdf4bb4
+index 0000000000000000000000000000000000000000..1c832d69bb3717dcfccf21e45f6f060a64eb4f11
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/HeightmapType.java
 @@ -0,0 +1,39 @@
 +package com.destroystokyo.paper;
 +
-+import org.bukkit.*;
++import org.jetbrains.annotations.ApiStatus;
 +
 +/**
 + * Enumeration of different heightmap types maintained by the server. Generally using these maps is much faster
 + * than using an iterative search for a block in a given x, z coordinate.
 + *
 + * @deprecated Upstream has added their own API for using the game heightmaps. See {@link org.bukkit.HeightMap} and the
-+ * non-deprecated getHighestBlock methods on World such as {@link org.bukkit.World#getHighestBlockAt(Location, HeightMap)}.
++ * non-deprecated getHighestBlock methods on World such as {@link org.bukkit.World#getHighestBlockAt(org.bukkit.Location, org.bukkit.HeightMap)}.
 + */
-+@Deprecated
++@Deprecated(forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.21")
 +public enum HeightmapType {
 +
 +    /**
-+     * The highest block used for lighting in the world. Also the block returned by {@link World#getHighestBlockYAt(int, int)}}
++     * The highest block used for lighting in the world. Also the block returned by {@link org.bukkit.World#getHighestBlockYAt(int, int)}}
 +     */
 +    LIGHT_BLOCKING,
 +
@@ -51,15 +51,14 @@ index 0000000000000000000000000000000000000000..709e44ea1b14ab6917501c928e689cc6
 +    SOLID_OR_LIQUID_NO_LEAVES;
 +}
 diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
-index 2b9a117804a8ca54b47e51e23359bd6e01087641..6bbf8468bc47e82b0aeb164e49cdb73d93bae87b 100644
+index f7564581c18425c903e54f949728dd3742ca7bf2..1bfe465b9aaeea7d3c871140145b7de1b8f1d93d 100644
 --- a/src/main/java/org/bukkit/Location.java
 +++ b/src/main/java/org/bukkit/Location.java
-@@ -640,6 +640,47 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
+@@ -640,6 +640,46 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
          return centerLoc;
      }
  
 +    // Paper start - Add heightmap api
-+
 +    /**
 +     * Returns a copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
 +     * @return A copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
@@ -79,7 +78,7 @@ index 2b9a117804a8ca54b47e51e23359bd6e01087641..6bbf8468bc47e82b0aeb164e49cdb73d
 +     * @deprecated Use {@link org.bukkit.Location#toHighestLocation(HeightMap)}
 +     */
 +    @NotNull
-+    @Deprecated
++    @Deprecated(forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.21")
 +    public Location toHighestLocation(@NotNull final com.destroystokyo.paper.HeightmapType heightmap) {
 +        final Location ret = this.clone();
 +        ret.setY(this.getWorld().getHighestBlockYAt(this, heightmap));
@@ -97,16 +96,16 @@ index 2b9a117804a8ca54b47e51e23359bd6e01087641..6bbf8468bc47e82b0aeb164e49cdb73d
 +        ret.setY(this.getWorld().getHighestBlockYAt(this, heightMap));
 +        return ret;
 +    }
-+    // Paper end
++    // Paper end - Add heightmap api
 +
+     // Paper start - Expand Explosions API
      /**
       * Creates explosion at this location with given power
-      *
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index d667ac100f1bf11f4a8f9e8c53887a86e890ac6f..711fc41dbd029fa2d43f35165b62d09de89509b7 100644
+index 31fc272b0e82e4eef6d9bf01dd25d39513d354b3..0c5ce79c04e8193db248a221f519d80a944ef6ba 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -148,6 +148,87 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -150,6 +150,87 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @NotNull
      public Block getHighestBlockAt(@NotNull Location location);
  
@@ -127,7 +126,7 @@ index d667ac100f1bf11f4a8f9e8c53887a86e890ac6f..711fc41dbd029fa2d43f35165b62d09d
 +     *
 +     * @see com.destroystokyo.paper.HeightmapType
 +     */
-+    @Deprecated
++    @Deprecated(forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.21")
 +    public int getHighestBlockYAt(int x, int z, @NotNull com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException;
 +
 +    /**
@@ -145,7 +144,7 @@ index d667ac100f1bf11f4a8f9e8c53887a86e890ac6f..711fc41dbd029fa2d43f35165b62d09d
 +     * @deprecated Upstream has added support for this, use {@link World#getHighestBlockYAt(Location, HeightMap)}
 +     * @see com.destroystokyo.paper.HeightmapType
 +     */
-+    @Deprecated
++    @Deprecated(forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.21")
 +    default int getHighestBlockYAt(@NotNull Location location, @NotNull com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException {
 +        return this.getHighestBlockYAt(location.getBlockX(), location.getBlockZ(), heightmap);
 +    }
@@ -164,7 +163,7 @@ index d667ac100f1bf11f4a8f9e8c53887a86e890ac6f..711fc41dbd029fa2d43f35165b62d09d
 +     * @deprecated Upstream has added support for this, use {@link World#getHighestBlockAt(int, int, HeightMap)}
 +     * @see com.destroystokyo.paper.HeightmapType
 +     */
-+    @Deprecated
++    @Deprecated(forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.21")
 +    @NotNull
 +    default Block getHighestBlockAt(int x, int z, @NotNull com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException {
 +        return this.getBlockAt(x, this.getHighestBlockYAt(x, z, heightmap), z);
@@ -184,7 +183,7 @@ index d667ac100f1bf11f4a8f9e8c53887a86e890ac6f..711fc41dbd029fa2d43f35165b62d09d
 +     * @deprecated Upstream has added support for this, use {@link World#getHighestBlockAt(Location, HeightMap)}
 +     * @see com.destroystokyo.paper.HeightmapType
 +     */
-+    @Deprecated
++    @Deprecated(forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.21")
 +    @NotNull
 +    default Block getHighestBlockAt(@NotNull Location location, @NotNull com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException {
 +        return this.getHighestBlockAt(location.getBlockX(), location.getBlockZ(), heightmap);

@@ -18,10 +18,10 @@ For consistency, the old API methods now forward to use the
 ItemMeta API equivalents, and should deprecate the old API's.
 
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index e19407edd4847e5a5175e113944d1331bd4d4ffc..9b358c8e464c67c4953749cda6d2983db98e0c5f 100644
+index 3f18fb61a47dda559a6997af9c6c043423dd206a..c33660718c0ea281d7bcdb15df0568d4d46547e2 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -158,6 +158,23 @@ public final class ItemStack {
+@@ -156,6 +156,23 @@ public final class ItemStack {
          return this.getItem().getTooltipImage(this);
      }
  
@@ -45,7 +45,7 @@ index e19407edd4847e5a5175e113944d1331bd4d4ffc..9b358c8e464c67c4953749cda6d2983d
      public ItemStack(ItemLike item) {
          this(item, 1);
      }
-@@ -209,6 +226,7 @@ public final class ItemStack {
+@@ -204,6 +221,7 @@ public final class ItemStack {
              // CraftBukkit start - make defensive copy as this data may be coming from the save thread
              this.tag = nbttagcompound.getCompound("tag").copy();
              // CraftBukkit end
@@ -53,7 +53,7 @@ index e19407edd4847e5a5175e113944d1331bd4d4ffc..9b358c8e464c67c4953749cda6d2983d
              this.getItem().verifyTagAfterLoad(this.tag);
          }
  
-@@ -807,6 +825,7 @@ public final class ItemStack {
+@@ -814,6 +832,7 @@ public final class ItemStack {
  
      public void setTag(@Nullable CompoundTag nbt) {
          this.tag = nbt;
@@ -61,7 +61,7 @@ index e19407edd4847e5a5175e113944d1331bd4d4ffc..9b358c8e464c67c4953749cda6d2983d
          if (this.getItem().canBeDepleted()) {
              this.setDamageValue(this.getDamageValue());
          }
-@@ -1104,6 +1123,7 @@ public final class ItemStack {
+@@ -1111,6 +1130,7 @@ public final class ItemStack {
          ListTag nbttaglist = this.tag.getList("Enchantments", 10);
  
          nbttaglist.add(EnchantmentHelper.storeEnchantment(EnchantmentHelper.getEnchantmentId(enchantment), (byte) level));
@@ -70,20 +70,12 @@ index e19407edd4847e5a5175e113944d1331bd4d4ffc..9b358c8e464c67c4953749cda6d2983d
  
      public boolean isEnchanted() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index f4ca58b7e0f5e880f6c8ec71deac57aabf885c7c..a32369d2c15e24ec69cae90e228b8d48775f54e3 100644
+index 40aad6a209fbded448e3db21207a85d9f2875e71..4dcbd1ed61070c12adf5871a595875ca60110c5d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -6,7 +6,6 @@ import java.util.Map;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.ListTag;
- import net.minecraft.world.item.Item;
--import net.minecraft.world.item.enchantment.EnchantmentHelper;
- import org.apache.commons.lang.Validate;
- import org.bukkit.Material;
- import org.bukkit.NamespacedKey;
-@@ -178,28 +177,11 @@ public final class CraftItemStack extends ItemStack {
+@@ -188,28 +188,11 @@ public final class CraftItemStack extends ItemStack {
      public void addUnsafeEnchantment(Enchantment ench, int level) {
-         Validate.notNull(ench, "Cannot add null enchantment");
+         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
  
 -        if (!CraftItemStack.makeTag(this.handle)) {
 -            return;
@@ -115,17 +107,28 @@ index f4ca58b7e0f5e880f6c8ec71deac57aabf885c7c..a32369d2c15e24ec69cae90e228b8d48
      }
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-@@ -225,57 +207,29 @@ public final class CraftItemStack extends ItemStack {
+@@ -235,57 +218,40 @@ public final class CraftItemStack extends ItemStack {
          if (this.handle == null) {
              return 0;
          }
 -        return EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle);
-+        return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle); // Paper
++        // Paper start - replace to allow custom enchantments
++        final ListTag enchantments = this.handle.getEnchantmentTags();
++        for (int i = 0; i < enchantments.size(); i++) {
++            final CompoundTag tag = enchantments.getCompound(i);
++            final String id = tag.getString(CraftMetaItem.ENCHANTMENTS_ID.NBT);
++            final Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromStringOrNull(id));
++            if (ench.equals(enchant)) {
++                return EnchantmentHelper.getEnchantmentLevel(tag);
++            }
++        }
++        return 0;
++        // Paper end - replace to allow custom enchantments
      }
  
      @Override
      public int removeEnchantment(Enchantment ench) {
-         Validate.notNull(ench, "Cannot remove null enchantment");
+         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
  
 -        ListTag list = CraftItemStack.getEnchantmentList(this.handle), listCopy;
 -        if (list == null) {
@@ -184,7 +187,7 @@ index f4ca58b7e0f5e880f6c8ec71deac57aabf885c7c..a32369d2c15e24ec69cae90e228b8d48
  
      static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 7500684057dca1bfe615e64da55ef521abb4ed9a..0f8bb870925158199b216421feb328e5b0b55270 100644
+index 44244166ec4e8ac070404101219efbc0e5f1d168..092695d4b45205fe2290f8f4375e881aaf89817d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
@@ -280,14 +283,14 @@ index 7500684057dca1bfe615e64da55ef521abb4ed9a..0f8bb870925158199b216421feb328e5
  
      @Override
      public boolean addEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
-         Validate.notNull(ench, "Enchantment cannot be null");
+         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
          if (this.enchantments == null) {
 -            this.enchantments = new LinkedHashMap<Enchantment, Integer>(4);
 +            this.enchantments = new EnchantmentMap(); // Paper
          }
  
          if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
-@@ -1226,7 +1229,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1227,7 +1230,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              clone.customModelData = this.customModelData;
              clone.blockData = this.blockData;
              if (this.enchantments != null) {
@@ -296,7 +299,7 @@ index 7500684057dca1bfe615e64da55ef521abb4ed9a..0f8bb870925158199b216421feb328e5
              }
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
-@@ -1465,4 +1468,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1469,4 +1472,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              return CraftMetaItem.HANDLED_TAGS;
          }
      }
