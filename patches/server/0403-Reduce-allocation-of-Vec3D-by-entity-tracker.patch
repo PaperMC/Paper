@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 27 Apr 2020 00:04:16 -0700
+Subject: [PATCH] Reduce allocation of Vec3D by entity tracker
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
+index 05ac41e136da43284fb24a6b698ebd36318278fb..5ca3ad7b3d7606accd0a58b3c708fadb349608f7 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
++++ b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
+@@ -5,7 +5,7 @@ import org.jetbrains.annotations.VisibleForTesting;
+ 
+ public class VecDeltaCodec {
+     private static final double TRUNCATION_STEPS = 4096.0D;
+-    private Vec3 base = Vec3.ZERO;
++    public Vec3 base = Vec3.ZERO; // Paper
+ 
+     @VisibleForTesting
+     static long encode(double value) {
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 48586780da5d260894fe59efaa97cb1facfe73fe..dadf403ac91887f0fae87889170deb6d5732cbc1 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1348,9 +1348,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         public void updatePlayer(ServerPlayer player) {
+             org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
+             if (player != this.entity) {
++                // Paper start - remove allocation of Vec3D here
++                // Vec3 vec3d = player.position().subtract(this.entity.position());
++                double vec3d_dx = player.getX() - this.entity.getX();
++                double vec3d_dz = player.getZ() - this.entity.getZ();
++                // Paper end - remove allocation of Vec3D here
+                 Vec3 vec3d = player.position().subtract(this.entity.position());
+                 double d0 = (double) Math.min(this.getEffectiveRange(), io.papermc.paper.chunk.system.ChunkSystem.getSendViewDistance(player) * 16); // Paper - per player view distance
+-                double d1 = vec3d.x * vec3d.x + vec3d.z * vec3d.z;
++                double d1 = vec3d_dx * vec3d_dx + vec3d_dz * vec3d_dz; // Paper
+                 double d2 = d0 * d0;
+                 boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player);
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index ae3d1077b42fb288938a8a65471f00b3f52cb18f..d1bcc1f9816826391b7ba7c79e3b1c2c013933de 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -161,7 +161,13 @@ public class ServerEntity {
+                 i = Mth.floor(this.entity.getYRot() * 256.0F / 360.0F);
+                 j = Mth.floor(this.entity.getXRot() * 256.0F / 360.0F);
+                 Vec3 vec3d = this.entity.trackingPosition();
+-                boolean flag1 = this.positionCodec.delta(vec3d).lengthSqr() >= 7.62939453125E-6D;
++                // Paper start - reduce allocation of Vec3D here
++                Vec3 base = this.positionCodec.base;
++                double vec3d_dx = vec3d.x - base.x;
++                double vec3d_dy = vec3d.y - base.y;
++                double vec3d_dz = vec3d.z - base.z;
++                boolean flag1 = (vec3d_dx * vec3d_dx + vec3d_dy * vec3d_dy + vec3d_dz * vec3d_dz) >= 7.62939453125E-6D;
++                // Paper end - reduce allocation of Vec3D here
+                 Packet<?> packet1 = null;
+                 boolean flag2 = flag1 || this.tickCount % 60 == 0;
+                 boolean flag3 = Math.abs(i - this.yRotp) >= 1 || Math.abs(j - this.xRotp) >= 1;
