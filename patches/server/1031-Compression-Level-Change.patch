@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PedroMPagani <pedro.paulo.pagani@gmail.com>
+Date: Sun, 10 Sep 2023 08:39:10 -0300
+Subject: [PATCH] Change compression to be 1, this drastically improves the
+ compression speeds, should reduce CPU usage, for some reason this is on -1,
+ default, but at the same time it causes a huge overhead on compression.
+
+You are free to benchmark this on your OWN, this benchmark from my part was done on DonutSMP events, that get around 700-800 players in a close 400x400 area where there's a lot of Crystal PVP everywhere, lots of chunk interactions etc, compression is highly necessary on environments like this, and a few servers also use this, it's a quick change and most users shouldn't ever feel any need to have this changed but it's a good software improvement if you confirm this should be applied.
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index cf20f0983fc25b26cf92b9d3a28746b1909fc56b..f67cf50ae5d49cd8adf4e3eaf773db91e85e70da 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -780,7 +780,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+     public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
+         if (compressionThreshold >= 0) {
+-            com.velocitypowered.natives.compression.VelocityCompressor compressor = com.velocitypowered.natives.util.Natives.compress.get().create(-1); // Paper
++            com.velocitypowered.natives.compression.VelocityCompressor compressor = com.velocitypowered.natives.util.Natives.compress.get().create(1); // Paper
+             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
+                 ((CompressionDecoder) this.channel.pipeline().get("decompress")).setThreshold(compressionThreshold, rejectsBadPackets);
+             } else {
