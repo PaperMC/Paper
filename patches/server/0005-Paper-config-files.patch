@@ -14,7 +14,7 @@ public org.spigotmc.SpigotWorldConfig getString(Ljava/lang/String;Ljava/lang/Str
 public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index e0724559c70b5967123010e898e66e757b2b1b58..b0facb2b0b86fafbfd5776eba2e5bdb69cc1cbed 100644
+index 75ca9df9f74e41802ba102fa052dd3446f400785..d67bfb162d122f6944aa16219b754d8d6ee40fb8 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -13,6 +13,7 @@ dependencies {
@@ -23,8 +23,8 @@ index e0724559c70b5967123010e898e66e757b2b1b58..b0facb2b0b86fafbfd5776eba2e5bdb6
      testImplementation("org.mockito:mockito-core:4.9.0") // Paper - switch to mockito
 +    implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
-     runtimeOnly("org.xerial:sqlite-jdbc:3.41.2.2")
-     runtimeOnly("com.mysql:mysql-connector-j:8.0.32")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.0.33")
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..ef41cf3a7d1e6f2bfe81e0fb865d2f969bbc77c1
@@ -440,10 +440,10 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..52b02cb1f02d1c65b840f38cfc8baee500aa2259
+index 0000000000000000000000000000000000000000..45f1436cdd4b81b621ab71e4336c2aa666572105
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,292 @@
 +package io.papermc.paper.configuration;
 +
 +import co.aikar.timings.MinecraftTimings;
@@ -589,6 +589,14 @@ index 0000000000000000000000000000000000000000..52b02cb1f02d1c65b840f38cfc8baee5
 +        public boolean allowHeadlessPistons = false;
 +        @Comment("This setting controls if grindstones should be able to output overstacked items (such as cursed books).")
 +        public boolean allowGrindstoneOverstacking = false;
++        @Comment("This setting controls what compression format is used for region files.")
++        public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
++
++        public enum CompressionFormat {
++            GZIP,
++            ZLIB,
++            NONE
++        }
 +    }
 +
 +    public Commands commands;
@@ -604,7 +612,6 @@ index 0000000000000000000000000000000000000000..52b02cb1f02d1c65b840f38cfc8baee5
 +    public class Logging extends ConfigurationPart {
 +        public boolean logPlayerIpAddresses = true;
 +        public boolean deobfuscateStacktraces = true;
-+        public boolean useRgbForNamedTextColors = true;
 +    }
 +
 +    public Scoreboards scoreboards;
@@ -716,9 +723,17 @@ index 0000000000000000000000000000000000000000..52b02cb1f02d1c65b840f38cfc8baee5
 +        public int regionFileCacheSize = 256;
 +        @Comment("See https://luckformula.emc.gs")
 +        public boolean useAlternativeLuckFormula = false;
-+        public boolean lagCompensateBlockBreaking = true;
 +        public boolean useDimensionTypeForCustomSpawners = false;
 +        public boolean strictAdvancementDimensionCheck = false;
++    }
++
++    public BlockUpdates blockUpdates;
++
++    public class BlockUpdates extends ConfigurationPart {
++        public boolean disableNoteblockUpdates = false;
++        public boolean disableTripwireUpdates = false;
++        public boolean disableChorusPlantUpdates = false;
++        public boolean disableMushroomBlockUpdates = false;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/InnerClassFieldDiscoverer.java b/src/main/java/io/papermc/paper/configuration/InnerClassFieldDiscoverer.java
@@ -934,10 +949,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f6b9d216c24d8858802f85209fe1a869e5a9be31
+index 0000000000000000000000000000000000000000..e471960e0443392f6f54732b052a4debf2a8fd97
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,439 @@
+@@ -0,0 +1,442 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -964,6 +979,7 @@ index 0000000000000000000000000000000000000000..f6b9d216c24d8858802f85209fe1a869
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
++import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
@@ -1067,7 +1083,8 @@ index 0000000000000000000000000000000000000000..f6b9d216c24d8858802f85209fe1a869
 +        See https://docs.papermc.io/paper/configuration for more information.
 +        """;
 +
-+    private static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
++    @VisibleForTesting
++    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
 +        @Override // override to ensure "verbose" is false
 +        public void init() {
 +            SpigotConfig.readConfig(SpigotWorldConfig.class, this);
@@ -1151,6 +1168,7 @@ index 0000000000000000000000000000000000000000..f6b9d216c24d8858802f85209fe1a869
 +                    .register(DoubleOrDefault.SERIALIZER)
 +                    .register(BooleanOrDefault.SERIALIZER)
 +                    .register(Duration.SERIALIZER)
++                    .register(DurationOrDisabled.SERIALIZER)
 +                    .register(EngineMode.SERIALIZER)
 +                    .register(NbtPathSerializer.SERIALIZER)
 +                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
@@ -1379,10 +1397,10 @@ index 0000000000000000000000000000000000000000..f6b9d216c24d8858802f85209fe1a869
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java b/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1bb16fc7598cd53e822d84b69d6a9727b37f484f
+index 0000000000000000000000000000000000000000..f0d4ec73bc8872a85e34f5c6b4d342e7562ca350
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,77 @@
 +package io.papermc.paper.configuration;
 +
 +import org.spongepowered.configurate.NodePath;
@@ -1392,6 +1410,15 @@ index 0000000000000000000000000000000000000000..1bb16fc7598cd53e822d84b69d6a9727
 +interface RemovedConfigurations {
 +
 +    NodePath[] REMOVED_WORLD_PATHS = {
++        path("falling-blocks-collide-with-signs"),
++        path("fast-drain"),
++        path("lava-flow-speed"),
++        path("load-chunks"),
++        path("misc", "boats-drop-boats"),
++        path("player-exhaustion"),
++        path("remove-unloaded"),
++        path("tick-next-tick-list-cap"),
++        path("tick-next-tick-list-cap-ignores-redstone"),
 +        path("elytra-hit-wall-damage"),
 +        path("queue-light-updates"),
 +        path("save-queue-limit-for-auto-save"),
@@ -1407,7 +1434,7 @@ index 0000000000000000000000000000000000000000..1bb16fc7598cd53e822d84b69d6a9727
 +        path("reset-arrow-despawn-timer-on-fall"),
 +        path("seed-based-feature-search"),
 +        path("seed-based-feature-search-loads-chunks"),
-+        path("viewdistances.no-tick-view-distance"),
++        path("viewdistances", "no-tick-view-distance"),
 +        path("seed-based-feature-search"), // unneeded as of 1.18
 +        path("seed-based-feature-search-loads-chunks"), // unneeded as of 1.18
 +        path("reset-arrow-despawn-timer-on-fall"),
@@ -1430,6 +1457,10 @@ index 0000000000000000000000000000000000000000..1bb16fc7598cd53e822d84b69d6a9727
 +    };
 +
 +    NodePath[] REMOVED_GLOBAL_PATHS = {
++        path("data-value-allowed-items"),
++        path("effect-modifiers"),
++        path("stackable-buckets"),
++        path("async-chunks"),
 +        path("queue-light-updates-max-loss"),
 +        path("sleep-between-chunk-saves"),
 +        path("remove-invalid-statistics"),
@@ -1442,16 +1473,17 @@ index 0000000000000000000000000000000000000000..1bb16fc7598cd53e822d84b69d6a9727
 +        path("commandErrorMessage"),
 +        path("baby-zombie-movement-speed"),
 +        path("limit-player-interactions"),
-+        path("warnWhenSettingExcessiveVelocity")
++        path("warnWhenSettingExcessiveVelocity"),
++        path("logging", "use-rgb-for-named-text-colors")
 +    };
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914cdf441db
+index 0000000000000000000000000000000000000000..da7c899fbab162ee197a0593f455ebd9c5286d3c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,482 @@
+@@ -0,0 +1,530 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1467,6 +1499,7 @@ index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
++import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.ArrowDespawnRate;
@@ -1486,6 +1519,8 @@ index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.world.Difficulty;
++import net.minecraft.world.entity.Display;
++import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.entity.EntityType;
 +import net.minecraft.world.entity.MobCategory;
 +import net.minecraft.world.entity.monster.Vindicator;
@@ -1496,6 +1531,7 @@ index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 +import org.slf4j.Logger;
 +import org.spigotmc.SpigotWorldConfig;
++import org.spigotmc.TrackingRange;
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 +import org.spongepowered.configurate.objectmapping.meta.Required;
 +import org.spongepowered.configurate.objectmapping.meta.Setting;
@@ -1578,6 +1614,13 @@ index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914
 +
 +        public class Markers extends ConfigurationPart {
 +            public boolean tick = true;
++        }
++
++        public Sniffer sniffer;
++
++        public class Sniffer extends ConfigurationPart {
++            public IntOr.Default hatchTime = IntOr.Default.USE_DEFAULT;
++            public IntOr.Default boostedHatchTime = IntOr.Default.USE_DEFAULT;
 +        }
 +
 +        public Spawning spawning;
@@ -1739,6 +1782,42 @@ index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914
 +                }
 +            }
 +        }
++
++        public TrackingRangeY trackingRangeY;
++
++        public class TrackingRangeY extends ConfigurationPart {
++            public boolean enabled = false;
++            public IntOr.Default player = IntOr.Default.USE_DEFAULT;
++            public IntOr.Default animal = IntOr.Default.USE_DEFAULT;
++            public IntOr.Default monster = IntOr.Default.USE_DEFAULT;
++            public IntOr.Default misc = IntOr.Default.USE_DEFAULT;
++            public IntOr.Default display = IntOr.Default.USE_DEFAULT;
++            public IntOr.Default other = IntOr.Default.USE_DEFAULT;
++
++            public int get(Entity entity, int def) {
++                if (entity instanceof Display) return display.or(def);
++                
++                switch (TrackingRange.getTrackingRangeType(entity)) {
++                    case PLAYER -> {
++                        return player.or(def);
++                    }
++                    case ANIMAL -> {
++                        return animal.or(def);
++                    }
++                    case MONSTER -> {
++                        return monster.or(def);
++                    }
++                    case MISC -> {
++                        return misc.or(def);
++                    }
++                    case ENDERDRAGON -> {
++                        return -1; // Ender dragon is exempt
++                    }
++                }
++                
++                return other.or(def);
++            }
++        }
 +    }
 +
 +    public Lootables lootables;
@@ -1746,6 +1825,7 @@ index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914
 +    public class Lootables extends ConfigurationPart {
 +        public boolean autoReplenish = false;
 +        public boolean restrictPlayerReloot = true;
++        public DurationOrDisabled restrictPlayerRelootTime = DurationOrDisabled.USE_DISABLED;
 +        public boolean resetSeedOnFill = true;
 +        public int maxRefills = -1;
 +        public Duration refreshMin = Duration.of("12h");
@@ -3777,7 +3857,7 @@ index 0000000000000000000000000000000000000000..d08b65234192d5b639cead675114f64b
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3e422b74a377fa3edaf82dd960e7449c998c2912
+index 0000000000000000000000000000000000000000..33ae915b2462faf1705be3b195e113c154352653
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 @@ -0,0 +1,53 @@
@@ -3798,7 +3878,7 @@ index 0000000000000000000000000000000000000000..3e422b74a377fa3edaf82dd960e7449c
 +    public static final ScalarSerializer<BooleanOrDefault> SERIALIZER = new Serializer();
 +
 +    public boolean or(boolean fallback) {
-+        return this.value != null && this.value;
++        return this.value == null ? fallback : this.value;
 +    }
 +
 +    private static final class Serializer extends ScalarSerializer<BooleanOrDefault> {
@@ -3907,7 +3987,7 @@ index 0000000000000000000000000000000000000000..193709f1d08e489fc51cbe11d4325297
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/Duration.java b/src/main/java/io/papermc/paper/configuration/type/Duration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fdc906b106a5c6fff2675d5399650f5b793deb70
+index 0000000000000000000000000000000000000000..422ccb0b332b3e94be228b9b94f379467d6461a5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/Duration.java
 @@ -0,0 +1,97 @@
@@ -3992,7 +4072,7 @@ index 0000000000000000000000000000000000000000..fdc906b106a5c6fff2675d5399650f5b
 +        return (int) num;
 +    }
 +
-+    private static final class Serializer extends ScalarSerializer<Duration> {
++    static final class Serializer extends ScalarSerializer<Duration> {
 +        private Serializer() {
 +            super(Duration.class);
 +        }
@@ -4005,6 +4085,66 @@ index 0000000000000000000000000000000000000000..fdc906b106a5c6fff2675d5399650f5b
 +        @Override
 +        protected Object serialize(Duration item, Predicate<Class<?>> typeSupported) {
 +            return item.value();
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java b/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3f17e75e08e1cb4359b96a78c5b8d5284c484e43
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java
+@@ -0,0 +1,54 @@
++package io.papermc.paper.configuration.type;
++
++import java.lang.reflect.Type;
++import java.util.Optional;
++import java.util.function.Predicate;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
++
++@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
++public final class DurationOrDisabled {
++    private static final String DISABLE_VALUE = "disabled";
++    public static final DurationOrDisabled USE_DISABLED = new DurationOrDisabled(Optional.empty());
++    public static final ScalarSerializer<DurationOrDisabled> SERIALIZER = new Serializer();
++
++    private Optional<Duration> value;
++
++    public DurationOrDisabled(final Optional<Duration> value) {
++        this.value = value;
++    }
++
++    public Optional<Duration> value() {
++        return this.value;
++    }
++
++    public void value(final Optional<Duration> value) {
++        this.value = value;
++    }
++
++    public Duration or(final Duration fallback) {
++        return this.value.orElse(fallback);
++    }
++
++    private static final class Serializer extends ScalarSerializer<DurationOrDisabled> {
++        Serializer() {
++            super(DurationOrDisabled.class);
++        }
++
++        @Override
++        public DurationOrDisabled deserialize(final Type type, final Object obj) throws SerializationException {
++            if (obj instanceof final String string) {
++                if (DISABLE_VALUE.equalsIgnoreCase(string)) {
++                    return USE_DISABLED;
++                }
++                return new DurationOrDisabled(Optional.of(Duration.SERIALIZER.deserialize(string)));
++            }
++            throw new SerializationException(obj + "(" + type + ") is not a duration or '" + DISABLE_VALUE + "'");
++        }
++
++        @Override
++        protected Object serialize(final DurationOrDisabled item, final Predicate<Class<?>> typeSupported) {
++            return item.value.map(Duration::value).orElse(DISABLE_VALUE);
 +        }
 +    }
 +}
@@ -4421,7 +4561,7 @@ index 0000000000000000000000000000000000000000..70cc7b45e7355f6c8476a74a070f1266
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 9b93b953f0747078d25289f129f82755089f94c9..aa054369cef3da4f90ce17788dcb9ca80dc98010 100644
+index e7240acad17dc9c0d93f2792cc0d90c1855ac436..35e7f8e7b19c217fa5f3f55abb0f8b9cd6b16f18 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -131,6 +131,10 @@ public class Main {
@@ -4445,10 +4585,10 @@ index 9b93b953f0747078d25289f129f82755089f94c9..aa054369cef3da4f90ce17788dcb9ca8
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3e1460b8331652c2f2e174ee41e3c728b2dbc753..2ed954f1fab3235a1d3fff2dd0d24c3b398b4d67 100644
+index 60e683ac0adaa192c502d059f6e448d0a23e8a09..6877a10fe56b46cf3fb7ccccf5a55e57d03048e9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -295,6 +295,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -294,6 +294,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private static final int SAMPLE_INTERVAL = 100;
      public final double[] recentTps = new double[ 3 ];
      // Spigot end
@@ -4456,7 +4596,7 @@ index 3e1460b8331652c2f2e174ee41e3c728b2dbc753..2ed954f1fab3235a1d3fff2dd0d24c3b
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -385,6 +386,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -384,6 +385,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              }
          }
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
@@ -4465,19 +4605,19 @@ index 3e1460b8331652c2f2e174ee41e3c728b2dbc753..2ed954f1fab3235a1d3fff2dd0d24c3b
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
-index 697ca7457115423a8c4d8a7d1f7a353237b56509..d7d65d0faefa5551480a4090de3a881828238ffd 100644
+index 71e7beac6cf1e0f813d5ff3e9c51c13491be7139..f1cc27809c1e8612f7c4fa912f5e39c07b09d808 100644
 --- a/src/main/java/net/minecraft/server/Services.java
 +++ b/src/main/java/net/minecraft/server/Services.java
-@@ -7,14 +7,30 @@ import java.io.File;
+@@ -10,14 +10,30 @@ import javax.annotation.Nullable;
  import net.minecraft.server.players.GameProfileCache;
  import net.minecraft.util.SignatureValidator;
  
--public record Services(MinecraftSessionService sessionService, SignatureValidator serviceSignatureValidator, GameProfileRepository profileRepository, GameProfileCache profileCache) {
+-public record Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache) {
 +// Paper start
-+public record Services(MinecraftSessionService sessionService, SignatureValidator serviceSignatureValidator, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations) {
++public record Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations) {
 +
-+    public Services(MinecraftSessionService sessionService, SignatureValidator signatureValidator, GameProfileRepository profileRepository, GameProfileCache profileCache) {
-+        this(sessionService, signatureValidator, profileRepository, profileCache, null);
++    public Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache) {
++        this(sessionService, servicesKeySet, profileRepository, profileCache, null);
 +    }
 +
 +    @Override
@@ -4492,18 +4632,18 @@ index 697ca7457115423a8c4d8a7d1f7a353237b56509..d7d65d0faefa5551480a4090de3a8818
          MinecraftSessionService minecraftSessionService = authenticationService.createMinecraftSessionService();
          GameProfileRepository gameProfileRepository = authenticationService.createProfileRepository();
          GameProfileCache gameProfileCache = new GameProfileCache(gameProfileRepository, new File(rootDirectory, "usercache.json"));
-         SignatureValidator signatureValidator = SignatureValidator.from(authenticationService.getServicesKey());
--        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache);
+-        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache);
 +        // Paper start
 +        final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
 +        final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
 +        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
-+        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache, paperConfigurations);
++        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache, paperConfigurations);
 +        // Paper end
      }
- }
+ 
+     @Nullable
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index c434bec64863cb9023917e737c9471444f23a110..1fe07773cf9664164b29164caba22800e5a6bdae 100644
+index ea5657d31f51469d6c0b9463fcc5cea9c270fb2e..546ad678af2705e3956f5f139aa847354a6fdeae 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -183,6 +183,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -4518,10 +4658,10 @@ index c434bec64863cb9023917e737c9471444f23a110..1fe07773cf9664164b29164caba22800
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
 diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/main/java/net/minecraft/server/dedicated/Settings.java
-index a02be624f7203d9465a8d62ccb734b436781f18c..5ac04182d32922dab00b81bc7f2ee1321066dcd5 100644
+index 37ab411817008d4e6194e177d88d50931e53b42e..ca23639f15107ccd43b874ae38fa37279b827a8f 100644
 --- a/src/main/java/net/minecraft/server/dedicated/Settings.java
 +++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
-@@ -75,6 +75,7 @@ public abstract class Settings<T extends Settings<T>> {
+@@ -119,6 +119,7 @@ public abstract class Settings<T extends Settings<T>> {
          try {
              // CraftBukkit start - Don't attempt writing to file if it's read only
              if (path.toFile().exists() && !path.toFile().canWrite()) {
@@ -4530,10 +4670,10 @@ index a02be624f7203d9465a8d62ccb734b436781f18c..5ac04182d32922dab00b81bc7f2ee132
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 37b2696e69719e44490116e4c4f6ab86c38043ed..ad011c4f328129e2e5eb6b1b1f5e1d282d1ec04a 100644
+index d40998a5330be64849a5bc2b49781b70ef149a0e..82435da47f0f7db73556310f84dc538a7c5f0809 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -230,7 +230,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -234,7 +234,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
          // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
@@ -4543,10 +4683,10 @@ index 37b2696e69719e44490116e4c4f6ab86c38043ed..ad011c4f328129e2e5eb6b1b1f5e1d28
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 9a86fedb7ea4932590b86ef96785141489b03528..40deaa2463876659c0579b5273b5249760e8f8c0 100644
+index cda55e481ddbcc1de5478125c5db20ebba168e7d..bacd4d875642cd93c3185f788745dd73a3cfde8a 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -156,6 +156,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -155,6 +155,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
      public boolean populating;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
@@ -4559,7 +4699,7 @@ index 9a86fedb7ea4932590b86ef96785141489b03528..40deaa2463876659c0579b5273b52497
  
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      public static BlockPos lastPhysicsProblem; // Spigot
-@@ -173,8 +179,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -172,8 +178,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public abstract ResourceKey<LevelStem> getTypeKey();
  
@@ -4571,10 +4711,10 @@ index 9a86fedb7ea4932590b86ef96785141489b03528..40deaa2463876659c0579b5273b52497
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6b5d97752b07ebd70a7986331bd28dde14958ccc..79ee400968a82aa5eb125d62f0440f926e3298f9 100644
+index 9aa71c85b630590b49a922fcc8d4badd01d46db4..3f5d20c65d9980b57f676d56a074c8e34a0e2fc8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -883,6 +883,7 @@ public final class CraftServer implements Server {
+@@ -914,6 +914,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
@@ -4583,7 +4723,7 @@ index 6b5d97752b07ebd70a7986331bd28dde14958ccc..79ee400968a82aa5eb125d62f0440f92
              world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 0d76c6880572e7620770f045e1faf59ea047a946..6f4efb5553da256ee3a6dc422167d4cdbb208a5d 100644
+index 5a39201392fefe8da495244fdbc380e882ec938f..e8fb9e3454282ad328e6bc0d078142285d9cfa76 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -141,6 +141,19 @@ public class Main {
@@ -4667,7 +4807,7 @@ index 0000000000000000000000000000000000000000..0396589795da1f83ddf62426236dde9a
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index eab3834dca7cf70468390584156b9a770bfb2a32..a616624a7beb35239be0fc2bb7fe60db1c673c2d 100644
+index c440dcf3cc2ddb8fd9094fe8495e820ae7797f5c..d1fd4cf65c31bc00d0bffa3123fc2223f1498a34 100644
 --- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
 +++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
 @@ -62,6 +62,7 @@ public abstract class AbstractTestingBase {

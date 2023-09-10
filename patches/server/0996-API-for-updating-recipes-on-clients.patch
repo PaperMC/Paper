@@ -1,0 +1,114 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 21 Aug 2021 17:25:38 -0700
+Subject: [PATCH] API for updating recipes on clients
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index fff7ad7a45f310783ac96b44575ad3db13d537fa..640e9bd618dc8286933318744c2064ede1fd9b5f 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1524,6 +1524,13 @@ public abstract class PlayerList {
+     }
+ 
+     public void reloadResources() {
++        // Paper start - split this method up into separate methods
++        this.reloadAdvancementData();
++        this.reloadTagData();
++        this.reloadRecipeData();
++    }
++    public void reloadAdvancementData() {
++        // Paper end
+         // CraftBukkit start
+         /*Iterator iterator = this.advancements.values().iterator();
+ 
+@@ -1539,7 +1546,15 @@ public abstract class PlayerList {
+         }
+         // CraftBukkit end
+ 
++        // Paper start
++    }
++    public void reloadTagData() {
++        // Paper end
+         this.broadcastAll(new ClientboundUpdateTagsPacket(TagNetworkSerialization.serializeTagsToNetwork(this.registries)));
++        // Paper start
++    }
++    public void reloadRecipeData() {
++        // Paper end
+         ClientboundUpdateRecipesPacket packetplayoutrecipeupdate = new ClientboundUpdateRecipesPacket(this.server.getRecipeManager().getRecipes());
+         Iterator iterator1 = this.players.iterator();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index d62cdda5ef3691a54ce34729920bad8e16c7a883..54f27d91f941235a99e341ed84531ad7f0840728 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1149,6 +1149,18 @@ public final class CraftServer implements Server {
+         ReloadCommand.reload(console);
+     }
+ 
++    // Paper start
++    @Override
++    public void updateResources() {
++        this.playerList.reloadResources();
++    }
++
++    @Override
++    public void updateRecipes() {
++        this.playerList.reloadRecipeData();
++    }
++    // Paper end
++
+     private void loadIcon() {
+         this.icon = new CraftIconCache(null);
+         try {
+@@ -1491,6 +1503,13 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean addRecipe(Recipe recipe) {
++        // Paper start
++        return this.addRecipe(recipe, false);
++    }
++
++    @Override
++    public boolean addRecipe(Recipe recipe, boolean resendRecipes) {
++        // Paper end
+         CraftRecipe toAdd;
+         if (recipe instanceof CraftRecipe) {
+             toAdd = (CraftRecipe) recipe;
+@@ -1520,6 +1539,11 @@ public final class CraftServer implements Server {
+             }
+         }
+         toAdd.addToCraftingManager();
++        // Paper start
++        if (resendRecipes) {
++            this.playerList.reloadRecipeData();
++        }
++        // Paper end
+         return true;
+     }
+ 
+@@ -1639,10 +1663,23 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean removeRecipe(NamespacedKey recipeKey) {
++        // Paper start
++        return this.removeRecipe(recipeKey, false);
++    }
++
++    @Override
++    public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
++        // Paper end
+         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
+ 
+         ResourceLocation mcKey = CraftNamespacedKey.toMinecraft(recipeKey);
+-        return this.getServer().getRecipeManager().removeRecipe(mcKey);
++        // Paper start - resend recipes on successful removal
++        boolean removed = this.getServer().getRecipeManager().removeRecipe(mcKey);
++        if (removed && resendRecipes) {
++            this.playerList.reloadRecipeData();
++        }
++        return removed;
++        // Paper end
+     }
+ 
+     @Override

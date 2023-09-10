@@ -61,7 +61,7 @@ repositories {
 }
 
 dependencies {
-    paramMappings("net.fabricmc:yarn:1.19.4+build.1:mergedv2")
+    paramMappings("net.fabricmc:yarn:1.20.1+build.1:mergedv2")
     remapper("net.fabricmc:tiny-remapper:0.8.6:fat")
     decompiler("net.minecraftforge:forgeflower:2.0.627.2")
     spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.6")
@@ -135,6 +135,11 @@ tasks.collectAtsFromPatches {
     // Uncomment while updating for a new Minecraft version
     // extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
 }
+
+// Uncomment while updating for a new Minecraft version
+// tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches> {
+//     filterPatches.set(false)
+// }
 
 tasks.register("printMinecraftVersion") {
     doLast {

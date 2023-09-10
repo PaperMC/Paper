@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 21 Aug 2021 18:53:03 -0700
+Subject: [PATCH] Only capture actual tree growth
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/grower/AbstractMegaTreeGrower.java b/src/main/java/net/minecraft/world/level/block/grower/AbstractMegaTreeGrower.java
+index 3decfca75ae1ace3da8ff47815a47d84c2a86105..b1e4a84bc5351ffe472d8371565665148253ad8f 100644
+--- a/src/main/java/net/minecraft/world/level/block/grower/AbstractMegaTreeGrower.java
++++ b/src/main/java/net/minecraft/world/level/block/grower/AbstractMegaTreeGrower.java
+@@ -49,17 +49,25 @@ public abstract class AbstractMegaTreeGrower extends AbstractTreeGrower {
+                 ConfiguredFeature<?, ?> worldgenfeatureconfigured = (ConfiguredFeature) holder.value();
+                 BlockState iblockdata1 = Blocks.AIR.defaultBlockState();
+ 
++                // Paper start
++                final CaptureState captureState = new CaptureState(world).recordAndSetToFalse();
++                try (captureState) {
++                // Paper end
+                 world.setBlock(pos.offset(x, 0, z), iblockdata1, 4);
+                 world.setBlock(pos.offset(x + 1, 0, z), iblockdata1, 4);
+                 world.setBlock(pos.offset(x, 0, z + 1), iblockdata1, 4);
+                 world.setBlock(pos.offset(x + 1, 0, z + 1), iblockdata1, 4);
++                } // Paper
+                 if (worldgenfeatureconfigured.place(world, chunkGenerator, random, pos.offset(x, 0, z))) {
+                     return true;
+                 } else {
++                    captureState.recordAndSetToFalse(); // Paper
++                    try (captureState) { // Paper
+                     world.setBlock(pos.offset(x, 0, z), state, 4);
+                     world.setBlock(pos.offset(x + 1, 0, z), state, 4);
+                     world.setBlock(pos.offset(x, 0, z + 1), state, 4);
+                     world.setBlock(pos.offset(x + 1, 0, z + 1), state, 4);
++                    } // Paper
+                     return false;
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/world/level/block/grower/AbstractTreeGrower.java b/src/main/java/net/minecraft/world/level/block/grower/AbstractTreeGrower.java
+index a743f36f2682a6b72ffa6644782fc081d1479eb7..1478483c0a5e35dfe0865ba5d819822765940dbf 100644
+--- a/src/main/java/net/minecraft/world/level/block/grower/AbstractTreeGrower.java
++++ b/src/main/java/net/minecraft/world/level/block/grower/AbstractTreeGrower.java
+@@ -41,7 +41,12 @@ public abstract class AbstractTreeGrower {
+                 ConfiguredFeature<?, ?> worldgenfeatureconfigured = (ConfiguredFeature) holder.value();
+                 BlockState iblockdata1 = world.getFluidState(pos).createLegacyBlock();
+ 
++                // Paper start - don't capture the change to air for tree blocks
++                final CaptureState captureState = new CaptureState(world).recordAndSetToFalse();
++                try (captureState) {
++                // Paper end
+                 world.setBlock(pos, iblockdata1, 4);
++                } // Paper
+                 if (worldgenfeatureconfigured.place(world, chunkGenerator, random, pos)) {
+                     if (world.getBlockState(pos) == iblockdata1) {
+                         world.sendBlockUpdated(pos, state, iblockdata1, 2);
+@@ -49,7 +54,10 @@ public abstract class AbstractTreeGrower {
+ 
+                     return true;
+                 } else {
++                    captureState.recordAndSetToFalse(); // Paper - don't capture the change to air for tree blocks
++                    try (captureState) { // Paper
+                     world.setBlock(pos, state, 4);
++                    } // Paper
+                     return false;
+                 }
+             }
+@@ -122,4 +130,29 @@ public abstract class AbstractTreeGrower {
+         }
+     }
+     // CraftBukkit end
++    // Paper start
++    static class CaptureState implements AutoCloseable {
++        private final ServerLevel level;
++        private boolean previousCaptureTreeGeneration;
++        private boolean previousCaptureBlockStates;
++
++        CaptureState(net.minecraft.server.level.ServerLevel level) {
++            this.level = level;
++        }
++
++        CaptureState recordAndSetToFalse() {
++            this.previousCaptureTreeGeneration = this.level.captureTreeGeneration;
++            this.previousCaptureBlockStates = this.level.captureBlockStates;
++            this.level.captureTreeGeneration = false;
++            this.level.captureBlockStates = false;
++            return this;
++        }
++
++        @Override
++        public void close() {
++            this.level.captureTreeGeneration = this.previousCaptureTreeGeneration;
++            this.level.captureBlockStates = this.previousCaptureBlockStates;
++        }
++    }
++    // Paper end
+ }

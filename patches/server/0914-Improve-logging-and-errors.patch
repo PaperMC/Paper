@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 14 Dec 2022 15:52:11 -0800
+Subject: [PATCH] Improve logging and errors
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index dbc93883b8529b0aab3ea21ddd466bc8c3739351..d7a4e200853f4eb980f1ea4a5c6a338039979cf1 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3622,7 +3622,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+                     this.resetPlayerChatState(remotechatsession_a.validate(this.player.getGameProfile(), signaturevalidator, Duration.ZERO));
+                 } catch (ProfilePublicKey.ValidationException profilepublickey_b) {
+-                    ServerGamePacketListenerImpl.LOGGER.error("Failed to validate profile key: {}", profilepublickey_b.getMessage());
++                    // ServerGamePacketListenerImpl.LOGGER.error("Failed to validate profile key: {}", profilepublickey_b.getMessage()); // Paper - unnecessary log
+                     this.disconnect(profilepublickey_b.getComponent(), profilepublickey_b.kickCause); // Paper - kick event causes
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/server/packs/PathPackResources.java b/src/main/java/net/minecraft/server/packs/PathPackResources.java
+index 0232c29d96e1021a9f5a9678996993dc55fe7254..8ad8ad1189d7cdb58caaa39c482d32685afa3f9a 100644
+--- a/src/main/java/net/minecraft/server/packs/PathPackResources.java
++++ b/src/main/java/net/minecraft/server/packs/PathPackResources.java
+@@ -105,6 +105,12 @@ public class PathPackResources extends AbstractPackResources {
+         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(path)) {
+             for(Path path2 : directoryStream) {
+                 String string = path2.getFileName().toString();
++                // Paper start
++                if (!Files.isDirectory(path2)) {
++                    LOGGER.error("Invalid directory entry: {} in {}.", string, this.root, new java.nio.file.NotDirectoryException(string));
++                    continue;
++                }
++                // Paper end
+                 if (string.equals(string.toLowerCase(Locale.ROOT))) {
+                     set.add(string);
+                 } else {
+diff --git a/src/main/java/org/bukkit/craftbukkit/legacy/CraftLegacy.java b/src/main/java/org/bukkit/craftbukkit/legacy/CraftLegacy.java
+index 080cca90f15d90249b7a38f33286ae2f735ba7d9..2677e21d8239bf0361a3bc5c9a50c328e54d70f6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/legacy/CraftLegacy.java
++++ b/src/main/java/org/bukkit/craftbukkit/legacy/CraftLegacy.java
+@@ -44,6 +44,7 @@ import org.bukkit.material.MaterialData;
+  */
+ @Deprecated
+ public final class CraftLegacy {
++    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper
+ 
+     private static final Map<Byte, Material> SPAWN_EGGS = new HashMap<>();
+     private static final Set<String> whitelistedStates = new HashSet<>(Arrays.asList("explode", "check_decay", "decayable", "facing"));
+@@ -255,7 +256,7 @@ public final class CraftLegacy {
+     }
+ 
+     static {
+-        System.err.println("Initializing Legacy Material Support. Unless you have legacy plugins and/or data this is a bug!");
++        LOGGER.warn("Initializing Legacy Material Support. Unless you have legacy plugins and/or data this is a bug!"); // Paper - doesn't need to be an error
+         if (MinecraftServer.getServer() != null && MinecraftServer.getServer().isDebugging()) {
+             new Exception().printStackTrace();
+         }
