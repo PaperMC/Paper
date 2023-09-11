@@ -57,6 +57,9 @@ https://bugs.mojang.com/browse/MC-84789
 https://bugs.mojang.com/browse/MC-225381
   Fix overfilled bundles duplicating items / being filled with air
 
+https://bugs.mojang.com/browse/MC-868
+  Fix Detector Rail switches junction before Minecart passes detector (happens only with minecarts of certain speed)
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -370,6 +373,19 @@ index 023ed8441d629629828051b4098b09b06ce51a75..95b53450a807fccfa55b59852da52785
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
+index 05dfb1790a292f9f85b641377c2ca3675726c127..fe4740cd2a5092fb5c9a597c2ea3774d8ca13882 100644
+--- a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
+@@ -75,7 +75,7 @@ public class DetectorRailBlock extends BaseRailBlock {
+             boolean flag = (Boolean) state.getValue(DetectorRailBlock.POWERED);
+             boolean flag1 = false;
+             List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (entity) -> {
+-                return true;
++                return java.awt.geom.Point2D.distance(pos.getX() + 0.5, pos.getZ() + 0.5, entity.getX(), entity.getZ()) < 0.5D; // Paper - MC-868 - Check if distance between minecart and detector rail is less than maximum distance to edge of a block
+             });
+ 
+             if (!list.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
 index 2932419b7ca3f066b1db329829af36ba31e17c65..e11eced0bf15dfecaf64f5e1c28e973c38746095 100644
 --- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
