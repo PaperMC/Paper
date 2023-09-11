@@ -2,6 +2,7 @@ package org.bukkit.plugin.messaging;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 import java.util.Collection;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.TestPlugin;
@@ -73,7 +74,7 @@ public class StandardMessengerTest {
         Messenger messenger = getMessenger();
         TestPlugin plugin = getPlugin();
         TestMessageListener listener = new TestMessageListener("test:foo", "test:bar".getBytes());
-        Player player = TestPlayer.getInstance();
+        Player player = mock();
         PluginMessageListenerRegistration registration = messenger.registerIncomingPluginChannel(plugin, "test:foo", listener);
 
         assertTrue(registration.isValid());
@@ -114,7 +115,7 @@ public class StandardMessengerTest {
         TestPlugin plugin = getPlugin();
         TestMessageListener listener1 = new TestMessageListener("test:foo", "test:bar".getBytes());
         TestMessageListener listener2 = new TestMessageListener("test:baz", "test:qux".getBytes());
-        Player player = TestPlayer.getInstance();
+        Player player = mock();
         PluginMessageListenerRegistration registration1 = messenger.registerIncomingPluginChannel(plugin, "test:foo", listener1);
         PluginMessageListenerRegistration registration2 = messenger.registerIncomingPluginChannel(plugin, "test:baz", listener2);
 
@@ -143,7 +144,7 @@ public class StandardMessengerTest {
         TestPlugin plugin = getPlugin();
         TestMessageListener listener1 = new TestMessageListener("test:foo", "test:bar".getBytes());
         TestMessageListener listener2 = new TestMessageListener("test:baz", "test:qux".getBytes());
-        Player player = TestPlayer.getInstance();
+        Player player = mock();
         PluginMessageListenerRegistration registration1 = messenger.registerIncomingPluginChannel(plugin, "test:foo", listener1);
         PluginMessageListenerRegistration registration2 = messenger.registerIncomingPluginChannel(plugin, "test:baz", listener2);
 

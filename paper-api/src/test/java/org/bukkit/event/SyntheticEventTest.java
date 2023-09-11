@@ -1,25 +1,26 @@
 package org.bukkit.event;
 
-import org.bukkit.TestServer;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.TestPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
+import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SyntheticEventTest {
+public class SyntheticEventTest extends AbstractTestingBase {
     @SuppressWarnings("deprecation")
     @Test
     public void test() {
-        final JavaPluginLoader loader = new JavaPluginLoader(TestServer.getInstance());
+        final JavaPluginLoader loader = new JavaPluginLoader(Bukkit.getServer());
         TestPlugin plugin = new TestPlugin(getClass().getName()) {
             @Override
             public PluginLoader getPluginLoader() {
                 return loader;
             }
         };
-        SimplePluginManager pluginManager = new SimplePluginManager(TestServer.getInstance(), null);
+        SimplePluginManager pluginManager = new SimplePluginManager(Bukkit.getServer(), null);
 
         TestEvent event = new TestEvent(false);
         Impl impl = new Impl();

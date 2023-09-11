@@ -2,19 +2,20 @@ package org.bukkit.plugin;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import org.bukkit.TestServer;
+import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.bukkit.event.TestEvent;
 import org.bukkit.permissions.Permission;
+import org.bukkit.support.AbstractTestingBase;
 import org.junit.After;
 import org.junit.Test;
 
-public class PluginManagerTest {
+public class PluginManagerTest extends AbstractTestingBase {
     private class MutableObject {
         volatile Object value = null;
     }
 
-    private static final PluginManager pm = TestServer.getInstance().getPluginManager();
+    private static final PluginManager pm = Bukkit.getServer().getPluginManager();
 
     private final MutableObject store = new MutableObject();
 

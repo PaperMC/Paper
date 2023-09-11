@@ -2,6 +2,7 @@ package org.bukkit;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Random;
@@ -189,8 +190,10 @@ public class LocationTest {
         return new Vector(x, y, z);
     }
 
+    private static final World TEST_WORLD = mock();
+
     private static Location getEmptyLocation() {
-        return new Location(TestWorld.INSTANCE, 0, 0, 0);
+        return new Location(TEST_WORLD, 0, 0, 0);
     }
 
     private Location getLocation() {
