@@ -3233,7 +3233,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.hasBlockLight;
 +    }
 +
-+    protected int getSkyLightValue(final BlockPos blockPos, final ChunkAccess chunk) {
++    public int getSkyLightValue(final BlockPos blockPos, final ChunkAccess chunk) {
 +        if (!this.hasSkyLight) {
 +            return 0;
 +        }
@@ -3303,7 +3303,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return 15;
 +    }
 +
-+    protected int getBlockLightValue(final BlockPos blockPos, final ChunkAccess chunk) {
++    public int getBlockLightValue(final BlockPos blockPos, final ChunkAccess chunk) {
 +        if (!this.hasBlockLight) {
 +            return 0;
 +        }
@@ -3422,7 +3422,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public CompletableFuture<Void> blockChange(final BlockPos pos) {
++    public LightQueue.ChunkTasks blockChange(final BlockPos pos) {
 +        if (this.world == null || pos.getY() < WorldUtil.getMinBlockY(this.world) || pos.getY() > WorldUtil.getMaxBlockY(this.world)) { // empty world
 +            return null;
 +        }
@@ -3430,7 +3430,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.lightQueue.queueBlockChange(pos);
 +    }
 +
-+    public CompletableFuture<Void> sectionChange(final SectionPos pos, final boolean newEmptyValue) {
++    public LightQueue.ChunkTasks sectionChange(final SectionPos pos, final boolean newEmptyValue) {
 +        if (this.world == null) { // empty world
 +            return null;
 +        }
@@ -3613,7 +3613,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    protected static final class LightQueue {
++    public static final class LightQueue {
 +
 +        protected final Long2ObjectLinkedOpenHashMap<ChunkTasks> chunkTasks = new Long2ObjectLinkedOpenHashMap<>();
 +        protected final StarLightInterface manager;
@@ -3626,13 +3626,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return this.chunkTasks.isEmpty();
 +        }
 +
-+        public synchronized CompletableFuture<Void> queueBlockChange(final BlockPos pos) {
++        public synchronized LightQueue.ChunkTasks queueBlockChange(final BlockPos pos) {
 +            final ChunkTasks tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), ChunkTasks::new);
 +            tasks.changedPositions.add(pos.immutable());
-+            return tasks.onComplete;
++            return tasks;
 +        }
 +
-+        public synchronized CompletableFuture<Void> queueSectionChange(final SectionPos pos, final boolean newEmptyValue) {
++        public synchronized LightQueue.ChunkTasks queueSectionChange(final SectionPos pos, final boolean newEmptyValue) {
 +            final ChunkTasks tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), ChunkTasks::new);
 +
 +            if (tasks.changedSectionSet == null) {
@@ -3640,20 +3640,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            tasks.changedSectionSet[pos.getY() - this.manager.minSection] = Boolean.valueOf(newEmptyValue);
 +
-+            return tasks.onComplete;
++            return tasks;
 +        }
 +
-+        public synchronized CompletableFuture<Void> queueChunkLighting(final ChunkPos pos, final Runnable lightTask) {
++        public synchronized LightQueue.ChunkTasks queueChunkLighting(final ChunkPos pos, final Runnable lightTask) {
 +            final ChunkTasks tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), ChunkTasks::new);
 +            if (tasks.lightTasks == null) {
 +                tasks.lightTasks = new ArrayList<>();
 +            }
 +            tasks.lightTasks.add(lightTask);
 +
-+            return tasks.onComplete;
++            return tasks;
 +        }
 +
-+        public synchronized CompletableFuture<Void> queueChunkSkylightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
++        public synchronized LightQueue.ChunkTasks queueChunkSkylightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
 +            final ChunkTasks tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), ChunkTasks::new);
 +
 +            ShortOpenHashSet queuedEdges = tasks.queuedEdgeChecksSky;
@@ -3662,10 +3662,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            queuedEdges.addAll(sections);
 +
-+            return tasks.onComplete;
++            return tasks;
 +        }
 +
-+        public synchronized CompletableFuture<Void> queueChunkBlocklightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
++        public synchronized LightQueue.ChunkTasks queueChunkBlocklightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
 +            final ChunkTasks tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), ChunkTasks::new);
 +
 +            ShortOpenHashSet queuedEdges = tasks.queuedEdgeChecksBlock;
@@ -3674,7 +3674,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            queuedEdges.addAll(sections);
 +
-+            return tasks.onComplete;
++            return tasks;
 +        }
 +
 +        public void removeChunk(final ChunkPos pos) {
@@ -3694,7 +3694,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return this.chunkTasks.removeFirst();
 +        }
 +
-+        protected static final class ChunkTasks {
++        public static final class ChunkTasks {
 +
 +            public final Set<BlockPos> changedPositions = new ObjectOpenHashSet<>();
 +            public Boolean[] changedSectionSet;
@@ -3702,6 +3702,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            public ShortOpenHashSet queuedEdgeChecksBlock;
 +            public List<Runnable> lightTasks;
 +
++            public boolean isTicketAdded = false;
 +            public final CompletableFuture<Void> onComplete = new CompletableFuture<>();
 +
 +            public final long chunkCoordinate;
@@ -4614,7 +4615,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private final Long2IntOpenHashMap chunksBeingWorkedOn = new Long2IntOpenHashMap();
 +
-+    private void queueTaskForSection(final int chunkX, final int chunkY, final int chunkZ, final Supplier<CompletableFuture<Void>> runnable) {
++    private void queueTaskForSection(final int chunkX, final int chunkY, final int chunkZ,
++                                     final Supplier<ca.spottedleaf.starlight.common.light.StarLightInterface.LightQueue.ChunkTasks> runnable) {
 +        final ServerLevel world = (ServerLevel)this.theLightEngine.getWorld();
 +
 +        final ChunkAccess center = this.theLightEngine.getAnyChunkNow(chunkX, chunkZ);
@@ -4641,12 +4643,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        final long key = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 +
-+        final CompletableFuture<Void> updateFuture = runnable.get();
++        final ca.spottedleaf.starlight.common.light.StarLightInterface.LightQueue.ChunkTasks updateFuture = runnable.get();
 +
 +        if (updateFuture == null) {
 +            // not scheduled
 +            return;
 +        }
++
++        if (updateFuture.isTicketAdded) {
++            // ticket already added
++            return;
++        }
++        updateFuture.isTicketAdded = true;
 +
 +        final int references = this.chunksBeingWorkedOn.addTo(key, 1);
 +        if (references == 0) {
@@ -4654,7 +4662,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            world.getChunkSource().addRegionTicket(ca.spottedleaf.starlight.common.light.StarLightInterface.CHUNK_WORK_TICKET, pos, 0, pos);
 +        }
 +
-+        updateFuture.thenAcceptAsync((final Void ignore) -> {
++        updateFuture.onComplete.thenAcceptAsync((final Void ignore) -> {
 +            final int newReferences = this.chunksBeingWorkedOn.get(key);
 +            if (newReferences == 1) {
 +                this.chunksBeingWorkedOn.remove(key);
@@ -4668,8 +4676,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                LOGGER.error("Failed to remove ticket level for post chunk task " + new ChunkPos(chunkX, chunkZ), thr);
 +            }
 +        });
-+    }
-+
+     }
+ 
 +    @Override
 +    public boolean hasLightWork() {
 +        // route to new light engine
@@ -4689,11 +4697,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (sky == 15) return 15;
 +        final int block = this.theLightEngine.getBlockReader().getLightValue(pos);
 +        return Math.max(sky, block);
-     }
++    }
 +    // Paper end - replace light engine imp
- 
++
      @Override
      public void close() {
+     }
 @@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      @Override

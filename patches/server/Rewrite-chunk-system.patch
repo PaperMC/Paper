@@ -846,6 +846,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return;
          }
 @@ -0,0 +0,0 @@ public final class StarLightInterface {
+         }
+     }
+ 
+-    public LightQueue.ChunkTasks blockChange(final BlockPos pos) {
++    public io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks blockChange(final BlockPos pos) { // Paper - rewrite chunk system
+         if (this.world == null || pos.getY() < WorldUtil.getMinBlockY(this.world) || pos.getY() > WorldUtil.getMaxBlockY(this.world)) { // empty world
+             return null;
+         }
+@@ -0,0 +0,0 @@ public final class StarLightInterface {
+         return this.lightQueue.queueBlockChange(pos);
+     }
+ 
+-    public LightQueue.ChunkTasks sectionChange(final SectionPos pos, final boolean newEmptyValue) {
++    public io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks sectionChange(final SectionPos pos, final boolean newEmptyValue) { // Paper - rewrite chunk system
+         if (this.world == null) { // empty world
+             return null;
+         }
+@@ -0,0 +0,0 @@ public final class StarLightInterface {
      }
  
      public void scheduleChunkLight(final ChunkPos pos, final Runnable run) {
@@ -905,7 +923,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        throw new UnsupportedOperationException("No longer implemented, task draining is now performed by the light thread"); // Paper - replace light queue
      }
  
-     protected static final class LightQueue {
+     public static final class LightQueue {
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/co/aikar/timings/TimingsExport.java
@@ -6036,7 +6054,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public CompletableFuture<Void> queueBlockChange(final BlockPos pos) {
++    public ChunkTasks queueBlockChange(final BlockPos pos) {
 +        final ChunkTasks tasks;
 +        synchronized (this) {
 +            tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), (final long keyInMap) -> {
@@ -6047,10 +6065,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
-+    public CompletableFuture<Void> queueSectionChange(final SectionPos pos, final boolean newEmptyValue) {
++    public ChunkTasks queueSectionChange(final SectionPos pos, final boolean newEmptyValue) {
 +        final ChunkTasks tasks;
 +        synchronized (this) {
 +            tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), (final long keyInMap) -> {
@@ -6065,10 +6083,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
-+    public CompletableFuture<Void> queueChunkLightTask(final ChunkPos pos, final BooleanSupplier lightTask, final PrioritisedExecutor.Priority priority) {
++    public ChunkTasks queueChunkLightTask(final ChunkPos pos, final BooleanSupplier lightTask, final PrioritisedExecutor.Priority priority) {
 +        final ChunkTasks tasks;
 +        synchronized (this) {
 +            tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), (final long keyInMap) -> {
@@ -6082,10 +6100,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
-+    public CompletableFuture<Void> queueChunkSkylightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
++    public ChunkTasks queueChunkSkylightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
 +        final ChunkTasks tasks;
 +        synchronized (this) {
 +            tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), (final long keyInMap) -> {
@@ -6101,10 +6119,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
-+    public CompletableFuture<Void> queueChunkBlocklightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
++    public ChunkTasks queueChunkBlocklightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
 +        final ChunkTasks tasks;
 +
 +        synchronized (this) {
@@ -6121,7 +6139,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
 +    public void removeChunk(final ChunkPos pos) {
@@ -6134,20 +6152,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    protected static final class ChunkTasks implements Runnable {
++    public static final class ChunkTasks implements Runnable {
 +
-+        final Set<BlockPos> changedPositions = new HashSet<>();
-+        Boolean[] changedSectionSet;
-+        ShortOpenHashSet queuedEdgeChecksSky;
-+        ShortOpenHashSet queuedEdgeChecksBlock;
-+        List<BooleanSupplier> lightTasks;
-+
-+        final CompletableFuture<Void> onComplete = new CompletableFuture<>();
-+
++        public final CompletableFuture<Void> onComplete = new CompletableFuture<>();
++        public boolean isTicketAdded;
 +        public final long chunkCoordinate;
++
 +        private final StarLightInterface lightEngine;
 +        private final LightQueue queue;
 +        private final PrioritisedExecutor.PrioritisedTask task;
++        private final Set<BlockPos> changedPositions = new HashSet<>();
++        private Boolean[] changedSectionSet;
++        private ShortOpenHashSet queuedEdgeChecksSky;
++        private ShortOpenHashSet queuedEdgeChecksBlock;
++        private List<BooleanSupplier> lightTasks;
 +
 +        public ChunkTasks(final long chunkCoordinate, final StarLightInterface lightEngine, final LightQueue queue) {
 +            this(chunkCoordinate, lightEngine, queue, PrioritisedExecutor.Priority.NORMAL);
@@ -20276,6 +20294,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.theLightEngine.relightChunks(chunks, (ChunkPos chunkPos) -> {
                  chunkLightCallback.accept(chunkPos);
                  ((java.util.concurrent.Executor)((ServerLevel)this.theLightEngine.getWorld()).getChunkSource().mainThreadProcessor).execute(() -> {
+@@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+     private final Long2IntOpenHashMap chunksBeingWorkedOn = new Long2IntOpenHashMap();
+ 
+     private void queueTaskForSection(final int chunkX, final int chunkY, final int chunkZ,
+-                                     final Supplier<ca.spottedleaf.starlight.common.light.StarLightInterface.LightQueue.ChunkTasks> runnable) {
++                                     final Supplier<io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks> runnable) { // Paper - rewrite chunk system
+         final ServerLevel world = (ServerLevel)this.theLightEngine.getWorld();
+ 
+         final ChunkAccess center = this.theLightEngine.getAnyChunkNow(chunkX, chunkZ);
+@@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+ 
+         final long key = CoordinateUtils.getChunkKey(chunkX, chunkZ);
+ 
+-        final ca.spottedleaf.starlight.common.light.StarLightInterface.LightQueue.ChunkTasks updateFuture = runnable.get();
++        final io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks updateFuture = runnable.get(); // Paper - rewrite chunk system
+ 
+         if (updateFuture == null) {
+             // not scheduled
 @@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
