@@ -780,7 +780,7 @@ index 0000000000000000000000000000000000000000..64b5803d002b2968841a5ddee987f98b
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java
-index 146c78a333e47cb4d8aa97700e19a12ca176ce76..691239e65b0870ceb0d071b57793cff9b2593f62 100644
+index 499c069d64692872924963d3a7ac39664b20468d..ef8ea36b2acefb935afda01396d2699e2921f396 100644
 --- a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java
 +++ b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java
 @@ -41,14 +41,14 @@ public final class StarLightInterface {
@@ -845,6 +845,24 @@ index 146c78a333e47cb4d8aa97700e19a12ca176ce76..691239e65b0870ceb0d071b57793cff9
          if (this.cachedBlockPropagators == null) {
              return;
          }
+@@ -381,7 +382,7 @@ public final class StarLightInterface {
+         }
+     }
+ 
+-    public LightQueue.ChunkTasks blockChange(final BlockPos pos) {
++    public io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks blockChange(final BlockPos pos) { // Paper - rewrite chunk system
+         if (this.world == null || pos.getY() < WorldUtil.getMinBlockY(this.world) || pos.getY() > WorldUtil.getMaxBlockY(this.world)) { // empty world
+             return null;
+         }
+@@ -389,7 +390,7 @@ public final class StarLightInterface {
+         return this.lightQueue.queueBlockChange(pos);
+     }
+ 
+-    public LightQueue.ChunkTasks sectionChange(final SectionPos pos, final boolean newEmptyValue) {
++    public io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks sectionChange(final SectionPos pos, final boolean newEmptyValue) { // Paper - rewrite chunk system
+         if (this.world == null) { // empty world
+             return null;
+         }
 @@ -519,57 +520,15 @@ public final class StarLightInterface {
      }
  
@@ -905,7 +923,7 @@ index 146c78a333e47cb4d8aa97700e19a12ca176ce76..691239e65b0870ceb0d071b57793cff9
 +        throw new UnsupportedOperationException("No longer implemented, task draining is now performed by the light thread"); // Paper - replace light queue
      }
  
-     protected static final class LightQueue {
+     public static final class LightQueue {
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 index 38f01952153348d937e326da0ec102cd9b0f80af..1080e1f67afe5574baca0df50cdb1d029a7a586a 100644
 --- a/src/main/java/co/aikar/timings/TimingsExport.java
@@ -5951,7 +5969,7 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/light/LightQueue.java b/src/main/java/io/papermc/paper/chunk/system/light/LightQueue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..36e93fefdfbebddce4c153974c7cd81af3cb92e9
+index 0000000000000000000000000000000000000000..de28d6ee71990da74d9deb360fac8bde5adbc918
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/light/LightQueue.java
 @@ -0,0 +1,283 @@
@@ -6036,7 +6054,7 @@ index 0000000000000000000000000000000000000000..36e93fefdfbebddce4c153974c7cd81a
 +        }
 +    }
 +
-+    public CompletableFuture<Void> queueBlockChange(final BlockPos pos) {
++    public ChunkTasks queueBlockChange(final BlockPos pos) {
 +        final ChunkTasks tasks;
 +        synchronized (this) {
 +            tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), (final long keyInMap) -> {
@@ -6047,10 +6065,10 @@ index 0000000000000000000000000000000000000000..36e93fefdfbebddce4c153974c7cd81a
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
-+    public CompletableFuture<Void> queueSectionChange(final SectionPos pos, final boolean newEmptyValue) {
++    public ChunkTasks queueSectionChange(final SectionPos pos, final boolean newEmptyValue) {
 +        final ChunkTasks tasks;
 +        synchronized (this) {
 +            tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), (final long keyInMap) -> {
@@ -6065,10 +6083,10 @@ index 0000000000000000000000000000000000000000..36e93fefdfbebddce4c153974c7cd81a
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
-+    public CompletableFuture<Void> queueChunkLightTask(final ChunkPos pos, final BooleanSupplier lightTask, final PrioritisedExecutor.Priority priority) {
++    public ChunkTasks queueChunkLightTask(final ChunkPos pos, final BooleanSupplier lightTask, final PrioritisedExecutor.Priority priority) {
 +        final ChunkTasks tasks;
 +        synchronized (this) {
 +            tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), (final long keyInMap) -> {
@@ -6082,10 +6100,10 @@ index 0000000000000000000000000000000000000000..36e93fefdfbebddce4c153974c7cd81a
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
-+    public CompletableFuture<Void> queueChunkSkylightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
++    public ChunkTasks queueChunkSkylightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
 +        final ChunkTasks tasks;
 +        synchronized (this) {
 +            tasks = this.chunkTasks.computeIfAbsent(CoordinateUtils.getChunkKey(pos), (final long keyInMap) -> {
@@ -6101,10 +6119,10 @@ index 0000000000000000000000000000000000000000..36e93fefdfbebddce4c153974c7cd81a
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
-+    public CompletableFuture<Void> queueChunkBlocklightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
++    public ChunkTasks queueChunkBlocklightEdgeCheck(final SectionPos pos, final ShortCollection sections) {
 +        final ChunkTasks tasks;
 +
 +        synchronized (this) {
@@ -6121,7 +6139,7 @@ index 0000000000000000000000000000000000000000..36e93fefdfbebddce4c153974c7cd81a
 +
 +        tasks.schedule();
 +
-+        return tasks.onComplete;
++        return tasks;
 +    }
 +
 +    public void removeChunk(final ChunkPos pos) {
@@ -6134,20 +6152,20 @@ index 0000000000000000000000000000000000000000..36e93fefdfbebddce4c153974c7cd81a
 +        }
 +    }
 +
-+    protected static final class ChunkTasks implements Runnable {
++    public static final class ChunkTasks implements Runnable {
 +
-+        final Set<BlockPos> changedPositions = new HashSet<>();
-+        Boolean[] changedSectionSet;
-+        ShortOpenHashSet queuedEdgeChecksSky;
-+        ShortOpenHashSet queuedEdgeChecksBlock;
-+        List<BooleanSupplier> lightTasks;
-+
-+        final CompletableFuture<Void> onComplete = new CompletableFuture<>();
-+
++        public final CompletableFuture<Void> onComplete = new CompletableFuture<>();
++        public boolean isTicketAdded;
 +        public final long chunkCoordinate;
++
 +        private final StarLightInterface lightEngine;
 +        private final LightQueue queue;
 +        private final PrioritisedExecutor.PrioritisedTask task;
++        private final Set<BlockPos> changedPositions = new HashSet<>();
++        private Boolean[] changedSectionSet;
++        private ShortOpenHashSet queuedEdgeChecksSky;
++        private ShortOpenHashSet queuedEdgeChecksBlock;
++        private List<BooleanSupplier> lightTasks;
 +
 +        public ChunkTasks(final long chunkCoordinate, final StarLightInterface lightEngine, final LightQueue queue) {
 +            this(chunkCoordinate, lightEngine, queue, PrioritisedExecutor.Priority.NORMAL);
@@ -16980,7 +16998,7 @@ index 73c3070b2e300e0ab29ac1db1631023cef7970f8..f46ae930c6d1609dbefb56e67853f6e8
  
      public boolean isDebugging() {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 32d5d085721a6b9c539b261a2249f6206d0f8a87..ff279901038dfbed6a0b51cc5355ccd17efc6883 100644
+index 14101c77fd9814a5d1e8e1bf0d8584f42086b051..fea6b32015f9e2654c40ad90301d7aaeb0dabf72 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -399,7 +399,34 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -20235,7 +20253,7 @@ index a0856fc649c50309258f015e623502dd46aeeab4..5a18f4649b64d47f429eb6c1dbb6238a
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
          this.chatVisibility = ChatVisiblity.FULL;
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-index 481272124b7589cff0aa05b6df5b7e6f1d539414..b4be02ec4bb77059f79d3e4d6a6f1ee4843a01f9 100644
+index 6716d9acc8b31f3fc3642b47fa52ce32c5195a3e..76bd323f25d7c2f4e12dd13baa53995fa4f8b27a 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 @@ -37,15 +37,12 @@ import net.minecraft.world.level.chunk.ChunkStatus;
@@ -20276,7 +20294,25 @@ index 481272124b7589cff0aa05b6df5b7e6f1d539414..b4be02ec4bb77059f79d3e4d6a6f1ee4
              this.theLightEngine.relightChunks(chunks, (ChunkPos chunkPos) -> {
                  chunkLightCallback.accept(chunkPos);
                  ((java.util.concurrent.Executor)((ServerLevel)this.theLightEngine.getWorld()).getChunkSource().mainThreadProcessor).execute(() -> {
-@@ -275,17 +271,11 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -115,7 +111,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+     private final Long2IntOpenHashMap chunksBeingWorkedOn = new Long2IntOpenHashMap();
+ 
+     private void queueTaskForSection(final int chunkX, final int chunkY, final int chunkZ,
+-                                     final Supplier<ca.spottedleaf.starlight.common.light.StarLightInterface.LightQueue.ChunkTasks> runnable) {
++                                     final Supplier<io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks> runnable) { // Paper - rewrite chunk system
+         final ServerLevel world = (ServerLevel)this.theLightEngine.getWorld();
+ 
+         final ChunkAccess center = this.theLightEngine.getAnyChunkNow(chunkX, chunkZ);
+@@ -142,7 +138,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+ 
+         final long key = CoordinateUtils.getChunkKey(chunkX, chunkZ);
+ 
+-        final ca.spottedleaf.starlight.common.light.StarLightInterface.LightQueue.ChunkTasks updateFuture = runnable.get();
++        final io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks updateFuture = runnable.get(); // Paper - rewrite chunk system
+ 
+         if (updateFuture == null) {
+             // not scheduled
+@@ -282,17 +278,11 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
      private void addTask(int x, int z, ThreadedLevelLightEngine.TaskType stage, Runnable task) {
@@ -20296,7 +20332,7 @@ index 481272124b7589cff0aa05b6df5b7e6f1d539414..b4be02ec4bb77059f79d3e4d6a6f1ee4
      }
  
      @Override
-@@ -327,90 +317,15 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -334,90 +324,15 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
      public CompletableFuture<ChunkAccess> lightChunk(ChunkAccess chunk, boolean excludeBlocks) {
