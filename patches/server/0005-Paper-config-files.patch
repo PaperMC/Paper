@@ -1480,10 +1480,10 @@ index 0000000000000000000000000000000000000000..f0d4ec73bc8872a85e34f5c6b4d342e7
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..da7c899fbab162ee197a0593f455ebd9c5286d3c
+index 0000000000000000000000000000000000000000..f5dd8ad4c97b8ce4db0d530c34926b465985ef26
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,530 @@
+@@ -0,0 +1,566 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1513,6 +1513,7 @@ index 0000000000000000000000000000000000000000..da7c899fbab162ee197a0593f455ebd9
 +import java.util.Map;
 +import java.util.function.Function;
 +import java.util.stream.Collectors;
++import java.util.stream.Stream;
 +import net.minecraft.Util;
 +import net.minecraft.commands.arguments.NbtPathArgument;
 +import net.minecraft.core.Holder;
@@ -1816,6 +1817,41 @@ index 0000000000000000000000000000000000000000..da7c899fbab162ee197a0593f455ebd9
 +                }
 +                
 +                return other.or(def);
++            }
++        }
++
++        public DynamicBrainActivation dynamicBrainActivation;
++
++        public class DynamicBrainActivation extends ConfigurationPart.Post {
++            public boolean enabled = true;
++            public int startDistance = 12;
++            public transient int startDistanceSquared;
++            public int maxTickDelay = 20;
++            public int distanceModifier = 8;
++            public Map<EntityType<?>, Boolean> enabledForEntities = Stream.of(
++                EntityType.ZOGLIN,
++                EntityType.PIGLIN_BRUTE,
++                EntityType.ALLAY,
++                EntityType.AXOLOTL,
++                EntityType.CAMEL,
++                EntityType.FROG,
++                EntityType.TADPOLE,
++                EntityType.GOAT,
++                EntityType.SNIFFER,
++                EntityType.HOGLIN,
++                EntityType.PIGLIN,
++                EntityType.WARDEN,
++                EntityType.VILLAGER
++            ).collect(Collectors.toMap(key -> key, key -> true));
++
++            @Override
++            public void postProcess() {
++                this.startDistanceSquared = this.startDistance * this.startDistance;
++                for (final Map.Entry<EntityType<?>, Boolean> entry : this.enabledForEntities.entrySet()) {
++                    if (entry.getValue()) {
++                        entry.getKey().dynamicBrainActivationEnabled = true;
++                    }
++                }
 +            }
 +        }
 +    }

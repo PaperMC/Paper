@@ -132,6 +132,65 @@ index 2dc801061025888192c3bf2c4c38b928c16a0165..ca788f0dcec4a117b410fe8348969e05
      }
  
      public static <T> SortedArraySet<T> create(Comparator<T> comparator) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/Brain.java b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+index ef6e968ed2708272eab407a983928382a2f2049c..f34b3548990d4398123352c439b598d47a904a70 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/Brain.java
++++ b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+@@ -59,8 +59,8 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public static <E extends LivingEntity> Codec<Brain<E>> codec(final Collection<? extends MemoryModuleType<?>> memoryModules, final Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) {
+-        final MutableObject<Codec<Brain<E>>> mutableObject = new MutableObject<>();
+-        mutableObject.setValue((new MapCodec<Brain<E>>() {
++        final MutableObject<Codec<Brain<E>>> mutableObject1 = new MutableObject<>(); // Paper - decompile fix
++        mutableObject1.setValue((new MapCodec<Brain<E>>() { // Paper - decompile fix
+             public <T> Stream<T> keys(DynamicOps<T> dynamicOps) {
+                 return memoryModules.stream().flatMap((memoryType) -> {
+                     return memoryType.getCodec().map((codec) -> {
+@@ -81,7 +81,7 @@ public class Brain<E extends LivingEntity> {
+                     mutableObject.setValue(mutableObject.getValue().apply2(ImmutableList.Builder::add, dataResult2));
+                 });
+                 ImmutableList<Brain.MemoryValue<?>> immutableList = mutableObject.getValue().resultOrPartial(Brain.LOGGER::error).map(ImmutableList.Builder::build).orElseGet(ImmutableList::of);
+-                return DataResult.success(new Brain<>(memoryModules, sensors, immutableList, mutableObject::getValue));
++                return DataResult.success(new Brain<>(memoryModules, sensors, immutableList, mutableObject1::getValue)); // Paper - decompile fix
+             }
+ 
+             private <T, U> DataResult<Brain.MemoryValue<U>> captureRead(MemoryModuleType<U> memoryType, DynamicOps<T> ops, T value) {
+@@ -103,7 +103,7 @@ public class Brain<E extends LivingEntity> {
+                 return recordBuilder;
+             }
+         }).fieldOf("memories").codec());
+-        return mutableObject.getValue();
++        return mutableObject1.getValue();
+     }
+ 
+     public Brain(Collection<? extends MemoryModuleType<?>> memories, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors, ImmutableList<Brain.MemoryValue<?>> memoryEntries, Supplier<Codec<Brain<E>>> codecSupplier) {
+@@ -181,14 +181,14 @@ public class Brain<E extends LivingEntity> {
+         if (optional == null) {
+             throw new IllegalStateException("Unregistered memory fetched: " + type);
+         } else {
+-            return optional.map(ExpirableValue::getValue);
++            return (Optional<U>) optional.map(ExpirableValue::getValue); // Paper - decompile fix
+         }
+     }
+ 
+     @Nullable
+     public <U> Optional<U> getMemoryInternal(MemoryModuleType<U> type) {
+         Optional<? extends ExpirableValue<?>> optional = this.memories.get(type);
+-        return optional == null ? null : optional.map(ExpirableValue::getValue);
++        return optional == null ? null : (Optional<U>) optional.map(ExpirableValue::getValue); // Paper - decompile fix
+     }
+ 
+     public <U> long getTimeUntilExpiry(MemoryModuleType<U> type) {
+@@ -483,7 +483,7 @@ public class Brain<E extends LivingEntity> {
+         private final Optional<? extends ExpirableValue<U>> value;
+ 
+         static <U> Brain.MemoryValue<U> createUnchecked(MemoryModuleType<U> type, Optional<? extends ExpirableValue<?>> data) {
+-            return new Brain.MemoryValue<>(type, data);
++            return new Brain.MemoryValue<>(type, (Optional<? extends ExpirableValue<U>>) data); // Paper - decompile fix
+         }
+ 
+         MemoryValue(MemoryModuleType<U> type, Optional<? extends ExpirableValue<U>> data) {
 diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
 index d6e25c7f5dc6c219e2590aa8b1ffd51a2120d50e..40cdff9eaa1e78e02060d970e477d96f960cfed3 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java

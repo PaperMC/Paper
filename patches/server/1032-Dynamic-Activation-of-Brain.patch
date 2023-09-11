@@ -1,0 +1,230 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Paul Sauve <paul@technove.co>
+Date: Fri, 15 Jan 2021 19:05:01 -0600
+Subject: [PATCH] Dynamic Activation of Brain
+
+This replaces the current method of ticking an inactive entity's
+pathfinder 1/4 times with a new method that's dynamic based off how far
+away it is from a player. If an entity is within 32 blocks, it gets
+ticked every tick. If it's within 45 blocks, it gets ticked every other
+tick. If it's within 55 blocks, it gets ticked once every three ticks.
+(these numbers have since been changed, but the idea is the same.)
+
+Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+
+Copyright (C) 2020 Technove LLC
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 9afc81ccb237c3655d64cdbe8a0db9a4d7791043..6d5ce37028c4b018003e0f2a60589fed0e952343 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -308,6 +308,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+     private ResourceLocation lootTable;
+     private final EntityDimensions dimensions;
+     private final FeatureFlagSet requiredFeatures;
++    public boolean dynamicBrainActivationEnabled; // Paper
+ 
+     private static <T extends Entity> EntityType<T> register(String id, EntityType.Builder type) { // CraftBukkit - decompile error
+         return (EntityType) Registry.register(BuiltInRegistries.ENTITY_TYPE, id, (EntityType<T>) type.build(id)); // CraftBukkit - decompile error
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 78c98f38bc263664ea4cd344670243a7d372885c..c9e9bc0fae5f736fb9c0def9c8d2e1b156361018 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -263,6 +263,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
+     public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
+     public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper
++    public int activatedPriority; // Paper - Dynamic brain activation
+ 
+     @Override
+     public float getBukkitYaw() {
+@@ -301,6 +302,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         NbtOps dynamicopsnbt = NbtOps.INSTANCE;
+ 
+         this.brain = this.makeBrain(new Dynamic(dynamicopsnbt, (Tag) dynamicopsnbt.createMap((Map) ImmutableMap.of(dynamicopsnbt.createString("memories"), (Tag) dynamicopsnbt.emptyMap()))));
++        this.activatedPriority = this.level().paperConfig().entities.dynamicBrainActivation.maxTickDelay; // Paper - Dynamic brain activation
+     }
+ 
+     public Brain<?> getBrain() {
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index e2a25c29ec74147b3e66aa0b3deb85a8f6ee53a5..a90bdd1f6d534ebfe2b4ae3c8cbe7831f315aa3b 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -222,10 +222,10 @@ public abstract class Mob extends LivingEntity implements Targeting {
+     @Override
+     public void inactiveTick() {
+         super.inactiveTick();
+-        if (this.goalSelector.inactiveTick()) {
++        if (this.goalSelector.inactiveTick(this.activatedPriority, !this.level().paperConfig().entities.dynamicBrainActivation.enabled)) { // Paper - pass activated priroity
+             this.goalSelector.tick();
+         }
+-        if (this.targetSelector.inactiveTick()) {
++        if (this.targetSelector.inactiveTick(this.activatedPriority, !this.level().paperConfig().entities.dynamicBrainActivation.enabled)) { // Paper - pass activated priority
+             this.targetSelector.tick();
+         }
+     }
+@@ -910,16 +910,20 @@ public abstract class Mob extends LivingEntity implements Targeting {
+ 
+         if (i % 2 != 0 && this.tickCount > 1) {
+             this.level().getProfiler().push("targetSelector");
++            if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Paper - use this to alternate ticking
+             this.targetSelector.tickRunningGoals(false);
+             this.level().getProfiler().pop();
+             this.level().getProfiler().push("goalSelector");
++            if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Paper - use this to alternate ticking
+             this.goalSelector.tickRunningGoals(false);
+             this.level().getProfiler().pop();
+         } else {
+             this.level().getProfiler().push("targetSelector");
++            if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Paper - use this to alternate ticking
+             this.targetSelector.tick();
+             this.level().getProfiler().pop();
+             this.level().getProfiler().push("goalSelector");
++            if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Paper - use this to alternate ticking
+             this.goalSelector.tick();
+             this.level().getProfiler().pop();
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/Brain.java b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+index f34b3548990d4398123352c439b598d47a904a70..f5024359782013d9e00fae0af5efb2f0ecd630c8 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/Brain.java
++++ b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+@@ -53,6 +53,10 @@ public class Brain<E extends LivingEntity> {
+     private final Set<Activity> activeActivities = Sets.newHashSet();
+     private Activity defaultActivity = Activity.IDLE;
+     private long lastScheduleUpdate = -9999L;
++    // Paper start - Dynamic brain activation
++    private int behaviorTick;
++    private boolean dirty = true;
++    // Paper end - Dynamic brain activation
+ 
+     public static <E extends LivingEntity> Brain.Provider<E> provider(Collection<? extends MemoryModuleType<?>> memoryModules, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) {
+         return new Brain.Provider<>(memoryModules, sensors);
+@@ -144,6 +148,7 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public void clearMemories() {
++        this.dirty = true; // Paper - Dynamic brain activation
+         this.memories.keySet().forEach((type) -> {
+             this.memories.put(type, Optional.empty());
+         });
+@@ -170,6 +175,7 @@ public class Brain<E extends LivingEntity> {
+             if (memory.isPresent() && this.isEmptyCollection(memory.get().getValue())) {
+                 this.eraseMemory(type);
+             } else {
++                this.dirty = true; // Paper - Dynamic brain activation
+                 this.memories.put(type, memory);
+             }
+         }
+@@ -314,6 +320,7 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public void setActiveActivityToFirstValid(List<Activity> activities) {
++        if (!this.dirty) return; // Paper - Dynamic brain activation; assumes that this is always called with the same list
+         for(Activity activity : activities) {
+             if (this.activityRequirementsAreMet(activity)) {
+                 this.setActiveActivity(activity);
+@@ -321,6 +328,7 @@ public class Brain<E extends LivingEntity> {
+             }
+         }
+ 
++        this.dirty = false; // Paper - Dynamic brain activation
+     }
+ 
+     public void setDefaultActivity(Activity activity) {
+@@ -346,6 +354,7 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public void addActivityAndRemoveMemoriesWhenStopped(Activity activity, ImmutableList<? extends Pair<Integer, ? extends BehaviorControl<? super E>>> indexedTasks, Set<Pair<MemoryModuleType<?>, MemoryStatus>> requiredMemories, Set<MemoryModuleType<?>> forgettingMemories) {
++        this.dirty = true; // Paper - Dynamic brain activation; just in case
+         this.activityRequirements.put(activity, requiredMemories);
+         if (!forgettingMemories.isEmpty()) {
+             this.activityMemoriesToEraseWhenStopped.put(activity, forgettingMemories);
+@@ -384,6 +393,7 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public void tick(ServerLevel world, E entity) {
++        if (this.behaviorTick++ % entity.activatedPriority != 0) return; // Paper  - Dynamic brain activation
+         this.forgetOutdatedMemories();
+         this.tickSensors(world, entity);
+         this.startEachNonRunningBehavior(world, entity);
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
+index b738ee2d3801fadfd09313f05ae24593e56b0ec6..c08456ab11ed9c4637b5a65066ae11972366836f 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
+@@ -53,9 +53,14 @@ public class GoalSelector {
+     }
+ 
+     // Paper start
+-    public boolean inactiveTick() {
++    public boolean inactiveTick(int tickRate, boolean inactive) {
++        if (inactive) {
++            tickRate = 4;
++        }
++        tickRate = Math.min(tickRate, this.newGoalRate);
+         this.curRate++;
+-        return this.curRate % this.newGoalRate == 0;
++        return this.curRate % tickRate == 0;
++        // Paper end
+     }
+     public boolean hasTasks() {
+         for (WrappedGoal task : this.availableGoals) {
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index eda7f0bb42f7269676d5d2193e1155912ede9920..fc7ced974f5c6c11cd0c6210037085d8a7023f8c 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -214,9 +214,27 @@ public class ActivationRange
+             // Paper start
+             java.util.function.Predicate<Entity> entityPredicate = world.paperConfig().entities.markers.tick ? null : (e) -> !(e instanceof net.minecraft.world.entity.Marker); // Configurable marker ticking
+             java.util.List<Entity> entities = world.getEntities((Entity)null, maxBB, entityPredicate);
++            io.papermc.paper.configuration.WorldConfiguration.Entities.DynamicBrainActivation dabConfig = world.paperConfig().entities.dynamicBrainActivation; // Paper - Dynamic brain activation
+             for (int i = 0; i < entities.size(); i++) {
+                 Entity entity = entities.get(i);
+                 ActivationRange.activateEntity(entity);
++
++                // Paper start - Dynamic brain activation
++                if (entity instanceof LivingEntity livingEntity) {
++                    if (dabConfig.enabled && livingEntity.getType().dynamicBrainActivationEnabled) {
++                        net.minecraft.world.phys.Vec3 playerVec = player.position();
++                        net.minecraft.world.phys.Vec3 entityVec = livingEntity.position();
++                        final double diffX = playerVec.x - entityVec.x, diffY = playerVec.y - entityVec.y, diffZ = playerVec.z - entityVec.z;
++                        final int squaredDistance = (int) (diffX * diffX + diffY * diffY + diffZ * diffZ);
++                        livingEntity.activatedPriority = squaredDistance > dabConfig.startDistanceSquared ?
++                            Math.max(1, Math.min(squaredDistance >> dabConfig.distanceModifier, dabConfig.maxTickDelay)) :
++                            1;
++                    } else {
++                        livingEntity.activatedPriority = 1;
++                    }
++                }
++                // Paper end - Dynamic brain activation
++
+             }
+             // Paper end
+         }
+@@ -233,12 +251,12 @@ public class ActivationRange
+         if ( MinecraftServer.currentTick > entity.activatedTick )
+         {
+             if ( entity.defaultActivationState )
+-            {
++            { // Paper - diff on change
+                 entity.activatedTick = MinecraftServer.currentTick;
+                 return;
+             }
+             if ( entity.activationType.boundingBox.intersects( entity.getBoundingBox() ) )
+-            {
++            {  // Paper - diff on change
+                 entity.activatedTick = MinecraftServer.currentTick;
+             }
+         }
