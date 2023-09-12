@@ -98,68 +98,114 @@ index e2a25c29ec74147b3e66aa0b3deb85a8f6ee53a5..a90bdd1f6d534ebfe2b4ae3c8cbe7831
              this.level().getProfiler().pop();
          }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/Brain.java b/src/main/java/net/minecraft/world/entity/ai/Brain.java
-index f34b3548990d4398123352c439b598d47a904a70..f5024359782013d9e00fae0af5efb2f0ecd630c8 100644
+index f34b3548990d4398123352c439b598d47a904a70..69caedf29ed867c76677df62eac15efe7779fc65 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/Brain.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/Brain.java
-@@ -53,6 +53,10 @@ public class Brain<E extends LivingEntity> {
+@@ -53,6 +53,12 @@ public class Brain<E extends LivingEntity> {
      private final Set<Activity> activeActivities = Sets.newHashSet();
      private Activity defaultActivity = Activity.IDLE;
      private long lastScheduleUpdate = -9999L;
 +    // Paper start - Dynamic brain activation
 +    private int behaviorTick;
-+    private boolean dirty = true;
++    private boolean dirtyMemories = true;
++    private boolean dirtyActivities = true;
++    private boolean active;
 +    // Paper end - Dynamic brain activation
  
      public static <E extends LivingEntity> Brain.Provider<E> provider(Collection<? extends MemoryModuleType<?>> memoryModules, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) {
          return new Brain.Provider<>(memoryModules, sensors);
-@@ -144,6 +148,7 @@ public class Brain<E extends LivingEntity> {
+@@ -144,6 +150,7 @@ public class Brain<E extends LivingEntity> {
      }
  
      public void clearMemories() {
-+        this.dirty = true; // Paper - Dynamic brain activation
++        this.dirtyMemories = true; // Paper - Dynamic brain activation
          this.memories.keySet().forEach((type) -> {
              this.memories.put(type, Optional.empty());
          });
-@@ -170,6 +175,7 @@ public class Brain<E extends LivingEntity> {
+@@ -170,6 +177,7 @@ public class Brain<E extends LivingEntity> {
              if (memory.isPresent() && this.isEmptyCollection(memory.get().getValue())) {
                  this.eraseMemory(type);
              } else {
-+                this.dirty = true; // Paper - Dynamic brain activation
++                this.dirtyMemories = true; // Paper - Dynamic brain activation
                  this.memories.put(type, memory);
              }
          }
-@@ -314,6 +320,7 @@ public class Brain<E extends LivingEntity> {
+@@ -281,6 +289,7 @@ public class Brain<E extends LivingEntity> {
+ 
+     private void setActiveActivity(Activity except) {
+         if (!this.isActive(except)) {
++            this.dirtyActivities = true; // Paper - Dynamic brain activation
+             this.eraseMemoriesForOtherActivitesThan(except);
+             this.activeActivities.clear();
+             this.activeActivities.addAll(this.coreActivities);
+@@ -314,6 +323,7 @@ public class Brain<E extends LivingEntity> {
      }
  
      public void setActiveActivityToFirstValid(List<Activity> activities) {
-+        if (!this.dirty) return; // Paper - Dynamic brain activation; assumes that this is always called with the same list
++        if (!this.dirtyMemories) return; // Paper - Dynamic brain activation; assumes that this is always called with the same list
          for(Activity activity : activities) {
              if (this.activityRequirementsAreMet(activity)) {
                  this.setActiveActivity(activity);
-@@ -321,6 +328,7 @@ public class Brain<E extends LivingEntity> {
+@@ -321,6 +331,7 @@ public class Brain<E extends LivingEntity> {
              }
          }
  
-+        this.dirty = false; // Paper - Dynamic brain activation
++        this.dirtyMemories = false; // Paper - Dynamic brain activation
      }
  
      public void setDefaultActivity(Activity activity) {
-@@ -346,6 +354,7 @@ public class Brain<E extends LivingEntity> {
+@@ -346,6 +357,7 @@ public class Brain<E extends LivingEntity> {
      }
  
      public void addActivityAndRemoveMemoriesWhenStopped(Activity activity, ImmutableList<? extends Pair<Integer, ? extends BehaviorControl<? super E>>> indexedTasks, Set<Pair<MemoryModuleType<?>, MemoryStatus>> requiredMemories, Set<MemoryModuleType<?>> forgettingMemories) {
-+        this.dirty = true; // Paper - Dynamic brain activation; just in case
++        this.dirtyMemories = true; // Paper - Dynamic brain activation; just in case
          this.activityRequirements.put(activity, requiredMemories);
          if (!forgettingMemories.isEmpty()) {
              this.activityMemoriesToEraseWhenStopped.put(activity, forgettingMemories);
-@@ -384,6 +393,7 @@ public class Brain<E extends LivingEntity> {
+@@ -384,6 +396,7 @@ public class Brain<E extends LivingEntity> {
      }
  
      public void tick(ServerLevel world, E entity) {
-+        if (this.behaviorTick++ % entity.activatedPriority != 0) return; // Paper  - Dynamic brain activation
++        this.active = this.behaviorTick++ % entity.activatedPriority == 0; // Paper - Dynamic brain activation
          this.forgetOutdatedMemories();
          this.tickSensors(world, entity);
          this.startEachNonRunningBehavior(world, entity);
+@@ -391,7 +404,13 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     private void tickSensors(ServerLevel world, E entity) {
+-        for(Sensor<? super E> sensor : this.sensors.values()) {
++        // Paper start - Dynamic brain activation
++        for (final Map.Entry<SensorType<? extends Sensor<? super E>>, Sensor<? super E>> entry : this.sensors.entrySet()) {
++            if (!this.active && entry.getKey() != SensorType.IS_IN_WATER) {
++                continue;
++            }
++            final Sensor<? super E> sensor = entry.getValue();
++            // Paper end - Dynamic brain activation
+             sensor.tick(world, entity);
+         }
+ 
+@@ -421,6 +440,12 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     private void startEachNonRunningBehavior(ServerLevel world, E entity) {
++        // Paper start - Dynamic brain activation
++        if (!this.dirtyActivities) {
++            return;
++        }
++        this.dirtyActivities = false;
++        // Paper end - Dynamic brain activation
+         long l = world.getGameTime();
+ 
+         for(Map<Activity, Set<BehaviorControl<? super E>>> map : this.availableBehaviorsByPriority.values()) {
+@@ -442,6 +467,7 @@ public class Brain<E extends LivingEntity> {
+         long l = world.getGameTime();
+ 
+         for(BehaviorControl<? super E> behaviorControl : this.getRunningBehaviors()) {
++            if (!this.active && !(behaviorControl instanceof net.minecraft.world.entity.ai.behavior.Swim)) continue; // Paper - Dynamic brain activation
+             behaviorControl.tickOrStop(world, entity, l);
+         }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 index b738ee2d3801fadfd09313f05ae24593e56b0ec6..c08456ab11ed9c4637b5a65066ae11972366836f 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
