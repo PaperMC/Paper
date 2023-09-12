@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Tue, 12 Sep 2023 21:18:04 +1000
+Subject: [PATCH] Optimize brain ticking
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/Brain.java b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+index f34b3548990d4398123352c439b598d47a904a70..2005cd4ee368c0638f63297a5a0cfaaf86135633 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/Brain.java
++++ b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+@@ -53,6 +53,10 @@ public class Brain<E extends LivingEntity> {
+     private final Set<Activity> activeActivities = Sets.newHashSet();
+     private Activity defaultActivity = Activity.IDLE;
+     private long lastScheduleUpdate = -9999L;
++    // Paper start
++    private boolean dirtyMemories = true;
++    private boolean dirtyActivities = true;
++    // Paper end
+ 
+     public static <E extends LivingEntity> Brain.Provider<E> provider(Collection<? extends MemoryModuleType<?>> memoryModules, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) {
+         return new Brain.Provider<>(memoryModules, sensors);
+@@ -144,6 +148,7 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public void clearMemories() {
++        this.dirtyMemories = true; // Paper
+         this.memories.keySet().forEach((type) -> {
+             this.memories.put(type, Optional.empty());
+         });
+@@ -170,6 +175,7 @@ public class Brain<E extends LivingEntity> {
+             if (memory.isPresent() && this.isEmptyCollection(memory.get().getValue())) {
+                 this.eraseMemory(type);
+             } else {
++                this.dirtyMemories = true; // Paper
+                 this.memories.put(type, memory);
+             }
+         }
+@@ -281,6 +287,7 @@ public class Brain<E extends LivingEntity> {
+ 
+     private void setActiveActivity(Activity except) {
+         if (!this.isActive(except)) {
++            this.dirtyActivities = true;
+             this.eraseMemoriesForOtherActivitesThan(except);
+             this.activeActivities.clear();
+             this.activeActivities.addAll(this.coreActivities);
+@@ -314,6 +321,7 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public void setActiveActivityToFirstValid(List<Activity> activities) {
++        if (!this.dirtyMemories) return; // Paper - this assumes that the list is always going to be the same
+         for(Activity activity : activities) {
+             if (this.activityRequirementsAreMet(activity)) {
+                 this.setActiveActivity(activity);
+@@ -321,6 +329,7 @@ public class Brain<E extends LivingEntity> {
+             }
+         }
+ 
++        this.dirtyMemories = false; // Paper
+     }
+ 
+     public void setDefaultActivity(Activity activity) {
+@@ -346,6 +355,7 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public void addActivityAndRemoveMemoriesWhenStopped(Activity activity, ImmutableList<? extends Pair<Integer, ? extends BehaviorControl<? super E>>> indexedTasks, Set<Pair<MemoryModuleType<?>, MemoryStatus>> requiredMemories, Set<MemoryModuleType<?>> forgettingMemories) {
++        this.dirtyMemories = true; // Paper
+         this.activityRequirements.put(activity, requiredMemories);
+         if (!forgettingMemories.isEmpty()) {
+             this.activityMemoriesToEraseWhenStopped.put(activity, forgettingMemories);
+@@ -421,6 +431,12 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     private void startEachNonRunningBehavior(ServerLevel world, E entity) {
++        // Paper start - Dynamic brain activation
++        if (!this.dirtyActivities) {
++            return;
++        }
++        this.dirtyActivities = false;
++        // Paper end - Dynamic brain activation
+         long l = world.getGameTime();
+ 
+         for(Map<Activity, Set<BehaviorControl<? super E>>> map : this.availableBehaviorsByPriority.values()) {
+@@ -524,3 +540,4 @@ public class Brain<E extends LivingEntity> {
+         }
+     }
+ }
++
