@@ -491,6 +491,19 @@ index e9a6e5be5f33a342f7e5c496f0f1c64b2f302ace..f0db59a556deaefefbdaca121585c0fd
          return offers;
      }
  
+diff --git a/src/main/java/org/bukkit/event/entity/EntityTargetLivingEntityEvent.java b/src/main/java/org/bukkit/event/entity/EntityTargetLivingEntityEvent.java
+index 090ec6f96ca9b7f760389994da988c44c32b9976..e6b4d4c1722bf4a11744a421d09646b22745b138 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityTargetLivingEntityEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityTargetLivingEntityEvent.java
+@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
+  * LivingEntity's.
+  */
+ public class EntityTargetLivingEntityEvent extends EntityTargetEvent {
+-    public EntityTargetLivingEntityEvent(@NotNull final Entity entity, @Nullable final LivingEntity target, @Nullable final TargetReason reason) {
++    public EntityTargetLivingEntityEvent(@NotNull final Entity entity, @Nullable final LivingEntity target, @NotNull final TargetReason reason) { // Paper
+         super(entity, target, reason);
+     }
+ 
 diff --git a/src/main/java/org/bukkit/event/entity/EntityToggleSwimEvent.java b/src/main/java/org/bukkit/event/entity/EntityToggleSwimEvent.java
 index e1123295b9511a2c610a1baf7195638f7f3e64c4..273ae8e5da0a858d3b82d1b0f5992318ff49f145 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityToggleSwimEvent.java
@@ -510,6 +523,75 @@ index e1123295b9511a2c610a1baf7195638f7f3e64c4..273ae8e5da0a858d3b82d1b0f5992318
      @Override
      public void setCancelled(boolean cancel) {
          this.cancel = cancel;
+diff --git a/src/main/java/org/bukkit/event/entity/SpawnerSpawnEvent.java b/src/main/java/org/bukkit/event/entity/SpawnerSpawnEvent.java
+index 9353f0d09272404f42167ab8b7ad83a03620c436..f3ec8f67328b266defb31a44a36d31401d5e9371 100644
+--- a/src/main/java/org/bukkit/event/entity/SpawnerSpawnEvent.java
++++ b/src/main/java/org/bukkit/event/entity/SpawnerSpawnEvent.java
+@@ -12,12 +12,19 @@ import org.jetbrains.annotations.NotNull;
+ public class SpawnerSpawnEvent extends EntitySpawnEvent {
+     private final CreatureSpawner spawner;
+ 
+-    public SpawnerSpawnEvent(@NotNull final Entity spawnee, @NotNull final CreatureSpawner spawner) {
++    public SpawnerSpawnEvent(@NotNull final Entity spawnee, @org.jetbrains.annotations.Nullable final CreatureSpawner spawner) { // Paper
+         super(spawnee);
+         this.spawner = spawner;
+     }
+ 
+-    @NotNull
++    /**
++     * Gets the spawner tile state, or null
++     * when the entity is spawned from a minecart
++     * spawner.
++     *
++     * @return the spawner tile state
++     */
++    @org.jetbrains.annotations.Nullable // Paper
+     public CreatureSpawner getSpawner() {
+         return spawner;
+     }
+diff --git a/src/main/java/org/bukkit/event/hanging/HangingBreakByEntityEvent.java b/src/main/java/org/bukkit/event/hanging/HangingBreakByEntityEvent.java
+index 68517811f63838bdad41073ee26be82f95042a8e..454885e47611edd707358ddfe0a01b7acf9ad5c8 100644
+--- a/src/main/java/org/bukkit/event/hanging/HangingBreakByEntityEvent.java
++++ b/src/main/java/org/bukkit/event/hanging/HangingBreakByEntityEvent.java
+@@ -11,22 +11,21 @@ import org.jetbrains.annotations.Nullable;
+ public class HangingBreakByEntityEvent extends HangingBreakEvent {
+     private final Entity remover;
+ 
+-    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @Nullable final Entity remover) {
++    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @NotNull final Entity remover) { // Paper
+         this(hanging, remover, HangingBreakEvent.RemoveCause.ENTITY);
+     }
+ 
+-    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @Nullable final Entity remover, @NotNull final HangingBreakEvent.RemoveCause cause) {
++    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @NotNull final Entity remover, @NotNull final HangingBreakEvent.RemoveCause cause) { // Paper
+         super(hanging, cause);
+         this.remover = remover;
+     }
+ 
+     /**
+      * Gets the entity that removed the hanging entity.
+-     * May be null, for example when broken by an explosion.
+      *
+      * @return the entity that removed the hanging entity
+      */
+-    @Nullable
++    @NotNull // Paper
+     public Entity getRemover() {
+         return remover;
+     }
+diff --git a/src/main/java/org/bukkit/event/inventory/HopperInventorySearchEvent.java b/src/main/java/org/bukkit/event/inventory/HopperInventorySearchEvent.java
+index 80a0a4ad813d6453b30273d25942e6612bb05c1b..18bb808e73c7a78f367ccdb44d5fe12bc54672cb 100644
+--- a/src/main/java/org/bukkit/event/inventory/HopperInventorySearchEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/HopperInventorySearchEvent.java
+@@ -34,7 +34,7 @@ public class HopperInventorySearchEvent extends BlockEvent {
+         DESTINATION;
+     }
+ 
+-    public HopperInventorySearchEvent(@NotNull Inventory inventory, @NotNull ContainerType containerType, @NotNull Block hopper, @NotNull Block searchBlock) {
++    public HopperInventorySearchEvent(@Nullable Inventory inventory, @NotNull ContainerType containerType, @NotNull Block hopper, @NotNull Block searchBlock) { // Paper
+         super(hopper);
+         this.inventory = inventory;
+         this.containerType = containerType;
 diff --git a/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java b/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java
 index 1b2267f4e8ebded198773ec80e2bff2c861c7084..1a58734d919fae247eeb85dd785fd59990856505 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java
@@ -522,6 +604,28 @@ index 1b2267f4e8ebded198773ec80e2bff2c861c7084..1a58734d919fae247eeb85dd785fd599
 +    @NotNull // Paper
      public Location getTo() {
          return to;
+     }
+diff --git a/src/main/java/org/bukkit/event/raid/RaidSpawnWaveEvent.java b/src/main/java/org/bukkit/event/raid/RaidSpawnWaveEvent.java
+index cd58dd7de781823804701fc023706e805c0142a8..1b8bb5241efcf4a90fd098f2000f8394072dca4a 100644
+--- a/src/main/java/org/bukkit/event/raid/RaidSpawnWaveEvent.java
++++ b/src/main/java/org/bukkit/event/raid/RaidSpawnWaveEvent.java
+@@ -19,7 +19,7 @@ public class RaidSpawnWaveEvent extends RaidEvent {
+     private final List<Raider> raiders;
+     private final Raider leader;
+ 
+-    public RaidSpawnWaveEvent(@NotNull Raid raid, @NotNull World world, @Nullable Raider leader, @NotNull List<Raider> raiders) {
++    public RaidSpawnWaveEvent(@NotNull Raid raid, @NotNull World world, @NotNull Raider leader, @NotNull List<Raider> raiders) { // Paper
+         super(raid, world);
+         this.raiders = raiders;
+         this.leader = leader;
+@@ -30,7 +30,7 @@ public class RaidSpawnWaveEvent extends RaidEvent {
+      *
+      * @return {@link Raider}
+      */
+-    @Nullable
++    @NotNull // Paper
+     public Raider getPatrolLeader() {
+         return leader;
      }
 diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleEntityCollisionEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleEntityCollisionEvent.java
 index 6bafc62e2235a6b783cbf96f4dabeeaf02bd5178..50c762d777ac90a05772501a28cacff8fd3f5126 100644
