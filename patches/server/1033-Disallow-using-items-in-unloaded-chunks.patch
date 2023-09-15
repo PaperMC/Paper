@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: pseudospace0 <pseudospace0@proton.me>
+Date: Fri, 15 Sep 2023 15:08:17 +0200
+Subject: [PATCH] Disallow using items in unloaded chunks
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 3c0651fa5a5db880202c9a3805a6455269c5f16d..d242fe521240aee461e72bc4f19696d6b72bc739 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1983,13 +1983,18 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         if (this.player.isImmobile()) return; // CraftBukkit
+         if (!this.checkLimit(packet.timestamp)) return; // Spigot - check limit
++        // Paper start - Prevent using items in unloaded chunks
++        BlockHitResult movingobjectpositionblock = packet.getHitResult();
++        if (this.player.level().getChunkIfLoadedImmediately(movingobjectpositionblock.getBlockPos().getX() >> 4, movingobjectpositionblock.getBlockPos().getZ() >> 4) == null) {
++            return;
++        }
++        // Paper end
+         this.player.connection.ackBlockChangesUpTo(packet.getSequence());
+         ServerLevel worldserver = this.player.serverLevel();
+         InteractionHand enumhand = packet.getHand();
+         ItemStack itemstack = this.player.getItemInHand(enumhand);
+ 
+         if (itemstack.isItemEnabled(worldserver.enabledFeatures())) {
+-            BlockHitResult movingobjectpositionblock = packet.getHitResult();
+             Vec3 vec3d = movingobjectpositionblock.getLocation();
+             // Paper start - improve distance check
+             if (!Double.isFinite(vec3d.x) || !Double.isFinite(vec3d.y) || !Double.isFinite(vec3d.z)) {
