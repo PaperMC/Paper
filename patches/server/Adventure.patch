@@ -378,6 +378,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.network.chat.OutgoingChatMessage;
 +import net.minecraft.network.chat.PlayerChatMessage;
 +import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerPlayer;
 +import org.bukkit.command.ConsoleCommandSender;
@@ -397,6 +398,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +@DefaultQualifier(NonNull.class)
 +public final class ChatProcessor {
++    static final ResourceKey<ChatType> PAPER_RAW = ResourceKey.create(Registries.CHAT_TYPE, new ResourceLocation(ResourceLocation.PAPER_NAMESPACE, "raw"));
 +    static final String DEFAULT_LEGACY_FORMAT = "<%1$s> %2$s"; // copied from PlayerChatEvent/AsyncPlayerChatEvent
 +    final MinecraftServer server;
 +    final ServerPlayer player;
@@ -568,7 +570,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final ChatRenderer renderer = event.renderer();
 +
 +        final Set<Audience> viewers = event.viewers();
-+        final ResourceKey<ChatType> chatTypeKey = renderer instanceof ChatRenderer.Default ? ChatType.CHAT : ChatType.RAW;
++        final ResourceKey<ChatType> chatTypeKey = renderer instanceof ChatRenderer.Default ? ChatType.CHAT : PAPER_RAW;
 +        final ChatType.Bound chatType = ChatType.bind(chatTypeKey, this.player.level().registryAccess(), PaperAdventure.asVanilla(displayName(player)));
 +
 +        OutgoingChat outgoingChat = viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy() ? new ServerOutgoingChat() : new ViewersOutgoingChat();
@@ -1825,26 +1827,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  }
-diff --git a/src/main/java/net/minecraft/network/chat/ChatType.java b/src/main/java/net/minecraft/network/chat/ChatType.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/chat/ChatType.java
-+++ b/src/main/java/net/minecraft/network/chat/ChatType.java
-@@ -0,0 +0,0 @@ public record ChatType(ChatTypeDecoration chat, ChatTypeDecoration narration) {
-     public static final ResourceKey<ChatType> TEAM_MSG_COMMAND_INCOMING = create("team_msg_command_incoming");
-     public static final ResourceKey<ChatType> TEAM_MSG_COMMAND_OUTGOING = create("team_msg_command_outgoing");
-     public static final ResourceKey<ChatType> EMOTE_COMMAND = create("emote_command");
-+    public static final ResourceKey<ChatType> RAW = create("raw"); // Paper
- 
-     private static ResourceKey<ChatType> create(String id) {
-         return ResourceKey.create(Registries.CHAT_TYPE, new ResourceLocation(id));
-@@ -0,0 +0,0 @@ public record ChatType(ChatTypeDecoration chat, ChatTypeDecoration narration) {
-         messageTypeRegisterable.register(TEAM_MSG_COMMAND_INCOMING, new ChatType(ChatTypeDecoration.teamMessage("chat.type.team.text"), ChatTypeDecoration.withSender("chat.type.text.narrate")));
-         messageTypeRegisterable.register(TEAM_MSG_COMMAND_OUTGOING, new ChatType(ChatTypeDecoration.teamMessage("chat.type.team.sent"), ChatTypeDecoration.withSender("chat.type.text.narrate")));
-         messageTypeRegisterable.register(EMOTE_COMMAND, new ChatType(ChatTypeDecoration.withSender("chat.type.emote"), ChatTypeDecoration.withSender("chat.type.emote")));
-+        messageTypeRegisterable.register(RAW, new ChatType(new ChatTypeDecoration("%s", java.util.List.of(ChatTypeDecoration.Parameter.CONTENT), Style.EMPTY), new ChatTypeDecoration("%s", java.util.List.of(ChatTypeDecoration.Parameter.CONTENT), Style.EMPTY))); // Paper
-     }
- 
-     public static ChatType.Bound bind(ResourceKey<ChatType> typeKey, Entity entity) {
 diff --git a/src/main/java/net/minecraft/network/chat/Component.java b/src/main/java/net/minecraft/network/chat/Component.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/Component.java
@@ -2172,22 +2154,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          buf.writeComponent(this.header);
          buf.writeComponent(this.footer);
      }
-diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-+++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-@@ -0,0 +0,0 @@ public class RegistryDataLoader {
-         RegistryOps.RegistryInfoLookup registryInfoLookup = createContext(baseRegistryManager, list);
-         list.forEach((loader) -> {
-             loader.getSecond().load(resourceManager, registryInfoLookup);
-+            // Paper start
-+            if (loader.getFirst().key() == Registries.CHAT_TYPE) {
-+                Registry.register((Registry<ChatType>) loader.getFirst(), ChatType.RAW, new ChatType(new net.minecraft.network.chat.ChatTypeDecoration("%s", List.of(net.minecraft.network.chat.ChatTypeDecoration.Parameter.CONTENT), net.minecraft.network.chat.Style.EMPTY), new net.minecraft.network.chat.ChatTypeDecoration("%s", List.of(net.minecraft.network.chat.ChatTypeDecoration.Parameter.CONTENT), net.minecraft.network.chat.Style.EMPTY))); // CraftBukkit
-+            }
-+            // Paper end
-         });
-         list.forEach((loader) -> {
-             Registry<?> registry = loader.getFirst();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -5069,6 +5035,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/resources/META-INF/services/net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer$Provider
 @@ -0,0 +1 @@
 +io.papermc.paper.adventure.providers.PlainTextComponentSerializerProviderImpl
+diff --git a/src/main/resources/data/paper/chat_type/raw.json b/src/main/resources/data/paper/chat_type/raw.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/resources/data/paper/chat_type/raw.json
+@@ -0,0 +0,0 @@
++{
++    "chat": {
++        "parameters": [
++            "content"
++        ],
++        "translation_key": "%s"
++    },
++    "narration": {
++        "parameters": [
++            "content"
++        ],
++        "translation_key": "%s"
++    }
++}
 diff --git a/src/test/java/io/papermc/paper/adventure/ComponentServicesTest.java b/src/test/java/io/papermc/paper/adventure/ComponentServicesTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
