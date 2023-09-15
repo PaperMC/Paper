@@ -19,109 +19,97 @@ public net.minecraft.world.level.levelgen.SurfaceSystem getOrCreateRandomFactory
 
 Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
-diff --git a/src/main/java/net/minecraft/data/worldgen/SurfaceRuleData.java b/src/main/java/net/minecraft/data/worldgen/SurfaceRuleData.java
-index 06e1774dfbb667aca69bc30c9675ed472cb5728c..1d5bc86516df3781aea894c3afd340421ba51a17 100644
---- a/src/main/java/net/minecraft/data/worldgen/SurfaceRuleData.java
-+++ b/src/main/java/net/minecraft/data/worldgen/SurfaceRuleData.java
-@@ -53,6 +53,66 @@ public class SurfaceRuleData {
-         return overworldLike(true, false, true);
-     }
- 
-+    // Paper start
-+    // Taken from SurfaceRules$VerticalGradientConditionSource
-+    // isRoof = true if roof, false if floor
-+    public record PaperBedrockConditionSource(net.minecraft.resources.ResourceLocation randomName, VerticalAnchor trueAtAndBelow, VerticalAnchor falseAtAndAbove, boolean isRoof) implements SurfaceRules.ConditionSource {
+diff --git a/src/main/java/io/papermc/paper/world/worldgen/OptionallyFlatBedrockConditionSource.java b/src/main/java/io/papermc/paper/world/worldgen/OptionallyFlatBedrockConditionSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..02d98ec591b676acf64460d14d608860d32a362a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/worldgen/OptionallyFlatBedrockConditionSource.java
+@@ -0,0 +1,76 @@
++package io.papermc.paper.world.worldgen;
 +
-+        public static final net.minecraft.util.KeyDispatchDataCodec<PaperBedrockConditionSource> CODEC = net.minecraft.util.KeyDispatchDataCodec.of(com.mojang.serialization.codecs.RecordCodecBuilder.<PaperBedrockConditionSource>mapCodec((instance) -> {
-+            return instance.group(
-+                net.minecraft.resources.ResourceLocation.CODEC.fieldOf("random_name").forGetter(PaperBedrockConditionSource::randomName),
-+                VerticalAnchor.CODEC.fieldOf("true_at_and_below").forGetter(PaperBedrockConditionSource::trueAtAndBelow),
-+                VerticalAnchor.CODEC.fieldOf("false_at_and_above").forGetter(PaperBedrockConditionSource::falseAtAndAbove),
-+                com.mojang.serialization.Codec.BOOL.fieldOf("roof").forGetter(PaperBedrockConditionSource::isRoof)
-+                ).apply(instance, PaperBedrockConditionSource::new);
-+        }));
++import com.mojang.serialization.Codec;
++import com.mojang.serialization.codecs.RecordCodecBuilder;
++import net.minecraft.core.Registry;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.util.KeyDispatchDataCodec;
++import net.minecraft.util.Mth;
++import net.minecraft.util.RandomSource;
++import net.minecraft.world.level.levelgen.PositionalRandomFactory;
++import net.minecraft.world.level.levelgen.SurfaceRules;
++import net.minecraft.world.level.levelgen.VerticalAnchor;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+        public PaperBedrockConditionSource(String randomName, net.minecraft.world.level.levelgen.VerticalAnchor trueAtAndBelow, net.minecraft.world.level.levelgen.VerticalAnchor falseAtAndAbove, boolean invert) {
-+            this(new net.minecraft.resources.ResourceLocation(randomName), trueAtAndBelow, falseAtAndAbove, invert);
-+        }
++// Modelled off of SurfaceRules$VerticalGradientConditionSource
++@DefaultQualifier(NonNull.class)
++public record OptionallyFlatBedrockConditionSource(ResourceLocation randomName, VerticalAnchor trueAtAndBelow, VerticalAnchor falseAtAndAbove, boolean isRoof) implements SurfaceRules.ConditionSource {
 +
-+        @Override
-+        public net.minecraft.util.KeyDispatchDataCodec<PaperBedrockConditionSource>codec() {
-+            return CODEC;
-+        }
++    private static final ResourceKey<Codec<? extends SurfaceRules.ConditionSource>> CODEC_RESOURCE_KEY = ResourceKey.create(Registries.MATERIAL_CONDITION, new ResourceLocation(ResourceLocation.PAPER_NAMESPACE, "optionally_flat_bedrock_condition_source"));
++    private static final KeyDispatchDataCodec<OptionallyFlatBedrockConditionSource> CODEC = KeyDispatchDataCodec.of(RecordCodecBuilder.mapCodec((instance) -> {
++        return instance.group(
++            ResourceLocation.CODEC.fieldOf("random_name").forGetter(OptionallyFlatBedrockConditionSource::randomName),
++            VerticalAnchor.CODEC.fieldOf("true_at_and_below").forGetter(OptionallyFlatBedrockConditionSource::trueAtAndBelow),
++            VerticalAnchor.CODEC.fieldOf("false_at_and_above").forGetter(OptionallyFlatBedrockConditionSource::falseAtAndAbove),
++            Codec.BOOL.fieldOf("is_roof").forGetter(OptionallyFlatBedrockConditionSource::isRoof)
++        ).apply(instance, OptionallyFlatBedrockConditionSource::new);
++    }));
 +
-+        @Override
-+        public SurfaceRules.Condition apply(SurfaceRules.Context context) {
-+            boolean hasFlatBedrock = context.context.getWorld().paperConfig().environment.generateFlatBedrock;
-+            int trueAtY = this.trueAtAndBelow().resolveY(context.context);
-+            int falseAtY = this.falseAtAndAbove().resolveY(context.context);
++    public static void bootstrap() {
++        Registry.register(BuiltInRegistries.MATERIAL_CONDITION, CODEC_RESOURCE_KEY, CODEC.codec());
++    }
 +
-+            int y = isRoof ? Math.max(falseAtY, trueAtY) - 1 : Math.min(falseAtY, trueAtY) ;
-+            final int i = hasFlatBedrock ? y : trueAtY;
-+            final int j = hasFlatBedrock ? y : falseAtY;
-+            // TODO access transformer for randomState
-+            final net.minecraft.world.level.levelgen.PositionalRandomFactory positionalRandomFactory = context.randomState.getOrCreateRandomFactory(this.randomName());
++    @Override
++    public KeyDispatchDataCodec<? extends SurfaceRules.ConditionSource> codec() {
++        return CODEC;
++    }
 +
-+            class VerticalGradientCondition extends SurfaceRules.LazyYCondition {
-+                VerticalGradientCondition(SurfaceRules.Context context) {
-+                    super(context);
-+                }
++    @Override
++    public SurfaceRules.Condition apply(final SurfaceRules.Context context) {
++        boolean hasFlatBedrock = context.context.getWorld().paperConfig().environment.generateFlatBedrock;
++        int tempTrueAtAndBelowY = this.trueAtAndBelow().resolveY(context.context);
++        int tempFalseAtAndAboveY = this.falseAtAndAbove().resolveY(context.context);
 +
-+                @Override
-+                protected boolean compute() {
-+                    int y = this.context.blockY;
-+                    if (y <= i) {
-+                        return true;
-+                    } else if (y >= j) {
-+                        return false;
-+                    } else {
-+                        double d = net.minecraft.util.Mth.map((double) y, (double) i, (double) j, 1.0D, 0.0D);
-+                        net.minecraft.util.RandomSource randomSource = positionalRandomFactory.at(this.context.blockX, y, this.context.blockZ);
-+                        return (double) randomSource.nextFloat() < d;
-+                    }
-+                }
++        int flatYLevel = this.isRoof ? Math.max(tempFalseAtAndAboveY, tempTrueAtAndBelowY) - 1 : Math.min(tempFalseAtAndAboveY, tempTrueAtAndBelowY);
++        final int trueAtAndBelowY = hasFlatBedrock ? flatYLevel : tempTrueAtAndBelowY;
++        final int falseAtAndAboveY = hasFlatBedrock ? flatYLevel : tempFalseAtAndAboveY;
++
++        final PositionalRandomFactory positionalRandomFactory = context.randomState.getOrCreateRandomFactory(this.randomName());
++
++        class VerticalGradientCondition extends SurfaceRules.LazyYCondition {
++            VerticalGradientCondition(SurfaceRules.Context context) {
++                super(context);
 +            }
 +
-+            return new VerticalGradientCondition(context);
++            @Override
++            protected boolean compute() {
++                int blockY = this.context.blockY;
++                if (blockY <= trueAtAndBelowY) {
++                    return true;
++                } else if (blockY >= falseAtAndAboveY) {
++                    return false;
++                } else {
++                    double d = Mth.map(blockY, trueAtAndBelowY, falseAtAndAboveY, 1.0D, 0.0D);
++                    RandomSource randomSource = positionalRandomFactory.at(this.context.blockX, blockY, this.context.blockZ);
++                    return (double)randomSource.nextFloat() < d;
++                }
++            }
 +        }
-+    }
-+    // Paper end
 +
-     public static SurfaceRules.RuleSource overworldLike(boolean surface, boolean bedrockRoof, boolean bedrockFloor) {
-         SurfaceRules.ConditionSource conditionSource = SurfaceRules.yBlockCheck(VerticalAnchor.absolute(97), 2);
-         SurfaceRules.ConditionSource conditionSource2 = SurfaceRules.yBlockCheck(VerticalAnchor.absolute(256), 0);
-@@ -83,11 +143,11 @@ public class SurfaceRuleData {
-         SurfaceRules.RuleSource ruleSource9 = SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.WOODED_BADLANDS), SurfaceRules.ifTrue(conditionSource, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource16, COARSE_DIRT), SurfaceRules.ifTrue(conditionSource17, COARSE_DIRT), SurfaceRules.ifTrue(conditionSource18, COARSE_DIRT), ruleSource))), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.SWAMP), SurfaceRules.ifTrue(conditionSource6, SurfaceRules.ifTrue(SurfaceRules.not(conditionSource7), SurfaceRules.ifTrue(SurfaceRules.noiseCondition(Noises.SWAMP, 0.0D), WATER)))), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.MANGROVE_SWAMP), SurfaceRules.ifTrue(conditionSource5, SurfaceRules.ifTrue(SurfaceRules.not(conditionSource7), SurfaceRules.ifTrue(SurfaceRules.noiseCondition(Noises.SWAMP, 0.0D), WATER)))))), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.BADLANDS, Biomes.ERODED_BADLANDS, Biomes.WOODED_BADLANDS), SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource2, ORANGE_TERRACOTTA), SurfaceRules.ifTrue(conditionSource4, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource16, TERRACOTTA), SurfaceRules.ifTrue(conditionSource17, TERRACOTTA), SurfaceRules.ifTrue(conditionSource18, TERRACOTTA), SurfaceRules.bandlands())), SurfaceRules.ifTrue(conditionSource8, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.ON_CEILING, RED_SANDSTONE), RED_SAND)), SurfaceRules.ifTrue(SurfaceRules.not(conditionSource11), ORANGE_TERRACOTTA), SurfaceRules.ifTrue(conditionSource10, WHITE_TERRACOTTA), ruleSource3)), SurfaceRules.ifTrue(conditionSource3, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource7, SurfaceRules.ifTrue(SurfaceRules.not(conditionSource4), ORANGE_TERRACOTTA)), SurfaceRules.bandlands())), SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.ifTrue(conditionSource10, WHITE_TERRACOTTA)))), SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(conditionSource8, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource12, SurfaceRules.ifTrue(conditionSource11, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource9, AIR), SurfaceRules.ifTrue(SurfaceRules.temperature(), ICE), WATER))), ruleSource8))), SurfaceRules.ifTrue(conditionSource10, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(conditionSource12, SurfaceRules.ifTrue(conditionSource11, WATER))), SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, ruleSource7), SurfaceRules.ifTrue(conditionSource14, SurfaceRules.ifTrue(SurfaceRules.DEEP_UNDER_FLOOR, SANDSTONE)), SurfaceRules.ifTrue(conditionSource15, SurfaceRules.ifTrue(SurfaceRules.VERY_DEEP_UNDER_FLOOR, SANDSTONE)))), SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.FROZEN_PEAKS, Biomes.JAGGED_PEAKS), STONE), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.WARM_OCEAN, Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN), ruleSource2), ruleSource3)));
-         ImmutableList.Builder<SurfaceRules.RuleSource> builder = ImmutableList.builder();
-         if (bedrockRoof) {
--            builder.add(SurfaceRules.ifTrue(SurfaceRules.not(SurfaceRules.verticalGradient("bedrock_roof", VerticalAnchor.belowTop(5), VerticalAnchor.top())), BEDROCK));
-+            builder.add(SurfaceRules.ifTrue(SurfaceRules.not(new PaperBedrockConditionSource("bedrock_roof", VerticalAnchor.belowTop(5), VerticalAnchor.top(), true)), BEDROCK)); // Paper
-         }
- 
-         if (bedrockFloor) {
--            builder.add(SurfaceRules.ifTrue(SurfaceRules.verticalGradient("bedrock_floor", VerticalAnchor.bottom(), VerticalAnchor.aboveBottom(5)), BEDROCK));
-+            builder.add(SurfaceRules.ifTrue(new PaperBedrockConditionSource("bedrock_floor", VerticalAnchor.bottom(), VerticalAnchor.aboveBottom(5), false), BEDROCK)); // Paper
-         }
- 
-         SurfaceRules.RuleSource ruleSource10 = SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), ruleSource9);
-@@ -112,7 +172,7 @@ public class SurfaceRuleData {
-         SurfaceRules.ConditionSource conditionSource11 = SurfaceRules.noiseCondition(Noises.NETHER_WART, 1.17D);
-         SurfaceRules.ConditionSource conditionSource12 = SurfaceRules.noiseCondition(Noises.NETHER_STATE_SELECTOR, 0.0D);
-         SurfaceRules.RuleSource ruleSource = SurfaceRules.ifTrue(conditionSource9, SurfaceRules.ifTrue(conditionSource3, SurfaceRules.ifTrue(conditionSource4, GRAVEL)));
--        return SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.verticalGradient("bedrock_floor", VerticalAnchor.bottom(), VerticalAnchor.aboveBottom(5)), BEDROCK), SurfaceRules.ifTrue(SurfaceRules.not(SurfaceRules.verticalGradient("bedrock_roof", VerticalAnchor.belowTop(5), VerticalAnchor.top())), BEDROCK), SurfaceRules.ifTrue(conditionSource5, NETHERRACK), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.BASALT_DELTAS), SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.UNDER_CEILING, BASALT), SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(ruleSource, SurfaceRules.ifTrue(conditionSource12, BASALT), BLACKSTONE)))), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.SOUL_SAND_VALLEY), SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.UNDER_CEILING, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource12, SOUL_SAND), SOUL_SOIL)), SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(ruleSource, SurfaceRules.ifTrue(conditionSource12, SOUL_SAND), SOUL_SOIL)))), SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.not(conditionSource2), SurfaceRules.ifTrue(conditionSource6, LAVA)), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.WARPED_FOREST), SurfaceRules.ifTrue(SurfaceRules.not(conditionSource10), SurfaceRules.ifTrue(conditionSource, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource11, WARPED_WART_BLOCK), WARPED_NYLIUM)))), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.CRIMSON_FOREST), SurfaceRules.ifTrue(SurfaceRules.not(conditionSource10), SurfaceRules.ifTrue(conditionSource, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource11, NETHER_WART_BLOCK), CRIMSON_NYLIUM)))))), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.NETHER_WASTES), SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.ifTrue(conditionSource7, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.not(conditionSource6), SurfaceRules.ifTrue(conditionSource3, SurfaceRules.ifTrue(conditionSource4, SOUL_SAND))), NETHERRACK))), SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(conditionSource, SurfaceRules.ifTrue(conditionSource4, SurfaceRules.ifTrue(conditionSource8, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource2, GRAVEL), SurfaceRules.ifTrue(SurfaceRules.not(conditionSource6), GRAVEL)))))))), NETHERRACK);
-+        return SurfaceRules.sequence(SurfaceRules.ifTrue(new PaperBedrockConditionSource("bedrock_floor", VerticalAnchor.bottom(), VerticalAnchor.aboveBottom(5), false), BEDROCK), SurfaceRules.ifTrue(SurfaceRules.not(new PaperBedrockConditionSource("bedrock_roof", VerticalAnchor.belowTop(5), VerticalAnchor.top(), true)), BEDROCK), SurfaceRules.ifTrue(conditionSource5, NETHERRACK), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.BASALT_DELTAS), SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.UNDER_CEILING, BASALT), SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(ruleSource, SurfaceRules.ifTrue(conditionSource12, BASALT), BLACKSTONE)))), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.SOUL_SAND_VALLEY), SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.UNDER_CEILING, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource12, SOUL_SAND), SOUL_SOIL)), SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(ruleSource, SurfaceRules.ifTrue(conditionSource12, SOUL_SAND), SOUL_SOIL)))), SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.not(conditionSource2), SurfaceRules.ifTrue(conditionSource6, LAVA)), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.WARPED_FOREST), SurfaceRules.ifTrue(SurfaceRules.not(conditionSource10), SurfaceRules.ifTrue(conditionSource, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource11, WARPED_WART_BLOCK), WARPED_NYLIUM)))), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.CRIMSON_FOREST), SurfaceRules.ifTrue(SurfaceRules.not(conditionSource10), SurfaceRules.ifTrue(conditionSource, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource11, NETHER_WART_BLOCK), CRIMSON_NYLIUM)))))), SurfaceRules.ifTrue(SurfaceRules.isBiome(Biomes.NETHER_WASTES), SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.ifTrue(conditionSource7, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.not(conditionSource6), SurfaceRules.ifTrue(conditionSource3, SurfaceRules.ifTrue(conditionSource4, SOUL_SAND))), NETHERRACK))), SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(conditionSource, SurfaceRules.ifTrue(conditionSource4, SurfaceRules.ifTrue(conditionSource8, SurfaceRules.sequence(SurfaceRules.ifTrue(conditionSource2, GRAVEL), SurfaceRules.ifTrue(SurfaceRules.not(conditionSource6), GRAVEL)))))))), NETHERRACK);
-     }
- 
-     public static SurfaceRules.RuleSource end() {
++        return new VerticalGradientCondition(context);
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
-index c887d34171f89c731d76c4ca92c70be2b1edc1e6..df6752b5c77bc88a4fcf1ffe918b24d41cd30ad4 100644
+index c887d34171f89c731d76c4ca92c70be2b1edc1e6..5816998cde8504d58732e63eb2179a5d828f35bb 100644
 --- a/src/main/java/net/minecraft/server/Bootstrap.java
 +++ b/src/main/java/net/minecraft/server/Bootstrap.java
 @@ -78,6 +78,7 @@ public class Bootstrap {
                      CauldronInteraction.bootStrap();
                      // Paper start
                      BuiltInRegistries.bootStrap(() -> {
-+                        net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.MATERIAL_CONDITION, new net.minecraft.resources.ResourceLocation("paper", "bedrock_condition_source"), net.minecraft.data.worldgen.SurfaceRuleData.PaperBedrockConditionSource.CODEC.codec());
++                        io.papermc.paper.world.worldgen.OptionallyFlatBedrockConditionSource.bootstrap(); // Paper - optional flat bedrock
                          io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
                      });
                      // Paper end
@@ -208,3 +196,93 @@ index 640c2683c842655bbaee8f293f1c2613ef44844e..53d818b0cc602f827d0b907e293515f6
          this.level = world;
          this.generator = generator;
          this.topFeature = placedFeature;
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/amplified.json b/src/main/resources/data/minecraft/worldgen/noise_settings/amplified.json
+index 3f61ea695aa6a91a0cacf1fa8dc0a9bdc6fa36e6..02d32bbdbc795db271205bef95e6987ac34b0136 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/amplified.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/amplified.json
+@@ -389,7 +389,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/caves.json b/src/main/resources/data/minecraft/worldgen/noise_settings/caves.json
+index 1fe9ce904cba21ff4e6efb948a0bc274a22bcb0b..2e8c1aad10a2b0adbdee4180cfc1902984b6565b 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/caves.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/caves.json
+@@ -110,7 +110,8 @@
+         "if_true": {
+           "type": "minecraft:not",
+           "invert": {
+-            "type": "minecraft:vertical_gradient",
++            "type": "paper:optionally_flat_bedrock_condition_source",
++            "is_roof": true,
+             "false_at_and_above": {
+               "below_top": 0
+             },
+@@ -130,7 +131,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/large_biomes.json b/src/main/resources/data/minecraft/worldgen/noise_settings/large_biomes.json
+index f4c34de998d78a80bc026d8e0d423c9bed9bbf8a..fd5bd5474b8f931f2e04706997e71cd5145a5a82 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/large_biomes.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/large_biomes.json
+@@ -389,7 +389,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/nether.json b/src/main/resources/data/minecraft/worldgen/noise_settings/nether.json
+index 6219d25fcdbc761debc1d1e357757d1b977dc0b0..1657179b8c3f7e549e3b8774ecb75f292ae79c38 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/nether.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/nether.json
+@@ -108,7 +108,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },
+@@ -129,7 +130,8 @@
+         "if_true": {
+           "type": "minecraft:not",
+           "invert": {
+-            "type": "minecraft:vertical_gradient",
++            "type": "paper:optionally_flat_bedrock_condition_source",
++            "is_roof": true,
+             "false_at_and_above": {
+               "below_top": 0
+             },
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/overworld.json b/src/main/resources/data/minecraft/worldgen/noise_settings/overworld.json
+index da3bda6167859f4ddf7d76ec2053f40b2139c13e..70beb7665a43a06b4afcb3c77aa77f923cb444cb 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/overworld.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/overworld.json
+@@ -389,7 +389,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },
