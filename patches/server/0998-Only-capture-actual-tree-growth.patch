@@ -4,91 +4,68 @@ Date: Sat, 21 Aug 2021 18:53:03 -0700
 Subject: [PATCH] Only capture actual tree growth
 
 
-diff --git a/src/main/java/net/minecraft/world/level/block/grower/AbstractMegaTreeGrower.java b/src/main/java/net/minecraft/world/level/block/grower/AbstractMegaTreeGrower.java
-index 3decfca75ae1ace3da8ff47815a47d84c2a86105..b1e4a84bc5351ffe472d8371565665148253ad8f 100644
---- a/src/main/java/net/minecraft/world/level/block/grower/AbstractMegaTreeGrower.java
-+++ b/src/main/java/net/minecraft/world/level/block/grower/AbstractMegaTreeGrower.java
-@@ -49,17 +49,25 @@ public abstract class AbstractMegaTreeGrower extends AbstractTreeGrower {
-                 ConfiguredFeature<?, ?> worldgenfeatureconfigured = (ConfiguredFeature) holder.value();
-                 BlockState iblockdata1 = Blocks.AIR.defaultBlockState();
- 
-+                // Paper start
-+                final CaptureState captureState = new CaptureState(world).recordAndSetToFalse();
-+                try (captureState) {
-+                // Paper end
-                 world.setBlock(pos.offset(x, 0, z), iblockdata1, 4);
-                 world.setBlock(pos.offset(x + 1, 0, z), iblockdata1, 4);
-                 world.setBlock(pos.offset(x, 0, z + 1), iblockdata1, 4);
-                 world.setBlock(pos.offset(x + 1, 0, z + 1), iblockdata1, 4);
-+                } // Paper
-                 if (worldgenfeatureconfigured.place(world, chunkGenerator, random, pos.offset(x, 0, z))) {
-                     return true;
-                 } else {
-+                    captureState.recordAndSetToFalse(); // Paper
-+                    try (captureState) { // Paper
-                     world.setBlock(pos.offset(x, 0, z), state, 4);
-                     world.setBlock(pos.offset(x + 1, 0, z), state, 4);
-                     world.setBlock(pos.offset(x, 0, z + 1), state, 4);
-                     world.setBlock(pos.offset(x + 1, 0, z + 1), state, 4);
-+                    } // Paper
-                     return false;
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index 70aade6a8d36f8376cc567800258ea6fabb0607f..8c2750de3be202122ccf9923a9fa32fcb8bdb743 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -861,6 +861,7 @@ public interface DispenseItemBehavior {
+                     if (!fertilizeEvent.isCancelled()) {
+                         for (org.bukkit.block.BlockState blockstate : blocks) {
+                             blockstate.update(true);
++                            worldserver.checkCapturedTreeStateForObserverNotify(blockposition, (org.bukkit.craftbukkit.block.CraftBlockState) blockstate); // Paper - notify observers even if grow failed
+                         }
+                     }
                  }
-             }
-diff --git a/src/main/java/net/minecraft/world/level/block/grower/AbstractTreeGrower.java b/src/main/java/net/minecraft/world/level/block/grower/AbstractTreeGrower.java
-index a743f36f2682a6b72ffa6644782fc081d1479eb7..1478483c0a5e35dfe0865ba5d819822765940dbf 100644
---- a/src/main/java/net/minecraft/world/level/block/grower/AbstractTreeGrower.java
-+++ b/src/main/java/net/minecraft/world/level/block/grower/AbstractTreeGrower.java
-@@ -41,7 +41,12 @@ public abstract class AbstractTreeGrower {
-                 ConfiguredFeature<?, ?> worldgenfeatureconfigured = (ConfiguredFeature) holder.value();
-                 BlockState iblockdata1 = world.getFluidState(pos).createLegacyBlock();
- 
-+                // Paper start - don't capture the change to air for tree blocks
-+                final CaptureState captureState = new CaptureState(world).recordAndSetToFalse();
-+                try (captureState) {
-+                // Paper end
-                 world.setBlock(pos, iblockdata1, 4);
-+                } // Paper
-                 if (worldgenfeatureconfigured.place(world, chunkGenerator, random, pos)) {
-                     if (world.getBlockState(pos) == iblockdata1) {
-                         world.sendBlockUpdated(pos, state, iblockdata1, 2);
-@@ -49,7 +54,10 @@ public abstract class AbstractTreeGrower {
- 
-                     return true;
-                 } else {
-+                    captureState.recordAndSetToFalse(); // Paper - don't capture the change to air for tree blocks
-+                    try (captureState) { // Paper
-                     world.setBlock(pos, state, 4);
-+                    } // Paper
-                     return false;
-                 }
-             }
-@@ -122,4 +130,29 @@ public abstract class AbstractTreeGrower {
-         }
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 879cc823d56625867eb73bb621db6a13f40ad81c..d138660e459b2d09ba9dd7ae2bf3da499d9ae25c 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -396,6 +396,7 @@ public final class ItemStack {
+                     }
+                     for (CraftBlockState blockstate : blocks) {
+                         world.setBlock(blockstate.getPosition(),blockstate.getHandle(), blockstate.getFlag()); // SPIGOT-7248 - manual update to avoid physics where appropriate
++                        world.checkCapturedTreeStateForObserverNotify(blockposition, blockstate); // Paper - notify observers even if grow failed
+                         if (blockstate instanceof org.bukkit.craftbukkit.block.CapturedBlockState capturedBlockState) capturedBlockState.checkTreeBlockHack(); // Paper
+                     }
+                     entityhuman.awardStat(Stats.ITEM_USED.get(item)); // SPIGOT-7236 - award stat
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 773bfdd3ed457a352b5329f280c0d10297d579ba..b6b6d5af1784963d95843e326abffa3add55ec4f 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -1554,4 +1554,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         return null;
      }
-     // CraftBukkit end
+     // Paper end
++
 +    // Paper start
-+    static class CaptureState implements AutoCloseable {
-+        private final ServerLevel level;
-+        private boolean previousCaptureTreeGeneration;
-+        private boolean previousCaptureBlockStates;
-+
-+        CaptureState(net.minecraft.server.level.ServerLevel level) {
-+            this.level = level;
-+        }
-+
-+        CaptureState recordAndSetToFalse() {
-+            this.previousCaptureTreeGeneration = this.level.captureTreeGeneration;
-+            this.previousCaptureBlockStates = this.level.captureBlockStates;
-+            this.level.captureTreeGeneration = false;
-+            this.level.captureBlockStates = false;
-+            return this;
-+        }
-+
-+        @Override
-+        public void close() {
-+            this.level.captureTreeGeneration = this.previousCaptureTreeGeneration;
-+            this.level.captureBlockStates = this.previousCaptureBlockStates;
++    public void checkCapturedTreeStateForObserverNotify(final BlockPos pos, final CraftBlockState craftBlockState) {
++        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) { // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
++            this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
 +        }
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+index d5ec1e5909c03a58add7f4597b140f787600c09a..8a0cb287bec1c607278f7a333140afbecd45dea5 100644
+--- a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+@@ -73,6 +73,7 @@ public class SaplingBlock extends BushBlock implements BonemealableBlock {
+                     if (event == null || !event.isCancelled()) {
+                         for (BlockState blockstate : blocks) {
+                             blockstate.update(true);
++                            world.checkCapturedTreeStateForObserverNotify(pos, (org.bukkit.craftbukkit.block.CraftBlockState) blockstate); // Paper - notify observers even if grow failed
+                         }
+                     }
+                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index f3ac362b7b65a5273ff5fdad1d8065c5f654a53a..bb5837c74edfecec9956b635546a8ecfe1c7dfa5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -592,6 +592,7 @@ public class CraftBlock implements Block {
+             if (!event.isCancelled()) {
+                 for (BlockState blockstate : blocks) {
+                     blockstate.update(true);
++                    world.checkCapturedTreeStateForObserverNotify(this.position, (org.bukkit.craftbukkit.block.CraftBlockState) blockstate); // Paper - notify observers even if grow failed
+                 }
+             }
+         }
