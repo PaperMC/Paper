@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Thu, 31 Aug 2023 17:32:48 +0200
+Subject: [PATCH] Fix silent equipment change for mobs
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 3d5c967dbccb2a288092a3bf950ab4bfda7a3bb4..a99d737f71277ea3082816c7a7fc47ab3a201d30 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -1057,13 +1057,20 @@ public abstract class Mob extends LivingEntity implements Targeting {
+ 
+     @Override
+     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
++        // Paper start
++        setItemSlot(slot, stack, false);
++    }
++
++    @Override
++    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) {
++        // Paper end
+         this.verifyEquippedItem(stack);
+         switch (slot.getType()) {
+             case HAND:
+-                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack, silent); // Paper
+                 break;
+             case ARMOR:
+-                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack, silent); // Paper
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index 9ca1e9d95e62929c0015d5ca2c2f9c70e421842e..26c7b2f18f21b04529f989b345c385693d98c903 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -250,8 +250,8 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+     // Paper end
+ 
+     @Override
+-    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+-        super.setItemSlot(slot, stack);
++    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) { // Paper
++        super.setItemSlot(slot, stack, silent); // Paper
+         if (!this.level().isClientSide) {
+             this.reassessWeaponGoal();
+         }
+diff --git a/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java b/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4845f24e291ed8d643e182f3d6c50746a6ca2ded
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java
+@@ -0,0 +1,55 @@
++package io.papermc.paper.entity;
++
++import io.github.classgraph.ClassGraph;
++import io.github.classgraph.ClassInfo;
++import io.github.classgraph.MethodInfo;
++import io.github.classgraph.MethodInfoList;
++import io.github.classgraph.MethodParameterInfo;
++import io.github.classgraph.ScanResult;
++import java.util.ArrayList;
++import java.util.List;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.Test;
++import org.junit.runner.RunWith;
++import org.junit.runners.Parameterized;
++
++import static org.junit.Assert.fail;
++
++@RunWith(Parameterized.class)
++public class EntitySetItemSlotSilentOverrideTest extends AbstractTestingBase {
++
++    @Parameterized.Parameter
++    public ClassInfo overridesSetItemSlot;
++
++    @Parameterized.Parameters(name = "{0}")
++    public static Iterable<ClassInfo> parameters() {
++        final List<ClassInfo> classInfo = new ArrayList<>();
++        try (ScanResult scanResult = new ClassGraph()
++            .enableClassInfo()
++            .enableMethodInfo()
++            .whitelistPackages("net.minecraft")
++            .scan()
++        ) {
++            for (final ClassInfo subclass : scanResult.getSubclasses("net.minecraft.world.entity.LivingEntity")) {
++                final MethodInfoList setItemSlot = subclass.getDeclaredMethodInfo("setItemSlot");
++                if (!setItemSlot.isEmpty()) {
++                    classInfo.add(subclass);
++                }
++            }
++        }
++        return classInfo;
++    }
++
++    @Test
++    public void checkSetItemSlotSilentOverrides() {
++        final MethodInfoList setItemSlot = this.overridesSetItemSlot.getDeclaredMethodInfo("setItemSlot");
++        for (final MethodInfo methodInfo : setItemSlot) {
++            for (final MethodParameterInfo methodParameterInfo : methodInfo.getParameterInfo()) {
++                if ("boolean".equals(methodParameterInfo.getTypeDescriptor().toStringWithSimpleNames())) {
++                    return;
++                }
++            }
++        }
++        fail(this.overridesSetItemSlot.getName() + " needs to override setItemSlot with the boolean silent parameter as well");
++    }
++}
