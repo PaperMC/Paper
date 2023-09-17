@@ -60,6 +60,12 @@ https://bugs.mojang.com/browse/MC-225381
 https://bugs.mojang.com/browse/MC-173303
   Fix leashed pets teleporting to owner when loaded
 
+https://bugs.mojang.com/browse/MC-174630
+  Fix secondary beacon effect remaining after switching effect
+
+https://bugs.mojang.com/browse/MC-153086
+  Fix the beacon deactivation sound always playing when broken
+
 == AT ==
 public net/minecraft/world/entity/Mob leashInfoTag
 
@@ -338,6 +344,22 @@ index 380afb885e85e4cf80e746d217033345a7514443..41457c9f27b18fa2734a6cca297ec518
                      if (!raid.hasFirstWaveSpawned()) {
                          player.awardStat(Stats.RAID_TRIGGER);
                          CriteriaTriggers.BAD_OMEN.trigger(player);
+diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+index 335d0a85378c04dd466fafd42048b2474c815cb9..f984af71fc034e09147fa339bd5f260a7466e127 100644
+--- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+@@ -167,6 +167,11 @@ public class BeaconMenu extends AbstractContainerMenu {
+     // Paper end
+ 
+     public void updateEffects(Optional<MobEffect> primary, Optional<MobEffect> secondary) {
++        // Paper start - fix MC-174630 - validate secondary power
++        if (secondary.isPresent() && secondary.get() != net.minecraft.world.effect.MobEffects.REGENERATION && (primary.isPresent() && secondary.get() != primary.get())) {
++            secondary = Optional.empty();
++        }
++        // Paper end
+         if (this.paymentSlot.hasItem()) {
+             // Paper start
+             io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
 diff --git a/src/main/java/net/minecraft/world/item/BundleItem.java b/src/main/java/net/minecraft/world/item/BundleItem.java
 index 10b0720ce7eed58fa3cd8c8051efa6225f7d73e1..ac0bc87f60c4e1562d1301522183e449558d42f8 100644
 --- a/src/main/java/net/minecraft/world/item/BundleItem.java
@@ -424,3 +446,19 @@ index 436290eaa0dab05a642b67b265117dbe5eceb8b7..5ccc419b904aec590c5624438da61ca6
  
      }
  }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index 147e808c7e2b3ed16861c989c1ba4a0b99a5be38..2b3bb4513557e8d81bf2b0a3e10c34cec6a6d43e 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -282,7 +282,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, worldPosition);
+         new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
+         // Paper end
++        // Paper start - fix MC-153086
++        if (this.levels > 0 && !this.beamSections.isEmpty()) {
+         BeaconBlockEntity.playSound(this.level, this.worldPosition, SoundEvents.BEACON_DEACTIVATE);
++        }
++        // Paper end
+         super.setRemoved();
+     }
+ 
