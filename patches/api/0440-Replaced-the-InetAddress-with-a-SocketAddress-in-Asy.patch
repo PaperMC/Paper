@@ -1,0 +1,189 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: markustieger <markustieger@gmail.com>
+Date: Sun, 17 Sep 2023 15:34:06 +0200
+Subject: [PATCH] Replaced the InetAddress with a SocketAddress in
+ AsyncPlayerPreLoginEvent and PlayerLoginEvent for unix domain socket support
+
+
+diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+index fc2d9e85b65347b90bde3b0b13ccae759e33d466..f6b7555012878c398bad562294842ef49d8a859a 100644
+--- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+@@ -1,6 +1,8 @@
+ package org.bukkit.event.player;
+ 
+ import java.net.InetAddress;
++import java.net.InetSocketAddress;
++import java.net.SocketAddress;
+ import java.util.UUID;
+ 
+ import com.destroystokyo.paper.profile.PlayerProfile;
+@@ -20,7 +22,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+     private net.kyori.adventure.text.Component message; // Paper
+     //private String name; // Paper - Not used anymore
+     private final InetAddress ipAddress;
+-    private final InetAddress rawAddress; // Paper
++    private final java.net.SocketAddress rawSocketAddress; // Paper
+     //private UUID uniqueId; // Paper - Not used anymore
+     private final String hostname; // Paper
+ 
+@@ -59,22 +61,34 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      */
+     @NotNull
+     public InetAddress getRawAddress() {
+-        return rawAddress;
++        if (rawSocketAddress instanceof InetSocketAddress inetSocketAddress) return inetSocketAddress.getAddress();
++        return InetAddress.getLoopbackAddress();
++    }
++
++    /**
++     * Gets the raw socket address of the player logging in
++     * @return The socket address
++     */
++    @NotNull
++    public SocketAddress getRawSocketAddress() {
++        return rawSocketAddress;
+     }
+     // Paper end
+ 
+     @Deprecated
+     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
+-        this(name, ipAddress, ipAddress, uniqueId, profile);
++        this(name, ipAddress, new java.net.InetSocketAddress(ipAddress, 0), uniqueId, profile);
+     }
+ 
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper - Use SocketAddress
+     @Deprecated // Paper - Add hostname
+-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final java.net.SocketAddress rawSocketAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
+         // Paper start - Add hostname
+-        this(name, ipAddress, rawAddress, uniqueId, profile, "");
++        this(name, ipAddress, rawSocketAddress, uniqueId, profile, "");
+     }
+ 
+-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile, @NotNull String hostname) {
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper - Use SocketAddress
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final java.net.SocketAddress rawSocketAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile, @NotNull String hostname) {
+         // Paper end - Add hostname
+         super(true);
+         this.profile = profile;
+@@ -83,7 +97,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+         this.message = net.kyori.adventure.text.Component.empty(); // Paper
+         //this.name = name; // Paper - Not used anymore
+         this.ipAddress = ipAddress;
+-        this.rawAddress = rawAddress; // Paper
++        this.rawSocketAddress = rawSocketAddress; // Paper
+         //this.uniqueId = uniqueId; // Paper - Not used anymore
+         this.hostname = hostname; // Paper - Add hostname
+     }
+diff --git a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+index 62fb782baad5c80a3daaa557c0faa674c58a98cf..29a047a6e090beda3701fdb3f6aed21dd2d960df 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+@@ -1,6 +1,7 @@
+ package org.bukkit.event.player;
+ 
+ import java.net.InetAddress;
++import java.net.InetSocketAddress;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.HandlerList;
+ import org.jetbrains.annotations.NotNull;
+@@ -18,7 +19,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+     private final String hostname;
+     private Result result = Result.ALLOWED;
+     private net.kyori.adventure.text.Component message = net.kyori.adventure.text.Component.empty();
+-    private final InetAddress realAddress; // Spigot
++    private final java.net.SocketAddress realSocketAddress; // Paper
+ 
+     /**
+      * This constructor defaults message to an empty string, and result to
+@@ -28,19 +29,20 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * @param hostname The hostname that was used to connect to the server
+      * @param address The address the player used to connect, provided for
+      *     timing issues
+-     * @param realAddress the actual, unspoofed connecting address
++     * @param realSocketAddress the actual, unspoofed socket address
+      */
+-    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull InetAddress realAddress) { // Spigot
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper - Use SocketAddress
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull java.net.SocketAddress realSocketAddress) { // Paper
+         super(player);
+         this.hostname = hostname;
+         this.address = address;
+-        // Spigot start
+-        this.realAddress = realAddress;
++        // Paper start
++        this.realSocketAddress = realSocketAddress;
+     }
+ 
+     public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address) {
+-        this(player, hostname, address, address);
+-        // Spigot end
++        this(player, hostname, address, new java.net.InetSocketAddress(address, 0));
++        // Paper end
+     }
+ 
+     /**
+@@ -52,12 +54,12 @@ public class PlayerLoginEvent extends PlayerEvent {
+      *     timing issues
+      * @param result The result status for this event
+      * @param message The message to be displayed if result denies login
+-     * @param realAddress the actual, unspoofed connecting address
+-     * @deprecated in favour of {@link #PlayerLoginEvent(Player, String, InetAddress, Result, net.kyori.adventure.text.Component, InetAddress)}
++     * @param realSocketAddress the actual, unspoofed socket address
++     * @deprecated in favour of {@link #PlayerLoginEvent(Player, String, InetAddress, Result, net.kyori.adventure.text.Component, java.net.SocketAddress)}
+      */
+     @Deprecated // Paper
+-    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final InetAddress realAddress) { // Spigot
+-        this(player, hostname, address, realAddress); // Spigot
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final java.net.SocketAddress realSocketAddress) { // Paper
++        this(player, hostname, address, realSocketAddress); // Spigot
+         this.result = result;
+         this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
+     }
+@@ -72,10 +74,10 @@ public class PlayerLoginEvent extends PlayerEvent {
+      *     timing issues
+      * @param result The result status for this event
+      * @param message The message to be displayed if result denies login
+-     * @param realAddress the actual, unspoofed connecting address
++     * @param realAddress the actual, unspoofed socket address
+      */
+-    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final InetAddress realAddress) { // Spigot
+-        this(player, hostname, address, realAddress); // Spigot
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final java.net.SocketAddress realAddress) { // Paper
++        this(player, hostname, address, realAddress); // Paper
+         this.result = result;
+         this.message = message;
+     }
+@@ -100,7 +102,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+     }
+     // Paper end
+ 
+-    // Spigot start
++    // Paper start
+     /**
+      * Gets the connection address of this player, regardless of whether it has been spoofed or not.
+      *
+@@ -108,9 +110,20 @@ public class PlayerLoginEvent extends PlayerEvent {
+      */
+     @NotNull
+     public InetAddress getRealAddress() {
+-        return realAddress;
++        if (realSocketAddress instanceof InetSocketAddress inetSocketAddress) return inetSocketAddress.getAddress();
++        return InetAddress.getLoopbackAddress();
+     }
+-    // Spigot end
++
++    /**
++     * Gets the socket address of this player, regardless of whether it has been spoofed or not.
++     *
++     * @return the player's socket address
++     */
++    @NotNull
++    public java.net.SocketAddress getRealSocketAddress() {
++        return realSocketAddress;
++    }
++    // Paper end
+ 
+     /**
+      * Gets the current result of the login, as an enum
