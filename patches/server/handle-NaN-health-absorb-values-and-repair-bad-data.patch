@@ -12,13 +12,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public void readAdditionalSaveData(CompoundTag nbt) {
--        this.setAbsorptionAmount(nbt.getFloat("AbsorptionAmount"));
+-        this.internalSetAbsorptionAmount(nbt.getFloat("AbsorptionAmount"));
 +        // Paper start - jvm keeps optimizing the setter
 +        float absorptionAmount = nbt.getFloat("AbsorptionAmount");
 +        if (Float.isNaN(absorptionAmount)) {
 +            absorptionAmount = 0;
 +        }
-+        this.setAbsorptionAmount(absorptionAmount);
++        this.internalSetAbsorptionAmount(absorptionAmount);
 +        // Paper end
          if (nbt.contains("Attributes", 9) && this.level() != null && !this.level().isClientSide) {
              this.getAttributes().load(nbt.getList("Attributes", 10));
@@ -37,12 +37,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
-     public void setAbsorptionAmount(float amount) {
--        if (amount < 0.0F) {
-+        if (amount < 0.0F || Float.isNaN(amount)) { // Paper
-             amount = 0.0F;
-         }
+     public final void setAbsorptionAmount(float absorptionAmount) {
+-        this.internalSetAbsorptionAmount(Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()));
++        this.internalSetAbsorptionAmount(!Float.isNaN(absorptionAmount) ? Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()) : 0.0F); // Paper
+     }
  
+     protected void internalSetAbsorptionAmount(float absorptionAmount) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
