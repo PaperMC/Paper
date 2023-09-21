@@ -9,7 +9,7 @@ public net.minecraft.server.packs.VanillaPackResourcesBuilder safeGetPath(Ljava/
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 3ec94658ddd0c2f7b3716742c247656d9c7c8866..b1c84b847f8845407eafc89d8b027b34cc6a95b8 100644
+index 91a5d6e9775010336da28ed6e2f6654b0f7248f6..32d475a636d4ba90eeaecfac148143f940cba6e2 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -9,10 +9,9 @@ plugins {
@@ -23,8 +23,8 @@ index 3ec94658ddd0c2f7b3716742c247656d9c7c8866..b1c84b847f8845407eafc89d8b027b34
      implementation("org.ow2.asm:asm:9.5")
 +    implementation("org.ow2.asm:asm-commons:9.5") // Paper - ASM event executor generation
      implementation("commons-lang:commons-lang:2.6")
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
-     runtimeOnly("com.mysql:mysql-connector-j:8.0.33")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.43.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
 @@ -23,6 +22,8 @@ dependencies {
  
      testImplementation("junit:junit:4.13.2")
@@ -33,7 +33,7 @@ index 3ec94658ddd0c2f7b3716742c247656d9c7c8866..b1c84b847f8845407eafc89d8b027b34
 +    implementation("io.netty:netty-all:4.1.87.Final"); // Paper - Bump netty
  }
  
- val craftbukkitPackageVersion = "1_20_R1" // Paper
+ val craftbukkitPackageVersion = "1_20_R2" // Paper
 @@ -34,6 +35,7 @@ tasks.jar {
          val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
          val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
@@ -99,7 +99,7 @@ index 3ec94658ddd0c2f7b3716742c247656d9c7c8866..b1c84b847f8845407eafc89d8b027b34
 +    jvmArgs("-DPaper.isRunDev=true")
  }
 diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
-index 6eb213981aeb7e75e1ed75f1483bc98187726f6f..de37a6e2edf36107a04b3707b9c5bbd608fcab20 100644
+index 68e3d54c79924d72b22eb3bc142ff47aa1700895..d3300e43523429fdd0e61c5aa9aed2e6bc78e07e 100644
 --- a/src/main/java/net/minecraft/resources/ResourceLocation.java
 +++ b/src/main/java/net/minecraft/resources/ResourceLocation.java
 @@ -26,6 +26,7 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
@@ -111,10 +111,10 @@ index 6eb213981aeb7e75e1ed75f1483bc98187726f6f..de37a6e2edf36107a04b3707b9c5bbd6
      private final String path;
  
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index e7240acad17dc9c0d93f2792cc0d90c1855ac436..ba96530f00faa1d113a14242eb8192349c7c944f 100644
+index 84dab998d5b91b9c5690e9e086b17a60b6dec058..2ac60ea28ce722cdef61cfdc69bbbdf391628238 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -110,6 +110,17 @@ public class Main {
+@@ -107,6 +107,17 @@ public class Main {
              */ // CraftBukkit end
  
          try {
@@ -133,20 +133,20 @@ index e7240acad17dc9c0d93f2792cc0d90c1855ac436..ba96530f00faa1d113a14242eb819234
              Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
  
 diff --git a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
-index 03bf7dfc289c6a02f19678d3c7041c027154b99d..43ce85977472fd831fa272ff1d81df4586352d72 100644
+index 7db49f077704f03d1815f8382523199bd6c9a0dc..4ed8f38ba9c7b075b99a0da0e213a1e9d03ac717 100644
 --- a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
 +++ b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
-@@ -28,7 +28,7 @@ public class ServerPacksSource extends BuiltInPackSource {
-     }
+@@ -32,7 +32,7 @@ public class ServerPacksSource extends BuiltInPackSource {
  
-     private static VanillaPackResources createVanillaPackSource() {
+     @VisibleForTesting
+     public static VanillaPackResources createVanillaPackSource() {
 -        return (new VanillaPackResourcesBuilder()).setMetadata(BUILT_IN_METADATA).exposeNamespace("minecraft").applyDevelopmentConfig().pushJarResources().build();
 +        return (new VanillaPackResourcesBuilder()).setMetadata(BUILT_IN_METADATA).exposeNamespace("minecraft", ResourceLocation.PAPER_NAMESPACE).applyDevelopmentConfig().pushJarResources().build(); // Paper
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index e325cb56f2bafce21ce06bb5c674837abbb676e7..8a30ebbac91a0750c00ebbcb5372e6d2a45c064a 100644
+index bf691570a019d4c1e2affceb7b707b65e943345b..541aa0cd6c89a6df8e4244aaea7a610cf7200e54 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -209,7 +209,7 @@ public class Main {
@@ -157,7 +157,7 @@ index e325cb56f2bafce21ce06bb5c674837abbb676e7..8a30ebbac91a0750c00ebbcb5372e6d2
 +                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
  
                      Calendar deadline = Calendar.getInstance();
-                     deadline.add(Calendar.DAY_OF_YEAR, -21);
+                     deadline.add(Calendar.DAY_OF_YEAR, -3);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 index 93046379d0cefd5d3236fc59e698809acdc18f80..774556a62eb240da42e84db4502e2ed43495be17 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java

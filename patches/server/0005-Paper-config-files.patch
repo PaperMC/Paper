@@ -14,7 +14,7 @@ public org.spigotmc.SpigotWorldConfig getString(Ljava/lang/String;Ljava/lang/Str
 public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 784a2ae459d4a6afd6773d2298838c07c9152250..b60a9ab80589eb8a3e9ece76c7eb24cd3d6dbe96 100644
+index b6f741435b7c63d748b79669d3d8f420db52c3a7..ba38153a37e864ab7f02a169da3df8806122aa76 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -13,6 +13,7 @@ dependencies {
@@ -23,8 +23,8 @@ index 784a2ae459d4a6afd6773d2298838c07c9152250..b60a9ab80589eb8a3e9ece76c7eb24cd
      testImplementation("org.mockito:mockito-core:4.9.0") // Paper - switch to mockito
 +    implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
-     runtimeOnly("com.mysql:mysql-connector-j:8.0.33")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.43.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..ef41cf3a7d1e6f2bfe81e0fb865d2f969bbc77c1
@@ -4567,10 +4567,10 @@ index 0000000000000000000000000000000000000000..70cc7b45e7355f6c8476a74a070f1266
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index ba96530f00faa1d113a14242eb8192349c7c944f..ac59339d9ed4b0860de7d338e5b7610175e27165 100644
+index 2ac60ea28ce722cdef61cfdc69bbbdf391628238..9cfdd5d8c1650d9c9bdfbc07980239e507ff942d 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -142,6 +142,10 @@ public class Main {
+@@ -139,6 +139,10 @@ public class Main {
              dedicatedserversettings.forceSave();
              Path path2 = Paths.get("eula.txt");
              Eula eula = new Eula(path2);
@@ -4581,7 +4581,7 @@ index ba96530f00faa1d113a14242eb8192349c7c944f..ac59339d9ed4b0860de7d338e5b76101
  
              if (optionset.has("initSettings")) { // CraftBukkit
                  // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
-@@ -176,7 +180,7 @@ public class Main {
+@@ -173,7 +177,7 @@ public class Main {
              }
  
              File file = (File) optionset.valueOf("universe"); // CraftBukkit
@@ -4591,10 +4591,10 @@ index ba96530f00faa1d113a14242eb8192349c7c944f..ac59339d9ed4b0860de7d338e5b76101
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 60e683ac0adaa192c502d059f6e448d0a23e8a09..6877a10fe56b46cf3fb7ccccf5a55e57d03048e9 100644
+index bc4f2e0a7086825ba8d1a503a65a4375d6c90d72..1561b26e1b4115f4d5631f20b31c2238d1d23202 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -294,6 +294,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -289,6 +289,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private static final int SAMPLE_INTERVAL = 100;
      public final double[] recentTps = new double[ 3 ];
      // Spigot end
@@ -4602,14 +4602,14 @@ index 60e683ac0adaa192c502d059f6e448d0a23e8a09..6877a10fe56b46cf3fb7ccccf5a55e57
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -384,6 +385,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             }
+@@ -379,6 +380,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
+         // CraftBukkit end
 +        this.paperConfigurations = services.paperConfigurations(); // Paper
      }
-     // CraftBukkit end
  
+     private void readScoreboard(DimensionDataStorage persistentStateManager) {
 diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
 index 71e7beac6cf1e0f813d5ff3e9c51c13491be7139..f1cc27809c1e8612f7c4fa912f5e39c07b09d808 100644
 --- a/src/main/java/net/minecraft/server/Services.java
@@ -4649,7 +4649,7 @@ index 71e7beac6cf1e0f813d5ff3e9c51c13491be7139..f1cc27809c1e8612f7c4fa912f5e39c0
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index ea5657d31f51469d6c0b9463fcc5cea9c270fb2e..546ad678af2705e3956f5f139aa847354a6fdeae 100644
+index 97065ae5eb30edfb2cb3fbc53769f8ffc7712377..a9ec28c3cf3ed50d929c80ac21959d82603ff0aa 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -183,6 +183,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -4676,7 +4676,7 @@ index 37ab411817008d4e6194e177d88d50931e53b42e..ca23639f15107ccd43b874ae38fa3727
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index d40998a5330be64849a5bc2b49781b70ef149a0e..82435da47f0f7db73556310f84dc538a7c5f0809 100644
+index df03b655bc5b864164da101bbf7edbca4cc7e147..f3a41559be5ad0b40762d368d8582704c8305961 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -234,7 +234,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -4717,10 +4717,10 @@ index cda55e481ddbcc1de5478125c5db20ebba168e7d..bacd4d875642cd93c3185f788745dd73
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 396e847ab81100684f61830011f2e675d5f284a4..34209c5f4465eadb095336d8023739e6f0f2785b 100644
+index f4a2fbf89320df88e99b20a56b4feeba7e395dd2..cbfc9b90805ecce074d42cfeb0b68d84cdafcac6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -916,6 +916,7 @@ public final class CraftServer implements Server {
+@@ -919,6 +919,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
@@ -4729,7 +4729,7 @@ index 396e847ab81100684f61830011f2e675d5f284a4..34209c5f4465eadb095336d8023739e6
              world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 8a30ebbac91a0750c00ebbcb5372e6d2a45c064a..67d408b79422cf0c4aed6636cfd4ebb9e13e19f9 100644
+index 541aa0cd6c89a6df8e4244aaea7a610cf7200e54..8d5c4fbaab751802fdb47d218c7d28f619d9eb62 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -141,6 +141,19 @@ public class Main {
@@ -4813,7 +4813,7 @@ index 0000000000000000000000000000000000000000..0396589795da1f83ddf62426236dde9a
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index 453e2189b842a6f6f52186578af1ee2e2fcba2e4..52a6f1791c7de062d5d567d7cc9ee68731fd6e67 100644
+index 31d3a6967f509286bcfe1cf55d1a3dc637927e55..a2f79ff9765e2dcdb7980085c96f12cbbc40e832 100644
 --- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
 +++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
 @@ -63,6 +63,7 @@ public abstract class AbstractTestingBase {
