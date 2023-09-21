@@ -16,10 +16,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
 +        // Paper start
 +        if (throwable instanceof io.netty.handler.codec.EncoderException && throwable.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
-+            if (packetTooLargeException.getPacket().packetTooLarge(this)) {
++            final Packet<?> packet = packetTooLargeException.getPacket();
++            final io.netty.util.Attribute<ConnectionProtocol.CodecData<?>> codecDataAttribute = channelhandlercontext.channel().attr(packetTooLargeException.codecKey);
++            if (packet.packetTooLarge(this)) {
++                ProtocolSwapHandler.swapProtocolIfNeeded(codecDataAttribute, packet);
 +                return;
-+            } else if (packetTooLargeException.getPacket().isSkippable()) {
++            } else if (packet.isSkippable()) {
 +                Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
++                ProtocolSwapHandler.swapProtocolIfNeeded(codecDataAttribute, packet);
 +                return;
 +            } else {
 +                throwable = throwable.getCause();
@@ -40,19 +44,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    if (k > 8388608) {
 +                    if (false && k > 8388608) { // Paper - disable
                          throw new IllegalArgumentException("Packet too big (is " + k + ", should be less than 8388608): " + packet);
-                     } else {
-                         int l = channelHandlerContext.channel().attr(Connection.ATTRIBUTE_PROTOCOL).get().getId();
-@@ -0,0 +0,0 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
-                         throw var10;
                      }
+ 
+@@ -0,0 +0,0 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+ 
+                     throw var13;
+                 } finally {
++                    // Paper start
++                    int packetLength = friendlyByteBuf.readableBytes();
++                    if (packetLength > MAX_PACKET_SIZE) {
++                        throw new PacketTooLargeException(packet, this.codecKey, packetLength);
++                    }
++                    // Paper end
+                     ProtocolSwapHandler.swapProtocolIfNeeded(attribute, packet);
                  }
-+
-+                // Paper start
-+                int packetLength = friendlyByteBuf.readableBytes();
-+                if (packetLength > MAX_PACKET_SIZE) {
-+                    throw new PacketTooLargeException(packet, packetLength);
-+                }
-+                // Paper end
+ 
              }
          }
      }
@@ -62,14 +68,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static class PacketTooLargeException extends RuntimeException {
 +        private final Packet<?> packet;
++        public final AttributeKey<ConnectionProtocol.CodecData<?>> codecKey;
 +
-+        PacketTooLargeException(Packet<?> packet, int packetLength) {
++        PacketTooLargeException(Packet<?> packet, AttributeKey<ConnectionProtocol.CodecData<?>> codecKey, int packetLength) {
 +            super("PacketTooLarge - " + packet.getClass().getSimpleName() + " is " + packetLength + ". Max is " + MAX_PACKET_SIZE);
 +            this.packet = packet;
++            this.codecKey = codecKey;
 +        }
 +
 +        public Packet<?> getPacket() {
-+            return packet;
++            return this.packet;
 +        }
 +    }
 +    // Paper end

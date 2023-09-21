@@ -58,7 +58,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
                      CraftItemStack source = CraftItemStack.asCraftMirror(blockEntity.items.get(0));
-                     CookingRecipe<?> recipe = (CookingRecipe<?>) irecipe.toBukkitRecipe();
+                     CookingRecipe<?> recipe = (CookingRecipe<?>) recipeholder.toBukkitRecipe();
  
 -                    FurnaceStartSmeltEvent event = new FurnaceStartSmeltEvent(CraftBlock.at(world, pos), source, recipe);
 +                    FurnaceStartSmeltEvent event = new FurnaceStartSmeltEvent(CraftBlock.at(world, pos), source, recipe, AbstractFurnaceBlockEntity.getTotalCookTime(world, blockEntity.recipeType, blockEntity, blockEntity.cookSpeedMultiplier)); // Paper - cook speed multiplier API
@@ -74,25 +74,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      blockEntity.cookingProgress = 0;
 -                    blockEntity.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(world, blockEntity);
 +                    blockEntity.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(world, blockEntity.recipeType, blockEntity, blockEntity.cookSpeedMultiplier); // Paper
-                     if (AbstractFurnaceBlockEntity.burn(blockEntity.level, blockEntity.worldPosition, world.registryAccess(), irecipe, blockEntity.items, i)) { // CraftBukkit
-                         blockEntity.setRecipeUsed(irecipe);
+                     if (AbstractFurnaceBlockEntity.burn(blockEntity.level, blockEntity.worldPosition, world.registryAccess(), recipeholder, blockEntity.items, i)) { // CraftBukkit
+                         blockEntity.setRecipeUsed(recipeholder);
                      }
 @@ -0,0 +0,0 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
          }
      }
  
 -    private static int getTotalCookTime(Level world, AbstractFurnaceBlockEntity furnace) {
--        return (world != null) ? (Integer) furnace.quickCheck.getRecipeFor(furnace, world).map(AbstractCookingRecipe::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302
+-        if (world == null) return 200; // CraftBukkit - SPIGOT-4302
+-        return (Integer) furnace.quickCheck.getRecipeFor(furnace, world).map((recipeholder) -> {
+-            return ((AbstractCookingRecipe) recipeholder.value()).getCookingTime();
+-        }).orElse(200);
 +    // Paper start
 +    public static int getTotalCookTime(@Nullable Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, AbstractFurnaceBlockEntity furnace, double cookSpeedMultiplier) {
 +        /* Scale the recipe's cooking time to the current cookSpeedMultiplier */
-+        int cookTime = world != null ? furnace.quickCheck.getRecipeFor(furnace, world).map(AbstractCookingRecipe::getCookingTime).orElse(200) : (net.minecraft.server.MinecraftServer.getServer().getRecipeManager().getRecipeFor(recipeType, furnace, world /* passing a null level here is safe. world is only used for map extending recipes which won't happen here */).map(AbstractCookingRecipe::getCookingTime).orElse(200));
++        int cookTime = world != null ? furnace.quickCheck.getRecipeFor(furnace, world).map(holder -> holder.value().getCookingTime()).orElse(200) : (net.minecraft.server.MinecraftServer.getServer().getRecipeManager().getRecipeFor(recipeType, furnace, world /* passing a null level here is safe. world is only used for map extending recipes which won't happen here */).map(holder -> holder.value().getCookingTime()).orElse(200));
 +        return (int) Math.ceil (cookTime / cookSpeedMultiplier);
++        // Paper end
      }
-+    // Paper end
  
      public static boolean isFuel(ItemStack stack) {
-         return AbstractFurnaceBlockEntity.getFuel().containsKey(stack.getItem());
 @@ -0,0 +0,0 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
          }
  

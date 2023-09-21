@@ -16,37 +16,26 @@ diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/io/papermc/paper/util/MCUtil.java
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
-@@ -0,0 +0,0 @@ import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
- import net.minecraft.core.Vec3i;
- import net.minecraft.server.MinecraftServer;
-+import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.network.chat.Component;
- import net.minecraft.server.level.ChunkHolder;
- import net.minecraft.server.level.ChunkMap;
- import net.minecraft.server.level.DistanceManager;
 @@ -0,0 +0,0 @@ public final class MCUtil {
-         }
+     public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
+         return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
      }
- 
++
 +    @Nullable
-+    public static Component getBaseComponentFromNbt(String key, CompoundTag compound) {
++    public static net.minecraft.network.chat.Component getBaseComponentFromNbt(String key, net.minecraft.nbt.CompoundTag compound) {
 +        if (!compound.contains(key)) {
 +            return null;
 +        }
 +        String string = compound.getString(key);
 +        try {
-+            return Component.Serializer.fromJson(string);
++            return net.minecraft.network.chat.Component.Serializer.fromJson(string);
 +        } catch (com.google.gson.JsonParseException e) {
 +            org.bukkit.Bukkit.getLogger().warning("Unable to parse " + key + " from " + compound +": " + e.getMessage());
 +        }
 +
 +        return null;
 +    }
-+
-     public static ChunkStatus getChunkStatus(ChunkHolder chunk) {
-         return chunk.getChunkHolderStatus();
-     }
+ }
 diff --git a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
@@ -91,8 +80,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 @@ -0,0 +0,0 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
-         this.levels = nbt.getInt("Levels"); // SPIGOT-5053, use where available
-         // CraftBukkit end
+         this.secondaryPower = BeaconBlockEntity.loadEffect(nbt, "secondary_effect");
+         this.levels = nbt.getInt("Levels"); // CraftBukkit - SPIGOT-5053, use where available
          if (nbt.contains("CustomName", 8)) {
 -            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"));
 +            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
