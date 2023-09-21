@@ -723,26 +723,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 @@ -0,0 +0,0 @@ public class PacketUtils {
              engine.executeIfPossible(() -> {
-                 if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerGamePacketListenerImpl && ((ServerGamePacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
-                 if (listener.isAcceptingMessages()) {
+                 if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerCommonPacketListenerImpl && ((ServerCommonPacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
+                 if (listener.shouldHandleMessage(packet)) {
 -                    try {
 +                    co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
 +                    try (co.aikar.timings.Timing ignored = timing.startTiming()) { // Paper - timings
                          packet.handle(listener);
                      } catch (Exception exception) {
-                         if (listener.shouldPropagateHandlingExceptions()) {
+                         if (exception instanceof ReportedException) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ import org.bukkit.event.player.AsyncPlayerChatPreviewEvent;
+@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.Main;
  import org.bukkit.event.server.ServerLoadEvent;
  // CraftBukkit end
  
 -import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 +import co.aikar.timings.MinecraftTimings; // Paper
  
- public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements CommandSource, AutoCloseable {
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, CommandSource, AutoCloseable {
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
@@ -775,7 +775,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.runAllTasks();
          java.util.concurrent.locks.LockSupport.parkNanos("executing tasks", 1000L);
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     // CraftBukkit end
+     }
  
      protected void waitUntilNextTick() {
 -        this.runAllTasks();
@@ -827,7 +827,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          long j = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         this.frameTimer.logFrameDuration(k - i);
+         this.logTickTime(k - i);
          this.profiler.pop();
          org.spigotmc.WatchdogThread.tick(); // Spigot
 -        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
@@ -835,11 +835,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
      }
  
-     private ServerStatus buildServerStatus() {
+     protected void logTickTime(long nanos) {}
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     }
- 
-     public void tickChildren(BooleanSupplier shouldKeepTicking) {
+         this.getPlayerList().getPlayers().forEach((entityplayer) -> {
+             entityplayer.connection.suspendFlushing();
+         });
 -        SpigotTimings.schedulerTimer.startTiming(); // Spigot
 +        MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
          this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
@@ -908,8 +908,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.tickablesTimer.stopTiming(); // Spigot
 +        MinecraftTimings.tickablesTimer.stopTiming(); // Spigot // Paper
  
-         this.profiler.pop();
-     }
+         this.profiler.popPush("send chunks");
+         iterator = this.playerList.getPlayers().iterator();
 diff --git a/src/main/java/net/minecraft/server/ServerFunctionManager.java b/src/main/java/net/minecraft/server/ServerFunctionManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ServerFunctionManager.java
@@ -921,7 +921,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            try {
 +            try (co.aikar.timings.Timing timing = function.getTiming().startTiming()) { // Paper
                  this.context = new ServerFunctionManager.ExecutionContext(tracer);
-                 i = this.context.runTopCommand(function, source);
+                 i = this.context.runTopCommand(customfunction1, source);
              } finally {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -1278,7 +1278,7 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void tick() {
@@ -1286,7 +1286,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.ackBlockChangesUpTo > -1) {
              this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
              this.ackBlockChangesUpTo = -1;
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
              this.disconnect(Component.translatable("multiplayer.disconnect.idling"));
          }
@@ -1294,7 +1294,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      }
  
      private void handleCommand(String s) {
@@ -1303,7 +1303,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
          this.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + s);
  
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          this.cserver.getPluginManager().callEvent(event);
  
          if (event.isCancelled()) {
@@ -1312,7 +1312,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return;
          }
  
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              java.util.logging.Logger.getLogger(ServerGamePacketListenerImpl.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
              return;
          } finally {
@@ -1455,17 +1455,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          double d0 = this.getX() - this.xo;
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
-         if (this.isSleeping()) {
-             this.setXRot(0.0F);
          }
--
+ 
+         this.refreshDirtyAttributes();
 -        SpigotTimings.timerEntityTickRest.stopTiming(); // Spigot
      }
  
      public void detectEquipmentUpdates() {
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
-         this.setDeltaMovement(d4, d5, d6);
+         this.setDeltaMovement(d0, d1, d2);
          this.level().getProfiler().push("ai");
 -        SpigotTimings.timerEntityAI.startTiming(); // Spigot
          if (this.isImmobile()) {

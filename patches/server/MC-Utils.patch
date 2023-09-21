@@ -5529,14 +5529,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
 @@ -0,0 +0,0 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
-                         JvmProfiler.INSTANCE.onPacketSent(l, i, channelHandlerContext.channel().remoteAddress(), k);
-                     }
-                 } catch (Throwable var10) {
--                    LOGGER.error("Error receiving packet {}", i, var10);
-+                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", i, packet.isSkippable(), var10); // Paper - Give proper error message
+ 
+                     JvmProfiler.INSTANCE.onPacketSent(codecData.protocol(), i, channelHandlerContext.channel().remoteAddress(), k);
+                 } catch (Throwable var13) {
+-                    LOGGER.error("Error receiving packet {}", i, var13);
++                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", i, packet.isSkippable(), var13); // Paper - Give proper error message
                      if (packet.isSkippable()) {
-                         throw new SkipPacketException(var10);
-                     } else {
+                         throw new SkipPacketException(var13);
+                     }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -5606,8 +5606,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
      private final DebugBuffer<ChunkHolder.ChunkSaveDebug> chunkToSaveHistory;
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-     private boolean wasAccessibleSinceLastSave;
      private CompletableFuture<Void> pendingFullStateConfirmation;
+     private CompletableFuture<?> sendSync;
  
 +    private final ChunkMap chunkMap; // Paper
 +
@@ -5835,14 +5835,6 @@ diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
- import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
- import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
- import net.minecraft.network.protocol.game.DebugPackets;
-+import io.papermc.paper.util.MCUtil;
- import net.minecraft.server.level.progress.ChunkProgressListener;
- import net.minecraft.server.network.ServerPlayerConnection;
- import net.minecraft.util.CsvOutput;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      };
      // CraftBukkit end
@@ -5851,8 +5843,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
 +
 +    void addPlayerToDistanceMaps(ServerPlayer player) {
-+        int chunkX = MCUtil.getChunkCoordinate(player.getX());
-+        int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
++        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
++        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
 +        // Note: players need to be explicitly added to distance maps before they can be updated
 +    }
 +
@@ -5861,8 +5853,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    void updateMaps(ServerPlayer player) {
-+        int chunkX = MCUtil.getChunkCoordinate(player.getX());
-+        int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
++        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
++        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
 +        // Note: players need to be explicitly added to distance maps before they can be updated
 +    }
 +    // Paper end
@@ -5903,7 +5895,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.overworldDataStorage = persistentStateManagerFactory;
          this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
-         this.setViewDistance(viewDistance);
+         this.setServerViewDistance(viewDistance);
 +        // Paper start
 +        this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
 +        this.regionManagers.add(this.dataRegionManager);
@@ -5958,8 +5950,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      protected void saveAllChunks(boolean flush) {
          if (flush) {
--            List<ChunkHolder> list = (List) this.visibleChunkMap.values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList());
-+            List<ChunkHolder> list = (List) io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList()); // Paper
+-            List<ChunkHolder> list = this.visibleChunkMap.values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).toList();
++            List<ChunkHolder> list = io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).toList(); // Paper
              MutableBoolean mutableboolean = new MutableBoolean();
  
              do {
@@ -6023,15 +6015,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          };
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
- 
-             this.viewDistance = j;
-             this.distanceManager.updatePlayerTickets(this.viewDistance);
--            ObjectIterator objectiterator = this.updatingChunkMap.values().iterator();
-+            Iterator objectiterator = io.papermc.paper.chunk.system.ChunkSystem.getUpdatingChunkHolders(this.level).iterator(); // Paper
- 
-             while (objectiterator.hasNext()) {
-                 ChunkHolder playerchunk = (ChunkHolder) objectiterator.next();
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public int size() {
@@ -6066,30 +6049,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Optional<LevelChunk> optional1 = optional.flatMap((ichunkaccess) -> {
                  return ichunkaccess instanceof LevelChunk ? Optional.of((LevelChunk) ichunkaccess) : Optional.empty();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             if (!flag1) {
-                 this.distanceManager.addPlayer(SectionPos.of((EntityAccess) player), player);
-             }
+ 
+             player.setChunkTrackingView(ChunkTrackingView.EMPTY);
+             this.updateChunkTracking(player);
 +            this.addPlayerToDistanceMaps(player); // Paper - distance maps
          } else {
              SectionPos sectionposition = player.getLastSectionPos();
  
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             if (!flag2) {
                  this.distanceManager.removePlayer(sectionposition, player);
              }
+ 
 +            this.removePlayerFromDistanceMaps(player); // Paper - distance maps
++        }
++
+             this.applyChunkTrackingView(player, ChunkTrackingView.EMPTY);
          }
  
-         for (int k = i - this.viewDistance - 1; k <= i + this.viewDistance + 1; ++k) {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             }
+             this.updateChunkTracking(player);
          }
  
 +        this.updateMaps(player); // Paper - distance maps
-+
      }
  
-     @Override
+     private void updateChunkTracking(ServerPlayer player) {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private class ChunkDistanceManager extends DistanceManager {
  
@@ -6567,17 +6551,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
-     public Integer clientViewDistance;
+     public boolean sentListPacket = false;
      public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
      // CraftBukkit end
 +    public boolean isRealPlayer; // Paper
 +    public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
  
-     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile) {
+     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
-         this.setMaxUpStep(1.0F);
          this.fudgeSpawnLocation(world);
+         this.updateOptions(clientOptions);
  
 +        this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
 +
@@ -6634,7 +6618,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
      }
  
-     public void placeNewPlayer(Connection connection, ServerPlayer player) {
+     public void placeNewPlayer(Connection connection, ServerPlayer player, CommonListenerCookie clientData) {
 +        player.isRealPlayer = true; // Paper
          GameProfile gameprofile = player.getGameProfile();
          GameProfileCache usercache = this.server.getProfileCache();
