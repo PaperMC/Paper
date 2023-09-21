@@ -9,10 +9,10 @@ from triggering monster spawns on a server.
 Also a highly more effecient way to blanket block spawns in a world
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 6f30a16595e352e32375530a0482d8c0ee9c1113..8dc2a217d018e0a11fb852cf46d4e9b5290ea6a0 100644
+index 17182c7f130853b4b5d942e7d60adaded14f84f6..425a0baa9321e9b484814f38fe28de3c82333443 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -708,7 +708,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1193,7 +1193,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
          chunkRange = (chunkRange > 8) ? 8 : chunkRange;
  
@@ -21,9 +21,9 @@ index 6f30a16595e352e32375530a0482d8c0ee9c1113..8dc2a217d018e0a11fb852cf46d4e9b5
 +        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
 +        double blockRange = 16384.0D; // Paper
          // Spigot end
-         long i = chunkcoordintpair.toLong();
- 
-@@ -725,6 +727,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         if (!this.distanceManager.hasPlayersNearby(chunkcoordintpair.toLong())) {
+             return false;
+@@ -1208,6 +1210,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
  
                  entityplayer = (ServerPlayer) iterator.next();
@@ -40,10 +40,10 @@ index 6f30a16595e352e32375530a0482d8c0ee9c1113..8dc2a217d018e0a11fb852cf46d4e9b5
  
              return true;
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index b0687dcf8af84af627b67e7fbb68170a2fd28da0..5cb151a7d89c7281b03f24c5f79afb7edf7cbfea 100644
+index b1fd6118132ba38f60d2a2b15c09231fa29be8fa..0f38bdf2c9a29f2111c27138b8d997c230633bb8 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -565,6 +565,15 @@ public class ServerChunkCache extends ChunkSource {
+@@ -718,6 +718,15 @@ public class ServerChunkCache extends ChunkSource {
              boolean flag2 = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
  
              Collections.shuffle(list);
@@ -60,7 +60,7 @@ index b0687dcf8af84af627b67e7fbb68170a2fd28da0..5cb151a7d89c7281b03f24c5f79afb7e
  
              while (iterator1.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 5c855a15f7847ca37c263755f643eeb1fd79668b..3842caf61e388aa65b3a18c587480a7dabb8341b 100644
+index 40efa19ffe9275748a62e0546c3fd42bbcb0883d..491dffdcbb065acf5861dc01b403d1a895c92baa 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1,5 +1,6 @@
@@ -70,11 +70,11 @@ index 5c855a15f7847ca37c263755f643eeb1fd79668b..3842caf61e388aa65b3a18c587480a7d
  import com.google.common.collect.Lists;
  import com.google.common.net.InetAddresses;
  import com.mojang.authlib.GameProfile;
-@@ -260,6 +261,7 @@ public class ServerPlayer extends Player {
+@@ -257,6 +258,7 @@ public class ServerPlayer extends Player {
      // CraftBukkit end
      public boolean isRealPlayer; // Paper
      public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
 +    public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
  
-     private final java.util.concurrent.atomic.AtomicReference<io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances> viewDistances = new java.util.concurrent.atomic.AtomicReference<>(new io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances(-1, -1, -1));
-     public io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.PlayerChunkLoaderData chunkLoader;
+     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
+         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
