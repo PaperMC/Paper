@@ -35,33 +35,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
      private static final ExecutorService IO_POOL = makeIoExecutor();
      private static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT);
-     public static TimeSource.NanoTimeSource timeSource = System::nanoTime;
+     public static final long NANOS_PER_MILLI = 1000000L;
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 @@ -0,0 +0,0 @@ public class GameProfileCache {
              } else {
-                 this.requests.put(username, CompletableFuture.supplyAsync(() -> {
+                 CompletableFuture<Optional<GameProfile>> completablefuture1 = CompletableFuture.supplyAsync(() -> {
                      return this.get(username);
 -                }, Util.backgroundExecutor()).whenCompleteAsync((optional, throwable) -> {
 +                }, Util.PROFILE_EXECUTOR).whenCompleteAsync((optional, throwable) -> { // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
                      this.requests.remove(username);
-                 }, this.executor).whenCompleteAsync((optional, throwable) -> {
-                     consumer.accept(optional);
+                 }, this.executor);
+ 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 @@ -0,0 +0,0 @@ public class SkullBlockEntity extends BlockEntity {
-     public static void updateGameprofile(@Nullable GameProfile owner, Consumer<GameProfile> callback) {
-         if (owner != null && !StringUtil.isNullOrEmpty(owner.getName()) && (!owner.isComplete() || !owner.getProperties().containsKey("textures")) && profileCache != null && sessionService != null) {
-             profileCache.getAsync(owner.getName(), (profile) -> {
--                Util.backgroundExecutor().execute(() -> {
-+                Util.PROFILE_EXECUTOR.execute(() -> { // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
-                     Util.ifElse(profile, (profilex) -> {
-                         Property property = Iterables.getFirst(profilex.getProperties().get("textures"), (Property)null);
-                         if (property == null) {
+             } else {
+                 return Optional.empty();
+             }
+-        }, Util.backgroundExecutor());
++        }, Util.PROFILE_EXECUTOR); // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
+     }
+ 
+     private static boolean hasTextures(GameProfile profile) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java

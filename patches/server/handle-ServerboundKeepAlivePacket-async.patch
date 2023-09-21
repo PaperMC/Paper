@@ -14,11 +14,11 @@ off the main thread.
 also adding some additional logging in order to help work out what is causing
 random disconnections for clients.
 
-diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
@@ -27,14 +27,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
              int i = (int) (Util.getMillis() - this.keepAliveTime);
  
-             this.player.latency = (this.player.latency * 3 + i) / 4;
+             this.latency = (this.latency * 3 + i) / 4;
              this.keepAlivePending = false;
          } else if (!this.isSingleplayerOwner()) {
+-            this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
 +            // Paper start - This needs to be handled on the main thread for plugins
 +            server.submit(() -> {
-             this.disconnect(Component.translatable("disconnect.timeout"));
++                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
 +            });
-+            // Paper end
++            // Paper endg
          }
  
      }

@@ -9,15 +9,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
- 
-     }
- 
-+    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
-+
-     // Spigot start
-     public void initUUID()
-     {
-@@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge));
              } else {
                  // Spigot start
@@ -29,7 +20,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      public void run() {
                          try {
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-                             server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.gameProfile.getName(), ex);
+                             server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.requestedUsername, ex);
                          }
                      }
 -                }.start();
@@ -46,7 +37,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - Cache authenticator threads
 +        authenticatorPool.execute(new Runnable() {
              public void run() {
-                 GameProfile gameprofile = ServerLoginPacketListenerImpl.this.gameProfile;
+                 String s1 = (String) Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
  
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
@@ -61,3 +52,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      // Spigot start
+@@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+         this.state = ServerLoginPacketListenerImpl.State.ACCEPTED;
+     }
+ 
++    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
++
+     // Spigot start
+     protected GameProfile createOfflineProfile(String name) {
+         UUID uuid;
