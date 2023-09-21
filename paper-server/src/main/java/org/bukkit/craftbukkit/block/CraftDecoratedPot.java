@@ -26,13 +26,13 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
         Preconditions.checkArgument(sherd == null || sherd == Material.BRICK || Tag.ITEMS_DECORATED_POT_SHERDS.isTagged(sherd), "sherd is not a valid sherd material: %s", sherd);
 
         Item sherdItem = (sherd != null) ? CraftMagicNumbers.getItem(sherd) : Items.BRICK;
-        DecoratedPotBlockEntity.a decorations = getSnapshot().getDecorations(); // PAIL rename Decorations
+        DecoratedPotBlockEntity.Decoration decorations = getSnapshot().getDecorations();
 
         switch (face) {
-            case BACK -> getSnapshot().decorations = new DecoratedPotBlockEntity.a(sherdItem, decorations.left(), decorations.right(), decorations.front());
-            case LEFT -> getSnapshot().decorations = new DecoratedPotBlockEntity.a(decorations.back(), sherdItem, decorations.right(), decorations.front());
-            case RIGHT -> getSnapshot().decorations = new DecoratedPotBlockEntity.a(decorations.back(), decorations.left(), sherdItem, decorations.front());
-            case FRONT -> getSnapshot().decorations = new DecoratedPotBlockEntity.a(decorations.back(), decorations.left(), decorations.right(), sherdItem);
+            case BACK -> getSnapshot().decorations = new DecoratedPotBlockEntity.Decoration(sherdItem, decorations.left(), decorations.right(), decorations.front());
+            case LEFT -> getSnapshot().decorations = new DecoratedPotBlockEntity.Decoration(decorations.back(), sherdItem, decorations.right(), decorations.front());
+            case RIGHT -> getSnapshot().decorations = new DecoratedPotBlockEntity.Decoration(decorations.back(), decorations.left(), sherdItem, decorations.front());
+            case FRONT -> getSnapshot().decorations = new DecoratedPotBlockEntity.Decoration(decorations.back(), decorations.left(), decorations.right(), sherdItem);
             default -> throw new IllegalArgumentException("Unexpected value: " + face);
         }
     }
@@ -41,7 +41,7 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
     public Material getSherd(Side face) {
         Preconditions.checkArgument(face != null, "face must not be null");
 
-        DecoratedPotBlockEntity.a decorations = getSnapshot().getDecorations(); // PAIL rename Decorations
+        DecoratedPotBlockEntity.Decoration decorations = getSnapshot().getDecorations();
         Item sherdItem = switch (face) {
             case BACK -> decorations.back();
             case LEFT -> decorations.left();
@@ -55,7 +55,7 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
 
     @Override
     public Map<Side, Material> getSherds() {
-        DecoratedPotBlockEntity.a decorations = getSnapshot().getDecorations(); // PAIL rename Decorations
+        DecoratedPotBlockEntity.Decoration decorations = getSnapshot().getDecorations();
 
         Map<Side, Material> sherds = new EnumMap<>(Side.class);
         sherds.put(Side.BACK, CraftMagicNumbers.getMaterial(decorations.back()));

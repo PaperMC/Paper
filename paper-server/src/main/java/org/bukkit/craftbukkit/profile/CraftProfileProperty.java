@@ -90,37 +90,37 @@ final class CraftProfileProperty {
         StringBuilder builder = new StringBuilder();
         builder.append("{");
         builder.append("name=");
-        builder.append(property.getName());
+        builder.append(property.name());
         builder.append(", value=");
-        builder.append(property.getValue());
+        builder.append(property.value());
         builder.append(", signature=");
-        builder.append(property.getSignature());
+        builder.append(property.signature());
         builder.append("}");
         return builder.toString();
     }
 
     public static int hashCode(@Nonnull Property property) {
         int result = 1;
-        result = 31 * result + Objects.hashCode(property.getName());
-        result = 31 * result + Objects.hashCode(property.getValue());
-        result = 31 * result + Objects.hashCode(property.getSignature());
+        result = 31 * result + Objects.hashCode(property.name());
+        result = 31 * result + Objects.hashCode(property.value());
+        result = 31 * result + Objects.hashCode(property.signature());
         return result;
     }
 
     public static boolean equals(@Nullable Property property, @Nullable Property other) {
         if (property == null || other == null) return (property == other);
-        if (!Objects.equals(property.getValue(), other.getValue())) return false;
-        if (!Objects.equals(property.getName(), other.getName())) return false;
-        if (!Objects.equals(property.getSignature(), other.getSignature())) return false;
+        if (!Objects.equals(property.value(), other.value())) return false;
+        if (!Objects.equals(property.name(), other.name())) return false;
+        if (!Objects.equals(property.signature(), other.signature())) return false;
         return true;
     }
 
     public static Map<String, Object> serialize(@Nonnull Property property) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("name", property.getName());
-        map.put("value", property.getValue());
+        map.put("name", property.name());
+        map.put("value", property.value());
         if (property.hasSignature()) {
-            map.put("signature", property.getSignature());
+            map.put("signature", property.signature());
         }
         return map;
     }

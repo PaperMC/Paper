@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityBeacon.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityBeacon.java
-@@ -38,6 +38,11 @@
+@@ -40,6 +40,11 @@
  import net.minecraft.world.level.levelgen.HeightMap;
  import net.minecraft.world.phys.AxisAlignedBB;
  
@@ -12,7 +12,7 @@
  public class TileEntityBeacon extends TileEntity implements ITileInventory, INamableTileEntity {
  
      private static final int MAX_LEVELS = 4;
-@@ -61,6 +66,15 @@
+@@ -65,6 +70,15 @@
      public IChatBaseComponent name;
      public ChestLock lockKey;
      private final IContainerProperties dataAccess;
@@ -26,9 +26,9 @@
 +    }
 +    // CraftBukkit end
  
-     public TileEntityBeacon(BlockPosition blockposition, IBlockData iblockdata) {
-         super(TileEntityTypes.BEACON, blockposition, iblockdata);
-@@ -236,39 +250,78 @@
+     @Nullable
+     static MobEffectList filterEffect(@Nullable MobEffectList mobeffectlist) {
+@@ -245,39 +259,78 @@
          super.setRemoved();
      }
  
@@ -117,17 +117,20 @@
      public static void playSound(World world, BlockPosition blockposition, SoundEffect soundeffect) {
          world.playSound((EntityHuman) null, blockposition, soundeffect, SoundCategory.BLOCKS, 1.0F, 1.0F);
      }
-@@ -297,8 +350,11 @@
-     @Override
-     public void load(NBTTagCompound nbttagcompound) {
+@@ -312,7 +365,7 @@
+         if (nbttagcompound.contains(s, 8)) {
+             MinecraftKey minecraftkey = MinecraftKey.tryParse(nbttagcompound.getString(s));
+ 
+-            return filterEffect((MobEffectList) BuiltInRegistries.MOB_EFFECT.get(minecraftkey));
++            return (MobEffectList) BuiltInRegistries.MOB_EFFECT.get(minecraftkey); // CraftBukkit - persist manually set non-default beacon effects (SPIGOT-3598)
+         } else {
+             return null;
+         }
+@@ -323,6 +376,7 @@
          super.load(nbttagcompound);
--        this.primaryPower = getValidEffectById(nbttagcompound.getInt("Primary"));
--        this.secondaryPower = getValidEffectById(nbttagcompound.getInt("Secondary"));
-+        // CraftBukkit start - persist manually set non-default beacon effects (SPIGOT-3598)
-+        this.primaryPower = MobEffectList.byId(nbttagcompound.getInt("Primary"));
-+        this.secondaryPower = MobEffectList.byId(nbttagcompound.getInt("Secondary"));
-+        this.levels = nbttagcompound.getInt("Levels"); // SPIGOT-5053, use where available
-+        // CraftBukkit end
+         this.primaryPower = loadEffect(nbttagcompound, "primary_effect");
+         this.secondaryPower = loadEffect(nbttagcompound, "secondary_effect");
++        this.levels = nbttagcompound.getInt("Levels"); // CraftBukkit - SPIGOT-5053, use where available
          if (nbttagcompound.contains("CustomName", 8)) {
              this.name = IChatBaseComponent.ChatSerializer.fromJson(nbttagcompound.getString("CustomName"));
          }

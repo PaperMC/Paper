@@ -18,6 +18,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
+import org.bukkit.craftbukkit.profile.CraftGameProfile;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -74,7 +75,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (tag.contains(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
             this.setProfile(GameProfileSerializer.readGameProfile(tag.getCompound(SKULL_OWNER.NBT)));
         } else if (tag.contains(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_STRING) && !tag.getString(SKULL_OWNER.NBT).isEmpty()) {
-            this.setProfile(new GameProfile(null, tag.getString(SKULL_OWNER.NBT)));
+            this.setProfile(new CraftGameProfile(null, tag.getString(SKULL_OWNER.NBT)));
         }
 
         if (tag.contains(BLOCK_ENTITY_TAG.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
@@ -142,9 +143,11 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             // SPIGOT-6558: Set initial textures
             tag.put(SKULL_OWNER.NBT, serializedProfile);
             // Fill in textures
-            TileEntitySkull.updateGameprofile(profile, (filledProfile) -> {
-                setProfile(filledProfile);
-                tag.put(SKULL_OWNER.NBT, serializedProfile);
+            TileEntitySkull.fillProfileTextures(profile).thenAccept((optional) -> {
+                optional.ifPresent((filledProfile) -> {
+                    setProfile(filledProfile);
+                    tag.put(SKULL_OWNER.NBT, serializedProfile);
+                });
             });
         }
 
@@ -208,7 +211,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (name == null) {
             setProfile(null);
         } else {
-            setProfile(new GameProfile(null, name));
+            setProfile(new CraftGameProfile(null, name));
         }
 
         return true;
@@ -221,7 +224,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         } else if (owner instanceof CraftPlayer) {
             setProfile(((CraftPlayer) owner).getProfile());
         } else {
-            setProfile(new GameProfile(owner.getUniqueId(), owner.getName()));
+            setProfile(new CraftGameProfile(owner.getUniqueId(), owner.getName()));
         }
 
         return true;

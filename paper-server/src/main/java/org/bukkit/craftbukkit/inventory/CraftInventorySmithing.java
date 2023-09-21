@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.world.IInventory;
 import net.minecraft.world.inventory.InventoryCraftResult;
-import net.minecraft.world.item.crafting.IRecipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -39,7 +39,7 @@ public class CraftInventorySmithing extends CraftResultInventory implements Smit
 
     @Override
     public Recipe getRecipe() {
-        IRecipe recipe = getResultInventory().getRecipeUsed();
+        RecipeHolder<?> recipe = getResultInventory().getRecipeUsed();
         return (recipe == null) ? null : recipe.toBukkitRecipe();
     }
 }

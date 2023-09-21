@@ -11,7 +11,7 @@
  public class PlayerChunk {
  
      public static final Either<IChunkAccess, PlayerChunk.Failure> UNLOADED_CHUNK = Either.right(PlayerChunk.Failure.UNLOADED);
-@@ -71,11 +75,11 @@
+@@ -72,12 +76,12 @@
          this.fullChunkFuture = PlayerChunk.UNLOADED_LEVEL_CHUNK_FUTURE;
          this.tickingChunkFuture = PlayerChunk.UNLOADED_LEVEL_CHUNK_FUTURE;
          this.entityTickingChunkFuture = PlayerChunk.UNLOADED_LEVEL_CHUNK_FUTURE;
@@ -21,11 +21,13 @@
          this.blockChangedLightSectionFilter = new BitSet();
          this.skyChangedLightSectionFilter = new BitSet();
 -        this.pendingFullStateConfirmation = CompletableFuture.completedFuture((Object) null);
+-        this.sendSync = CompletableFuture.completedFuture((Object) null);
 +        this.pendingFullStateConfirmation = CompletableFuture.completedFuture(null); // CraftBukkit - decompile error
++        this.sendSync = CompletableFuture.completedFuture(null); // CraftBukkit - decompile error
          this.pos = chunkcoordintpair;
          this.levelHeightAccessor = levelheightaccessor;
          this.lightEngine = levellightengine;
-@@ -88,6 +92,20 @@
+@@ -90,6 +94,20 @@
          this.changedBlocksPerSection = new ShortSet[levelheightaccessor.getSectionsCount()];
      }
  
@@ -46,7 +48,7 @@
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getFutureIfPresentUnchecked(ChunkStatus chunkstatus) {
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.futures.get(chunkstatus.getIndex());
  
-@@ -113,17 +131,17 @@
+@@ -115,9 +133,9 @@
      @Nullable
      public Chunk getTickingChunk() {
          CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.getTickingChunkFuture();
@@ -57,6 +59,8 @@
 +        return either == null ? null : (Chunk) either.left().orElse(null); // CraftBukkit - decompile error
      }
  
+     public CompletableFuture<?> getChunkSendSyncFuture() {
+@@ -132,9 +150,9 @@
      @Nullable
      public Chunk getFullChunk() {
          CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.getFullChunkFuture();
@@ -68,7 +72,7 @@
      }
  
      @Nullable
-@@ -168,6 +186,7 @@
+@@ -179,6 +197,7 @@
          if (chunk != null) {
              int i = this.levelHeightAccessor.getSectionIndex(blockposition.getY());
  
@@ -76,7 +80,7 @@
              if (this.changedBlocksPerSection[i] == null) {
                  this.hasChangedSections = true;
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
-@@ -178,10 +197,10 @@
+@@ -189,10 +208,10 @@
      }
  
      public void sectionLightChanged(EnumSkyBlock enumskyblock, int i) {
@@ -89,7 +93,7 @@
  
              if (ichunkaccess != null) {
                  ichunkaccess.setUnsaved(true);
-@@ -246,8 +265,11 @@
+@@ -257,8 +276,11 @@
                                  PacketPlayOutMultiBlockChange packetplayoutmultiblockchange = new PacketPlayOutMultiBlockChange(sectionposition, shortset, chunksection);
  
                                  this.broadcast(list, packetplayoutmultiblockchange);
@@ -102,7 +106,7 @@
                                  });
                              }
                          }
-@@ -372,7 +394,7 @@
+@@ -394,7 +416,7 @@
          this.pendingFullStateConfirmation = completablefuture1;
          completablefuture.thenAccept((either) -> {
              either.ifLeft((chunk) -> {
@@ -111,7 +115,7 @@
              });
          });
      }
-@@ -389,6 +411,30 @@
+@@ -411,6 +433,30 @@
          boolean flag1 = ChunkLevel.isLoaded(this.ticketLevel);
          FullChunkStatus fullchunkstatus = ChunkLevel.fullStatus(this.oldTicketLevel);
          FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
@@ -142,7 +146,7 @@
  
          if (flag) {
              Either<IChunkAccess, PlayerChunk.Failure> either = Either.right(new PlayerChunk.Failure() {
-@@ -459,6 +505,26 @@
+@@ -481,6 +527,26 @@
  
          this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
          this.oldTicketLevel = this.ticketLevel;

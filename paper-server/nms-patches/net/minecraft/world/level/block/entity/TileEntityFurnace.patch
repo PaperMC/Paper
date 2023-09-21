@@ -18,7 +18,7 @@
 +import org.bukkit.inventory.CookingRecipe;
 +// CraftBukkit end
 +
- public abstract class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeHolder, AutoRecipeOutput {
+ public abstract class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeCraftingHolder, AutoRecipeOutput {
  
      protected static final int SLOT_INPUT = 0;
 @@ -115,7 +129,7 @@
@@ -72,18 +72,18 @@
          return item.builtInRegistryHolder().is(TagsItem.NON_FLAMMABLE_WOOD);
      }
 @@ -271,7 +319,7 @@
-             IRecipe irecipe;
+             RecipeHolder recipeholder;
  
              if (flag2) {
--                irecipe = (IRecipe) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).orElse((Object) null);
-+                irecipe = (IRecipe) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).orElse(null); // CraftBukkit - decompile error
+-                recipeholder = (RecipeHolder) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).orElse((Object) null);
++                recipeholder = (RecipeHolder) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).orElse(null); // CraftBukkit - decompile error
              } else {
-                 irecipe = null;
+                 recipeholder = null;
              }
 @@ -279,9 +327,20 @@
              int i = tileentityfurnace.getMaxStackSize();
  
-             if (!tileentityfurnace.isLit() && canBurn(world.registryAccess(), irecipe, tileentityfurnace.items, i)) {
+             if (!tileentityfurnace.isLit() && canBurn(world.registryAccess(), recipeholder, tileentityfurnace.items, i)) {
 -                tileentityfurnace.litTime = tileentityfurnace.getBurnDuration(itemstack);
 +                // CraftBukkit start
 +                CraftItemStack fuel = CraftItemStack.asCraftMirror(itemstack);
@@ -106,11 +106,11 @@
 @@ -297,11 +356,23 @@
              }
  
-             if (tileentityfurnace.isLit() && canBurn(world.registryAccess(), irecipe, tileentityfurnace.items, i)) {
+             if (tileentityfurnace.isLit() && canBurn(world.registryAccess(), recipeholder, tileentityfurnace.items, i)) {
 +                // CraftBukkit start
-+                if (irecipe != null && tileentityfurnace.cookingProgress == 0) {
++                if (recipeholder != null && tileentityfurnace.cookingProgress == 0) {
 +                    CraftItemStack source = CraftItemStack.asCraftMirror(tileentityfurnace.items.get(0));
-+                    CookingRecipe<?> recipe = (CookingRecipe<?>) irecipe.toBukkitRecipe();
++                    CookingRecipe<?> recipe = (CookingRecipe<?>) recipeholder.toBukkitRecipe();
 +
 +                    FurnaceStartSmeltEvent event = new FurnaceStartSmeltEvent(CraftBlock.at(world, blockposition), source, recipe);
 +                    world.getCraftServer().getPluginManager().callEvent(event);
@@ -123,20 +123,20 @@
                  if (tileentityfurnace.cookingProgress == tileentityfurnace.cookingTotalTime) {
                      tileentityfurnace.cookingProgress = 0;
                      tileentityfurnace.cookingTotalTime = getTotalCookTime(world, tileentityfurnace);
--                    if (burn(world.registryAccess(), irecipe, tileentityfurnace.items, i)) {
-+                    if (burn(tileentityfurnace.level, tileentityfurnace.worldPosition, world.registryAccess(), irecipe, tileentityfurnace.items, i)) { // CraftBukkit
-                         tileentityfurnace.setRecipeUsed(irecipe);
+-                    if (burn(world.registryAccess(), recipeholder, tileentityfurnace.items, i)) {
++                    if (burn(tileentityfurnace.level, tileentityfurnace.worldPosition, world.registryAccess(), recipeholder, tileentityfurnace.items, i)) { // CraftBukkit
+                         tileentityfurnace.setRecipeUsed(recipeholder);
                      }
  
 @@ -340,17 +411,44 @@
          }
      }
  
--    private static boolean burn(IRegistryCustom iregistrycustom, @Nullable IRecipe<?> irecipe, NonNullList<ItemStack> nonnulllist, int i) {
-+    private static boolean burn(World world, BlockPosition blockposition, IRegistryCustom iregistrycustom, @Nullable IRecipe<?> irecipe, NonNullList<ItemStack> nonnulllist, int i) { // CraftBukkit
-         if (irecipe != null && canBurn(iregistrycustom, irecipe, nonnulllist, i)) {
+-    private static boolean burn(IRegistryCustom iregistrycustom, @Nullable RecipeHolder<?> recipeholder, NonNullList<ItemStack> nonnulllist, int i) {
++    private static boolean burn(World world, BlockPosition blockposition, IRegistryCustom iregistrycustom, @Nullable RecipeHolder<?> recipeholder, NonNullList<ItemStack> nonnulllist, int i) { // CraftBukkit
+         if (recipeholder != null && canBurn(iregistrycustom, recipeholder, nonnulllist, i)) {
              ItemStack itemstack = (ItemStack) nonnulllist.get(0);
-             ItemStack itemstack1 = irecipe.getResultItem(iregistrycustom);
+             ItemStack itemstack1 = recipeholder.value().getResultItem(iregistrycustom);
              ItemStack itemstack2 = (ItemStack) nonnulllist.get(2);
  
 +            // CraftBukkit start - fire FurnaceSmeltEvent
@@ -174,45 +174,44 @@
  
              if (itemstack.is(Blocks.WET_SPONGE.asItem()) && !((ItemStack) nonnulllist.get(1)).isEmpty() && ((ItemStack) nonnulllist.get(1)).is(Items.BUCKET)) {
                  nonnulllist.set(1, new ItemStack(Items.WATER_BUCKET));
-@@ -374,7 +472,7 @@
+@@ -374,6 +472,7 @@
      }
  
      private static int getTotalCookTime(World world, TileEntityFurnace tileentityfurnace) {
--        return (Integer) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).map(RecipeCooking::getCookingTime).orElse(200);
-+        return (world != null) ? (Integer) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).map(RecipeCooking::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302
-     }
- 
-     public static boolean isFuel(ItemStack itemstack) {
-@@ -493,8 +591,8 @@
++        if (world == null) return 200; // CraftBukkit - SPIGOT-4302
+         return (Integer) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).map((recipeholder) -> {
+             return ((RecipeCooking) recipeholder.value()).getCookingTime();
+         }).orElse(200);
+@@ -495,8 +594,8 @@
      @Override
      public void awardUsedRecipes(EntityHuman entityhuman, List<ItemStack> list) {}
  
 -    public void awardUsedRecipesAndPopExperience(EntityPlayer entityplayer) {
--        List<IRecipe<?>> list = this.getRecipesToAwardAndPopExperience(entityplayer.serverLevel(), entityplayer.position());
+-        List<RecipeHolder<?>> list = this.getRecipesToAwardAndPopExperience(entityplayer.serverLevel(), entityplayer.position());
 +    public void awardUsedRecipesAndPopExperience(EntityPlayer entityplayer, ItemStack itemstack, int amount) { // CraftBukkit
-+        List<IRecipe<?>> list = this.getRecipesToAwardAndPopExperience(entityplayer.serverLevel(), entityplayer.position(), this.worldPosition, entityplayer, itemstack, amount); // CraftBukkit
++        List<RecipeHolder<?>> list = this.getRecipesToAwardAndPopExperience(entityplayer.serverLevel(), entityplayer.position(), this.worldPosition, entityplayer, itemstack, amount); // CraftBukkit
  
          entityplayer.awardRecipes(list);
          Iterator iterator = list.iterator();
-@@ -511,6 +609,12 @@
+@@ -513,6 +612,12 @@
      }
  
-     public List<IRecipe<?>> getRecipesToAwardAndPopExperience(WorldServer worldserver, Vec3D vec3d) {
+     public List<RecipeHolder<?>> getRecipesToAwardAndPopExperience(WorldServer worldserver, Vec3D vec3d) {
 +        // CraftBukkit start
 +        return this.getRecipesToAwardAndPopExperience(worldserver, vec3d, this.worldPosition, null, null, 0);
 +    }
 +
-+    public List<IRecipe<?>> getRecipesToAwardAndPopExperience(WorldServer worldserver, Vec3D vec3d, BlockPosition blockposition, EntityPlayer entityplayer, ItemStack itemstack, int amount) {
++    public List<RecipeHolder<?>> getRecipesToAwardAndPopExperience(WorldServer worldserver, Vec3D vec3d, BlockPosition blockposition, EntityPlayer entityplayer, ItemStack itemstack, int amount) {
 +        // CraftBukkit end
-         List<IRecipe<?>> list = Lists.newArrayList();
+         List<RecipeHolder<?>> list = Lists.newArrayList();
          ObjectIterator objectiterator = this.recipesUsed.object2IntEntrySet().iterator();
  
-@@ -519,14 +623,14 @@
+@@ -521,14 +626,14 @@
  
-             worldserver.getRecipeManager().byKey((MinecraftKey) entry.getKey()).ifPresent((irecipe) -> {
-                 list.add(irecipe);
--                createExperience(worldserver, vec3d, entry.getIntValue(), ((RecipeCooking) irecipe).getExperience());
-+                createExperience(worldserver, vec3d, entry.getIntValue(), ((RecipeCooking) irecipe).getExperience(), blockposition, entityplayer, itemstack, amount); // CraftBukkit
+             worldserver.getRecipeManager().byKey((MinecraftKey) entry.getKey()).ifPresent((recipeholder) -> {
+                 list.add(recipeholder);
+-                createExperience(worldserver, vec3d, entry.getIntValue(), ((RecipeCooking) recipeholder.value()).getExperience());
++                createExperience(worldserver, vec3d, entry.getIntValue(), ((RecipeCooking) recipeholder.value()).getExperience(), blockposition, entityplayer, itemstack, amount); // CraftBukkit
              });
          }
  
@@ -224,7 +223,7 @@
          int j = MathHelper.floor((float) i * f);
          float f1 = MathHelper.frac((float) i * f);
  
-@@ -534,6 +638,17 @@
+@@ -536,6 +641,17 @@
              ++j;
          }
  

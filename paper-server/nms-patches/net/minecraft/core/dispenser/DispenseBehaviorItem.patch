@@ -1,10 +1,11 @@
 --- a/net/minecraft/core/dispenser/DispenseBehaviorItem.java
 +++ b/net/minecraft/core/dispenser/DispenseBehaviorItem.java
-@@ -8,8 +8,22 @@
+@@ -7,8 +7,23 @@
  import net.minecraft.world.level.World;
  import net.minecraft.world.level.block.BlockDispenser;
  
 +// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.CraftVector;
 +import org.bukkit.event.block.BlockDispenseEvent;
@@ -23,13 +24,13 @@
      public DispenseBehaviorItem() {}
  
      @Override
-@@ -26,11 +40,19 @@
-         IPosition iposition = BlockDispenser.getDispensePosition(isourceblock);
+@@ -25,11 +40,19 @@
+         IPosition iposition = BlockDispenser.getDispensePosition(sourceblock);
          ItemStack itemstack1 = itemstack.split(1);
  
--        spawnItem(isourceblock.getLevel(), itemstack1, 6, enumdirection, iposition);
+-        spawnItem(sourceblock.level(), itemstack1, 6, enumdirection, iposition);
 +        // CraftBukkit start
-+        if (!spawnItem(isourceblock.getLevel(), itemstack1, 6, enumdirection, isourceblock, dropper)) {
++        if (!spawnItem(sourceblock.level(), itemstack1, 6, enumdirection, sourceblock, dropper)) {
 +            itemstack.grow(1);
 +        }
 +        // CraftBukkit end
@@ -38,20 +39,20 @@
  
 -    public static void spawnItem(World world, ItemStack itemstack, int i, EnumDirection enumdirection, IPosition iposition) {
 +    // CraftBukkit start - void -> boolean return, IPosition -> ISourceBlock last argument, dropper
-+    public static boolean spawnItem(World world, ItemStack itemstack, int i, EnumDirection enumdirection, ISourceBlock isourceblock, boolean dropper) {
++    public static boolean spawnItem(World world, ItemStack itemstack, int i, EnumDirection enumdirection, SourceBlock sourceblock, boolean dropper) {
 +        if (itemstack.isEmpty()) return true;
-+        IPosition iposition = BlockDispenser.getDispensePosition(isourceblock);
++        IPosition iposition = BlockDispenser.getDispensePosition(sourceblock);
 +        // CraftBukkit end
          double d0 = iposition.x();
          double d1 = iposition.y();
          double d2 = iposition.z();
-@@ -45,7 +67,39 @@
+@@ -44,7 +67,39 @@
          double d3 = world.random.nextDouble() * 0.1D + 0.2D;
  
          entityitem.setDeltaMovement(world.random.triangle((double) enumdirection.getStepX() * d3, 0.0172275D * (double) i), world.random.triangle(0.2D, 0.0172275D * (double) i), world.random.triangle((double) enumdirection.getStepZ() * d3, 0.0172275D * (double) i));
 +
 +        // CraftBukkit start
-+        org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getPos().getX(), isourceblock.getPos().getY(), isourceblock.getPos().getZ());
++        org.bukkit.block.Block block = CraftBlock.at(world, sourceblock.pos());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 +
 +        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), CraftVector.toBukkit(entityitem.getDeltaMovement()));
@@ -71,7 +72,7 @@
 +            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.DISPENSER_REGISTRY.get(eventStack.getItem());
 +            if (idispensebehavior != IDispenseBehavior.NOOP && idispensebehavior.getClass() != DispenseBehaviorItem.class) {
-+                idispensebehavior.dispense(isourceblock, eventStack);
++                idispensebehavior.dispense(sourceblock, eventStack);
 +            } else {
 +                world.addFreshEntity(entityitem);
 +            }
@@ -84,4 +85,4 @@
 +        // CraftBukkit end
      }
  
-     protected void playSound(ISourceBlock isourceblock) {
+     protected void playSound(SourceBlock sourceblock) {

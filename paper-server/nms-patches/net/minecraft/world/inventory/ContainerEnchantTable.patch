@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/ContainerEnchantTable.java
 +++ b/net/minecraft/world/inventory/ContainerEnchantTable.java
-@@ -25,6 +25,21 @@
+@@ -27,6 +27,21 @@
  import net.minecraft.world.level.block.BlockEnchantmentTable;
  import net.minecraft.world.level.block.Blocks;
  
@@ -21,8 +21,8 @@
 +
  public class ContainerEnchantTable extends Container {
  
-     private final IInventory enchantSlots;
-@@ -34,6 +49,10 @@
+     static final MinecraftKey EMPTY_SLOT_LAPIS_LAZULI = new MinecraftKey("item/empty_slot_lapis_lazuli");
+@@ -37,6 +52,10 @@
      public final int[] costs;
      public final int[] enchantClue;
      public final int[] levelClue;
@@ -33,7 +33,7 @@
  
      public ContainerEnchantTable(int i, PlayerInventory playerinventory) {
          this(i, playerinventory, ContainerAccess.NULL);
-@@ -47,6 +66,13 @@
+@@ -50,6 +69,13 @@
                  super.setChanged();
                  ContainerEnchantTable.this.slotsChanged(this);
              }
@@ -47,7 +47,7 @@
          };
          this.random = RandomSource.create();
          this.enchantmentSeed = ContainerProperty.standalone();
-@@ -94,6 +120,9 @@
+@@ -97,6 +123,9 @@
          this.addDataSlot(ContainerProperty.shared(this.levelClue, 0));
          this.addDataSlot(ContainerProperty.shared(this.levelClue, 1));
          this.addDataSlot(ContainerProperty.shared(this.levelClue, 2));
@@ -57,7 +57,7 @@
      }
  
      @Override
-@@ -101,7 +130,7 @@
+@@ -104,7 +133,7 @@
          if (iinventory == this.enchantSlots) {
              ItemStack itemstack = iinventory.getItem(0);
  
@@ -66,7 +66,7 @@
                  this.access.execute((world, blockposition) -> {
                      int i = 0;
                      Iterator iterator = BlockEnchantmentTable.BOOKSHELF_OFFSETS.iterator();
-@@ -140,6 +169,41 @@
+@@ -143,6 +172,41 @@
                          }
                      }
  
@@ -108,7 +108,7 @@
                      this.broadcastChanges();
                  });
              } else {
-@@ -167,9 +231,26 @@
+@@ -170,8 +234,25 @@
                      ItemStack itemstack2 = itemstack;
                      List<WeightedRandomEnchant> list = this.getEnchantmentList(itemstack, i, this.costs[i]);
  
@@ -117,10 +117,8 @@
 +                    // CraftBukkit start
 +                    if (true || !list.isEmpty()) {
 +                        // entityhuman.onEnchantmentPerformed(itemstack, j); // Moved down
-                         boolean flag = itemstack.is(Items.BOOK);
 +                        Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<org.bukkit.enchantments.Enchantment, Integer>();
-+                        for (Object obj : list) {
-+                            WeightedRandomEnchant instance = (WeightedRandomEnchant) obj;
++                        for (WeightedRandomEnchant instance : list) {
 +                            enchants.put(org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(instance.enchantment))), instance.level);
 +                        }
 +                        CraftItemStack item = CraftItemStack.asCraftMirror(itemstack2);
@@ -134,20 +132,24 @@
 +                        if (event.isCancelled() || (level > entityhuman.experienceLevel && !entityhuman.getAbilities().instabuild) || event.getEnchantsToAdd().isEmpty()) {
 +                            return;
 +                        }
++                        // CraftBukkit end
+                         boolean flag = itemstack.is(Items.BOOK);
  
                          if (flag) {
-                             itemstack2 = new ItemStack(Items.ENCHANTED_BOOK);
-@@ -182,16 +263,29 @@
+@@ -185,18 +266,30 @@
                              this.enchantSlots.setItem(0, itemstack2);
                          }
  
--                        for (int k = 0; k < list.size(); ++k) {
--                            WeightedRandomEnchant weightedrandomenchant = (WeightedRandomEnchant) list.get(k);
+-                        Iterator iterator = list.iterator();
+-
+-                        while (iterator.hasNext()) {
+-                            WeightedRandomEnchant weightedrandomenchant = (WeightedRandomEnchant) iterator.next();
 -
 -                            if (flag) {
 -                                ItemEnchantedBook.addEnchantment(itemstack2, weightedrandomenchant);
 -                            } else {
 -                                itemstack2.enchant(weightedrandomenchant.enchantment, weightedrandomenchant.level);
++                        // CraftBukkit start
 +                        for (Map.Entry<org.bukkit.enchantments.Enchantment, Integer> entry : event.getEnchantsToAdd().entrySet()) {
 +                            try {
 +                                if (flag) {
@@ -174,7 +176,7 @@
                          if (!entityhuman.getAbilities().instabuild) {
                              itemstack1.shrink(j);
                              if (itemstack1.isEmpty()) {
-@@ -254,6 +348,7 @@
+@@ -259,6 +352,7 @@
  
      @Override
      public boolean stillValid(EntityHuman entityhuman) {
@@ -182,7 +184,7 @@
          return stillValid(this.access, entityhuman, Blocks.ENCHANTING_TABLE);
      }
  
-@@ -304,4 +399,17 @@
+@@ -309,4 +403,17 @@
  
          return itemstack;
      }

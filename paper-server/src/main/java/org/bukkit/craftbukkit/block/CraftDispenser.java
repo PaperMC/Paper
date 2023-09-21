@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.block;
 
-import com.google.common.base.Preconditions;
 import net.minecraft.world.level.block.BlockDispenser;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntityDispenser;
@@ -53,7 +52,7 @@ public class CraftDispenser extends CraftLootable<TileEntityDispenser> implement
             CraftWorld world = (CraftWorld) this.getWorld();
             BlockDispenser dispense = (BlockDispenser) Blocks.DISPENSER;
 
-            dispense.dispenseFrom(world.getHandle(), this.getPosition());
+            dispense.dispenseFrom(world.getHandle(), this.getHandle(), this.getPosition());
             return true;
         } else {
             return false;

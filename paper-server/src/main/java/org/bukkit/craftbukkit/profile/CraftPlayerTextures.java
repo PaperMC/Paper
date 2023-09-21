@@ -96,7 +96,7 @@ final class CraftPlayerTextures implements PlayerTextures {
         Property property = getProperty();
         if (property == null) return;
 
-        data = CraftProfileProperty.decodePropertyValue(property.getValue());
+        data = CraftProfileProperty.decodePropertyValue(property.value());
         if (data != null) {
             JsonObject texturesMap = JsonHelper.getObjectOrNull(data, "textures");
             loadSkin(texturesMap);

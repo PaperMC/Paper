@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/PlayerConnection.java
 +++ b/net/minecraft/server/network/PlayerConnection.java
-@@ -185,6 +185,71 @@
+@@ -180,6 +180,66 @@
  import net.minecraft.world.phys.shapes.VoxelShapes;
  import org.slf4j.Logger;
  
@@ -13,7 +13,6 @@
 +import net.minecraft.network.protocol.game.PacketPlayOutAttachEntity;
 +import net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment;
 +import net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity;
-+import net.minecraft.network.protocol.game.PacketPlayOutSpawnPosition;
 +import net.minecraft.world.entity.EntityInsentient;
 +import net.minecraft.world.entity.animal.Bucketable;
 +import net.minecraft.world.entity.EntityLiving;
@@ -21,7 +20,7 @@
 +import net.minecraft.world.entity.animal.allay.Allay;
 +import net.minecraft.world.inventory.InventoryClickType;
 +import net.minecraft.world.inventory.Slot;
-+import net.minecraft.world.item.crafting.IRecipe;
++import net.minecraft.world.item.crafting.RecipeHolder;
 +import net.minecraft.world.level.RayTrace;
 +import net.minecraft.world.phys.MovingObjectPosition;
 +import org.bukkit.Location;
@@ -30,7 +29,6 @@
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.CraftChatMessage;
-+import org.bukkit.craftbukkit.util.CraftLocation;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.craftbukkit.util.LazyPlayerSet;
@@ -38,7 +36,6 @@
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.block.Action;
-+import org.bukkit.event.block.SignChangeEvent;
 +import org.bukkit.event.inventory.ClickType;
 +import org.bukkit.event.inventory.CraftItemEvent;
 +import org.bukkit.event.inventory.InventoryAction;
@@ -54,9 +51,7 @@
 +import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 +import org.bukkit.event.player.PlayerInteractEntityEvent;
 +import org.bukkit.event.player.PlayerItemHeldEvent;
-+import org.bukkit.event.player.PlayerKickEvent;
 +import org.bukkit.event.player.PlayerMoveEvent;
-+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 +import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
 +import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 +import org.bukkit.event.player.PlayerTeleportEvent;
@@ -69,13 +64,13 @@
 +import org.bukkit.inventory.SmithingInventory;
 +// CraftBukkit end
 +
- public class PlayerConnection implements ServerPlayerConnection, TickablePacketListener, PacketListenerPlayIn {
+ public class PlayerConnection extends ServerCommonPacketListenerImpl implements PacketListenerPlayIn, ServerPlayerConnection, TickablePacketListener {
  
      static final Logger LOGGER = LogUtils.getLogger();
-@@ -201,7 +266,9 @@
-     private long keepAliveTime;
-     private boolean keepAlivePending;
-     private long keepAliveChallenge;
+@@ -191,7 +251,9 @@
+     public final PlayerChunkSender chunkSender;
+     private int tickCount;
+     private int ackBlockChangesUpTo = -1;
 -    private int chatSpamTickCount;
 +    // CraftBukkit start - multithreaded fields
 +    private final AtomicInteger chatSpamTickCount = new AtomicInteger();
@@ -83,18 +78,24 @@
      private int dropSpamTickCount;
      private double firstGoodX;
      private double firstGoodY;
-@@ -247,8 +314,31 @@
-         this.keepAliveTime = SystemUtils.getMillis();
+@@ -227,7 +289,7 @@
+     private boolean waitingForSwitchToConfig;
+ 
+     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer, CommonListenerCookie commonlistenercookie) {
+-        super(minecraftserver, networkmanager, commonlistenercookie);
++        super(minecraftserver, networkmanager, commonlistenercookie, entityplayer); // CraftBukkit
+         this.lastChatTimeStamp = new AtomicReference(Instant.EPOCH);
+         this.lastSeenMessages = new LastSeenMessagesValidator(20);
+         this.messageSignatureCache = MessageSignatureCache.createDefault();
+@@ -237,9 +299,25 @@
+         entityplayer.connection = this;
          entityplayer.getTextFilter().join();
          this.signedMessageDecoder = minecraftserver.enforceSecureProfile() ? SignedMessageChain.b.REJECT_ALL : SignedMessageChain.b.unsigned(entityplayer.getUUID());
 -        this.chatMessageChain = new FutureChain(minecraftserver);
 +        this.chatMessageChain = new FutureChain(minecraftserver.chatExecutor); // CraftBukkit - async chat
-+        // CraftBukkit start - add fields and methods
-+        this.cserver = minecraftserver.server;
-+    }
-+
-+    private final org.bukkit.craftbukkit.CraftServer cserver;
-+    public boolean processedDisconnect;
+     }
+ 
++    // CraftBukkit start - add fields
 +    private int lastTick = MinecraftServer.currentTick;
 +    private int allowedPlayerTicks = 1;
 +    private int lastDropTick = MinecraftServer.currentTick;
@@ -108,27 +109,15 @@
 +    private float lastPitch = Float.MAX_VALUE;
 +    private float lastYaw = Float.MAX_VALUE;
 +    private boolean justTeleported = false;
-+
-+    public CraftPlayer getCraftPlayer() {
-+        return (this.player == null) ? null : (CraftPlayer) this.player.getBukkitEntity();
-     }
 +    // CraftBukkit end
- 
++
      @Override
      public void tick() {
-@@ -303,7 +393,7 @@
-         this.server.getProfiler().push("keepAlive");
-         long i = SystemUtils.getMillis();
- 
--        if (i - this.keepAliveTime >= 15000L) {
-+        if (i - this.keepAliveTime >= 25000L) { // CraftBukkit
-             if (this.keepAlivePending) {
-                 this.disconnect(IChatBaseComponent.translatable("disconnect.timeout"));
-             } else {
-@@ -315,15 +405,21 @@
+         if (this.ackBlockChangesUpTo > -1) {
+@@ -291,15 +369,21 @@
          }
  
-         this.server.getProfiler().pop();
+         this.keepConnectionAlive();
 +        // CraftBukkit start
 +        for (int spam; (spam = this.chatSpamTickCount.get()) > 0 && !chatSpamTickCount.compareAndSet(spam, spam - 1); ) ;
 +        /* Use thread-safe field access instead
@@ -147,76 +136,7 @@
              this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.idling"));
          }
  
-@@ -347,16 +443,67 @@
-         return this.server.isSingleplayerOwner(this.player.getGameProfile());
-     }
- 
-+    // CraftBukkit start
-+    @Deprecated
-     public void disconnect(IChatBaseComponent ichatbasecomponent) {
-+        disconnect(CraftChatMessage.fromComponent(ichatbasecomponent));
-+    }
-+    // CraftBukkit end
-+
-+    public void disconnect(String s) {
-+        // CraftBukkit start - fire PlayerKickEvent
-+        if (this.processedDisconnect) {
-+            return;
-+        }
-+        if (!this.cserver.isPrimaryThread()) {
-+            Waitable waitable = new Waitable() {
-+                @Override
-+                protected Object evaluate() {
-+                    PlayerConnection.this.disconnect(s);
-+                    return null;
-+                }
-+            };
-+
-+            this.server.processQueue.add(waitable);
-+
-+            try {
-+                waitable.get();
-+            } catch (InterruptedException e) {
-+                Thread.currentThread().interrupt();
-+            } catch (ExecutionException e) {
-+                throw new RuntimeException(e);
-+            }
-+            return;
-+        }
-+
-+        String leaveMessage = EnumChatFormat.YELLOW + this.player.getScoreboardName() + " left the game.";
-+
-+        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), s, leaveMessage);
-+
-+        if (this.cserver.getServer().isRunning()) {
-+            this.cserver.getPluginManager().callEvent(event);
-+        }
-+
-+        if (event.isCancelled()) {
-+            // Do not kick the player
-+            return;
-+        }
-+        this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
-+        // Send the possibly modified leave message
-+        final IChatBaseComponent ichatbasecomponent = CraftChatMessage.fromString(event.getReason(), true)[0];
-+        // CraftBukkit end
-+
-         this.connection.send(new PacketPlayOutKickDisconnect(ichatbasecomponent), PacketSendListener.thenRun(() -> {
-             this.connection.disconnect(ichatbasecomponent);
-         }));
-+        this.onDisconnect(ichatbasecomponent); // CraftBukkit - fire quit instantly
-         this.connection.setReadOnly();
-         MinecraftServer minecraftserver = this.server;
-         NetworkManager networkmanager = this.connection;
- 
-         Objects.requireNonNull(this.connection);
--        minecraftserver.executeBlocking(networkmanager::handleDisconnection);
-+        // CraftBukkit - Don't wait
-+        minecraftserver.wrapRunnable(networkmanager::handleDisconnection);
-     }
- 
-     private <T, R> CompletableFuture<R> filterTextPacket(T t0, BiFunction<ITextFilter, T, CompletableFuture<R>> bifunction) {
-@@ -420,7 +567,34 @@
+@@ -390,7 +474,34 @@
                  double d9 = entity.getDeltaMovement().lengthSqr();
                  double d10 = d6 * d6 + d7 * d7 + d8 * d8;
  
@@ -250,9 +170,9 @@
 +                if (d10 - d9 > Math.max(100.0D, Math.pow((double) (10.0F * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
 +                // CraftBukkit end
                      PlayerConnection.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", new Object[]{entity.getName().getString(), this.player.getName().getString(), d6, d7, d8});
-                     this.connection.send(new PacketPlayOutVehicleMove(entity));
+                     this.send(new PacketPlayOutVehicleMove(entity));
                      return;
-@@ -460,14 +634,72 @@
+@@ -430,14 +541,72 @@
                  }
  
                  entity.absMoveTo(d3, d4, d5, f, f1);
@@ -262,7 +182,7 @@
                  if (flag && (flag2 || !flag3)) {
                      entity.absMoveTo(d0, d1, d2, f, f1);
 +                    player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
-                     this.connection.send(new PacketPlayOutVehicleMove(entity));
+                     this.send(new PacketPlayOutVehicleMove(entity));
                      return;
                  }
  
@@ -325,7 +245,7 @@
                  this.player.serverLevel().getChunkSource().move(this.player);
                  this.player.checkMovementStatistics(this.player.getX() - d0, this.player.getY() - d1, this.player.getZ() - d2);
                  this.clientVehicleIsFloating = d11 >= -0.03125D && !flag1 && !this.server.isFlightAllowed() && !entity.isNoGravity() && this.noBlocksAround(entity);
-@@ -501,6 +733,7 @@
+@@ -471,6 +640,7 @@
              }
  
              this.awaitingPositionFromClient = null;
@@ -333,16 +253,16 @@
          }
  
      }
-@@ -508,7 +741,7 @@
+@@ -478,7 +648,7 @@
      @Override
      public void handleRecipeBookSeenRecipePacket(PacketPlayInRecipeDisplayed packetplayinrecipedisplayed) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinrecipedisplayed, this, this.player.serverLevel());
 -        Optional optional = this.server.getRecipeManager().byKey(packetplayinrecipedisplayed.getRecipe());
-+        Optional<? extends IRecipe<?>> optional = this.server.getRecipeManager().byKey(packetplayinrecipedisplayed.getRecipe()); // CraftBukkit - decompile error
++        Optional<? extends RecipeHolder<?>> optional = this.server.getRecipeManager().byKey(packetplayinrecipedisplayed.getRecipe()); // CraftBukkit - decompile error
          RecipeBookServer recipebookserver = this.player.getRecipeBook();
  
          Objects.requireNonNull(recipebookserver);
-@@ -538,6 +771,12 @@
+@@ -508,6 +678,12 @@
      @Override
      public void handleCustomCommandSuggestions(PacketPlayInTabComplete packetplayintabcomplete) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayintabcomplete, this, this.player.serverLevel());
@@ -355,15 +275,15 @@
          StringReader stringreader = new StringReader(packetplayintabcomplete.getCommand());
  
          if (stringreader.canRead() && stringreader.peek() == '/') {
-@@ -547,6 +786,7 @@
+@@ -517,6 +693,7 @@
          ParseResults<CommandListenerWrapper> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
  
          this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
 +            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
-             this.connection.send(new PacketPlayOutTabComplete(packetplayintabcomplete.getId(), suggestions));
+             this.send(new PacketPlayOutTabComplete(packetplayintabcomplete.getId(), suggestions));
          });
      }
-@@ -792,6 +1032,13 @@
+@@ -762,6 +939,13 @@
  
          if (container instanceof ContainerMerchant) {
              ContainerMerchant containermerchant = (ContainerMerchant) container;
@@ -377,7 +297,7 @@
  
              if (!containermerchant.stillValid(this.player)) {
                  PlayerConnection.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, containermerchant);
-@@ -806,6 +1053,13 @@
+@@ -776,6 +960,13 @@
  
      @Override
      public void handleEditBook(PacketPlayInBEdit packetplayinbedit) {
@@ -391,7 +311,7 @@
          int i = packetplayinbedit.getSlot();
  
          if (PlayerInventory.isHotbarSlot(i) || i == 40) {
-@@ -814,7 +1068,7 @@
+@@ -784,7 +975,7 @@
  
              Objects.requireNonNull(list);
              optional.ifPresent(list::add);
@@ -400,7 +320,7 @@
  
              Objects.requireNonNull(list);
              stream.forEach(list::add);
-@@ -832,7 +1086,7 @@
+@@ -802,7 +993,7 @@
          ItemStack itemstack = this.player.getInventory().getItem(i);
  
          if (itemstack.is(Items.WRITABLE_BOOK)) {
@@ -409,7 +329,7 @@
          }
      }
  
-@@ -857,16 +1111,16 @@
+@@ -827,16 +1018,16 @@
  
              this.updateBookPages(list, (s) -> {
                  return IChatBaseComponent.ChatSerializer.toJson(IChatBaseComponent.literal(s));
@@ -430,7 +350,7 @@
                  return NBTTagString.valueOf((String) unaryoperator.apply(filteredtext.filteredOrEmpty()));
              });
  
-@@ -892,6 +1146,7 @@
+@@ -862,6 +1053,7 @@
          }
  
          itemstack.addTagElement("pages", nbttaglist);
@@ -438,7 +358,7 @@
      }
  
      @Override
-@@ -928,7 +1183,7 @@
+@@ -898,7 +1090,7 @@
          } else {
              WorldServer worldserver = this.player.serverLevel();
  
@@ -447,7 +367,7 @@
                  if (this.tickCount == 0) {
                      this.resetPosition();
                  }
-@@ -938,7 +1193,7 @@
+@@ -908,7 +1100,7 @@
                          this.awaitingTeleportTime = this.tickCount;
                          this.teleport(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot());
                      }
@@ -456,7 +376,7 @@
                  } else {
                      this.awaitingTeleportTime = this.tickCount;
                      double d0 = clampHorizontal(packetplayinflying.getX(this.player.getX()));
-@@ -950,7 +1205,15 @@
+@@ -920,7 +1112,15 @@
                      if (this.player.isPassenger()) {
                          this.player.absMoveTo(this.player.getX(), this.player.getY(), this.player.getZ(), f, f1);
                          this.player.serverLevel().getChunkSource().move(this.player);
@@ -472,7 +392,7 @@
                          double d3 = this.player.getX();
                          double d4 = this.player.getY();
                          double d5 = this.player.getZ();
-@@ -969,15 +1232,33 @@
+@@ -939,15 +1139,33 @@
                              ++this.receivedMovePacketCount;
                              int i = this.receivedMovePacketCount - this.knownMovePacketCount;
  
@@ -508,7 +428,7 @@
                                      PlayerConnection.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d6, d7, d8});
                                      this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
                                      return;
-@@ -998,6 +1279,7 @@
+@@ -968,6 +1186,7 @@
                              boolean flag1 = this.player.verticalCollisionBelow;
  
                              this.player.move(EnumMoveType.PLAYER, new Vec3D(d6, d7, d8));
@@ -516,7 +436,7 @@
                              double d11 = d7;
  
                              d6 = d0 - this.player.getX();
-@@ -1016,9 +1298,70 @@
+@@ -986,9 +1205,70 @@
                              }
  
                              if (!this.player.noPhysics && !this.player.isSleeping() && (flag2 && worldserver.noCollision(this.player, axisalignedbb) || this.isPlayerCollidingWithAnythingNew(worldserver, axisalignedbb, d0, d1, d2))) {
@@ -588,7 +508,7 @@
                                  this.player.absMoveTo(d0, d1, d2, f, f1);
                                  this.clientIsFloating = d11 >= -0.03125D && !flag1 && this.player.gameMode.getGameModeForPlayer() != EnumGamemode.SPECTATOR && !this.server.isFlightAllowed() && !this.player.getAbilities().mayfly && !this.player.hasEffect(MobEffects.LEVITATION) && !this.player.isFallFlying() && !this.player.isAutoSpinAttack() && this.noBlocksAround(this.player);
                                  this.player.serverLevel().getChunkSource().move(this.player);
-@@ -1059,11 +1402,68 @@
+@@ -1029,11 +1309,68 @@
          return true;
      }
  
@@ -658,7 +578,7 @@
          double d3 = set.contains(RelativeMovement.X) ? this.player.getX() : 0.0D;
          double d4 = set.contains(RelativeMovement.Y) ? this.player.getY() : 0.0D;
          double d5 = set.contains(RelativeMovement.Z) ? this.player.getZ() : 0.0D;
-@@ -1075,6 +1475,14 @@
+@@ -1045,6 +1382,14 @@
              this.awaitingTeleport = 0;
          }
  
@@ -673,7 +593,7 @@
          this.awaitingTeleportTime = this.tickCount;
          this.player.absMoveTo(d0, d1, d2, f, f1);
          this.player.connection.send(new PacketPlayOutPosition(d0 - d3, d1 - d4, d2 - d5, f - f2, f1 - f3, set, this.awaitingTeleport));
-@@ -1083,6 +1491,7 @@
+@@ -1053,6 +1398,7 @@
      @Override
      public void handlePlayerAction(PacketPlayInBlockDig packetplayinblockdig) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinblockdig, this, this.player.serverLevel());
@@ -681,7 +601,7 @@
          BlockPosition blockposition = packetplayinblockdig.getPos();
  
          this.player.resetLastActionTime();
-@@ -1093,14 +1502,46 @@
+@@ -1063,14 +1409,46 @@
                  if (!this.player.isSpectator()) {
                      ItemStack itemstack = this.player.getItemInHand(EnumHand.OFF_HAND);
  
@@ -730,7 +650,7 @@
                      this.player.drop(false);
                  }
  
-@@ -1138,6 +1579,7 @@
+@@ -1108,6 +1486,7 @@
      @Override
      public void handleUseItemOn(PacketPlayInUseItem packetplayinuseitem) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinuseitem, this, this.player.serverLevel());
@@ -738,7 +658,7 @@
          this.player.connection.ackBlockChangesUpTo(packetplayinuseitem.getSequence());
          WorldServer worldserver = this.player.serverLevel();
          EnumHand enumhand = packetplayinuseitem.getHand();
-@@ -1161,6 +1603,7 @@
+@@ -1131,6 +1510,7 @@
  
                      if (blockposition.getY() < i) {
                          if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.mayInteract(this.player, blockposition)) {
@@ -746,7 +666,7 @@
                              EnumInteractionResult enuminteractionresult = this.player.gameMode.useItemOn(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
  
                              if (enumdirection == EnumDirection.UP && !enuminteractionresult.consumesAction() && blockposition.getY() >= i - 1 && wasBlockPlacementAttempt(this.player, itemstack)) {
-@@ -1189,6 +1632,7 @@
+@@ -1159,6 +1539,7 @@
      @Override
      public void handleUseItem(PacketPlayInBlockPlace packetplayinblockplace) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinblockplace, this, this.player.serverLevel());
@@ -754,7 +674,7 @@
          this.ackBlockChangesUpTo(packetplayinblockplace.getSequence());
          WorldServer worldserver = this.player.serverLevel();
          EnumHand enumhand = packetplayinblockplace.getHand();
-@@ -1196,6 +1640,49 @@
+@@ -1166,6 +1547,49 @@
  
          this.player.resetLastActionTime();
          if (!itemstack.isEmpty() && itemstack.isItemEnabled(worldserver.enabledFeatures())) {
@@ -804,7 +724,7 @@
              EnumInteractionResult enuminteractionresult = this.player.gameMode.useItem(this.player, worldserver, itemstack, enumhand);
  
              if (enuminteractionresult.shouldSwing()) {
-@@ -1216,7 +1703,7 @@
+@@ -1186,7 +1610,7 @@
                  Entity entity = packetplayinspectate.getEntity(worldserver);
  
                  if (entity != null) {
@@ -813,15 +733,7 @@
                      return;
                  }
              }
-@@ -1231,6 +1718,7 @@
-             PlayerConnection.LOGGER.info("Disconnecting {} due to resource pack rejection", this.player.getName());
-             this.disconnect(IChatBaseComponent.translatable("multiplayer.requiredTexturePrompt.disconnect"));
-         }
-+        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(getCraftPlayer(), PlayerResourcePackStatusEvent.Status.values()[packetplayinresourcepackstatus.action.ordinal()])); // CraftBukkit
- 
-     }
- 
-@@ -1252,12 +1740,27 @@
+@@ -1209,6 +1633,13 @@
  
      @Override
      public void onDisconnect(IChatBaseComponent ichatbasecomponent) {
@@ -832,8 +744,13 @@
 +            this.processedDisconnect = true;
 +        }
 +        // CraftBukkit end
-         this.chatMessageChain.close();
          PlayerConnection.LOGGER.info("{} lost connection: {}", this.player.getName().getString(), ichatbasecomponent.getString());
+         this.removePlayerFromWorld();
+         super.onDisconnect(ichatbasecomponent);
+@@ -1216,10 +1647,18 @@
+ 
+     private void removePlayerFromWorld() {
+         this.chatMessageChain.close();
 +        // CraftBukkit start - Replace vanilla quit message handling with our own.
 +        /*
          this.server.invalidateStatus();
@@ -848,25 +765,9 @@
 +        }
 +        // CraftBukkit end
          this.player.getTextFilter().leave();
-         if (this.isSingleplayerOwner()) {
-             PlayerConnection.LOGGER.info("Stopping singleplayer server as player logged out");
-@@ -1280,6 +1783,15 @@
      }
  
-     public void send(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) {
-+        // CraftBukkit start
-+        if (packet == null) {
-+            return;
-+        } else if (packet instanceof PacketPlayOutSpawnPosition) {
-+            PacketPlayOutSpawnPosition packet6 = (PacketPlayOutSpawnPosition) packet;
-+            this.player.compassTarget = CraftLocation.toBukkit(packet6.pos, this.getCraftPlayer().getWorld());
-+        }
-+        // CraftBukkit end
-+
-         try {
-             this.connection.send(packet, packetsendlistener);
-         } catch (Throwable throwable) {
-@@ -1296,7 +1808,16 @@
+@@ -1234,7 +1673,16 @@
      @Override
      public void handleSetCarriedItem(PacketPlayInHeldItemSlot packetplayinhelditemslot) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinhelditemslot, this, this.player.serverLevel());
@@ -883,7 +784,7 @@
              if (this.player.getInventory().selected != packetplayinhelditemslot.getSlot() && this.player.getUsedItemHand() == EnumHand.MAIN_HAND) {
                  this.player.stopUsingItem();
              }
-@@ -1305,18 +1826,25 @@
+@@ -1243,18 +1691,25 @@
              this.player.resetLastActionTime();
          } else {
              PlayerConnection.LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
@@ -910,8 +811,8 @@
                      PlayerChatMessage playerchatmessage;
  
                      try {
-@@ -1334,9 +1862,9 @@
-                             PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent((IChatBaseComponent) completablefuture1.join()).filter(((FilteredText) completablefuture.join()).mask());
+@@ -1272,9 +1727,9 @@
+                             PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(ichatbasecomponent).filter(filteredtext.mask());
  
                              this.broadcastChatMessage(playerchatmessage1);
 -                        }, executor);
@@ -922,7 +823,7 @@
              }
  
          }
-@@ -1351,6 +1879,12 @@
+@@ -1289,6 +1744,12 @@
  
              if (optional.isPresent()) {
                  this.server.submit(() -> {
@@ -935,7 +836,7 @@
                      this.performChatCommand(serverboundchatcommandpacket, (LastSeenMessages) optional.get());
                      this.detectRateSpam();
                  });
-@@ -1360,12 +1894,25 @@
+@@ -1298,12 +1759,25 @@
      }
  
      private void performChatCommand(ServerboundChatCommandPacket serverboundchatcommandpacket, LastSeenMessages lastseenmessages) {
@@ -963,20 +864,20 @@
          } catch (SignedMessageChain.a signedmessagechain_a) {
              this.handleMessageDecodeFailure(signedmessagechain_a);
              return;
-@@ -1373,10 +1920,10 @@
+@@ -1311,10 +1785,10 @@
  
          CommandSigningContext.a commandsigningcontext_a = new CommandSigningContext.a(map);
  
 -        parseresults = CommandDispatcher.mapSource(parseresults, (commandlistenerwrapper) -> {
 +        parseresults = CommandDispatcher.<CommandListenerWrapper>mapSource(parseresults, (commandlistenerwrapper) -> { // CraftBukkit - decompile error
-             return commandlistenerwrapper.withSigningContext(commandsigningcontext_a);
+             return commandlistenerwrapper.withSigningContext(commandsigningcontext_a, this.chatMessageChain);
          });
 -        this.server.getCommands().performCommand(parseresults, serverboundchatcommandpacket.command());
 +        this.server.getCommands().performCommand(parseresults, command); // CraftBukkit
      }
  
      private void handleMessageDecodeFailure(SignedMessageChain.a signedmessagechain_a) {
-@@ -1417,7 +1964,7 @@
+@@ -1355,7 +1829,7 @@
          } else {
              Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(lastseenmessages_b);
  
@@ -985,7 +886,7 @@
                  this.send(new ClientboundSystemChatPacket(IChatBaseComponent.translatable("chat.disabled.options").withStyle(EnumChatFormat.RED), false));
                  return Optional.empty();
              } else {
-@@ -1465,6 +2012,116 @@
+@@ -1403,6 +1877,116 @@
          return false;
      }
  
@@ -1102,7 +1003,7 @@
      private PlayerChatMessage getSignedMessage(PacketPlayInChat packetplayinchat, LastSeenMessages lastseenmessages) throws SignedMessageChain.a {
          SignedMessageBody signedmessagebody = new SignedMessageBody(packetplayinchat.message(), packetplayinchat.timeStamp(), packetplayinchat.salt(), lastseenmessages);
  
-@@ -1472,13 +2129,33 @@
+@@ -1410,13 +1994,33 @@
      }
  
      private void broadcastChatMessage(PlayerChatMessage playerchatmessage) {
@@ -1139,7 +1040,7 @@
              this.disconnect(IChatBaseComponent.translatable("disconnect.spam"));
          }
  
-@@ -1500,13 +2177,62 @@
+@@ -1438,13 +2042,62 @@
      @Override
      public void handleAnimate(PacketPlayInArmAnimation packetplayinarmanimation) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinarmanimation, this, this.player.serverLevel());
@@ -1202,7 +1103,7 @@
          this.player.resetLastActionTime();
          Entity entity;
          IJumpable ijumpable;
-@@ -1588,6 +2314,12 @@
+@@ -1526,6 +2179,12 @@
      }
  
      public void sendPlayerChatMessage(PlayerChatMessage playerchatmessage, ChatMessageType.a chatmessagetype_a) {
@@ -1215,7 +1116,7 @@
          this.send(new ClientboundPlayerChatPacket(playerchatmessage.link().sender(), playerchatmessage.link().index(), playerchatmessage.signature(), playerchatmessage.signedBody().pack(this.messageSignatureCache), playerchatmessage.unsignedContent(), playerchatmessage.filterMask(), chatmessagetype_a.toNetwork(this.player.level().registryAccess())));
          this.addPendingMessage(playerchatmessage);
      }
-@@ -1603,6 +2335,7 @@
+@@ -1552,6 +2211,7 @@
      @Override
      public void handleInteract(PacketPlayInUseEntity packetplayinuseentity) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinuseentity, this, this.player.serverLevel());
@@ -1223,7 +1124,7 @@
          final WorldServer worldserver = this.player.serverLevel();
          final Entity entity = packetplayinuseentity.getTarget(worldserver);
  
-@@ -1617,13 +2350,51 @@
+@@ -1566,13 +2226,51 @@
  
              if (axisalignedbb.distanceToSqr(this.player.getEyePosition()) < PlayerConnection.MAX_INTERACTION_DISTANCE) {
                  packetplayinuseentity.dispatch(new PacketPlayInUseEntity.c() {
@@ -1276,7 +1177,7 @@
                              if (enuminteractionresult.consumesAction()) {
                                  CriterionTriggers.PLAYER_INTERACTED_WITH_ENTITY.trigger(PlayerConnection.this.player, itemstack1, entity);
                                  if (enuminteractionresult.shouldSwing()) {
-@@ -1636,23 +2407,29 @@
+@@ -1585,23 +2283,29 @@
  
                      @Override
                      public void onInteraction(EnumHand enumhand) {
@@ -1309,7 +1210,7 @@
                              }
                          } else {
                              PlayerConnection.this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.invalid_entity_attacked"));
-@@ -1675,14 +2452,14 @@
+@@ -1624,14 +2328,14 @@
              case PERFORM_RESPAWN:
                  if (this.player.wonGame) {
                      this.player.wonGame = false;
@@ -1326,7 +1227,7 @@
                      if (this.server.isHardcore()) {
                          this.player.setGameMode(EnumGamemode.SPECTATOR);
                          ((GameRules.GameRuleBoolean) this.player.level().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS)).set(false, this.server);
-@@ -1698,15 +2475,21 @@
+@@ -1647,15 +2351,21 @@
      @Override
      public void handleContainerClose(PacketPlayInCloseWindow packetplayinclosewindow) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinclosewindow, this, this.player.serverLevel());
@@ -1350,7 +1251,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  PlayerConnection.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1719,7 +2502,284 @@
+@@ -1668,7 +2378,284 @@
                      boolean flag = packetplayinwindowclick.getStateId() != this.player.containerMenu.getStateId();
  
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -1636,12 +1537,12 @@
                      ObjectIterator objectiterator = Int2ObjectMaps.fastIterable(packetplayinwindowclick.getChangedSlots()).iterator();
  
                      while (objectiterator.hasNext()) {
-@@ -1749,9 +2809,18 @@
+@@ -1698,9 +2685,18 @@
              if (!this.player.containerMenu.stillValid(this.player)) {
                  PlayerConnection.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
              } else {
--                this.server.getRecipeManager().byKey(packetplayinautorecipe.getRecipe()).ifPresent((irecipe) -> {
--                    ((ContainerRecipeBook) this.player.containerMenu).handlePlacement(packetplayinautorecipe.isShiftDown(), irecipe, this.player);
+-                this.server.getRecipeManager().byKey(packetplayinautorecipe.getRecipe()).ifPresent((recipeholder) -> {
+-                    ((ContainerRecipeBook) this.player.containerMenu).handlePlacement(packetplayinautorecipe.isShiftDown(), recipeholder, this.player);
 +                // CraftBukkit start - implement PlayerRecipeBookClickEvent
 +                org.bukkit.inventory.Recipe recipe = this.cserver.getRecipe(CraftNamespacedKey.fromMinecraft(packetplayinautorecipe.getRecipe()));
 +                if (recipe == null) {
@@ -1650,14 +1551,14 @@
 +                org.bukkit.event.player.PlayerRecipeBookClickEvent event = CraftEventFactory.callRecipeBookClickEvent(this.player, recipe, packetplayinautorecipe.isShiftDown());
 +
 +                // Cast to keyed should be safe as the recipe will never be a MerchantRecipe.
-+                this.server.getRecipeManager().byKey(CraftNamespacedKey.toMinecraft(((org.bukkit.Keyed) event.getRecipe()).getKey())).ifPresent((irecipe) -> {
-+                    ((ContainerRecipeBook) this.player.containerMenu).handlePlacement(event.isShiftClick(), irecipe, this.player);
++                this.server.getRecipeManager().byKey(CraftNamespacedKey.toMinecraft(((org.bukkit.Keyed) event.getRecipe()).getKey())).ifPresent((recipeholder) -> {
++                    ((ContainerRecipeBook) this.player.containerMenu).handlePlacement(event.isShiftClick(), recipeholder, this.player);
                  });
 +                // CraftBukkit end
              }
          }
      }
-@@ -1759,6 +2828,7 @@
+@@ -1708,6 +2704,7 @@
      @Override
      public void handleContainerButtonClick(PacketPlayInEnchantItem packetplayinenchantitem) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinenchantitem, this, this.player.serverLevel());
@@ -1665,7 +1566,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packetplayinenchantitem.getContainerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -1801,6 +2871,43 @@
+@@ -1750,6 +2747,43 @@
  
              boolean flag1 = packetplayinsetcreativeslot.getSlotNum() >= 1 && packetplayinsetcreativeslot.getSlotNum() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getDamageValue() >= 0 && itemstack.getCount() <= 64 && !itemstack.isEmpty();
@@ -1709,7 +1610,7 @@
  
              if (flag1 && flag2) {
                  this.player.inventoryMenu.getSlot(packetplayinsetcreativeslot.getSlotNum()).setByPlayer(itemstack);
-@@ -1823,6 +2930,7 @@
+@@ -1772,6 +2806,7 @@
      }
  
      private void updateSignText(PacketPlayInUpdateSign packetplayinupdatesign, List<FilteredText> list) {
@@ -1717,15 +1618,7 @@
          this.player.resetLastActionTime();
          WorldServer worldserver = this.player.serverLevel();
          BlockPosition blockposition = packetplayinupdatesign.getPos();
-@@ -1843,6 +2951,7 @@
- 
-     @Override
-     public void handleKeepAlive(PacketPlayInKeepAlive packetplayinkeepalive) {
-+        PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinkeepalive, this, this.player.serverLevel()); // CraftBukkit
-         if (this.keepAlivePending && packetplayinkeepalive.getId() == this.keepAliveChallenge) {
-             int i = (int) (SystemUtils.getMillis() - this.keepAliveTime);
- 
-@@ -1857,7 +2966,17 @@
+@@ -1793,7 +2828,17 @@
      @Override
      public void handlePlayerAbilities(PacketPlayInAbilities packetplayinabilities) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinabilities, this, this.player.serverLevel());
@@ -1744,56 +1637,12 @@
      }
  
      @Override
-@@ -1866,8 +2985,50 @@
-         this.player.updateOptions(packetplayinsettings);
+@@ -1852,7 +2897,7 @@
+         if (!this.waitingForSwitchToConfig) {
+             throw new IllegalStateException("Client acknowledged config, but none was requested");
+         } else {
+-            this.connection.setListener(new ServerConfigurationPacketListenerImpl(this.server, this.connection, this.createCookie(this.player.clientInformation())));
++            this.connection.setListener(new ServerConfigurationPacketListenerImpl(this.server, this.connection, this.createCookie(this.player.clientInformation()), this.player)); // CraftBukkit
+         }
      }
  
--    @Override
--    public void handleCustomPayload(PacketPlayInCustomPayload packetplayincustompayload) {}
-+    // CraftBukkit start
-+    private static final MinecraftKey CUSTOM_REGISTER = new MinecraftKey("register");
-+    private static final MinecraftKey CUSTOM_UNREGISTER = new MinecraftKey("unregister");
-+
-+    @Override
-+    public void handleCustomPayload(PacketPlayInCustomPayload packetplayincustompayload) {
-+        PlayerConnectionUtils.ensureRunningOnSameThread(packetplayincustompayload, this, this.player.serverLevel());
-+        if (packetplayincustompayload.identifier.equals(CUSTOM_REGISTER)) {
-+            try {
-+                String channels = packetplayincustompayload.data.toString(com.google.common.base.Charsets.UTF_8);
-+                for (String channel : channels.split("\0")) {
-+                    getCraftPlayer().addChannel(channel);
-+                }
-+            } catch (Exception ex) {
-+                PlayerConnection.LOGGER.error("Couldn\'t register custom payload", ex);
-+                this.disconnect("Invalid payload REGISTER!");
-+            }
-+        } else if (packetplayincustompayload.identifier.equals(CUSTOM_UNREGISTER)) {
-+            try {
-+                String channels = packetplayincustompayload.data.toString(com.google.common.base.Charsets.UTF_8);
-+                for (String channel : channels.split("\0")) {
-+                    getCraftPlayer().removeChannel(channel);
-+                }
-+            } catch (Exception ex) {
-+                PlayerConnection.LOGGER.error("Couldn\'t unregister custom payload", ex);
-+                this.disconnect("Invalid payload UNREGISTER!");
-+            }
-+        } else {
-+            try {
-+                byte[] data = new byte[packetplayincustompayload.data.readableBytes()];
-+                packetplayincustompayload.data.readBytes(data);
-+                cserver.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packetplayincustompayload.identifier.toString(), data);
-+            } catch (Exception ex) {
-+                PlayerConnection.LOGGER.error("Couldn\'t dispatch custom payload", ex);
-+                this.disconnect("Invalid custom payload!");
-+            }
-+        }
-+
-+    }
-+
-+    public final boolean isDisconnected() {
-+        return !this.player.joining && !this.connection.isConnected();
-+    }
-+    // CraftBukkit end
- 
-     @Override
-     public void handleChangeDifficulty(PacketPlayInDifficultyChange packetplayindifficultychange) {

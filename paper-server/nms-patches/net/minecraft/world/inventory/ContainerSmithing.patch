@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/ContainerSmithing.java
 +++ b/net/minecraft/world/inventory/ContainerSmithing.java
-@@ -12,6 +12,8 @@
+@@ -13,6 +13,8 @@
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.IBlockData;
  
@@ -9,29 +9,29 @@
  public class ContainerSmithing extends ContainerAnvilAbstract {
  
      public static final int TEMPLATE_SLOT = 0;
-@@ -27,6 +29,9 @@
+@@ -28,6 +30,9 @@
      @Nullable
-     private SmithingRecipe selectedRecipe;
-     private final List<SmithingRecipe> recipes;
+     private RecipeHolder<SmithingRecipe> selectedRecipe;
+     private final List<RecipeHolder<SmithingRecipe>> recipes;
 +    // CraftBukkit start
 +    private CraftInventoryView bukkitEntity;
 +    // CraftBukkit end
  
      public ContainerSmithing(int i, PlayerInventory playerinventory) {
          this(i, playerinventory, ContainerAccess.NULL);
-@@ -96,7 +101,7 @@
-         List<SmithingRecipe> list = this.level.getRecipeManager().getRecipesFor(Recipes.SMITHING, this.inputSlots, this.level);
+@@ -97,7 +102,7 @@
+         List<RecipeHolder<SmithingRecipe>> list = this.level.getRecipeManager().getRecipesFor(Recipes.SMITHING, this.inputSlots, this.level);
  
          if (list.isEmpty()) {
 -            this.resultSlots.setItem(0, ItemStack.EMPTY);
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareSmithingEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
          } else {
-             SmithingRecipe smithingrecipe = (SmithingRecipe) list.get(0);
-             ItemStack itemstack = smithingrecipe.assemble(this.inputSlots, this.level.registryAccess());
-@@ -104,7 +109,9 @@
+             RecipeHolder<SmithingRecipe> recipeholder = (RecipeHolder) list.get(0);
+             ItemStack itemstack = ((SmithingRecipe) recipeholder.value()).assemble(this.inputSlots, this.level.registryAccess());
+@@ -105,7 +110,9 @@
              if (itemstack.isItemEnabled(this.level.enabledFeatures())) {
-                 this.selectedRecipe = smithingrecipe;
-                 this.resultSlots.setRecipeUsed(smithingrecipe);
+                 this.selectedRecipe = recipeholder;
+                 this.resultSlots.setRecipeUsed(recipeholder);
 -                this.resultSlots.setItem(0, itemstack);
 +                // CraftBukkit start
 +                org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareSmithingEvent(getBukkitView(), itemstack);
@@ -39,9 +39,9 @@
              }
          }
  
-@@ -132,4 +139,18 @@
-             return findSlotMatchingIngredient(smithingrecipe, itemstack);
-         }).anyMatch(Optional::isPresent);
+@@ -137,4 +144,18 @@
+             return !this.getSlot(i).hasItem();
+         }).findFirst();
      }
 +
 +    // CraftBukkit start

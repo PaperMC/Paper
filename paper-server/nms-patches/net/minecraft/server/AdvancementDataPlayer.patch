@@ -1,23 +1,18 @@
 --- a/net/minecraft/server/AdvancementDataPlayer.java
 +++ b/net/minecraft/server/AdvancementDataPlayer.java
-@@ -144,7 +144,11 @@
-                         Advancement advancement = advancementdataworld.getAdvancement((MinecraftKey) entry.getKey());
+@@ -197,6 +197,7 @@
+             AdvancementHolder advancementholder = advancementdataworld.get(minecraftkey);
  
-                         if (advancement == null) {
--                            AdvancementDataPlayer.LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", entry.getKey(), this.playerSavePath);
-+                            // CraftBukkit start
-+                            if (entry.getKey().getNamespace().equals("minecraft")) {
-+                                AdvancementDataPlayer.LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", entry.getKey(), this.playerSavePath);
-+                            }
-+                            // CraftBukkit end
-                         } else {
-                             this.startProgress(advancement, (AdvancementProgress) entry.getValue());
-                             this.progressChanged.add(advancement);
-@@ -227,6 +231,7 @@
-             this.progressChanged.add(advancement);
+             if (advancementholder == null) {
++                if (!minecraftkey.getNamespace().equals("minecraft")) return; // CraftBukkit
+                 AdvancementDataPlayer.LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", minecraftkey, this.playerSavePath);
+             } else {
+                 this.startProgress(advancementholder, advancementprogress);
+@@ -228,6 +229,7 @@
+             this.progressChanged.add(advancementholder);
              flag = true;
              if (!flag1 && advancementprogress.isDone()) {
-+                this.player.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.bukkit)); // CraftBukkit
-                 advancement.getRewards().grant(this.player);
-                 if (advancement.getDisplay() != null && advancement.getDisplay().shouldAnnounceChat() && this.player.level().getGameRules().getBoolean(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)) {
-                     this.playerList.broadcastSystemMessage(IChatBaseComponent.translatable("chat.type.advancement." + advancement.getDisplay().getFrame().getName(), this.player.getDisplayName(), advancement.getChatComponent()), false);
++                this.player.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancementholder.toBukkit())); // CraftBukkit
+                 advancementholder.value().rewards().grant(this.player);
+                 advancementholder.value().display().ifPresent((advancementdisplay) -> {
+                     if (advancementdisplay.shouldAnnounceChat() && this.player.level().getGameRules().getBoolean(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)) {

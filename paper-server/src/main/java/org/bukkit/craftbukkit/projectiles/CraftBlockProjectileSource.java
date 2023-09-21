@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.projectiles;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.EnumDirection;
 import net.minecraft.core.IPosition;
-import net.minecraft.core.SourceBlock;
+import net.minecraft.core.dispenser.SourceBlock;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityTypes;
@@ -24,7 +24,6 @@ import net.minecraft.world.level.block.entity.TileEntityDispenser;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
@@ -66,10 +65,10 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
         Preconditions.checkArgument(getBlock().getType() == Material.DISPENSER, "Block is no longer dispenser");
         // Copied from BlockDispenser.dispense()
-        SourceBlock isourceblock = new SourceBlock((WorldServer) dispenserBlock.getLevel(), dispenserBlock.getBlockPos());
+        SourceBlock sourceblock = new SourceBlock((WorldServer) dispenserBlock.getLevel(), dispenserBlock.getBlockPos(), dispenserBlock.getBlockState(), dispenserBlock);
         // Copied from DispenseBehaviorProjectile
-        IPosition iposition = BlockDispenser.getDispensePosition(isourceblock);
-        EnumDirection enumdirection = (EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING);
+        IPosition iposition = BlockDispenser.getDispensePosition(sourceblock);
+        EnumDirection enumdirection = (EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING);
         net.minecraft.world.level.World world = dispenserBlock.getLevel();
         net.minecraft.world.entity.Entity launch = null;
 

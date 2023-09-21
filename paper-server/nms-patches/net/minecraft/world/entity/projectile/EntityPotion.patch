@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityPotion.java
 +++ b/net/minecraft/world/entity/projectile/EntityPotion.java
-@@ -31,6 +31,16 @@
+@@ -31,6 +31,17 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  
@@ -8,6 +8,7 @@
 +import java.util.HashMap;
 +import java.util.Map;
 +import net.minecraft.server.level.EntityPlayer;
++import net.minecraft.world.effect.MobEffects;
 +import net.minecraft.world.level.block.Blocks;
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -17,7 +18,7 @@
  public class EntityPotion extends EntityProjectileThrowable implements ItemSupplier {
  
      public static final double SPLASH_RANGE = 4.0D;
-@@ -99,7 +109,7 @@
+@@ -99,7 +110,7 @@
  
              if (flag) {
                  this.applyWater();
@@ -26,7 +27,7 @@
                  if (this.isLingering()) {
                      this.makeAreaOfEffectCloud(itemstack, potionregistry);
                  } else {
-@@ -148,6 +158,7 @@
+@@ -148,6 +159,7 @@
      private void applySplash(List<MobEffect> list, @Nullable Entity entity) {
          AxisAlignedBB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
          List<EntityLiving> list1 = this.level().getEntitiesOfClass(EntityLiving.class, axisalignedbb);
@@ -34,7 +35,7 @@
  
          if (!list1.isEmpty()) {
              Entity entity1 = this.getEffectSource();
-@@ -168,24 +179,50 @@
+@@ -168,24 +180,49 @@
                              d1 = 1.0D - Math.sqrt(d0) / 4.0D;
                          }
  
@@ -65,9 +66,8 @@
 +                    MobEffectList mobeffectlist = mobeffect.getEffect();
 +                    // CraftBukkit start - Abide by PVP settings - for players only!
 +                    if (!this.level().pvpMode && this.getOwner() instanceof EntityPlayer && entityliving instanceof EntityPlayer && entityliving != this.getOwner()) {
-+                        int i = MobEffectList.getId(mobeffectlist);
-+                        // Block SLOWER_MOVEMENT, SLOWER_DIG, HARM, BLINDNESS, HUNGER, WEAKNESS and POISON potions
-+                        if (i == 2 || i == 4 || i == 7 || i == 15 || i == 17 || i == 18 || i == 19) {
++                        if (mobeffectlist == MobEffects.MOVEMENT_SLOWDOWN || mobeffectlist == MobEffects.DIG_SLOWDOWN || mobeffectlist == MobEffects.HARM || mobeffectlist == MobEffects.BLINDNESS
++                                || mobeffectlist == MobEffects.HUNGER || mobeffectlist == MobEffects.WEAKNESS || mobeffectlist == MobEffects.POISON) {
 +                            continue;
 +                        }
 +                    }
@@ -122,10 +122,10 @@
          IBlockData iblockdata = this.level().getBlockState(blockposition);
  
          if (iblockdata.is(TagsBlock.FIRE)) {
--            this.level().removeBlock(blockposition, false);
+-            this.level().destroyBlock(blockposition, false, this);
 +            // CraftBukkit start
 +            if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState())) {
-+                this.level().removeBlock(blockposition, false);
++                this.level().destroyBlock(blockposition, false, this);
 +            }
 +            // CraftBukkit end
          } else if (AbstractCandleBlock.isLit(iblockdata)) {

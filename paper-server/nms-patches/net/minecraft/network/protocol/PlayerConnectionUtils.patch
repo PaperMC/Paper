@@ -1,31 +1,31 @@
 --- a/net/minecraft/network/protocol/PlayerConnectionUtils.java
 +++ b/net/minecraft/network/protocol/PlayerConnectionUtils.java
-@@ -7,6 +7,11 @@
+@@ -8,6 +8,11 @@
  import net.minecraft.util.thread.IAsyncTaskHandler;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.network.PlayerConnection;
++import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 +// CraftBukkit end
 +
  public class PlayerConnectionUtils {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -20,6 +25,7 @@
+@@ -21,6 +26,7 @@
      public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T t0, IAsyncTaskHandler<?> iasynctaskhandler) throws CancelledPacketHandleException {
          if (!iasynctaskhandler.isSameThread()) {
              iasynctaskhandler.executeIfPossible(() -> {
-+                if (MinecraftServer.getServer().hasStopped() || (t0 instanceof PlayerConnection && ((PlayerConnection) t0).processedDisconnect)) return; // CraftBukkit, MC-142590
-                 if (t0.isAcceptingMessages()) {
++                if (MinecraftServer.getServer().hasStopped() || (t0 instanceof ServerCommonPacketListenerImpl && ((ServerCommonPacketListenerImpl) t0).processedDisconnect)) return; // CraftBukkit, MC-142590
+                 if (t0.shouldHandleMessage(packet)) {
                      try {
                          packet.handle(t0);
-@@ -36,6 +42,10 @@
+@@ -46,6 +52,10 @@
  
              });
              throw CancelledPacketHandleException.RUNNING_ON_DIFFERENT_THREAD;
 +            // CraftBukkit start - SPIGOT-5477, MC-142590
-+        } else if (MinecraftServer.getServer().hasStopped() || (t0 instanceof PlayerConnection && ((PlayerConnection) t0).processedDisconnect)) {
++        } else if (MinecraftServer.getServer().hasStopped() || (t0 instanceof ServerCommonPacketListenerImpl && ((ServerCommonPacketListenerImpl) t0).processedDisconnect)) {
 +            throw CancelledPacketHandleException.RUNNING_ON_DIFFERENT_THREAD;
 +            // CraftBukkit end
          }

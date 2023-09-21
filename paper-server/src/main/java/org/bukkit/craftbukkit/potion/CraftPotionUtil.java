@@ -100,12 +100,12 @@ public class CraftPotionUtil {
     }
 
     public static MobEffect fromBukkit(PotionEffect effect) {
-        MobEffectList type = MobEffectList.byId(effect.getType().getId());
+        MobEffectList type = CraftPotionEffectType.bukkitToMinecraft(effect.getType());
         return new MobEffect(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles());
     }
 
     public static PotionEffect toBukkit(MobEffect effect) {
-        PotionEffectType type = PotionEffectType.getById(MobEffectList.getId(effect.getEffect()));
+        PotionEffectType type = CraftPotionEffectType.minecraftToBukkit(effect.getEffect());
         int amp = effect.getAmplifier();
         int duration = effect.getDuration();
         boolean ambient = effect.isAmbient();
@@ -114,7 +114,7 @@ public class CraftPotionUtil {
     }
 
     public static boolean equals(MobEffectList mobEffect, PotionEffectType type) {
-        PotionEffectType typeV = PotionEffectType.getById(MobEffectList.getId(mobEffect));
+        PotionEffectType typeV = CraftPotionEffectType.minecraftToBukkit(mobEffect);
         return typeV.equals(type);
     }
 }

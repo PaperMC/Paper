@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
 import net.minecraft.core.BlockPosition;
-import net.minecraft.core.Position;
 import net.minecraft.world.phys.Vec3D;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -37,24 +36,8 @@ public final class CraftLocation {
         return new Location(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), yaw, pitch);
     }
 
-    public static Location toBukkit(Position position) {
-        return toBukkit(position, null, 0.0F, 0.0F);
-    }
-
-    public static Location toBukkit(Position position, World world) {
-        return toBukkit(position, world, 0.0F, 0.0F);
-    }
-
-    public static Location toBukkit(Position position, World world, float yaw, float pitch) {
-        return new Location(world, position.x(), position.y(), position.z(), yaw, pitch);
-    }
-
     public static BlockPosition toBlockPosition(Location location) {
         return new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    }
-
-    public static Position toPosition(Location location) {
-        return new Position(location.getX(), location.getY(), location.getZ());
     }
 
     public static Vec3D toVec3D(Location location) {

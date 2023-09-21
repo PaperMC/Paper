@@ -1,10 +1,11 @@
 --- a/net/minecraft/server/network/LoginListener.java
 +++ b/net/minecraft/server/network/LoginListener.java
-@@ -38,6 +38,12 @@
+@@ -39,6 +39,13 @@
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
++import net.minecraft.server.level.EntityPlayer;
 +import org.bukkit.craftbukkit.util.Waitable;
 +import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 +import org.bukkit.event.player.PlayerPreLoginEvent;
@@ -13,7 +14,15 @@
  public class LoginListener implements PacketLoginInListener, TickablePacketListener {
  
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
-@@ -83,6 +89,13 @@
+@@ -55,6 +62,7 @@
+     @Nullable
+     private GameProfile authenticatedProfile;
+     private final String serverId;
++    private EntityPlayer player; // CraftBukkit
+ 
+     public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
+         this.state = LoginListener.EnumProtocolState.HELLO;
+@@ -80,6 +88,13 @@
  
      }
  
@@ -27,43 +36,43 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -104,10 +117,12 @@
-             this.gameProfile = this.createFakeProfile(this.gameProfile);
-         }
+@@ -138,10 +153,12 @@
  
--        IChatBaseComponent ichatbasecomponent = this.server.getPlayerList().canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile);
+     private void verifyLoginAndFinishConnectionSetup(GameProfile gameprofile) {
+         PlayerList playerlist = this.server.getPlayerList();
+-        IChatBaseComponent ichatbasecomponent = playerlist.canPlayerLogin(this.connection.getRemoteAddress(), gameprofile);
 +        // CraftBukkit start - fire PlayerLoginEvent
-+        EntityPlayer s = this.server.getPlayerList().canPlayerLogin(this, this.gameProfile);
++        this.player = playerlist.canPlayerLogin(this, gameprofile); // CraftBukkit
  
 -        if (ichatbasecomponent != null) {
 -            this.disconnect(ichatbasecomponent);
-+        if (s == null) {
++        if (this.player == null) {
 +            // this.disconnect(ichatbasecomponent);
 +            // CraftBukkit end
          } else {
-             this.state = LoginListener.EnumProtocolState.ACCEPTED;
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
-@@ -120,7 +135,7 @@
-             EntityPlayer entityplayer = this.server.getPlayerList().getPlayer(this.gameProfile.getId());
+                 this.connection.send(new PacketLoginOutSetCompression(this.server.getCompressionThreshold()), PacketSendListener.thenRun(() -> {
+@@ -149,7 +166,7 @@
+                 }));
+             }
  
-             try {
--                EntityPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile);
-+                EntityPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile, s); // CraftBukkit - add player reference
+-            boolean flag = playerlist.disconnectAllPlayersWithProfile(gameprofile);
++            boolean flag = playerlist.disconnectAllPlayersWithProfile(gameprofile, this.player); // CraftBukkit - add player reference
  
-                 if (entityplayer != null) {
-                     this.state = LoginListener.EnumProtocolState.DELAY_ACCEPT;
-@@ -210,6 +225,43 @@
-                 try {
-                     LoginListener.this.gameProfile = LoginListener.this.server.getSessionService().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.getAddress());
-                     if (LoginListener.this.gameProfile != null) {
+             if (flag) {
+                 this.state = LoginListener.EnumProtocolState.WAITING_FOR_DUPE_DISCONNECT;
+@@ -205,6 +222,43 @@
+                     if (profileresult != null) {
+                         GameProfile gameprofile = profileresult.profile();
+ 
 +                        // CraftBukkit start - fire PlayerPreLoginEvent
 +                        if (!connection.isConnected()) {
 +                            return;
 +                        }
 +
-+                        String playerName = gameProfile.getName();
++                        String playerName = gameprofile.getName();
 +                        java.net.InetAddress address = ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress();
-+                        java.util.UUID uniqueId = gameProfile.getId();
++                        java.util.UUID uniqueId = gameprofile.getId();
 +                        final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
 +
 +                        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
@@ -93,18 +102,27 @@
 +                            }
 +                        }
 +                        // CraftBukkit end
-                         LoginListener.LOGGER.info("UUID of player {} is {}", LoginListener.this.gameProfile.getName(), LoginListener.this.gameProfile.getId());
-                         LoginListener.this.state = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
+                         LoginListener.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
+                         LoginListener.this.startClientVerification(gameprofile);
                      } else if (LoginListener.this.server.isSingleplayer()) {
-@@ -229,6 +281,11 @@
+@@ -222,6 +276,11 @@
                          LoginListener.this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.authservers_down"));
                          LoginListener.LOGGER.error("Couldn't verify username because servers are unavailable");
                      }
 +                    // CraftBukkit start - catch all exceptions
 +                } catch (Exception exception) {
 +                    disconnect("Failed to verify username!");
-+                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameprofile.getName(), exception);
++                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + s1, exception);
 +                    // CraftBukkit end
                  }
  
              }
+@@ -247,7 +306,7 @@
+     public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket serverboundloginacknowledgedpacket) {
+         Validate.validState(this.state == LoginListener.EnumProtocolState.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet", new Object[0]);
+         CommonListenerCookie commonlistenercookie = CommonListenerCookie.createInitial((GameProfile) Objects.requireNonNull(this.authenticatedProfile));
+-        ServerConfigurationPacketListenerImpl serverconfigurationpacketlistenerimpl = new ServerConfigurationPacketListenerImpl(this.server, this.connection, commonlistenercookie);
++        ServerConfigurationPacketListenerImpl serverconfigurationpacketlistenerimpl = new ServerConfigurationPacketListenerImpl(this.server, this.connection, commonlistenercookie, this.player); // CraftBukkit
+ 
+         this.connection.setListener(serverconfigurationpacketlistenerimpl);
+         serverconfigurationpacketlistenerimpl.startConfiguration();

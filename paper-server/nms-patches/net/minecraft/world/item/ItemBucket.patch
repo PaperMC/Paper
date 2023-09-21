@@ -17,12 +17,12 @@
  public class ItemBucket extends Item implements DispensibleContainerItem {
  
      public final FluidType content;
-@@ -59,6 +69,17 @@
-                     iblockdata = world.getBlockState(blockposition);
-                     if (iblockdata.getBlock() instanceof IFluidSource) {
-                         IFluidSource ifluidsource = (IFluidSource) iblockdata.getBlock();
+@@ -61,6 +71,17 @@
+ 
+                     if (block instanceof IFluidSource) {
+                         IFluidSource ifluidsource = (IFluidSource) block;
 +                        // CraftBukkit start
-+                        ItemStack dummyFluid = ifluidsource.pickupBlock(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
++                        ItemStack dummyFluid = ifluidsource.pickupBlock(entityhuman, DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
 +                        if (dummyFluid.isEmpty()) return InteractionResultWrapper.fail(itemstack); // Don't fire event if the bucket won't be filled.
 +                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((WorldServer) world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.getItem(), enumhand);
 +
@@ -32,10 +32,10 @@
 +                            return InteractionResultWrapper.fail(itemstack);
 +                        }
 +                        // CraftBukkit end
-                         ItemStack itemstack1 = ifluidsource.pickupBlock(world, blockposition, iblockdata);
+                         ItemStack itemstack1 = ifluidsource.pickupBlock(entityhuman, world, blockposition, iblockdata);
  
                          if (!itemstack1.isEmpty()) {
-@@ -67,7 +88,7 @@
+@@ -69,7 +90,7 @@
                                  entityhuman.playSound(soundeffect, 1.0F, 1.0F);
                              });
                              world.gameEvent((Entity) entityhuman, GameEvent.FLUID_PICKUP, blockposition);
@@ -44,7 +44,7 @@
  
                              if (!world.isClientSide) {
                                  CriterionTriggers.FILLED_BUCKET.trigger((EntityPlayer) entityhuman, itemstack1);
-@@ -82,7 +103,7 @@
+@@ -84,7 +105,7 @@
                      iblockdata = world.getBlockState(blockposition);
                      BlockPosition blockposition2 = iblockdata.getBlock() instanceof IFluidContainer && this.content == FluidTypes.WATER ? blockposition : blockposition1;
  
@@ -53,7 +53,7 @@
                          this.checkExtraContent(entityhuman, world, itemstack, blockposition2);
                          if (entityhuman instanceof EntityPlayer) {
                              CriterionTriggers.PLACED_BLOCK.trigger((EntityPlayer) entityhuman, blockposition2, itemstack);
-@@ -109,6 +130,12 @@
+@@ -111,6 +132,12 @@
  
      @Override
      public boolean emptyContents(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock) {
@@ -63,15 +63,15 @@
 +
 +    public boolean emptyContents(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock, EnumDirection enumdirection, BlockPosition clicked, ItemStack itemstack, EnumHand enumhand) {
 +        // CraftBukkit end
-         if (!(this.content instanceof FluidTypeFlowing)) {
-             return false;
-         } else {
-@@ -117,8 +144,18 @@
-             boolean flag = iblockdata.canBeReplaced(this.content);
-             boolean flag1 = iblockdata.isAir() || flag || block instanceof IFluidContainer && ((IFluidContainer) block).canPlaceLiquid(world, blockposition, iblockdata, this.content);
+         FluidType fluidtype = this.content;
+ 
+         if (!(fluidtype instanceof FluidTypeFlowing)) {
+@@ -148,8 +175,18 @@
+ 
+             boolean flag2 = flag1;
  
 +            // CraftBukkit start
-+            if (flag1 && entityhuman != null) {
++            if (flag2 && entityhuman != null) {
 +                PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((WorldServer) world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand);
 +                if (event.isCancelled()) {
 +                    ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-4238: needed when looking through entity
@@ -80,7 +80,7 @@
 +                }
 +            }
 +            // CraftBukkit end
-             if (!flag1) {
+             if (!flag2) {
 -                return movingobjectpositionblock != null && this.emptyContents(entityhuman, world, movingobjectpositionblock.getBlockPos().relative(movingobjectpositionblock.getDirection()), (MovingObjectPositionBlock) null);
 +                return movingobjectpositionblock != null && this.emptyContents(entityhuman, world, movingobjectpositionblock.getBlockPos().relative(movingobjectpositionblock.getDirection()), (MovingObjectPositionBlock) null, enumdirection, clicked, itemstack, enumhand); // CraftBukkit
              } else if (world.dimensionType().ultraWarm() && this.content.is(TagsFluid.WATER)) {

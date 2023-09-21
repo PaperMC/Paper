@@ -1,10 +1,11 @@
 --- a/net/minecraft/core/dispenser/DispenseBehaviorShulkerBox.java
 +++ b/net/minecraft/core/dispenser/DispenseBehaviorShulkerBox.java
-@@ -11,6 +11,11 @@
+@@ -10,6 +10,12 @@
  import net.minecraft.world.level.block.BlockDispenser;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.event.block.BlockDispenseEvent;
 +// CraftBukkit end
@@ -12,17 +13,17 @@
  public class DispenseBehaviorShulkerBox extends DispenseBehaviorMaybe {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -27,6 +32,30 @@
-             BlockPosition blockposition = isourceblock.getPos().relative(enumdirection);
-             EnumDirection enumdirection1 = isourceblock.getLevel().isEmptyBlock(blockposition.below()) ? enumdirection : EnumDirection.UP;
+@@ -26,6 +32,30 @@
+             BlockPosition blockposition = sourceblock.pos().relative(enumdirection);
+             EnumDirection enumdirection1 = sourceblock.level().isEmptyBlock(blockposition.below()) ? enumdirection : EnumDirection.UP;
  
 +            // CraftBukkit start
-+            org.bukkit.block.Block bukkitBlock = isourceblock.getLevel().getWorld().getBlockAt(isourceblock.getPos().getX(), isourceblock.getPos().getY(), isourceblock.getPos().getZ());
++            org.bukkit.block.Block bukkitBlock = CraftBlock.at(sourceblock.level(), sourceblock.pos());
 +            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 +
 +            BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
 +            if (!BlockDispenser.eventFired) {
-+                isourceblock.getLevel().getCraftServer().getPluginManager().callEvent(event);
++                sourceblock.level().getCraftServer().getPluginManager().callEvent(event);
 +            }
 +
 +            if (event.isCancelled()) {
@@ -34,12 +35,12 @@
 +                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +                IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.DISPENSER_REGISTRY.get(eventStack.getItem());
 +                if (idispensebehavior != IDispenseBehavior.NOOP && idispensebehavior != this) {
-+                    idispensebehavior.dispense(isourceblock, eventStack);
++                    idispensebehavior.dispense(sourceblock, eventStack);
 +                    return itemstack;
 +                }
 +            }
 +            // CraftBukkit end
 +
              try {
-                 this.setSuccess(((ItemBlock) item).place(new BlockActionContextDirectional(isourceblock.getLevel(), blockposition, enumdirection, itemstack, enumdirection1)).consumesAction());
+                 this.setSuccess(((ItemBlock) item).place(new BlockActionContextDirectional(sourceblock.level(), blockposition, enumdirection, itemstack, enumdirection1)).consumesAction());
              } catch (Exception exception) {

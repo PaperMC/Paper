@@ -46,7 +46,7 @@ public abstract class AbstractTestingBase {
         SharedConstants.tryDetectVersion();
         DispenserRegistry.bootStrap();
         // Populate available packs
-        ResourcePackRepository resourceRepository = new ResourcePackRepository(new ResourcePackSourceVanilla());
+        ResourcePackRepository resourceRepository = ResourcePackSourceVanilla.createVanillaTrustedRepository();
         resourceRepository.reload();
         // Set up resource manager
         ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA, resourceRepository.getAvailablePacks().stream().map(ResourcePackLoader::open).toList());

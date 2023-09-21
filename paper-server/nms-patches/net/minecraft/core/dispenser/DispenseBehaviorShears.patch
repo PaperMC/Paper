@@ -1,10 +1,11 @@
 --- a/net/minecraft/core/dispenser/DispenseBehaviorShears.java
 +++ b/net/minecraft/core/dispenser/DispenseBehaviorShears.java
-@@ -23,6 +23,12 @@
+@@ -22,6 +22,13 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.AxisAlignedBB;
  
 +// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.event.block.BlockDispenseEvent;
@@ -13,12 +14,12 @@
  public class DispenseBehaviorShears extends DispenseBehaviorMaybe {
  
      public DispenseBehaviorShears() {}
-@@ -30,11 +36,34 @@
+@@ -29,11 +36,34 @@
      @Override
-     protected ItemStack execute(ISourceBlock isourceblock, ItemStack itemstack) {
-         WorldServer worldserver = isourceblock.getLevel();
+     protected ItemStack execute(SourceBlock sourceblock, ItemStack itemstack) {
+         WorldServer worldserver = sourceblock.level();
 +        // CraftBukkit start
-+        org.bukkit.block.Block bukkitBlock = worldserver.getWorld().getBlockAt(isourceblock.getPos().getX(), isourceblock.getPos().getY(), isourceblock.getPos().getZ());
++        org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, sourceblock.pos());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 +
 +        BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
@@ -35,21 +36,21 @@
 +            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.DISPENSER_REGISTRY.get(eventStack.getItem());
 +            if (idispensebehavior != IDispenseBehavior.NOOP && idispensebehavior != this) {
-+                idispensebehavior.dispense(isourceblock, eventStack);
++                idispensebehavior.dispense(sourceblock, eventStack);
 +                return itemstack;
 +            }
 +        }
 +        // CraftBukkit end
  
          if (!worldserver.isClientSide()) {
-             BlockPosition blockposition = isourceblock.getPos().relative((EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING));
+             BlockPosition blockposition = sourceblock.pos().relative((EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING));
  
 -            this.setSuccess(tryShearBeehive(worldserver, blockposition) || tryShearLivingEntity(worldserver, blockposition));
 +            this.setSuccess(tryShearBeehive(worldserver, blockposition) || tryShearLivingEntity(worldserver, blockposition, bukkitBlock, craftItem)); // CraftBukkit
              if (this.isSuccess() && itemstack.hurt(1, worldserver.getRandom(), (EntityPlayer) null)) {
                  itemstack.setCount(0);
              }
-@@ -63,7 +92,7 @@
+@@ -62,7 +92,7 @@
          return false;
      }
  
@@ -58,7 +59,7 @@
          List<EntityLiving> list = worldserver.getEntitiesOfClass(EntityLiving.class, new AxisAlignedBB(blockposition), IEntitySelector.NO_SPECTATORS);
          Iterator iterator = list.iterator();
  
-@@ -74,6 +103,11 @@
+@@ -73,6 +103,11 @@
                  IShearable ishearable = (IShearable) entityliving;
  
                  if (ishearable.readyForShearing()) {

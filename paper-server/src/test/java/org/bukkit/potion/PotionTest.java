@@ -9,6 +9,7 @@ import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.item.alchemy.PotionRegistry;
+import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
@@ -16,12 +17,11 @@ public class PotionTest extends AbstractTestingBase {
     @Test
     public void testEffectCompleteness() throws Throwable {
         Map<PotionType, String> effects = new EnumMap(PotionType.class);
-        for (Object reg : BuiltInRegistries.POTION) {
-            List<MobEffect> eff = ((PotionRegistry) reg).getEffects();
+        for (PotionRegistry reg : BuiltInRegistries.POTION) {
+            List<MobEffect> eff = reg.getEffects();
             if (eff.size() != 1) continue;
-            int id = MobEffectList.getId(eff.get(0).getEffect());
-            PotionEffectType type = PotionEffectType.getById(id);
-            assertNotNull(String.valueOf(id), PotionEffectType.getById(id));
+            PotionEffectType type = CraftPotionEffectType.minecraftToBukkit(eff.get(0).getEffect());
+            assertNotNull(String.valueOf(reg), type);
 
             PotionType enumType = PotionType.getByEffect(type);
             assertNotNull(type.getName(), enumType);
@@ -37,8 +37,7 @@ public class PotionTest extends AbstractTestingBase {
         for (MobEffectList nms : BuiltInRegistries.MOB_EFFECT) {
             MinecraftKey key = BuiltInRegistries.MOB_EFFECT.getKey(nms);
 
-            int id = MobEffectList.getId(nms);
-            PotionEffectType bukkit = PotionEffectType.getById(id);
+            PotionEffectType bukkit = CraftPotionEffectType.minecraftToBukkit(nms);
 
             assertNotNull("No Bukkit type for " + key, bukkit);
             assertFalse("No name for " + key, bukkit.getName().contains("UNKNOWN"));

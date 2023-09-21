@@ -1,12 +1,12 @@
 --- a/net/minecraft/core/dispenser/DispenseBehaviorProjectile.java
 +++ b/net/minecraft/core/dispenser/DispenseBehaviorProjectile.java
-@@ -9,6 +9,13 @@
+@@ -8,6 +8,13 @@
  import net.minecraft.world.level.World;
  import net.minecraft.world.level.block.BlockDispenser;
  
 +// CraftBukkit start
 +import net.minecraft.world.entity.Entity;
-+import net.minecraft.world.level.block.entity.TileEntityDispenser;
++import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.event.block.BlockDispenseEvent;
 +// CraftBukkit end
@@ -14,15 +14,15 @@
  public abstract class DispenseBehaviorProjectile extends DispenseBehaviorItem {
  
      public DispenseBehaviorProjectile() {}
-@@ -20,9 +27,38 @@
-         EnumDirection enumdirection = (EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING);
+@@ -19,9 +26,38 @@
+         EnumDirection enumdirection = (EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING);
          IProjectile iprojectile = this.getProjectile(worldserver, iposition, itemstack);
  
 -        iprojectile.shoot((double) enumdirection.getStepX(), (double) ((float) enumdirection.getStepY() + 0.1F), (double) enumdirection.getStepZ(), this.getPower(), this.getUncertainty());
 +        // CraftBukkit start
 +        // iprojectile.shoot((double) enumdirection.getStepX(), (double) ((float) enumdirection.getStepY() + 0.1F), (double) enumdirection.getStepZ(), this.getPower(), this.getUncertainty());
 +        ItemStack itemstack1 = itemstack.split(1);
-+        org.bukkit.block.Block block = worldserver.getWorld().getBlockAt(isourceblock.getPos().getX(), isourceblock.getPos().getY(), isourceblock.getPos().getZ());
++        org.bukkit.block.Block block = CraftBlock.at(worldserver, sourceblock.pos());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 +
 +        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector((double) enumdirection.getStepX(), (double) ((float) enumdirection.getStepY() + 0.1F), (double) enumdirection.getStepZ()));
@@ -41,13 +41,13 @@
 +            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.DISPENSER_REGISTRY.get(eventStack.getItem());
 +            if (idispensebehavior != IDispenseBehavior.NOOP && idispensebehavior != this) {
-+                idispensebehavior.dispense(isourceblock, eventStack);
++                idispensebehavior.dispense(sourceblock, eventStack);
 +                return itemstack;
 +            }
 +        }
 +
 +        iprojectile.shoot(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.getPower(), this.getUncertainty());
-+        ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource((TileEntityDispenser) isourceblock.getEntity());
++        ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(sourceblock.blockEntity());
 +        // CraftBukkit end
          worldserver.addFreshEntity(iprojectile);
 -        itemstack.shrink(1);

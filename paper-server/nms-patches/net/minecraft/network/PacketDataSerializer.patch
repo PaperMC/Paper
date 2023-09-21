@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/PacketDataSerializer.java
 +++ b/net/minecraft/network/PacketDataSerializer.java
-@@ -81,6 +81,8 @@
+@@ -80,6 +80,8 @@
  import org.joml.Quaternionf;
  import org.joml.Vector3f;
  
@@ -8,8 +8,8 @@
 +
  public class PacketDataSerializer extends ByteBuf {
  
-     private static final int MAX_VARINT_SIZE = 5;
-@@ -220,7 +222,7 @@
+     public static final int DEFAULT_NBT_QUOTA = 2097152;
+@@ -204,7 +206,7 @@
  
      public <T, C extends Collection<T>> C readCollection(IntFunction<C> intfunction, PacketDataSerializer.a<T> packetdataserializer_a) {
          int i = this.readVarInt();
@@ -18,7 +18,7 @@
  
          for (int j = 0; j < i; ++j) {
              c0.add(packetdataserializer_a.apply(this));
-@@ -231,7 +233,7 @@
+@@ -215,7 +217,7 @@
  
      public <T> void writeCollection(Collection<T> collection, PacketDataSerializer.b<T> packetdataserializer_b) {
          this.writeVarInt(collection.size());
@@ -27,7 +27,7 @@
  
          while (iterator.hasNext()) {
              T t0 = iterator.next();
-@@ -258,12 +260,12 @@
+@@ -242,12 +244,12 @@
  
      public void writeIntIdList(IntList intlist) {
          this.writeVarInt(intlist.size());
@@ -42,7 +42,7 @@
  
          for (int j = 0; j < i; ++j) {
              K k0 = packetdataserializer_a.apply(this);
-@@ -297,7 +299,7 @@
+@@ -281,7 +283,7 @@
      }
  
      public <E extends Enum<E>> void writeEnumSet(EnumSet<E> enumset, Class<E> oclass) {
@@ -51,7 +51,7 @@
          BitSet bitset = new BitSet(ae.length);
  
          for (int i = 0; i < ae.length; ++i) {
-@@ -308,7 +310,7 @@
+@@ -292,7 +294,7 @@
      }
  
      public <E extends Enum<E>> EnumSet<E> readEnumSet(Class<E> oclass) {
@@ -60,7 +60,7 @@
          BitSet bitset = this.readFixedBitSet(ae.length);
          EnumSet<E> enumset = EnumSet.noneOf(oclass);
  
-@@ -545,7 +547,7 @@
+@@ -530,7 +532,7 @@
      }
  
      public <T extends Enum<T>> T readEnum(Class<T> oclass) {
@@ -69,16 +69,16 @@
      }
  
      public PacketDataSerializer writeEnum(Enum<?> oenum) {
-@@ -622,7 +624,7 @@
-         } else {
-             try {
-                 NBTCompressedStreamTools.write(nbttagcompound, (DataOutput) (new ByteBufOutputStream(this)));
--            } catch (IOException ioexception) {
-+            } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
-                 throw new EncoderException(ioexception);
-             }
+@@ -585,7 +587,7 @@
+         try {
+             NBTCompressedStreamTools.writeAnyTag((NBTBase) nbtbase, new ByteBufOutputStream(this));
+             return this;
+-        } catch (IOException ioexception) {
++        } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
+             throw new EncoderException(ioexception);
          }
-@@ -659,7 +661,7 @@
+     }
+@@ -613,7 +615,7 @@
      }
  
      public PacketDataSerializer writeItem(ItemStack itemstack) {
@@ -87,7 +87,7 @@
              this.writeBoolean(false);
          } else {
              this.writeBoolean(true);
-@@ -688,6 +690,11 @@
+@@ -642,6 +644,11 @@
              ItemStack itemstack = new ItemStack(item, b0);
  
              itemstack.setTag(this.readNbt());

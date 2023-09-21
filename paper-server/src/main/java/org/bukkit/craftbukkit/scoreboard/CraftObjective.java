@@ -74,13 +74,13 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         Scoreboard board = scoreboard.board;
         ScoreboardObjective objective = this.objective;
 
-        for (int i = 0; i < CraftScoreboardTranslations.MAX_DISPLAY_SLOT; i++) {
+        for (net.minecraft.world.scores.DisplaySlot i : net.minecraft.world.scores.DisplaySlot.values()) {
             if (board.getDisplayObjective(i) == objective) {
                 board.setDisplayObjective(i, null);
             }
         }
         if (slot != null) {
-            int slotNumber = CraftScoreboardTranslations.fromBukkitSlot(slot);
+            net.minecraft.world.scores.DisplaySlot slotNumber = CraftScoreboardTranslations.fromBukkitSlot(slot);
             board.setDisplayObjective(slotNumber, getHandle());
         }
     }
@@ -91,7 +91,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         Scoreboard board = scoreboard.board;
         ScoreboardObjective objective = this.objective;
 
-        for (int i = 0; i < CraftScoreboardTranslations.MAX_DISPLAY_SLOT; i++) {
+        for (net.minecraft.world.scores.DisplaySlot i : net.minecraft.world.scores.DisplaySlot.values()) {
             if (board.getDisplayObjective(i) == objective) {
                 return CraftScoreboardTranslations.toBukkitSlot(i);
             }

@@ -10,6 +10,7 @@ import java.util.Map;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.SuspiciousStewMeta;
@@ -21,7 +22,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
 
     static final ItemMetaKey DURATION = new ItemMetaKey("EffectDuration", "duration");
     static final ItemMetaKey EFFECTS = new ItemMetaKey("Effects", "effects");
-    static final ItemMetaKey ID = new ItemMetaKey("EffectId", "id");
+    static final ItemMetaKey ID = new ItemMetaKey("id", "id");
 
     private List<PotionEffect> customEffects;
 
@@ -44,7 +45,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
 
             for (int i = 0; i < length; i++) {
                 NBTTagCompound effect = list.getCompound(i);
-                PotionEffectType type = PotionEffectType.getById(effect.getByte(ID.NBT));
+                PotionEffectType type = PotionEffectType.getByKey(NamespacedKey.fromString(effect.getString(ID.NBT)));
                 if (type == null) {
                     continue;
                 }
@@ -78,7 +79,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
 
             for (PotionEffect effect : customEffects) {
                 NBTTagCompound effectData = new NBTTagCompound();
-                effectData.putByte(ID.NBT, ((byte) effect.getType().getId()));
+                effectData.putString(ID.NBT, effect.getType().getKey().toString());
                 effectData.putInt(DURATION.NBT, effect.getDuration());
                 effectList.add(effectData);
             }

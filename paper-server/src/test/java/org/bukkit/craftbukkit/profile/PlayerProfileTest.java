@@ -95,11 +95,11 @@ public class PlayerProfileTest {
         Assert.assertEquals("Unique id is not the same", UNIQUE_ID, profile1.getUniqueId());
         Assert.assertEquals("Name is not the same", NAME, profile1.getName());
 
-        CraftPlayerProfile profile2 = new CraftPlayerProfile(new GameProfile(UNIQUE_ID, null));
+        CraftPlayerProfile profile2 = new CraftPlayerProfile(new CraftGameProfile(UNIQUE_ID, null));
         Assert.assertEquals("Unique id is not the same", UNIQUE_ID, profile2.getUniqueId());
         Assert.assertEquals("Name is not null", null, profile2.getName());
 
-        CraftPlayerProfile profile3 = new CraftPlayerProfile(new GameProfile(null, NAME));
+        CraftPlayerProfile profile3 = new CraftPlayerProfile(new CraftGameProfile(null, NAME));
         Assert.assertEquals("Unique id is not null", null, profile3.getUniqueId());
         Assert.assertEquals("Name is not the same", NAME, profile3.getName());
     }
@@ -123,7 +123,7 @@ public class PlayerProfileTest {
 
         Property property = CraftPlayerProfile.getProperty(gameProfile, CraftPlayerTextures.PROPERTY_NAME);
         Assert.assertNotNull("Textures property is null", property);
-        Assert.assertEquals("Property values are not the same", VALUE, property.getValue());
+        Assert.assertEquals("Property values are not the same", VALUE, property.value());
         Assert.assertEquals("Names are not the same", NAME, gameProfile.getName());
         Assert.assertEquals("Unique ids are not the same", UNIQUE_ID, gameProfile.getId());
         Assert.assertTrue("Signature is missing", property.hasSignature());
@@ -198,17 +198,17 @@ public class PlayerProfileTest {
     public void testCustomSkin() {
         CraftPlayerProfile profile = new CraftPlayerProfile(UNIQUE_ID, NAME);
         profile.getTextures().setSkin(SKIN);
-        Assert.assertEquals("profile with custom skin does not match expected value", COMPACT_VALUE, profile.getTextures().getProperty().getValue());
+        Assert.assertEquals("profile with custom skin does not match expected value", COMPACT_VALUE, profile.getTextures().getProperty().value());
     }
 
     @Test
     public void testEquals() {
         CraftPlayerProfile profile1 = buildPlayerProfile();
         CraftPlayerProfile profile2 = buildPlayerProfile();
-        CraftPlayerProfile profile3 = new CraftPlayerProfile(new GameProfile(UNIQUE_ID, NAME));
-        CraftPlayerProfile profile4 = new CraftPlayerProfile(new GameProfile(UNIQUE_ID, NAME));
-        CraftPlayerProfile profile5 = new CraftPlayerProfile(new GameProfile(UNIQUE_ID, null));
-        CraftPlayerProfile profile6 = new CraftPlayerProfile(new GameProfile(null, NAME));
+        CraftPlayerProfile profile3 = new CraftPlayerProfile(UNIQUE_ID, NAME);
+        CraftPlayerProfile profile4 = new CraftPlayerProfile(UNIQUE_ID, NAME);
+        CraftPlayerProfile profile5 = new CraftPlayerProfile(UNIQUE_ID, null);
+        CraftPlayerProfile profile6 = new CraftPlayerProfile(null, NAME);
 
         Assert.assertEquals("profile1 and profile2 are not equal", profile1, profile2);
         Assert.assertEquals("profile3 and profile4 are not equal", profile3, profile4);
