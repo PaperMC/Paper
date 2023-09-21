@@ -10,8 +10,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/build.gradle.kts
 @@ -0,0 +0,0 @@ dependencies {
      implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
-     implementation("org.ow2.asm:asm:9.4")
-     implementation("org.ow2.asm:asm-commons:9.4") // Paper - ASM event executor generation
+     implementation("org.ow2.asm:asm:9.5")
+     implementation("org.ow2.asm:asm-commons:9.5") // Paper - ASM event executor generation
 +    testImplementation("org.mockito:mockito-core:4.9.0") // Paper - switch to mockito
      implementation("commons-lang:commons-lang:2.6")
      runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
@@ -99,6 +99,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import java.util.Iterator;
 +import java.util.function.Supplier;
++import java.util.stream.Stream;
++import java.util.stream.StreamSupport;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
@@ -116,6 +118,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public @Nullable Keyed get(@NotNull final NamespacedKey key) {
 +        return this.supplier().get().get(key);
++    }
++
++    @Override
++    public @NotNull Stream<Keyed> stream() {
++        return StreamSupport.stream(this.supplier.get().spliterator(), false);
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
@@ -137,7 +144,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        DummyServer.setup();
          DummyEnchantments.setup();
  
-         ImmutableList.Builder<Material> builder = ImmutableList.builder();
+         CraftRegistry.setMinecraftRegistry(REGISTRY_CUSTOM);
 diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
 deleted file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000

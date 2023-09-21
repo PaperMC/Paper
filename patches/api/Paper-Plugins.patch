@@ -2276,20 +2276,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    // Paper end
  }
-diff --git a/src/test/java/io/papermc/paper/testing/TestServer.java b/src/test/java/io/papermc/paper/testing/TestServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/test/java/io/papermc/paper/testing/TestServer.java
-+++ b/src/test/java/io/papermc/paper/testing/TestServer.java
-@@ -0,0 +0,0 @@ public final class TestServer {
- 
-         when(dummyServer.getTag(anyString(), any(NamespacedKey.class), any())).thenAnswer(ignored -> new EmptyTag());
- 
--        final PluginManager pluginManager = new SimplePluginManager(dummyServer, new SimpleCommandMap(dummyServer));
--        when(dummyServer.getPluginManager()).thenReturn(pluginManager);
--
-         when(dummyServer.getRegistry(any())).thenAnswer(ignored -> new EmptyRegistry());
-         when(dummyServer.getScoreboardCriteria(anyString())).thenReturn(null);
- 
 diff --git a/src/test/java/org/bukkit/event/SyntheticEventTest.java b/src/test/java/org/bukkit/event/SyntheticEventTest.java
 deleted file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -2298,26 +2284,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 -package org.bukkit.event;
 -
+-import org.bukkit.Bukkit;
 -import org.bukkit.plugin.PluginLoader;
 -import org.bukkit.plugin.SimplePluginManager;
 -import org.bukkit.plugin.TestPlugin;
 -import org.bukkit.plugin.java.JavaPluginLoader;
+-import org.bukkit.support.AbstractTestingBase;
 -import org.junit.Assert;
 -import org.junit.Test;
 -
--public class SyntheticEventTest {
+-public class SyntheticEventTest extends AbstractTestingBase {
 -    @SuppressWarnings("deprecation")
 -    @Test
 -    public void test() {
--        io.papermc.paper.testing.TestServer.setup(); // Paper
--        final JavaPluginLoader loader = new JavaPluginLoader(org.bukkit.Bukkit.getServer()); // Paper
+-        final JavaPluginLoader loader = new JavaPluginLoader(Bukkit.getServer());
 -        TestPlugin plugin = new TestPlugin(getClass().getName()) {
 -            @Override
 -            public PluginLoader getPluginLoader() {
 -                return loader;
 -            }
 -        };
--        SimplePluginManager pluginManager = new SimplePluginManager(org.bukkit.Bukkit.getServer(), null); // Paper
+-        SimplePluginManager pluginManager = new SimplePluginManager(Bukkit.getServer(), null);
 -
 -        TestEvent event = new TestEvent(false);
 -        Impl impl = new Impl();
@@ -2354,18 +2341,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -import static org.hamcrest.Matchers.*;
 -import static org.junit.Assert.*;
+-import org.bukkit.Bukkit;
 -import org.bukkit.event.Event;
 -import org.bukkit.event.TestEvent;
 -import org.bukkit.permissions.Permission;
+-import org.bukkit.support.AbstractTestingBase;
 -import org.junit.After;
 -import org.junit.Test;
 -
--public class PluginManagerTest {
+-public class PluginManagerTest extends AbstractTestingBase {
 -    private class MutableObject {
 -        volatile Object value = null;
 -    }
 -
--    private static final PluginManager pm = org.bukkit.Bukkit.getServer().getPluginManager(); // Paper
+-    private static final PluginManager pm = Bukkit.getServer().getPluginManager();
 -
 -    private final MutableObject store = new MutableObject();
 -
@@ -2550,3 +2539,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public FileConfiguration getConfig() {
+diff --git a/src/test/java/org/bukkit/support/TestServer.java b/src/test/java/org/bukkit/support/TestServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/support/TestServer.java
++++ b/src/test/java/org/bukkit/support/TestServer.java
+@@ -0,0 +0,0 @@ public final class TestServer {
+         Thread creatingThread = Thread.currentThread();
+         when(instance.isPrimaryThread()).then(mock -> Thread.currentThread().equals(creatingThread));
+ 
+-        PluginManager pluginManager = new SimplePluginManager(instance, new SimpleCommandMap(instance));
+-        when(instance.getPluginManager()).thenReturn(pluginManager);
++        // Paper - remove plugin manager for Paper Plugins
+ 
+         Logger logger = Logger.getLogger(TestServer.class.getCanonicalName());
+         when(instance.getLogger()).thenReturn(logger);
