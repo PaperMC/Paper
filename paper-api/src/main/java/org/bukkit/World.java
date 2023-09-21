@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -33,7 +34,6 @@ import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.util.BoundingBox;
-import org.bukkit.util.Consumer;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
@@ -521,7 +521,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param delegate A class to call for each block changed as a result of
      *     this method
      * @return true if the tree was created successfully, otherwise false
-     * @see #generateTree(org.bukkit.Location, java.util.Random, org.bukkit.TreeType, org.bukkit.util.Consumer)
+     * @see #generateTree(org.bukkit.Location, java.util.Random, org.bukkit.TreeType, java.util.function.Consumer)
      * @deprecated this method does not handle tile entities (bee nests)
      */
     @Deprecated
