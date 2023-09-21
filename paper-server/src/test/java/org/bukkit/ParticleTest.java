@@ -37,7 +37,7 @@ public class ParticleTest extends AbstractTestingBase {
             Assert.assertNotNull("Missing Bukkit->NMS particle mapping for " + bukkit, CraftParticle.toNMS(bukkit, data));
         }
         for (net.minecraft.core.particles.Particle nms : BuiltInRegistries.PARTICLE_TYPE) {
-            Assert.assertNotNull("Missing NMS->Bukkit particle mapping for " + BuiltInRegistries.PARTICLE_TYPE.getKey(nms), CraftParticle.toBukkit(nms));
+            Assert.assertNotNull("Missing NMS->Bukkit particle mapping for " + BuiltInRegistries.PARTICLE_TYPE.getKey(nms), CraftParticle.minecraftToBukkit(nms));
         }
     }
 }

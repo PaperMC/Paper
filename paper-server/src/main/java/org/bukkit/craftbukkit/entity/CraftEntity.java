@@ -210,8 +210,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public CraftEntity(final CraftServer server, final Entity entity) {
         this.server = server;
         this.entity = entity;
-        EntityType type = Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(EntityTypes.getKey(entity.getType())));
-        this.entityType = (type != null) ? type : EntityType.UNKNOWN;
+        this.entityType = CraftEntityType.minecraftToBukkit(entity.getType());
     }
 
     public static CraftEntity getEntity(CraftServer server, Entity entity) {
@@ -778,17 +777,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public Sound getSwimSound() {
-        return CraftSound.getBukkit(getHandle().getSwimSound0());
+        return CraftSound.minecraftToBukkit(getHandle().getSwimSound0());
     }
 
     @Override
     public Sound getSwimSplashSound() {
-        return CraftSound.getBukkit(getHandle().getSwimSplashSound0());
+        return CraftSound.minecraftToBukkit(getHandle().getSwimSplashSound0());
     }
 
     @Override
     public Sound getSwimHighSpeedSplashSound() {
-        return CraftSound.getBukkit(getHandle().getSwimHighSpeedSplashSound0());
+        return CraftSound.minecraftToBukkit(getHandle().getSwimHighSpeedSplashSound0());
     }
 
     public void setHandle(final Entity entity) {

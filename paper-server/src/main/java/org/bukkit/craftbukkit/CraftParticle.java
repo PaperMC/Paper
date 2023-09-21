@@ -229,11 +229,7 @@ public enum CraftParticle {
         throw new IllegalArgumentException(particle.getDataType().toString());
     }
 
-    public static Particle toBukkit(net.minecraft.core.particles.ParticleParam nms) {
-        return toBukkit(nms.getType());
-    }
-
-    public static Particle toBukkit(net.minecraft.core.particles.Particle nms) {
-        return particles.inverse().get(BuiltInRegistries.PARTICLE_TYPE.getKey(nms));
+    public static Particle minecraftToBukkit(net.minecraft.core.particles.Particle<?> minecraft) {
+        return particles.inverse().get(BuiltInRegistries.PARTICLE_TYPE.getKey(minecraft));
     }
 }

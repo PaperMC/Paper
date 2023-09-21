@@ -110,7 +110,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public Particle getParticle() {
-        return CraftParticle.toBukkit(getHandle().getParticle());
+        return CraftParticle.minecraftToBukkit(getHandle().getParticle().getType());
     }
 
     @Override

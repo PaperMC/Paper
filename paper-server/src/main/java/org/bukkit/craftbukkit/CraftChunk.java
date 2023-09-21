@@ -44,6 +44,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.entity.Entity;
@@ -279,7 +280,7 @@ public class CraftChunk implements Chunk {
         Preconditions.checkArgument(biome != null, "Biome cannot be null");
 
         IChunkAccess chunk = getHandle(ChunkStatus.BIOMES);
-        Predicate<Holder<BiomeBase>> nms = Predicates.equalTo(CraftBlock.biomeToBiomeBase(chunk.biomeRegistry, biome));
+        Predicate<Holder<BiomeBase>> nms = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
         for (ChunkSection section : chunk.getSections()) {
             if (section != null && section.getBiomes().maybeHas(nms)) {
                 return true;

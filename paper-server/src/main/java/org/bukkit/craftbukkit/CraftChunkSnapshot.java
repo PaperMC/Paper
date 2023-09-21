@@ -15,7 +15,7 @@ import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
@@ -85,7 +85,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     public boolean contains(Biome biome) {
         Preconditions.checkArgument(biome != null, "Biome cannot be null");
 
-        Predicate<Holder<BiomeBase>> nms = Predicates.equalTo(CraftBlock.biomeToBiomeBase(this.biomeRegistry, biome));
+        Predicate<Holder<BiomeBase>> nms = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
         for (PalettedContainerRO<Holder<BiomeBase>> palette : this.biome) {
             if (palette.maybeHas(nms)) {
                 return true;
@@ -151,7 +151,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         validateChunkCoordinates(x, y, z);
 
         PalettedContainerRO<Holder<BiomeBase>> biome = this.biome[getSectionIndex(y)]; // SPIGOT-7188: Don't need to convert y to biome coordinate scale since it is bound to the block chunk section
-        return CraftBlock.biomeBaseToBiome(biomeRegistry, biome.get(x >> 2, (y & 0xF) >> 2, z >> 2));
+        return CraftBiome.minecraftHolderToBukkit(biome.get(x >> 2, (y & 0xF) >> 2, z >> 2));
     }
 
     @Override

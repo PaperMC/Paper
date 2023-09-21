@@ -1,15 +1,12 @@
 package org.bukkit.craftbukkit.tag;
 
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityTypes;
-import org.bukkit.Registry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.entity.EntityType;
 
 public class CraftEntityTag extends CraftTag<EntityTypes<?>, EntityType> {
@@ -20,11 +17,11 @@ public class CraftEntityTag extends CraftTag<EntityTypes<?>, EntityType> {
 
     @Override
     public boolean isTagged(EntityType entity) {
-        return registry.getHolderOrThrow(ResourceKey.create(Registries.ENTITY_TYPE, CraftNamespacedKey.toMinecraft(entity.getKey()))).is(tag);
+        return CraftEntityType.bukkitToMinecraft(entity).is(tag);
     }
 
     @Override
     public Set<EntityType> getValues() {
-        return getHandle().stream().map((nms) -> Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(EntityTypes.getKey(nms.value())))).filter(Objects::nonNull).collect(Collectors.toUnmodifiableSet());
+        return getHandle().stream().map(Holder::value).map(CraftEntityType::minecraftToBukkit).collect(Collectors.toUnmodifiableSet());
     }
 }

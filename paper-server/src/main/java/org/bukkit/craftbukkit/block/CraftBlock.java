@@ -8,10 +8,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
-import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.EnumHand;
 import net.minecraft.world.EnumInteractionResult;
@@ -21,7 +17,6 @@ import net.minecraft.world.item.context.ItemActionContext;
 import net.minecraft.world.level.EnumSkyBlock;
 import net.minecraft.world.level.GeneratorAccess;
 import net.minecraft.world.level.RayTrace;
-import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.block.BlockRedstoneWire;
 import net.minecraft.world.level.block.BlockSapling;
 import net.minecraft.world.level.block.Blocks;
@@ -36,7 +31,6 @@ import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Registry;
 import org.bukkit.TreeType;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
@@ -53,7 +47,6 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
 import org.bukkit.craftbukkit.util.CraftVoxelShape;
 import org.bukkit.entity.Entity;
@@ -343,27 +336,6 @@ public class CraftBlock implements Block {
     @Override
     public void setBiome(Biome bio) {
         getWorld().setBiome(getX(), getY(), getZ(), bio);
-    }
-
-    public static Biome biomeBaseToBiome(IRegistry<BiomeBase> registry, Holder<BiomeBase> base) {
-        return biomeBaseToBiome(registry, base.value());
-    }
-
-    public static Biome biomeBaseToBiome(IRegistry<BiomeBase> registry, BiomeBase base) {
-        if (base == null) {
-            return null;
-        }
-
-        Biome biome = Registry.BIOME.get(CraftNamespacedKey.fromMinecraft(registry.getKey(base)));
-        return (biome == null) ? Biome.CUSTOM : biome;
-    }
-
-    public static Holder<BiomeBase> biomeToBiomeBase(IRegistry<BiomeBase> registry, Biome bio) {
-        if (bio == null || bio == Biome.CUSTOM) {
-            return null;
-        }
-
-        return registry.getHolderOrThrow(ResourceKey.create(Registries.BIOME, CraftNamespacedKey.toMinecraft(bio.getKey())));
     }
 
     @Override

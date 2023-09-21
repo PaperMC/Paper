@@ -1,25 +1,29 @@
 package org.bukkit.craftbukkit.generator.structure;
 
-import net.minecraft.core.registries.BuiltInRegistries;
+import com.google.common.base.Preconditions;
+import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.generator.structure.StructureType;
 
 public class CraftStructureType extends StructureType {
 
     public static StructureType minecraftToBukkit(net.minecraft.world.level.levelgen.structure.StructureType<?> minecraft) {
-        if (minecraft == null) {
-            return null;
-        }
+        Preconditions.checkArgument(minecraft != null);
 
-        return Registry.STRUCTURE_TYPE.get(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.STRUCTURE_TYPE.getKey(minecraft)));
+        IRegistry<net.minecraft.world.level.levelgen.structure.StructureType<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE_TYPE);
+        StructureType bukkit = Registry.STRUCTURE_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
+
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit;
     }
 
     public static net.minecraft.world.level.levelgen.structure.StructureType<?> bukkitToMinecraft(StructureType bukkit) {
-        if (bukkit == null) {
-            return null;
-        }
+        Preconditions.checkArgument(bukkit != null);
 
         return ((CraftStructureType) bukkit).getHandle();
     }

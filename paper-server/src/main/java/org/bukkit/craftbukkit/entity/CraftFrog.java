@@ -1,9 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.entity.animal.FrogVariant;
 import net.minecraft.world.entity.animal.frog.Frog;
 import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.Entity;
@@ -40,13 +43,34 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
 
     @Override
     public Variant getVariant() {
-        return Registry.FROG_VARIANT.get(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.FROG_VARIANT.getKey(getHandle().getVariant())));
+        return CraftVariant.minecraftToBukkit(getHandle().getVariant());
     }
 
     @Override
     public void setVariant(Variant variant) {
         Preconditions.checkArgument(variant != null, "variant");
 
-        getHandle().setVariant(BuiltInRegistries.FROG_VARIANT.get(CraftNamespacedKey.toMinecraft(variant.getKey())));
+        getHandle().setVariant(CraftVariant.bukkitToMinecraft(variant));
+    }
+
+    public static class CraftVariant {
+
+        public static Variant minecraftToBukkit(FrogVariant minecraft) {
+            Preconditions.checkArgument(minecraft != null);
+
+            IRegistry<FrogVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT);
+            Variant bukkit = Registry.FROG_VARIANT.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
+
+            Preconditions.checkArgument(bukkit != null);
+
+            return bukkit;
+        }
+
+        public static FrogVariant bukkitToMinecraft(Variant bukkit) {
+            Preconditions.checkArgument(bukkit != null);
+
+            return CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT)
+                    .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+        }
     }
 }

@@ -1,13 +1,15 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.entity.animal.EntityCat;
 import net.minecraft.world.item.EnumColor;
 import org.bukkit.DyeColor;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Cat;
-import org.bukkit.entity.Cat.Type;
 
 public class CraftCat extends CraftTameableAnimal implements Cat {
 
@@ -27,14 +29,14 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
 
     @Override
     public Type getCatType() {
-        return Type.values()[BuiltInRegistries.CAT_VARIANT.getId(getHandle().getVariant())];
+        return CraftType.minecraftToBukkit(getHandle().getVariant());
     }
 
     @Override
     public void setCatType(Type type) {
         Preconditions.checkArgument(type != null, "Cannot have null Type");
 
-        getHandle().setVariant(BuiltInRegistries.CAT_VARIANT.byId(type.ordinal()));
+        getHandle().setVariant(CraftType.bukkitToMinecraft(type));
     }
 
     @Override
@@ -45,5 +47,23 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
     @Override
     public void setCollarColor(DyeColor color) {
         getHandle().setCollarColor(EnumColor.byId(color.getWoolData()));
+    }
+
+    public static class CraftType {
+
+        public static Type minecraftToBukkit(CatVariant minecraft) {
+            Preconditions.checkArgument(minecraft != null);
+
+            IRegistry<CatVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.CAT_VARIANT);
+
+            return Type.values()[registry.getId(minecraft)];
+        }
+
+        public static CatVariant bukkitToMinecraft(Type bukkit) {
+            Preconditions.checkArgument(bukkit != null);
+
+            return CraftRegistry.getMinecraftRegistry(Registries.CAT_VARIANT)
+                    .byId(bukkit.ordinal());
+        }
     }
 }

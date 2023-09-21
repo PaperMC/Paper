@@ -38,7 +38,7 @@ import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftHeightMap;
-import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.ChunkGenerator.BiomeGrid;
@@ -76,13 +76,13 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
         @Override
         public Biome getBiome(int x, int y, int z) {
-            return CraftBlock.biomeBaseToBiome(biome.biomeRegistry, biome.getNoiseBiome(x >> 2, y >> 2, z >> 2));
+            return CraftBiome.minecraftHolderToBukkit(biome.getNoiseBiome(x >> 2, y >> 2, z >> 2));
         }
 
         @Override
         public void setBiome(int x, int y, int z, Biome bio) {
             Preconditions.checkArgument(bio != Biome.CUSTOM, "Cannot set the biome to %s", bio);
-            biome.setBiome(x >> 2, y >> 2, z >> 2, CraftBlock.biomeToBiomeBase(biome.biomeRegistry, bio));
+            biome.setBiome(x >> 2, y >> 2, z >> 2, CraftBiome.bukkitToMinecraftHolder(bio));
         }
     }
 

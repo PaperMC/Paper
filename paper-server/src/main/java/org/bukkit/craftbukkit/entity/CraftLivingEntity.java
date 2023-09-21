@@ -710,51 +710,51 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public <T> T getMemory(MemoryKey<T> memoryKey) {
-        return (T) getHandle().getBrain().getMemory(CraftMemoryKey.fromMemoryKey(memoryKey)).map(CraftMemoryMapper::fromNms).orElse(null);
+        return (T) getHandle().getBrain().getMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey)).map(CraftMemoryMapper::fromNms).orElse(null);
     }
 
     @Override
     public <T> void setMemory(MemoryKey<T> memoryKey, T t) {
-        getHandle().getBrain().setMemory(CraftMemoryKey.fromMemoryKey(memoryKey), CraftMemoryMapper.toNms(t));
+        getHandle().getBrain().setMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey), CraftMemoryMapper.toNms(t));
     }
 
     @Override
     public Sound getHurtSound() {
         SoundEffect sound = getHandle().getHurtSound0(getHandle().damageSources().generic());
-        return (sound != null) ? CraftSound.getBukkit(sound) : null;
+        return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
 
     @Override
     public Sound getDeathSound() {
         SoundEffect sound = getHandle().getDeathSound0();
-        return (sound != null) ? CraftSound.getBukkit(sound) : null;
+        return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
 
     @Override
     public Sound getFallDamageSound(int fallHeight) {
-        return CraftSound.getBukkit(getHandle().getFallDamageSound0(fallHeight));
+        return CraftSound.minecraftToBukkit(getHandle().getFallDamageSound0(fallHeight));
     }
 
     @Override
     public Sound getFallDamageSoundSmall() {
-        return CraftSound.getBukkit(getHandle().getFallSounds().small());
+        return CraftSound.minecraftToBukkit(getHandle().getFallSounds().small());
     }
 
     @Override
     public Sound getFallDamageSoundBig() {
-        return CraftSound.getBukkit(getHandle().getFallSounds().big());
+        return CraftSound.minecraftToBukkit(getHandle().getFallSounds().big());
     }
 
     @Override
     public Sound getDrinkingSound(ItemStack itemStack) {
         Preconditions.checkArgument(itemStack != null, "itemStack must not be null");
-        return CraftSound.getBukkit(getHandle().getDrinkingSound0(CraftItemStack.asNMSCopy(itemStack)));
+        return CraftSound.minecraftToBukkit(getHandle().getDrinkingSound0(CraftItemStack.asNMSCopy(itemStack)));
     }
 
     @Override
     public Sound getEatingSound(ItemStack itemStack) {
         Preconditions.checkArgument(itemStack != null, "itemStack must not be null");
-        return CraftSound.getBukkit(getHandle().getEatingSound0(CraftItemStack.asNMSCopy(itemStack)));
+        return CraftSound.minecraftToBukkit(getHandle().getEatingSound0(CraftItemStack.asNMSCopy(itemStack)));
     }
 
     @Override

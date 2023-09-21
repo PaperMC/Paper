@@ -29,7 +29,7 @@ public class ArtTest extends AbstractTestingBase {
             int width = enumArt.value().getWidth() / UNIT_MULTIPLIER;
             int height = enumArt.value().getHeight() / UNIT_MULTIPLIER;
 
-            Art subject = CraftArt.NotchToBukkit(enumArt);
+            Art subject = CraftArt.minecraftHolderToBukkit(enumArt);
 
             String message = String.format("org.bukkit.Art is missing '%s'", name);
             assertNotNull(message, subject);
@@ -48,7 +48,7 @@ public class ArtTest extends AbstractTestingBase {
     public void testCraftArtToNotch() {
         Map<Holder<PaintingVariant>, Art> cache = new HashMap<>();
         for (Art art : Art.values()) {
-            Holder<PaintingVariant> enumArt = CraftArt.BukkitToNotch(art);
+            Holder<PaintingVariant> enumArt = CraftArt.bukkitToMinecraftHolder(art);
             assertNotNull(art.name(), enumArt);
             assertThat(art.name(), cache.put(enumArt, art), is(nullValue()));
         }
@@ -58,7 +58,7 @@ public class ArtTest extends AbstractTestingBase {
     public void testCraftArtToBukkit() {
         Map<Art, Holder<PaintingVariant>> cache = new EnumMap(Art.class);
         for (Holder<PaintingVariant> enumArt : BuiltInRegistries.PAINTING_VARIANT.asHolderIdMap()) {
-            Art art = CraftArt.NotchToBukkit(enumArt);
+            Art art = CraftArt.minecraftHolderToBukkit(enumArt);
             assertNotNull("Could not CraftArt.NotchToBukkit " + enumArt, art);
             assertThat("Duplicate artwork " + enumArt, cache.put(art, enumArt), is(nullValue()));
         }

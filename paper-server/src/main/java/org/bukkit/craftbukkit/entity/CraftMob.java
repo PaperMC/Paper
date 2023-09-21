@@ -50,7 +50,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
     @Override
     public Sound getAmbientSound() {
         SoundEffect sound = getHandle().getAmbientSound0();
-        return (sound != null) ? CraftSound.getBukkit(sound) : null;
+        return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
 
     @Override

@@ -4,8 +4,6 @@ import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.MinecraftKey;
 import net.minecraft.server.packs.repository.ResourcePackLoader;
 import net.minecraft.server.packs.repository.ResourcePackRepository;
 import net.minecraft.world.entity.EntityTypes;
@@ -13,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.EntityType;
 import org.bukkit.packs.DataPack;
@@ -96,7 +95,7 @@ public class CraftDataPackManager implements DataPackManager {
         Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "EntityType.UNKNOWN its not allowed here");
 
         CraftWorld craftWorld = ((CraftWorld) world);
-        EntityTypes<?> nmsEntity = BuiltInRegistries.ENTITY_TYPE.get(new MinecraftKey(entityType.getKey().getKey()));
+        EntityTypes<?> nmsEntity = CraftEntityType.bukkitToMinecraft(entityType);
         return nmsEntity.isEnabled(craftWorld.getHandle().enabledFeatures());
     }
 }

@@ -2,8 +2,6 @@ package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -43,14 +41,11 @@ import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.IBlockData;
-import net.minecraft.world.level.material.FluidType;
 import net.minecraft.world.level.storage.SavedFile;
 import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
-import org.bukkit.Fluid;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.UnsafeValues;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
@@ -58,9 +53,8 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftFeatureFlag;
+import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
-import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
-import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.CraftLegacy;
@@ -105,7 +99,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     // ========================================================================
     private static final Map<Block, Material> BLOCK_MATERIAL = new HashMap<>();
     private static final Map<Item, Material> ITEM_MATERIAL = new HashMap<>();
-    private static final BiMap<FluidType, Fluid> FLUIDTYPE_FLUID = HashBiMap.create();
     private static final Map<Material, Item> MATERIAL_ITEM = new HashMap<>();
     private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
 
@@ -116,11 +109,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         for (Item item : BuiltInRegistries.ITEM) {
             ITEM_MATERIAL.put(item, Material.getMaterial(BuiltInRegistries.ITEM.getKey(item).getPath().toUpperCase(Locale.ROOT)));
-        }
-
-        for (FluidType fluidType : BuiltInRegistries.FLUID) {
-            Fluid fluid = Registry.FLUID.get(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.FLUID.getKey(fluidType)));
-            FLUIDTYPE_FLUID.put(fluidType, fluid);
         }
 
         for (Material material : Material.values()) {
@@ -146,10 +134,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return ITEM_MATERIAL.getOrDefault(item, Material.AIR);
     }
 
-    public static Fluid getFluid(FluidType fluid) {
-        return FLUIDTYPE_FLUID.get(fluid);
-    }
-
     public static Item getItem(Material material) {
         if (material != null && material.isLegacy()) {
             material = CraftLegacy.fromLegacy(material);
@@ -164,10 +148,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         return MATERIAL_BLOCK.get(material);
-    }
-
-    public static FluidType getFluid(Fluid fluid) {
-        return FLUIDTYPE_FLUID.inverse().get(fluid);
     }
 
     public static MinecraftKey key(Material mat) {
@@ -352,7 +332,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         Multimap<AttributeBase, net.minecraft.world.entity.ai.attributes.AttributeModifier> nmsDefaultAttributes = getItem(material).getDefaultAttributeModifiers(CraftEquipmentSlot.getNMS(slot));
         for (Entry<AttributeBase, net.minecraft.world.entity.ai.attributes.AttributeModifier> mapEntry : nmsDefaultAttributes.entries()) {
-            Attribute attribute = CraftAttributeMap.fromMinecraft(BuiltInRegistries.ATTRIBUTE.getKey(mapEntry.getKey()).toString());
+            Attribute attribute = CraftAttribute.minecraftToBukkit(mapEntry.getKey());
             defaultAttributes.put(attribute, CraftAttributeInstance.convert(mapEntry.getValue(), slot));
         }
 

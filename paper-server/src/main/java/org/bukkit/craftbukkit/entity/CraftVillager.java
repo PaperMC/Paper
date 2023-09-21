@@ -1,16 +1,19 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import java.util.Locale;
 import net.minecraft.core.BlockPosition;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.monster.EntityZombie;
 import net.minecraft.world.entity.monster.EntityZombieVillager;
 import net.minecraft.world.entity.npc.EntityVillager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.level.block.BlockBed;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Location;
+import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -43,24 +46,24 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public Profession getProfession() {
-        return CraftVillager.nmsToBukkitProfession(getHandle().getVillagerData().getProfession());
+        return CraftProfession.minecraftToBukkit(getHandle().getVillagerData().getProfession());
     }
 
     @Override
     public void setProfession(Profession profession) {
         Preconditions.checkArgument(profession != null, "Profession cannot be null");
-        getHandle().setVillagerData(getHandle().getVillagerData().setProfession(CraftVillager.bukkitToNmsProfession(profession)));
+        getHandle().setVillagerData(getHandle().getVillagerData().setProfession(CraftProfession.bukkitToMinecraft(profession)));
     }
 
     @Override
     public Type getVillagerType() {
-        return Type.valueOf(BuiltInRegistries.VILLAGER_TYPE.getKey(getHandle().getVillagerData().getType()).getPath().toUpperCase(Locale.ROOT));
+        return CraftType.minecraftToBukkit(getHandle().getVillagerData().getType());
     }
 
     @Override
     public void setVillagerType(Type type) {
         Preconditions.checkArgument(type != null, "Type cannot be null");
-        getHandle().setVillagerData(getHandle().getVillagerData().setType(BuiltInRegistries.VILLAGER_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey()))));
+        getHandle().setVillagerData(getHandle().getVillagerData().setType(CraftType.bukkitToMinecraft(type)));
     }
 
     @Override
@@ -123,11 +126,45 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         return (entityzombievillager != null) ? (ZombieVillager) entityzombievillager.getBukkitEntity() : null;
     }
 
-    public static Profession nmsToBukkitProfession(VillagerProfession nms) {
-        return Profession.valueOf(BuiltInRegistries.VILLAGER_PROFESSION.getKey(nms).getPath().toUpperCase(Locale.ROOT));
+    public static class CraftType {
+
+        public static Type minecraftToBukkit(VillagerType minecraft) {
+            Preconditions.checkArgument(minecraft != null);
+
+            IRegistry<VillagerType> registry = CraftRegistry.getMinecraftRegistry(Registries.VILLAGER_TYPE);
+            Type bukkit = Registry.VILLAGER_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
+
+            Preconditions.checkArgument(bukkit != null);
+
+            return bukkit;
+        }
+
+        public static VillagerType bukkitToMinecraft(Type bukkit) {
+            Preconditions.checkArgument(bukkit != null);
+
+            return CraftRegistry.getMinecraftRegistry(Registries.VILLAGER_TYPE)
+                    .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+        }
     }
 
-    public static VillagerProfession bukkitToNmsProfession(Profession bukkit) {
-        return BuiltInRegistries.VILLAGER_PROFESSION.get(CraftNamespacedKey.toMinecraft(bukkit.getKey()));
+    public static class CraftProfession {
+
+        public static Profession minecraftToBukkit(VillagerProfession minecraft) {
+            Preconditions.checkArgument(minecraft != null);
+
+            IRegistry<VillagerProfession> registry = CraftRegistry.getMinecraftRegistry(Registries.VILLAGER_PROFESSION);
+            Profession bukkit = Registry.VILLAGER_PROFESSION.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
+
+            Preconditions.checkArgument(bukkit != null);
+
+            return bukkit;
+        }
+
+        public static VillagerProfession bukkitToMinecraft(Profession bukkit) {
+            Preconditions.checkArgument(bukkit != null);
+
+            return CraftRegistry.getMinecraftRegistry(Registries.VILLAGER_PROFESSION)
+                    .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+        }
     }
 }
