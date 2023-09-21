@@ -4,9 +4,11 @@ import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -20,6 +22,7 @@ import org.bukkit.plugin.AuthorNagException;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -329,6 +332,12 @@ public class Commodore
                             return;
                         }
 
+                        if ( owner.startsWith( "org/bukkit" ) && desc.contains( "org/bukkit/util/Consumer" ) )
+                        {
+                            super.visitMethodInsn( opcode, owner, name, desc.replace( "org/bukkit/util/Consumer", "java/util/function/Consumer" ), itf );
+                            return;
+                        }
+
                         if ( modern )
                         {
                             if ( owner.equals( "org/bukkit/Material" ) )
@@ -425,6 +434,35 @@ public class Commodore
                         }
 
                         super.visitLdcInsn( value );
+                    }
+
+                    @Override
+                    public void visitInvokeDynamicInsn( String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments )
+                    {
+                        if ( bootstrapMethodHandle.getOwner().equals( "java/lang/invoke/LambdaMetafactory" )
+                                && bootstrapMethodHandle.getName().equals( "metafactory" ) && bootstrapMethodArguments.length == 3 )
+                        {
+                            Type samMethodType = (Type) bootstrapMethodArguments[ 0 ];
+                            Handle implMethod = (Handle) bootstrapMethodArguments[ 1 ];
+                            Type instantiatedMethodType = (Type) bootstrapMethodArguments[ 2 ];
+
+                            List<Object> newTypes = new ArrayList<>();
+                            newTypes.add( samMethodType );
+
+                            if ( implMethod.getOwner().startsWith( "org/bukkit" ) && implMethod.getDesc().contains( "org/bukkit/util/Consumer" ) )
+                            {
+                                implMethod = new Handle( implMethod.getTag(), implMethod.getOwner(), implMethod.getName(),
+                                        implMethod.getDesc().replace( "org/bukkit/util/Consumer", "java/util/function/Consumer" ), implMethod.isInterface() );
+                            }
+
+                            newTypes.add( implMethod );
+                            newTypes.add( instantiatedMethodType );
+
+                            super.visitInvokeDynamicInsn( name, descriptor, bootstrapMethodHandle, newTypes.toArray() );
+                            return;
+                        }
+
+                        super.visitInvokeDynamicInsn( name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments );
                     }
                 };
             }
