@@ -42,7 +42,7 @@ do
     strip_cr "$nms/$file" > /dev/null
 	strip_cr "$cb/$file" > /dev/null
     outName=$(echo nms-patches/"$(echo $file | cut -d. -f1)".patch)
-    patchNew=$(diff -u --label a/$file "$nms/$file" --label b/$file "$cb/$file" || true)
+    patchNew=$(diff -u --minimal --label a/$file "$nms/$file" --label b/$file "$cb/$file" || true)
     if [ -f "$outName" ]
     then
         patchCut=$(echo "$patchNew" | tail -n +3)

@@ -427,14 +427,14 @@
 +        */
 +        return player == null;
 +        // CraftBukkit end
-+    }
-+
-+    // CraftBukkit start
-+    public EntityPlayer respawn(EntityPlayer entityplayer, boolean flag, RespawnReason reason) {
-+        return this.respawn(entityplayer, this.server.getLevel(entityplayer.getRespawnDimension()), flag, null, true, reason);
      }
  
 -    public EntityPlayer respawn(EntityPlayer entityplayer, boolean flag) {
++    // CraftBukkit start
++    public EntityPlayer respawn(EntityPlayer entityplayer, boolean flag, RespawnReason reason) {
++        return this.respawn(entityplayer, this.server.getLevel(entityplayer.getRespawnDimension()), flag, null, true, reason);
++    }
++
 +    public EntityPlayer respawn(EntityPlayer entityplayer, WorldServer worldserver, boolean flag, Location location, boolean avoidSuffocation, RespawnReason reason) {
 +        entityplayer.stopRiding(); // CraftBukkit
          this.players.remove(entityplayer);
@@ -483,7 +483,8 @@
 +                } else {
 +                    optional = Optional.empty();
 +                }
-+
+ 
+-                f1 = (float) MathHelper.wrapDegrees(MathHelper.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
 +                if (optional.isPresent()) {
 +                    IBlockData iblockdata = worldserver1.getBlockState(blockposition);
 +                    boolean flag3 = iblockdata.is(Blocks.RESPAWN_ANCHOR);
@@ -506,13 +507,6 @@
 +                    entityplayer1.connection.send(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
 +                    entityplayer1.setRespawnPosition(null, null, 0f, false, false, PlayerSpawnChangeEvent.Cause.RESET); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed
 +                }
-+            }
- 
--                f1 = (float) MathHelper.wrapDegrees(MathHelper.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-+            if (location == null) {
-+                worldserver1 = this.server.getLevel(World.OVERWORLD);
-+                blockposition = entityplayer1.getSpawnPoint(worldserver1);
-+                location = CraftLocation.toBukkit(blockposition, worldserver1.getWorld()).add(0.5F, 0.1F, 0.5F);
              }
  
 -            entityplayer1.moveTo(vec3d.x, vec3d.y, vec3d.z, f1, 0.0F);
@@ -520,6 +514,12 @@
 -            flag2 = !flag && flag3;
 -        } else if (blockposition != null) {
 -            entityplayer1.connection.send(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
++            if (location == null) {
++                worldserver1 = this.server.getLevel(World.OVERWORLD);
++                blockposition = entityplayer1.getSpawnPoint(worldserver1);
++                location = CraftLocation.toBukkit(blockposition, worldserver1.getWorld()).add(0.5F, 0.1F, 0.5F);
++            }
++
 +            Player respawnPlayer = entityplayer1.getBukkitEntity();
 +            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn && !flag2, flag2, reason);
 +            cserver.getPluginManager().callEvent(respawnEvent);
