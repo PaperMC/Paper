@@ -417,8 +417,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                3448,
 +                3450,
 +                3451,
-+                3459
-+                // All up to 1.20-rc1
++                3459,
++                3564,
++                3565,
++                3566,
++                3568
++                // All up to 1.20.2
 +        };
 +        Arrays.sort(converterVersions);
 +
@@ -1058,6 +1062,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static final int V1_20                 = 3463;
 +    public static final int V1_20_1_RC1           = 3464;
 +    public static final int V1_20_1               = 3465;
++    public static final int V23W31A               = 3567;
++    public static final int V23W32A               = 3569;
++    public static final int V23W33A               = 3570;
++    public static final int V23W35A               = 3571;
++    public static final int V1_20_2_PRE1          = 3572;
 +
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/advancements/ConverterAbstractAdvancementsRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/advancements/ConverterAbstractAdvancementsRename.java
@@ -4766,7 +4775,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        register(4083, "{Name:'minecraft:structure_block',Properties:{mode:'data'}}", "{Name:'minecraft:structure_block',Properties:{mode:'data'}}");
 +        finalizeMaps();
 +    }
-+
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/HelperItemNameV102.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/HelperItemNameV102.java
 new file mode 100644
@@ -5164,39 +5172,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                ITEM_NAMES.put(i, extra[i]);
 +            }
 +        }
-+
-+        // Add block ids into conversion as well
-+        // Very old versions of the game handled them, but it seems 1.8.8 did not parse them at all, so no conversion
-+        // was written.
-+        // block ids are only skipped (set to AIR) if there is no 1-1 replacement item.
-+        ITEM_NAMES.put(26, "minecraft:bed"); // bed block
-+        ITEM_NAMES.put(34, ITEM_NAMES.get(0)); // skip (piston head block)
-+        ITEM_NAMES.put(55, "minecraft:redstone"); // redstone wire block
-+        ITEM_NAMES.put(59, ITEM_NAMES.get(0)); // skip (wheat crop block)
-+        ITEM_NAMES.put(63, "minecraft:sign"); // standing sign
-+        ITEM_NAMES.put(64, "minecraft:wooden_door"); // wooden door block
-+        ITEM_NAMES.put(68, "minecraft:sign"); // wall sign
-+        ITEM_NAMES.put(71, "minecraft:iron_door"); // iron door block
-+        ITEM_NAMES.put(74, "minecraft:redstone_ore"); // lit redstone ore block
-+        ITEM_NAMES.put(75, "minecraft:redstone_torch"); // unlit redstone torch
-+        ITEM_NAMES.put(83, "minecraft:reeds"); // sugar cane block
-+        ITEM_NAMES.put(92, "minecraft:cake"); // cake block
-+        ITEM_NAMES.put(93, "minecraft:repeater"); // unpowered repeater block
-+        ITEM_NAMES.put(94, "minecraft:repeater"); // powered repeater block
-+        ITEM_NAMES.put(104, ITEM_NAMES.get(0)); // skip (pumpkin stem)
-+        ITEM_NAMES.put(105, ITEM_NAMES.get(0)); // skip (melon stem)
-+        ITEM_NAMES.put(115, "minecraft:nether_wart"); // nether wart block
-+        ITEM_NAMES.put(117, "minecraft:brewing_stand"); // brewing stand block
-+        ITEM_NAMES.put(118, "minecraft:cauldron"); // cauldron block
-+        ITEM_NAMES.put(124, "minecraft:redstone_lamp"); // lit redstone lamp block
-+        ITEM_NAMES.put(132, ITEM_NAMES.get(0)); // skip (tripwire wire block)
-+        ITEM_NAMES.put(140, "minecraft:flower_pot"); // flower pot block
-+        ITEM_NAMES.put(144, "minecraft:skull"); // skull block
-+        ITEM_NAMES.put(149, "minecraft:comparator"); // unpowered comparator block
-+        ITEM_NAMES.put(150, "minecraft:comparator"); // powered comparator block
-+        // there are technically more, but at some point even older versions pre id -> name conversion didn't even load them.
-+        // (all I know is 1.7.10 does not load them)
-+        // and so given even the vanilla game wouldn't load them, there's no conversion path for them - they were never valid.
 +    }
 +
 +    private static final String[] POTION_NAMES = new String[128];
@@ -6415,25 +6390,206 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.converters.helpers.HelperBlockFlatteningV1450;
 +import ca.spottedleaf.dataconverter.minecraft.converters.itemstack.ConverterFlattenItemStack;
++import ca.spottedleaf.dataconverter.minecraft.versions.V1451;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import ca.spottedleaf.dataconverter.types.Types;
 +import com.google.common.collect.ImmutableMap;
 +import com.google.common.collect.ImmutableSet;
 +import org.apache.commons.lang3.StringUtils;
++import java.util.HashMap;
++import java.util.HashSet;
 +import java.util.Map;
 +import java.util.Set;
 +
-+public final class ConverterFlattenStats extends DataConverter<MapType<String>, MapType<String>> {
++public final class ConverterFlattenStats {
 +
-+    private static final Set<String> SKIP = ImmutableSet.<String>builder().add("stat.craftItem.minecraft.spawn_egg").add("stat.useItem.minecraft.spawn_egg").add("stat.breakItem.minecraft.spawn_egg").add("stat.pickup.minecraft.spawn_egg").add("stat.drop.minecraft.spawn_egg").build();
-+    private static final Map<String, String> CUSTOM_MAP = ImmutableMap.<String, String>builder().put("stat.leaveGame", "minecraft:leave_game").put("stat.playOneMinute", "minecraft:play_one_minute").put("stat.timeSinceDeath", "minecraft:time_since_death").put("stat.sneakTime", "minecraft:sneak_time").put("stat.walkOneCm", "minecraft:walk_one_cm").put("stat.crouchOneCm", "minecraft:crouch_one_cm").put("stat.sprintOneCm", "minecraft:sprint_one_cm").put("stat.swimOneCm", "minecraft:swim_one_cm").put("stat.fallOneCm", "minecraft:fall_one_cm").put("stat.climbOneCm", "minecraft:climb_one_cm").put("stat.flyOneCm", "minecraft:fly_one_cm").put("stat.diveOneCm", "minecraft:dive_one_cm").put("stat.minecartOneCm", "minecraft:minecart_one_cm").put("stat.boatOneCm", "minecraft:boat_one_cm").put("stat.pigOneCm", "minecraft:pig_one_cm").put("stat.horseOneCm", "minecraft:horse_one_cm").put("stat.aviateOneCm", "minecraft:aviate_one_cm").put("stat.jump", "minecraft:jump").put("stat.drop", "minecraft:drop").put("stat.damageDealt", "minecraft:damage_dealt").put("stat.damageTaken", "minecraft:damage_taken").put("stat.deaths", "minecraft:deaths").put("stat.mobKills", "minecraft:mob_kills").put("stat.animalsBred", "minecraft:animals_bred").put("stat.playerKills", "minecraft:player_kills").put("stat.fishCaught", "minecraft:fish_caught").put("stat.talkedToVillager", "minecraft:talked_to_villager").put("stat.tradedWithVillager", "minecraft:traded_with_villager").put("stat.cakeSlicesEaten", "minecraft:eat_cake_slice").put("stat.cauldronFilled", "minecraft:fill_cauldron").put("stat.cauldronUsed", "minecraft:use_cauldron").put("stat.armorCleaned", "minecraft:clean_armor").put("stat.bannerCleaned", "minecraft:clean_banner").put("stat.brewingstandInteraction", "minecraft:interact_with_brewingstand").put("stat.beaconInteraction", "minecraft:interact_with_beacon").put("stat.dropperInspected", "minecraft:inspect_dropper").put("stat.hopperInspected", "minecraft:inspect_hopper").put("stat.dispenserInspected", "minecraft:inspect_dispenser").put("stat.noteblockPlayed", "minecraft:play_noteblock").put("stat.noteblockTuned", "minecraft:tune_noteblock").put("stat.flowerPotted", "minecraft:pot_flower").put("stat.trappedChestTriggered", "minecraft:trigger_trapped_chest").put("stat.enderchestOpened", "minecraft:open_enderchest").put("stat.itemEnchanted", "minecraft:enchant_item").put("stat.recordPlayed", "minecraft:play_record").put("stat.furnaceInteraction", "minecraft:interact_with_furnace").put("stat.craftingTableInteraction", "minecraft:interact_with_crafting_table").put("stat.chestOpened", "minecraft:open_chest").put("stat.sleepInBed", "minecraft:sleep_in_bed").put("stat.shulkerBoxOpened", "minecraft:open_shulker_box").build();
-+    private static final Map<String, String> ITEM_KEYS = ImmutableMap.<String, String>builder().put("stat.craftItem", "minecraft:crafted").put("stat.useItem", "minecraft:used").put("stat.breakItem", "minecraft:broken").put("stat.pickup", "minecraft:picked_up").put("stat.drop", "minecraft:dropped").build();
-+    private static final Map<String, String> ENTITY_KEYS = ImmutableMap.<String, String>builder().put("stat.entityKilledBy", "minecraft:killed_by").put("stat.killEntity", "minecraft:killed").build();
-+    private static final Map<String, String> ENTITIES = ImmutableMap.<String, String>builder().put("Bat", "minecraft:bat").put("Blaze", "minecraft:blaze").put("CaveSpider", "minecraft:cave_spider").put("Chicken", "minecraft:chicken").put("Cow", "minecraft:cow").put("Creeper", "minecraft:creeper").put("Donkey", "minecraft:donkey").put("ElderGuardian", "minecraft:elder_guardian").put("Enderman", "minecraft:enderman").put("Endermite", "minecraft:endermite").put("EvocationIllager", "minecraft:evocation_illager").put("Ghast", "minecraft:ghast").put("Guardian", "minecraft:guardian").put("Horse", "minecraft:horse").put("Husk", "minecraft:husk").put("Llama", "minecraft:llama").put("LavaSlime", "minecraft:magma_cube").put("MushroomCow", "minecraft:mooshroom").put("Mule", "minecraft:mule").put("Ozelot", "minecraft:ocelot").put("Parrot", "minecraft:parrot").put("Pig", "minecraft:pig").put("PolarBear", "minecraft:polar_bear").put("Rabbit", "minecraft:rabbit").put("Sheep", "minecraft:sheep").put("Shulker", "minecraft:shulker").put("Silverfish", "minecraft:silverfish").put("SkeletonHorse", "minecraft:skeleton_horse").put("Skeleton", "minecraft:skeleton").put("Slime", "minecraft:slime").put("Spider", "minecraft:spider").put("Squid", "minecraft:squid").put("Stray", "minecraft:stray").put("Vex", "minecraft:vex").put("Villager", "minecraft:villager").put("VindicationIllager", "minecraft:vindication_illager").put("Witch", "minecraft:witch").put("WitherSkeleton", "minecraft:wither_skeleton").put("Wolf", "minecraft:wolf").put("ZombieHorse", "minecraft:zombie_horse").put("PigZombie", "minecraft:zombie_pigman").put("ZombieVillager", "minecraft:zombie_villager").put("Zombie", "minecraft:zombie").build();
++    private static final int VERSION = MCVersions.V17W47A;
++    private static final int VERSION_STEP = 6;
 +
-+    public ConverterFlattenStats() {
-+        super(MCVersions.V17W47A, 6);
-+    }
++    private static final Set<String> SPECIAL_OBJECTIVE_CRITERIA = new HashSet<>(
++            Set.of(
++                    "dummy",
++                    "trigger",
++                    "deathCount",
++                    "playerKillCount",
++                    "totalKillCount",
++                    "health",
++                    "food",
++                    "air",
++                    "armor",
++                    "xp",
++                    "level",
++                    "killedByTeam.aqua",
++                    "killedByTeam.black",
++                    "killedByTeam.blue",
++                    "killedByTeam.dark_aqua",
++                    "killedByTeam.dark_blue",
++                    "killedByTeam.dark_gray",
++                    "killedByTeam.dark_green",
++                    "killedByTeam.dark_purple",
++                    "killedByTeam.dark_red",
++                    "killedByTeam.gold",
++                    "killedByTeam.gray",
++                    "killedByTeam.green",
++                    "killedByTeam.light_purple",
++                    "killedByTeam.red",
++                    "killedByTeam.white",
++                    "killedByTeam.yellow",
++                    "teamkill.aqua",
++                    "teamkill.black",
++                    "teamkill.blue",
++                    "teamkill.dark_aqua",
++                    "teamkill.dark_blue",
++                    "teamkill.dark_gray",
++                    "teamkill.dark_green",
++                    "teamkill.dark_purple",
++                    "teamkill.dark_red",
++                    "teamkill.gold",
++                    "teamkill.gray",
++                    "teamkill.green",
++                    "teamkill.light_purple",
++                    "teamkill.red",
++                    "teamkill.white",
++                    "teamkill.yellow"
++            )
++    );
++
++    private static final Set<String> SKIP = new HashSet<>(
++            ImmutableSet.<String>builder()
++                    .add("stat.craftItem.minecraft.spawn_egg")
++                    .add("stat.useItem.minecraft.spawn_egg")
++                    .add("stat.breakItem.minecraft.spawn_egg")
++                    .add("stat.pickup.minecraft.spawn_egg")
++                    .add("stat.drop.minecraft.spawn_egg")
++                    .build()
++    );
++
++    private static final Map<String, String> CUSTOM_MAP = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("stat.leaveGame", "minecraft:leave_game")
++                    .put("stat.playOneMinute", "minecraft:play_one_minute")
++                    .put("stat.timeSinceDeath", "minecraft:time_since_death")
++                    .put("stat.sneakTime", "minecraft:sneak_time")
++                    .put("stat.walkOneCm", "minecraft:walk_one_cm")
++                    .put("stat.crouchOneCm", "minecraft:crouch_one_cm")
++                    .put("stat.sprintOneCm", "minecraft:sprint_one_cm")
++                    .put("stat.swimOneCm", "minecraft:swim_one_cm")
++                    .put("stat.fallOneCm", "minecraft:fall_one_cm")
++                    .put("stat.climbOneCm", "minecraft:climb_one_cm")
++                    .put("stat.flyOneCm", "minecraft:fly_one_cm")
++                    .put("stat.diveOneCm", "minecraft:dive_one_cm")
++                    .put("stat.minecartOneCm", "minecraft:minecart_one_cm")
++                    .put("stat.boatOneCm", "minecraft:boat_one_cm")
++                    .put("stat.pigOneCm", "minecraft:pig_one_cm")
++                    .put("stat.horseOneCm", "minecraft:horse_one_cm")
++                    .put("stat.aviateOneCm", "minecraft:aviate_one_cm")
++                    .put("stat.jump", "minecraft:jump")
++                    .put("stat.drop", "minecraft:drop")
++                    .put("stat.damageDealt", "minecraft:damage_dealt")
++                    .put("stat.damageTaken", "minecraft:damage_taken")
++                    .put("stat.deaths", "minecraft:deaths")
++                    .put("stat.mobKills", "minecraft:mob_kills")
++                    .put("stat.animalsBred", "minecraft:animals_bred")
++                    .put("stat.playerKills", "minecraft:player_kills")
++                    .put("stat.fishCaught", "minecraft:fish_caught")
++                    .put("stat.talkedToVillager", "minecraft:talked_to_villager")
++                    .put("stat.tradedWithVillager", "minecraft:traded_with_villager")
++                    .put("stat.cakeSlicesEaten", "minecraft:eat_cake_slice")
++                    .put("stat.cauldronFilled", "minecraft:fill_cauldron")
++                    .put("stat.cauldronUsed", "minecraft:use_cauldron")
++                    .put("stat.armorCleaned", "minecraft:clean_armor")
++                    .put("stat.bannerCleaned", "minecraft:clean_banner")
++                    .put("stat.brewingstandInteraction", "minecraft:interact_with_brewingstand")
++                    .put("stat.beaconInteraction", "minecraft:interact_with_beacon")
++                    .put("stat.dropperInspected", "minecraft:inspect_dropper")
++                    .put("stat.hopperInspected", "minecraft:inspect_hopper")
++                    .put("stat.dispenserInspected", "minecraft:inspect_dispenser")
++                    .put("stat.noteblockPlayed", "minecraft:play_noteblock")
++                    .put("stat.noteblockTuned", "minecraft:tune_noteblock")
++                    .put("stat.flowerPotted", "minecraft:pot_flower")
++                    .put("stat.trappedChestTriggered", "minecraft:trigger_trapped_chest")
++                    .put("stat.enderchestOpened", "minecraft:open_enderchest")
++                    .put("stat.itemEnchanted", "minecraft:enchant_item")
++                    .put("stat.recordPlayed", "minecraft:play_record")
++                    .put("stat.furnaceInteraction", "minecraft:interact_with_furnace")
++                    .put("stat.craftingTableInteraction", "minecraft:interact_with_crafting_table")
++                    .put("stat.chestOpened", "minecraft:open_chest")
++                    .put("stat.sleepInBed", "minecraft:sleep_in_bed")
++                    .put("stat.shulkerBoxOpened", "minecraft:open_shulker_box")
++                    .build()
++    );
++
++    private static final String BLOCK_KEY = "stat.mineBlock";
++    private static final String NEW_BLOCK_KEY = "minecraft:mined";
++
++    private static final Map<String, String> ITEM_KEYS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("stat.craftItem", "minecraft:crafted")
++                    .put("stat.useItem", "minecraft:used")
++                    .put("stat.breakItem", "minecraft:broken")
++                    .put("stat.pickup", "minecraft:picked_up")
++                    .put("stat.drop", "minecraft:dropped")
++                    .build()
++    );
++
++    private static final Map<String, String> ENTITY_KEYS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("stat.entityKilledBy", "minecraft:killed_by")
++                    .put("stat.killEntity", "minecraft:killed")
++                    .build()
++    );
++
++    private static final Map<String, String> ENTITIES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("Bat", "minecraft:bat")
++                    .put("Blaze", "minecraft:blaze")
++                    .put("CaveSpider", "minecraft:cave_spider")
++                    .put("Chicken", "minecraft:chicken")
++                    .put("Cow", "minecraft:cow")
++                    .put("Creeper", "minecraft:creeper")
++                    .put("Donkey", "minecraft:donkey")
++                    .put("ElderGuardian", "minecraft:elder_guardian")
++                    .put("Enderman", "minecraft:enderman")
++                    .put("Endermite", "minecraft:endermite")
++                    .put("EvocationIllager", "minecraft:evocation_illager")
++                    .put("Ghast", "minecraft:ghast")
++                    .put("Guardian", "minecraft:guardian")
++                    .put("Horse", "minecraft:horse")
++                    .put("Husk", "minecraft:husk")
++                    .put("Llama", "minecraft:llama")
++                    .put("LavaSlime", "minecraft:magma_cube")
++                    .put("MushroomCow", "minecraft:mooshroom")
++                    .put("Mule", "minecraft:mule")
++                    .put("Ozelot", "minecraft:ocelot")
++                    .put("Parrot", "minecraft:parrot")
++                    .put("Pig", "minecraft:pig")
++                    .put("PolarBear", "minecraft:polar_bear")
++                    .put("Rabbit", "minecraft:rabbit")
++                    .put("Sheep", "minecraft:sheep")
++                    .put("Shulker", "minecraft:shulker")
++                    .put("Silverfish", "minecraft:silverfish")
++                    .put("SkeletonHorse", "minecraft:skeleton_horse")
++                    .put("Skeleton", "minecraft:skeleton")
++                    .put("Slime", "minecraft:slime")
++                    .put("Spider", "minecraft:spider")
++                    .put("Squid", "minecraft:squid")
++                    .put("Stray", "minecraft:stray")
++                    .put("Vex", "minecraft:vex")
++                    .put("Villager", "minecraft:villager")
++                    .put("VindicationIllager", "minecraft:vindication_illager")
++                    .put("Witch", "minecraft:witch")
++                    .put("WitherSkeleton", "minecraft:wither_skeleton")
++                    .put("Wolf", "minecraft:wolf")
++                    .put("ZombieHorse", "minecraft:zombie_horse")
++                    .put("PigZombie", "minecraft:zombie_pigman")
++                    .put("ZombieVillager", "minecraft:zombie_villager")
++                    .put("Zombie", "minecraft:zombie")
++                    .build()
++    );
++
++    private static final String NEW_CUSTOM_KEY = "minecraft:custom";
++
++    private ConverterFlattenStats() {}
 +
 +    private static String upgradeItem(final String itemName) {
 +        return ConverterFlattenItemStack.flattenItem(itemName, 0);
@@ -6443,64 +6599,98 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return HelperBlockFlatteningV1450.getNewBlockName(block);
 +    }
 +
-+    @Override
-+    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+        final MapType<String> stats = Types.NBT.createEmptyMap();
++    private static record StatType(String category, String key) {}
 +
-+        for (final String statKey : data.keys()) {
-+            final Number value = data.getNumber(statKey);
-+            if (value == null) {
-+                continue;
-+            }
-+
-+            if (SKIP.contains(statKey)) {
-+                continue;
-+            }
-+
-+            final String statType;
-+            final String newStatKey;
-+
-+            if (CUSTOM_MAP.containsKey(statKey)) {
-+                statType = "minecraft:custom";
-+                newStatKey = CUSTOM_MAP.get(statKey);
-+            } else {
-+                final int i = StringUtils.ordinalIndexOf(statKey, ".", 2);
-+                if (i < 0) {
-+                    continue;
-+                }
-+
-+                final String key = statKey.substring(0, i);
-+
-+                if ("stat.mineBlock".equals(key)) {
-+                    statType = "minecraft:mined";
-+                    newStatKey = upgradeBlock(statKey.substring(i + 1).replace('.', ':'));
-+                } else if (ITEM_KEYS.containsKey(key)) {
-+                    statType = ITEM_KEYS.get(key);
-+                    final String item = statKey.substring(i + 1).replace('.', ':');
-+                    final String upgradedItem = upgradeItem(item);
-+                    newStatKey = upgradedItem == null ? item : upgradedItem;
-+                } else if (ENTITY_KEYS.containsKey(key)) {
-+                    statType = ENTITY_KEYS.get(key);
-+                    final String entity = statKey.substring(i + 1).replace('.', ':');
-+                    newStatKey = ENTITIES.getOrDefault(entity, entity);
-+                } else {
-+                    continue;
-+                }
-+            }
-+
-+            MapType<String> statTypeMap = stats.getMap(statType);
-+            if (statTypeMap == null) {
-+                stats.setMap(statType, statTypeMap = Types.NBT.createEmptyMap());
-+            }
-+
-+            statTypeMap.setGeneric(newStatKey, value);
++    private static StatType convertLegacyKey(final String key) {
++        if (SKIP.contains(key)) {
++            return null;
 +        }
 +
-+        data.clear();
++        final String custom = CUSTOM_MAP.get(key);
++        if (custom != null) {
++            return new StatType(NEW_CUSTOM_KEY, custom);
++        }
 +
-+        data.setMap("stats", stats);
++        final int i = StringUtils.ordinalIndexOf(key, ".", 2);
++        if (i < 0) {
++            return null;
++        }
++
++        final String stat = key.substring(0, i);
++
++        if (BLOCK_KEY.equals(stat)) {
++            return new StatType(NEW_BLOCK_KEY, upgradeBlock(key.substring(i + 1).replace('.', ':')));
++        }
++
++        final String itemStat = ITEM_KEYS.get(stat);
++
++        if (itemStat != null) {
++            final String itemId = key.substring(i + 1).replace('.', ':');
++            final String flattenedItem = upgradeItem(itemId);
++
++            return new StatType(itemStat, flattenedItem == null ? itemId : flattenedItem);
++        }
++
++        final String entityStat = ENTITY_KEYS.get(stat);
++        if (entityStat != null) {
++            final String entityId = key.substring(i + 1).replace('.', ':');
++
++            return new StatType(entityStat, ENTITIES.getOrDefault(entityId, entityId));
++        }
 +
 +        return null;
++    }
++
++    public static DataConverter<MapType<String>, MapType<String>> makeStatsConverter() {
++        return new DataConverter<>(VERSION, VERSION_STEP) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                final MapType<String> stats = Types.NBT.createEmptyMap();
++
++                for (final String statKey : data.keys()) {
++                    final Number value = data.getNumber(statKey);
++                    if (value == null) {
++                        continue;
++                    }
++
++                    final StatType converted = convertLegacyKey(statKey);
++
++                    if (converted == null) {
++                        continue;
++                    }
++
++                    stats.getOrCreateMap(converted.category()).setGeneric(converted.key(), value);
++                }
++
++                data.clear();
++                data.setMap("stats", stats);
++
++                return null;
++            }
++        };
++    }
++
++    public static DataConverter<MapType<String>, MapType<String>> makeObjectiveConverter() {
++        return new DataConverter<>(VERSION, VERSION_STEP) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                final String criteriaName = data.getString("CriteriaName");
++
++                if (criteriaName == null) {
++                    return null;
++                }
++
++                if (SPECIAL_OBJECTIVE_CRITERIA.contains(criteriaName)) {
++                    return null;
++                }
++
++                final StatType converted = convertLegacyKey(criteriaName);
++                data.setString("CriteriaName",
++                        converted == null ? "dummy" : V1451.packWithDot(converted.category()) + ":" + V1451.packWithDot(converted.key()));
++
++                return null;
++            }
++        };
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/tileentity/ConverterAbstractTileEntityRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/tileentity/ConverterAbstractTileEntityRename.java
@@ -6873,7 +7063,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static final MCDataType OPTIONS            = new MCDataType("Options");
 +    public static final MCDataType STRUCTURE          = new MCDataType("Structure");
 +    public static final MCDataType STATS              = new MCDataType("Stats");
-+    public static final MCDataType SAVED_DATA         = new MCDataType("SavedData");
 +    public static final MCDataType ADVANCEMENTS       = new MCDataType("Advancements");
 +    public static final MCDataType POI_CHUNK          = new MCDataType("PoiChunk");
 +    public static final MCDataType ENTITY_CHUNK       = new MCDataType("EntityChunk");
@@ -6892,7 +7081,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static final MCValueType BIOME             = new MCValueType("Biome");
 +    public static final MCDataType WORLD_GEN_SETTINGS = new MCDataType("WorldGenSettings");
 +    public static final MCValueType GAME_EVENT_NAME   = new MCValueType("GameEventName");
-+    public static final MCValueType MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST = new MCValueType("MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST");
++
++    public static final MCValueType MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST = new MCValueType("MultiNoiseBiomeSourceParameterList");
++
++    public static final MCDataType SAVED_DATA_RANDOM_SEQUENCES          = new MCDataType("SavedData/RandomSequences");
++    public static final MCDataType SAVED_DATA_SCOREBOARD                = new MCDataType("SavedData/Scoreboard");
++    public static final MCDataType SAVED_DATA_STRUCTURE_FEATURE_INDICES = new MCDataType("SavedData/StructureFeatureIndices");
++    public static final MCDataType SAVED_DATA_MAP_DATA                  = new MCDataType("SavedData/MapData");
++    public static final MCDataType SAVED_DATA_RAIDS                     = new MCDataType("SavedData/Raids");
 +
 +    static {
 +        try {
@@ -7111,6 +7307,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        V3450.register();
 +        V3451.register();
 +        V3459.register();
++        V3564.register();
++        V3565.register();
++        V3566.register();
++        V3568.register();
 +    }
 +
 +    private MCTypeRegistry() {}
@@ -8656,6 +8856,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    protected static final int VERSION = MCVersions.V17W47A;
 +
++    public static String packWithDot(final String string) {
++        final ResourceLocation resourceLocation = ResourceLocation.tryParse(string);
++        return resourceLocation != null ? resourceLocation.getNamespace() + "." + resourceLocation.getPath() : string;
++    }
++
 +    public static void register() {
 +        // V0
 +        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, 0, "minecraft:trapped_chest", new DataWalkerItemLists("Items"));
@@ -8879,7 +9084,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +
 +        // V6
-+        MCTypeRegistry.STATS.addStructureConverter(new ConverterFlattenStats());
++        MCTypeRegistry.STATS.addStructureConverter(ConverterFlattenStats.makeStatsConverter());
++        MCTypeRegistry.OBJECTIVE.addStructureConverter(ConverterFlattenStats.makeObjectiveConverter());
 +        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:jukebox", new DataConverter<>(VERSION, 6) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
@@ -8926,11 +9132,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +
 +        MCTypeRegistry.OBJECTIVE.addStructureHook(VERSION, 6, new DataHook<>() {
-+            private static String packWithDot(final String string) {
-+                final ResourceLocation resourceLocation = ResourceLocation.tryParse(string);
-+                return resourceLocation != null ? resourceLocation.getNamespace() + "." + resourceLocation.getPath() : string;
-+            }
-+
 +            @Override
 +            public MapType<String> preHook(final MapType<String> data, final long fromVersion, final long toVersion) {
 +                // unpack
@@ -9629,34 +9830,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.converters.blockname.ConverterAbstractBlockRename;
 +import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V1480 {
 +
 +    protected static final int VERSION = MCVersions.V18W14A + 1;
 +
-+    public static final Map<String, String> RENAMED_IDS = ImmutableMap.<String, String>builder()
-+            .put("minecraft:blue_coral", "minecraft:tube_coral_block")
-+            .put("minecraft:pink_coral", "minecraft:brain_coral_block")
-+            .put("minecraft:purple_coral", "minecraft:bubble_coral_block")
-+            .put("minecraft:red_coral", "minecraft:fire_coral_block")
-+            .put("minecraft:yellow_coral", "minecraft:horn_coral_block")
-+            .put("minecraft:blue_coral_plant", "minecraft:tube_coral")
-+            .put("minecraft:pink_coral_plant", "minecraft:brain_coral")
-+            .put("minecraft:purple_coral_plant", "minecraft:bubble_coral")
-+            .put("minecraft:red_coral_plant", "minecraft:fire_coral")
-+            .put("minecraft:yellow_coral_plant", "minecraft:horn_coral")
-+            .put("minecraft:blue_coral_fan", "minecraft:tube_coral_fan")
-+            .put("minecraft:pink_coral_fan", "minecraft:brain_coral_fan")
-+            .put("minecraft:purple_coral_fan", "minecraft:bubble_coral_fan")
-+            .put("minecraft:red_coral_fan", "minecraft:fire_coral_fan")
-+            .put("minecraft:yellow_coral_fan", "minecraft:horn_coral_fan")
-+            .put("minecraft:blue_dead_coral", "minecraft:dead_tube_coral")
-+            .put("minecraft:pink_dead_coral", "minecraft:dead_brain_coral")
-+            .put("minecraft:purple_dead_coral", "minecraft:dead_bubble_coral")
-+            .put("minecraft:red_dead_coral", "minecraft:dead_fire_coral")
-+            .put("minecraft:yellow_dead_coral", "minecraft:dead_horn_coral")
-+            .build();
++    public static final Map<String, String> RENAMED_IDS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:blue_coral", "minecraft:tube_coral_block")
++                    .put("minecraft:pink_coral", "minecraft:brain_coral_block")
++                    .put("minecraft:purple_coral", "minecraft:bubble_coral_block")
++                    .put("minecraft:red_coral", "minecraft:fire_coral_block")
++                    .put("minecraft:yellow_coral", "minecraft:horn_coral_block")
++                    .put("minecraft:blue_coral_plant", "minecraft:tube_coral")
++                    .put("minecraft:pink_coral_plant", "minecraft:brain_coral")
++                    .put("minecraft:purple_coral_plant", "minecraft:bubble_coral")
++                    .put("minecraft:red_coral_plant", "minecraft:fire_coral")
++                    .put("minecraft:yellow_coral_plant", "minecraft:horn_coral")
++                    .put("minecraft:blue_coral_fan", "minecraft:tube_coral_fan")
++                    .put("minecraft:pink_coral_fan", "minecraft:brain_coral_fan")
++                    .put("minecraft:purple_coral_fan", "minecraft:bubble_coral_fan")
++                    .put("minecraft:red_coral_fan", "minecraft:fire_coral_fan")
++                    .put("minecraft:yellow_coral_fan", "minecraft:horn_coral_fan")
++                    .put("minecraft:blue_dead_coral", "minecraft:dead_tube_coral")
++                    .put("minecraft:pink_dead_coral", "minecraft:dead_brain_coral")
++                    .put("minecraft:purple_dead_coral", "minecraft:dead_bubble_coral")
++                    .put("minecraft:red_dead_coral", "minecraft:dead_fire_coral")
++                    .put("minecraft:yellow_dead_coral", "minecraft:dead_horn_coral")
++                    .build()
++    );
 +
 +    public static void register() {
 +        ConverterAbstractBlockRename.register(VERSION, RENAMED_IDS::get);
@@ -9795,6 +9999,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItemLists;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V1486 {
@@ -9805,14 +10010,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, id, new DataWalkerItemLists("ArmorItems", "HandItems"));
 +    }
 +
-+    public static final Map<String, String> RENAMED_ENTITY_IDS = ImmutableMap.<String, String>builder()
-+            .put("minecraft:salmon_mob", "minecraft:salmon")
-+            .put("minecraft:cod_mob", "minecraft:cod")
-+            .build();
-+    public static final Map<String, String> RENAMED_ITEM_IDS = ImmutableMap.<String, String>builder()
-+            .put("minecraft:salmon_mob_spawn_egg", "minecraft:salmon_spawn_egg")
-+            .put("minecraft:cod_mob_spawn_egg", "minecraft:cod_spawn_egg")
-+            .build();
++    public static final Map<String, String> RENAMED_ENTITY_IDS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:salmon_mob", "minecraft:salmon")
++                    .put("minecraft:cod_mob", "minecraft:cod")
++                    .build()
++    );
++    public static final Map<String, String> RENAMED_ITEM_IDS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:salmon_mob_spawn_egg", "minecraft:salmon_spawn_egg")
++                    .put("minecraft:cod_mob_spawn_egg", "minecraft:cod_spawn_egg")
++                    .build()
++    );
 +
 +
 +    public static void register() {
@@ -10652,69 +10861,72 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.converters.advancements.ConverterAbstractAdvancementsRename;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V1501 {
 +
 +    protected static final int VERSION = MCVersions.V1_13_PRE1;
 +
-+    private static final Map<String, String> RENAMES = ImmutableMap.<String, String>builder()
-+            .put("minecraft:recipes/brewing/speckled_melon", "minecraft:recipes/brewing/glistering_melon_slice")
-+            .put("minecraft:recipes/building_blocks/black_stained_hardened_clay", "minecraft:recipes/building_blocks/black_terracotta")
-+            .put("minecraft:recipes/building_blocks/blue_stained_hardened_clay", "minecraft:recipes/building_blocks/blue_terracotta")
-+            .put("minecraft:recipes/building_blocks/brown_stained_hardened_clay", "minecraft:recipes/building_blocks/brown_terracotta")
-+            .put("minecraft:recipes/building_blocks/cyan_stained_hardened_clay", "minecraft:recipes/building_blocks/cyan_terracotta")
-+            .put("minecraft:recipes/building_blocks/gray_stained_hardened_clay", "minecraft:recipes/building_blocks/gray_terracotta")
-+            .put("minecraft:recipes/building_blocks/green_stained_hardened_clay", "minecraft:recipes/building_blocks/green_terracotta")
-+            .put("minecraft:recipes/building_blocks/light_blue_stained_hardened_clay", "minecraft:recipes/building_blocks/light_blue_terracotta")
-+            .put("minecraft:recipes/building_blocks/light_gray_stained_hardened_clay", "minecraft:recipes/building_blocks/light_gray_terracotta")
-+            .put("minecraft:recipes/building_blocks/lime_stained_hardened_clay", "minecraft:recipes/building_blocks/lime_terracotta")
-+            .put("minecraft:recipes/building_blocks/magenta_stained_hardened_clay", "minecraft:recipes/building_blocks/magenta_terracotta")
-+            .put("minecraft:recipes/building_blocks/orange_stained_hardened_clay", "minecraft:recipes/building_blocks/orange_terracotta")
-+            .put("minecraft:recipes/building_blocks/pink_stained_hardened_clay", "minecraft:recipes/building_blocks/pink_terracotta")
-+            .put("minecraft:recipes/building_blocks/purple_stained_hardened_clay", "minecraft:recipes/building_blocks/purple_terracotta")
-+            .put("minecraft:recipes/building_blocks/red_stained_hardened_clay", "minecraft:recipes/building_blocks/red_terracotta")
-+            .put("minecraft:recipes/building_blocks/white_stained_hardened_clay", "minecraft:recipes/building_blocks/white_terracotta")
-+            .put("minecraft:recipes/building_blocks/yellow_stained_hardened_clay", "minecraft:recipes/building_blocks/yellow_terracotta")
-+            .put("minecraft:recipes/building_blocks/acacia_wooden_slab", "minecraft:recipes/building_blocks/acacia_slab")
-+            .put("minecraft:recipes/building_blocks/birch_wooden_slab", "minecraft:recipes/building_blocks/birch_slab")
-+            .put("minecraft:recipes/building_blocks/dark_oak_wooden_slab", "minecraft:recipes/building_blocks/dark_oak_slab")
-+            .put("minecraft:recipes/building_blocks/jungle_wooden_slab", "minecraft:recipes/building_blocks/jungle_slab")
-+            .put("minecraft:recipes/building_blocks/oak_wooden_slab", "minecraft:recipes/building_blocks/oak_slab")
-+            .put("minecraft:recipes/building_blocks/spruce_wooden_slab", "minecraft:recipes/building_blocks/spruce_slab")
-+            .put("minecraft:recipes/building_blocks/brick_block", "minecraft:recipes/building_blocks/bricks")
-+            .put("minecraft:recipes/building_blocks/chiseled_stonebrick", "minecraft:recipes/building_blocks/chiseled_stone_bricks")
-+            .put("minecraft:recipes/building_blocks/end_bricks", "minecraft:recipes/building_blocks/end_stone_bricks")
-+            .put("minecraft:recipes/building_blocks/lit_pumpkin", "minecraft:recipes/building_blocks/jack_o_lantern")
-+            .put("minecraft:recipes/building_blocks/magma", "minecraft:recipes/building_blocks/magma_block")
-+            .put("minecraft:recipes/building_blocks/melon_block", "minecraft:recipes/building_blocks/melon")
-+            .put("minecraft:recipes/building_blocks/mossy_stonebrick", "minecraft:recipes/building_blocks/mossy_stone_bricks")
-+            .put("minecraft:recipes/building_blocks/nether_brick", "minecraft:recipes/building_blocks/nether_bricks")
-+            .put("minecraft:recipes/building_blocks/pillar_quartz_block", "minecraft:recipes/building_blocks/quartz_pillar")
-+            .put("minecraft:recipes/building_blocks/red_nether_brick", "minecraft:recipes/building_blocks/red_nether_bricks")
-+            .put("minecraft:recipes/building_blocks/snow", "minecraft:recipes/building_blocks/snow_block")
-+            .put("minecraft:recipes/building_blocks/smooth_red_sandstone", "minecraft:recipes/building_blocks/cut_red_sandstone")
-+            .put("minecraft:recipes/building_blocks/smooth_sandstone", "minecraft:recipes/building_blocks/cut_sandstone")
-+            .put("minecraft:recipes/building_blocks/stonebrick", "minecraft:recipes/building_blocks/stone_bricks")
-+            .put("minecraft:recipes/building_blocks/stone_stairs", "minecraft:recipes/building_blocks/cobblestone_stairs")
-+            .put("minecraft:recipes/building_blocks/string_to_wool", "minecraft:recipes/building_blocks/white_wool_from_string")
-+            .put("minecraft:recipes/decorations/fence", "minecraft:recipes/decorations/oak_fence")
-+            .put("minecraft:recipes/decorations/purple_shulker_box", "minecraft:recipes/decorations/shulker_box")
-+            .put("minecraft:recipes/decorations/slime", "minecraft:recipes/decorations/slime_block")
-+            .put("minecraft:recipes/decorations/snow_layer", "minecraft:recipes/decorations/snow")
-+            .put("minecraft:recipes/misc/bone_meal_from_block", "minecraft:recipes/misc/bone_meal_from_bone_block")
-+            .put("minecraft:recipes/misc/bone_meal_from_bone", "minecraft:recipes/misc/bone_meal")
-+            .put("minecraft:recipes/misc/gold_ingot_from_block", "minecraft:recipes/misc/gold_ingot_from_gold_block")
-+            .put("minecraft:recipes/misc/iron_ingot_from_block", "minecraft:recipes/misc/iron_ingot_from_iron_block")
-+            .put("minecraft:recipes/redstone/fence_gate", "minecraft:recipes/redstone/oak_fence_gate")
-+            .put("minecraft:recipes/redstone/noteblock", "minecraft:recipes/redstone/note_block")
-+            .put("minecraft:recipes/redstone/trapdoor", "minecraft:recipes/redstone/oak_trapdoor")
-+            .put("minecraft:recipes/redstone/wooden_button", "minecraft:recipes/redstone/oak_button")
-+            .put("minecraft:recipes/redstone/wooden_door", "minecraft:recipes/redstone/oak_door")
-+            .put("minecraft:recipes/redstone/wooden_pressure_plate", "minecraft:recipes/redstone/oak_pressure_plate")
-+            .put("minecraft:recipes/transportation/boat", "minecraft:recipes/transportation/oak_boat")
-+            .put("minecraft:recipes/transportation/golden_rail", "minecraft:recipes/transportation/powered_rail")
-+            .build();
++    private static final Map<String, String> RENAMES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:recipes/brewing/speckled_melon", "minecraft:recipes/brewing/glistering_melon_slice")
++                    .put("minecraft:recipes/building_blocks/black_stained_hardened_clay", "minecraft:recipes/building_blocks/black_terracotta")
++                    .put("minecraft:recipes/building_blocks/blue_stained_hardened_clay", "minecraft:recipes/building_blocks/blue_terracotta")
++                    .put("minecraft:recipes/building_blocks/brown_stained_hardened_clay", "minecraft:recipes/building_blocks/brown_terracotta")
++                    .put("minecraft:recipes/building_blocks/cyan_stained_hardened_clay", "minecraft:recipes/building_blocks/cyan_terracotta")
++                    .put("minecraft:recipes/building_blocks/gray_stained_hardened_clay", "minecraft:recipes/building_blocks/gray_terracotta")
++                    .put("minecraft:recipes/building_blocks/green_stained_hardened_clay", "minecraft:recipes/building_blocks/green_terracotta")
++                    .put("minecraft:recipes/building_blocks/light_blue_stained_hardened_clay", "minecraft:recipes/building_blocks/light_blue_terracotta")
++                    .put("minecraft:recipes/building_blocks/light_gray_stained_hardened_clay", "minecraft:recipes/building_blocks/light_gray_terracotta")
++                    .put("minecraft:recipes/building_blocks/lime_stained_hardened_clay", "minecraft:recipes/building_blocks/lime_terracotta")
++                    .put("minecraft:recipes/building_blocks/magenta_stained_hardened_clay", "minecraft:recipes/building_blocks/magenta_terracotta")
++                    .put("minecraft:recipes/building_blocks/orange_stained_hardened_clay", "minecraft:recipes/building_blocks/orange_terracotta")
++                    .put("minecraft:recipes/building_blocks/pink_stained_hardened_clay", "minecraft:recipes/building_blocks/pink_terracotta")
++                    .put("minecraft:recipes/building_blocks/purple_stained_hardened_clay", "minecraft:recipes/building_blocks/purple_terracotta")
++                    .put("minecraft:recipes/building_blocks/red_stained_hardened_clay", "minecraft:recipes/building_blocks/red_terracotta")
++                    .put("minecraft:recipes/building_blocks/white_stained_hardened_clay", "minecraft:recipes/building_blocks/white_terracotta")
++                    .put("minecraft:recipes/building_blocks/yellow_stained_hardened_clay", "minecraft:recipes/building_blocks/yellow_terracotta")
++                    .put("minecraft:recipes/building_blocks/acacia_wooden_slab", "minecraft:recipes/building_blocks/acacia_slab")
++                    .put("minecraft:recipes/building_blocks/birch_wooden_slab", "minecraft:recipes/building_blocks/birch_slab")
++                    .put("minecraft:recipes/building_blocks/dark_oak_wooden_slab", "minecraft:recipes/building_blocks/dark_oak_slab")
++                    .put("minecraft:recipes/building_blocks/jungle_wooden_slab", "minecraft:recipes/building_blocks/jungle_slab")
++                    .put("minecraft:recipes/building_blocks/oak_wooden_slab", "minecraft:recipes/building_blocks/oak_slab")
++                    .put("minecraft:recipes/building_blocks/spruce_wooden_slab", "minecraft:recipes/building_blocks/spruce_slab")
++                    .put("minecraft:recipes/building_blocks/brick_block", "minecraft:recipes/building_blocks/bricks")
++                    .put("minecraft:recipes/building_blocks/chiseled_stonebrick", "minecraft:recipes/building_blocks/chiseled_stone_bricks")
++                    .put("minecraft:recipes/building_blocks/end_bricks", "minecraft:recipes/building_blocks/end_stone_bricks")
++                    .put("minecraft:recipes/building_blocks/lit_pumpkin", "minecraft:recipes/building_blocks/jack_o_lantern")
++                    .put("minecraft:recipes/building_blocks/magma", "minecraft:recipes/building_blocks/magma_block")
++                    .put("minecraft:recipes/building_blocks/melon_block", "minecraft:recipes/building_blocks/melon")
++                    .put("minecraft:recipes/building_blocks/mossy_stonebrick", "minecraft:recipes/building_blocks/mossy_stone_bricks")
++                    .put("minecraft:recipes/building_blocks/nether_brick", "minecraft:recipes/building_blocks/nether_bricks")
++                    .put("minecraft:recipes/building_blocks/pillar_quartz_block", "minecraft:recipes/building_blocks/quartz_pillar")
++                    .put("minecraft:recipes/building_blocks/red_nether_brick", "minecraft:recipes/building_blocks/red_nether_bricks")
++                    .put("minecraft:recipes/building_blocks/snow", "minecraft:recipes/building_blocks/snow_block")
++                    .put("minecraft:recipes/building_blocks/smooth_red_sandstone", "minecraft:recipes/building_blocks/cut_red_sandstone")
++                    .put("minecraft:recipes/building_blocks/smooth_sandstone", "minecraft:recipes/building_blocks/cut_sandstone")
++                    .put("minecraft:recipes/building_blocks/stonebrick", "minecraft:recipes/building_blocks/stone_bricks")
++                    .put("minecraft:recipes/building_blocks/stone_stairs", "minecraft:recipes/building_blocks/cobblestone_stairs")
++                    .put("minecraft:recipes/building_blocks/string_to_wool", "minecraft:recipes/building_blocks/white_wool_from_string")
++                    .put("minecraft:recipes/decorations/fence", "minecraft:recipes/decorations/oak_fence")
++                    .put("minecraft:recipes/decorations/purple_shulker_box", "minecraft:recipes/decorations/shulker_box")
++                    .put("minecraft:recipes/decorations/slime", "minecraft:recipes/decorations/slime_block")
++                    .put("minecraft:recipes/decorations/snow_layer", "minecraft:recipes/decorations/snow")
++                    .put("minecraft:recipes/misc/bone_meal_from_block", "minecraft:recipes/misc/bone_meal_from_bone_block")
++                    .put("minecraft:recipes/misc/bone_meal_from_bone", "minecraft:recipes/misc/bone_meal")
++                    .put("minecraft:recipes/misc/gold_ingot_from_block", "minecraft:recipes/misc/gold_ingot_from_gold_block")
++                    .put("minecraft:recipes/misc/iron_ingot_from_block", "minecraft:recipes/misc/iron_ingot_from_iron_block")
++                    .put("minecraft:recipes/redstone/fence_gate", "minecraft:recipes/redstone/oak_fence_gate")
++                    .put("minecraft:recipes/redstone/noteblock", "minecraft:recipes/redstone/note_block")
++                    .put("minecraft:recipes/redstone/trapdoor", "minecraft:recipes/redstone/oak_trapdoor")
++                    .put("minecraft:recipes/redstone/wooden_button", "minecraft:recipes/redstone/oak_button")
++                    .put("minecraft:recipes/redstone/wooden_door", "minecraft:recipes/redstone/oak_door")
++                    .put("minecraft:recipes/redstone/wooden_pressure_plate", "minecraft:recipes/redstone/oak_pressure_plate")
++                    .put("minecraft:recipes/transportation/boat", "minecraft:recipes/transportation/oak_boat")
++                    .put("minecraft:recipes/transportation/golden_rail", "minecraft:recipes/transportation/powered_rail")
++                    .build()
++    );
 +
 +    private V1501() {}
 +
@@ -10733,68 +10945,71 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.converters.recipe.ConverterAbstractRecipeRename;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V1502 {
 +
 +    protected static final int VERSION = MCVersions.V1_13_PRE2;
 +
-+    private static final Map<String, String> RECIPES_UPDATES = ImmutableMap.<String, String>builder()
-+            .put("minecraft:acacia_wooden_slab", "minecraft:acacia_slab")
-+            .put("minecraft:birch_wooden_slab", "minecraft:birch_slab")
-+            .put("minecraft:black_stained_hardened_clay", "minecraft:black_terracotta")
-+            .put("minecraft:blue_stained_hardened_clay", "minecraft:blue_terracotta")
-+            .put("minecraft:boat", "minecraft:oak_boat")
-+            .put("minecraft:bone_meal_from_block", "minecraft:bone_meal_from_bone_block")
-+            .put("minecraft:bone_meal_from_bone", "minecraft:bone_meal")
-+            .put("minecraft:brick_block", "minecraft:bricks")
-+            .put("minecraft:brown_stained_hardened_clay", "minecraft:brown_terracotta")
-+            .put("minecraft:chiseled_stonebrick", "minecraft:chiseled_stone_bricks")
-+            .put("minecraft:cyan_stained_hardened_clay", "minecraft:cyan_terracotta")
-+            .put("minecraft:dark_oak_wooden_slab", "minecraft:dark_oak_slab")
-+            .put("minecraft:end_bricks", "minecraft:end_stone_bricks")
-+            .put("minecraft:fence_gate", "minecraft:oak_fence_gate")
-+            .put("minecraft:fence", "minecraft:oak_fence")
-+            .put("minecraft:golden_rail", "minecraft:powered_rail")
-+            .put("minecraft:gold_ingot_from_block", "minecraft:gold_ingot_from_gold_block")
-+            .put("minecraft:gray_stained_hardened_clay", "minecraft:gray_terracotta")
-+            .put("minecraft:green_stained_hardened_clay", "minecraft:green_terracotta")
-+            .put("minecraft:iron_ingot_from_block", "minecraft:iron_ingot_from_iron_block")
-+            .put("minecraft:jungle_wooden_slab", "minecraft:jungle_slab")
-+            .put("minecraft:light_blue_stained_hardened_clay", "minecraft:light_blue_terracotta")
-+            .put("minecraft:light_gray_stained_hardened_clay", "minecraft:light_gray_terracotta")
-+            .put("minecraft:lime_stained_hardened_clay", "minecraft:lime_terracotta")
-+            .put("minecraft:lit_pumpkin", "minecraft:jack_o_lantern")
-+            .put("minecraft:magenta_stained_hardened_clay", "minecraft:magenta_terracotta")
-+            .put("minecraft:magma", "minecraft:magma_block")
-+            .put("minecraft:melon_block", "minecraft:melon")
-+            .put("minecraft:mossy_stonebrick", "minecraft:mossy_stone_bricks")
-+            .put("minecraft:noteblock", "minecraft:note_block")
-+            .put("minecraft:oak_wooden_slab", "minecraft:oak_slab")
-+            .put("minecraft:orange_stained_hardened_clay", "minecraft:orange_terracotta")
-+            .put("minecraft:pillar_quartz_block", "minecraft:quartz_pillar")
-+            .put("minecraft:pink_stained_hardened_clay", "minecraft:pink_terracotta")
-+            .put("minecraft:purple_shulker_box", "minecraft:shulker_box")
-+            .put("minecraft:purple_stained_hardened_clay", "minecraft:purple_terracotta")
-+            .put("minecraft:red_nether_brick", "minecraft:red_nether_bricks")
-+            .put("minecraft:red_stained_hardened_clay", "minecraft:red_terracotta")
-+            .put("minecraft:slime", "minecraft:slime_block")
-+            .put("minecraft:smooth_red_sandstone", "minecraft:cut_red_sandstone")
-+            .put("minecraft:smooth_sandstone", "minecraft:cut_sandstone")
-+            .put("minecraft:snow_layer", "minecraft:snow")
-+            .put("minecraft:snow", "minecraft:snow_block")
-+            .put("minecraft:speckled_melon", "minecraft:glistering_melon_slice")
-+            .put("minecraft:spruce_wooden_slab", "minecraft:spruce_slab")
-+            .put("minecraft:stonebrick", "minecraft:stone_bricks")
-+            .put("minecraft:stone_stairs", "minecraft:cobblestone_stairs")
-+            .put("minecraft:string_to_wool", "minecraft:white_wool_from_string")
-+            .put("minecraft:trapdoor", "minecraft:oak_trapdoor")
-+            .put("minecraft:white_stained_hardened_clay", "minecraft:white_terracotta")
-+            .put("minecraft:wooden_button", "minecraft:oak_button")
-+            .put("minecraft:wooden_door", "minecraft:oak_door")
-+            .put("minecraft:wooden_pressure_plate", "minecraft:oak_pressure_plate")
-+            .put("minecraft:yellow_stained_hardened_clay", "minecraft:yellow_terracotta")
-+            .build();
++    private static final Map<String, String> RECIPES_UPDATES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:acacia_wooden_slab", "minecraft:acacia_slab")
++                    .put("minecraft:birch_wooden_slab", "minecraft:birch_slab")
++                    .put("minecraft:black_stained_hardened_clay", "minecraft:black_terracotta")
++                    .put("minecraft:blue_stained_hardened_clay", "minecraft:blue_terracotta")
++                    .put("minecraft:boat", "minecraft:oak_boat")
++                    .put("minecraft:bone_meal_from_block", "minecraft:bone_meal_from_bone_block")
++                    .put("minecraft:bone_meal_from_bone", "minecraft:bone_meal")
++                    .put("minecraft:brick_block", "minecraft:bricks")
++                    .put("minecraft:brown_stained_hardened_clay", "minecraft:brown_terracotta")
++                    .put("minecraft:chiseled_stonebrick", "minecraft:chiseled_stone_bricks")
++                    .put("minecraft:cyan_stained_hardened_clay", "minecraft:cyan_terracotta")
++                    .put("minecraft:dark_oak_wooden_slab", "minecraft:dark_oak_slab")
++                    .put("minecraft:end_bricks", "minecraft:end_stone_bricks")
++                    .put("minecraft:fence_gate", "minecraft:oak_fence_gate")
++                    .put("minecraft:fence", "minecraft:oak_fence")
++                    .put("minecraft:golden_rail", "minecraft:powered_rail")
++                    .put("minecraft:gold_ingot_from_block", "minecraft:gold_ingot_from_gold_block")
++                    .put("minecraft:gray_stained_hardened_clay", "minecraft:gray_terracotta")
++                    .put("minecraft:green_stained_hardened_clay", "minecraft:green_terracotta")
++                    .put("minecraft:iron_ingot_from_block", "minecraft:iron_ingot_from_iron_block")
++                    .put("minecraft:jungle_wooden_slab", "minecraft:jungle_slab")
++                    .put("minecraft:light_blue_stained_hardened_clay", "minecraft:light_blue_terracotta")
++                    .put("minecraft:light_gray_stained_hardened_clay", "minecraft:light_gray_terracotta")
++                    .put("minecraft:lime_stained_hardened_clay", "minecraft:lime_terracotta")
++                    .put("minecraft:lit_pumpkin", "minecraft:jack_o_lantern")
++                    .put("minecraft:magenta_stained_hardened_clay", "minecraft:magenta_terracotta")
++                    .put("minecraft:magma", "minecraft:magma_block")
++                    .put("minecraft:melon_block", "minecraft:melon")
++                    .put("minecraft:mossy_stonebrick", "minecraft:mossy_stone_bricks")
++                    .put("minecraft:noteblock", "minecraft:note_block")
++                    .put("minecraft:oak_wooden_slab", "minecraft:oak_slab")
++                    .put("minecraft:orange_stained_hardened_clay", "minecraft:orange_terracotta")
++                    .put("minecraft:pillar_quartz_block", "minecraft:quartz_pillar")
++                    .put("minecraft:pink_stained_hardened_clay", "minecraft:pink_terracotta")
++                    .put("minecraft:purple_shulker_box", "minecraft:shulker_box")
++                    .put("minecraft:purple_stained_hardened_clay", "minecraft:purple_terracotta")
++                    .put("minecraft:red_nether_brick", "minecraft:red_nether_bricks")
++                    .put("minecraft:red_stained_hardened_clay", "minecraft:red_terracotta")
++                    .put("minecraft:slime", "minecraft:slime_block")
++                    .put("minecraft:smooth_red_sandstone", "minecraft:cut_red_sandstone")
++                    .put("minecraft:smooth_sandstone", "minecraft:cut_sandstone")
++                    .put("minecraft:snow_layer", "minecraft:snow")
++                    .put("minecraft:snow", "minecraft:snow_block")
++                    .put("minecraft:speckled_melon", "minecraft:glistering_melon_slice")
++                    .put("minecraft:spruce_wooden_slab", "minecraft:spruce_slab")
++                    .put("minecraft:stonebrick", "minecraft:stone_bricks")
++                    .put("minecraft:stone_stairs", "minecraft:cobblestone_stairs")
++                    .put("minecraft:string_to_wool", "minecraft:white_wool_from_string")
++                    .put("minecraft:trapdoor", "minecraft:oak_trapdoor")
++                    .put("minecraft:white_stained_hardened_clay", "minecraft:white_terracotta")
++                    .put("minecraft:wooden_button", "minecraft:oak_button")
++                    .put("minecraft:wooden_door", "minecraft:oak_door")
++                    .put("minecraft:wooden_pressure_plate", "minecraft:oak_pressure_plate")
++                    .put("minecraft:yellow_stained_hardened_clay", "minecraft:yellow_terracotta")
++                    .build()
++    );
 +
 +    private V1502() {}
 +
@@ -11035,7 +11250,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.converters.blockname.ConverterAbstractBlockRename;
 +import ca.spottedleaf.dataconverter.minecraft.converters.entity.ConverterAbstractEntityRename;
@@ -11043,61 +11257,68 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.converters.recipe.ConverterAbstractRecipeRename;
 +import ca.spottedleaf.dataconverter.minecraft.converters.stats.ConverterAbstractStatsRename;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.types.MapType;
 +import com.google.common.collect.ImmutableMap;
-+
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V1510 {
 +
-+    public static final Map<String, String> RENAMED_ENTITY_IDS = ImmutableMap.<String, String>builder()
-+            .put("minecraft:commandblock_minecart", "minecraft:command_block_minecart")
-+            .put("minecraft:ender_crystal", "minecraft:end_crystal")
-+            .put("minecraft:snowman", "minecraft:snow_golem")
-+            .put("minecraft:evocation_illager", "minecraft:evoker")
-+            .put("minecraft:evocation_fangs", "minecraft:evoker_fangs")
-+            .put("minecraft:illusion_illager", "minecraft:illusioner")
-+            .put("minecraft:vindication_illager", "minecraft:vindicator")
-+            .put("minecraft:villager_golem", "minecraft:iron_golem")
-+            .put("minecraft:xp_orb", "minecraft:experience_orb")
-+            .put("minecraft:xp_bottle", "minecraft:experience_bottle")
-+            .put("minecraft:eye_of_ender_signal", "minecraft:eye_of_ender")
-+            .put("minecraft:fireworks_rocket", "minecraft:firework_rocket")
-+            .build();
++    public static final Map<String, String> RENAMED_ENTITY_IDS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:commandblock_minecart", "minecraft:command_block_minecart")
++                    .put("minecraft:ender_crystal", "minecraft:end_crystal")
++                    .put("minecraft:snowman", "minecraft:snow_golem")
++                    .put("minecraft:evocation_illager", "minecraft:evoker")
++                    .put("minecraft:evocation_fangs", "minecraft:evoker_fangs")
++                    .put("minecraft:illusion_illager", "minecraft:illusioner")
++                    .put("minecraft:vindication_illager", "minecraft:vindicator")
++                    .put("minecraft:villager_golem", "minecraft:iron_golem")
++                    .put("minecraft:xp_orb", "minecraft:experience_orb")
++                    .put("minecraft:xp_bottle", "minecraft:experience_bottle")
++                    .put("minecraft:eye_of_ender_signal", "minecraft:eye_of_ender")
++                    .put("minecraft:fireworks_rocket", "minecraft:firework_rocket")
++                    .build()
++    );
 +
-+    public static final Map<String, String> RENAMED_BLOCKS = ImmutableMap.<String, String>builder()
-+            .put("minecraft:portal", "minecraft:nether_portal")
-+            .put("minecraft:oak_bark", "minecraft:oak_wood")
-+            .put("minecraft:spruce_bark", "minecraft:spruce_wood")
-+            .put("minecraft:birch_bark", "minecraft:birch_wood")
-+            .put("minecraft:jungle_bark", "minecraft:jungle_wood")
-+            .put("minecraft:acacia_bark", "minecraft:acacia_wood")
-+            .put("minecraft:dark_oak_bark", "minecraft:dark_oak_wood")
-+            .put("minecraft:stripped_oak_bark", "minecraft:stripped_oak_wood")
-+            .put("minecraft:stripped_spruce_bark", "minecraft:stripped_spruce_wood")
-+            .put("minecraft:stripped_birch_bark", "minecraft:stripped_birch_wood")
-+            .put("minecraft:stripped_jungle_bark", "minecraft:stripped_jungle_wood")
-+            .put("minecraft:stripped_acacia_bark", "minecraft:stripped_acacia_wood")
-+            .put("minecraft:stripped_dark_oak_bark", "minecraft:stripped_dark_oak_wood")
-+            .put("minecraft:mob_spawner", "minecraft:spawner")
-+            .build();
++    public static final Map<String, String> RENAMED_BLOCKS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:portal", "minecraft:nether_portal")
++                    .put("minecraft:oak_bark", "minecraft:oak_wood")
++                    .put("minecraft:spruce_bark", "minecraft:spruce_wood")
++                    .put("minecraft:birch_bark", "minecraft:birch_wood")
++                    .put("minecraft:jungle_bark", "minecraft:jungle_wood")
++                    .put("minecraft:acacia_bark", "minecraft:acacia_wood")
++                    .put("minecraft:dark_oak_bark", "minecraft:dark_oak_wood")
++                    .put("minecraft:stripped_oak_bark", "minecraft:stripped_oak_wood")
++                    .put("minecraft:stripped_spruce_bark", "minecraft:stripped_spruce_wood")
++                    .put("minecraft:stripped_birch_bark", "minecraft:stripped_birch_wood")
++                    .put("minecraft:stripped_jungle_bark", "minecraft:stripped_jungle_wood")
++                    .put("minecraft:stripped_acacia_bark", "minecraft:stripped_acacia_wood")
++                    .put("minecraft:stripped_dark_oak_bark", "minecraft:stripped_dark_oak_wood")
++                    .put("minecraft:mob_spawner", "minecraft:spawner")
++                    .build()
++    );
 +
-+    public static final Map<String, String> RENAMED_ITEMS = ImmutableMap.<String, String>builder()
-+            .putAll(RENAMED_BLOCKS)
-+            .put("minecraft:clownfish", "minecraft:tropical_fish")
-+            .put("minecraft:chorus_fruit_popped", "minecraft:popped_chorus_fruit")
-+            .put("minecraft:evocation_illager_spawn_egg", "minecraft:evoker_spawn_egg")
-+            .put("minecraft:vindication_illager_spawn_egg", "minecraft:vindicator_spawn_egg")
-+            .build();
++    public static final Map<String, String> RENAMED_ITEMS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .putAll(RENAMED_BLOCKS)
++                    .put("minecraft:clownfish", "minecraft:tropical_fish")
++                    .put("minecraft:chorus_fruit_popped", "minecraft:popped_chorus_fruit")
++                    .put("minecraft:evocation_illager_spawn_egg", "minecraft:evoker_spawn_egg")
++                    .put("minecraft:vindication_illager_spawn_egg", "minecraft:vindicator_spawn_egg")
++                    .build()
++    );
 +
-+    private static final Map<String, String> RECIPES_UPDATES = ImmutableMap.<String, String>builder()
-+            .put("minecraft:acacia_bark", "minecraft:acacia_wood")
-+            .put("minecraft:birch_bark", "minecraft:birch_wood")
-+            .put("minecraft:dark_oak_bark", "minecraft:dark_oak_wood")
-+            .put("minecraft:jungle_bark", "minecraft:jungle_wood")
-+            .put("minecraft:oak_bark", "minecraft:oak_wood")
-+            .put("minecraft:spruce_bark", "minecraft:spruce_wood")
-+            .build();
++    private static final Map<String, String> RECIPES_UPDATES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:acacia_bark", "minecraft:acacia_wood")
++                    .put("minecraft:birch_bark", "minecraft:birch_wood")
++                    .put("minecraft:dark_oak_bark", "minecraft:dark_oak_wood")
++                    .put("minecraft:jungle_bark", "minecraft:jungle_wood")
++                    .put("minecraft:oak_bark", "minecraft:oak_wood")
++                    .put("minecraft:spruce_bark", "minecraft:spruce_wood")
++                    .build()
++    );
 +
 +    protected static final int VERSION = MCVersions.V1_13_PRE4 + 6;
 +
@@ -11116,9 +11337,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return RENAMED_ENTITY_IDS.get(input);
 +        });
 +
-+        ConverterAbstractStatsRename.register(VERSION, ImmutableMap.of(
-+                "minecraft:swim_one_cm", "minecraft:walk_on_water_one_cm",
-+                "minecraft:dive_one_cm", "minecraft:walk_under_water_one_cm"
++        ConverterAbstractStatsRename.register(VERSION, new HashMap<>(
++                ImmutableMap.of(
++                        "minecraft:swim_one_cm", "minecraft:walk_on_water_one_cm",
++                        "minecraft:dive_one_cm", "minecraft:walk_under_water_one_cm"
++                )
 +        )::get);
 +
 +
@@ -11221,19 +11444,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.converters.blockname.ConverterAbstractBlockRename;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V1515 {
 +
 +    protected static final int VERSION = MCVersions.V1_13_PRE7 + 2;
 +
-+    public static final Map<String, String> RENAMED_BLOCK_IDS = ImmutableMap.<String, String>builder()
-+            .put("minecraft:tube_coral_fan", "minecraft:tube_coral_wall_fan")
-+            .put("minecraft:brain_coral_fan", "minecraft:brain_coral_wall_fan")
-+            .put("minecraft:bubble_coral_fan", "minecraft:bubble_coral_wall_fan")
-+            .put("minecraft:fire_coral_fan", "minecraft:fire_coral_wall_fan")
-+            .put("minecraft:horn_coral_fan", "minecraft:horn_coral_wall_fan")
-+            .build();
++    public static final Map<String, String> RENAMED_BLOCK_IDS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:tube_coral_fan", "minecraft:tube_coral_wall_fan")
++                    .put("minecraft:brain_coral_fan", "minecraft:brain_coral_wall_fan")
++                    .put("minecraft:bubble_coral_fan", "minecraft:bubble_coral_wall_fan")
++                    .put("minecraft:fire_coral_fan", "minecraft:fire_coral_wall_fan")
++                    .put("minecraft:horn_coral_fan", "minecraft:horn_coral_wall_fan")
++                    .build()
++    );
 +
 +    private V1515() {}
 +
@@ -11455,17 +11681,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItemLists;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V1800 {
 +
 +    protected static final int VERSION = MCVersions.V1_13_2 + 169;
 +
-+    public static final Map<String, String> RENAMED_ITEM_IDS = ImmutableMap.<String, String>builder()
-+            .put("minecraft:cactus_green", "minecraft:green_dye")
-+            .put("minecraft:rose_red", "minecraft:red_dye")
-+            .put("minecraft:dandelion_yellow", "minecraft:yellow_dye")
-+            .build();
++    public static final Map<String, String> RENAMED_ITEM_IDS = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:cactus_green", "minecraft:green_dye")
++                    .put("minecraft:rose_red", "minecraft:red_dye")
++                    .put("minecraft:dandelion_yellow", "minecraft:yellow_dye")
++                    .build()
++    );
 +
 +    private V1800() {}
 +
@@ -11723,24 +11952,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V1911 {
 +
 +    protected static final int VERSION = MCVersions.V18W46A + 1;
 +
-+    private static final Map<String, String> CHUNK_STATUS_REMAP = ImmutableMap.<String, String>builder()
-+            .put("structure_references", "empty")
-+            .put("biomes", "empty")
-+            .put("base", "surface")
-+            .put("carved", "carvers")
-+            .put("liquid_carved", "liquid_carvers")
-+            .put("decorated", "features")
-+            .put("lighted", "light")
-+            .put("mobs_spawned", "spawn")
-+            .put("finalized", "heightmaps")
-+            .put("fullchunk", "full")
-+            .build();
++    private static final Map<String, String> CHUNK_STATUS_REMAP = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("structure_references", "empty")
++                    .put("biomes", "empty")
++                    .put("base", "surface")
++                    .put("carved", "carvers")
++                    .put("liquid_carved", "liquid_carvers")
++                    .put("decorated", "features")
++                    .put("lighted", "light")
++                    .put("mobs_spawned", "spawn")
++                    .put("finalized", "heightmaps")
++                    .put("fullchunk", "full")
++                    .build()
++    );
 +
 +
 +    private V1911() {}
@@ -12000,7 +12232,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    protected static final int VERSION = MCVersions.V19W03C + 1;
 +
 +    public static void register() {
-+        MCTypeRegistry.SAVED_DATA.addStructureConverter(new DataConverter<>(VERSION) {
++        MCTypeRegistry.SAVED_DATA_MAP_DATA.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> root, final long sourceVersion, final long toVersion) {
 +                final MapType<String> data = root.getMap("data");
@@ -13620,7 +13852,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        });
 +
-+        MCTypeRegistry.SAVED_DATA.addStructureConverter(new DataConverter<>(VERSION) {
++        MCTypeRegistry.SAVED_DATA_RAIDS.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> root, final long sourceVersion, final long toVersion) {
 +                final MapType<String> data = root.getMap("data");
@@ -13748,20 +13980,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V2518 {
 +
 +    protected static final int VERSION = MCVersions.V20W12A + 3;
 +
-+    private static final Map<String, String> FACING_RENAMES = ImmutableMap.<String, String>builder()
-+            .put("down", "down_south")
-+            .put("up", "up_north")
-+            .put("north", "north_up")
-+            .put("south", "south_up")
-+            .put("west", "west_up")
-+            .put("east", "east_up")
-+            .build();
++    private static final Map<String, String> FACING_RENAMES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("down", "down_south")
++                    .put("up", "up_north")
++                    .put("north", "north_up")
++                    .put("south", "south_up")
++                    .put("west", "west_up")
++                    .put("east", "east_up")
++                    .build()
++    );
 +
 +
 +    private V2518() {}
@@ -13871,32 +14106,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import ca.spottedleaf.dataconverter.types.ObjectType;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V2523 {
 +
 +    protected static final int VERSION = MCVersions.V20W13B + 2;
 +
-+    private static final Map<String, String> RENAMES = ImmutableMap.<String, String>builder()
-+            .put("generic.maxHealth", "generic.max_health")
-+            .put("Max Health", "generic.max_health")
-+            .put("zombie.spawnReinforcements", "zombie.spawn_reinforcements")
-+            .put("Spawn Reinforcements Chance", "zombie.spawn_reinforcements")
-+            .put("horse.jumpStrength", "horse.jump_strength")
-+            .put("Jump Strength", "horse.jump_strength")
-+            .put("generic.followRange", "generic.follow_range")
-+            .put("Follow Range", "generic.follow_range")
-+            .put("generic.knockbackResistance", "generic.knockback_resistance")
-+            .put("Knockback Resistance", "generic.knockback_resistance")
-+            .put("generic.movementSpeed", "generic.movement_speed")
-+            .put("Movement Speed", "generic.movement_speed")
-+            .put("generic.flyingSpeed", "generic.flying_speed")
-+            .put("Flying Speed", "generic.flying_speed")
-+            .put("generic.attackDamage", "generic.attack_damage")
-+            .put("generic.attackKnockback", "generic.attack_knockback")
-+            .put("generic.attackSpeed", "generic.attack_speed")
-+            .put("generic.armorToughness", "generic.armor_toughness")
-+            .build();
++    private static final Map<String, String> RENAMES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("generic.maxHealth", "generic.max_health")
++                    .put("Max Health", "generic.max_health")
++                    .put("zombie.spawnReinforcements", "zombie.spawn_reinforcements")
++                    .put("Spawn Reinforcements Chance", "zombie.spawn_reinforcements")
++                    .put("horse.jumpStrength", "horse.jump_strength")
++                    .put("Jump Strength", "horse.jump_strength")
++                    .put("generic.followRange", "generic.follow_range")
++                    .put("Follow Range", "generic.follow_range")
++                    .put("generic.knockbackResistance", "generic.knockback_resistance")
++                    .put("Knockback Resistance", "generic.knockback_resistance")
++                    .put("generic.movementSpeed", "generic.movement_speed")
++                    .put("Movement Speed", "generic.movement_speed")
++                    .put("generic.flyingSpeed", "generic.flying_speed")
++                    .put("Flying Speed", "generic.flying_speed")
++                    .put("generic.attackDamage", "generic.attack_damage")
++                    .put("generic.attackKnockback", "generic.attack_knockback")
++                    .put("generic.attackSpeed", "generic.attack_speed")
++                    .put("generic.armorToughness", "generic.armor_toughness")
++                    .build()
++    );
 +
 +    private V2523() {}
 +
@@ -14328,17 +14566,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    protected static final int VERSION = MCVersions.V20W20B + 13;
 +
-+    private static final ImmutableMap<String, StructureFeatureConfiguration> DEFAULTS = ImmutableMap.<String, StructureFeatureConfiguration>builder()
-+            .put("minecraft:village", new StructureFeatureConfiguration(32, 8, 10387312))
-+            .put("minecraft:desert_pyramid", new StructureFeatureConfiguration(32, 8, 14357617))
-+            .put("minecraft:igloo", new StructureFeatureConfiguration(32, 8, 14357618))
-+            .put("minecraft:jungle_pyramid", new StructureFeatureConfiguration(32, 8, 14357619))
-+            .put("minecraft:swamp_hut", new StructureFeatureConfiguration(32, 8, 14357620))
-+            .put("minecraft:pillager_outpost", new StructureFeatureConfiguration(32, 8, 165745296))
-+            .put("minecraft:monument", new StructureFeatureConfiguration(32, 5, 10387313))
-+            .put("minecraft:endcity", new StructureFeatureConfiguration(20, 11, 10387313))
-+            .put("minecraft:mansion", new StructureFeatureConfiguration(80, 20, 10387319))
-+            .build();
++    private static final Map<String, StructureFeatureConfiguration> DEFAULTS = new HashMap<>(
++            ImmutableMap.<String, StructureFeatureConfiguration>builder()
++                    .put("minecraft:village", new StructureFeatureConfiguration(32, 8, 10387312))
++                    .put("minecraft:desert_pyramid", new StructureFeatureConfiguration(32, 8, 14357617))
++                    .put("minecraft:igloo", new StructureFeatureConfiguration(32, 8, 14357618))
++                    .put("minecraft:jungle_pyramid", new StructureFeatureConfiguration(32, 8, 14357619))
++                    .put("minecraft:swamp_hut", new StructureFeatureConfiguration(32, 8, 14357620))
++                    .put("minecraft:pillager_outpost", new StructureFeatureConfiguration(32, 8, 165745296))
++                    .put("minecraft:monument", new StructureFeatureConfiguration(32, 5, 10387313))
++                    .put("minecraft:endcity", new StructureFeatureConfiguration(20, 11, 10387313))
++                    .put("minecraft:mansion", new StructureFeatureConfiguration(80, 20, 10387319))
++                    .build()
++    );
 +
 +    record StructureFeatureConfiguration(int spacing, int separation, int salt) {
 +
@@ -14796,67 +15036,70 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.converters.helpers.ConverterAbstractStringValueTypeRename;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
 +import java.util.Map;
 +
 +public final class V2553 {
 +
 +    protected static final int VERSION = MCVersions.V20W20B + 16;
 +
-+    public static final Map<String, String> BIOME_RENAMES = ImmutableMap.<String, String>builder()
-+            .put("minecraft:extreme_hills", "minecraft:mountains")
-+            .put("minecraft:swampland", "minecraft:swamp")
-+            .put("minecraft:hell", "minecraft:nether_wastes")
-+            .put("minecraft:sky", "minecraft:the_end")
-+            .put("minecraft:ice_flats", "minecraft:snowy_tundra")
-+            .put("minecraft:ice_mountains", "minecraft:snowy_mountains")
-+            .put("minecraft:mushroom_island", "minecraft:mushroom_fields")
-+            .put("minecraft:mushroom_island_shore", "minecraft:mushroom_field_shore")
-+            .put("minecraft:beaches", "minecraft:beach")
-+            .put("minecraft:forest_hills", "minecraft:wooded_hills")
-+            .put("minecraft:smaller_extreme_hills", "minecraft:mountain_edge")
-+            .put("minecraft:stone_beach", "minecraft:stone_shore")
-+            .put("minecraft:cold_beach", "minecraft:snowy_beach")
-+            .put("minecraft:roofed_forest", "minecraft:dark_forest")
-+            .put("minecraft:taiga_cold", "minecraft:snowy_taiga")
-+            .put("minecraft:taiga_cold_hills", "minecraft:snowy_taiga_hills")
-+            .put("minecraft:redwood_taiga", "minecraft:giant_tree_taiga")
-+            .put("minecraft:redwood_taiga_hills", "minecraft:giant_tree_taiga_hills")
-+            .put("minecraft:extreme_hills_with_trees", "minecraft:wooded_mountains")
-+            .put("minecraft:savanna_rock", "minecraft:savanna_plateau")
-+            .put("minecraft:mesa", "minecraft:badlands")
-+            .put("minecraft:mesa_rock", "minecraft:wooded_badlands_plateau")
-+            .put("minecraft:mesa_clear_rock", "minecraft:badlands_plateau")
-+            .put("minecraft:sky_island_low", "minecraft:small_end_islands")
-+            .put("minecraft:sky_island_medium", "minecraft:end_midlands")
-+            .put("minecraft:sky_island_high", "minecraft:end_highlands")
-+            .put("minecraft:sky_island_barren", "minecraft:end_barrens")
-+            .put("minecraft:void", "minecraft:the_void")
-+            .put("minecraft:mutated_plains", "minecraft:sunflower_plains")
-+            .put("minecraft:mutated_desert", "minecraft:desert_lakes")
-+            .put("minecraft:mutated_extreme_hills", "minecraft:gravelly_mountains")
-+            .put("minecraft:mutated_forest", "minecraft:flower_forest")
-+            .put("minecraft:mutated_taiga", "minecraft:taiga_mountains")
-+            .put("minecraft:mutated_swampland", "minecraft:swamp_hills")
-+            .put("minecraft:mutated_ice_flats", "minecraft:ice_spikes")
-+            .put("minecraft:mutated_jungle", "minecraft:modified_jungle")
-+            .put("minecraft:mutated_jungle_edge", "minecraft:modified_jungle_edge")
-+            .put("minecraft:mutated_birch_forest", "minecraft:tall_birch_forest")
-+            .put("minecraft:mutated_birch_forest_hills", "minecraft:tall_birch_hills")
-+            .put("minecraft:mutated_roofed_forest", "minecraft:dark_forest_hills")
-+            .put("minecraft:mutated_taiga_cold", "minecraft:snowy_taiga_mountains")
-+            .put("minecraft:mutated_redwood_taiga", "minecraft:giant_spruce_taiga")
-+            .put("minecraft:mutated_redwood_taiga_hills", "minecraft:giant_spruce_taiga_hills")
-+            .put("minecraft:mutated_extreme_hills_with_trees", "minecraft:modified_gravelly_mountains")
-+            .put("minecraft:mutated_savanna", "minecraft:shattered_savanna")
-+            .put("minecraft:mutated_savanna_rock", "minecraft:shattered_savanna_plateau")
-+            .put("minecraft:mutated_mesa", "minecraft:eroded_badlands")
-+            .put("minecraft:mutated_mesa_rock", "minecraft:modified_wooded_badlands_plateau")
-+            .put("minecraft:mutated_mesa_clear_rock", "minecraft:modified_badlands_plateau")
-+            .put("minecraft:warm_deep_ocean", "minecraft:deep_warm_ocean")
-+            .put("minecraft:lukewarm_deep_ocean", "minecraft:deep_lukewarm_ocean")
-+            .put("minecraft:cold_deep_ocean", "minecraft:deep_cold_ocean")
-+            .put("minecraft:frozen_deep_ocean", "minecraft:deep_frozen_ocean")
-+            .build();
++    public static final Map<String, String> BIOME_RENAMES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:extreme_hills", "minecraft:mountains")
++                    .put("minecraft:swampland", "minecraft:swamp")
++                    .put("minecraft:hell", "minecraft:nether_wastes")
++                    .put("minecraft:sky", "minecraft:the_end")
++                    .put("minecraft:ice_flats", "minecraft:snowy_tundra")
++                    .put("minecraft:ice_mountains", "minecraft:snowy_mountains")
++                    .put("minecraft:mushroom_island", "minecraft:mushroom_fields")
++                    .put("minecraft:mushroom_island_shore", "minecraft:mushroom_field_shore")
++                    .put("minecraft:beaches", "minecraft:beach")
++                    .put("minecraft:forest_hills", "minecraft:wooded_hills")
++                    .put("minecraft:smaller_extreme_hills", "minecraft:mountain_edge")
++                    .put("minecraft:stone_beach", "minecraft:stone_shore")
++                    .put("minecraft:cold_beach", "minecraft:snowy_beach")
++                    .put("minecraft:roofed_forest", "minecraft:dark_forest")
++                    .put("minecraft:taiga_cold", "minecraft:snowy_taiga")
++                    .put("minecraft:taiga_cold_hills", "minecraft:snowy_taiga_hills")
++                    .put("minecraft:redwood_taiga", "minecraft:giant_tree_taiga")
++                    .put("minecraft:redwood_taiga_hills", "minecraft:giant_tree_taiga_hills")
++                    .put("minecraft:extreme_hills_with_trees", "minecraft:wooded_mountains")
++                    .put("minecraft:savanna_rock", "minecraft:savanna_plateau")
++                    .put("minecraft:mesa", "minecraft:badlands")
++                    .put("minecraft:mesa_rock", "minecraft:wooded_badlands_plateau")
++                    .put("minecraft:mesa_clear_rock", "minecraft:badlands_plateau")
++                    .put("minecraft:sky_island_low", "minecraft:small_end_islands")
++                    .put("minecraft:sky_island_medium", "minecraft:end_midlands")
++                    .put("minecraft:sky_island_high", "minecraft:end_highlands")
++                    .put("minecraft:sky_island_barren", "minecraft:end_barrens")
++                    .put("minecraft:void", "minecraft:the_void")
++                    .put("minecraft:mutated_plains", "minecraft:sunflower_plains")
++                    .put("minecraft:mutated_desert", "minecraft:desert_lakes")
++                    .put("minecraft:mutated_extreme_hills", "minecraft:gravelly_mountains")
++                    .put("minecraft:mutated_forest", "minecraft:flower_forest")
++                    .put("minecraft:mutated_taiga", "minecraft:taiga_mountains")
++                    .put("minecraft:mutated_swampland", "minecraft:swamp_hills")
++                    .put("minecraft:mutated_ice_flats", "minecraft:ice_spikes")
++                    .put("minecraft:mutated_jungle", "minecraft:modified_jungle")
++                    .put("minecraft:mutated_jungle_edge", "minecraft:modified_jungle_edge")
++                    .put("minecraft:mutated_birch_forest", "minecraft:tall_birch_forest")
++                    .put("minecraft:mutated_birch_forest_hills", "minecraft:tall_birch_hills")
++                    .put("minecraft:mutated_roofed_forest", "minecraft:dark_forest_hills")
++                    .put("minecraft:mutated_taiga_cold", "minecraft:snowy_taiga_mountains")
++                    .put("minecraft:mutated_redwood_taiga", "minecraft:giant_spruce_taiga")
++                    .put("minecraft:mutated_redwood_taiga_hills", "minecraft:giant_spruce_taiga_hills")
++                    .put("minecraft:mutated_extreme_hills_with_trees", "minecraft:modified_gravelly_mountains")
++                    .put("minecraft:mutated_savanna", "minecraft:shattered_savanna")
++                    .put("minecraft:mutated_savanna_rock", "minecraft:shattered_savanna_plateau")
++                    .put("minecraft:mutated_mesa", "minecraft:eroded_badlands")
++                    .put("minecraft:mutated_mesa_rock", "minecraft:modified_wooded_badlands_plateau")
++                    .put("minecraft:mutated_mesa_clear_rock", "minecraft:modified_badlands_plateau")
++                    .put("minecraft:warm_deep_ocean", "minecraft:deep_warm_ocean")
++                    .put("minecraft:lukewarm_deep_ocean", "minecraft:deep_lukewarm_ocean")
++                    .put("minecraft:cold_deep_ocean", "minecraft:deep_cold_ocean")
++                    .put("minecraft:frozen_deep_ocean", "minecraft:deep_frozen_ocean")
++                    .build()
++    );
 +
 +
 +    private V2553() {}
@@ -15117,33 +15360,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.converters.blockname.ConverterAbstractBlockRename;
 +import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
++import java.util.Map;
 +
 +public final class V2690 {
 +
 +    protected static final int VERSION = MCVersions.V21W05A;
 +
-+    protected static final ImmutableMap<String, String> RENAMES = ImmutableMap.<String, String>builder()
-+            .put("minecraft:weathered_copper_block", "minecraft:oxidized_copper_block")
-+            .put("minecraft:semi_weathered_copper_block", "minecraft:weathered_copper_block")
-+            .put("minecraft:lightly_weathered_copper_block", "minecraft:exposed_copper_block")
-+            .put("minecraft:weathered_cut_copper", "minecraft:oxidized_cut_copper")
-+            .put("minecraft:semi_weathered_cut_copper", "minecraft:weathered_cut_copper")
-+            .put("minecraft:lightly_weathered_cut_copper", "minecraft:exposed_cut_copper")
-+            .put("minecraft:weathered_cut_copper_stairs", "minecraft:oxidized_cut_copper_stairs")
-+            .put("minecraft:semi_weathered_cut_copper_stairs", "minecraft:weathered_cut_copper_stairs")
-+            .put("minecraft:lightly_weathered_cut_copper_stairs", "minecraft:exposed_cut_copper_stairs")
-+            .put("minecraft:weathered_cut_copper_slab", "minecraft:oxidized_cut_copper_slab")
-+            .put("minecraft:semi_weathered_cut_copper_slab", "minecraft:weathered_cut_copper_slab")
-+            .put("minecraft:lightly_weathered_cut_copper_slab", "minecraft:exposed_cut_copper_slab")
-+            .put("minecraft:waxed_semi_weathered_copper", "minecraft:waxed_weathered_copper")
-+            .put("minecraft:waxed_lightly_weathered_copper", "minecraft:waxed_exposed_copper")
-+            .put("minecraft:waxed_semi_weathered_cut_copper", "minecraft:waxed_weathered_cut_copper")
-+            .put("minecraft:waxed_lightly_weathered_cut_copper", "minecraft:waxed_exposed_cut_copper")
-+            .put("minecraft:waxed_semi_weathered_cut_copper_stairs", "minecraft:waxed_weathered_cut_copper_stairs")
-+            .put("minecraft:waxed_lightly_weathered_cut_copper_stairs", "minecraft:waxed_exposed_cut_copper_stairs")
-+            .put("minecraft:waxed_semi_weathered_cut_copper_slab", "minecraft:waxed_weathered_cut_copper_slab")
-+            .put("minecraft:waxed_lightly_weathered_cut_copper_slab", "minecraft:waxed_exposed_cut_copper_slab")
-+            .build();
++    protected static final Map<String, String> RENAMES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:weathered_copper_block", "minecraft:oxidized_copper_block")
++                    .put("minecraft:semi_weathered_copper_block", "minecraft:weathered_copper_block")
++                    .put("minecraft:lightly_weathered_copper_block", "minecraft:exposed_copper_block")
++                    .put("minecraft:weathered_cut_copper", "minecraft:oxidized_cut_copper")
++                    .put("minecraft:semi_weathered_cut_copper", "minecraft:weathered_cut_copper")
++                    .put("minecraft:lightly_weathered_cut_copper", "minecraft:exposed_cut_copper")
++                    .put("minecraft:weathered_cut_copper_stairs", "minecraft:oxidized_cut_copper_stairs")
++                    .put("minecraft:semi_weathered_cut_copper_stairs", "minecraft:weathered_cut_copper_stairs")
++                    .put("minecraft:lightly_weathered_cut_copper_stairs", "minecraft:exposed_cut_copper_stairs")
++                    .put("minecraft:weathered_cut_copper_slab", "minecraft:oxidized_cut_copper_slab")
++                    .put("minecraft:semi_weathered_cut_copper_slab", "minecraft:weathered_cut_copper_slab")
++                    .put("minecraft:lightly_weathered_cut_copper_slab", "minecraft:exposed_cut_copper_slab")
++                    .put("minecraft:waxed_semi_weathered_copper", "minecraft:waxed_weathered_copper")
++                    .put("minecraft:waxed_lightly_weathered_copper", "minecraft:waxed_exposed_copper")
++                    .put("minecraft:waxed_semi_weathered_cut_copper", "minecraft:waxed_weathered_cut_copper")
++                    .put("minecraft:waxed_lightly_weathered_cut_copper", "minecraft:waxed_exposed_cut_copper")
++                    .put("minecraft:waxed_semi_weathered_cut_copper_stairs", "minecraft:waxed_weathered_cut_copper_stairs")
++                    .put("minecraft:waxed_lightly_weathered_cut_copper_stairs", "minecraft:waxed_exposed_cut_copper_stairs")
++                    .put("minecraft:waxed_semi_weathered_cut_copper_slab", "minecraft:waxed_weathered_cut_copper_slab")
++                    .put("minecraft:waxed_lightly_weathered_cut_copper_slab", "minecraft:waxed_exposed_cut_copper_slab")
++                    .build()
++    );
 +
 +    public static void register() {
 +        ConverterAbstractItemRename.register(VERSION, RENAMES::get);
@@ -15162,17 +15409,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.converters.blockname.ConverterAbstractBlockRename;
 +import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
++import java.util.Map;
 +
 +public final class V2691 {
 +
 +    protected static final int VERSION = MCVersions.V21W05A + 1;
 +
-+    protected static final ImmutableMap<String, String> RENAMES = ImmutableMap.<String, String>builder()
-+            .put("minecraft:waxed_copper", "minecraft:waxed_copper_block")
-+            .put("minecraft:oxidized_copper_block", "minecraft:oxidized_copper")
-+            .put("minecraft:weathered_copper_block", "minecraft:weathered_copper")
-+            .put("minecraft:exposed_copper_block", "minecraft:exposed_copper")
-+            .build();
++    protected static final Map<String, String> RENAMES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:waxed_copper", "minecraft:waxed_copper_block")
++                    .put("minecraft:oxidized_copper_block", "minecraft:oxidized_copper")
++                    .put("minecraft:weathered_copper_block", "minecraft:weathered_copper")
++                    .put("minecraft:exposed_copper_block", "minecraft:exposed_copper")
++                    .build()
++    );
 +
 +    public static void register() {
 +        ConverterAbstractItemRename.register(VERSION, RENAMES::get);
@@ -15212,30 +15463,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.converters.blockname.ConverterAbstractBlockRename;
 +import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
++import java.util.Map;
 +
 +public final class V2696 {
 +
 +    protected static final int VERSION = MCVersions.V21W07A + 1;
 +
-+    protected static final ImmutableMap<String, String> RENAMES = ImmutableMap.<String, String>builder()
-+            .put("minecraft:grimstone", "minecraft:deepslate")
-+            .put("minecraft:grimstone_slab", "minecraft:cobbled_deepslate_slab")
-+            .put("minecraft:grimstone_stairs", "minecraft:cobbled_deepslate_stairs")
-+            .put("minecraft:grimstone_wall", "minecraft:cobbled_deepslate_wall")
-+            .put("minecraft:polished_grimstone", "minecraft:polished_deepslate")
-+            .put("minecraft:polished_grimstone_slab", "minecraft:polished_deepslate_slab")
-+            .put("minecraft:polished_grimstone_stairs", "minecraft:polished_deepslate_stairs")
-+            .put("minecraft:polished_grimstone_wall", "minecraft:polished_deepslate_wall")
-+            .put("minecraft:grimstone_tiles", "minecraft:deepslate_tiles")
-+            .put("minecraft:grimstone_tile_slab", "minecraft:deepslate_tile_slab")
-+            .put("minecraft:grimstone_tile_stairs", "minecraft:deepslate_tile_stairs")
-+            .put("minecraft:grimstone_tile_wall", "minecraft:deepslate_tile_wall")
-+            .put("minecraft:grimstone_bricks", "minecraft:deepslate_bricks")
-+            .put("minecraft:grimstone_brick_slab", "minecraft:deepslate_brick_slab")
-+            .put("minecraft:grimstone_brick_stairs", "minecraft:deepslate_brick_stairs")
-+            .put("minecraft:grimstone_brick_wall", "minecraft:deepslate_brick_wall")
-+            .put("minecraft:chiseled_grimstone", "minecraft:chiseled_deepslate")
-+            .build();
++    protected static final Map<String, String> RENAMES = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:grimstone", "minecraft:deepslate")
++                    .put("minecraft:grimstone_slab", "minecraft:cobbled_deepslate_slab")
++                    .put("minecraft:grimstone_stairs", "minecraft:cobbled_deepslate_stairs")
++                    .put("minecraft:grimstone_wall", "minecraft:cobbled_deepslate_wall")
++                    .put("minecraft:polished_grimstone", "minecraft:polished_deepslate")
++                    .put("minecraft:polished_grimstone_slab", "minecraft:polished_deepslate_slab")
++                    .put("minecraft:polished_grimstone_stairs", "minecraft:polished_deepslate_stairs")
++                    .put("minecraft:polished_grimstone_wall", "minecraft:polished_deepslate_wall")
++                    .put("minecraft:grimstone_tiles", "minecraft:deepslate_tiles")
++                    .put("minecraft:grimstone_tile_slab", "minecraft:deepslate_tile_slab")
++                    .put("minecraft:grimstone_tile_stairs", "minecraft:deepslate_tile_stairs")
++                    .put("minecraft:grimstone_tile_wall", "minecraft:deepslate_tile_wall")
++                    .put("minecraft:grimstone_bricks", "minecraft:deepslate_bricks")
++                    .put("minecraft:grimstone_brick_slab", "minecraft:deepslate_brick_slab")
++                    .put("minecraft:grimstone_brick_stairs", "minecraft:deepslate_brick_stairs")
++                    .put("minecraft:grimstone_brick_wall", "minecraft:deepslate_brick_wall")
++                    .put("minecraft:chiseled_grimstone", "minecraft:chiseled_deepslate")
++                    .build()
++    );
 +
 +    public static void register() {
 +        ConverterAbstractItemRename.register(VERSION, RENAMES::get);
@@ -16666,51 +16921,55 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.converters.helpers.ConverterAbstractStringValueTypeRename;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
++import java.util.Map;
 +
 +public final class V2838 {
 +
 +    protected static final int VERSION = MCVersions.V21W40A;
 +
-+    public static final ImmutableMap<String, String> BIOME_UPDATE = ImmutableMap.<String, String>builder()
-+            .put("minecraft:badlands_plateau", "minecraft:badlands")
-+            .put("minecraft:bamboo_jungle_hills", "minecraft:bamboo_jungle")
-+            .put("minecraft:birch_forest_hills", "minecraft:birch_forest")
-+            .put("minecraft:dark_forest_hills", "minecraft:dark_forest")
-+            .put("minecraft:desert_hills", "minecraft:desert")
-+            .put("minecraft:desert_lakes", "minecraft:desert")
-+            .put("minecraft:giant_spruce_taiga_hills", "minecraft:old_growth_spruce_taiga")
-+            .put("minecraft:giant_spruce_taiga", "minecraft:old_growth_spruce_taiga")
-+            .put("minecraft:giant_tree_taiga_hills", "minecraft:old_growth_pine_taiga")
-+            .put("minecraft:giant_tree_taiga", "minecraft:old_growth_pine_taiga")
-+            .put("minecraft:gravelly_mountains", "minecraft:windswept_gravelly_hills")
-+            .put("minecraft:jungle_edge", "minecraft:sparse_jungle")
-+            .put("minecraft:jungle_hills", "minecraft:jungle")
-+            .put("minecraft:modified_badlands_plateau", "minecraft:badlands")
-+            .put("minecraft:modified_gravelly_mountains", "minecraft:windswept_gravelly_hills")
-+            .put("minecraft:modified_jungle_edge", "minecraft:sparse_jungle")
-+            .put("minecraft:modified_jungle", "minecraft:jungle")
-+            .put("minecraft:modified_wooded_badlands_plateau", "minecraft:wooded_badlands")
-+            .put("minecraft:mountain_edge", "minecraft:windswept_hills")
-+            .put("minecraft:mountains", "minecraft:windswept_hills")
-+            .put("minecraft:mushroom_field_shore", "minecraft:mushroom_fields")
-+            .put("minecraft:shattered_savanna", "minecraft:windswept_savanna")
-+            .put("minecraft:shattered_savanna_plateau", "minecraft:windswept_savanna")
-+            .put("minecraft:snowy_mountains", "minecraft:snowy_plains")
-+            .put("minecraft:snowy_taiga_hills", "minecraft:snowy_taiga")
-+            .put("minecraft:snowy_taiga_mountains", "minecraft:snowy_taiga")
-+            .put("minecraft:snowy_tundra", "minecraft:snowy_plains")
-+            .put("minecraft:stone_shore", "minecraft:stony_shore")
-+            .put("minecraft:swamp_hills", "minecraft:swamp")
-+            .put("minecraft:taiga_hills", "minecraft:taiga")
-+            .put("minecraft:taiga_mountains", "minecraft:taiga")
-+            .put("minecraft:tall_birch_forest", "minecraft:old_growth_birch_forest")
-+            .put("minecraft:tall_birch_hills", "minecraft:old_growth_birch_forest")
-+            .put("minecraft:wooded_badlands_plateau", "minecraft:wooded_badlands")
-+            .put("minecraft:wooded_hills", "minecraft:forest")
-+            .put("minecraft:wooded_mountains", "minecraft:windswept_forest")
-+            .put("minecraft:lofty_peaks", "minecraft:jagged_peaks")
-+            .put("minecraft:snowcapped_peaks", "minecraft:frozen_peaks")
-+            .build();
++    public static final Map<String, String> BIOME_UPDATE = new HashMap<>(
++            ImmutableMap.<String, String>builder()
++                    .put("minecraft:badlands_plateau", "minecraft:badlands")
++                    .put("minecraft:bamboo_jungle_hills", "minecraft:bamboo_jungle")
++                    .put("minecraft:birch_forest_hills", "minecraft:birch_forest")
++                    .put("minecraft:dark_forest_hills", "minecraft:dark_forest")
++                    .put("minecraft:desert_hills", "minecraft:desert")
++                    .put("minecraft:desert_lakes", "minecraft:desert")
++                    .put("minecraft:giant_spruce_taiga_hills", "minecraft:old_growth_spruce_taiga")
++                    .put("minecraft:giant_spruce_taiga", "minecraft:old_growth_spruce_taiga")
++                    .put("minecraft:giant_tree_taiga_hills", "minecraft:old_growth_pine_taiga")
++                    .put("minecraft:giant_tree_taiga", "minecraft:old_growth_pine_taiga")
++                    .put("minecraft:gravelly_mountains", "minecraft:windswept_gravelly_hills")
++                    .put("minecraft:jungle_edge", "minecraft:sparse_jungle")
++                    .put("minecraft:jungle_hills", "minecraft:jungle")
++                    .put("minecraft:modified_badlands_plateau", "minecraft:badlands")
++                    .put("minecraft:modified_gravelly_mountains", "minecraft:windswept_gravelly_hills")
++                    .put("minecraft:modified_jungle_edge", "minecraft:sparse_jungle")
++                    .put("minecraft:modified_jungle", "minecraft:jungle")
++                    .put("minecraft:modified_wooded_badlands_plateau", "minecraft:wooded_badlands")
++                    .put("minecraft:mountain_edge", "minecraft:windswept_hills")
++                    .put("minecraft:mountains", "minecraft:windswept_hills")
++                    .put("minecraft:mushroom_field_shore", "minecraft:mushroom_fields")
++                    .put("minecraft:shattered_savanna", "minecraft:windswept_savanna")
++                    .put("minecraft:shattered_savanna_plateau", "minecraft:windswept_savanna")
++                    .put("minecraft:snowy_mountains", "minecraft:snowy_plains")
++                    .put("minecraft:snowy_taiga_hills", "minecraft:snowy_taiga")
++                    .put("minecraft:snowy_taiga_mountains", "minecraft:snowy_taiga")
++                    .put("minecraft:snowy_tundra", "minecraft:snowy_plains")
++                    .put("minecraft:stone_shore", "minecraft:stony_shore")
++                    .put("minecraft:swamp_hills", "minecraft:swamp")
++                    .put("minecraft:taiga_hills", "minecraft:taiga")
++                    .put("minecraft:taiga_mountains", "minecraft:taiga")
++                    .put("minecraft:tall_birch_forest", "minecraft:old_growth_birch_forest")
++                    .put("minecraft:tall_birch_hills", "minecraft:old_growth_birch_forest")
++                    .put("minecraft:wooded_badlands_plateau", "minecraft:wooded_badlands")
++                    .put("minecraft:wooded_hills", "minecraft:forest")
++                    .put("minecraft:wooded_mountains", "minecraft:windswept_forest")
++                    .put("minecraft:lofty_peaks", "minecraft:jagged_peaks")
++                    .put("minecraft:snowcapped_peaks", "minecraft:frozen_peaks")
++                    .build()
++    );
 +
 +    public static void register() {
 +        ConverterAbstractStringValueTypeRename.register(VERSION, MCTypeRegistry.BIOME, BIOME_UPDATE::get);
@@ -18381,27 +18640,58 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                // front text
 +                final MapType<String> frontText = data.getTypeUtil().createEmptyMap();
 +                data.setMap("front_text", frontText);
 +
-+                frontText.setList("messages", migrateToList(data, "Text"));
-+                frontText.setList("filtered_messages", migrateToList(data, "FilteredText"));
++                final ListType frontMessages = migrateToList(data, "Text");
++                frontText.setList("messages", frontMessages);
++
++                ListType frontFilteredMessages = null;
++
++                for (int i = 0; i < 4; ++i) {
++                    final String filtered = data.getString("FilteredText" + i);
++                    if (filtered == null) {
++                        if (frontFilteredMessages != null) {
++                            frontFilteredMessages.addString(frontMessages.getString(i));
++                        }
++                        continue;
++                    }
++
++                    if (frontFilteredMessages == null) {
++                        frontFilteredMessages = data.getTypeUtil().createEmptyList();
++                        for (int k = 0; k < i; ++k) {
++                            frontFilteredMessages.addString(frontMessages.getString(k));
++                        }
++                    }
++
++                    frontFilteredMessages.addString(filtered);
++                }
++
++                if (frontFilteredMessages != null) {
++                    frontText.setList("filtered_messages", frontFilteredMessages);
++                }
++
 +                frontText.setString("color", data.getString("Color", DEFAULT_COLOR));
 +                frontText.setBoolean("has_glowing_text", data.getBoolean("GlowingText", false));
++                frontText.setBoolean("_filtered_correct", true);
 +
++                // back text
 +                final MapType<String> backText = data.getTypeUtil().createEmptyMap();
 +                data.setMap("back_text", backText);
 +
 +                final ListType blankMessages = data.getTypeUtil().createEmptyList();
++                backText.setList("messages", blankMessages);
++
 +                for (int i = 0; i < 4; ++i) {
 +                    blankMessages.addString(BLANK_TEXT_LINE);
 +                }
 +
-+                backText.setList("messages", blankMessages);
-+                backText.setList("filtered_messages", blankMessages.copy()); // need to copy so that the value isn't mapped to twice, so that updates to one do not reflect in the other
 +                backText.setString("color", DEFAULT_COLOR);
 +                backText.setBoolean("has_glowing_text", false);
 +
++                // misc
++                data.setBoolean("is_waxed", false);
 +                return null;
 +            }
 +        };
@@ -18654,6 +18944,448 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return null;
 +            }
 +        });
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3564.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3564.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3564.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++import net.minecraft.network.chat.CommonComponents;
++import net.minecraft.network.chat.Component;
++
++public final class V3564 {
++
++    private static final int VERSION = MCVersions.V1_20_1 + 99;
++
++    public static void register() {
++        final DataConverter<MapType<String>, MapType<String>> converter = new DataConverter<>(VERSION) {
++
++            private static final String[] LEGACY_FIELDS = new String[] {
++                    "Text1",
++                    "Text2",
++                    "Text3",
++                    "Text4",
++
++                    "FilteredText1",
++                    "FilteredText2",
++                    "FilteredText3",
++                    "FilteredText4",
++
++                    "Color",
++
++                    "GlowingText"
++            };
++
++            private static final String EMPTY = Component.Serializer.toJson(CommonComponents.EMPTY);
++
++            private static void updateText(final MapType<String> text) {
++                if (text == null) {
++                    return;
++                }
++
++                if (text.getBoolean("_filtered_correct", false)) {
++                    text.remove("_filtered_correct");
++                    return;
++                }
++
++                final ListType filteredMessages = text.getList("filtered_messages", ObjectType.STRING);
++
++                if (filteredMessages == null || filteredMessages.size() == 0) {
++                    return;
++                }
++
++                // should treat null here as empty list
++                final ListType messages = text.getList("messages", ObjectType.STRING);
++
++                final ListType newFilteredList = filteredMessages.getTypeUtil().createEmptyList();
++                boolean newFilteredIsEmpty = true;
++
++                for (int i = 0, len = filteredMessages.size(); i < len; ++i) {
++                    final String filtered = filteredMessages.getString(i);
++                    final String message = messages != null && i < messages.size() ? messages.getString(i) : EMPTY;
++
++                    final String newFiltered = EMPTY.equals(filtered) ? message : filtered;
++
++                    newFilteredList.addString(newFiltered);
++
++                    newFilteredIsEmpty = newFilteredIsEmpty && EMPTY.equals(newFiltered);
++                }
++
++                if (newFilteredIsEmpty) {
++                    text.remove("filtered_messages");
++                } else {
++                    text.setList("filtered_messages", newFilteredList);
++                }
++            }
++
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                updateText(data.getMap("front_text"));
++                updateText(data.getMap("back_text"));
++
++                for (final String toRemove : LEGACY_FIELDS) {
++                    data.remove(toRemove);
++                }
++
++                return null;
++            }
++        };
++
++        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:sign", converter);
++        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:hanging_sign", converter);
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3565.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3565.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3565.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.MapType;
++
++public final class V3565 {
++
++    private static final int VERSION = MCVersions.V1_20_1 + 100;
++
++    public static void register() {
++        MCTypeRegistry.SAVED_DATA_RANDOM_SEQUENCES.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> root, final long sourceVersion, final long toVersion) {
++                final MapType<String> oldData = root.getMap("data");
++                if (oldData == null) {
++                    return null;
++                }
++
++                final MapType<String> newData = root.getTypeUtil().createEmptyMap();
++                root.setMap("data", newData);
++
++                newData.setMap("sequences", oldData);
++
++                return null;
++            }
++        });
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3566.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3566.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3566.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.MapType;
++import com.google.common.collect.ImmutableMap;
++import java.util.HashMap;
++import java.util.Map;
++
++public final class V3566 {
++
++    private static final int VERSION = MCVersions.V1_20_1 + 101;
++
++    public static void register() {
++        MCTypeRegistry.SAVED_DATA_SCOREBOARD.addStructureConverter(new DataConverter<>(VERSION) {
++
++            private static final Map<String, String> SLOT_RENAMES = new HashMap<>(
++                    ImmutableMap.<String, String>builder()
++                            .put("slot_0", "list")
++                            .put("slot_1", "sidebar")
++                            .put("slot_2", "below_name")
++                            .put("slot_3", "sidebar.team.black")
++                            .put("slot_4", "sidebar.team.dark_blue")
++                            .put("slot_5", "sidebar.team.dark_green")
++                            .put("slot_6", "sidebar.team.dark_aqua")
++                            .put("slot_7", "sidebar.team.dark_red")
++                            .put("slot_8", "sidebar.team.dark_purple")
++                            .put("slot_9", "sidebar.team.gold")
++                            .put("slot_10", "sidebar.team.gray")
++                            .put("slot_11", "sidebar.team.dark_gray")
++                            .put("slot_12", "sidebar.team.blue")
++                            .put("slot_13", "sidebar.team.green")
++                            .put("slot_14", "sidebar.team.aqua")
++                            .put("slot_15", "sidebar.team.red")
++                            .put("slot_16", "sidebar.team.light_purple")
++                            .put("slot_17", "sidebar.team.yellow")
++                            .put("slot_18", "sidebar.team.white")
++                            .build()
++            );
++
++            @Override
++            public MapType<String> convert(final MapType<String> root, final long sourceVersion, final long toVersion) {
++                final MapType<String> data = root.getMap("data");
++                if (data == null) {
++                    return null;
++                }
++
++                RenameHelper.renameKeys(data.getMap("DisplaySlots"), SLOT_RENAMES::get);
++
++                return null;
++            }
++        });
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3568.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3568.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3568.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.Map;
++import java.util.Set;
++
++public final class V3568 {
++
++    private static final int VERSION = MCVersions.V23W31A + 1;
++
++    private static final String[] EFFECT_ID_MAP = new String[34];
++    static {
++        EFFECT_ID_MAP[1] = "minecraft:speed";
++        EFFECT_ID_MAP[2] = "minecraft:slowness";
++        EFFECT_ID_MAP[3] = "minecraft:haste";
++        EFFECT_ID_MAP[4] = "minecraft:mining_fatigue";
++        EFFECT_ID_MAP[5] = "minecraft:strength";
++        EFFECT_ID_MAP[6] = "minecraft:instant_health";
++        EFFECT_ID_MAP[7] = "minecraft:instant_damage";
++        EFFECT_ID_MAP[8] = "minecraft:jump_boost";
++        EFFECT_ID_MAP[9] = "minecraft:nausea";
++        EFFECT_ID_MAP[10] = "minecraft:regeneration";
++        EFFECT_ID_MAP[11] = "minecraft:resistance";
++        EFFECT_ID_MAP[12] = "minecraft:fire_resistance";
++        EFFECT_ID_MAP[13] = "minecraft:water_breathing";
++        EFFECT_ID_MAP[14] = "minecraft:invisibility";
++        EFFECT_ID_MAP[15] = "minecraft:blindness";
++        EFFECT_ID_MAP[16] = "minecraft:night_vision";
++        EFFECT_ID_MAP[17] = "minecraft:hunger";
++        EFFECT_ID_MAP[18] = "minecraft:weakness";
++        EFFECT_ID_MAP[19] = "minecraft:poison";
++        EFFECT_ID_MAP[20] = "minecraft:wither";
++        EFFECT_ID_MAP[21] = "minecraft:health_boost";
++        EFFECT_ID_MAP[22] = "minecraft:absorption";
++        EFFECT_ID_MAP[23] = "minecraft:saturation";
++        EFFECT_ID_MAP[24] = "minecraft:glowing";
++        EFFECT_ID_MAP[25] = "minecraft:levitation";
++        EFFECT_ID_MAP[26] = "minecraft:luck";
++        EFFECT_ID_MAP[27] = "minecraft:unluck";
++        EFFECT_ID_MAP[28] = "minecraft:slow_falling";
++        EFFECT_ID_MAP[29] = "minecraft:conduit_power";
++        EFFECT_ID_MAP[30] = "minecraft:dolphins_grace";
++        EFFECT_ID_MAP[31] = "minecraft:bad_omen";
++        EFFECT_ID_MAP[32] = "minecraft:hero_of_the_village";
++        EFFECT_ID_MAP[33] = "minecraft:darkness";
++    }
++    private static final Set<String> EFFECT_ITEMS =
++            new HashSet<>(
++                    Set.of(
++                            "minecraft:potion",
++                            "minecraft:splash_potion",
++                            "minecraft:lingering_potion",
++                            "minecraft:tipped_arrow"
++                    )
++            );
++
++    private static String readLegacyEffect(final MapType<String> data, final String path) {
++        final Number id = data.getNumber(path);
++        if (id == null) {
++            return null;
++        }
++
++        final int castedId = id.intValue();
++        return castedId >= 0 && castedId < EFFECT_ID_MAP.length ? EFFECT_ID_MAP[castedId] : null;
++    }
++
++    private static void convertLegacyEffect(final MapType<String> data, final String legacyPath, final String newPath) {
++        final Number id = data.getNumber(legacyPath);
++        data.remove(legacyPath);
++
++        if (id == null) {
++            return;
++        }
++
++        final int castedId = id.intValue();
++        final String newId = castedId >= 0 && castedId < EFFECT_ID_MAP.length ? EFFECT_ID_MAP[castedId] : null;
++
++        if (newId == null) {
++            return;
++        }
++
++        data.setString(newPath, newId);
++    }
++
++    private static final Map<String, String> MOB_EFFECT_RENAMES = new HashMap<>();
++    static {
++        MOB_EFFECT_RENAMES.put("Ambient", "ambient");
++        MOB_EFFECT_RENAMES.put("Amplifier", "amplifier");
++        MOB_EFFECT_RENAMES.put("Duration", "duration");
++        MOB_EFFECT_RENAMES.put("ShowParticles", "show_particles");
++        MOB_EFFECT_RENAMES.put("ShowIcon", "show_icon");
++        MOB_EFFECT_RENAMES.put("FactorCalculationData", "factor_calculation_data");
++        MOB_EFFECT_RENAMES.put("HiddenEffect", "hidden_effect");
++    }
++
++    private static void convertMobEffect(final MapType<String> mobEffect) {
++        if (mobEffect == null) {
++            return;
++        }
++
++        convertLegacyEffect(mobEffect, "Id", "id");
++
++        for (final Map.Entry<String, String> rename : MOB_EFFECT_RENAMES.entrySet()) {
++            RenameHelper.renameSingle(mobEffect, rename.getKey(), rename.getValue());
++        }
++
++        convertMobEffect(mobEffect.getMap("hidden_effect"));
++    }
++
++    private static void convertMobEffectList(final MapType<String> data, final String oldPath, final String newPath) {
++        final ListType effects = data.getList(oldPath, ObjectType.MAP);
++        if (effects == null) {
++            return;
++        }
++
++        for (int i = 0, len = effects.size(); i < len; ++i) {
++            convertMobEffect(effects.getMap(i));
++        }
++
++        data.remove(oldPath);
++        data.setList(newPath, effects);
++    }
++
++    private static void removeAndSet(final MapType<String> data, final String toRemovePath,
++                                     final String toSetPath, final Object toSet) {
++        data.remove(toRemovePath);
++        if (toSet != null) {
++            data.setGeneric(toSetPath, toSet);
++        }
++    }
++
++    private static void updateSuspiciousStew(final MapType<String> from, final MapType<String> into) {
++        removeAndSet(into, "EffectId", "id", readLegacyEffect(from, "EffectId"));
++        removeAndSet(into, "EffectDuration", "duration", from.getGeneric("EffectDuration"));
++    }
++
++    public static void register() {
++        final DataConverter<MapType<String>, MapType<String>> beaconConverter = new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                convertLegacyEffect(data, "Primary", "primary_effect");
++                convertLegacyEffect(data, "Secondary", "secondary_effect");
++
++                return null;
++            }
++        };
++
++        final DataConverter<MapType<String>, MapType<String>> mooshroomConverter = new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                final MapType<String> newEffect = data.getTypeUtil().createEmptyMap();
++                updateSuspiciousStew(data, newEffect);
++
++                data.remove("EffectId");
++                data.remove("EffectDuration");
++
++                if (!newEffect.isEmpty()) {
++                    final ListType stewEffects = data.getTypeUtil().createEmptyList();
++                    data.setList("stew_effects", stewEffects);
++
++                    stewEffects.addMap(newEffect);
++                }
++
++                return null;
++            }
++        };
++        final DataConverter<MapType<String>, MapType<String>> arrowConverter = new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                convertMobEffectList(data, "CustomPotionEffects", "custom_potion_effects");
++                return null;
++            }
++        };
++        final DataConverter<MapType<String>, MapType<String>> areaEffectCloudConverter = new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                convertMobEffectList(data, "Effects", "effects");
++                return null;
++            }
++        };
++        final DataConverter<MapType<String>, MapType<String>> livingEntityConverter = new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                convertMobEffectList(data, "ActiveEffects", "active_effects");
++                return null;
++            }
++        };
++
++        final DataConverter<MapType<String>, MapType<String>> itemConverter = new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> root, final long sourceVersion, final long toVersion) {
++                final String id = root.getString("id");
++
++                final MapType<String> tag = root.getMap("tag");
++
++                if ("minecraft:suspicious_stew".equals(id)) {
++                    RenameHelper.renameSingle(tag, "Effects", "effects");
++
++                    final ListType effects = tag.getList("effects", ObjectType.MAP);
++
++                    if (effects != null) {
++                        for (int i = 0, len = effects.size(); i < len; ++i) {
++                            final MapType<String> effect = effects.getMap(i);
++                            updateSuspiciousStew(effect, effect);
++                        }
++                    }
++
++                    return null;
++                }
++
++                if (EFFECT_ITEMS.contains(id)) {
++                    convertMobEffectList(tag, "CustomPotionEffects", "custom_potion_effects");
++                    return null;
++                }
++
++                return null;
++            }
++        };
++
++        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:beacon", beaconConverter);
++
++        MCTypeRegistry.ENTITY.addConverterForId("minecraft:mooshroom", mooshroomConverter);
++        MCTypeRegistry.ENTITY.addConverterForId("minecraft:arrow", arrowConverter);
++        MCTypeRegistry.ENTITY.addConverterForId("minecraft:area_effect_cloud", areaEffectCloudConverter);
++        MCTypeRegistry.ENTITY.addStructureConverter(livingEntityConverter);
++
++        MCTypeRegistry.PLAYER.addStructureConverter(livingEntityConverter);
++
++        MCTypeRegistry.ITEM_STACK.addStructureConverter(itemConverter);
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V501.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V501.java
@@ -19004,7 +19736,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import com.mojang.logging.LogUtils;
 +import net.minecraft.core.BlockPos;
-+import net.minecraft.core.Registry;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.world.item.BlockItem;
 +import net.minecraft.world.item.Item;
@@ -19012,10 +19743,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.block.EntityBlock;
 +import net.minecraft.world.level.block.entity.BlockEntity;
 +import net.minecraft.world.level.block.entity.BlockEntityType;
-+import net.minecraft.world.level.block.state.BlockState;
 +import org.slf4j.Logger;
 +import java.util.HashMap;
-+import java.util.LinkedHashMap;
 +import java.util.Map;
 +
 +public final class V704 {
@@ -19024,7 +19753,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    protected static final int VERSION = MCVersions.V1_10_2 + 192;
 +
-+    public static final Map<String, String> ITEM_ID_TO_TILE_ENTITY_ID = new HashMap<String, String>() {
++    public static final Map<String, String> ITEM_ID_TO_TILE_ENTITY_ID = new HashMap<>() {
 +        @Override
 +        public String put(final String key, final String value) {
 +            if (this.containsKey(key)) {
@@ -20217,15 +20946,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return null;
 +        });
 +
-+        MCTypeRegistry.SAVED_DATA.addStructureWalker(VERSION, (final MapType<String> root, final long fromVersion, final long toVersion) -> {
++        MCTypeRegistry.SAVED_DATA_SCOREBOARD.addStructureWalker(VERSION, (final MapType<String> root, final long fromVersion, final long toVersion) -> {
++            final MapType<String> data = root.getMap("data");
++            if (data == null) {
++                return null;
++            }
++
++            WalkerUtils.convertList(MCTypeRegistry.OBJECTIVE, data, "Objectives", fromVersion, toVersion);
++            WalkerUtils.convertList(MCTypeRegistry.TEAM, data, "Teams", fromVersion, toVersion);
++
++            return null;
++        });
++        MCTypeRegistry.SAVED_DATA_STRUCTURE_FEATURE_INDICES.addStructureWalker(VERSION, (final MapType<String> root, final long fromVersion, final long toVersion) -> {
 +            final MapType<String> data = root.getMap("data");
 +            if (data == null) {
 +                return null;
 +            }
 +
 +            WalkerUtils.convertValues(MCTypeRegistry.STRUCTURE_FEATURE, data, "Features", fromVersion, toVersion);
-+            WalkerUtils.convertList(MCTypeRegistry.OBJECTIVE, data, "Objectives", fromVersion, toVersion);
-+            WalkerUtils.convertList(MCTypeRegistry.TEAM, data, "Teams", fromVersion, toVersion);
 +
 +            return null;
 +        });
@@ -23733,7 +24471,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/data/structures/StructureUpdater.java
 +++ b/src/main/java/net/minecraft/data/structures/StructureUpdater.java
 @@ -0,0 +0,0 @@ public class StructureUpdater implements SnbtToNbt.Filter {
-             LOGGER.warn("SNBT Too old, do not forget to update: {} < {}: {}", i, 3437, name);
+             LOGGER.warn("SNBT Too old, do not forget to update: {} < {}: {}", i, 3563, name);
          }
  
 -        CompoundTag compoundTag = DataFixTypes.STRUCTURE.updateToCurrentVersion(DataFixers.getDataFixer(), nbt, i);
@@ -23844,3 +24582,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          return nbttagcompound;
+diff --git a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
++++ b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+@@ -0,0 +0,0 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+                     throw (NullPointerException) Util.pauseInIde(new NullPointerException("Fixer Upper not set inside LevelData, and the player tag is not upgraded."));
+                 }
+ 
+-                this.loadedPlayerTag = DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, this.loadedPlayerTag, this.playerDataVersion);
++                this.loadedPlayerTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.PLAYER, this.loadedPlayerTag, version, SharedConstants.getCurrentVersion().getDataVersion().getVersion()); // Paper
+             }
+ 
+             this.upgradedPlayerTag = true;
