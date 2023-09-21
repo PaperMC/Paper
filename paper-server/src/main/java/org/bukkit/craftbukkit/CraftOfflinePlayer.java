@@ -60,7 +60,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         }
 
         // This might not match lastKnownName but if not it should be more correct
-        if (profile.getName() != null) {
+        if (!profile.getName().isEmpty()) {
             return profile.getName();
         }
 

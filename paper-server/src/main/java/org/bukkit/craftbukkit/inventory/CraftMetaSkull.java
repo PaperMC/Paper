@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.SystemUtils;
 import net.minecraft.nbt.GameProfileSerializer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.resources.MinecraftKey;
@@ -18,7 +19,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
-import org.bukkit.craftbukkit.profile.CraftGameProfile;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -75,7 +75,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (tag.contains(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
             this.setProfile(GameProfileSerializer.readGameProfile(tag.getCompound(SKULL_OWNER.NBT)));
         } else if (tag.contains(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_STRING) && !tag.getString(SKULL_OWNER.NBT).isEmpty()) {
-            this.setProfile(new CraftGameProfile(null, tag.getString(SKULL_OWNER.NBT)));
+            this.setProfile(new GameProfile(SystemUtils.NIL_UUID, tag.getString(SKULL_OWNER.NBT)));
         }
 
         if (tag.contains(BLOCK_ENTITY_TAG.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
@@ -179,7 +179,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     @Override
     public boolean hasOwner() {
-        return profile != null && profile.getName() != null;
+        return profile != null && !profile.getName().isEmpty();
     }
 
     @Override
@@ -190,11 +190,11 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     @Override
     public OfflinePlayer getOwningPlayer() {
         if (hasOwner()) {
-            if (profile.getId() != null) {
+            if (!profile.getId().equals(SystemUtils.NIL_UUID)) {
                 return Bukkit.getOfflinePlayer(profile.getId());
             }
 
-            if (profile.getName() != null) {
+            if (!profile.getName().isEmpty()) {
                 return Bukkit.getOfflinePlayer(profile.getName());
             }
         }
@@ -211,7 +211,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (name == null) {
             setProfile(null);
         } else {
-            setProfile(new CraftGameProfile(null, name));
+            setProfile(new GameProfile(SystemUtils.NIL_UUID, name));
         }
 
         return true;
@@ -224,7 +224,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         } else if (owner instanceof CraftPlayer) {
             setProfile(((CraftPlayer) owner).getProfile());
         } else {
-            setProfile(new CraftGameProfile(owner.getUniqueId(), owner.getName()));
+            setProfile(new GameProfile(owner.getUniqueId(), owner.getName()));
         }
 
         return true;

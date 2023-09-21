@@ -5,6 +5,7 @@ import com.mojang.authlib.properties.Property;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.UUID;
+import net.minecraft.SystemUtils;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
@@ -95,11 +96,11 @@ public class PlayerProfileTest {
         Assert.assertEquals("Unique id is not the same", UNIQUE_ID, profile1.getUniqueId());
         Assert.assertEquals("Name is not the same", NAME, profile1.getName());
 
-        CraftPlayerProfile profile2 = new CraftPlayerProfile(new CraftGameProfile(UNIQUE_ID, null));
+        CraftPlayerProfile profile2 = new CraftPlayerProfile(new GameProfile(UNIQUE_ID, ""));
         Assert.assertEquals("Unique id is not the same", UNIQUE_ID, profile2.getUniqueId());
         Assert.assertEquals("Name is not null", null, profile2.getName());
 
-        CraftPlayerProfile profile3 = new CraftPlayerProfile(new CraftGameProfile(null, NAME));
+        CraftPlayerProfile profile3 = new CraftPlayerProfile(new GameProfile(SystemUtils.NIL_UUID, NAME));
         Assert.assertEquals("Unique id is not null", null, profile3.getUniqueId());
         Assert.assertEquals("Name is not the same", NAME, profile3.getName());
     }
