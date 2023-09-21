@@ -16,37 +16,32 @@ whereas higher values will make this less sensitive to issues such as spikes
 from networking or during connections flood of chunk packets on slower clients,
  at the cost of dead connections being kept open for longer.
 
-diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-     public ServerPlayer player;
-     private int tickCount;
-     private int ackBlockChangesUpTo = -1;
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     private static final Component TIMEOUT_DISCONNECTION_MESSAGE = Component.translatable("disconnect.timeout");
+     protected final MinecraftServer server;
+     public final Connection connection; // Paper
 -    private long keepAliveTime;
-+    private long keepAliveTime = Util.getMillis();
++    private long keepAliveTime = Util.getMillis(); // Paper
      private boolean keepAlivePending;
      private long keepAliveChallenge;
-     // CraftBukkit start - multithreaded fields
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-     private final LastSeenMessagesValidator lastSeenMessages;
-     private final MessageSignatureCache messageSignatureCache;
-     private final FutureChain chatMessageChain;
+     private int latency;
+     private volatile boolean suspendFlushingOnServerThread = false;
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
-     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
-         this.lastChatTimeStamp = new AtomicReference(Instant.EPOCH);
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-         }
+     public ServerCommonPacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, CommonListenerCookie commonlistenercookie, ServerPlayer player) { // CraftBukkit
+         this.server = minecraftserver;
+@@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
+     protected void keepConnectionAlive() {
          this.server.getProfiler().push("keepAlive");
 -        long i = Util.getMillis();
 -
 -        if (i - this.keepAliveTime >= 25000L) { // CraftBukkit
 -            if (this.keepAlivePending) {
--                this.disconnect(Component.translatable("disconnect.timeout"));
--            } else {
 +        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
 +        long currentTime = Util.getMillis();
@@ -55,7 +50,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (this.keepAlivePending) {
 +            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
 +                ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // more info
-+                this.disconnect(Component.translatable("disconnect.timeout", new Object[0]));
+                 this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
+-            } else {
 +            }
 +        } else {
 +            if (elapsedTime >= 15000L) { // 15 seconds
@@ -70,4 +66,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
  
          this.server.getProfiler().pop();
-         // CraftBukkit start
+     }
