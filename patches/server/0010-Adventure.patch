@@ -2419,7 +2419,7 @@ index e7a9dd7791a0dd200c4d74922c6e5adaa5013669..b9062fe651de34d5b3f9d5f146ae0b4f
  
          this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index bbd256d088879f04762fcf628573f1348e4961a8..92b18f382e91936aad54b083284a393684747d9d 100644
+index bbd256d088879f04762fcf628573f1348e4961a8..463d268c3e9450996f58f9820dbd8fc527c213ea 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -45,6 +45,7 @@ import net.minecraft.nbt.ListTag;
@@ -2454,11 +2454,13 @@ index bbd256d088879f04762fcf628573f1348e4961a8..92b18f382e91936aad54b083284a3936
          }
          // CraftBukkit end
          this.player.getTextFilter().leave();
-@@ -1754,10 +1759,10 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                     CompletableFuture<FilteredText> completablefuture = this.filterTextPacket(playerchatmessage.signedContent());
-                     Component ichatbasecomponent = this.server.getChatDecorator().decorate(this.player, playerchatmessage.decoratedContent());
+@@ -1752,12 +1757,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                     }
  
+                     CompletableFuture<FilteredText> completablefuture = this.filterTextPacket(playerchatmessage.signedContent());
+-                    Component ichatbasecomponent = this.server.getChatDecorator().decorate(this.player, playerchatmessage.decoratedContent());
 +                    CompletableFuture<ChatDecorator.Result> componentFuture = this.server.getChatDecorator().decorate(this.player, null, playerchatmessage.decoratedContent()); // Paper
+ 
                      this.chatMessageChain.append((executor) -> {
 -                        return completablefuture.thenAcceptAsync((filteredtext) -> {
 -                            PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(ichatbasecomponent).filter(filteredtext.mask());
@@ -2468,7 +2470,7 @@ index bbd256d088879f04762fcf628573f1348e4961a8..92b18f382e91936aad54b083284a3936
                              this.broadcastChatMessage(playerchatmessage1);
                          }, this.server.chatExecutor); // CraftBukkit - async chat
                      });
-@@ -1862,7 +1867,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1862,7 +1866,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(acknowledgment);
  
              if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
@@ -2477,7 +2479,7 @@ index bbd256d088879f04762fcf628573f1348e4961a8..92b18f382e91936aad54b083284a3936
                  return Optional.empty();
              } else {
                  this.player.resetLastActionTime();
-@@ -1920,7 +1925,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1920,7 +1924,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              this.handleCommand(s);
          } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
              // Do nothing, this is coming from a plugin
@@ -2491,7 +2493,7 @@ index bbd256d088879f04762fcf628573f1348e4961a8..92b18f382e91936aad54b083284a3936
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
-@@ -2044,7 +2054,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2044,7 +2053,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  }
              });
          } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) { // Re-add "Command Only" flag check
