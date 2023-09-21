@@ -1457,6 +1457,8 @@ public class CraftEventFactory {
                 }
                 CraftMetaBook meta = (CraftMetaBook) editBookEvent.getNewBookMeta();
                 CraftItemStack.setItemMeta(itemInHand, meta);
+            } else {
+                player.getBukkitEntity().updateInventory(); // SPIGOT-7484
             }
         }
 
