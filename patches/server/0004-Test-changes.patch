@@ -5,13 +5,13 @@ Subject: [PATCH] Test changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 592d2cd1114ee9fbf7b16068ef729f7db4de83d1..f3f20b34a3ebcbb75004003892e903ee4fd0edd3 100644
+index b1c84b847f8845407eafc89d8b027b34cc6a95b8..784a2ae459d4a6afd6773d2298838c07c9152250 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -12,6 +12,7 @@ dependencies {
      implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
-     implementation("org.ow2.asm:asm:9.4")
-     implementation("org.ow2.asm:asm-commons:9.4") // Paper - ASM event executor generation
+     implementation("org.ow2.asm:asm:9.5")
+     implementation("org.ow2.asm:asm-commons:9.5") // Paper - ASM event executor generation
 +    testImplementation("org.mockito:mockito-core:4.9.0") // Paper - switch to mockito
      implementation("commons-lang:commons-lang:2.6")
      runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
@@ -91,14 +91,16 @@ index 0000000000000000000000000000000000000000..e944e9dca13883c57e93e480ae5adfe5
 +}
 diff --git a/src/test/java/io/papermc/paper/testing/LazyRegistry.java b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8dd0df8c2cc25d37a2590a07872682230a9335f2
+index 0000000000000000000000000000000000000000..c88749e839ee1a9cf8439c4218c8a98afbd9c491
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,30 @@
 +package io.papermc.paper.testing;
 +
 +import java.util.Iterator;
 +import java.util.function.Supplier;
++import java.util.stream.Stream;
++import java.util.stream.StreamSupport;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
@@ -117,12 +119,17 @@ index 0000000000000000000000000000000000000000..8dd0df8c2cc25d37a2590a0787268223
 +    public @Nullable Keyed get(@NotNull final NamespacedKey key) {
 +        return this.supplier().get().get(key);
 +    }
++
++    @Override
++    public @NotNull Stream<Keyed> stream() {
++        return StreamSupport.stream(this.supplier.get().spliterator(), false);
++    }
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index 1b875fc4dc5550ffab21d11e0c2451a2b22250f9..c440dcf3cc2ddb8fd9094fe8495e820ae7797f5c 100644
+index 4f392c199fc31808d339659156f2e9b229e755e2..453e2189b842a6f6f52186578af1ee2e2fcba2e4 100644
 --- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
 +++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-@@ -53,6 +53,7 @@ public abstract class AbstractTestingBase {
+@@ -54,6 +54,7 @@ public abstract class AbstractTestingBase {
          LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
          layers = WorldLoader.loadAndReplaceLayer(resourceManager, layers, RegistryLayer.WORLDGEN, RegistryDataLoader.WORLDGEN_REGISTRIES);
          REGISTRY_CUSTOM = layers.compositeAccess().freeze();
@@ -130,14 +137,14 @@ index 1b875fc4dc5550ffab21d11e0c2451a2b22250f9..c440dcf3cc2ddb8fd9094fe8495e820a
          // Register vanilla pack
          DATA_PACK = ReloadableServerResources.loadResources(resourceManager, REGISTRY_CUSTOM, FeatureFlags.REGISTRY.allFlags(), Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
          // Bind tags
-@@ -60,7 +61,6 @@ public abstract class AbstractTestingBase {
+@@ -61,7 +62,6 @@ public abstract class AbstractTestingBase {
          // Biome shortcut
          BIOMES = REGISTRY_CUSTOM.registryOrThrow(Registries.BIOME);
  
 -        DummyServer.setup();
          DummyEnchantments.setup();
  
-         ImmutableList.Builder<Material> builder = ImmutableList.builder();
+         CraftRegistry.setMinecraftRegistry(REGISTRY_CUSTOM);
 diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
 deleted file mode 100644
 index e3197ea88b68de8f893f3fa986507b95b789645d..0000000000000000000000000000000000000000
