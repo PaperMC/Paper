@@ -206,6 +206,10 @@ public final class GameRule<T> {
      * Whether vines will spread.
      */
     public static final GameRule<Boolean> DO_VINES_SPREAD = new GameRule<>("doVinesSpread", Boolean.class);
+    /**
+     * Whether ender pearls will vanish on player death.
+     */
+    public static final GameRule<Boolean> ENDER_PEARLS_VANISH_ON_DEATH = new GameRule<>("enderPearlsVanishOnDeath", Boolean.class);
 
     // Numerical rules
     /**

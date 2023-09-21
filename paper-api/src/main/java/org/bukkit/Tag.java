@@ -261,6 +261,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> TERRACOTTA = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("terracotta"), Material.class);
     /**
+     * Vanilla block tag representing all concrete powder.
+     */
+    Tag<Material> CONCRETE_POWDER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("concrete_powder"), Material.class);
+    /**
      * Vanilla block tag representing all blocks which complete the find tree
      * tutorial.
      */
@@ -499,6 +503,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla block tag representing all blocks that play combination step sounds.
      */
     Tag<Material> COMBINATION_STEP_SOUND_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("combination_step_sound_blocks"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks that play step sounds with camels on sand.
+     */
+    Tag<Material> CAMEL_SAND_STEP_SOUND_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("camel_sand_step_sound_blocks"), Material.class);
     /**
      * Vanilla block tag representing all blocks that block vibration signals.
      */
@@ -950,6 +958,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla tag representing entities which are dismounted when underwater.
      */
     Tag<EntityType> ENTITY_TYPES_DISMOUNTS_UNDERWATER = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("dismounts_underwater"), EntityType.class);
+    /**
+     * Vanilla tag representing entities which are not controlled by their mount.
+     */
+    Tag<EntityType> ENTITY_TYPES_NON_CONTROLLING_RIDER = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("non_controlling_rider"), EntityType.class);
 
     /**
      * Returns whether or not this tag has an entry for the specified item.

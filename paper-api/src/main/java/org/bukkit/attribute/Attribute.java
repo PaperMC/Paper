@@ -54,6 +54,10 @@ public enum Attribute implements Keyed {
      */
     GENERIC_LUCK("generic.luck"),
     /**
+     * Maximum absorption of an Entity.
+     */
+    MAX_ABSORPTION("generic.max_absorption"),
+    /**
      * Strength with which a horse will jump.
      */
     HORSE_JUMP_STRENGTH("horse.jump_strength"),

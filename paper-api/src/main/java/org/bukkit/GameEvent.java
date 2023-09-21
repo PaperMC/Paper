@@ -52,8 +52,11 @@ public abstract class GameEvent implements Keyed {
     @Deprecated
     public static final GameEvent ENTITY_KILLED = getEvent("entity_die");
     public static final GameEvent ENTITY_PLACE = getEvent("entity_place");
-    public static final GameEvent ENTITY_ROAR = getEvent("entity_roar");
-    public static final GameEvent ENTITY_SHAKE = getEvent("entity_shake");
+    public static final GameEvent ENTITY_ACTION = getEvent("entity_action");
+    @Deprecated
+    public static final GameEvent ENTITY_ROAR = getEvent("entity_action");
+    @Deprecated
+    public static final GameEvent ENTITY_SHAKE = getEvent("entity_action");
     public static final GameEvent EQUIP = getEvent("equip");
     public static final GameEvent EXPLODE = getEvent("explode");
     public static final GameEvent FLAP = getEvent("flap");
@@ -77,7 +80,7 @@ public abstract class GameEvent implements Keyed {
     public static final GameEvent PROJECTILE_LAND = getEvent("projectile_land");
     public static final GameEvent PROJECTILE_SHOOT = getEvent("projectile_shoot");
     @Deprecated
-    public static final GameEvent RAVAGER_ROAR = getEvent("entity_roar");
+    public static final GameEvent RAVAGER_ROAR = getEvent("entity_action");
     @Deprecated
     public static final GameEvent RING_BELL = getEvent("block_change");
     public static final GameEvent SCULK_SENSOR_TENDRILS_CLICKING = getEvent("sculk_sensor_tendrils_clicking");
@@ -91,8 +94,9 @@ public abstract class GameEvent implements Keyed {
     public static final GameEvent STEP = getEvent("step");
     public static final GameEvent SWIM = getEvent("swim");
     public static final GameEvent TELEPORT = getEvent("teleport");
+    public static final GameEvent UNEQUIP = getEvent("unequip");
     @Deprecated
-    public static final GameEvent WOLF_SHAKING = getEvent("entity_shake");
+    public static final GameEvent WOLF_SHAKING = getEvent("entity_action");
     public static final GameEvent RESONATE_1 = getEvent("resonate_1");
     public static final GameEvent RESONATE_2 = getEvent("resonate_2");
     public static final GameEvent RESONATE_3 = getEvent("resonate_3");
