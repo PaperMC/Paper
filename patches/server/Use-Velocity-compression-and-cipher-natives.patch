@@ -9,8 +9,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -0,0 +0,0 @@ dependencies {
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
-     runtimeOnly("com.mysql:mysql-connector-j:8.0.33")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.43.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 +    // Paper start - Use Velocity cipher
 +    implementation("com.velocitypowered:velocity-native:3.1.2-SNAPSHOT") {
@@ -131,18 +131,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
                  }
  
-+                // Paper start
-+                if (this.inflater != null) {
-                 byte[] bs = new byte[friendlyByteBuf.readableBytes()];
-                 friendlyByteBuf.readBytes(bs);
-                 this.inflater.setInput(bs);
-@@ -0,0 +0,0 @@ public class CompressionDecoder extends ByteToMessageDecoder {
-                 this.inflater.inflate(cs);
-                 list.add(Unpooled.wrappedBuffer(cs));
++                if (inflater != null) { // Paper - use velocity compression - fallback to vanilla inflater
+                 this.setupInflaterInput(byteBuf);
+                 ByteBuf byteBuf2 = this.inflate(channelHandlerContext, i);
                  this.inflater.reset();
-+                    return;
-+                }
+                 list.add(byteBuf2);
++                return; // Paper - use velocity compression
++                } // Paper - use velocity compression
 +
++                // Paper start - use velocity compression
 +                int claimedUncompressedSize = i; // OBFHELPER
 +                ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), this.compressor, byteBuf);
 +                ByteBuf uncompressed = com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(channelHandlerContext.alloc(), this.compressor, claimedUncompressedSize);
@@ -156,7 +153,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                } finally {
 +                    compatibleIn.release();
 +                }
-+                // Paper end
++                // Paper end - use velocity compression
              }
          }
      }
@@ -170,9 +167,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     public void setThreshold(int compressionThreshold, boolean rejectsBadPackets) {
-         this.threshold = compressionThreshold;
-         this.validateDecompressed = rejectsBadPackets;
+     private void setupInflaterInput(ByteBuf buf) {
+         ByteBuffer byteBuffer;
+         if (buf.nioBufferCount() > 0) {
 diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/CompressionEncoder.java
@@ -208,16 +205,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) {
 +    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception { // Paper
          int i = byteBuf.readableBytes();
-         FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(byteBuf2);
          if (i < this.threshold) {
-             friendlyByteBuf.writeVarInt(0);
-             friendlyByteBuf.writeBytes(byteBuf);
+             VarInt.write(byteBuf2, 0);
+             byteBuf2.writeBytes(byteBuf);
          } else {
 +            // Paper start
 +            if (this.deflater != null) {
              byte[] bs = new byte[i];
              byteBuf.readBytes(bs);
-             friendlyByteBuf.writeVarInt(bs.length);
+             VarInt.write(byteBuf2, bs.length);
 @@ -0,0 +0,0 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
              }
  
@@ -339,7 +335,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
              this.channels.add(((ServerBootstrap) ((ServerBootstrap) (new ServerBootstrap()).channel(oclass)).childHandler(new ChannelInitializer<Channel>() {
                  protected void initChannel(Channel channel) {
-                     try {
+                     Connection.setInitialProtocolAttributes(channel);
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
