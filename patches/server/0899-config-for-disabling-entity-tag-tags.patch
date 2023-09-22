@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 15 Sep 2021 14:52:42 -0700
+Subject: [PATCH] config for disabling entity tag tags
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 0d38fe5a88af0afce85b8be7051d0e2f43f0ac34..ee3db367162ce075ff420fd724484a8593da0fe7 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -493,6 +493,13 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+                 if (world.isClientSide || !entity.onlyOpCanSetNbt() || player != null && minecraftserver.getPlayerList().isOp(player.getGameProfile())) {
+                     CompoundTag nbttagcompound1 = entity.saveWithoutId(new CompoundTag());
+                     UUID uuid = entity.getUUID();
++                    // Paper start - filter out protected tags
++                    if (player == null || !player.getBukkitEntity().hasPermission("minecraft.nbt.place")) {
++                        for (net.minecraft.commands.arguments.NbtPathArgument.NbtPath tag : world.paperConfig().entities.spawning.filteredEntityTagNbtPaths) {
++                            tag.remove(itemNbt.getCompound("EntityTag"));
++                        }
++                    }
++                    // Paper end
+ 
+                     nbttagcompound1.merge(itemNbt.getCompound("EntityTag"));
+                     entity.setUUID(uuid);
