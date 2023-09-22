@@ -10,8 +10,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/co/aikar/timings/MinecraftTimings.java
 +++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
 @@ -0,0 +0,0 @@ public final class MinecraftTimings {
-     public static final Timing antiXrayUpdateTimer = Timings.ofSafe("anti-xray - update");
-     public static final Timing antiXrayObfuscateTimer = Timings.ofSafe("anti-xray - obfuscate");
+     public static final Timing scoreboardScoreSearch = Timings.ofSafe("Scoreboard score search"); // Paper - add timings for scoreboard search
+ 
  
 +    public static final Timing midTickChunkTasks = Timings.ofSafe("Mid Tick Chunk Tasks");
 +
@@ -110,22 +110,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-                 Collections.shuffle(shuffled);
-                 iterator1 = shuffled.iterator();
-             }
-+
+             // Paper end
+             Iterator iterator1 = list.iterator();
+ 
 +            int chunksTicked = 0; // Paper
-             try {
              while (iterator1.hasNext()) {
-                 LevelChunk chunk1 = iterator1.next();
+                 ServerChunkCache.ChunkAndHolder chunkproviderserver_a = (ServerChunkCache.ChunkAndHolder) iterator1.next();
+                 LevelChunk chunk1 = chunkproviderserver_a.chunk;
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
  
-                     if (true || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) { // Paper - the chunk is known ticking
+                     if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
                          this.level.tickChunk(chunk1, k);
 +                        if ((chunksTicked++ & 1) == 0) net.minecraft.server.MinecraftServer.getServer().executeMidTickTasks(); // Paper
                      }
                  }
-                 // Paper start - optimise chunk tick iteration
+             }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java

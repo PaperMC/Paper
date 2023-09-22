@@ -24,7 +24,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // re-create map each time because a nms MobEffect can have its attributes modified
 +        final java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> attributeMap = new java.util.HashMap<>();
 +        this.handle.getAttributeModifiers().forEach((attribute, attributeModifier) -> {
-+            attributeMap.put(org.bukkit.craftbukkit.attribute.CraftAttributeMap.fromMinecraft(attribute.toString()), org.bukkit.craftbukkit.attribute.CraftAttributeInstance.convert(attributeModifier));
++            attributeMap.put(
++                org.bukkit.craftbukkit.attribute.CraftAttributeMap.fromMinecraft(attribute.toString()),
++                // use zero as amplifier to get the base amount, as it is amount = base * (amplifier + 1)
++                org.bukkit.craftbukkit.attribute.CraftAttributeInstance.convert(attributeModifier.create(0))
++            );
 +        });
 +        return java.util.Map.copyOf(attributeMap);
 +    }
@@ -34,7 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        com.google.common.base.Preconditions.checkArgument(effectAmplifier >= 0, "effectAmplifier must be greater than or equal to 0");
 +        net.minecraft.world.entity.ai.attributes.Attribute nmsAttribute = org.bukkit.craftbukkit.attribute.CraftAttributeMap.toMinecraft(attribute);
 +        com.google.common.base.Preconditions.checkArgument(this.handle.getAttributeModifiers().containsKey(nmsAttribute), attribute + " is not present on " + this.getKey());
-+        return this.handle.getAttributeModifierValue(effectAmplifier, this.handle.getAttributeModifiers().get(nmsAttribute));
++        return this.handle.getAttributeModifiers().get(nmsAttribute).create(effectAmplifier).getAmount();
 +    }
 +
 +    @Override

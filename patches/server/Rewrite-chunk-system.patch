@@ -16818,60 +16818,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/Connection.java
-+++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     @Nullable
-     BandwidthDebugMonitor bandwidthDebugMonitor;
-     public String hostname = ""; // CraftBukkit - add field
-+    // Paper start - add pending task queue
-+    private final Queue<Runnable> pendingTasks = new java.util.concurrent.ConcurrentLinkedQueue<>();
-+    public void execute(final Runnable run) {
-+        if (this.channel == null || !this.channel.isRegistered()) {
-+            run.run();
-+            return;
-+        }
-+        final boolean queue = !this.queue.isEmpty();
-+        if (!queue) {
-+            this.channel.eventLoop().execute(run);
-+        } else {
-+            this.pendingTasks.add(run);
-+            if (this.queue.isEmpty()) {
-+                // something flushed async, dump tasks now
-+                Runnable r;
-+                while ((r = this.pendingTasks.poll()) != null) {
-+                    this.channel.eventLoop().execute(r);
-+                }
-+            }
-+        }
-+    }
-+    // Paper end - add pending task queue
- 
-     public Connection(PacketFlow side) {
-         this.receiving = side;
-@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     }
- 
-     private void flushQueue() {
-+        try { // Paper - add pending task queue
-         if (this.channel != null && this.channel.isOpen()) {
-             Queue queue = this.pendingActions;
- 
-@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
- 
-             }
-         }
-+        } finally { // Paper start - add pending task queue
-+            Runnable r;
-+            while ((r = this.pendingTasks.poll()) != null) {
-+                this.channel.eventLoop().execute(r);
-+            }
-+        } // Paper end - add pending task queue
-     }
- 
-     public void tick() {
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
@@ -22182,7 +22128,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final IntBuffer timestamps;
      @VisibleForTesting
      protected final RegionBitmap usedSectors;
-+    public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
++    public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
  
      public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
          this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync);

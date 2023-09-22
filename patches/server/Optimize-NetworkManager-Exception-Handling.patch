@@ -8,37 +8,28 @@ diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
 +++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
-@@ -0,0 +0,0 @@ public enum ConnectionProtocol implements BundlerInfo.Provider {
+@@ -0,0 +0,0 @@ public enum ConnectionProtocol {
  
          @Nullable
          public Packet<?> createPacket(int id, FriendlyByteBuf buf) {
 +            if (id < 0 || id >= this.idToDeserializer.size()) return null; // Paper
-             Function<FriendlyByteBuf, ? extends Packet<T>> function = this.idToDeserializer.get(id);
+             Function<FriendlyByteBuf, ? extends Packet<? super T>> function = this.idToDeserializer.get(id);
              return function != null ? function.apply(buf) : null;
          }
 diff --git a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
 +++ b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
-@@ -0,0 +0,0 @@ import io.netty.handler.codec.CorruptedFrameException;
- import java.util.List;
+@@ -0,0 +0,0 @@ public class Varint21FrameDecoder extends ByteToMessageDecoder {
+     }
  
- public class Varint21FrameDecoder extends ByteToMessageDecoder {
-+    private final byte[] lenBuf = new byte[3]; // Paper
-+    @Override
      protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
 +        // Paper start - if channel is not active just discard the packet
 +        if (!channelHandlerContext.channel().isActive()) {
 +            byteBuf.skipBytes(byteBuf.readableBytes());
 +            return;
 +        }
-+        // Paper end
++        // Paper end - if channel is not active just discard the packet
          byteBuf.markReaderIndex();
--        byte[] bs = new byte[3];
-+        // Paper start - reuse temporary length buffer
-+        byte[] bs = lenBuf;
-+        java.util.Arrays.fill(bs, (byte) 0);
-+        // Paper end
- 
-         for(int i = 0; i < bs.length; ++i) {
-             if (!byteBuf.isReadable()) {
+         this.helperBuf.clear();
+         if (!copyVarint(byteBuf, this.helperBuf)) {
