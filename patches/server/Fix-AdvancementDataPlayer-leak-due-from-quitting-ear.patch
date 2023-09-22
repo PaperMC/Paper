@@ -15,11 +15,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.world.level.storage.loot.LootContext;
  
- public abstract class SimpleCriterionTrigger<T extends AbstractCriterionTriggerInstance> implements CriterionTrigger<T> {
+ public abstract class SimpleCriterionTrigger<T extends SimpleCriterionTrigger.SimpleInstance> implements CriterionTrigger<T> {
 -    private final Map<PlayerAdvancements, Set<CriterionTrigger.Listener<T>>> players = Maps.newIdentityHashMap();
-+    //private final Map<PlayerAdvancements, Set<CriterionTrigger.Listener<T>>> players = Maps.newIdentityHashMap(); // Paper - moved into AdvancementDataPlayer to fix memory leak
-+
-+    public SimpleCriterionTrigger() {}
++    // private final Map<PlayerAdvancements, Set<CriterionTrigger.Listener<T>>> players = Maps.newIdentityHashMap(); // Paper - moved into AdvancementDataPlayer to fix memory leak
  
      @Override
      public final void addPlayerListener(PlayerAdvancements manager, CriterionTrigger.Listener<T> conditions) {
@@ -41,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
-@@ -0,0 +0,0 @@ public abstract class SimpleCriterionTrigger<T extends AbstractCriterionTriggerI
+@@ -0,0 +0,0 @@ public abstract class SimpleCriterionTrigger<T extends SimpleCriterionTrigger.Si
  
      @Override
      public final void removePlayerListeners(PlayerAdvancements tracker) {
@@ -49,8 +47,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        tracker.criterionData.remove(this); // Paper - fix AdvancementDataPlayer leak
      }
  
-     protected abstract T createInstance(JsonObject obj, ContextAwarePredicate playerPredicate, DeserializationContext predicateDeserializer);
-@@ -0,0 +0,0 @@ public abstract class SimpleCriterionTrigger<T extends AbstractCriterionTriggerI
+     protected abstract T createInstance(JsonObject obj, Optional<ContextAwarePredicate> predicate, DeserializationContext predicateDeserializer);
+@@ -0,0 +0,0 @@ public abstract class SimpleCriterionTrigger<T extends SimpleCriterionTrigger.Si
  
      protected void trigger(ServerPlayer player, Predicate<T> predicate) {
          PlayerAdvancements playerAdvancements = player.getAdvancements();
@@ -64,10 +62,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/PlayerAdvancements.java
 +++ b/src/main/java/net/minecraft/server/PlayerAdvancements.java
 @@ -0,0 +0,0 @@ public class PlayerAdvancements {
-     @Nullable
-     private Advancement lastSelectedTab;
+     private AdvancementHolder lastSelectedTab;
      private boolean isFirstPacket = true;
-+    public final Map<net.minecraft.advancements.critereon.SimpleCriterionTrigger, Set<CriterionTrigger.Listener>> criterionData = new java.util.IdentityHashMap<>(); // Paper - fix advancement data player leakage
+     private final Codec<PlayerAdvancements.Data> codec;
++    public final Map<net.minecraft.advancements.critereon.SimpleCriterionTrigger<?>, Set<CriterionTrigger.Listener<?>>> criterionData = new java.util.IdentityHashMap<>(); // Paper - fix advancement data player leakage
  
      public PlayerAdvancements(DataFixer dataFixer, PlayerList playerManager, ServerAdvancementManager advancementLoader, Path filePath, ServerPlayer owner) {
-         this.dataFixer = dataFixer;
+         this.playerList = playerManager;

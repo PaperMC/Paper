@@ -4,34 +4,25 @@ Date: Sat, 11 Apr 2020 13:10:58 +0200
 Subject: [PATCH] Brand support
 
 
-diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     private int latency;
+     private volatile boolean suspendFlushingOnServerThread = false;
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
-     private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper
++    private @Nullable String clientBrandName = null; // Paper - Brand name
++    protected static final ResourceLocation MINECRAFT_BRAND = new ResourceLocation("brand"); // Paper - Brand support
  
-+    private String clientBrandName = null; // Paper - Brand name
-+
-     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
-         this.lastChatTimeStamp = new AtomicReference(Instant.EPOCH);
-         this.lastSeenMessages = new LastSeenMessagesValidator(20);
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-     private static final ResourceLocation CUSTOM_REGISTER = new ResourceLocation("register");
-     private static final ResourceLocation CUSTOM_UNREGISTER = new ResourceLocation("unregister");
- 
-+    private static final ResourceLocation MINECRAFT_BRAND = new ResourceLocation("brand"); // Paper - Brand support
-+
-     @Override
-     public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
-         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     public ServerCommonPacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, CommonListenerCookie commonlistenercookie, ServerPlayer player) { // CraftBukkit
+         this.server = minecraftserver;
+@@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
              try {
-                 byte[] data = new byte[packet.data.readableBytes()];
-                 packet.data.readBytes(data);
+                 byte[] data = new byte[payload.readableBytes()];
+                 payload.readBytes(data);
 +                // Paper start - Brand support
-+                if (packet.identifier.equals(MINECRAFT_BRAND)) {
++                if (identifier.equals(MINECRAFT_BRAND)) {
 +                    try {
 +                        this.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.copiedBuffer(data)).readUtf(256);
 +                    } catch (StringIndexOutOfBoundsException ex) {
@@ -39,16 +30,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +                }
 +                // Paper end
-                 this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), packet.identifier.toString(), data);
+                 this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      }
  
 +    // Paper start - brand support
++    @Nullable
 +    public String getClientBrandName() {
-+        return clientBrandName;
++        return this.clientBrandName;
 +    }
 +    // Paper end
 +
