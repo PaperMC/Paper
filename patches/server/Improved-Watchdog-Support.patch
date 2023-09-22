@@ -92,7 +92,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-         Thread thread = new Thread(() -> {
+         Thread thread = new io.papermc.paper.util.TickThread(() -> { // Paper - rewrite chunk system
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      // CraftBukkit start
@@ -122,12 +122,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.metricsRecorder.isRecording()) {
              this.cancelRecordingMetrics();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.getProfileCache().save(false); // Paper
          }
          // Spigot end
- 
 +        // Paper start - move final shutdown items here
 +        LOGGER.info("Flushing Chunk IO");
-+        // TODO chunk system patch has a line here
++        // Paper end - move final shutdown items here
+         io.papermc.paper.chunk.system.io.RegionFileIOThread.close(true); // Paper // Paper - rewrite chunk system
++        // Paper start - move final shutdown items here
 +        LOGGER.info("Closing Thread Pool");
 +        Util.shutdownExecutors(); // Paper
 +        LOGGER.info("Closing Server");
@@ -136,7 +138,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } catch (Exception e) {
 +        }
 +        this.onServerExit();
-+        // Paper end
++        // Paper end - move final shutdown items here
      }
  
      public String getLocalIp() {
@@ -474,14 +476,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -0,0 +0,0 @@ import org.bukkit.Bukkit;
- public class WatchdogThread extends Thread
+ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Paper - rewrite chunk system
  {
  
 +    public static final boolean DISABLE_WATCHDOG = Boolean.getBoolean("disable.watchdog"); // Paper
      private static WatchdogThread instance;
      private long timeoutTime;
      private boolean restart;
-@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
      {
          if ( WatchdogThread.instance == null )
          {
@@ -489,7 +491,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              WatchdogThread.instance = new WatchdogThread( timeoutTime * 1000L, restart );
              WatchdogThread.instance.start();
          } else
-@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
              // Paper start
              Logger log = Bukkit.getServer().getLogger();
              long currentTime = WatchdogThread.monotonicMillis();
@@ -506,7 +508,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  lastEarlyWarning = currentTime;
                  if (isLongTimeout) {
                  // Paper end
-@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
  
                  if ( isLongTimeout )
                  {
