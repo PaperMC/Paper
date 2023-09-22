@@ -148,22 +148,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - optimise out extra getCubes
 +    private boolean hasNewCollision(final ServerLevel world, final Entity entity, final AABB oldBox, final AABB newBox) {
-+        final List<AABB> collisions = io.papermc.paper.util.CachedLists.getTempCollisionList();
-+        try {
-+            io.papermc.paper.util.CollisionUtil.getCollisions(world, entity, newBox, collisions, false, true,
-+                true, false, null, null);
++        final List<AABB> collisionsBB = new java.util.ArrayList<>();
++        final List<VoxelShape> collisionsVoxel = new java.util.ArrayList<>();
++        io.papermc.paper.util.CollisionUtil.getCollisions(
++            world, entity, newBox, collisionsVoxel, collisionsBB,
++            io.papermc.paper.util.CollisionUtil.COLLISION_FLAG_COLLIDE_WITH_UNLOADED_CHUNKS | io.papermc.paper.util.CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
++            null, null
++        );
 +
-+            for (int i = 0, len = collisions.size(); i < len; ++i) {
-+                final AABB box = collisions.get(i);
-+                if (!io.papermc.paper.util.CollisionUtil.voxelShapeIntersect(box, oldBox)) {
-+                    return true;
-+                }
++        for (int i = 0, len = collisionsBB.size(); i < len; ++i) {
++            final AABB box = collisionsBB.get(i);
++            if (!io.papermc.paper.util.CollisionUtil.voxelShapeIntersect(box, oldBox)) {
++                return true;
 +            }
-+
-+            return false;
-+        } finally {
-+            io.papermc.paper.util.CachedLists.returnTempCollisionList(collisions);
 +        }
++
++        for (int i = 0, len = collisionsVoxel.size(); i < len; ++i) {
++            final VoxelShape voxel = collisionsVoxel.get(i);
++            if (!io.papermc.paper.util.CollisionUtil.voxelShapeIntersectNoEmpty(voxel, oldBox)) {
++                return true;
++            }
++        }
++
++        return false;
 +    }
 +    // Paper end - optimise out extra getCubes
      private boolean isPlayerCollidingWithAnythingNew(LevelReader world, AABB box, double newX, double newY, double newZ) {
