@@ -33,7 +33,7 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index ddcc212ba83d9365adb842b3d3ced64e3d7dd155..584985272a02eb5b61a22cf2404fbd97a55a3358 100644
+index 9e65b56fd2d5af6be305efa08e7c569e6598343a..bbf84e05d8c2ac5ad8e3837756421b6bda65f91c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -18,8 +18,12 @@ import java.nio.file.LinkOption;
@@ -49,15 +49,15 @@ index ddcc212ba83d9365adb842b3d3ced64e3d7dd155..584985272a02eb5b61a22cf2404fbd97
  import net.minecraft.world.level.ChunkPos;
  import org.slf4j.Logger;
  
-@@ -45,6 +49,7 @@ public class RegionFile implements AutoCloseable {
+@@ -44,6 +48,7 @@ public class RegionFile implements AutoCloseable {
+     private final IntBuffer timestamps;
      @VisibleForTesting
      protected final RegionBitmap usedSectors;
-     public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
 +    public final Path regionFile; // Paper
  
      public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
          this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync);
-@@ -52,6 +57,8 @@ public class RegionFile implements AutoCloseable {
+@@ -51,6 +56,8 @@ public class RegionFile implements AutoCloseable {
  
      public RegionFile(Path file, Path directory, RegionFileVersion outputChunkStreamVersion, boolean dsync) throws IOException {
          this.header = ByteBuffer.allocateDirect(8192);
@@ -66,7 +66,7 @@ index ddcc212ba83d9365adb842b3d3ced64e3d7dd155..584985272a02eb5b61a22cf2404fbd97
          this.usedSectors = new RegionBitmap();
          this.version = outputChunkStreamVersion;
          if (!Files.isDirectory(directory, new LinkOption[0])) {
-@@ -430,6 +437,74 @@ public class RegionFile implements AutoCloseable {
+@@ -420,6 +427,74 @@ public class RegionFile implements AutoCloseable {
  
      }
  
@@ -142,21 +142,10 @@ index ddcc212ba83d9365adb842b3d3ced64e3d7dd155..584985272a02eb5b61a22cf2404fbd97
  
          private final ChunkPos pos;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 4c1b1ac36ef09a9cc8da6e8ee71f82d4a67478df..96f129cb13642dc9667464b58c025fa0ed700cfd 100644
+index 81710e2853a75a47edd0abf3f5b30f8558b5abcd..e7aa20ec84fcbe74ca2a1a11697e083d713d6a1a 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -11,8 +11,10 @@ import java.nio.file.Path;
- import javax.annotation.Nullable;
- import net.minecraft.FileUtil;
- import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.nbt.ListTag;
- import net.minecraft.nbt.NbtIo;
- import net.minecraft.nbt.StreamTagVisitor;
-+import net.minecraft.nbt.Tag;
- import net.minecraft.util.ExceptionCollector;
- import net.minecraft.world.level.ChunkPos;
- 
-@@ -120,6 +122,71 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -53,6 +53,71 @@ public final class RegionFileStorage implements AutoCloseable {
          }
      }
  
@@ -203,8 +192,8 @@ index 4c1b1ac36ef09a9cc8da6e8ee71f82d4a67478df..96f129cb13642dc9667464b58c025fa0
 +    }
 +
 +    private static void mergeChunkList(CompoundTag level, CompoundTag oversizedLevel, String key, String oversizedKey) {
-+        ListTag levelList = level.getList(key, 10);
-+        ListTag oversizedList = oversizedLevel.getList(oversizedKey, 10);
++        net.minecraft.nbt.ListTag levelList = level.getList(key, 10);
++        net.minecraft.nbt.ListTag oversizedList = oversizedLevel.getList(oversizedKey, 10);
 +
 +        if (!oversizedList.isEmpty()) {
 +            levelList.addAll(oversizedList);
@@ -212,7 +201,7 @@ index 4c1b1ac36ef09a9cc8da6e8ee71f82d4a67478df..96f129cb13642dc9667464b58c025fa0
 +        }
 +    }
 +
-+    private static int getNBTSize(Tag nbtBase) {
++    private static int getNBTSize(net.minecraft.nbt.Tag nbtBase) {
 +        DataOutputStream test = new DataOutputStream(new org.apache.commons.io.output.NullOutputStream());
 +        try {
 +            nbtBase.write(test);
@@ -228,8 +217,8 @@ index 4c1b1ac36ef09a9cc8da6e8ee71f82d4a67478df..96f129cb13642dc9667464b58c025fa0
      @Nullable
      public CompoundTag read(ChunkPos pos) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-@@ -131,6 +198,12 @@ public class RegionFileStorage implements AutoCloseable {
-         try { // Paper
+@@ -63,6 +128,12 @@ public final class RegionFileStorage implements AutoCloseable {
+         // CraftBukkit end
          DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
  
 +        // Paper start
@@ -241,7 +230,7 @@ index 4c1b1ac36ef09a9cc8da6e8ee71f82d4a67478df..96f129cb13642dc9667464b58c025fa0
          CompoundTag nbttagcompound;
          label43:
          {
-@@ -217,6 +290,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -141,6 +212,7 @@ public final class RegionFileStorage implements AutoCloseable {
  
              try {
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);

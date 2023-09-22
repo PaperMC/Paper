@@ -22,18 +22,18 @@ it only impacts data sent from the client.
 Set -DPaper.maxSignLength=XX to change limit or -1 to disable
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 6b49981d61e910d8d8fa09ff091359754e6d09a3..593f017a43153c081f007073926fa4f520bded00 100644
+index aed6d2420afeb404b5542f19d7424b6c14d0b636..717f23a92017a589e639c09e15377e30f602d8fe 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -302,6 +302,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -288,6 +288,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      private final MessageSignatureCache messageSignatureCache;
      private final FutureChain chatMessageChain;
-     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
+     private boolean waitingForSwitchToConfig;
 +    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper
  
-     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
-         this.lastChatTimeStamp = new AtomicReference(Instant.EPOCH);
-@@ -3189,7 +3190,19 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie clientData) {
+         super(server, connection, clientData, player); // CraftBukkit
+@@ -3044,7 +3045,19 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void handleSignUpdate(ServerboundSignUpdatePacket packet) {

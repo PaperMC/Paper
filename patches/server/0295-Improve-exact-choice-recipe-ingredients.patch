@@ -143,18 +143,18 @@ index 0000000000000000000000000000000000000000..413dfa52760db393ad6a8b5341200ee7
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java b/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java
-index c8e9e85728d6b60bb829e69c015ab3c5172afd54..86cc516a6d4e8c64497479ec128d4e8d73667cfa 100644
+index 4303f2b4e55191f8a53170435c6d1263782d1c8d..f5440ae9bbce231de06cf184fd0a8490cebfafde 100644
 --- a/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java
 +++ b/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java
-@@ -33,6 +33,7 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
+@@ -34,6 +34,7 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
              this.inventory = entity.getInventory();
              if (this.testClearGrid() || entity.isCreative()) {
                  this.stackedContents.clear();
 +                this.stackedContents.initialize(recipe); // Paper - better exact choice recipes
                  entity.getInventory().fillStackedContents(this.stackedContents);
                  this.menu.fillCraftSlotsStackedContents(this.stackedContents);
-                 if (this.stackedContents.canCraft(recipe, (IntList)null)) {
-@@ -79,7 +80,7 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
+                 if (this.stackedContents.canCraft(recipe.value(), (IntList)null)) {
+@@ -80,7 +81,7 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
              int l = k;
  
              for(int m : intList) {
@@ -163,7 +163,7 @@ index c8e9e85728d6b60bb829e69c015ab3c5172afd54..86cc516a6d4e8c64497479ec128d4e8d
                  if (n < l) {
                      l = n;
                  }
-@@ -96,10 +97,21 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
+@@ -97,10 +98,21 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
      @Override
      public void addItemToSlot(Iterator<Integer> inputs, int slot, int amount, int gridX, int gridY) {
          Slot slot2 = this.menu.getSlot(slot);
@@ -187,7 +187,7 @@ index c8e9e85728d6b60bb829e69c015ab3c5172afd54..86cc516a6d4e8c64497479ec128d4e8d
              }
          }
  
-@@ -129,8 +141,14 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
+@@ -130,8 +142,14 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
          return i;
      }
  
@@ -204,10 +204,10 @@ index c8e9e85728d6b60bb829e69c015ab3c5172afd54..86cc516a6d4e8c64497479ec128d4e8d
              ItemStack itemStack = this.inventory.getItem(i);
              if (!itemStack.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/world/entity/player/StackedContents.java b/src/main/java/net/minecraft/world/entity/player/StackedContents.java
-index ba5cd22ec5a0853b48fbc2b0ba271fb79a8af4dc..68d272e98f9e54c9b150c75c27a9ae545be842f6 100644
+index 5cc5f67284ad01c9154876252450552ed37f24bf..26b236a764177ac16d53f5cbaf83d3e21d015ebc 100644
 --- a/src/main/java/net/minecraft/world/entity/player/StackedContents.java
 +++ b/src/main/java/net/minecraft/world/entity/player/StackedContents.java
-@@ -20,8 +20,10 @@ import net.minecraft.world.item.crafting.Recipe;
+@@ -21,8 +21,10 @@ import net.minecraft.world.item.crafting.RecipeHolder;
  public class StackedContents {
      private static final int EMPTY = 0;
      public final Int2IntMap contents = new Int2IntOpenHashMap();
@@ -218,7 +218,7 @@ index ba5cd22ec5a0853b48fbc2b0ba271fb79a8af4dc..68d272e98f9e54c9b150c75c27a9ae54
          if (!stack.isDamaged() && !stack.isEnchanted() && !stack.hasCustomHoverName()) {
              this.accountStack(stack);
          }
-@@ -36,6 +38,7 @@ public class StackedContents {
+@@ -37,6 +39,7 @@ public class StackedContents {
          if (!stack.isEmpty()) {
              int i = getStackingIndex(stack);
              int j = Math.min(maxCount, stack.getCount());
@@ -226,7 +226,7 @@ index ba5cd22ec5a0853b48fbc2b0ba271fb79a8af4dc..68d272e98f9e54c9b150c75c27a9ae54
              this.put(i, j);
          }
  
-@@ -83,6 +86,23 @@ public class StackedContents {
+@@ -84,6 +87,23 @@ public class StackedContents {
          return itemId == 0 ? ItemStack.EMPTY : new ItemStack(Item.byId(itemId));
      }
  
@@ -250,7 +250,7 @@ index ba5cd22ec5a0853b48fbc2b0ba271fb79a8af4dc..68d272e98f9e54c9b150c75c27a9ae54
      public void clear() {
          this.contents.clear();
      }
-@@ -106,7 +126,7 @@ public class StackedContents {
+@@ -107,7 +127,7 @@ public class StackedContents {
              this.data = new BitSet(this.ingredientCount + this.itemCount + this.ingredientCount + this.ingredientCount * this.itemCount);
  
              for(int i = 0; i < this.ingredients.size(); ++i) {
@@ -296,34 +296,34 @@ index ba5cd22ec5a0853b48fbc2b0ba271fb79a8af4dc..68d272e98f9e54c9b150c75c27a9ae54
      }
  }
 diff --git a/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java b/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java
-index f551651ce2d8b29c4a5cd787f48dedbbb411b2cb..e30af1e639db0c89066e76915884e1a0bef584a3 100644
+index c864809c7d656cf8e3f1080c2c57aefd0a417240..760a429137350d8ae100e77273318f3ba1ccfcc5 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java
-@@ -7,7 +7,7 @@ import net.minecraft.world.Container;
+@@ -6,7 +6,7 @@ import net.minecraft.world.Container;
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.level.Level;
  
 -public abstract class AbstractCookingRecipe implements Recipe<Container> {
 +public abstract class AbstractCookingRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<Container> implements Recipe<Container> { // Paper - improve exact recipe choices
      protected final RecipeType<?> type;
-     protected final ResourceLocation id;
-     private final CookingBookCategory category;
-@@ -26,6 +26,7 @@ public abstract class AbstractCookingRecipe implements Recipe<Container> {
-         this.result = output;
+     protected final CookingBookCategory category;
+     protected final String group;
+@@ -23,6 +23,7 @@ public abstract class AbstractCookingRecipe implements Recipe<Container> {
+         this.result = result;
          this.experience = experience;
-         this.cookingTime = cookTime;
+         this.cookingTime = cookingTime;
 +        this.checkExactIngredients(); // Paper - improve exact recipe choices
      }
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/item/crafting/Recipe.java b/src/main/java/net/minecraft/world/item/crafting/Recipe.java
-index d1505698ce45bbc7f592a23111391542d01d2b28..f2cf1f30191e14c9e9b5b5e4a3f6d9346125e998 100644
+index 75ae978b577b6b2399e1476328114e94abd7d6c4..80387cd1bee2bd4c024073cee74222828f9f2c17 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/Recipe.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/Recipe.java
-@@ -68,4 +68,10 @@ public interface Recipe<C extends Container> {
+@@ -65,4 +65,10 @@ public interface Recipe<C extends Container> {
      }
  
-     org.bukkit.inventory.Recipe toBukkitRecipe(); // CraftBukkit
+     org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id); // CraftBukkit
 +
 +    // Paper start - improved exact choice recipes
 +    default boolean hasExactIngredients() {
@@ -332,10 +332,10 @@ index d1505698ce45bbc7f592a23111391542d01d2b28..f2cf1f30191e14c9e9b5b5e4a3f6d934
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java b/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
-index 9c1285e31d947f92e0b00149e342e793898e0d7c..6693dd51440da3f0fc338c4e2cb67d3222eed182 100644
+index 4430c1161c3316566158ab7286e21495edb38991..17bef91546fa85d401b263c3a69fbf464f290eca 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
-@@ -30,7 +30,7 @@ import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
+@@ -26,7 +26,7 @@ import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
  import org.bukkit.inventory.RecipeChoice;
  // CraftBukkit end
  
@@ -344,16 +344,16 @@ index 9c1285e31d947f92e0b00149e342e793898e0d7c..6693dd51440da3f0fc338c4e2cb67d32
  
      final int width;
      final int height;
-@@ -50,6 +50,7 @@ public class ShapedRecipe implements CraftingRecipe {
-         this.recipeItems = input;
-         this.result = output;
+@@ -44,6 +44,7 @@ public class ShapedRecipe implements CraftingRecipe {
+         this.recipeItems = ingredients;
+         this.result = result;
          this.showNotification = showNotification;
 +        this.checkExactIngredients(); // Paper - improve exact recipe choices
      }
  
-     public ShapedRecipe(ResourceLocation id, String group, CraftingBookCategory category, int width, int height, NonNullList<Ingredient> input, ItemStack output) {
+     public ShapedRecipe(String group, CraftingBookCategory category, int width, int height, NonNullList<Ingredient> ingredients, ItemStack result) {
 diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java b/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
-index 1023dcb80dfb978dd496ed0f96ca5832fadf0f87..2e60bdc44c33d434bfd9ca5bf8f75de799c6768c 100644
+index 7f78490ebf459595460ce656b9b9227e5d6b8de6..38f7d1ece27ec1a3deda21fb6a6f0e788c8ed718 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
 @@ -20,7 +20,7 @@ import org.bukkit.craftbukkit.inventory.CraftRecipe;
@@ -363,17 +363,17 @@ index 1023dcb80dfb978dd496ed0f96ca5832fadf0f87..2e60bdc44c33d434bfd9ca5bf8f75de7
 -public class ShapelessRecipe implements CraftingRecipe {
 +public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<CraftingContainer> implements CraftingRecipe { // Paper - improve exact recipe choices
  
-     private final ResourceLocation id;
      final String group;
-@@ -34,6 +34,7 @@ public class ShapelessRecipe implements CraftingRecipe {
+     final CraftingBookCategory category;
+@@ -32,6 +32,7 @@ public class ShapelessRecipe implements CraftingRecipe {
          this.category = category;
-         this.result = output;
-         this.ingredients = input;
+         this.result = result;
+         this.ingredients = ingredients;
 +        this.checkExactIngredients(); // Paper - improve exact recipe choices
      }
  
      // CraftBukkit start
-@@ -83,6 +84,7 @@ public class ShapelessRecipe implements CraftingRecipe {
+@@ -77,6 +78,7 @@ public class ShapelessRecipe implements CraftingRecipe {
  
      public boolean matches(CraftingContainer inventory, Level world) {
          StackedContents autorecipestackmanager = new StackedContents();
