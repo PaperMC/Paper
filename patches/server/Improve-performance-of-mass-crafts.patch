@@ -27,12 +27,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!world.isClientSide) {
              ServerPlayer entityplayer = (ServerPlayer) player;
              ItemStack itemstack = ItemStack.EMPTY;
--            Optional<CraftingRecipe> optional = world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world);
-+            final Recipe<?> currentRecipe = craftingInventory.getCurrentRecipe(); // Paper - check last recipe used first
-+            Optional<CraftingRecipe> optional = currentRecipe == null ? world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world) : world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world, currentRecipe.getId()).map(com.mojang.datafixers.util.Pair::getSecond); // Paper - check last recipe used first
+-            Optional<RecipeHolder<CraftingRecipe>> optional = world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world);
++            final RecipeHolder<?> currentRecipe = craftingInventory.getCurrentRecipe(); // Paper - check last recipe used first
++            Optional<RecipeHolder<CraftingRecipe>> optional = currentRecipe == null ? world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world) : world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world, currentRecipe.id()).map(com.mojang.datafixers.util.Pair::getSecond); // Paper - check last recipe used first
  
              if (optional.isPresent()) {
-                 CraftingRecipe recipecrafting = (CraftingRecipe) optional.get();
+                 RecipeHolder<CraftingRecipe> recipeholder = (RecipeHolder) optional.get();
 diff --git a/src/main/java/net/minecraft/world/inventory/ResultSlot.java b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/inventory/ResultSlot.java
@@ -42,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void onTake(Player player, ItemStack stack) {
          this.checkTakeAchievements(stack);
 -        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level());
-+        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level(), this.craftSlots.getCurrentRecipe() != null ? this.craftSlots.getCurrentRecipe().getId() : null); // Paper - check last recipe used first
++        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level(), this.craftSlots.getCurrentRecipe() != null ? this.craftSlots.getCurrentRecipe().id() : null); // Paper - check last recipe used first
  
          for(int i = 0; i < nonNullList.size(); ++i) {
              ItemStack itemStack = this.craftSlots.getItem(i);
@@ -51,33 +51,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 @@ -0,0 +0,0 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
-             T t0 = map.get(id); // CraftBukkit - decompile error
+             RecipeHolder<T> recipeholder = (RecipeHolder) map.get(id);
  
-             if (t0 != null && t0.matches(inventory, world)) {
-+                inventory.setCurrentRecipe(t0); // Paper
-                 return Optional.of(Pair.of(id, t0));
+             if (recipeholder != null && recipeholder.value().matches(inventory, world)) {
++                inventory.setCurrentRecipe(recipeholder); // Paper
+                 return Optional.of(Pair.of(id, recipeholder));
              }
          }
  
 +        inventory.setCurrentRecipe(null); // Paper - clear before it might be set again
          return map.entrySet().stream().filter((entry) -> {
-             return ((Recipe) entry.getValue()).matches(inventory, world);
+             return ((RecipeHolder) entry.getValue()).value().matches(inventory, world);
          }).findFirst().map((entry) -> {
 +            inventory.setCurrentRecipe(entry.getValue()); // Paper
-             return Pair.of((ResourceLocation) entry.getKey(), entry.getValue()); // CraftBukkit - decompile error
+             return Pair.of((ResourceLocation) entry.getKey(), (RecipeHolder) entry.getValue());
          });
      }
 @@ -0,0 +0,0 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
      }
  
      public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world) {
--        Optional<T> optional = this.getRecipeFor(type, inventory, world);
+-        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, inventory, world);
 +        // Paper start - check last recipe used first
 +        return this.getRemainingItemsFor(type, inventory, world, null);
 +    }
 +    public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world, @Nullable ResourceLocation firstToCheck) {
-+        Optional<T> optional = firstToCheck == null ? this.getRecipeFor(type, inventory, world) : this.getRecipeFor(type, inventory, world, firstToCheck).map(Pair::getSecond);
++        Optional<RecipeHolder<T>> optional = firstToCheck == null ? this.getRecipeFor(type, inventory, world) : this.getRecipeFor(type, inventory, world, firstToCheck).map(Pair::getSecond);
 +        // Paper end
  
          if (optional.isPresent()) {
-             return ((Recipe) optional.get()).getRemainingItems(inventory);
+             return ((RecipeHolder) optional.get()).value().getRemainingItems(inventory);
