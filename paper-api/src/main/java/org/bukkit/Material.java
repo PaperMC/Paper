@@ -1189,7 +1189,10 @@ public enum Material implements Keyed, Translatable {
     GREEN_TERRACOTTA(4105),
     RED_TERRACOTTA(5086),
     BLACK_TERRACOTTA(26691),
-    BARRIER(26453),
+    /**
+     * BlockData: {@link Waterlogged}
+     */
+    BARRIER(26453, Waterlogged.class),
     /**
      * BlockData: {@link Light}
      */
