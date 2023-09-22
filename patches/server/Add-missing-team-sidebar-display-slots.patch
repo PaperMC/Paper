@@ -5,19 +5,17 @@ Subject: [PATCH] Add missing team sidebar display slots
 
 == AT ==
 public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations
-public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations toBukkitSlot(I)Lorg/bukkit/scoreboard/DisplaySlot;
-public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations fromBukkitSlot(Lorg/bukkit/scoreboard/DisplaySlot;)I
+public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations toBukkitSlot(Lnet/minecraft/world/scores/DisplaySlot;)Lorg/bukkit/scoreboard/DisplaySlot;
+public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations fromBukkitSlot(Lorg/bukkit/scoreboard/DisplaySlot;)Lnet/minecraft/world/scores/DisplaySlot;
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java
-@@ -0,0 +0,0 @@ import org.bukkit.scoreboard.DisplaySlot;
- import org.bukkit.scoreboard.RenderType;
+@@ -0,0 +0,0 @@ import org.bukkit.scoreboard.RenderType;
  
  public final class CraftScoreboardTranslations {
--    static final int MAX_DISPLAY_SLOT = 19;
-+    static final int MAX_DISPLAY_SLOT = net.minecraft.world.scores.DisplaySlot.values().length; // Paper // TODO - revisit this.
+     static final int MAX_DISPLAY_SLOT = 19;
 +    @Deprecated // Paper
      static final ImmutableBiMap<DisplaySlot, String> SLOTS = ImmutableBiMap.<DisplaySlot, String>builder()
              .put(DisplaySlot.BELOW_NAME, "below_name")
@@ -43,18 +41,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private CraftScoreboardTranslations() {}
  
-     static DisplaySlot toBukkitSlot(net.minecraft.world.scores.DisplaySlot minecraft) {
-+        if (true) return org.bukkit.scoreboard.DisplaySlot.NAMES.value(minecraft.getSerializedName()); // Paper
+     public static DisplaySlot toBukkitSlot(net.minecraft.world.scores.DisplaySlot minecraft) {
++        if (true) return DisplaySlot.NAMES.value(minecraft.getSerializedName()); // Paper
          return CraftScoreboardTranslations.SLOTS.inverse().get(minecraft.getSerializedName());
      }
  
--    static net.minecraft.world.scores.DisplaySlot fromBukkitSlot(DisplaySlot slot) {
--        return net.minecraft.world.scores.DisplaySlot.CODEC.byName(CraftScoreboardTranslations.SLOTS.get(slot));
-+    public static net.minecraft.world.scores.DisplaySlot fromBukkitSlot(DisplaySlot slot) { // Paper - public for testing
-+        return net.minecraft.world.scores.DisplaySlot.CODEC.byName(slot.getId()); // Paper
+     public static net.minecraft.world.scores.DisplaySlot fromBukkitSlot(DisplaySlot slot) {
++        if (true) return net.minecraft.world.scores.DisplaySlot.CODEC.byName(slot.getId()); // Paper
+         return net.minecraft.world.scores.DisplaySlot.CODEC.byName(CraftScoreboardTranslations.SLOTS.get(slot));
      }
  
-     static RenderType toBukkitRender(ObjectiveCriteria.RenderType display) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
@@ -82,28 +78,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.scoreboard;
 +
-+import net.minecraft.world.scores.Scoreboard;
 +import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
 +import org.bukkit.scoreboard.DisplaySlot;
 +import org.junit.Test;
 +
-+import static org.junit.Assert.assertNotEquals;
 +import static org.junit.Assert.assertNotNull;
 +
 +public class DisplaySlotTest {
 +
 +    @Test
 +    public void testBukkitToMinecraftDisplaySlots() {
-+        for (DisplaySlot value : DisplaySlot.values()) {
-+            assertNotEquals(-1, CraftScoreboardTranslations.fromBukkitSlot(value));
++        for (DisplaySlot bukkitSlot : DisplaySlot.values()) {
++            assertNotNull(CraftScoreboardTranslations.fromBukkitSlot(bukkitSlot));
 +        }
 +    }
 +
 +    @Test
 +    public void testMinecraftToBukkitDisplaySlots() {
-+        // TODO https://github.com/PaperMC/Paper/issues/9742
-+        /*for (String name : Scoreboard.getDisplaySlotNames()) {
-+            assertNotNull(CraftScoreboardTranslations.toBukkitSlot(Scoreboard.getDisplaySlotByName(name)));
-+        }*/
++        for (net.minecraft.world.scores.DisplaySlot nmsSlot : net.minecraft.world.scores.DisplaySlot.values()) {
++            assertNotNull(CraftScoreboardTranslations.toBukkitSlot(nmsSlot));
++        }
 +    }
 +}
