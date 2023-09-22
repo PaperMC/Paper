@@ -5524,6 +5524,29 @@ index 666df22c8f847ef7152669540a3844566ef90d78..92095b494a0c4fb89b84f0b1c0376615
      public UUID getUUID(String key) {
          return NbtUtils.loadUUID(this.get(key));
      }
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index e7a124403f2b07c96caaaf97d1c9023f9ec2f9d9..5b267514504497de3faa7ffa490a179200d9415c 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -112,6 +112,18 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     BandwidthDebugMonitor bandwidthDebugMonitor;
+     public String hostname = ""; // CraftBukkit - add field
+ 
++    // Paper start - add utility methods
++    public final net.minecraft.server.level.ServerPlayer getPlayer() {
++        if (this.packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl impl) {
++            return impl.player;
++        } else if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
++            org.bukkit.craftbukkit.entity.CraftPlayer player = impl.getCraftPlayer();
++            return player == null ? null : player.getHandle();
++        }
++        return null;
++    }
++    // Paper end - add utility methods
++
+     public Connection(PacketFlow side) {
+         this.receiving = side;
+     }
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
 index 427959874b7f167184785a582163029ad4a66df2..344c5af75c4a66bb27f3f422937c6c427c15ed25 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
@@ -5537,6 +5560,71 @@ index 427959874b7f167184785a582163029ad4a66df2..344c5af75c4a66bb27f3f422937c6c42
                      if (packet.isSkippable()) {
                          throw new SkipPacketException(var13);
                      }
+diff --git a/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java b/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java
+index 929d31aa624f035eb314dece08969b102f5781fc..e94f0361cbca873f05b5b768c68c0933a0ca4483 100644
+--- a/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java
+@@ -38,4 +38,14 @@ public record ClientboundCustomQueryPacket(int transactionId, CustomQueryPayload
+     public void handle(ClientLoginPacketListener listener) {
+         listener.handleCustomQuery(this);
+     }
++
++    // Paper start - MC Utils - default query payloads
++    public static record PlayerInfoChannelPayload(ResourceLocation id, FriendlyByteBuf buffer) implements CustomQueryPayload {
++
++        @Override
++        public void write(final FriendlyByteBuf buf) {
++            buf.writeBytes(this.buffer.copy());
++        }
++    }
++    // Paper end - MC Utils - default query payloads
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java b/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
+index 44cac39893eb968aa8ea21ee571c0dcb866ce06c..953e7573f6b2ca73a8c27c4d63edec89b173f333 100644
+--- a/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
+@@ -15,7 +15,18 @@ public record ServerboundCustomQueryAnswerPacket(int transactionId, @Nullable Cu
+     }
+ 
+     private static CustomQueryAnswerPayload readPayload(int queryId, FriendlyByteBuf buf) {
+-        return readUnknownPayload(buf);
++        // Paper start - MC Utils - default query payloads
++        return new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(
++            buf.readNullable((buf2) -> {
++                int i = buf2.readableBytes();
++                if (i >= 0 && i <= MAX_PAYLOAD_SIZE) {
++                    return new FriendlyByteBuf(buf2.readBytes(i));
++                } else {
++                    throw new IllegalArgumentException("Payload may not be larger than " + MAX_PAYLOAD_SIZE + " bytes");
++                }
++            })
++        );
++        // Paper end - MC Utils - default query payloads
+     }
+ 
+     private static CustomQueryAnswerPayload readUnknownPayload(FriendlyByteBuf buf) {
+@@ -40,4 +51,21 @@ public record ServerboundCustomQueryAnswerPacket(int transactionId, @Nullable Cu
+     public void handle(ServerLoginPacketListener listener) {
+         listener.handleCustomQueryPacket(this);
+     }
++
++    // Paper start - MC Utils - default query payloads
++    public static final class QueryAnswerPayload implements CustomQueryAnswerPayload {
++
++        public final FriendlyByteBuf buffer;
++
++        public QueryAnswerPayload(final net.minecraft.network.FriendlyByteBuf buffer) {
++            this.buffer = buffer;
++        }
++
++        @Override
++        public void write(final net.minecraft.network.FriendlyByteBuf buf) {
++            buf.writeBytes(this.buffer.copy());
++        }
++    }
++    // Paper end - MC Utils - default query payloads
++
+ }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 124fad1031d6125bca233541e2d5f256da70ca44..2a7c614df7b9c9405a5dd23e6a888ede7fc86683 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java

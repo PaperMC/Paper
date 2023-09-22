@@ -39,10 +39,10 @@ public net.minecraft.server.network.ServerLoginPacketListenerImpl state
 public net.minecraft.server.network.ServerLoginPacketListenerImpl gameProfile
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 8af273d3aa3989e148ca93528754a13e1d1bf414..08361da4ebd301996b0aaafc58beb5ec6698ff44 100644
+index 6fcbf8205e1852d5193a42bfe1154f62ab01e7ad..9f8fbb8231b60c287c9442365c2f95cde92969b8 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -661,6 +661,26 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -644,6 +644,27 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                      packetlistener1.onDisconnect(ichatbasecomponent);
                  }
                  this.pendingActions.clear(); // Free up packet queue.
@@ -57,10 +57,11 @@ index 8af273d3aa3989e148ca93528754a13e1d1bf414..08361da4ebd301996b0aaafc58beb5ec
 +                    /* Player is login stage */
 +                    final net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener = (net.minecraft.server.network.ServerLoginPacketListenerImpl) packetListener;
 +                    switch (loginListener.state) {
-+                        case READY_TO_ACCEPT:
-+                        case DELAY_ACCEPT:
++                        case VERIFYING:
++                        case WAITING_FOR_DUPE_DISCONNECT:
++                        case PROTOCOL_SWITCHING:
 +                        case ACCEPTED:
-+                            final com.mojang.authlib.GameProfile profile = loginListener.gameProfile; /* Should be non-null at this stage */
++                            final com.mojang.authlib.GameProfile profile = loginListener.authenticatedProfile; /* Should be non-null at this stage */
 +                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(), profile.getName(),
 +                                ((java.net.InetSocketAddress)address).getAddress(), false).callEvent();
 +                    }
@@ -69,3 +70,16 @@ index 8af273d3aa3989e148ca93528754a13e1d1bf414..08361da4ebd301996b0aaafc58beb5ec
  
              }
          }
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index f870c20ecce27ebd893107a35e1b8f15e462ff85..c3e7a5f61e94d9905dc805bfc486819b61e143d1 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -58,7 +58,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     @Nullable
+     String requestedUsername;
+     @Nullable
+-    private GameProfile authenticatedProfile;
++    public GameProfile authenticatedProfile; // Paper - public
+     private final String serverId;
+     private ServerPlayer player; // CraftBukkit
+ 

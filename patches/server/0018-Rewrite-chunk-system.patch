@@ -16818,60 +16818,6 @@ index 0000000000000000000000000000000000000000..7e8dc9e8f381abfdcce2746edc93122d
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index e7a124403f2b07c96caaaf97d1c9023f9ec2f9d9..b097bb4855ab724b2c435a9a9db450ff3ce840fe 100644
---- a/src/main/java/net/minecraft/network/Connection.java
-+++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -111,6 +111,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     @Nullable
-     BandwidthDebugMonitor bandwidthDebugMonitor;
-     public String hostname = ""; // CraftBukkit - add field
-+    // Paper start - add pending task queue
-+    private final Queue<Runnable> pendingTasks = new java.util.concurrent.ConcurrentLinkedQueue<>();
-+    public void execute(final Runnable run) {
-+        if (this.channel == null || !this.channel.isRegistered()) {
-+            run.run();
-+            return;
-+        }
-+        final boolean queue = !this.queue.isEmpty();
-+        if (!queue) {
-+            this.channel.eventLoop().execute(run);
-+        } else {
-+            this.pendingTasks.add(run);
-+            if (this.queue.isEmpty()) {
-+                // something flushed async, dump tasks now
-+                Runnable r;
-+                while ((r = this.pendingTasks.poll()) != null) {
-+                    this.channel.eventLoop().execute(r);
-+                }
-+            }
-+        }
-+    }
-+    // Paper end - add pending task queue
- 
-     public Connection(PacketFlow side) {
-         this.receiving = side;
-@@ -368,6 +390,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     }
- 
-     private void flushQueue() {
-+        try { // Paper - add pending task queue
-         if (this.channel != null && this.channel.isOpen()) {
-             Queue queue = this.pendingActions;
- 
-@@ -380,6 +403,12 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
- 
-             }
-         }
-+        } finally { // Paper start - add pending task queue
-+            Runnable r;
-+            while ((r = this.pendingTasks.poll()) != null) {
-+                this.channel.eventLoop().execute(r);
-+            }
-+        } // Paper end - add pending task queue
-     }
- 
-     public void tick() {
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
 index a5e438a834826161c52ca9db57d234d9ff80a591..b8bc1b9b8e8a33df90a963f9f9769292bf595642 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
@@ -22175,14 +22121,14 @@ index 98b3909b536f11eda9c481ffd74066ad0cdb0ebc..0ec0be22f7292d57c40da6f1f4575bde
      }
  }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index d9daf07132c46548964a75588b69d7a74680e917..e68205fe7169c7c5b7c6fdada2ee97d86107ca97 100644
+index d9daf07132c46548964a75588b69d7a74680e917..5103081e8469dd5a393595eae00c6f6c9d0a5028 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -44,6 +44,7 @@ public class RegionFile implements AutoCloseable {
      private final IntBuffer timestamps;
      @VisibleForTesting
      protected final RegionBitmap usedSectors;
-+    public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
++    public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
  
      public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
          this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync);
