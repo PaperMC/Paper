@@ -21,7 +21,7 @@ index b81b99a7767e3b0d3549e49529e98efdb7334101..7df1b44674ba5e826ad7c96c9d242865
      runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.5")
      runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
 diff --git a/src/main/java/net/minecraft/network/CipherDecoder.java b/src/main/java/net/minecraft/network/CipherDecoder.java
-index 778beb445eac5769b9e4e07b4d1294c50ae2602b..c712fb8193115e1ab71b5e40fb0ccb9413062b03 100644
+index c76d406dd0ec9a65579b8cde293cff9306ce1c9d..937c47db17472f34ec6e783a81afad76ac0c252c 100644
 --- a/src/main/java/net/minecraft/network/CipherDecoder.java
 +++ b/src/main/java/net/minecraft/network/CipherDecoder.java
 @@ -7,13 +7,29 @@ import java.util.List;
@@ -59,7 +59,7 @@ index 778beb445eac5769b9e4e07b4d1294c50ae2602b..c712fb8193115e1ab71b5e40fb0ccb94
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/network/CipherEncoder.java b/src/main/java/net/minecraft/network/CipherEncoder.java
-index 0f3d502a9680006bcdcd7d272240a2e5c3b46790..5dd7be70603e8754d2625bb9d16900cb01b9c730 100644
+index fcfbf35a76f92875bc2e2a3b2d900420d91945a8..7ed0d37ecbf79e8642e8b730d8e81abeeed653ea 100644
 --- a/src/main/java/net/minecraft/network/CipherEncoder.java
 +++ b/src/main/java/net/minecraft/network/CipherEncoder.java
 @@ -4,15 +4,32 @@ import io.netty.buffer.ByteBuf;
@@ -102,7 +102,7 @@ index 0f3d502a9680006bcdcd7d272240a2e5c3b46790..5dd7be70603e8754d2625bb9d16900cb
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/network/CompressionDecoder.java b/src/main/java/net/minecraft/network/CompressionDecoder.java
-index 2758c257cb4e2b0497bd9243c635f8fe3dbc414c..a0bab433d003de49bf55e71fd744ce47d6899182 100644
+index 64767b4e542a78e91eafb83a40ef34fb9272598f..0d519b4e51909e62e9aae24f9ee98910d0e449aa 100644
 --- a/src/main/java/net/minecraft/network/CompressionDecoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionDecoder.java
 @@ -13,13 +13,20 @@ public class CompressionDecoder extends ByteToMessageDecoder {
@@ -171,26 +171,76 @@ index 2758c257cb4e2b0497bd9243c635f8fe3dbc414c..a0bab433d003de49bf55e71fd744ce47
          ByteBuffer byteBuffer;
          if (buf.nioBufferCount() > 0) {
 diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
-index 859af8c845bae9781a62fa4acae56c6e2d449e10..8eb4a47fe276591a547485646875366b48cddb49 100644
+index 0a8a00b2fcaf8ac171a5cce60a50ffd37de87b57..ec7239fd6a2ecf732d2843f9426e4cb69d166ce6 100644
 --- a/src/main/java/net/minecraft/network/CompressionEncoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionEncoder.java
-@@ -6,21 +6,36 @@ import io.netty.handler.codec.MessageToByteEncoder;
- import java.util.zip.Deflater;
- 
- public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+@@ -1,47 +1,100 @@
+-package net.minecraft.network;
+-
+-import io.netty.buffer.ByteBuf;
+-import io.netty.channel.ChannelHandlerContext;
+-import io.netty.handler.codec.MessageToByteEncoder;
+-import java.util.zip.Deflater;
+-
+-public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
 -    private final byte[] encodeBuf = new byte[8192];
+-    private final Deflater deflater;
+-    private int threshold;
+-
+-    public CompressionEncoder(int compressionThreshold) {
+-        this.threshold = compressionThreshold;
+-        this.deflater = new Deflater();
+-    }
+-
+-    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) {
+-        int i = byteBuf.readableBytes();
+-        if (i < this.threshold) {
+-            VarInt.write(byteBuf2, 0);
+-            byteBuf2.writeBytes(byteBuf);
+-        } else {
+-            byte[] bs = new byte[i];
+-            byteBuf.readBytes(bs);
+-            VarInt.write(byteBuf2, bs.length);
+-            this.deflater.setInput(bs, 0, i);
+-            this.deflater.finish();
+-
+-            while(!this.deflater.finished()) {
+-                int j = this.deflater.deflate(this.encodeBuf);
+-                byteBuf2.writeBytes(this.encodeBuf, 0, j);
+-            }
+-
+-            this.deflater.reset();
+-        }
+-
+-    }
+-
+-    public int getThreshold() {
+-        return this.threshold;
+-    }
+-
+-    public void setThreshold(int compressionThreshold) {
+-        this.threshold = compressionThreshold;
+-    }
+-}
++package net.minecraft.network;
++
++import io.netty.buffer.ByteBuf;
++import io.netty.channel.ChannelHandlerContext;
++import io.netty.handler.codec.MessageToByteEncoder;
++import java.util.zip.Deflater;
++
++public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
 +    private final byte[] encodeBuf; // Paper
-     private final Deflater deflater;
++    private final Deflater deflater;
 +    private final com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper
-     private int threshold;
- 
++    private int threshold;
++
 +    // Paper start
-     public CompressionEncoder(int compressionThreshold) {
++    public CompressionEncoder(int compressionThreshold) {
 +        this(null, compressionThreshold);
 +    }
 +    public CompressionEncoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold) {
-         this.threshold = compressionThreshold;
--        this.deflater = new Deflater();
++        this.threshold = compressionThreshold;
 +        if (compressor == null) {
 +            this.encodeBuf = new byte[8192];
 +            this.deflater = new Deflater();
@@ -200,28 +250,32 @@ index 859af8c845bae9781a62fa4acae56c6e2d449e10..8eb4a47fe276591a547485646875366b
 +        }
 +        this.compressor = compressor;
 +        // Paper end
-     }
- 
--    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) {
++    }
++
 +    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception { // Paper
-         int i = byteBuf.readableBytes();
-         if (i < this.threshold) {
-             VarInt.write(byteBuf2, 0);
-             byteBuf2.writeBytes(byteBuf);
-         } else {
++        int i = byteBuf.readableBytes();
++        if (i < this.threshold) {
++            VarInt.write(byteBuf2, 0);
++            byteBuf2.writeBytes(byteBuf);
++        } else {
 +            // Paper start
 +            if (this.deflater != null) {
-             byte[] bs = new byte[i];
-             byteBuf.readBytes(bs);
-             VarInt.write(byteBuf2, bs.length);
-@@ -33,10 +48,48 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
-             }
- 
-             this.deflater.reset();
++            byte[] bs = new byte[i];
++            byteBuf.readBytes(bs);
++            VarInt.write(byteBuf2, bs.length);
++            this.deflater.setInput(bs, 0, i);
++            this.deflater.finish();
++
++            while(!this.deflater.finished()) {
++                int j = this.deflater.deflate(this.encodeBuf);
++                byteBuf2.writeBytes(this.encodeBuf, 0, j);
++            }
++
++            this.deflater.reset();
 +                return;
 +            }
 +
-+            friendlyByteBuf.writeVarInt(i);
++            VarInt.write(byteBuf2, i);
 +            ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), this.compressor, byteBuf);
 +            try {
 +                this.compressor.deflate(compatibleIn, byteBuf2);
@@ -229,10 +283,10 @@ index 859af8c845bae9781a62fa4acae56c6e2d449e10..8eb4a47fe276591a547485646875366b
 +                compatibleIn.release();
 +            }
 +            // Paper end
-         }
- 
-     }
- 
++        }
++
++    }
++
 +    // Paper start
 +    @Override
 +    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, ByteBuf msg, boolean preferDirect) throws Exception{
@@ -260,9 +314,14 @@ index 859af8c845bae9781a62fa4acae56c6e2d449e10..8eb4a47fe276591a547485646875366b
 +    }
 +    // Paper end
 +
-     public int getThreshold() {
-         return this.threshold;
-     }
++    public int getThreshold() {
++        return this.threshold;
++    }
++
++    public void setThreshold(int compressionThreshold) {
++        this.threshold = compressionThreshold;
++    }
++}
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
 index 07fc88f8d057c59070e5de97b91c5bf5760ff09a..8ce56c24c0d8016b03ec626341609080e7cef232 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
