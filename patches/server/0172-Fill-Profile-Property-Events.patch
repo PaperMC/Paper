@@ -11,32 +11,42 @@ If Mojang API does need to be hit, event fire so you can get the results.
 This is useful for implementing a ProfileCache for Player Skulls
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java b/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
-index 93d73c27340645c7502acafdc0b2cfbc1a759dd8..5c7d2ee19243d0911a3a00af3ae42078a2ccba94 100644
+index ea906c9942be4c37b0daf866c759771af0b1e0ed..48fcfe223f807ccb903804adfead4b97beb2475d 100644
 --- a/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
 +++ b/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
-@@ -1,6 +1,8 @@
- package com.destroystokyo.paper.profile;
- 
- import com.mojang.authlib.Environment;
-+import com.destroystokyo.paper.event.profile.FillProfileEvent;
-+import com.destroystokyo.paper.event.profile.PreFillProfileEvent;
- import com.mojang.authlib.GameProfile;
- import com.mojang.authlib.minecraft.MinecraftProfileTexture;
- import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
-@@ -20,7 +22,15 @@ public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionServi
- 
-     @Override
-     public GameProfile fillProfileProperties(GameProfile profile, boolean requireSecure) {
--        return super.fillProfileProperties(profile, requireSecure);
-+        CraftPlayerProfile playerProfile = (CraftPlayerProfile) CraftPlayerProfile.asBukkitMirror(profile);
-+        new PreFillProfileEvent(playerProfile).callEvent();
-+        profile = playerProfile.getGameProfile();
-+        if (profile.isComplete() && profile.getProperties().containsKey("textures")) {
-+            return profile;
-+        }
-+        GameProfile gameProfile = super.fillProfileProperties(profile, requireSecure);
-+        new FillProfileEvent(CraftPlayerProfile.asBukkitMirror(gameProfile)).callEvent();
-+        return gameProfile;
+@@ -24,7 +24,21 @@ public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionServi
+         return super.getTextures(profile, requireSecure);
      }
  
-     @Override
+-    @Override
++    public @Nullable ProfileResult fetchProfile(GameProfile profile, final boolean requireSecure) {
++        CraftPlayerProfile playerProfile = (CraftPlayerProfile) CraftPlayerProfile.asBukkitMirror(profile);
++        new com.destroystokyo.paper.event.profile.PreFillProfileEvent(playerProfile).callEvent();
++        profile = playerProfile.getGameProfile();
++        if (profile.getProperties().containsKey("textures")) {
++            return new ProfileResult(profile, java.util.Collections.emptySet());
++        }
++        ProfileResult result = super.fetchProfile(profile.getId(), requireSecure);
++        if (result != null) {
++            new com.destroystokyo.paper.event.profile.FillProfileEvent(CraftPlayerProfile.asBukkitMirror(result.profile())).callEvent();
++        }
++        return result;
++    }
++
++    @Override @io.papermc.paper.annotation.DoNotUse @Deprecated
+     public @Nullable ProfileResult fetchProfile(final UUID profileId, final boolean requireSecure) {
+         return super.fetchProfile(profileId, requireSecure);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+index f5162f7171c348ff523b18e577246561d79e1c20..238b6cd88cb24ca63770db607f2241fcd7210574 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+@@ -216,7 +216,7 @@ public class SkullBlockEntity extends BlockEntity {
+             MinecraftSessionService minecraftsessionservice = SkullBlockEntity.sessionService;
+ 
+             if (minecraftsessionservice != null) {
+-                ProfileResult profileresult = minecraftsessionservice.fetchProfile(profile.getId(), true);
++                ProfileResult profileresult = minecraftsessionservice instanceof com.destroystokyo.paper.profile.PaperMinecraftSessionService paperMinecraftSessionService ? paperMinecraftSessionService.fetchProfile(profile, true) : minecraftsessionservice.fetchProfile(profile.getId(), true); // Paper
+ 
+                 return profileresult == null ? Optional.of(profile) : Optional.of(profileresult.profile());
+             } else {

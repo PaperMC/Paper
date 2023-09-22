@@ -252,20 +252,20 @@ index 0000000000000000000000000000000000000000..11de56afaf059b00fa5bec293516bcdc
 +    }
 +} 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index c00a625af27cdd80e2e4773ad93ff919f12acf31..5cc0a39622a265e42e6b7d20e81144d1acce59b7 100644
+index eb8b82514cc19ff5404c7558f93310d6629cb6d7..842f7423d113f23d4b95162c81d407efd765679a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -151,6 +151,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -147,6 +147,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final Long2LongMap chunkSaveCooldowns;
      private final Queue<Runnable> unloadQueue;
-     int viewDistance;
+     private int serverViewDistance;
 +    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
  
-     // Paper - rewrite chunk system
- 
-@@ -162,11 +163,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         int chunkX = MCUtil.getChunkCoordinate(player.getX());
-         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
+     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
+     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
+@@ -176,16 +177,32 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
+         int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
@@ -275,7 +275,6 @@ index c00a625af27cdd80e2e4773ad93ff919f12acf31..5cc0a39622a265e42e6b7d20e81144d1
      }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
-         this.level.playerChunkLoader.removePlayer(player); // Paper - replace chunk loader
  
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
@@ -285,10 +284,10 @@ index c00a625af27cdd80e2e4773ad93ff919f12acf31..5cc0a39622a265e42e6b7d20e81144d1
      }
  
      void updateMaps(ServerPlayer player) {
-@@ -174,6 +185,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
+         int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
+         int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
-         this.level.playerChunkLoader.updatePlayer(player); // Paper - replace chunk loader
++
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
 +            this.playerMobDistanceMap.update(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
@@ -297,7 +296,7 @@ index c00a625af27cdd80e2e4773ad93ff919f12acf31..5cc0a39622a265e42e6b7d20e81144d1
      }
      // Paper end
      // Paper start
-@@ -259,6 +275,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -276,6 +293,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
@@ -305,7 +304,7 @@ index c00a625af27cdd80e2e4773ad93ff919f12acf31..5cc0a39622a265e42e6b7d20e81144d1
      }
  
      protected ChunkGenerator generator() {
-@@ -284,6 +301,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -301,6 +319,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          });
      }
  
@@ -338,10 +337,10 @@ index c00a625af27cdd80e2e4773ad93ff919f12acf31..5cc0a39622a265e42e6b7d20e81144d1
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 5cb151a7d89c7281b03f24c5f79afb7edf7cbfea..d9743139d1cb932c6aac56da85f073e4dfe2933c 100644
+index 0f38bdf2c9a29f2111c27138b8d997c230633bb8..dd9b315c169398d12c592c549693f94922961ed1 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -543,7 +543,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -696,7 +696,18 @@ public class ServerChunkCache extends ChunkSource {
              gameprofilerfiller.push("naturalSpawnCount");
              this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
              int l = this.distanceManager.getNaturalSpawnChunkCount();
@@ -362,10 +361,10 @@ index 5cb151a7d89c7281b03f24c5f79afb7edf7cbfea..d9743139d1cb932c6aac56da85f073e4
  
              this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 4aea5b2e36f5cd6f9b076f9a225a391211ec0c25..a1f75dfbe975ff0150cb529266c3c0884c8e2d45 100644
+index 394f2b87010454ff2e4898f3ee5085c68d91952a..8af7966008a5f06c9a33f0c4396b940ecec623e8 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -248,6 +248,11 @@ public class ServerPlayer extends Player {
+@@ -246,6 +246,11 @@ public class ServerPlayer extends Player {
      public boolean queueHealthUpdatePacket = false;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end
@@ -377,7 +376,7 @@ index 4aea5b2e36f5cd6f9b076f9a225a391211ec0c25..a1f75dfbe975ff0150cb529266c3c088
  
      // CraftBukkit start
      public String displayName;
-@@ -380,6 +385,7 @@ public class ServerPlayer extends Player {
+@@ -339,6 +344,7 @@ public class ServerPlayer extends Player {
          this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
          this.bukkitPickUpLoot = true;
          this.maxHealthCache = this.getMaxHealth();
@@ -386,7 +385,7 @@ index 4aea5b2e36f5cd6f9b076f9a225a391211ec0c25..a1f75dfbe975ff0150cb529266c3c088
  
      // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 23d53f3fd524cc4d827dc95ab95367702a110a05..e57bb23ec14263b7c9dd721fefbe912963b863d0 100644
+index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a62668ea5037 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -70,6 +70,12 @@ public final class NaturalSpawner {

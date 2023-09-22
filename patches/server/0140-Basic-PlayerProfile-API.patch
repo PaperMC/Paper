@@ -11,7 +11,7 @@ public org.bukkit.craftbukkit.profile.CraftPlayerTextures
 public org.bukkit.craftbukkit.profile.CraftPlayerTextures copyFrom(Lorg/bukkit/profile/PlayerTextures;)V
 public org.bukkit.craftbukkit.profile.CraftPlayerTextures rebuildPropertyIfDirty()V
 public org.bukkit.craftbukkit.profile.CraftPlayerProfile toString(Lcom/mojang/authlib/properties/PropertyMap;)Ljava/lang/String;
-# needed to maintain visibility with overriden methods
+# needed to maintain visibility with overridden methods
 public org.bukkit.craftbukkit.profile.CraftPlayerProfile getProperty(Ljava/lang/String;)Lcom/mojang/authlib/properties/Property;
 public org.bukkit.craftbukkit.profile.CraftPlayerProfile setProperty(Ljava/lang/String;Lcom/mojang/authlib/properties/Property;)V
 
@@ -422,13 +422,15 @@ index 0000000000000000000000000000000000000000..3ff790cec1ad89caec4be64421dd7d51
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1459a1f99fe614d072a087cda18788cf13102645
+index 0000000000000000000000000000000000000000..04eae6eda89cbad530d2a5b8d1ef5880752a8625
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,30 @@
 +package com.destroystokyo.paper.profile;
 +
-+import com.mojang.authlib.*;
++import com.mojang.authlib.Environment;
++import com.mojang.authlib.EnvironmentParser;
++import com.mojang.authlib.GameProfileRepository;
 +import com.mojang.authlib.minecraft.MinecraftSessionService;
 +import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 +import com.mojang.authlib.yggdrasil.YggdrasilEnvironment;
@@ -436,15 +438,12 @@ index 0000000000000000000000000000000000000000..1459a1f99fe614d072a087cda18788cf
 +import java.net.Proxy;
 +
 +public class PaperAuthenticationService extends YggdrasilAuthenticationService {
++
 +    private final Environment environment;
++
 +    public PaperAuthenticationService(Proxy proxy) {
 +        super(proxy);
 +        this.environment = EnvironmentParser.getEnvironmentFromProperties().orElse(YggdrasilEnvironment.PROD.getEnvironment());
-+    }
-+
-+    @Override
-+    public UserAuthentication createUserAuthentication(Agent agent) {
-+        return new PaperUserAuthentication(this, agent);
 +    }
 +
 +    @Override
@@ -454,52 +453,57 @@ index 0000000000000000000000000000000000000000..1459a1f99fe614d072a087cda18788cf
 +
 +    @Override
 +    public GameProfileRepository createProfileRepository() {
-+        return new PaperGameProfileRepository(this, this.environment);
++        return new PaperGameProfileRepository(this.getProxy(), this.environment);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperGameProfileRepository.java b/src/main/java/com/destroystokyo/paper/profile/PaperGameProfileRepository.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..582c169c85ac66f1f9430f79042e4655f776c157
+index 0000000000000000000000000000000000000000..7b9e797b42c88b17d6a7c590a423f4e85d99a59d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/PaperGameProfileRepository.java
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,17 @@
 +package com.destroystokyo.paper.profile;
 +
-+import com.mojang.authlib.Agent;
 +import com.mojang.authlib.Environment;
 +import com.mojang.authlib.ProfileLookupCallback;
-+import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 +import com.mojang.authlib.yggdrasil.YggdrasilGameProfileRepository;
++import java.net.Proxy;
 +
 +public class PaperGameProfileRepository extends YggdrasilGameProfileRepository {
-+    public PaperGameProfileRepository(YggdrasilAuthenticationService authenticationService, Environment environment) {
-+        super(authenticationService, environment);
++    public PaperGameProfileRepository(Proxy proxy, Environment environment) {
++        super(proxy, environment);
 +    }
 +
 +    @Override
-+    public void findProfilesByNames(String[] names, Agent agent, ProfileLookupCallback callback) {
-+        super.findProfilesByNames(names, agent, callback);
++    public void findProfilesByNames(String[] names, ProfileLookupCallback callback) {
++        super.findProfilesByNames(names, callback);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java b/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..93d73c27340645c7502acafdc0b2cfbc1a759dd8
+index 0000000000000000000000000000000000000000..ea906c9942be4c37b0daf866c759771af0b1e0ed
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,31 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.Environment;
 +import com.mojang.authlib.GameProfile;
 +import com.mojang.authlib.minecraft.MinecraftProfileTexture;
++import com.mojang.authlib.yggdrasil.ProfileResult;
++import com.mojang.authlib.yggdrasil.ServicesKeySet;
 +import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 +import com.mojang.authlib.yggdrasil.YggdrasilMinecraftSessionService;
 +
++import java.net.Proxy;
 +import java.util.Map;
++import java.util.UUID;
++import org.jetbrains.annotations.Nullable;
 +
 +public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionService {
-+    protected PaperMinecraftSessionService(YggdrasilAuthenticationService authenticationService, Environment environment) {
-+        super(authenticationService, environment);
++
++    protected PaperMinecraftSessionService(ServicesKeySet servicesKeySet, Proxy proxy, Environment environment) {
++        super(servicesKeySet, proxy, environment);
 +    }
 +
 +    @Override
@@ -508,31 +512,8 @@ index 0000000000000000000000000000000000000000..93d73c27340645c7502acafdc0b2cfbc
 +    }
 +
 +    @Override
-+    public GameProfile fillProfileProperties(GameProfile profile, boolean requireSecure) {
-+        return super.fillProfileProperties(profile, requireSecure);
-+    }
-+
-+    @Override
-+    protected GameProfile fillGameProfile(GameProfile profile, boolean requireSecure) {
-+        return super.fillGameProfile(profile, requireSecure);
-+    }
-+}
-diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperUserAuthentication.java b/src/main/java/com/destroystokyo/paper/profile/PaperUserAuthentication.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..3cdd06d3af7ff94f1fe1a11b9a9275e17c695a38
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/profile/PaperUserAuthentication.java
-@@ -0,0 +1,12 @@
-+package com.destroystokyo.paper.profile;
-+
-+import com.mojang.authlib.Agent;
-+import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
-+import com.mojang.authlib.yggdrasil.YggdrasilUserAuthentication;
-+import java.util.UUID;
-+
-+public class PaperUserAuthentication extends YggdrasilUserAuthentication {
-+    public PaperUserAuthentication(YggdrasilAuthenticationService authenticationService, Agent agent) {
-+        super(authenticationService, UUID.randomUUID().toString(), agent);
++    public @Nullable ProfileResult fetchProfile(final UUID profileId, final boolean requireSecure) {
++        return super.fetchProfile(profileId, requireSecure);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/SharedPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/SharedPlayerProfile.java
