@@ -2249,7 +2249,7 @@ index 2a7c614df7b9c9405a5dd23e6a888ede7fc86683..794ab78d91cb54008679aecbc8f01eda
  
      public boolean logIPs() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 084339c7da80ce21ab8405e20b76af87dbbbe8ce..b944cda955c5660d3a9b84e9c92c2b19337a027a 100644
+index 084339c7da80ce21ab8405e20b76af87dbbbe8ce..f7674978f032f020887546f593024c1442719127 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -156,6 +156,7 @@ import net.minecraft.world.scores.Score;
@@ -2342,14 +2342,11 @@ index 084339c7da80ce21ab8405e20b76af87dbbbe8ce..b944cda955c5660d3a9b84e9c92c2b19
          }
  
      }
-@@ -1819,6 +1823,10 @@ public class ServerPlayer extends Player {
+@@ -1819,6 +1823,7 @@ public class ServerPlayer extends Player {
          }
          // CraftBukkit end
          this.language = clientOptions.language();
-+        // Paper start
-+        this.adventure$locale = net.kyori.adventure.translation.Translator.parseLocale(this.language);
-+        this.connection.connection.channel.attr(PaperAdventure.LOCALE_ATTRIBUTE).set(this.adventure$locale);
-+        // Paper end
++        this.adventure$locale = net.kyori.adventure.translation.Translator.parseLocale(this.language); // Paper
          this.requestedViewDistance = clientOptions.viewDistance();
          this.chatVisibility = clientOptions.chatVisibility();
          this.canChatColor = clientOptions.chatColors();
@@ -2418,8 +2415,20 @@ index e7a9dd7791a0dd200c4d74922c6e5adaa5013669..b9062fe651de34d5b3f9d5f146ae0b4f
          // CraftBukkit end
  
          this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
+diff --git a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+index ea26375d6f23b14a8a1cd926fe410713551de99d..ed80d9551cd7cc1ec26a5d5fd7bc185b38fddd78 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+@@ -92,6 +92,7 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
+     @Override
+     public void handleClientInformation(ServerboundClientInformationPacket packet) {
+         this.clientInformation = packet.information();
++        this.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(net.kyori.adventure.translation.Translator.parseLocale(packet.information().language())); // Paper
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index bbd256d088879f04762fcf628573f1348e4961a8..463d268c3e9450996f58f9820dbd8fc527c213ea 100644
+index bbd256d088879f04762fcf628573f1348e4961a8..ab30acb5bd76f31cab5052ce3d1edd3757a2cabf 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -45,6 +45,7 @@ import net.minecraft.nbt.ListTag;
@@ -2502,6 +2511,14 @@ index bbd256d088879f04762fcf628573f1348e4961a8..463d268c3e9450996f58f9820dbd8fc5
          } else {
              this.chat(s, message, true);
          }
+@@ -2907,6 +2916,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     public void handleClientInformation(ServerboundClientInformationPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         this.player.updateOptions(packet.information());
++        this.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(net.kyori.adventure.translation.Translator.parseLocale(packet.information().language())); // Paper
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 7d3a924a56f8a3f5756400e26e67581ebff27445..ef5d73a296982d8b9ac022c5ea755843c2da1c84 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
