@@ -16,11 +16,11 @@ index 63a3f714f0a85966fe23507179d39cbfdaa0a1ee..5614d8ed30a005fd7c11e47ced4331b4
      // CraftBukkit end
      public boolean isRealPlayer; // Paper
      public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
-diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 483fc6b3df30d298b023c7bd05cbc05e688229a9..0ed553e02ced432b5f6761ff295c6ee70deefa78 100644
---- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1848,6 +1848,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 877dd962a689c016668d1144ad2fef850fdbc31e..cc753619c42f3e12932862750053c930d71a9075 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -77,6 +77,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      @Override
      public void onDisconnect(Component reason) {
@@ -29,10 +29,44 @@ index 483fc6b3df30d298b023c7bd05cbc05e688229a9..0ed553e02ced432b5f6761ff295c6ee7
 +    }
 +    public void onDisconnect(Component reason, @Nullable net.kyori.adventure.text.Component quitMessage) {
 +        // Paper end
+         if (this.isSingleplayerOwner()) {
+             ServerCommonPacketListenerImpl.LOGGER.info("Stopping singleplayer server as player logged out");
+             this.server.halt(false);
+@@ -310,7 +315,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             // Do not kick the player
+             return;
+         }
+-        this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
+         // Send the possibly modified leave message
+         final Component ichatbasecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
+         // CraftBukkit end
+@@ -319,7 +323,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
+             this.connection.disconnect(ichatbasecomponent);
+         }));
+-        this.onDisconnect(ichatbasecomponent); // CraftBukkit - fire quit instantly
++        this.onDisconnect(ichatbasecomponent, event.leaveMessage()); // CraftBukkit - fire quit instantly
+         this.connection.setReadOnly();
+         MinecraftServer minecraftserver = this.server;
+         Connection networkmanager = this.connection;
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 483fc6b3df30d298b023c7bd05cbc05e688229a9..4d670073d20d7d678f993b6bd1213ea106e93d6f 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1848,6 +1848,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     @Override
+     public void onDisconnect(Component reason) {
++        // Paper start
++        this.onDisconnect(reason, null);
++    }
++    @Override
++    public void onDisconnect(Component reason, @Nullable net.kyori.adventure.text.Component quitMessage) {
++        // Paper end
          // CraftBukkit start - Rarely it would send a disconnect line twice
          if (this.processedDisconnect) {
              return;
-@@ -1856,11 +1861,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1856,11 +1862,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
          // CraftBukkit end
          ServerGamePacketListenerImpl.LOGGER.info("{} lost connection: {}", this.player.getName().getString(), reason.getString());
@@ -51,7 +85,7 @@ index 483fc6b3df30d298b023c7bd05cbc05e688229a9..0ed553e02ced432b5f6761ff295c6ee7
          this.chatMessageChain.close();
          // CraftBukkit start - Replace vanilla quit message handling with our own.
          /*
-@@ -1870,7 +1881,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1870,7 +1882,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
          this.player.disconnect();
          // Paper start - Adventure
