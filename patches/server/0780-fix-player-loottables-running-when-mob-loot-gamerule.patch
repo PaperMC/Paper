@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 22 Mar 2022 09:50:40 -0700
+Subject: [PATCH] fix player loottables running when mob loot gamerule is false
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index f6adb75984927e4254b98e4b6dc26ba4e5bc03d5..8e06894ba02a9f68cbbb77a6316f927dd021da89 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -918,12 +918,14 @@ public class ServerPlayer extends Player {
+                 }
+             }
+         }
++        if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - preserve this check from vanilla
+         // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
+         this.dropFromLootTable(damageSource, this.lastHurtByPlayerTime > 0);
+         for (org.bukkit.inventory.ItemStack item : this.drops) {
+             loot.add(item);
+         }
+         this.drops.clear(); // SPIGOT-5188: make sure to clear
++        } // Paper
+ 
+         Component defaultMessage = this.getCombatTracker().getDeathMessage();
+ 

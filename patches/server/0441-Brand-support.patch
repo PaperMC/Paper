@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DigitalRegent <misterwener@gmail.com>
+Date: Sat, 11 Apr 2020 13:10:58 +0200
+Subject: [PATCH] Brand support
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index d1808bf9dc19fad84da5eb3b4c3d549bc624b00a..cce6febce229abdad859f183716cdefbec4a8f2e 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -54,6 +54,8 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     private int latency;
+     private volatile boolean suspendFlushingOnServerThread = false;
+     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
++    private @Nullable String clientBrandName = null; // Paper - Brand name
++    protected static final ResourceLocation MINECRAFT_BRAND = new ResourceLocation("brand"); // Paper - Brand support
+ 
+     public ServerCommonPacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, CommonListenerCookie commonlistenercookie, ServerPlayer player) { // CraftBukkit
+         this.server = minecraftserver;
+@@ -140,6 +142,15 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             try {
+                 byte[] data = new byte[payload.readableBytes()];
+                 payload.readBytes(data);
++                // Paper start - Brand support
++                if (identifier.equals(MINECRAFT_BRAND)) {
++                    try {
++                        this.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.copiedBuffer(data)).readUtf(256);
++                    } catch (StringIndexOutOfBoundsException ex) {
++                        this.clientBrandName = "illegal";
++                    }
++                }
++                // Paper end
+                 this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
+             } catch (Exception ex) {
+                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
+@@ -149,6 +160,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+ 
+     }
+ 
++    // Paper start - brand support
++    @Nullable
++    public String getClientBrandName() {
++        return this.clientBrandName;
++    }
++    // Paper end
++
+     public final boolean isDisconnected() {
+         return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index f81ebf2e29bab66904644e106cdb2d1ca812a212..8a74046fd65f1bfa7ff22a0019fd8cdf989c7a00 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -3007,6 +3007,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // Paper end
+     };
+ 
++    // Paper start - brand support
++    @Override
++    public String getClientBrandName() {
++        return getHandle().connection != null ? getHandle().connection.getClientBrandName() : null;
++    }
++    // Paper end
++
+     public Player.Spigot spigot()
+     {
+         return this.spigot;
