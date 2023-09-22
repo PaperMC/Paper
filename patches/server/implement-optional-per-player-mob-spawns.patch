@@ -258,14 +258,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final Long2LongMap chunkSaveCooldowns;
      private final Queue<Runnable> unloadQueue;
-     int viewDistance;
+     private int serverViewDistance;
 +    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
  
-     // Paper - rewrite chunk system
- 
+     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
+     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         int chunkX = MCUtil.getChunkCoordinate(player.getX());
-         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
+         int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
+         int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
@@ -275,7 +275,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
-         this.level.playerChunkLoader.removePlayer(player); // Paper - replace chunk loader
  
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
@@ -285,10 +284,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      void updateMaps(ServerPlayer player) {
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
+         int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
+         int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
-         this.level.playerChunkLoader.updatePlayer(player); // Paper - replace chunk loader
++
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
 +            this.playerMobDistanceMap.update(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
