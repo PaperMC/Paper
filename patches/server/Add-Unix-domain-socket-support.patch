@@ -70,23 +70,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          synchronized (this.channels) {
 @@ -0,0 +0,0 @@ public class ServerConnectionListener {
-             LazyLoadedValue lazyinitvar;
+             EventLoopGroup eventloopgroup;
  
              if (Epoll.isAvailable() && this.server.isEpollEnabled()) {
++                // Paper start
 +                if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
 +                    oclass = io.netty.channel.epoll.EpollServerDomainSocketChannel.class;
 +                } else {
                  oclass = EpollServerSocketChannel.class;
 +                }
-                 lazyinitvar = ServerConnectionListener.SERVER_EPOLL_EVENT_GROUP;
++                // Paper end
+                 eventloopgroup = (EventLoopGroup) ServerConnectionListener.SERVER_EPOLL_EVENT_GROUP.get();
                  ServerConnectionListener.LOGGER.info("Using epoll channel type");
              } else {
 @@ -0,0 +0,0 @@ public class ServerConnectionListener {
-                     ((Connection) object).setListener(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
+                     ((Connection) object).setListenerForServerboundHandshake(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
                      io.papermc.paper.network.ChannelInitializeListenerHolder.callListeners(channel); // Paper
                  }
--            }).group((EventLoopGroup) lazyinitvar.get()).localAddress(address, port)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
-+            }).group((EventLoopGroup) lazyinitvar.get()).localAddress(address)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit // Paper
+-            }).group(eventloopgroup).localAddress(address, port)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
++            }).group(eventloopgroup).localAddress(address)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit // Paper
          }
      }
  
@@ -94,7 +96,7 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      // Spigot Start
      public SocketAddress getRawAddress()
      {
@@ -111,7 +113,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
-                 this.connection.setProtocol(ConnectionProtocol.LOGIN);
+                 this.connection.setClientboundProtocolAfterHandshake(ClientIntent.LOGIN);
                  // CraftBukkit start - Connection throttle
                  try {
 +                    if (!(this.connection.channel.localAddress() instanceof io.netty.channel.unix.DomainSocketAddress)) { // Paper - the connection throttle is useless when you have a Unix domain socket
@@ -132,10 +134,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.BYPASS_HOSTCHECK || ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) { // Paper
 +                            // Paper start - Unix domain socket support
 +                            java.net.SocketAddress socketAddress = connection.getRemoteAddress();
-                             packet.hostName = split[0];
+                             connection.hostname = split[0];
 -                            connection.address = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getPort());
 +                            connection.address = new java.net.InetSocketAddress(split[1], socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
 +                            // Paper end
-                             connection.spoofedUUID = com.mojang.util.UUIDTypeAdapter.fromString( split[2] );
+                             connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient( split[2] );
                          } else
                          {

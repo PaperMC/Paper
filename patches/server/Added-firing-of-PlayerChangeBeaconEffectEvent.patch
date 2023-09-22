@@ -10,7 +10,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
 @@ -0,0 +0,0 @@ public class BeaconMenu extends AbstractContainerMenu {
      public MobEffect getSecondaryEffect() {
-         return MobEffect.byId(this.beaconData.get(2));
+         return BeaconMenu.decodeEffect(this.beaconData.get(2));
      }
 +    // Paper start
 +    private static @Nullable org.bukkit.potion.PotionEffectType convert(Optional<MobEffect> effect) {
@@ -22,17 +22,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void updateEffects(Optional<MobEffect> primary, Optional<MobEffect> secondary) {
          if (this.paymentSlot.hasItem()) {
--            this.beaconData.set(1, (Integer) primary.map(MobEffect::getId).orElse(-1));
--            this.beaconData.set(2, (Integer) secondary.map(MobEffect::getId).orElse(-1));
+-            this.beaconData.set(1, BeaconMenu.encodeEffect((MobEffect) primary.orElse(null))); // CraftBukkit - decompile error
+-            this.beaconData.set(2, BeaconMenu.encodeEffect((MobEffect) secondary.orElse(null))); // CraftBukkit - decompile error
 +            // Paper start
 +            io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
 +            if (event.callEvent()) {
-+            this.beaconData.set(1, event.getPrimary() == null ? -1 : event.getPrimary().getId());
-+            this.beaconData.set(2, event.getSecondary() == null ? -1 : event.getSecondary().getId());
-+            if (event.willConsumeItem()) {
++                this.beaconData.set(1, BeaconMenu.encodeEffect(event.getPrimary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraft(event.getPrimary())));
++                this.beaconData.set(2, BeaconMenu.encodeEffect(event.getSecondary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraft(event.getSecondary())));
++                if (event.willConsumeItem()) {
 +            // Paper end
              this.paymentSlot.remove(1);
-+            }
++                }
              this.access.execute(Level::blockEntityChanged);
 +            } // Paper end
          }
