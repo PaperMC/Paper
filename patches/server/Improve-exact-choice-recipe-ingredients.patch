@@ -153,7 +153,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                this.stackedContents.initialize(recipe); // Paper - better exact choice recipes
                  entity.getInventory().fillStackedContents(this.stackedContents);
                  this.menu.fillCraftSlotsStackedContents(this.stackedContents);
-                 if (this.stackedContents.canCraft(recipe, (IntList)null)) {
+                 if (this.stackedContents.canCraft(recipe.value(), (IntList)null)) {
 @@ -0,0 +0,0 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
              int l = k;
  
@@ -207,7 +207,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/player/StackedContents.jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/player/StackedContents.java
 +++ b/src/main/java/net/minecraft/world/entity/player/StackedContents.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.item.crafting.Recipe;
+@@ -0,0 +0,0 @@ import net.minecraft.world.item.crafting.RecipeHolder;
  public class StackedContents {
      private static final int EMPTY = 0;
      public final Int2IntMap contents = new Int2IntOpenHashMap();
@@ -306,12 +306,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -public abstract class AbstractCookingRecipe implements Recipe<Container> {
 +public abstract class AbstractCookingRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<Container> implements Recipe<Container> { // Paper - improve exact recipe choices
      protected final RecipeType<?> type;
-     protected final ResourceLocation id;
-     private final CookingBookCategory category;
+     protected final CookingBookCategory category;
+     protected final String group;
 @@ -0,0 +0,0 @@ public abstract class AbstractCookingRecipe implements Recipe<Container> {
-         this.result = output;
+         this.result = result;
          this.experience = experience;
-         this.cookingTime = cookTime;
+         this.cookingTime = cookingTime;
 +        this.checkExactIngredients(); // Paper - improve exact recipe choices
      }
  
@@ -323,7 +323,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public interface Recipe<C extends Container> {
      }
  
-     org.bukkit.inventory.Recipe toBukkitRecipe(); // CraftBukkit
+     org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id); // CraftBukkit
 +
 +    // Paper start - improved exact choice recipes
 +    default boolean hasExactIngredients() {
@@ -345,13 +345,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      final int width;
      final int height;
 @@ -0,0 +0,0 @@ public class ShapedRecipe implements CraftingRecipe {
-         this.recipeItems = input;
-         this.result = output;
+         this.recipeItems = ingredients;
+         this.result = result;
          this.showNotification = showNotification;
 +        this.checkExactIngredients(); // Paper - improve exact recipe choices
      }
  
-     public ShapedRecipe(ResourceLocation id, String group, CraftingBookCategory category, int width, int height, NonNullList<Ingredient> input, ItemStack output) {
+     public ShapedRecipe(String group, CraftingBookCategory category, int width, int height, NonNullList<Ingredient> ingredients, ItemStack result) {
 diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java b/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
@@ -363,12 +363,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -public class ShapelessRecipe implements CraftingRecipe {
 +public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<CraftingContainer> implements CraftingRecipe { // Paper - improve exact recipe choices
  
-     private final ResourceLocation id;
      final String group;
+     final CraftingBookCategory category;
 @@ -0,0 +0,0 @@ public class ShapelessRecipe implements CraftingRecipe {
          this.category = category;
-         this.result = output;
-         this.ingredients = input;
+         this.result = result;
+         this.ingredients = ingredients;
 +        this.checkExactIngredients(); // Paper - improve exact recipe choices
      }
  
