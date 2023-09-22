@@ -5,10 +5,10 @@ Subject: [PATCH] Hide unnecessary itemmeta from clients
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 24f0d61a2fa9ac95dd26443a978209b53baf10b1..31fa0f4fbf195d0db7a89a060b1cc4fd30dc5ab0 100644
+index dcf412aa557cdc7464893264b86b916e0ffbb0b8..1f71e11ec2bd617595de788f42562a436e61c156 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -340,7 +340,7 @@ public class ServerEntity {
+@@ -337,7 +337,7 @@ public class ServerEntity {
                  if (!itemstack.isEmpty()) {
                      // Paper start - prevent oversized data
                      final ItemStack sanitized = LivingEntity.sanitizeItemStack(itemstack.copy(), false);
@@ -18,25 +18,25 @@ index 24f0d61a2fa9ac95dd26443a978209b53baf10b1..31fa0f4fbf195d0db7a89a060b1cc4fd
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 31c8b483006febd23363f7bcc2c09bde37b84847..81750c1551a69d1c77ab8c34437e5d839b7e2941 100644
+index 67f2de8c2ad186fb6fa6cf68a87964f687605c64..3dcffcf52a5342b515a26a426820491ebde15d33 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2693,8 +2693,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2543,8 +2543,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                  // Refresh the current entity metadata
                                  entity.getEntityData().refresh(player);
                                  // SPIGOT-7136 - Allays
 -                                if (entity instanceof Allay) {
--                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
+-                                    send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
 +                                if (entity instanceof Allay allay) { // Paper
-+                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, allay.stripMeta(allay.getItemBySlot(slot), true))).collect(Collectors.toList()))); // Paper - remove unnecessary item meta
++                                    send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, allay.stripMeta(allay.getItemBySlot(slot), true))).collect(Collectors.toList()))); // Paper - remove unnecessary item meta
                                      player.containerMenu.sendAllDataToRemote();
                                  }
                              }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index de69507b71c79172f0581aa58a7ac7e9a002444f..a35e59544786776391ba135f247ac1a28be3d754 100644
+index 52c8812c6670dbec377d0dfb985b190bf6e87da9..2a23448e756199b631355cd10b567ea1d54caa37 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3159,7 +3159,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3196,7 +3196,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
              // Paper start - prevent oversized data
              ItemStack toSend = sanitizeItemStack(itemstack1, true);
@@ -45,7 +45,7 @@ index de69507b71c79172f0581aa58a7ac7e9a002444f..a35e59544786776391ba135f247ac1a2
              // Paper end
              switch (enumitemslot.getType()) {
                  case HAND:
-@@ -3173,6 +3173,70 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3210,6 +3210,70 @@ public abstract class LivingEntity extends Entity implements Attackable {
          ((ServerLevel) this.level()).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list));
      }
  

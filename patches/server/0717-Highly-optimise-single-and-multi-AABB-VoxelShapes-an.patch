@@ -1180,10 +1180,10 @@ index 0000000000000000000000000000000000000000..3d2fa2466fe40e0b9d7749498684587a
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 52dba7fad11a7280137ade67983e594487e20891..50f6a044385c22336e799efe471ab65e7196aaa6 100644
+index 6974a1a4c1142339dffedfd4e0205103274bfa5b..aab560700503a0c3415e4aaf09a86e907106bd63 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -461,7 +461,7 @@ public class ServerPlayer extends Player {
+@@ -419,7 +419,7 @@ public class ServerPlayer extends Player {
  
                  if (blockposition1 != null) {
                      this.moveTo(blockposition1, 0.0F, 0.0F);
@@ -1192,7 +1192,7 @@ index 52dba7fad11a7280137ade67983e594487e20891..50f6a044385c22336e799efe471ab65e
                          break;
                      }
                  }
-@@ -469,7 +469,7 @@ public class ServerPlayer extends Player {
+@@ -427,7 +427,7 @@ public class ServerPlayer extends Player {
          } else {
              this.moveTo(blockposition, 0.0F, 0.0F);
  
@@ -1202,23 +1202,23 @@ index 52dba7fad11a7280137ade67983e594487e20891..50f6a044385c22336e799efe471ab65e
              }
          }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index ffa831673805201932c36b814f4439f3bb5c4c04..64e40e3caa85bff9382a483237301a8f231d1991 100644
+index 42520ae8a26b0970981ef44fe95d70b79fd5bc47..3542ba4c043e4d38caa191efbabfa98092228a84 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -895,7 +895,7 @@ public abstract class PlayerList {
-         // CraftBukkit end
+@@ -892,7 +892,7 @@ public abstract class PlayerList {
+         entityplayer1.forceSetPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
  
          worldserver1.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.POST_TELEPORT, new net.minecraft.world.level.ChunkPos(location.getBlockX() >> 4, location.getBlockZ() >> 4), 1, entityplayer.getId()); // Paper
 -        while (avoidSuffocation && !worldserver1.noCollision((Entity) entityplayer1) && entityplayer1.getY() < (double) worldserver1.getMaxBuildHeight()) {
 +        while (avoidSuffocation && !worldserver1.noCollision(entityplayer1, entityplayer1.getBoundingBox(), true) && entityplayer1.getY() < (double) worldserver1.getMaxBuildHeight()) { // Paper - make sure this loads chunks, we default to NOT loading now
+             // CraftBukkit end
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
- 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index f1d9b75eae4d42c02974c8bface6d73cb1e58182..23194249ab0add8cf2cbea190d3c6aee606b10a1 100644
+index 658fd3abef087c873ebc2833a38a111660311576..71b5d3a7ecbdc798847209c02458d11dbbe23556 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1210,9 +1210,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -1091,9 +1091,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
                  float f = this.getBlockSpeedFactor();
  
                  this.setDeltaMovement(this.getDeltaMovement().multiply((double) f, 1.0D, (double) f));
@@ -1266,7 +1266,7 @@ index f1d9b75eae4d42c02974c8bface6d73cb1e58182..23194249ab0add8cf2cbea190d3c6aee
                      if (this.remainingFireTicks <= 0) {
                          this.setRemainingFireTicks(-this.getFireImmuneTicks());
                      }
-@@ -1392,32 +1427,78 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -1266,32 +1301,78 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      }
  
      private Vec3 collide(Vec3 movement) {
@@ -1366,7 +1366,7 @@ index f1d9b75eae4d42c02974c8bface6d73cb1e58182..23194249ab0add8cf2cbea190d3c6aee
      }
  
      public static Vec3 collideBoundingBox(@Nullable Entity entity, Vec3 movement, AABB entityBoundingBox, Level world, List<VoxelShape> collisions) {
-@@ -2611,11 +2692,31 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -2493,11 +2574,31 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
              float f = this.dimensions.width * 0.8F;
              AABB axisalignedbb = AABB.ofSize(this.getEyePosition(), (double) f, 1.0E-6D, (double) f);
  
@@ -1416,7 +1416,7 @@ index a3eaf80b020c3bbc0306c5d17659ee661dfd275b..1b6f72932fbdd567a1534bcf15e8a610
                      }
  
 diff --git a/src/main/java/net/minecraft/world/level/CollisionGetter.java b/src/main/java/net/minecraft/world/level/CollisionGetter.java
-index 06107d69dff9f0b52a5f188095cbd9a9efa5684c..c0dd933c8e64484c4ae0d4fa0f6e19969cf09b37 100644
+index c476e37df8a75d77f5093b2a449e04f25ef2c2dd..05d91e5c09015a4064317a3a9c0d4bd06485cec9 100644
 --- a/src/main/java/net/minecraft/world/level/CollisionGetter.java
 +++ b/src/main/java/net/minecraft/world/level/CollisionGetter.java
 @@ -35,31 +35,33 @@ public interface CollisionGetter extends BlockGetter {
@@ -1470,12 +1470,12 @@ index 06107d69dff9f0b52a5f188095cbd9a9efa5684c..c0dd933c8e64484c4ae0d4fa0f6e1996
 +        // Paper end - optimise collisions
      }
  
-     List<VoxelShape> getEntityCollisions(@Nullable Entity entity, AABB box);
+     default boolean noBlockCollision(@Nullable Entity entity, AABB box) {
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index 66a5783e2a83c75ca46d1fd6f97d9de733c01a09..d860ddae508f53d06f74d8ae0efdfc500c1ddf07 100644
+index c41d0efb40f137d71b2a038dd362d17ddb2fac60..e82a56c32f4179dc6a8df97f314dc3b4370e818d 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
-@@ -49,7 +49,7 @@ public interface EntityGetter {
+@@ -37,7 +37,7 @@ public interface EntityGetter {
              return true;
          } else {
              for(Entity entity : this.getEntities(except, shape.bounds())) {
@@ -1484,7 +1484,7 @@ index 66a5783e2a83c75ca46d1fd6f97d9de733c01a09..d860ddae508f53d06f74d8ae0efdfc50
                      return false;
                  }
              }
-@@ -67,7 +67,7 @@ public interface EntityGetter {
+@@ -55,7 +55,7 @@ public interface EntityGetter {
              return List.of();
          } else {
              Predicate<Entity> predicate = entity == null ? EntitySelector.CAN_BE_COLLIDED_WITH : EntitySelector.NO_SPECTATORS.and(entity::canCollideWith);
@@ -1494,7 +1494,7 @@ index 66a5783e2a83c75ca46d1fd6f97d9de733c01a09..d860ddae508f53d06f74d8ae0efdfc50
                  return List.of();
              } else {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index a9e8d9c65a809562d4768df348dcd79bec4d0e3c..27680befd64967ef3c2ae0f35c9e7bd68d474314 100644
+index 96bdf69c8788aa0b1dff64789e6f13c856ee99ff..04b27d3797057b80e71d2d32c9e31c3fba39c86b 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -863,6 +863,12 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -1547,11 +1547,11 @@ index a9e8d9c65a809562d4768df348dcd79bec4d0e3c..27680befd64967ef3c2ae0f35c9e7bd6
  
          public Block getBlock() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
-index 12edaf88cca54540c617239ac31b2263dfa0ecd7..7a57a75db00cd64e4c95740b575277a1f355e414 100644
+index 5d53b09e19b664fad337ea5098bf9cf41a7168f8..f150a16fbf888455301d8b9043f0b45fb1fa1d84 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
-@@ -42,6 +42,110 @@ public class LevelChunkSection {
-         this.biomes = new PalettedContainer<>(biomeRegistry.asHolderIdMap(), biomeRegistry.getHolderOrThrow(Biomes.PLAINS), PalettedContainer.Strategy.SECTION_BIOMES, null); // Paper - Anti-Xray - Add preset biomes
+@@ -39,6 +39,110 @@ public class LevelChunkSection {
+         this.biomes = new PalettedContainer<>(biomeRegistry.asHolderIdMap(), biomeRegistry.getHolderOrThrow(Biomes.PLAINS), PalettedContainer.Strategy.SECTION_BIOMES);
      }
  
 +    // Paper start
@@ -1661,7 +1661,7 @@ index 12edaf88cca54540c617239ac31b2263dfa0ecd7..7a57a75db00cd64e4c95740b575277a1
      public BlockState getBlockState(int x, int y, int z) {
          return (BlockState) this.states.get(x, y, z);
      }
-@@ -62,8 +166,8 @@ public class LevelChunkSection {
+@@ -59,8 +163,8 @@ public class LevelChunkSection {
          return this.setBlockState(x, y, z, state, true);
      }
  
@@ -1672,7 +1672,7 @@ index 12edaf88cca54540c617239ac31b2263dfa0ecd7..7a57a75db00cd64e4c95740b575277a1
  
          if (lock) {
              iblockdata1 = (BlockState) this.states.getAndSet(x, y, z, state);
-@@ -102,6 +206,7 @@ public class LevelChunkSection {
+@@ -99,6 +203,7 @@ public class LevelChunkSection {
              ++this.tickingFluidCount;
          }
  
@@ -1680,7 +1680,7 @@ index 12edaf88cca54540c617239ac31b2263dfa0ecd7..7a57a75db00cd64e4c95740b575277a1
          return iblockdata1;
      }
  
-@@ -147,6 +252,7 @@ public class LevelChunkSection {
+@@ -144,6 +249,7 @@ public class LevelChunkSection {
  
          });
          // Paper end
@@ -2087,7 +2087,7 @@ index 9176735c08a75854209f24113b0e78332249dc4d..731c7dd15f131dc124be6af8f342b122
              if (one.isEmpty() && two.isEmpty()) {
                  return false;
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
-index c4ca051720f790f5b8eb860b14e268de8557454d..2182afd1b95acf14c55bddfeec17dae0a63e1f00 100644
+index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..c9b376949cefbcb6292ce393dfcdd85ff9855b11 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 @@ -16,11 +16,17 @@ import net.minecraft.world.phys.BlockHitResult;
@@ -2110,7 +2110,7 @@ index c4ca051720f790f5b8eb860b14e268de8557454d..2182afd1b95acf14c55bddfeec17dae0
          this.shape = voxels;
      }
  
-@@ -163,7 +169,7 @@ public abstract class VoxelShape {
+@@ -167,7 +173,7 @@ public abstract class VoxelShape {
          }
      }
  
