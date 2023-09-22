@@ -23,6 +23,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.profile;
 +
++import com.mojang.authlib.yggdrasil.ProfileResult;
 +import io.papermc.paper.configuration.GlobalConfiguration;
 +import com.google.common.base.Charsets;
 +import com.google.common.collect.Iterables;
@@ -32,6 +33,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.Util;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.players.GameProfileCache;
++import org.apache.commons.lang3.StringUtils;
 +import org.apache.commons.lang3.Validate;
 +import org.bukkit.configuration.serialization.SerializableAs;
 +import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
@@ -186,7 +188,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public boolean isComplete() {
-+        return profile.isComplete();
++        return this.getId() != null && StringUtils.isNotBlank(this.getName());
 +    }
 +
 +    @Override
@@ -239,7 +241,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +        }
-+        return this.profile.isComplete();
++        return this.isComplete();
 +    }
 +
 +    public boolean complete(boolean textures) {
@@ -249,15 +251,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        MinecraftServer server = MinecraftServer.getServer();
 +        boolean isCompleteFromCache = this.completeFromCache(true, onlineMode);
 +        if (onlineMode && (!isCompleteFromCache || textures && !hasTextures())) {
-+            GameProfile result = server.getSessionService().fillProfileProperties(profile, true);
-+            if (result != null) {
-+                copyProfileProperties(result, this.profile, true);
++            ProfileResult result = server.getSessionService().fetchProfile(this.getId(), true);
++            if (result != null && result.profile() != null) {
++                copyProfileProperties(result.profile(), this.profile, true);
 +            }
-+            if (this.profile.isComplete()) {
++            if (this.isComplete()) {
 +                server.getProfileCache().add(this.profile);
 +            }
 +        }
-+        return profile.isComplete() && (!onlineMode || !textures || hasTextures());
++        return this.isComplete() && (!onlineMode || !textures || hasTextures());
 +    }
 +
 +    private static void copyProfileProperties(GameProfile source, GameProfile target) {
@@ -273,13 +275,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        for (Property property : sourceProperties.values()) {
-+            targetProperties.removeAll(property.getName());
-+            targetProperties.put(property.getName(), property);
++            targetProperties.removeAll(property.name());
++            targetProperties.put(property.name(), property);
 +        }
 +    }
 +
 +    private static ProfileProperty toBukkit(Property property) {
-+        return new ProfileProperty(property.getName(), property.getValue(), property.getSignature());
++        return new ProfileProperty(property.name(), property.value(), property.signature());
 +    }
 +
 +    public static PlayerProfile asBukkitCopy(GameProfile gameProfile) {
@@ -338,7 +340,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    throw new IllegalArgumentException("Property data (" + propertyData + ") is not a valid Map");
 +                }
 +                Property property = CraftProfileProperty.deserialize((Map<?, ?>) propertyData);
-+                profile.profile.getProperties().put(property.getName(), property);
++                profile.profile.getProperties().put(property.name(), property);
 +            }
 +        }
 +
