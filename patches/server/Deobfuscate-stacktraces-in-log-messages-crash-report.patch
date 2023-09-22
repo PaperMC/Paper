@@ -14,8 +14,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
 +    implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
-     runtimeOnly("com.mysql:mysql-connector-j:8.0.33")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.43.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 @@ -0,0 +0,0 @@ tasks.check {
  }
@@ -498,22 +498,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     });
-     public static final AttributeKey<ConnectionProtocol> ATTRIBUTE_PROTOCOL = AttributeKey.valueOf("protocol");
-     public static final LazyLoadedValue<NioEventLoopGroup> NETWORK_WORKER_GROUP = new LazyLoadedValue<>(() -> {
+     public static final AttributeKey<ConnectionProtocol.CodecData<?>> ATTRIBUTE_SERVERBOUND_PROTOCOL = AttributeKey.valueOf("serverbound_protocol");
+     public static final AttributeKey<ConnectionProtocol.CodecData<?>> ATTRIBUTE_CLIENTBOUND_PROTOCOL = AttributeKey.valueOf("clientbound_protocol");
+     public static final Supplier<NioEventLoopGroup> NETWORK_WORKER_GROUP = Suppliers.memoize(() -> {
 -        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).build());
 +        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
-     public static final LazyLoadedValue<EpollEventLoopGroup> NETWORK_EPOLL_WORKER_GROUP = new LazyLoadedValue<>(() -> {
+     public static final Supplier<EpollEventLoopGroup> NETWORK_EPOLL_WORKER_GROUP = Suppliers.memoize(() -> {
 -        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).build());
 +        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
-     public static final LazyLoadedValue<DefaultEventLoopGroup> LOCAL_WORKER_GROUP = new LazyLoadedValue<>(() -> {
+     public static final Supplier<DefaultEventLoopGroup> LOCAL_WORKER_GROUP = Suppliers.memoize(() -> {
 -        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).build());
 +        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
      private final PacketFlow receiving;
-     private final Queue<Connection.PacketHolder> queue = Queues.newConcurrentLinkedQueue();
+     private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
              }
@@ -559,6 +559,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  getAddToWorldStackTrace(entity).printStackTrace();
              }
              // Paper end
+diff --git a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+@@ -0,0 +0,0 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
+             ServerConfigurationPacketListenerImpl.LOGGER.error("Couldn't place player in world", exception);
+             // Paper start
+             if (MinecraftServer.getServer().isDebugging()) {
+-                exception.printStackTrace();
++                io.papermc.paper.util.TraceUtil.printStackTrace(exception);
+             }
+             // Paper end
+             this.connection.send(new ClientboundDisconnectPacket(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA));
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
@@ -566,29 +579,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerConnectionListener {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-     public static final LazyLoadedValue<NioEventLoopGroup> SERVER_EVENT_GROUP = new LazyLoadedValue<>(() -> {
+     public static final Supplier<NioEventLoopGroup> SERVER_EVENT_GROUP = Suppliers.memoize(() -> {
 -        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).build());
 +        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
-     public static final LazyLoadedValue<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = new LazyLoadedValue<>(() -> {
+     public static final Supplier<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = Suppliers.memoize(() -> {
 -        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).build());
 +        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
      final MinecraftServer server;
      public volatile boolean running;
-diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-                 MutableComponent ichatmutablecomponent = Component.translatable("multiplayer.disconnect.invalid_player_data");
-                 // Paper start
-                 if (MinecraftServer.getServer().isDebugging()) {
--                    exception.printStackTrace();
-+                    io.papermc.paper.util.TraceUtil.printStackTrace(exception);
-                 }
-                 // Paper end
- 
 diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
@@ -644,7 +644,7 @@ diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
-@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
                      log.log( Level.SEVERE, "During the run of the server, a plugin set an excessive velocity on an entity" );
                      log.log( Level.SEVERE, "This may be the cause of the issue, or it may be entirely unrelated" );
                      log.log( Level.SEVERE, org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getMessage());
@@ -653,7 +653,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      {
                          log.log( Level.SEVERE, "\t\t" + stack );
                      }
-@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
          }
          log.log( Level.SEVERE, "\tStack:" );
          //
