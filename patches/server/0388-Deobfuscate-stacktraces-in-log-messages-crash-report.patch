@@ -6,7 +6,7 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index eecadeb81317834741b083fe8c5da77519d196a3..f037aff2f85f5ece47198f3957689a589045a95b 100644
+index 7f005b9a41064f1929e8d9cb53c5ab207d3a333d..dfb43cf7be60733f3ab142de66139971bca1b1fe 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -37,6 +37,7 @@ dependencies {
@@ -14,8 +14,8 @@ index eecadeb81317834741b083fe8c5da77519d196a3..f037aff2f85f5ece47198f3957689a58
      implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
 +    implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
-     runtimeOnly("com.mysql:mysql-connector-j:8.0.33")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.43.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 @@ -121,6 +122,18 @@ tasks.check {
  }
@@ -470,7 +470,7 @@ index 2d5494d2813b773e60ddba6790b750a9a08f21f8..0b210bdf7c1f5962afbd44195af6f84f
      }
  }
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
-index 30a58229aa6dac5039511d0c0df5f2912ea7de9f..abe37c7c3c6f5ab73afd738ec78f06d7e4d2ed96 100644
+index 226cba0c1eeedd9e80acd603c46b802c183db1fa..1d714d3eff11ed14f218656008190017494d4830 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
 +++ b/src/main/java/net/minecraft/CrashReport.java
 @@ -32,6 +32,7 @@ public class CrashReport {
@@ -494,27 +494,27 @@ index 52eb3176437113f9a0ff85d10ce5c2415e1b5570..b54ddd0ba0b001fbcb1838a838ca4890
          }
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 99d5fd192a4cf1ac2739520a111b8dd854ff2f57..dc3dea801a673462e767ad37268ec77ac95d214c 100644
+index 62df5c51fa11f85ec2fad20c0ea5aa6241294e8a..81e49a770fd8a10e987f3e67a5ab99fc39d5e47f 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -64,13 +64,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     });
-     public static final AttributeKey<ConnectionProtocol> ATTRIBUTE_PROTOCOL = AttributeKey.valueOf("protocol");
-     public static final LazyLoadedValue<NioEventLoopGroup> NETWORK_WORKER_GROUP = new LazyLoadedValue<>(() -> {
+@@ -75,13 +75,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     public static final AttributeKey<ConnectionProtocol.CodecData<?>> ATTRIBUTE_SERVERBOUND_PROTOCOL = AttributeKey.valueOf("serverbound_protocol");
+     public static final AttributeKey<ConnectionProtocol.CodecData<?>> ATTRIBUTE_CLIENTBOUND_PROTOCOL = AttributeKey.valueOf("clientbound_protocol");
+     public static final Supplier<NioEventLoopGroup> NETWORK_WORKER_GROUP = Suppliers.memoize(() -> {
 -        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).build());
 +        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
-     public static final LazyLoadedValue<EpollEventLoopGroup> NETWORK_EPOLL_WORKER_GROUP = new LazyLoadedValue<>(() -> {
+     public static final Supplier<EpollEventLoopGroup> NETWORK_EPOLL_WORKER_GROUP = Suppliers.memoize(() -> {
 -        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).build());
 +        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
-     public static final LazyLoadedValue<DefaultEventLoopGroup> LOCAL_WORKER_GROUP = new LazyLoadedValue<>(() -> {
+     public static final Supplier<DefaultEventLoopGroup> LOCAL_WORKER_GROUP = Suppliers.memoize(() -> {
 -        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).build());
 +        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
      private final PacketFlow receiving;
-     private final Queue<Connection.PacketHolder> queue = Queues.newConcurrentLinkedQueue();
-@@ -205,7 +205,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
+@@ -195,7 +195,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
              }
          }
@@ -524,7 +524,7 @@ index 99d5fd192a4cf1ac2739520a111b8dd854ff2f57..dc3dea801a673462e767ad37268ec77a
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index ba75c854faed13c60ae5464c4685373b99ef42c2..a3e839c8166a7fee282a764127d76cf0232e6c38 100644
+index f72c1a4baff6ac9a3b1df83ece3925e2b1678df9..967817ad15146407668361a85c89be6beb6a73f9 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -195,6 +195,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -536,7 +536,7 @@ index ba75c854faed13c60ae5464c4685373b99ef42c2..a3e839c8166a7fee282a764127d76cf0
          paperConfigurations.initializeWorldDefaultsConfiguration();
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 2838e035204e95defce0d7488248b2e57bf71fab..e96890be7f03b7cc846fe850d4169e09b5d40eab 100644
+index 4307b72acc389ccab97b2b7f3f824ddeca5a3cda..6bb7f2050e93f63045ea608672751da28138d3f8 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -221,7 +221,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -550,7 +550,7 @@ index 2838e035204e95defce0d7488248b2e57bf71fab..e96890be7f03b7cc846fe850d4169e09
      }
  
      @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
-@@ -1467,7 +1469,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1235,7 +1237,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
          if (entity.isRemoved()) {
              // Paper start
              if (DEBUG_ENTITIES) {
@@ -559,41 +559,41 @@ index 2838e035204e95defce0d7488248b2e57bf71fab..e96890be7f03b7cc846fe850d4169e09
                  getAddToWorldStackTrace(entity).printStackTrace();
              }
              // Paper end
+diff --git a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+index 496ac1d2fd43c5ddfe7fa7a8b72a75860ec43443..6c2a5b2cb57fe799cc1c5002662894ad6e2b22aa 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+@@ -132,7 +132,7 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
+             ServerConfigurationPacketListenerImpl.LOGGER.error("Couldn't place player in world", exception);
+             // Paper start
+             if (MinecraftServer.getServer().isDebugging()) {
+-                exception.printStackTrace();
++                io.papermc.paper.util.TraceUtil.printStackTrace(exception);
+             }
+             // Paper end
+             this.connection.send(new ClientboundDisconnectPacket(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA));
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index fbf375534e2b8bd6ef052c4625764f4f8feb2ed6..bb9e65eee7e0ca0f715cd5791c47579a57b1b577 100644
+index d870fbec236a3660f12e0f45cf9431067b18468b..c98d3c5afcce17a6f13f8d456b9f77b1f2a4f3f0 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-@@ -51,10 +51,10 @@ public class ServerConnectionListener {
+@@ -52,10 +52,10 @@ public class ServerConnectionListener {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-     public static final LazyLoadedValue<NioEventLoopGroup> SERVER_EVENT_GROUP = new LazyLoadedValue<>(() -> {
+     public static final Supplier<NioEventLoopGroup> SERVER_EVENT_GROUP = Suppliers.memoize(() -> {
 -        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).build());
 +        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
-     public static final LazyLoadedValue<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = new LazyLoadedValue<>(() -> {
+     public static final Supplier<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = Suppliers.memoize(() -> {
 -        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).build());
 +        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
      final MinecraftServer server;
      public volatile boolean running;
-diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 238a7bc87ab49da1f0fa3c733dd512fdffbd8ffc..9858f907e58fa606510f87efbdf8793c35ec711c 100644
---- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -185,7 +185,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-                 MutableComponent ichatmutablecomponent = Component.translatable("multiplayer.disconnect.invalid_player_data");
-                 // Paper start
-                 if (MinecraftServer.getServer().isDebugging()) {
--                    exception.printStackTrace();
-+                    io.papermc.paper.util.TraceUtil.printStackTrace(exception);
-                 }
-                 // Paper end
- 
 diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
-index 6599f874d9f97e9ef4862039ecad7277bbc5fd91..7edd4b88eb0476f0630630bc4681e859bd145b2b 100644
+index 5db27d7bcaaa2eeaeeb08401513d8d23f6cb63c7..ce43cb0152ba07c6c21e08142d65813d47c3b63b 100644
 --- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
 +++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
-@@ -364,7 +364,7 @@ public class OldUsersConverter {
+@@ -359,7 +359,7 @@ public class OldUsersConverter {
                          try {
                              root = NbtIo.readCompressed(new java.io.FileInputStream(file5));
                          } catch (Exception exception) {
@@ -602,7 +602,7 @@ index 6599f874d9f97e9ef4862039ecad7277bbc5fd91..7edd4b88eb0476f0630630bc4681e859
                              ServerInternalException.reportInternalException(exception); // Paper
                          }
  
-@@ -378,7 +378,7 @@ public class OldUsersConverter {
+@@ -373,7 +373,7 @@ public class OldUsersConverter {
                              try {
                                  NbtIo.writeCompressed(root, new java.io.FileOutputStream(file2));
                              } catch (Exception exception) {
@@ -612,7 +612,7 @@ index 6599f874d9f97e9ef4862039ecad7277bbc5fd91..7edd4b88eb0476f0630630bc4681e859
                              }
                         }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 246606164117e8140ab0892ec1326503b414a1ab..4d052f4cde791100f04b822899f0f436feaa23ea 100644
+index c9a6a56dfd25601bc0a11e5ddb349dba372c0e18..9cb4c145a36de0fe5be148b854ebb6f2a8446f49 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -603,7 +603,7 @@ public class LevelChunk extends ChunkAccess {
@@ -641,10 +641,10 @@ index 3c1992e212a6d6f1db4d5b807b38d71913619fc0..9c1aff17aabd062640e3f451a2ef8c50
  
      CraftAsyncScheduler() {
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index a9bd33b58a6a3296b70eaaaea3adbee74724e448..7071327fab87d53e794374c701d7c2748c439aaa 100644
+index e71041d41eae31cce73d8817c4f95f16c8c600aa..71dbda5ae954b31ca3915de8823b552a09dfcab8 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
-@@ -105,7 +105,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -105,7 +105,7 @@ public class WatchdogThread extends Thread
                      log.log( Level.SEVERE, "During the run of the server, a plugin set an excessive velocity on an entity" );
                      log.log( Level.SEVERE, "This may be the cause of the issue, or it may be entirely unrelated" );
                      log.log( Level.SEVERE, org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getMessage());
@@ -653,7 +653,7 @@ index a9bd33b58a6a3296b70eaaaea3adbee74724e448..7071327fab87d53e794374c701d7c274
                      {
                          log.log( Level.SEVERE, "\t\t" + stack );
                      }
-@@ -192,7 +192,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -191,7 +191,7 @@ public class WatchdogThread extends Thread
          }
          log.log( Level.SEVERE, "\tStack:" );
          //

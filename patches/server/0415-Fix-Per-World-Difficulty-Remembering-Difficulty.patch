@@ -8,10 +8,10 @@ makes it so that the server keeps the last difficulty used instead
 of restoring the server.properties every single load.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ccf238c12c416e2aa7ee83a14bbbb96f5b2f8b51..c09adcb869edf273c633ce996b048173ded89703 100644
+index 020c6ee8df9a97ca84f1fb36b03abfcd5df24744..ac7c70533659c5683f72ded537f76cb6ff4e3777 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -797,7 +797,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -782,7 +782,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          if (worldserver.getWorld().getKeepSpawnInMemory()) worldloadlistener.stop(); // Paper
          // CraftBukkit start
          // this.updateMobSpawningFlags();
@@ -20,7 +20,7 @@ index ccf238c12c416e2aa7ee83a14bbbb96f5b2f8b51..c09adcb869edf273c633ce996b048173
  
          this.forceTicks = false;
          // CraftBukkit end
-@@ -1725,11 +1725,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1731,11 +1731,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -40,7 +40,7 @@ index ccf238c12c416e2aa7ee83a14bbbb96f5b2f8b51..c09adcb869edf273c633ce996b048173
          }
      }
  
-@@ -1743,7 +1746,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1749,7 +1752,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
  
@@ -63,7 +63,7 @@ index 89be3991ef4fb2deb7276c5409cb571a7fb1f821..9c272f7cf8cbd2bbe147e57f7fabe135
                  return Component.translatable("commands.difficulty.success", difficulty.getDisplayName());
              }, true);
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index a3e839c8166a7fee282a764127d76cf0232e6c38..31bdf41a3e914c79e42f85b7f0aef439f35288f1 100644
+index 967817ad15146407668361a85c89be6beb6a73f9..5d90fc103577a5dab63daf9a23ba46da7eba1e18 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -325,7 +325,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -76,23 +76,23 @@ index a3e839c8166a7fee282a764127d76cf0232e6c38..31bdf41a3e914c79e42f85b7f0aef439
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 15a70bad66eb2508f58ff184061c2d19e45297e1..f80645fe0e1f9ad2a70ea33c5dc6a8c02ff262ec 100644
+index fcf875c6145c2428cab7a801442f34adc098b3ce..b70165b6ffce01aadf30af33746d347457dc150a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1203,7 +1203,7 @@ public class ServerPlayer extends Player {
+@@ -1162,7 +1162,7 @@ public class ServerPlayer extends Player {
                  this.isChangingDimension = true; // CraftBukkit - Set teleport invulnerability only if player changing worlds
  
-                 this.connection.send(new ClientboundRespawnPacket(worldserver.dimensionTypeId(), worldserver.dimension(), BiomeManager.obfuscateSeed(worldserver.getSeed()), this.gameMode.getGameModeForPlayer(), this.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), (byte) 3, this.getLastDeathLocation(), this.getPortalCooldown()));
+                 this.connection.send(new ClientboundRespawnPacket(this.createCommonSpawnInfo(worldserver), (byte) 3));
 -                this.connection.send(new ClientboundChangeDifficultyPacket(this.level().getDifficulty(), this.level().getLevelData().isDifficultyLocked()));
 +                this.connection.send(new ClientboundChangeDifficultyPacket(worldserver.getDifficulty(), this.level().getLevelData().isDifficultyLocked())); // Paper - fix difficulty sync issue
                  PlayerList playerlist = this.server.getPlayerList();
  
                  playerlist.sendPlayerPermissionLevel(this);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 4de14bd6390537730f764137390be4e7861d9894..3ddf29100807d5882e20395466d420fb169c2f87 100644
+index dc5bcf6cf46d32961da9a2a6e9691ab30bb96045..c6b5bc584fc117240c4290ba48dd71e5d70c2abb 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -3361,7 +3361,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3153,7 +3153,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
@@ -102,10 +102,10 @@ index 4de14bd6390537730f764137390be4e7861d9894..3ddf29100807d5882e20395466d420fb
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 7909cf20ab3cd4948ed13c6eba0cdf503b557a70..e9376086ea756f39a9766aa698ed0eba9401aaaa 100644
+index 4c4cee10d688aa0a3aab29f42c4cd8fd22488796..cc28da02a5736508bc82f31401646de2c0d7ab99 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -955,8 +955,8 @@ public final class CraftServer implements Server {
+@@ -958,8 +958,8 @@ public final class CraftServer implements Server {
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
          this.console.paperConfigurations.reloadConfigs(this.console);
          for (ServerLevel world : this.console.getAllLevels()) {
@@ -117,10 +117,10 @@ index 7909cf20ab3cd4948ed13c6eba0cdf503b557a70..e9376086ea756f39a9766aa698ed0eba
              for (SpawnCategory spawnCategory : SpawnCategory.values()) {
                  if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b34067a6bc3bf61ca94929bb8e9677deef686077..eb7a3a89ad7174e57d8ce98a67725c0d329b5d88 100644
+index b266cd21fec4c48d2fc4676eb30b1bfdaa4acd98..4f40c0fcab774647cc89c04d51ae47444bc88874 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1150,7 +1150,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1155,7 +1155,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setDifficulty(Difficulty difficulty) {

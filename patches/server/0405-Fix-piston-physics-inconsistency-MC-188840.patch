@@ -32,18 +32,18 @@ This patch fixes https://bugs.mojang.com/browse/MC-188840
 This patch also fixes rail duping and carpet duping.
 
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-index 4f6b7ed4809086811f0460544ba2ec0606f0f5da..e14967a745c21ff48a88fa0f22cc296a73b43d92 100644
+index 7248a8c51d0e285e2296826e48782f721265605b..48ee146dea30f7d8c48c6bee7a1547ad2a69959d 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-@@ -412,14 +412,26 @@ public class PistonBaseBlock extends DirectionalBlock {
+@@ -413,14 +413,26 @@ public class PistonBaseBlock extends DirectionalBlock {
              }
  
-             for (k = list.size() - 1; k >= 0; --k) {
--                blockposition3 = (BlockPos) list.get(k);
+             for (j = list.size() - 1; j >= 0; --j) {
+-                blockposition3 = (BlockPos) list.get(j);
 -                iblockdata1 = world.getBlockState(blockposition3);
 +                // Paper start - fix a variety of piston desync dupes
 +                boolean allowDesync = io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPistonDuplication;
-+                BlockPos oldPos = blockposition3 = (BlockPos) list.get(k);
++                BlockPos oldPos = blockposition3 = (BlockPos) list.get(j);
 +                iblockdata1 = allowDesync ? world.getBlockState(oldPos) : null;
 +                // Paper end - fix a variety of piston desync dupes
                  blockposition3 = blockposition3.relative(enumdirection1);
@@ -51,18 +51,18 @@ index 4f6b7ed4809086811f0460544ba2ec0606f0f5da..e14967a745c21ff48a88fa0f22cc296a
                  BlockState iblockdata2 = (BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, dir);
  
                  world.setBlock(blockposition3, iblockdata2, 68);
--                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, (BlockState) list1.get(k), dir, retract, false));
+-                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, (BlockState) list1.get(j), dir, retract, false));
 +                // Paper start - fix a variety of piston desync dupes
 +                if (!allowDesync) {
 +                    iblockdata1 = world.getBlockState(oldPos);
 +                    map.replace(oldPos, iblockdata1);
 +                }
-+                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, allowDesync ? list1.get(k) : iblockdata1, dir, retract, false));
++                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, allowDesync ? list1.get(j) : iblockdata1, dir, retract, false));
 +                if (!allowDesync) {
 +                    world.setBlock(oldPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_MOVE_BY_PISTON | 1024); // set air to prevent later physics updates from seeing this block
 +                }
 +                // Paper end - fix a variety of piston desync dupes
-                 aiblockdata[j++] = iblockdata1;
+                 aiblockdata[i++] = iblockdata1;
              }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
