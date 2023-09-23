@@ -1,6 +1,6 @@
 package org.bukkit.potion;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +11,7 @@ import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.item.alchemy.PotionRegistry;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PotionTest extends AbstractTestingBase {
     @Test
@@ -21,10 +21,10 @@ public class PotionTest extends AbstractTestingBase {
             List<MobEffect> eff = reg.getEffects();
             if (eff.size() != 1) continue;
             PotionEffectType type = CraftPotionEffectType.minecraftToBukkit(eff.get(0).getEffect());
-            assertNotNull(String.valueOf(reg), type);
+            assertNotNull(type, String.valueOf(reg));
 
             PotionType enumType = PotionType.getByEffect(type);
-            assertNotNull(type.getName(), enumType);
+            assertNotNull(enumType, type.getName());
 
             effects.put(enumType, enumType.name());
         }
@@ -39,11 +39,11 @@ public class PotionTest extends AbstractTestingBase {
 
             PotionEffectType bukkit = CraftPotionEffectType.minecraftToBukkit(nms);
 
-            assertNotNull("No Bukkit type for " + key, bukkit);
-            assertFalse("No name for " + key, bukkit.getName().contains("UNKNOWN"));
+            assertNotNull(bukkit, "No Bukkit type for " + key);
+            assertFalse(bukkit.getName().contains("UNKNOWN"), "No name for " + key);
 
             PotionEffectType byName = PotionEffectType.getByName(bukkit.getName());
-            assertEquals("Same type not returned by name " + key, bukkit, byName);
+            assertEquals(bukkit, byName, "Same type not returned by name " + key);
         }
     }
 }

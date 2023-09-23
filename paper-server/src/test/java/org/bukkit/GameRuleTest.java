@@ -1,10 +1,10 @@
 package org.bukkit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.Map;
 import net.minecraft.world.level.GameRules;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class GameRuleTest {
 
@@ -14,8 +14,8 @@ public class GameRuleTest {
 
         for (GameRule<?> rule : rules) {
             GameRule<?> registeredRule = GameRule.getByName(rule.getName());
-            Assert.assertNotNull("Null GameRule", registeredRule);
-            Assert.assertEquals("Invalid GameRule equality", rule, registeredRule);
+            assertNotNull(registeredRule, "Null GameRule");
+            assertEquals(rule, registeredRule, "Invalid GameRule equality");
         }
     }
 
@@ -26,31 +26,31 @@ public class GameRuleTest {
         for (Map.Entry<String, GameRules.GameRuleKey<?>> entry : minecraftRules.entrySet()) {
             GameRule<?> bukkitRule = GameRule.getByName(entry.getKey());
 
-            Assert.assertNotNull("Missing " + entry.getKey(), bukkitRule);
-            Assert.assertEquals("Invalid GameRule Name", bukkitRule.getName(), entry.getKey());
+            assertNotNull(bukkitRule, "Missing " + entry.getKey());
+            assertEquals(bukkitRule.getName(), entry.getKey(), "Invalid GameRule Name");
         }
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void nullGameRuleName() {
-        GameRule.getByName(null);
+        assertThrows(NullPointerException.class, () -> GameRule.getByName(null));
     }
 
     @Test
     public void emptyGameRuleName() {
-        Assert.assertNull(GameRule.getByName(""));
+        assertNull(GameRule.getByName(""));
     }
 
     @Test
     public void incorrectGameRuleName() {
-        Assert.assertNull(GameRule.getByName("doAnnounceAdvancements"));
-        Assert.assertNull(GameRule.getByName("sendCommandBlockFeedback"));
+        assertNull(GameRule.getByName("doAnnounceAdvancements"));
+        assertNull(GameRule.getByName("sendCommandBlockFeedback"));
     }
 
     @Test
     public void invalidCasing() {
-        Assert.assertNull(GameRule.getByName("CommandBlockOutput"));
-        Assert.assertNull(GameRule.getByName("spAwnRadius"));
-        Assert.assertNull(GameRule.getByName("rand0mTickSpeEd"));
+        assertNull(GameRule.getByName("CommandBlockOutput"));
+        assertNull(GameRule.getByName("spAwnRadius"));
+        assertNull(GameRule.getByName("rand0mTickSpeEd"));
     }
 }

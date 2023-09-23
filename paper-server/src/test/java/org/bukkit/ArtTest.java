@@ -1,7 +1,8 @@
 package org.bukkit;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -14,7 +15,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.decoration.PaintingVariant;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ArtTest extends AbstractTestingBase {
     private static final int UNIT_MULTIPLIER = 16;
@@ -32,16 +33,16 @@ public class ArtTest extends AbstractTestingBase {
             Art subject = CraftArt.minecraftHolderToBukkit(enumArt);
 
             String message = String.format("org.bukkit.Art is missing '%s'", name);
-            assertNotNull(message, subject);
+            assertNotNull(subject, message);
 
             assertThat(Art.getByName(name), is(subject));
-            assertThat("Art." + subject + "'s width", subject.getBlockWidth(), is(width));
-            assertThat("Art." + subject + "'s height", subject.getBlockHeight(), is(height));
+            assertThat(subject.getBlockWidth(), is(width), "Art." + subject + "'s width");
+            assertThat(subject.getBlockHeight(), is(height), "Art." + subject + "'s height");
 
             arts.remove(subject);
         }
 
-        assertThat("org.bukkit.Art has too many arts", arts, is(Collections.EMPTY_LIST));
+        assertThat(arts, is(Collections.EMPTY_LIST), "org.bukkit.Art has too many arts");
     }
 
     @Test
@@ -49,8 +50,8 @@ public class ArtTest extends AbstractTestingBase {
         Map<Holder<PaintingVariant>, Art> cache = new HashMap<>();
         for (Art art : Art.values()) {
             Holder<PaintingVariant> enumArt = CraftArt.bukkitToMinecraftHolder(art);
-            assertNotNull(art.name(), enumArt);
-            assertThat(art.name(), cache.put(enumArt, art), is(nullValue()));
+            assertNotNull(enumArt, art.name());
+            assertThat(cache.put(enumArt, art), is(nullValue()), art.name());
         }
     }
 
@@ -59,8 +60,8 @@ public class ArtTest extends AbstractTestingBase {
         Map<Art, Holder<PaintingVariant>> cache = new EnumMap(Art.class);
         for (Holder<PaintingVariant> enumArt : BuiltInRegistries.PAINTING_VARIANT.asHolderIdMap()) {
             Art art = CraftArt.minecraftHolderToBukkit(enumArt);
-            assertNotNull("Could not CraftArt.NotchToBukkit " + enumArt, art);
-            assertThat("Duplicate artwork " + enumArt, cache.put(art, enumArt), is(nullValue()));
+            assertNotNull(art, "Could not CraftArt.NotchToBukkit " + enumArt);
+            assertThat(cache.put(art, enumArt), is(nullValue()), "Duplicate artwork " + enumArt);
         }
     }
 }

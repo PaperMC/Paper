@@ -1,9 +1,9 @@
 package org.bukkit.entity;
 
+import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.world.entity.animal.EntityPanda;
 import org.bukkit.craftbukkit.entity.CraftPanda;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PandaGeneTest {
 
@@ -12,9 +12,9 @@ public class PandaGeneTest {
         for (Panda.Gene gene : Panda.Gene.values()) {
             EntityPanda.Gene nms = CraftPanda.toNms(gene);
 
-            Assert.assertNotNull("NMS gene null for " + gene, nms);
-            Assert.assertEquals("Recessive status did not match " + gene, gene.isRecessive(), nms.isRecessive());
-            Assert.assertEquals("Gene did not convert back " + gene, gene, CraftPanda.fromNms(nms));
+            assertNotNull(nms, "NMS gene null for " + gene);
+            assertEquals(gene.isRecessive(), nms.isRecessive(), "Recessive status did not match " + gene);
+            assertEquals(gene, CraftPanda.fromNms(nms), "Gene did not convert back " + gene);
         }
     }
 
@@ -23,9 +23,9 @@ public class PandaGeneTest {
         for (EntityPanda.Gene gene : EntityPanda.Gene.values()) {
             Panda.Gene bukkit = CraftPanda.fromNms(gene);
 
-            Assert.assertNotNull("Bukkit gene null for " + gene, bukkit);
-            Assert.assertEquals("Recessive status did not match " + gene, gene.isRecessive(), bukkit.isRecessive());
-            Assert.assertEquals("Gene did not convert back " + gene, gene, CraftPanda.toNms(bukkit));
+            assertNotNull(bukkit, "Bukkit gene null for " + gene);
+            assertEquals(gene.isRecessive(), bukkit.isRecessive(), "Recessive status did not match " + gene);
+            assertEquals(gene, CraftPanda.toNms(bukkit), "Gene did not convert back " + gene);
         }
     }
 }

@@ -1,32 +1,29 @@
 package org.bukkit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.Lists;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Stream;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class PerRegistryTest extends AbstractTestingBase {
 
     private static Random random;
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         random = new Random();
     }
 
-    @Parameters(name = "{index}: {0}")
-    public static List<Object[]> data() {
-        List<Object[]> data = Lists.newArrayList();
+    public static Stream<Arguments> data() {
+        List<Arguments> data = Lists.newArrayList();
 
         Field[] registryFields = Registry.class.getFields();
         for (Field registryField : registryFields) {
@@ -37,42 +34,42 @@ public class PerRegistryTest extends AbstractTestingBase {
                     continue;
                 }
 
-                data.add(new Object[] {registry});
+                data.add(Arguments.of(registry));
             } catch (ReflectiveOperationException e) {
                 e.printStackTrace();
             }
         }
 
-        return data;
+        return data.stream();
     }
 
-    @Parameter public Registry<? extends Keyed> registry;
-
-    @Test
-    public void testGet() {
-        this.registry.forEach(element -> {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testGet(Registry<?> registry) {
+        registry.forEach(element -> {
             // Values in the registry should be referentially equal to what is returned with #get()
             // This ensures that new instances are not created each time #get() is invoked
-            Assert.assertSame(element, registry.get(element.getKey()));
+            assertSame(element, registry.get(element.getKey()));
         });
     }
 
-    @Test
-    public void testMatch() {
-        this.registry.forEach(element -> {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testMatch(Registry<?> registry) {
+        registry.forEach(element -> {
             NamespacedKey key = element.getKey();
 
-            assertSameMatchWithKeyMessage(element, key.toString()); // namespace:key
-            assertSameMatchWithKeyMessage(element, key.getKey()); // key
-            assertSameMatchWithKeyMessage(element, key.toString().replace('_', ' ')); // namespace:key with space
-            assertSameMatchWithKeyMessage(element, key.getKey().replace('_', ' ')); // key with space
-            assertSameMatchWithKeyMessage(element, randomizeCase(key.toString())); // nAmeSPaCe:kEY
-            assertSameMatchWithKeyMessage(element, randomizeCase(key.getKey())); // kEy
+            assertSameMatchWithKeyMessage(registry, element, key.toString()); // namespace:key
+            assertSameMatchWithKeyMessage(registry, element, key.getKey()); // key
+            assertSameMatchWithKeyMessage(registry, element, key.toString().replace('_', ' ')); // namespace:key with space
+            assertSameMatchWithKeyMessage(registry, element, key.getKey().replace('_', ' ')); // key with space
+            assertSameMatchWithKeyMessage(registry, element, randomizeCase(key.toString())); // nAmeSPaCe:kEY
+            assertSameMatchWithKeyMessage(registry, element, randomizeCase(key.getKey())); // kEy
         });
     }
 
-    private void assertSameMatchWithKeyMessage(Keyed element, String key) {
-        Assert.assertSame(key, element, registry.match(key));
+    private void assertSameMatchWithKeyMessage(Registry<?> registry, Keyed element, String key) {
+        assertSame(element, registry.match(key), key);
     }
 
     private String randomizeCase(String input) {

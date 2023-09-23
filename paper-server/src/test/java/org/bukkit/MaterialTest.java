@@ -1,7 +1,8 @@
 package org.bukkit;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +17,7 @@ import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.item.Item;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MaterialTest extends AbstractTestingBase {
 
@@ -42,8 +43,8 @@ public class MaterialTest extends AbstractTestingBase {
 
             Material material = materials.remove(id);
 
-            assertThat("Missing " + name + "(" + id + ")", material, is(not(nullValue())));
-            assertNotNull("No item mapping for " + name, CraftMagicNumbers.getMaterial(item));
+            assertThat(material, is(not(nullValue())), "Missing " + name + "(" + id + ")");
+            assertNotNull(CraftMagicNumbers.getMaterial(item), "No item mapping for " + name);
         }
 
         assertThat(materials, is(Collections.EMPTY_MAP));

@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -12,8 +13,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RegistryConstantsTest extends AbstractTestingBase {
 
@@ -45,7 +45,7 @@ public class RegistryConstantsTest extends AbstractTestingBase {
 
         }
 
-        Assert.assertTrue(excessKeys.size() + " excess constants(s) in " + clazz.getSimpleName() + " that do not exist: " + excessKeys, excessKeys.isEmpty());
+        assertTrue(excessKeys.isEmpty(), excessKeys.size() + " excess constants(s) in " + clazz.getSimpleName() + " that do not exist: " + excessKeys);
     }
 
     private <T extends Keyed, M> void testMissingConstants(Class<T> clazz, ResourceKey<IRegistry<M>> nmsRegistryKey) {
@@ -59,14 +59,14 @@ public class RegistryConstantsTest extends AbstractTestingBase {
                 @SuppressWarnings("unchecked")
                 T bukkitObject = (T) clazz.getField(minecraftKey.getPath().toUpperCase()).get(null);
 
-                Assert.assertEquals("Keys are not the same for " + minecraftKey, minecraftKey, CraftNamespacedKey.toMinecraft(bukkitObject.getKey()));
+                assertEquals(minecraftKey, CraftNamespacedKey.toMinecraft(bukkitObject.getKey()), "Keys are not the same for " + minecraftKey);
             } catch (NoSuchFieldException e) {
                 missingKeys.add(minecraftKey);
             } catch (Exception e) {
-                Assert.fail(e.getMessage());
+                fail(e.getMessage());
             }
         }
 
-        Assert.assertTrue("Missing (" + missingKeys.size() + ") constants in " + clazz.getSimpleName() + ": " + missingKeys, missingKeys.isEmpty());
+        assertTrue(missingKeys.isEmpty(), "Missing (" + missingKeys.size() + ") constants in " + clazz.getSimpleName() + ": " + missingKeys);
     }
 }

@@ -1,5 +1,6 @@
 package org.bukkit.support;
 
+import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.util.List;
@@ -24,7 +25,6 @@ import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.junit.Assert;
 
 /**
  *  If you are getting: java.lang.ExceptionInInitializerError
@@ -73,6 +73,6 @@ public abstract class AbstractTestingBase {
             }
         }
         INVALIDATED_MATERIALS = builder.build();
-        Assert.assertEquals("Expected 610 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")", 610, INVALIDATED_MATERIALS.size());
+        assertEquals(610, INVALIDATED_MATERIALS.size(), "Expected 610 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")");
     }
 }

@@ -3,22 +3,16 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Joiner;
 import java.util.Arrays;
 import java.util.List;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.CompoundOperator;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.Operator;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
+import java.util.stream.Stream;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.provider.Arguments;
 
-@RunWith(Parameterized.class)
 public class ItemStackLoreEnchantmentTest extends ItemStackTest {
 
-    @Parameters(name = "[{index}]:{" + NAME_PARAMETER + "}")
-    public static List<Object[]> data() {
+    public static Stream<Arguments> data() {
         return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, ItemStackTest.COMPOUND_MATERIALS);
     }
 

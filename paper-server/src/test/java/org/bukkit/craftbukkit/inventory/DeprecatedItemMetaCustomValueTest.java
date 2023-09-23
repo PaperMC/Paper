@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.io.StringReader;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
@@ -18,52 +18,52 @@ import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.inventory.meta.tags.ItemTagAdapterContext;
 import org.bukkit.inventory.meta.tags.ItemTagType;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
 
     private static NamespacedKey VALID_KEY;
 
-    @Before
-    public void setup() {
+    @BeforeAll
+    public static void setup() {
         VALID_KEY = new NamespacedKey("test", "validkey");
     }
 
     /*
         Sets a test
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetNoAdapter() {
         ItemMeta itemMeta = createNewItemMeta();
-        itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, new PrimitiveTagType<>(boolean.class), true);
+        assertThrows(IllegalArgumentException.class, () -> itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, new PrimitiveTagType<>(boolean.class), true));
     }
 
     /*
         Contains a tag
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testHasNoAdapter() {
         ItemMeta itemMeta = createNewItemMeta();
         itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, ItemTagType.INTEGER, 1); // We gotta set this so we at least try to compare it
-        itemMeta.getCustomTagContainer().hasCustomTag(VALID_KEY, new PrimitiveTagType<>(boolean.class));
+        assertThrows(IllegalArgumentException.class, () -> itemMeta.getCustomTagContainer().hasCustomTag(VALID_KEY, new PrimitiveTagType<>(boolean.class)));
     }
 
     /*
         Getting a tag
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testGetNoAdapter() {
         ItemMeta itemMeta = createNewItemMeta();
         itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, ItemTagType.INTEGER, 1); //We gotta set this so we at least try to compare it
-        itemMeta.getCustomTagContainer().getCustomTag(VALID_KEY, new PrimitiveTagType<>(boolean.class));
+        assertThrows(IllegalArgumentException.class, () -> itemMeta.getCustomTagContainer().getCustomTag(VALID_KEY, new PrimitiveTagType<>(boolean.class)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testGetWrongType() {
         ItemMeta itemMeta = createNewItemMeta();
         itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, ItemTagType.INTEGER, 1);
-        itemMeta.getCustomTagContainer().getCustomTag(VALID_KEY, ItemTagType.STRING);
+        assertThrows(IllegalArgumentException.class, () -> itemMeta.getCustomTagContainer().getCustomTag(VALID_KEY, ItemTagType.STRING));
     }
 
     @Test

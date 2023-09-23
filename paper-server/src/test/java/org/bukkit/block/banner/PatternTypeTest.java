@@ -1,10 +1,10 @@
 package org.bukkit.block.banner;
 
-import junit.framework.Assert;
+import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.EnumBannerPatternType;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PatternTypeTest extends AbstractTestingBase {
 
@@ -13,7 +13,7 @@ public class PatternTypeTest extends AbstractTestingBase {
         for (EnumBannerPatternType nms : BuiltInRegistries.BANNER_PATTERN) {
             PatternType bukkit = PatternType.getByIdentifier(nms.getHashname());
 
-            Assert.assertNotNull("No Bukkit banner for " + nms + " " + nms.getHashname(), bukkit);
+            assertNotNull(bukkit, "No Bukkit banner for " + nms + " " + nms.getHashname());
         }
     }
 
@@ -28,7 +28,7 @@ public class PatternTypeTest extends AbstractTestingBase {
                 }
             }
 
-            Assert.assertNotNull("No NMS banner for " + bukkit + " " + bukkit.getIdentifier(), found);
+            assertNotNull(found, "No NMS banner for " + bukkit + " " + bukkit.getIdentifier());
         }
     }
 }

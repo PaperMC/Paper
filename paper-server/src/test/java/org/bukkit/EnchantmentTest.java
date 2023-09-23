@@ -1,12 +1,12 @@
 package org.bukkit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class EnchantmentTest extends AbstractTestingBase {
 
@@ -17,9 +17,9 @@ public class EnchantmentTest extends AbstractTestingBase {
 
             Enchantment bukkitById = Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(key));
 
-            Assert.assertFalse("Unknown enchant name for " + key, bukkitById.getName().startsWith("UNKNOWN"));
+            assertFalse(bukkitById.getName().startsWith("UNKNOWN"), "Unknown enchant name for " + key);
 
-            Assert.assertNotNull("Unknown target for " + key, bukkitById.getItemTarget());
+            assertNotNull(bukkitById.getItemTarget(), "Unknown target for " + key);
         }
     }
 }

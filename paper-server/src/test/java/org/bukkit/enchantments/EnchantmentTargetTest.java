@@ -1,13 +1,13 @@
 package org.bukkit.enchantments;
 
+import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.EnchantmentSlotType;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class EnchantmentTargetTest extends AbstractTestingBase {
 
@@ -27,7 +27,7 @@ public class EnchantmentTargetTest extends AbstractTestingBase {
                     break;
             }
 
-            Assert.assertNotNull("No bukkit target for slot " + nmsSlot, bukkitTarget);
+            assertNotNull(bukkitTarget, "No bukkit target for slot " + nmsSlot);
 
             for (Item item : BuiltInRegistries.ITEM) {
                 Material material = CraftMagicNumbers.getMaterial(item);
@@ -35,7 +35,7 @@ public class EnchantmentTargetTest extends AbstractTestingBase {
                 boolean nms = nmsSlot.canEnchant(item);
                 boolean bukkit = bukkitTarget.includes(material);
 
-                Assert.assertEquals("Slot mismatch for " + bukkitTarget + " and " + material, nms, bukkit);
+                assertEquals(nms, bukkit, "Slot mismatch for " + bukkitTarget + " and " + material);
             }
         }
     }

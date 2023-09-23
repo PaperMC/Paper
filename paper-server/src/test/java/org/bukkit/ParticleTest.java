@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftParticle;
@@ -7,8 +8,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ParticleTest extends AbstractTestingBase {
 
@@ -34,10 +34,10 @@ public class ParticleTest extends AbstractTestingBase {
                 data = 0;
             }
 
-            Assert.assertNotNull("Missing Bukkit->NMS particle mapping for " + bukkit, CraftParticle.toNMS(bukkit, data));
+            assertNotNull(CraftParticle.toNMS(bukkit, data), "Missing Bukkit->NMS particle mapping for " + bukkit);
         }
         for (net.minecraft.core.particles.Particle nms : BuiltInRegistries.PARTICLE_TYPE) {
-            Assert.assertNotNull("Missing NMS->Bukkit particle mapping for " + BuiltInRegistries.PARTICLE_TYPE.getKey(nms), CraftParticle.minecraftToBukkit(nms));
+            assertNotNull(CraftParticle.minecraftToBukkit(nms), "Missing NMS->Bukkit particle mapping for " + BuiltInRegistries.PARTICLE_TYPE.getKey(nms));
         }
     }
 }

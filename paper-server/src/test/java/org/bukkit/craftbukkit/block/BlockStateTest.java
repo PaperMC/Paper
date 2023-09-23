@@ -1,9 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
@@ -12,7 +9,7 @@ import net.minecraft.world.level.block.entity.TileEntity;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BlockStateTest extends AbstractTestingBase {
 
@@ -24,7 +21,7 @@ public class BlockStateTest extends AbstractTestingBase {
             boolean isCraftBlockEntityState = CraftBlockEntityState.class.isAssignableFrom(blockStateType);
 
             if (block instanceof ITileEntity) {
-                assertTrue(material + " has BlockState of type " + blockStateType.getName() + ", but expected subtype of CraftBlockEntityState", isCraftBlockEntityState);
+                assertTrue(isCraftBlockEntityState, material + " has BlockState of type " + blockStateType.getName() + ", but expected subtype of CraftBlockEntityState");
 
                 // check tile entity type
                 TileEntity tileEntity = ((ITileEntity) block).newBlockEntity(BlockPosition.ZERO, block.defaultBlockState());
@@ -37,10 +34,10 @@ public class BlockStateTest extends AbstractTestingBase {
                     fail(material + " has no tile entity, it be added to CraftBlockStates#isTileEntityOptional");
                 }
 
-                assertNotNull(material + " has no tile entity expected tile entity of type " + tileEntity.getClass(), materialTileEntity);
-                assertSame(material + " has unexpected tile entity type, expected " + tileEntity.getClass() + " but got " + tileEntity.getClass(), materialTileEntity.getClass(), tileEntity.getClass());
+                assertNotNull(materialTileEntity, material + " has no tile entity expected tile entity of type " + tileEntity.getClass());
+                assertSame(materialTileEntity.getClass(), tileEntity.getClass(), material + " has unexpected tile entity type, expected " + tileEntity.getClass() + " but got " + tileEntity.getClass());
             } else {
-                assertTrue(material + " has unexpected CraftBlockEntityState subytype " + blockStateType.getName() + " (but is not a tile)", !isCraftBlockEntityState);
+                assertFalse(isCraftBlockEntityState, material + " has unexpected CraftBlockEntityState subytype " + blockStateType.getName() + " (but is not a tile)");
             }
         }
     }

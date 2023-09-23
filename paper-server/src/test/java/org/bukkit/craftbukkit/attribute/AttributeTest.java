@@ -1,11 +1,11 @@
 package org.bukkit.craftbukkit.attribute;
 
+import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AttributeTest extends AbstractTestingBase {
 
@@ -14,7 +14,7 @@ public class AttributeTest extends AbstractTestingBase {
         for (AttributeBase nms : BuiltInRegistries.ATTRIBUTE) {
             Attribute bukkit = CraftAttribute.minecraftToBukkit(nms);
 
-            Assert.assertNotNull(nms.toString(), bukkit);
+            assertNotNull(bukkit, nms.toString());
         }
     }
 
@@ -23,7 +23,7 @@ public class AttributeTest extends AbstractTestingBase {
         for (Attribute attribute : Attribute.values()) {
             AttributeBase nms = CraftAttribute.bukkitToMinecraft(attribute);
 
-            Assert.assertNotNull(attribute.name(), nms);
+            assertNotNull(nms, attribute.name());
         }
     }
 }

@@ -1,10 +1,10 @@
 package org.bukkit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class GameEventTest extends AbstractTestingBase {
 
@@ -13,7 +13,7 @@ public class GameEventTest extends AbstractTestingBase {
         for (net.minecraft.world.level.gameevent.GameEvent nms : BuiltInRegistries.GAME_EVENT) {
             GameEvent bukkit = GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(nms)));
 
-            Assert.assertNotNull("Bukkit should not be null " + nms, bukkit);
+            assertNotNull(bukkit, "Bukkit should not be null " + nms);
         }
     }
 }

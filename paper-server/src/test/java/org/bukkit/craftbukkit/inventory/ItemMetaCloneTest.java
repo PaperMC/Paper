@@ -1,10 +1,11 @@
 package org.bukkit.craftbukkit.inventory;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Method;
 import org.bukkit.Material;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ItemMetaCloneTest {
 
@@ -14,8 +15,8 @@ public class ItemMetaCloneTest {
             Class<?> clazz = CraftItemFactory.instance().getItemMeta(material).getClass();
 
             Method clone = clazz.getDeclaredMethod("clone");
-            assertNotNull("Class " + clazz + " does not override clone()", clone);
-            assertThat("Class " + clazz + " clone return type does not match", clone.getReturnType(), is(equalTo(clazz)));
+            assertNotNull(clone, "Class " + clazz + " does not override clone()");
+            assertThat(clone.getReturnType(), is(equalTo(clazz)), "Class " + clazz + " clone return type does not match");
         }
     }
 }

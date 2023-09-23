@@ -64,7 +64,7 @@ Code Requirements
 * Do not submit your personal changes to configuration files.
 * Avoid moving or renaming classes.
 
-Bukkit/CraftBukkit employs [JUnit 4](https://www.vogella.com/tutorials/JUnit4/article.html) for testing. Pull Requests(PR) should attempt to integrate within that framework as appropriate.
+Bukkit/CraftBukkit employs [JUnit 5](https://www.vogella.com/tutorials/JUnit/article.html) for testing. Pull Requests(PR) should attempt to integrate within that framework as appropriate.
 Bukkit is a large project and what seems simple to a PR author at the time of writing may easily be overlooked by other authors and updates. Including unit tests with your PR
 will help to ensure the PR can be easily maintained over time and encourage the Spigot team to pull the PR.
 

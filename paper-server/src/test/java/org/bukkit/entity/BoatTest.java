@@ -3,7 +3,7 @@ package org.bukkit.entity;
 import net.minecraft.world.entity.vehicle.EntityBoat;
 import org.bukkit.craftbukkit.entity.CraftBoat;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BoatTest extends AbstractTestingBase {
 

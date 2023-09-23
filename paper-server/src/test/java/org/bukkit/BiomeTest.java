@@ -1,11 +1,11 @@
 package org.bukkit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BiomeTest extends AbstractTestingBase {
 
@@ -16,7 +16,7 @@ public class BiomeTest extends AbstractTestingBase {
                 continue;
             }
 
-            Assert.assertNotNull("No NMS mapping for " + biome, CraftBiome.bukkitToMinecraftHolder(biome));
+            assertNotNull(CraftBiome.bukkitToMinecraftHolder(biome), "No NMS mapping for " + biome);
         }
     }
 
@@ -24,7 +24,7 @@ public class BiomeTest extends AbstractTestingBase {
     public void testMinecraftToBukkit() {
         for (BiomeBase biomeBase : BIOMES) {
             Biome biome = CraftBiome.minecraftToBukkit(biomeBase);
-            Assert.assertTrue("No Bukkit mapping for " + biomeBase, biome != null && biome != Biome.CUSTOM);
+            assertTrue(biome != null && biome != Biome.CUSTOM, "No Bukkit mapping for " + biomeBase);
         }
     }
 }

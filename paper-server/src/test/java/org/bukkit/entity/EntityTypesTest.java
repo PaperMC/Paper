@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -7,8 +8,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.entity.EntityTypes;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class EntityTypesTest extends AbstractTestingBase {
 
@@ -20,12 +20,12 @@ public class EntityTypesTest extends AbstractTestingBase {
             MinecraftKey key = EntityTypes.getKey(nms);
 
             EntityType bukkit = EntityType.fromName(key.getPath());
-            Assert.assertNotNull("Missing nms->bukkit " + key, bukkit);
+            assertNotNull(bukkit, "Missing nms->bukkit " + key);
 
-            Assert.assertTrue("Duplicate entity nms->" + bukkit, allBukkit.remove(bukkit));
+            assertTrue(allBukkit.remove(bukkit), "Duplicate entity nms->" + bukkit);
         }
 
-        Assert.assertTrue("Unmapped bukkit entities " + allBukkit, allBukkit.isEmpty());
+        assertTrue(allBukkit.isEmpty(), "Unmapped bukkit entities " + allBukkit);
     }
 
     @Test
@@ -33,7 +33,7 @@ public class EntityTypesTest extends AbstractTestingBase {
         for (EntityType entityType : EntityType.values()) {
             // Currently EntityType#getTranslationKey has a validation for null name then for test skip this and check correct names.
             if (entityType.getName() != null) {
-                Assert.assertNotNull("Nulllable translation key for " + entityType, entityType.getTranslationKey());
+                assertNotNull(entityType.getTranslationKey(), "Nulllable translation key for " + entityType);
             }
         }
     }

@@ -1,11 +1,11 @@
 package org.bukkit.entity;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.entity.CraftTropicalFish;
 import org.bukkit.entity.TropicalFish.Pattern;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TropicalFishTest {
 
@@ -36,9 +36,9 @@ public class TropicalFishTest {
     }
 
     private void testVariant(int variant, DyeColor bodyColor, DyeColor patternColor, Pattern pattern) {
-        assertThat("variant write", CraftTropicalFish.getData(patternColor, bodyColor, pattern), is(variant));
-        assertThat("pattern colour read", CraftTropicalFish.getPatternColor(variant), is(patternColor));
-        assertThat("body colour read", CraftTropicalFish.getBodyColor(variant), is(bodyColor));
-        assertThat("pattern read", CraftTropicalFish.getPattern(variant), is(pattern));
+        assertThat(CraftTropicalFish.getData(patternColor, bodyColor, pattern), is(variant), "variant write");
+        assertThat(CraftTropicalFish.getPatternColor(variant), is(patternColor), "pattern colour read");
+        assertThat(CraftTropicalFish.getBodyColor(variant), is(bodyColor), "body colour read");
+        assertThat(CraftTropicalFish.getPattern(variant), is(pattern), "pattern read");
     }
 }

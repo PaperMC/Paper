@@ -2,7 +2,7 @@ package org.bukkit.entity;
 
 import net.minecraft.world.entity.EnumCreatureType;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SpawnCategoryTest {
 

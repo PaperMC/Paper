@@ -1,10 +1,10 @@
 package org.bukkit.craftbukkit.generator;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ChunkDataTest extends AbstractTestingBase {
 
@@ -35,28 +35,28 @@ public class ChunkDataTest extends AbstractTestingBase {
     @Test
     public void testMinHeight() {
         OldCraftChunkData data = new OldCraftChunkData(-128, 128, BIOMES);
-        assertTrue("Could not set block below min height", testSetBlock(data, 0, -256, 0, RED_WOOL, AIR));
-        assertTrue("Could set block above min height", testSetBlock(data, 0, -64, 0, RED_WOOL, RED_WOOL));
+        assertTrue(testSetBlock(data, 0, -256, 0, RED_WOOL, AIR), "Could not set block below min height");
+        assertTrue(testSetBlock(data, 0, -64, 0, RED_WOOL, RED_WOOL), "Could set block above min height");
     }
 
     @Test
     public void testMaxHeight() {
         OldCraftChunkData data = new OldCraftChunkData(0, 128, BIOMES);
-        assertTrue("Could not set block above max height", testSetBlock(data, 0, 128, 0, RED_WOOL, AIR));
-        assertTrue("Could set block below max height", testSetBlock(data, 0, 127, 0, RED_WOOL, RED_WOOL));
+        assertTrue(testSetBlock(data, 0, 128, 0, RED_WOOL, AIR), "Could not set block above max height");
+        assertTrue(testSetBlock(data, 0, 127, 0, RED_WOOL, RED_WOOL), "Could set block below max height");
     }
 
     @Test
     public void testBoundsCheckingSingle() {
         OldCraftChunkData data = new OldCraftChunkData(0, 256, BIOMES);
-        assertTrue("Can set block inside chunk bounds", testSetBlock(data, 0, 0, 0, RED_WOOL, RED_WOOL));
-        assertTrue("Can set block inside chunk bounds", testSetBlock(data, 15, 255, 15, RED_WOOL, RED_WOOL));
-        assertTrue("Can no set block outside chunk bounds", testSetBlock(data, -1, 0, 0, RED_WOOL, AIR));
-        assertTrue("Can no set block outside chunk bounds", testSetBlock(data, 0, -1, 0, RED_WOOL, AIR));
-        assertTrue("Can no set block outside chunk bounds", testSetBlock(data, 0, 0, -1, RED_WOOL, AIR));
-        assertTrue("Can no set block outside chunk bounds", testSetBlock(data, 16, 0, 0, RED_WOOL, AIR));
-        assertTrue("Can no set block outside chunk bounds", testSetBlock(data, 0, 256, 0, RED_WOOL, AIR));
-        assertTrue("Can no set block outside chunk bounds", testSetBlock(data, 0, 0, 16, RED_WOOL, AIR));
+        assertTrue(testSetBlock(data, 0, 0, 0, RED_WOOL, RED_WOOL), "Can set block inside chunk bounds");
+        assertTrue(testSetBlock(data, 15, 255, 15, RED_WOOL, RED_WOOL), "Can set block inside chunk bounds");
+        assertTrue(testSetBlock(data, -1, 0, 0, RED_WOOL, AIR), "Can no set block outside chunk bounds");
+        assertTrue(testSetBlock(data, 0, -1, 0, RED_WOOL, AIR), "Can no set block outside chunk bounds");
+        assertTrue(testSetBlock(data, 0, 0, -1, RED_WOOL, AIR), "Can no set block outside chunk bounds");
+        assertTrue(testSetBlock(data, 16, 0, 0, RED_WOOL, AIR), "Can no set block outside chunk bounds");
+        assertTrue(testSetBlock(data, 0, 256, 0, RED_WOOL, AIR), "Can no set block outside chunk bounds");
+        assertTrue(testSetBlock(data, 0, 0, 16, RED_WOOL, AIR), "Can no set block outside chunk bounds");
     }
 
     @Test
