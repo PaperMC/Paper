@@ -1,9 +1,9 @@
 package org.bukkit.metadata;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.TestPlugin;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MetadataValueAdapterTest {
     private TestPlugin plugin = new TestPlugin("x");
@@ -38,25 +38,25 @@ public class MetadataValueAdapterTest {
     @Test
     public void testBooleanConversion() {
         // null is False.
-        assertEquals(false, simpleValue(null).asBoolean());
+        assertFalse(simpleValue(null).asBoolean());
 
         // String to boolean.
-        assertEquals(true, simpleValue("True").asBoolean());
-        assertEquals(true, simpleValue("TRUE").asBoolean());
-        assertEquals(false, simpleValue("false").asBoolean());
+        assertTrue(simpleValue("True").asBoolean());
+        assertTrue(simpleValue("TRUE").asBoolean());
+        assertFalse(simpleValue("false").asBoolean());
 
         // Number to boolean.
-        assertEquals(true, simpleValue(1).asBoolean());
-        assertEquals(true, simpleValue(5.0).asBoolean());
-        assertEquals(false, simpleValue(0).asBoolean());
-        assertEquals(false, simpleValue(0.1).asBoolean());
+        assertTrue(simpleValue(1).asBoolean());
+        assertTrue(simpleValue(5.0).asBoolean());
+        assertFalse(simpleValue(0).asBoolean());
+        assertFalse(simpleValue(0.1).asBoolean());
 
         // Boolean as boolean, of course.
-        assertEquals(true, simpleValue(Boolean.TRUE).asBoolean());
-        assertEquals(false, simpleValue(Boolean.FALSE).asBoolean());
+        assertTrue(simpleValue(Boolean.TRUE).asBoolean());
+        assertFalse(simpleValue(Boolean.FALSE).asBoolean());
 
         // any object that is not null and not a Boolean, String, or Number is true.
-        assertEquals(true, simpleValue(new Object()).asBoolean());
+        assertTrue(simpleValue(new Object()).asBoolean());
     }
 
     /** Test String conversions return an empty string when given null. */

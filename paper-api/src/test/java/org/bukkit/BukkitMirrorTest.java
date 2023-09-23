@@ -1,72 +1,59 @@
 package org.bukkit;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class BukkitMirrorTest {
 
-    @Parameters(name = "{index}: {1}")
-    public static List<Object[]> data() {
-        return Lists.transform(Arrays.asList(Server.class.getDeclaredMethods()), new Function<Method, Object[]>() {
-            @Override
-            public Object[] apply(Method input) {
-                return new Object[] {
-                    input,
-                    input.toGenericString().substring("public abstract ".length()).replace("(", "{").replace(")", "}")
-                    };
-            }
-        });
+    public static Stream<Arguments> data() {
+        return Stream.of(Server.class.getDeclaredMethods())
+                .map(method -> {
+                    try {
+                        return Arguments.of(
+                                method,
+                                method.toGenericString().substring("public abstract ".length()).replace("(", "{").replace(")", "}"),
+                                Bukkit.class.getDeclaredMethod(method.getName(), method.getParameterTypes())
+                        );
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
-    @Parameter(0)
-    public Method server;
-
-    @Parameter(1)
-    public String name;
-
-    private Method bukkit;
-
-    @Before
-    public void makeBukkit() throws Throwable {
-        bukkit = Bukkit.class.getDeclaredMethod(server.getName(), server.getParameterTypes());
-    }
-
-    @Test
-    public void isStatic() throws Throwable {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void isStatic(Method server, String name, Method bukkit) throws Throwable {
         assertThat(Modifier.isStatic(bukkit.getModifiers()), is(true));
     }
 
-    @Test
-    public void isDeprecated() throws Throwable {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void isDeprecated(Method server, String name, Method bukkit) throws Throwable {
         assertThat(bukkit.isAnnotationPresent(Deprecated.class), is(server.isAnnotationPresent(Deprecated.class)));
     }
 
-    @Test
-    public void returnType() throws Throwable {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void returnType(Method server, String name, Method bukkit) throws Throwable {
         assertThat(bukkit.getReturnType(), is((Object) server.getReturnType()));
         // assertThat(bukkit.getGenericReturnType(), is(server.getGenericReturnType())); // too strict on <T> type generics
     }
 
-    @Test
-    public void parameterTypes() throws Throwable {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void parameterTypes(Method server, String name, Method bukkit) throws Throwable {
         // assertThat(bukkit.getGenericParameterTypes(), is(server.getGenericParameterTypes())); // too strict on <T> type generics
     }
 
-    @Test
-    public void declaredException() throws Throwable {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void declaredException(Method server, String name, Method bukkit) throws Throwable {
         assertThat(bukkit.getGenericExceptionTypes(), is(server.getGenericExceptionTypes()));
     }
 }

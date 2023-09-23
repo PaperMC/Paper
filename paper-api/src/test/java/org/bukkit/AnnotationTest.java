@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -13,8 +14,7 @@ import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -49,7 +49,7 @@ public class AnnotationTest {
         File file = new File(loc.toURI());
 
         // Running from jar is not supported yet
-        Assert.assertTrue("code must be in a directory", file.isDirectory());
+        assertTrue(file.isDirectory(), "code must be in a directory");
 
         final HashMap<String, ClassNode> foundClasses = new HashMap<>();
         collectClasses(file, foundClasses);
@@ -97,7 +97,7 @@ public class AnnotationTest {
             System.out.println(message);
         }
 
-        Assert.fail("There " + errors.size() + " are missing annotation(s)");
+        fail("There " + errors.size() + " are missing annotation(s)");
     }
 
     private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {

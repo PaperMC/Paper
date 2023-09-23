@@ -1,6 +1,6 @@
 package org.bukkit.configuration;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,7 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public abstract class ConfigurationSectionTest {
     public abstract ConfigurationSection getConfigurationSection();

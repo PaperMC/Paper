@@ -1,7 +1,7 @@
 package org.bukkit.materials;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 import org.bukkit.CropState;
 import org.bukkit.Material;
 import org.bukkit.NetherWartsState;
@@ -20,7 +20,7 @@ import org.bukkit.material.Tree;
 import org.bukkit.material.Wood;
 import org.bukkit.material.WoodenStep;
 import org.bukkit.material.types.MushroomBlockTexture;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MaterialDataTest {
 
@@ -28,10 +28,10 @@ public class MaterialDataTest {
     public void testDoor() {
         @SuppressWarnings("deprecation")
         Door door = new Door();
-        assertThat("Constructed with default door type", door.getItemType(), equalTo(Material.LEGACY_WOODEN_DOOR));
-        assertThat("Constructed with default top or bottom", door.isTopHalf(), equalTo(false));
-        assertThat("Constructed with default direction", door.getFacing(), equalTo(BlockFace.WEST));
-        assertThat("Constructed with default open state", door.isOpen(), equalTo(false));
+        assertThat(door.getItemType(), equalTo(Material.LEGACY_WOODEN_DOOR), "Constructed with default door type");
+        assertThat(door.isTopHalf(), equalTo(false), "Constructed with default top or bottom");
+        assertThat(door.getFacing(), equalTo(BlockFace.WEST), "Constructed with default direction");
+        assertThat(door.isOpen(), equalTo(false), "Constructed with default open state");
 
         Material[] types = new Material[]{Material.LEGACY_WOODEN_DOOR,
             Material.LEGACY_IRON_DOOR_BLOCK, Material.LEGACY_SPRUCE_DOOR,
@@ -44,26 +44,26 @@ public class MaterialDataTest {
             // Test bottom half
             for (BlockFace facing : directions) {
                 door = new Door(type, facing);
-                assertThat("Constructed with correct door type", door.getItemType(), equalTo(type));
-                assertThat("Constructed with default top or bottom", door.isTopHalf(), equalTo(false));
-                assertThat("Constructed with correct direction", door.getFacing(), equalTo(facing));
-                assertThat("Constructed with default open state", door.isOpen(), equalTo(false));
+                assertThat(door.getItemType(), equalTo(type), "Constructed with correct door type");
+                assertThat(door.isTopHalf(), equalTo(false), "Constructed with default top or bottom");
+                assertThat(door.getFacing(), equalTo(facing), "Constructed with correct direction");
+                assertThat(door.isOpen(), equalTo(false), "Constructed with default open state");
 
                 for (boolean openState : openStates) {
                     door = new Door(type, facing, openState);
-                    assertThat("Constructed with correct door type", door.getItemType(), equalTo(type));
-                    assertThat("Constructed with default top or bottom", door.isTopHalf(), equalTo(false));
-                    assertThat("Constructed with correct direction", door.getFacing(), equalTo(facing));
-                    assertThat("Constructed with correct open state", door.isOpen(), equalTo(openState));
+                    assertThat(door.getItemType(), equalTo(type), "Constructed with correct door type");
+                    assertThat(door.isTopHalf(), equalTo(false), "Constructed with default top or bottom");
+                    assertThat(door.getFacing(), equalTo(facing), "Constructed with correct direction");
+                    assertThat(door.isOpen(), equalTo(openState), "Constructed with correct open state");
                 }
             }
 
             // Test top half
             for (boolean hingeState : hingeStates) {
                 door = new Door(type, hingeState);
-                assertThat("Constructed with correct door type", door.getItemType(), equalTo(type));
-                assertThat("Constructed with default top or bottom", door.isTopHalf(), equalTo(true));
-                assertThat("Constructed with correct direction", door.getHinge(), equalTo(hingeState));
+                assertThat(door.getItemType(), equalTo(type), "Constructed with correct door type");
+                assertThat(door.isTopHalf(), equalTo(true), "Constructed with default top or bottom");
+                assertThat(door.getHinge(), equalTo(hingeState), "Constructed with correct direction");
             }
         }
     }
@@ -71,26 +71,26 @@ public class MaterialDataTest {
     @Test
     public void testWood() {
         Wood wood = new Wood();
-        assertThat("Constructed with default wood type", wood.getItemType(), equalTo(Material.LEGACY_WOOD));
-        assertThat("Constructed with default tree species", wood.getSpecies(), equalTo(TreeSpecies.GENERIC));
+        assertThat(wood.getItemType(), equalTo(Material.LEGACY_WOOD), "Constructed with default wood type");
+        assertThat(wood.getSpecies(), equalTo(TreeSpecies.GENERIC), "Constructed with default tree species");
 
         TreeSpecies[] allSpecies = TreeSpecies.values();
         for (TreeSpecies species : allSpecies) {
             wood = new Wood(species);
-            assertThat("Constructed with default wood type", wood.getItemType(), equalTo(Material.LEGACY_WOOD));
-            assertThat("Constructed with correct tree species", wood.getSpecies(), equalTo(species));
+            assertThat(wood.getItemType(), equalTo(Material.LEGACY_WOOD), "Constructed with default wood type");
+            assertThat(wood.getSpecies(), equalTo(species), "Constructed with correct tree species");
         }
 
         Material[] types = new Material[]{Material.LEGACY_WOOD, Material.LEGACY_WOOD_DOUBLE_STEP};
         for (Material type : types) {
             wood = new Wood(type);
-            assertThat("Constructed with correct wood type", wood.getItemType(), equalTo(type));
-            assertThat("Constructed with default tree species", wood.getSpecies(), equalTo(TreeSpecies.GENERIC));
+            assertThat(wood.getItemType(), equalTo(type), "Constructed with correct wood type");
+            assertThat(wood.getSpecies(), equalTo(TreeSpecies.GENERIC), "Constructed with default tree species");
 
             for (TreeSpecies species : allSpecies) {
                 wood = new Wood(type, species);
-                assertThat("Constructed with correct wood type", wood.getItemType(), equalTo(type));
-                assertThat("Constructed with correct tree species", wood.getSpecies(), equalTo(species));
+                assertThat(wood.getItemType(), equalTo(type), "Constructed with correct wood type");
+                assertThat(wood.getSpecies(), equalTo(species), "Constructed with correct tree species");
             }
         }
     }
@@ -98,14 +98,14 @@ public class MaterialDataTest {
     @Test
     public void testTree() {
         Tree tree = new Tree();
-        assertThat("Constructed with default tree type", tree.getItemType(), equalTo(Material.LEGACY_LOG));
-        assertThat("Constructed with default tree species", tree.getSpecies(), equalTo(TreeSpecies.GENERIC));
-        assertThat("Constructed with default direction", tree.getDirection(), equalTo(BlockFace.UP));
+        assertThat(tree.getItemType(), equalTo(Material.LEGACY_LOG), "Constructed with default tree type");
+        assertThat(tree.getSpecies(), equalTo(TreeSpecies.GENERIC), "Constructed with default tree species");
+        assertThat(tree.getDirection(), equalTo(BlockFace.UP), "Constructed with default direction");
 
         tree = new Tree(Material.LEGACY_LOG);
-        assertThat("Constructed with correct tree type", tree.getItemType(), equalTo(Material.LEGACY_LOG));
-        assertThat("Constructed with default tree species", tree.getSpecies(), equalTo(TreeSpecies.GENERIC));
-        assertThat("Constructed with default direction", tree.getDirection(), equalTo(BlockFace.UP));
+        assertThat(tree.getItemType(), equalTo(Material.LEGACY_LOG), "Constructed with correct tree type");
+        assertThat(tree.getSpecies(), equalTo(TreeSpecies.GENERIC), "Constructed with default tree species");
+        assertThat(tree.getDirection(), equalTo(BlockFace.UP), "Constructed with default direction");
 
         Material[] types = new Material[]{Material.LEGACY_LOG, Material.LEGACY_LOG_2};
         TreeSpecies[][] allSpecies = new TreeSpecies[][]{
@@ -116,20 +116,20 @@ public class MaterialDataTest {
         for (int t = 0; t < types.length; t++) {
             for (TreeSpecies species : allSpecies[t]) {
                 tree = new Tree(types[t], species);
-                assertThat("Constructed with correct tree type", tree.getItemType(), equalTo(types[t]));
-                assertThat("Constructed with correct tree species", tree.getSpecies(), equalTo(species));
-                assertThat("Constructed with default direction", tree.getDirection(), equalTo(BlockFace.UP));
+                assertThat(tree.getItemType(), equalTo(types[t]), "Constructed with correct tree type");
+                assertThat(tree.getSpecies(), equalTo(species), "Constructed with correct tree species");
+                assertThat(tree.getDirection(), equalTo(BlockFace.UP), "Constructed with default direction");
 
                 // check item type is fixed automatically for invalid type-species combo
                 tree = new Tree(types[types.length - 1 - t], species);
-                assertThat("Constructed with fixed tree type", tree.getItemType(), equalTo(types[t]));
-                assertThat("Constructed with correct tree species", tree.getSpecies(), equalTo(species));
-                assertThat("Constructed with default direction", tree.getDirection(), equalTo(BlockFace.UP));
+                assertThat(tree.getItemType(), equalTo(types[t]), "Constructed with fixed tree type");
+                assertThat(tree.getSpecies(), equalTo(species), "Constructed with correct tree species");
+                assertThat(tree.getDirection(), equalTo(BlockFace.UP), "Constructed with default direction");
                 for (BlockFace dir : allDirections) {
                     tree = new Tree(types[t], species, dir);
-                    assertThat("Constructed with correct tree type", tree.getItemType(), equalTo(types[t]));
-                    assertThat("Constructed with correct tree species", tree.getSpecies(), equalTo(species));
-                    assertThat("Constructed with correct direction", tree.getDirection(), equalTo(dir));
+                    assertThat(tree.getItemType(), equalTo(types[t]), "Constructed with correct tree type");
+                    assertThat(tree.getSpecies(), equalTo(species), "Constructed with correct tree species");
+                    assertThat(tree.getDirection(), equalTo(dir), "Constructed with correct direction");
                 }
             }
         }
@@ -138,16 +138,16 @@ public class MaterialDataTest {
     @Test
     public void testLeaves() {
         Leaves leaves = new Leaves();
-        assertThat("Constructed with default leaf type", leaves.getItemType(), equalTo(Material.LEGACY_LEAVES));
-        assertThat("Constructed with default tree species", leaves.getSpecies(), equalTo(TreeSpecies.GENERIC));
-        assertThat("Constructed with default decayable", leaves.isDecayable(), equalTo(true));
-        assertThat("Constructed with default decaying", leaves.isDecaying(), equalTo(false));
+        assertThat(leaves.getItemType(), equalTo(Material.LEGACY_LEAVES), "Constructed with default leaf type");
+        assertThat(leaves.getSpecies(), equalTo(TreeSpecies.GENERIC), "Constructed with default tree species");
+        assertThat(leaves.isDecayable(), equalTo(true), "Constructed with default decayable");
+        assertThat(leaves.isDecaying(), equalTo(false), "Constructed with default decaying");
 
         leaves = new Leaves(Material.LEGACY_LEAVES);
-        assertThat("Constructed with correct leaf type", leaves.getItemType(), equalTo(Material.LEGACY_LEAVES));
-        assertThat("Constructed with default tree species", leaves.getSpecies(), equalTo(TreeSpecies.GENERIC));
-        assertThat("Constructed with default decayable", leaves.isDecayable(), equalTo(true));
-        assertThat("Constructed with default decaying", leaves.isDecaying(), equalTo(false));
+        assertThat(leaves.getItemType(), equalTo(Material.LEGACY_LEAVES), "Constructed with correct leaf type");
+        assertThat(leaves.getSpecies(), equalTo(TreeSpecies.GENERIC), "Constructed with default tree species");
+        assertThat(leaves.isDecayable(), equalTo(true), "Constructed with default decayable");
+        assertThat(leaves.isDecaying(), equalTo(false), "Constructed with default decaying");
 
         Material[] types = new Material[]{Material.LEGACY_LEAVES, Material.LEGACY_LEAVES_2};
         TreeSpecies[][] allSpecies = new TreeSpecies[][]{
@@ -159,30 +159,30 @@ public class MaterialDataTest {
         for (int t = 0; t < types.length; t++) {
             for (TreeSpecies species : allSpecies[t]) {
                 leaves = new Leaves(types[t], species);
-                assertThat("Constructed with correct leaf type", leaves.getItemType(), equalTo(types[t]));
-                assertThat("Constructed with correct tree species", leaves.getSpecies(), equalTo(species));
-                assertThat("Constructed with default decayable", leaves.isDecayable(), equalTo(true));
-                assertThat("Constructed with default decaying", leaves.isDecaying(), equalTo(false));
+                assertThat(leaves.getItemType(), equalTo(types[t]), "Constructed with correct leaf type");
+                assertThat(leaves.getSpecies(), equalTo(species), "Constructed with correct tree species");
+                assertThat(leaves.isDecayable(), equalTo(true), "Constructed with default decayable");
+                assertThat(leaves.isDecaying(), equalTo(false), "Constructed with default decaying");
 
                 // check item type is fixed automatically for invalid type-species combo
                 leaves = new Leaves(types[types.length - 1 - t], species);
-                assertThat("Constructed with fixed leaf type", leaves.getItemType(), equalTo(types[t]));
-                assertThat("Constructed with correct tree species", leaves.getSpecies(), equalTo(species));
-                assertThat("Constructed with default decayable", leaves.isDecayable(), equalTo(true));
-                assertThat("Constructed with default decaying", leaves.isDecaying(), equalTo(false));
+                assertThat(leaves.getItemType(), equalTo(types[t]), "Constructed with fixed leaf type");
+                assertThat(leaves.getSpecies(), equalTo(species), "Constructed with correct tree species");
+                assertThat(leaves.isDecayable(), equalTo(true), "Constructed with default decayable");
+                assertThat(leaves.isDecaying(), equalTo(false), "Constructed with default decaying");
                 for (boolean isDecayable : decayable) {
                     leaves = new Leaves(types[t], species, isDecayable);
-                    assertThat("Constructed with correct wood type", leaves.getItemType(), equalTo(types[t]));
-                    assertThat("Constructed with correct tree species", leaves.getSpecies(), equalTo(species));
-                    assertThat("Constructed with correct decayable", leaves.isDecayable(), equalTo(isDecayable));
-                    assertThat("Constructed with default decaying", leaves.isDecaying(), equalTo(false));
+                    assertThat(leaves.getItemType(), equalTo(types[t]), "Constructed with correct wood type");
+                    assertThat(leaves.getSpecies(), equalTo(species), "Constructed with correct tree species");
+                    assertThat(leaves.isDecayable(), equalTo(isDecayable), "Constructed with correct decayable");
+                    assertThat(leaves.isDecaying(), equalTo(false), "Constructed with default decaying");
                     for (boolean isDecaying : decaying) {
                         leaves = new Leaves(types[t], species, isDecayable);
                         leaves.setDecaying(isDecaying);
-                        assertThat("Constructed with correct wood type", leaves.getItemType(), equalTo(types[t]));
-                        assertThat("Constructed with correct tree species", leaves.getSpecies(), equalTo(species));
-                        assertThat("Constructed with correct decayable", leaves.isDecayable(), equalTo(isDecaying || isDecayable));
-                        assertThat("Constructed with correct decaying", leaves.isDecaying(), equalTo(isDecaying));
+                        assertThat(leaves.getItemType(), equalTo(types[t]), "Constructed with correct wood type");
+                        assertThat(leaves.getSpecies(), equalTo(species), "Constructed with correct tree species");
+                        assertThat(leaves.isDecayable(), equalTo(isDecaying || isDecayable), "Constructed with correct decayable");
+                        assertThat(leaves.isDecaying(), equalTo(isDecaying), "Constructed with correct decaying");
                     }
                 }
             }
@@ -192,22 +192,22 @@ public class MaterialDataTest {
     @Test
     public void testWoodenStep() {
         WoodenStep woodenStep = new WoodenStep();
-        assertThat("Constructed with default step type", woodenStep.getItemType(), equalTo(Material.LEGACY_WOOD_STEP));
-        assertThat("Constructed with default tree species", woodenStep.getSpecies(), equalTo(TreeSpecies.GENERIC));
-        assertThat("Constructed with default inversion", woodenStep.isInverted(), equalTo(false));
+        assertThat(woodenStep.getItemType(), equalTo(Material.LEGACY_WOOD_STEP), "Constructed with default step type");
+        assertThat(woodenStep.getSpecies(), equalTo(TreeSpecies.GENERIC), "Constructed with default tree species");
+        assertThat(woodenStep.isInverted(), equalTo(false), "Constructed with default inversion");
 
         TreeSpecies[] allSpecies = TreeSpecies.values();
         boolean[] inversion = new boolean[]{true, false};
         for (TreeSpecies species : allSpecies) {
             woodenStep = new WoodenStep(species);
-            assertThat("Constructed with default step type", woodenStep.getItemType(), equalTo(Material.LEGACY_WOOD_STEP));
-            assertThat("Constructed with correct tree species", woodenStep.getSpecies(), equalTo(species));
-            assertThat("Constructed with default inversion", woodenStep.isInverted(), equalTo(false));
+            assertThat(woodenStep.getItemType(), equalTo(Material.LEGACY_WOOD_STEP), "Constructed with default step type");
+            assertThat(woodenStep.getSpecies(), equalTo(species), "Constructed with correct tree species");
+            assertThat(woodenStep.isInverted(), equalTo(false), "Constructed with default inversion");
             for (boolean isInverted : inversion) {
                 woodenStep = new WoodenStep(species, isInverted);
-                assertThat("Constructed with default step type", woodenStep.getItemType(), equalTo(Material.LEGACY_WOOD_STEP));
-                assertThat("Constructed with correct tree species", woodenStep.getSpecies(), equalTo(species));
-                assertThat("Constructed with correct inversion", woodenStep.isInverted(), equalTo(isInverted));
+                assertThat(woodenStep.getItemType(), equalTo(Material.LEGACY_WOOD_STEP), "Constructed with default step type");
+                assertThat(woodenStep.getSpecies(), equalTo(species), "Constructed with correct tree species");
+                assertThat(woodenStep.isInverted(), equalTo(isInverted), "Constructed with correct inversion");
             }
         }
     }
@@ -215,22 +215,22 @@ public class MaterialDataTest {
     @Test
     public void testSapling() {
         Sapling sapling = new Sapling();
-        assertThat("Constructed with default sapling type", sapling.getItemType(), equalTo(Material.LEGACY_SAPLING));
-        assertThat("Constructed with default tree species", sapling.getSpecies(), equalTo(TreeSpecies.GENERIC));
-        assertThat("Constructed with default growable", sapling.isInstantGrowable(), equalTo(false));
+        assertThat(sapling.getItemType(), equalTo(Material.LEGACY_SAPLING), "Constructed with default sapling type");
+        assertThat(sapling.getSpecies(), equalTo(TreeSpecies.GENERIC), "Constructed with default tree species");
+        assertThat(sapling.isInstantGrowable(), equalTo(false), "Constructed with default growable");
 
         TreeSpecies[] allSpecies = TreeSpecies.values();
         boolean[] growable = new boolean[]{true, false};
         for (TreeSpecies species : allSpecies) {
             sapling = new Sapling(species);
-            assertThat("Constructed with default sapling type", sapling.getItemType(), equalTo(Material.LEGACY_SAPLING));
-            assertThat("Constructed with correct tree species", sapling.getSpecies(), equalTo(species));
-            assertThat("Constructed with default growable", sapling.isInstantGrowable(), equalTo(false));
+            assertThat(sapling.getItemType(), equalTo(Material.LEGACY_SAPLING), "Constructed with default sapling type");
+            assertThat(sapling.getSpecies(), equalTo(species), "Constructed with correct tree species");
+            assertThat(sapling.isInstantGrowable(), equalTo(false), "Constructed with default growable");
             for (boolean isInstantGrowable : growable) {
                 sapling = new Sapling(species, isInstantGrowable);
-                assertThat("Constructed with default sapling type", sapling.getItemType(), equalTo(Material.LEGACY_SAPLING));
-                assertThat("Constructed with correct tree species", sapling.getSpecies(), equalTo(species));
-                assertThat("Constructed with correct growable", sapling.isInstantGrowable(), equalTo(isInstantGrowable));
+                assertThat(sapling.getItemType(), equalTo(Material.LEGACY_SAPLING), "Constructed with default sapling type");
+                assertThat(sapling.getSpecies(), equalTo(species), "Constructed with correct tree species");
+                assertThat(sapling.isInstantGrowable(), equalTo(isInstantGrowable), "Constructed with correct growable");
             }
         }
     }
@@ -244,19 +244,19 @@ public class MaterialDataTest {
         MushroomBlockTexture[] textures = MushroomBlockTexture.values();
         for (Material type : mushroomTypes) {
             Mushroom mushroom = new Mushroom(type);
-            assertThat("Constructed with correct mushroom type", mushroom.getItemType(), equalTo(type));
-            assertThat("Constructed with default pores face", mushroom.getBlockTexture(), equalTo(MushroomBlockTexture.ALL_PORES));
+            assertThat(mushroom.getItemType(), equalTo(type), "Constructed with correct mushroom type");
+            assertThat(mushroom.getBlockTexture(), equalTo(MushroomBlockTexture.ALL_PORES), "Constructed with default pores face");
 
             for (int f = 0; f < setFaces.length; f++) {
                 mushroom = new Mushroom(type, setFaces[f]);
-                assertThat("Constructed with correct mushroom type", mushroom.getItemType(), equalTo(type));
-                assertThat("Constructed with correct texture", mushroom.getBlockTexture(), equalTo(MushroomBlockTexture.getCapByFace(setFaces[f])));
+                assertThat(mushroom.getItemType(), equalTo(type), "Constructed with correct mushroom type");
+                assertThat(mushroom.getBlockTexture(), equalTo(MushroomBlockTexture.getCapByFace(setFaces[f])), "Constructed with correct texture");
             }
 
             for (MushroomBlockTexture texture : textures) {
                 mushroom = new Mushroom(type, texture);
-                assertThat("Constructed with correct mushroom type", mushroom.getItemType(), equalTo(type));
-                assertThat("Constructed with correct texture", mushroom.getBlockTexture(), equalTo(texture));
+                assertThat(mushroom.getItemType(), equalTo(type), "Constructed with correct mushroom type");
+                assertThat(mushroom.getBlockTexture(), equalTo(texture), "Constructed with correct texture");
             }
         }
     }
@@ -264,90 +264,90 @@ public class MaterialDataTest {
     @Test
     public void testCrops() {
         Crops crops = new Crops();
-        assertThat("Constructed with default crops type", crops.getItemType(), equalTo(Material.LEGACY_CROPS));
-        assertThat("Constructed with default crop state", crops.getState(), equalTo(CropState.SEEDED));
+        assertThat(crops.getItemType(), equalTo(Material.LEGACY_CROPS), "Constructed with default crops type");
+        assertThat(crops.getState(), equalTo(CropState.SEEDED), "Constructed with default crop state");
 
         CropState[] allStates = CropState.values();
         for (CropState state : allStates) {
             crops = new Crops(state);
-            assertThat("Constructed with default crops type", crops.getItemType(), equalTo(Material.LEGACY_CROPS));
-            assertThat("Constructed with correct crop state", crops.getState(), equalTo(state));
+            assertThat(crops.getItemType(), equalTo(Material.LEGACY_CROPS), "Constructed with default crops type");
+            assertThat(crops.getState(), equalTo(state), "Constructed with correct crop state");
         }
 
         // The crops which fully implement all crop states
         Material[] allCrops = new Material[]{Material.LEGACY_CROPS, Material.LEGACY_CARROT, Material.LEGACY_POTATO};
         for (Material crop : allCrops) {
             crops = new Crops(crop);
-            assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(crop));
-            assertThat("Constructed with default crop state", crops.getState(), equalTo(CropState.SEEDED));
+            assertThat(crops.getItemType(), equalTo(crop), "Constructed with correct crops type");
+            assertThat(crops.getState(), equalTo(CropState.SEEDED), "Constructed with default crop state");
 
             for (CropState state : allStates) {
                 crops = new Crops(crop, state);
-                assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(crop));
-                assertThat("Constructed with correct crop state", crops.getState(), equalTo(state));
+                assertThat(crops.getItemType(), equalTo(crop), "Constructed with correct crops type");
+                assertThat(crops.getState(), equalTo(state), "Constructed with correct crop state");
             }
         }
 
         // Beetroot are crops too, but they only have four states
         // Setting different crop states for beetroot will return the following when retrieved back
         CropState[] beetrootStates = new CropState[]{CropState.SEEDED, CropState.SEEDED, CropState.SMALL, CropState.SMALL, CropState.TALL, CropState.TALL, CropState.RIPE, CropState.RIPE};
-        assertThat("Beetroot state translations match size", beetrootStates.length, equalTo(allStates.length));
+        assertThat(beetrootStates.length, equalTo(allStates.length), "Beetroot state translations match size");
         crops = new Crops(Material.LEGACY_BEETROOT_BLOCK);
-        assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(Material.LEGACY_BEETROOT_BLOCK));
-        assertThat("Constructed with default crop state", crops.getState(), equalTo(CropState.SEEDED));
+        assertThat(crops.getItemType(), equalTo(Material.LEGACY_BEETROOT_BLOCK), "Constructed with correct crops type");
+        assertThat(crops.getState(), equalTo(CropState.SEEDED), "Constructed with default crop state");
         for (int s = 0; s < beetrootStates.length; s++) {
             crops = new Crops(Material.LEGACY_BEETROOT_BLOCK, allStates[s]);
-            assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(Material.LEGACY_BEETROOT_BLOCK));
-            assertThat("Constructed with correct crop state", crops.getState(), equalTo(beetrootStates[s]));
+            assertThat(crops.getItemType(), equalTo(Material.LEGACY_BEETROOT_BLOCK), "Constructed with correct crops type");
+            assertThat(crops.getState(), equalTo(beetrootStates[s]), "Constructed with correct crop state");
         }
 
         // In case you want to treat NetherWarts as Crops, although they really aren't
         crops = new Crops(Material.LEGACY_NETHER_WARTS);
         NetherWarts warts = new NetherWarts();
-        assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(warts.getItemType()));
-        assertThat("Constructed with default crop state", crops.getState(), equalTo(CropState.SEEDED));
-        assertThat("Constructed with default wart state", warts.getState(), equalTo(NetherWartsState.SEEDED));
+        assertThat(crops.getItemType(), equalTo(warts.getItemType()), "Constructed with correct crops type");
+        assertThat(crops.getState(), equalTo(CropState.SEEDED), "Constructed with default crop state");
+        assertThat(warts.getState(), equalTo(NetherWartsState.SEEDED), "Constructed with default wart state");
         allStates = new CropState[]{CropState.SEEDED, CropState.SMALL, CropState.TALL, CropState.RIPE};
         NetherWartsState[] allWartStates = NetherWartsState.values();
-        assertThat("Nether Warts state translations match size", allWartStates.length, equalTo(allStates.length));
+        assertThat(allWartStates.length, equalTo(allStates.length), "Nether Warts state translations match size");
         for (int s = 0; s < allStates.length; s++) {
             crops = new Crops(Material.LEGACY_NETHER_WARTS, allStates[s]);
             warts = new NetherWarts(allWartStates[s]);
-            assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(warts.getItemType()));
-            assertThat("Constructed with correct crop state", crops.getState(), equalTo(allStates[s]));
-            assertThat("Constructed with correct wart state", warts.getState(), equalTo(allWartStates[s]));
+            assertThat(crops.getItemType(), equalTo(warts.getItemType()), "Constructed with correct crops type");
+            assertThat(crops.getState(), equalTo(allStates[s]), "Constructed with correct crop state");
+            assertThat(warts.getState(), equalTo(allWartStates[s]), "Constructed with correct wart state");
         }
     }
 
     @Test
     public void testDiode() {
         Diode diode = new Diode();
-        assertThat("Constructed with backward compatible diode state", diode.getItemType(), equalTo(Material.LEGACY_DIODE_BLOCK_ON));
-        assertThat("Constructed with backward compatible powered", diode.isPowered(), equalTo(true));
-        assertThat("Constructed with default delay", diode.getDelay(), equalTo(1));
-        assertThat("Constructed with default direction", diode.getFacing(), equalTo(BlockFace.NORTH));
+        assertThat(diode.getItemType(), equalTo(Material.LEGACY_DIODE_BLOCK_ON), "Constructed with backward compatible diode state");
+        assertThat(diode.isPowered(), equalTo(true), "Constructed with backward compatible powered");
+        assertThat(diode.getDelay(), equalTo(1), "Constructed with default delay");
+        assertThat(diode.getFacing(), equalTo(BlockFace.NORTH), "Constructed with default direction");
 
         BlockFace[] directions = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
         int[] delays = new int[]{1, 2, 3, 4};
         boolean[] states = new boolean[]{false, true};
         for (BlockFace direction : directions) {
             diode = new Diode(direction);
-            assertThat("Constructed with default diode state", diode.getItemType(), equalTo(Material.LEGACY_DIODE_BLOCK_OFF));
-            assertThat("Constructed with default powered", diode.isPowered(), equalTo(false));
-            assertThat("Constructed with default delay", diode.getDelay(), equalTo(1));
-            assertThat("Constructed with correct direction", diode.getFacing(), equalTo(direction));
+            assertThat(diode.getItemType(), equalTo(Material.LEGACY_DIODE_BLOCK_OFF), "Constructed with default diode state");
+            assertThat(diode.isPowered(), equalTo(false), "Constructed with default powered");
+            assertThat(diode.getDelay(), equalTo(1), "Constructed with default delay");
+            assertThat(diode.getFacing(), equalTo(direction), "Constructed with correct direction");
             for (int delay : delays) {
                 diode = new Diode(direction, delay);
-                assertThat("Constructed with default diode state", diode.getItemType(), equalTo(Material.LEGACY_DIODE_BLOCK_OFF));
-                assertThat("Constructed with default powered", diode.isPowered(), equalTo(false));
-                assertThat("Constructed with correct delay", diode.getDelay(), equalTo(delay));
-                assertThat("Constructed with correct direction", diode.getFacing(), equalTo(direction));
+                assertThat(diode.getItemType(), equalTo(Material.LEGACY_DIODE_BLOCK_OFF), "Constructed with default diode state");
+                assertThat(diode.isPowered(), equalTo(false), "Constructed with default powered");
+                assertThat(diode.getDelay(), equalTo(delay), "Constructed with correct delay");
+                assertThat(diode.getFacing(), equalTo(direction), "Constructed with correct direction");
                 for (boolean state : states) {
                     diode = new Diode(direction, delay, state);
-                    assertThat("Constructed with correct diode state", diode.getItemType(), equalTo(state ? Material.LEGACY_DIODE_BLOCK_ON : Material.LEGACY_DIODE_BLOCK_OFF));
-                    assertThat("Constructed with default powered", diode.isPowered(), equalTo(state));
-                    assertThat("Constructed with correct delay", diode.getDelay(), equalTo(delay));
-                    assertThat("Constructed with correct direction", diode.getFacing(), equalTo(direction));
+                    assertThat(diode.getItemType(), equalTo(state ? Material.LEGACY_DIODE_BLOCK_ON : Material.LEGACY_DIODE_BLOCK_OFF), "Constructed with correct diode state");
+                    assertThat(diode.isPowered(), equalTo(state), "Constructed with default powered");
+                    assertThat(diode.getDelay(), equalTo(delay), "Constructed with correct delay");
+                    assertThat(diode.getFacing(), equalTo(direction), "Constructed with correct direction");
                 }
             }
         }
@@ -356,44 +356,44 @@ public class MaterialDataTest {
     @Test
     public void testComparator() {
         Comparator comparator = new Comparator();
-        assertThat("Constructed with default comparator state", comparator.getItemType(), equalTo(Material.LEGACY_REDSTONE_COMPARATOR_OFF));
-        assertThat("Constructed with default powered", comparator.isPowered(), equalTo(false));
-        assertThat("Constructed with default being powered", comparator.isBeingPowered(), equalTo(false));
-        assertThat("Constructed with default mode", comparator.isSubtractionMode(), equalTo(false));
-        assertThat("Constructed with default direction", comparator.getFacing(), equalTo(BlockFace.NORTH));
+        assertThat(comparator.getItemType(), equalTo(Material.LEGACY_REDSTONE_COMPARATOR_OFF), "Constructed with default comparator state");
+        assertThat(comparator.isPowered(), equalTo(false), "Constructed with default powered");
+        assertThat(comparator.isBeingPowered(), equalTo(false), "Constructed with default being powered");
+        assertThat(comparator.isSubtractionMode(), equalTo(false), "Constructed with default mode");
+        assertThat(comparator.getFacing(), equalTo(BlockFace.NORTH), "Constructed with default direction");
 
         BlockFace[] directions = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
         boolean[] modes = new boolean[]{false, true};
         boolean[] states = new boolean[]{false, true};
         for (BlockFace direction : directions) {
             comparator = new Comparator(direction);
-            assertThat("Constructed with default comparator state", comparator.getItemType(), equalTo(Material.LEGACY_REDSTONE_COMPARATOR_OFF));
-            assertThat("Constructed with default powered", comparator.isPowered(), equalTo(false));
-            assertThat("Constructed with default being powered", comparator.isBeingPowered(), equalTo(false));
-            assertThat("Constructed with default mode", comparator.isSubtractionMode(), equalTo(false));
-            assertThat("Constructed with correct direction", comparator.getFacing(), equalTo(direction));
+            assertThat(comparator.getItemType(), equalTo(Material.LEGACY_REDSTONE_COMPARATOR_OFF), "Constructed with default comparator state");
+            assertThat(comparator.isPowered(), equalTo(false), "Constructed with default powered");
+            assertThat(comparator.isBeingPowered(), equalTo(false), "Constructed with default being powered");
+            assertThat(comparator.isSubtractionMode(), equalTo(false), "Constructed with default mode");
+            assertThat(comparator.getFacing(), equalTo(direction), "Constructed with correct direction");
             for (boolean mode : modes) {
                 comparator = new Comparator(direction, mode);
-                assertThat("Constructed with default comparator state", comparator.getItemType(), equalTo(Material.LEGACY_REDSTONE_COMPARATOR_OFF));
-                assertThat("Constructed with default powered", comparator.isPowered(), equalTo(false));
-                assertThat("Constructed with default being powered", comparator.isBeingPowered(), equalTo(false));
-                assertThat("Constructed with correct mode", comparator.isSubtractionMode(), equalTo(mode));
-                assertThat("Constructed with correct direction", comparator.getFacing(), equalTo(direction));
+                assertThat(comparator.getItemType(), equalTo(Material.LEGACY_REDSTONE_COMPARATOR_OFF), "Constructed with default comparator state");
+                assertThat(comparator.isPowered(), equalTo(false), "Constructed with default powered");
+                assertThat(comparator.isBeingPowered(), equalTo(false), "Constructed with default being powered");
+                assertThat(comparator.isSubtractionMode(), equalTo(mode), "Constructed with correct mode");
+                assertThat(comparator.getFacing(), equalTo(direction), "Constructed with correct direction");
                 for (boolean state : states) {
                     comparator = new Comparator(direction, mode, state);
-                    assertThat("Constructed with correct comparator state", comparator.getItemType(), equalTo(state ? Material.LEGACY_REDSTONE_COMPARATOR_ON : Material.LEGACY_REDSTONE_COMPARATOR_OFF));
-                    assertThat("Constructed with correct powered", comparator.isPowered(), equalTo(state));
-                    assertThat("Constructed with default being powered", comparator.isBeingPowered(), equalTo(false));
-                    assertThat("Constructed with correct mode", comparator.isSubtractionMode(), equalTo(mode));
-                    assertThat("Constructed with correct direction", comparator.getFacing(), equalTo(direction));
+                    assertThat(comparator.getItemType(), equalTo(state ? Material.LEGACY_REDSTONE_COMPARATOR_ON : Material.LEGACY_REDSTONE_COMPARATOR_OFF), "Constructed with correct comparator state");
+                    assertThat(comparator.isPowered(), equalTo(state), "Constructed with correct powered");
+                    assertThat(comparator.isBeingPowered(), equalTo(false), "Constructed with default being powered");
+                    assertThat(comparator.isSubtractionMode(), equalTo(mode), "Constructed with correct mode");
+                    assertThat(comparator.getFacing(), equalTo(direction), "Constructed with correct direction");
 
                     // Check if the game sets the fourth bit, that block data is still interpreted correctly
                     comparator.setData((byte) ((comparator.getData() & 0x7) | 0x8));
-                    assertThat("Constructed with correct comparator state", comparator.getItemType(), equalTo(state ? Material.LEGACY_REDSTONE_COMPARATOR_ON : Material.LEGACY_REDSTONE_COMPARATOR_OFF));
-                    assertThat("Constructed with correct powered", comparator.isPowered(), equalTo(state));
-                    assertThat("Constructed with correct being powered", comparator.isBeingPowered(), equalTo(true));
-                    assertThat("Constructed with correct mode", comparator.isSubtractionMode(), equalTo(mode));
-                    assertThat("Constructed with correct direction", comparator.getFacing(), equalTo(direction));
+                    assertThat(comparator.getItemType(), equalTo(state ? Material.LEGACY_REDSTONE_COMPARATOR_ON : Material.LEGACY_REDSTONE_COMPARATOR_OFF), "Constructed with correct comparator state");
+                    assertThat(comparator.isPowered(), equalTo(state), "Constructed with correct powered");
+                    assertThat(comparator.isBeingPowered(), equalTo(true), "Constructed with correct being powered");
+                    assertThat(comparator.isSubtractionMode(), equalTo(mode), "Constructed with correct mode");
+                    assertThat(comparator.getFacing(), equalTo(direction), "Constructed with correct direction");
                 }
             }
         }
@@ -402,25 +402,25 @@ public class MaterialDataTest {
     @Test
     public void testHopper() {
         Hopper hopper = new Hopper();
-        assertThat("Constructed with default hopper type", hopper.getItemType(), equalTo(Material.LEGACY_HOPPER));
-        assertThat("Constructed with default active state", hopper.isActive(), equalTo(true));
-        assertThat("Constructed with default powered state", hopper.isPowered(), equalTo(false));
-        assertThat("Constructed with default direction", hopper.getFacing(), equalTo(BlockFace.DOWN));
+        assertThat(hopper.getItemType(), equalTo(Material.LEGACY_HOPPER), "Constructed with default hopper type");
+        assertThat(hopper.isActive(), equalTo(true), "Constructed with default active state");
+        assertThat(hopper.isPowered(), equalTo(false), "Constructed with default powered state");
+        assertThat(hopper.getFacing(), equalTo(BlockFace.DOWN), "Constructed with default direction");
 
         BlockFace[] directions = new BlockFace[]{BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST, BlockFace.EAST};
         boolean[] activeStates = new boolean[]{true, false};
         for (BlockFace direction : directions) {
             hopper = new Hopper(direction);
-            assertThat("Constructed with default hopper type", hopper.getItemType(), equalTo(Material.LEGACY_HOPPER));
-            assertThat("Constructed with default active state", hopper.isActive(), equalTo(true));
-            assertThat("Constructed with correct powered state", hopper.isPowered(), equalTo(false));
-            assertThat("Constructed with correct direction", hopper.getFacing(), equalTo(direction));
+            assertThat(hopper.getItemType(), equalTo(Material.LEGACY_HOPPER), "Constructed with default hopper type");
+            assertThat(hopper.isActive(), equalTo(true), "Constructed with default active state");
+            assertThat(hopper.isPowered(), equalTo(false), "Constructed with correct powered state");
+            assertThat(hopper.getFacing(), equalTo(direction), "Constructed with correct direction");
             for (boolean isActive : activeStates) {
                 hopper = new Hopper(direction, isActive);
-                assertThat("Constructed with default hopper type", hopper.getItemType(), equalTo(Material.LEGACY_HOPPER));
-                assertThat("Constructed with correct active state", hopper.isActive(), equalTo(isActive));
-                assertThat("Constructed with correct powered state", hopper.isPowered(), equalTo(!isActive));
-                assertThat("Constructed with correct direction", hopper.getFacing(), equalTo(direction));
+                assertThat(hopper.getItemType(), equalTo(Material.LEGACY_HOPPER), "Constructed with default hopper type");
+                assertThat(hopper.isActive(), equalTo(isActive), "Constructed with correct active state");
+                assertThat(hopper.isPowered(), equalTo(!isActive), "Constructed with correct powered state");
+                assertThat(hopper.getFacing(), equalTo(direction), "Constructed with correct direction");
             }
         }
     }

@@ -1,6 +1,6 @@
 package org.bukkit.configuration.file;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -8,13 +8,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.configuration.MemoryConfigurationTest;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public abstract class FileConfigurationTest extends MemoryConfigurationTest {
-    @Rule
-    public TemporaryFolder testFolder = new TemporaryFolder();
+    @TempDir
+    public File testFolder;
 
     @Override
     public abstract FileConfiguration getConfig();
@@ -36,7 +35,8 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
     @Test
     public void testSave_File() throws Exception {
         FileConfiguration config = getConfig();
-        File file = testFolder.newFile("test.config");
+        File file = new File(testFolder, "test.config");
+        file.createNewFile();
 
         for (Map.Entry<String, Object> entry : getTestValues().entrySet()) {
             config.set(entry.getKey(), entry.getValue());
@@ -50,7 +50,8 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
     @Test
     public void testSave_String() throws Exception {
         FileConfiguration config = getConfig();
-        File file = testFolder.newFile("test.config");
+        File file = new File(testFolder, "test.config");
+        file.createNewFile();
 
         for (Map.Entry<String, Object> entry : getTestValues().entrySet()) {
             config.set(entry.getKey(), entry.getValue());
@@ -78,7 +79,8 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
     @Test
     public void testLoad_File() throws Exception {
         FileConfiguration config = getConfig();
-        File file = testFolder.newFile("test.config");
+        File file = new File(testFolder, "test.config");
+        file.createNewFile();
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
         String saved = getTestValuesString();
         Map<String, Object> values = getTestValues();
@@ -101,7 +103,8 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
     @Test
     public void testLoad_String() throws Exception {
         FileConfiguration config = getConfig();
-        File file = testFolder.newFile("test.config");
+        File file = new File(testFolder, "test.config");
+        file.createNewFile();
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
         String saved = getTestValuesString();
         Map<String, Object> values = getTestValues();

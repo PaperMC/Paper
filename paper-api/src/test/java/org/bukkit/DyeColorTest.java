@@ -1,69 +1,57 @@
 package org.bukkit;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import java.util.ArrayList;
-import java.util.List;
 import org.bukkit.material.Colorable;
 import org.bukkit.material.Dye;
 import org.bukkit.material.Wool;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
-@RunWith(Parameterized.class)
 public class DyeColorTest {
 
-    @Parameters(name = "{index}: {0}")
-    public static List<Object[]> data() {
-        List<Object[]> list = new ArrayList<Object[]>();
-        for (DyeColor dye : DyeColor.values()) {
-            list.add(new Object[] {dye});
-        }
-        return list;
-    }
-
-    @Parameter public DyeColor dye;
-
-    @Test
+    @ParameterizedTest
+    @EnumSource(DyeColor.class)
     @SuppressWarnings("deprecation")
-    public void getByData() {
+    public void getByData(DyeColor dye) {
         byte data = dye.getWoolData();
 
         DyeColor byData = DyeColor.getByWoolData(data);
         assertThat(byData, is(dye));
     }
 
-    @Test
-    public void getByWoolData() {
+    @ParameterizedTest
+    @EnumSource(DyeColor.class)
+    public void getByWoolData(DyeColor dye) {
         byte data = dye.getWoolData();
 
         DyeColor byData = DyeColor.getByWoolData(data);
         assertThat(byData, is(dye));
     }
 
-    @Test
-    public void getByDyeData() {
+    @ParameterizedTest
+    @EnumSource(DyeColor.class)
+    public void getByDyeData(DyeColor dye) {
         byte data = dye.getDyeData();
 
         DyeColor byData = DyeColor.getByDyeData(data);
         assertThat(byData, is(dye));
     }
 
-    @Test
-    public void getDyeDyeColor() {
-        testColorable(new Dye(Material.LEGACY_INK_SACK, dye.getDyeData()));
-        testColorable(new Dye(dye));
+    @ParameterizedTest
+    @EnumSource(DyeColor.class)
+    public void getDyeDyeColor(DyeColor dye) {
+        testColorable(new Dye(Material.LEGACY_INK_SACK, dye.getDyeData()), dye);
+        testColorable(new Dye(dye), dye);
     }
 
-    @Test
-    public void getWoolDyeColor() {
-        testColorable(new Wool(Material.LEGACY_WOOL, dye.getWoolData()));
+    @ParameterizedTest
+    @EnumSource(DyeColor.class)
+    public void getWoolDyeColor(DyeColor dye) {
+        testColorable(new Wool(Material.LEGACY_WOOL, dye.getWoolData()), dye);
     }
 
-    private void testColorable(final Colorable colorable) {
-        assertThat(colorable.getColor(), is(this.dye));
+    private void testColorable(final Colorable colorable, DyeColor dye) {
+        assertThat(colorable.getColor(), is(dye));
     }
 }

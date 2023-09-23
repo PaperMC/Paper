@@ -1,9 +1,9 @@
 package org.bukkit.metadata;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.Callable;
 import org.bukkit.plugin.TestPlugin;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class LazyMetadataValueTest {
     private LazyMetadataValue subject;
@@ -41,7 +41,7 @@ public class LazyMetadataValueTest {
         assertEquals(value, subject.value());
     }
 
-    @Test(expected = MetadataEvaluationException.class)
+    @Test
     public void testEvalException() {
         subject = new LazyMetadataValue(plugin, LazyMetadataValue.CacheStrategy.CACHE_AFTER_FIRST_EVAL, new Callable<Object>() {
             @Override
@@ -49,7 +49,7 @@ public class LazyMetadataValueTest {
                 throw new RuntimeException("Gotcha!");
             }
         });
-        subject.value();
+        assertThrows(MetadataEvaluationException.class, () -> subject.value());
     }
 
     @Test

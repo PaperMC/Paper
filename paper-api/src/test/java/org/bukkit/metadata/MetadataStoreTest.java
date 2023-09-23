@@ -1,11 +1,11 @@
 package org.bukkit.metadata;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import java.util.concurrent.Callable;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.TestPlugin;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MetadataStoreTest {
     private Plugin pluginX = new TestPlugin("x");

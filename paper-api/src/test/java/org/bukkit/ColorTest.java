@@ -1,9 +1,10 @@
 package org.bukkit;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("javadoc")
 public class ColorTest {
@@ -58,7 +59,7 @@ public class ColorTest {
             YamlConfiguration deserialized = new YamlConfiguration();
             deserialized.loadFromString(serialized);
 
-            assertThat(testColor.name + " on " + serialized, base, is(deserialized.getColor("color")));
+            assertThat(base, is(deserialized.getColor("color")), testColor.name + " on " + serialized);
         }
     }
 
@@ -73,14 +74,14 @@ public class ColorTest {
             Color fromRGBs = Color.fromRGB(testColor.r, testColor.g, testColor.b);
             Color fromBGRs = Color.fromBGR(testColor.b, testColor.g, testColor.r);
 
-            assertThat(testColor.name, fromARGB, is(fromARGB));
-            assertThat(testColor.name, fromARGBs, is(fromARGBs));
-            assertThat(testColor.name, fromRGB, is(fromRGBs));
-            assertThat(testColor.name, fromRGB, is(fromBGR));
-            assertThat(testColor.name, fromRGB, is(fromBGRs));
-            assertThat(testColor.name, fromRGBs, is(fromBGR));
-            assertThat(testColor.name, fromRGBs, is(fromBGRs));
-            assertThat(testColor.name, fromBGR, is(fromBGRs));
+            assertThat(fromARGB, is(fromARGB), testColor.name);
+            assertThat(fromARGBs, is(fromARGBs), testColor.name);
+            assertThat(fromRGB, is(fromRGBs), testColor.name);
+            assertThat(fromRGB, is(fromBGR), testColor.name);
+            assertThat(fromRGB, is(fromBGRs), testColor.name);
+            assertThat(fromRGBs, is(fromBGR), testColor.name);
+            assertThat(fromRGBs, is(fromBGRs), testColor.name);
+            assertThat(fromBGR, is(fromBGRs), testColor.name);
         }
     }
 
@@ -93,11 +94,11 @@ public class ColorTest {
                 TestColor testTo = examples[j];
                 Color to = Color.fromARGB(testTo.argb);
                 String name = testFrom.name + " to " + testTo.name;
-                assertThat(name, from, is(not(to)));
+                assertThat(from, is(not(to)), name);
 
                 Color transform = from.setAlpha(testTo.a).setRed(testTo.r).setBlue(testTo.b).setGreen(testTo.g);
-                assertThat(name, transform, is(not(sameInstance(from))));
-                assertThat(name, transform, is(to));
+                assertThat(transform, is(not(sameInstance(from))), name);
+                assertThat(transform, is(to), name);
             }
         }
     }
@@ -106,8 +107,8 @@ public class ColorTest {
     @Test
     public void testARGB() {
         for (TestColor testColor : examples) {
-            assertThat(testColor.name, Color.fromARGB(testColor.argb).asARGB(), is(testColor.argb));
-            assertThat(testColor.name, Color.fromARGB(testColor.a, testColor.r, testColor.g, testColor.b).asARGB(), is(testColor.argb));
+            assertThat(Color.fromARGB(testColor.argb).asARGB(), is(testColor.argb), testColor.name);
+            assertThat(Color.fromARGB(testColor.a, testColor.r, testColor.g, testColor.b).asARGB(), is(testColor.argb), testColor.name);
         }
     }
 
@@ -115,342 +116,342 @@ public class ColorTest {
     @Test
     public void testRGB() {
         for (TestColor testColor : examples) {
-            assertThat(testColor.name, Color.fromRGB(testColor.rgb).asRGB(), is(testColor.rgb));
-            assertThat(testColor.name, Color.fromBGR(testColor.bgr).asRGB(), is(testColor.rgb));
-            assertThat(testColor.name, Color.fromRGB(testColor.r, testColor.g, testColor.b).asRGB(), is(testColor.rgb));
-            assertThat(testColor.name, Color.fromBGR(testColor.b, testColor.g, testColor.r).asRGB(), is(testColor.rgb));
+            assertThat(Color.fromRGB(testColor.rgb).asRGB(), is(testColor.rgb), testColor.name);
+            assertThat(Color.fromBGR(testColor.bgr).asRGB(), is(testColor.rgb), testColor.name);
+            assertThat(Color.fromRGB(testColor.r, testColor.g, testColor.b).asRGB(), is(testColor.rgb), testColor.name);
+            assertThat(Color.fromBGR(testColor.b, testColor.g, testColor.r).asRGB(), is(testColor.rgb), testColor.name);
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidRGB1() {
-        Color.fromRGB(0x01000000);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x01000000));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidRGB2() {
-        Color.fromRGB(Integer.MIN_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(Integer.MIN_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidRGB3() {
-        Color.fromRGB(Integer.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(Integer.MAX_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidRGB4() {
-        Color.fromRGB(-1);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(-1));
     }
 
     // BGR tests
     @Test
     public void testBGR() {
         for (TestColor testColor : examples) {
-            assertThat(testColor.name, Color.fromRGB(testColor.rgb).asBGR(), is(testColor.bgr));
-            assertThat(testColor.name, Color.fromBGR(testColor.bgr).asBGR(), is(testColor.bgr));
-            assertThat(testColor.name, Color.fromRGB(testColor.r, testColor.g, testColor.b).asBGR(), is(testColor.bgr));
-            assertThat(testColor.name, Color.fromBGR(testColor.b, testColor.g, testColor.r).asBGR(), is(testColor.bgr));
+            assertThat(Color.fromRGB(testColor.rgb).asBGR(), is(testColor.bgr), testColor.name);
+            assertThat(Color.fromBGR(testColor.bgr).asBGR(), is(testColor.bgr), testColor.name);
+            assertThat(Color.fromRGB(testColor.r, testColor.g, testColor.b).asBGR(), is(testColor.bgr), testColor.name);
+            assertThat(Color.fromBGR(testColor.b, testColor.g, testColor.r).asBGR(), is(testColor.bgr), testColor.name);
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidBGR1() {
-        Color.fromBGR(0x01000000);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x01000000));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidBGR2() {
-        Color.fromBGR(Integer.MIN_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(Integer.MIN_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidBGR3() {
-        Color.fromBGR(Integer.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(Integer.MAX_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidBGR4() {
-        Color.fromBGR(-1);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(-1));
     }
 
     // Alpha tests
     @Test
     public void testAlpha() {
         for (TestColor testColor : examples) {
-            assertThat(testColor.name, Color.fromARGB(testColor.argb).getAlpha(), is(testColor.a));
+            assertThat(Color.fromARGB(testColor.argb).getAlpha(), is(testColor.a), testColor.name);
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA01() {
-        Color.fromARGB(-1, 0x00, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromARGB(-1, 0x00, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA02() {
-        Color.fromARGB(Integer.MAX_VALUE, 0x00, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromARGB(Integer.MAX_VALUE, 0x00, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA03() {
-        Color.fromARGB(Integer.MIN_VALUE, 0x00, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromARGB(Integer.MIN_VALUE, 0x00, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA04() {
-        Color.fromARGB(0x100, 0x00, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromARGB(0x100, 0x00, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA05() {
-        Color.fromBGR(0x00, 0x00, 0x00).setAlpha(-1);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, 0x00, 0x00).setAlpha(-1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA06() {
-        Color.fromBGR(0x00, 0x00, 0x00).setAlpha(Integer.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, 0x00, 0x00).setAlpha(Integer.MAX_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA07() {
-        Color.fromBGR(0x00, 0x00, 0x00).setAlpha(Integer.MIN_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, 0x00, 0x00).setAlpha(Integer.MIN_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA08() {
-        Color.fromBGR(0x00, 0x00, 0x00).setAlpha(0x100);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, 0x00, 0x00).setAlpha(0x100));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA09() {
-        Color.WHITE.setAlpha(-1);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setAlpha(-1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA10() {
-        Color.WHITE.setAlpha(Integer.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setAlpha(Integer.MAX_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA11() {
-        Color.WHITE.setAlpha(Integer.MIN_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setAlpha(Integer.MIN_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidA12() {
-        Color.WHITE.setAlpha(0x100);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setAlpha(0x100));
     }
 
     // Red tests
     @Test
     public void testRed() {
         for (TestColor testColor : examples) {
-            assertThat(testColor.name, Color.fromRGB(testColor.rgb).getRed(), is(testColor.r));
-            assertThat(testColor.name, Color.fromBGR(testColor.bgr).getRed(), is(testColor.r));
-            assertThat(testColor.name, Color.fromRGB(testColor.r, testColor.g, testColor.b).getRed(), is(testColor.r));
-            assertThat(testColor.name, Color.fromBGR(testColor.b, testColor.g, testColor.r).getRed(), is(testColor.r));
+            assertThat(Color.fromRGB(testColor.rgb).getRed(), is(testColor.r), testColor.name);
+            assertThat(Color.fromBGR(testColor.bgr).getRed(), is(testColor.r), testColor.name);
+            assertThat(Color.fromRGB(testColor.r, testColor.g, testColor.b).getRed(), is(testColor.r), testColor.name);
+            assertThat(Color.fromBGR(testColor.b, testColor.g, testColor.r).getRed(), is(testColor.r), testColor.name);
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR01() {
-        Color.fromRGB(-1, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(-1, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR02() {
-        Color.fromRGB(Integer.MAX_VALUE, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(Integer.MAX_VALUE, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR03() {
-        Color.fromRGB(Integer.MIN_VALUE, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(Integer.MIN_VALUE, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR04() {
-        Color.fromRGB(0x100, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x100, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR05() {
-        Color.fromBGR(0x00, 0x00, -1);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, 0x00, -1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR06() {
-        Color.fromBGR(0x00, 0x00, Integer.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, 0x00, Integer.MAX_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR07() {
-        Color.fromBGR(0x00, 0x00, Integer.MIN_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, 0x00, Integer.MIN_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR08() {
-        Color.fromBGR(0x00, 0x00, 0x100);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, 0x00, 0x100));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR09() {
-        Color.WHITE.setRed(-1);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setRed(-1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR10() {
-        Color.WHITE.setRed(Integer.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setRed(Integer.MAX_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR11() {
-        Color.WHITE.setRed(Integer.MIN_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setRed(Integer.MIN_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidR12() {
-        Color.WHITE.setRed(0x100);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setRed(0x100));
     }
 
     // Blue tests
     @Test
     public void testBlue() {
         for (TestColor testColor : examples) {
-            assertThat(testColor.name, Color.fromRGB(testColor.rgb).getBlue(), is(testColor.b));
-            assertThat(testColor.name, Color.fromBGR(testColor.bgr).getBlue(), is(testColor.b));
-            assertThat(testColor.name, Color.fromRGB(testColor.r, testColor.g, testColor.b).getBlue(), is(testColor.b));
-            assertThat(testColor.name, Color.fromBGR(testColor.b, testColor.g, testColor.r).getBlue(), is(testColor.b));
+            assertThat(Color.fromRGB(testColor.rgb).getBlue(), is(testColor.b), testColor.name);
+            assertThat(Color.fromBGR(testColor.bgr).getBlue(), is(testColor.b), testColor.name);
+            assertThat(Color.fromRGB(testColor.r, testColor.g, testColor.b).getBlue(), is(testColor.b), testColor.name);
+            assertThat(Color.fromBGR(testColor.b, testColor.g, testColor.r).getBlue(), is(testColor.b), testColor.name);
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB01() {
-        Color.fromRGB(0x00, 0x00, -1);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x00, 0x00, -1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB02() {
-        Color.fromRGB(0x00, 0x00, Integer.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x00, 0x00, Integer.MAX_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB03() {
-        Color.fromRGB(0x00, 0x00, Integer.MIN_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x00, 0x00, Integer.MIN_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB04() {
-        Color.fromRGB(0x00, 0x00, 0x100);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x00, 0x00, 0x100));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB05() {
-        Color.fromBGR(-1, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(-1, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB06() {
-        Color.fromBGR(Integer.MAX_VALUE, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(Integer.MAX_VALUE, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB07() {
-        Color.fromBGR(Integer.MIN_VALUE, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(Integer.MIN_VALUE, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB08() {
-        Color.fromBGR(0x100, 0x00, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x100, 0x00, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB09() {
-        Color.WHITE.setBlue(-1);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setBlue(-1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB10() {
-        Color.WHITE.setBlue(Integer.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setBlue(Integer.MAX_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB11() {
-        Color.WHITE.setBlue(Integer.MIN_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setBlue(Integer.MIN_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidB12() {
-        Color.WHITE.setBlue(0x100);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setBlue(0x100));
     }
 
     // Green tests
     @Test
     public void testGreen() {
         for (TestColor testColor : examples) {
-            assertThat(testColor.name, Color.fromRGB(testColor.rgb).getGreen(), is(testColor.g));
-            assertThat(testColor.name, Color.fromBGR(testColor.bgr).getGreen(), is(testColor.g));
-            assertThat(testColor.name, Color.fromRGB(testColor.r, testColor.g, testColor.b).getGreen(), is(testColor.g));
-            assertThat(testColor.name, Color.fromBGR(testColor.b, testColor.g, testColor.r).getGreen(), is(testColor.g));
+            assertThat(Color.fromRGB(testColor.rgb).getGreen(), is(testColor.g), testColor.name);
+            assertThat(Color.fromBGR(testColor.bgr).getGreen(), is(testColor.g), testColor.name);
+            assertThat(Color.fromRGB(testColor.r, testColor.g, testColor.b).getGreen(), is(testColor.g), testColor.name);
+            assertThat(Color.fromBGR(testColor.b, testColor.g, testColor.r).getGreen(), is(testColor.g), testColor.name);
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG01() {
-        Color.fromRGB(0x00, -1, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x00, -1, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG02() {
-        Color.fromRGB(0x00, Integer.MAX_VALUE, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x00, Integer.MAX_VALUE, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG03() {
-        Color.fromRGB(0x00, Integer.MIN_VALUE, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x00, Integer.MIN_VALUE, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG04() {
-        Color.fromRGB(0x00, 0x100, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromRGB(0x00, 0x100, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG05() {
-        Color.fromBGR(0x00, -1, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, -1, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG06() {
-        Color.fromBGR(0x00, Integer.MAX_VALUE, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, Integer.MAX_VALUE, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG07() {
-        Color.fromBGR(0x00, Integer.MIN_VALUE, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, Integer.MIN_VALUE, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG08() {
-        Color.fromBGR(0x00, 0x100, 0x00);
+        assertThrows(IllegalArgumentException.class, () -> Color.fromBGR(0x00, 0x100, 0x00));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG09() {
-        Color.WHITE.setGreen(-1);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setGreen(-1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG10() {
-        Color.WHITE.setGreen(Integer.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setGreen(Integer.MAX_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG11() {
-        Color.WHITE.setGreen(Integer.MIN_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setGreen(Integer.MIN_VALUE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidG12() {
-        Color.WHITE.setGreen(0x100);
+        assertThrows(IllegalArgumentException.class, () -> Color.WHITE.setGreen(0x100));
     }
 }

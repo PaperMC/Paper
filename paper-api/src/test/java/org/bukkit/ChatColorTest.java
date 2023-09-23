@@ -1,8 +1,9 @@
 package org.bukkit;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class ChatColorTest {
 
@@ -13,14 +14,14 @@ public class ChatColorTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getByStringWithNull() {
-        ChatColor.getByChar((String) null);
+        assertThrows(IllegalArgumentException.class, () -> ChatColor.getByChar((String) null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getByStringWithEmpty() {
-        ChatColor.getByChar("");
+        assertThrows(IllegalArgumentException.class, () -> ChatColor.getByChar(""));
     }
 
     @Test

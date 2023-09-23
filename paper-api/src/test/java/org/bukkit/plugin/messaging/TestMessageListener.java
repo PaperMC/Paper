@@ -1,6 +1,6 @@
 package org.bukkit.plugin.messaging;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.entity.Player;
 
 public class TestMessageListener implements PluginMessageListener {

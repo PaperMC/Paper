@@ -1,13 +1,13 @@
 package org.bukkit.plugin.messaging;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.bukkit.support.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.Collection;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.TestPlugin;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class StandardMessengerTest {
     public StandardMessenger getMessenger() {
@@ -45,12 +45,12 @@ public class StandardMessengerTest {
         assertFalse(messenger.isOutgoingChannelRegistered(plugin, "test:foo"));
     }
 
-    @Test(expected = ReservedChannelException.class)
+    @Test
     public void testReservedOutgoingRegistration() {
         Messenger messenger = getMessenger();
         TestPlugin plugin = getPlugin();
 
-        messenger.registerOutgoingPluginChannel(plugin, "minecraft:register");
+        assertThrows(ReservedChannelException.class, () -> messenger.registerOutgoingPluginChannel(plugin, "minecraft:register"));
     }
 
     @Test
@@ -91,22 +91,22 @@ public class StandardMessengerTest {
         assertFalse(listener.hasReceived());
     }
 
-    @Test(expected = ReservedChannelException.class)
+    @Test
     public void testReservedIncomingRegistration() {
         Messenger messenger = getMessenger();
         TestPlugin plugin = getPlugin();
 
-        messenger.registerIncomingPluginChannel(plugin, "minecraft:register", new TestMessageListener("test:foo", "test:bar".getBytes()));
+        assertThrows(ReservedChannelException.class, () -> messenger.registerIncomingPluginChannel(plugin, "minecraft:register", new TestMessageListener("test:foo", "test:bar".getBytes())));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDuplicateIncomingRegistration() {
         Messenger messenger = getMessenger();
         TestPlugin plugin = getPlugin();
         TestMessageListener listener = new TestMessageListener("test:foo", "test:bar".getBytes());
 
         messenger.registerIncomingPluginChannel(plugin, "test:baz", listener);
-        messenger.registerIncomingPluginChannel(plugin, "test:baz", listener);
+        assertThrows(IllegalArgumentException.class, () -> messenger.registerIncomingPluginChannel(plugin, "test:baz", listener));
     }
 
     @Test
@@ -173,14 +173,14 @@ public class StandardMessengerTest {
         TestPlugin plugin1 = getPlugin();
         TestPlugin plugin2 = getPlugin();
 
-        assertEquals(messenger.getOutgoingChannels());
+        assertCollectionEquals(messenger.getOutgoingChannels());
 
         messenger.registerOutgoingPluginChannel(plugin1, "test:foo");
         messenger.registerOutgoingPluginChannel(plugin1, "test:bar");
         messenger.registerOutgoingPluginChannel(plugin2, "test:baz");
         messenger.registerOutgoingPluginChannel(plugin2, "test:baz");
 
-        assertEquals(messenger.getOutgoingChannels(), "test:foo", "test:bar", "test:baz");
+        assertCollectionEquals(messenger.getOutgoingChannels(), "test:foo", "test:bar", "test:baz");
     }
 
     @Test
@@ -195,9 +195,9 @@ public class StandardMessengerTest {
         messenger.registerOutgoingPluginChannel(plugin2, "test:baz");
         messenger.registerOutgoingPluginChannel(plugin2, "test:qux");
 
-        assertEquals(messenger.getOutgoingChannels(plugin1), "test:foo", "test:bar");
-        assertEquals(messenger.getOutgoingChannels(plugin2), "test:baz", "test:qux");
-        assertEquals(messenger.getOutgoingChannels(plugin3));
+        assertCollectionEquals(messenger.getOutgoingChannels(plugin1), "test:foo", "test:bar");
+        assertCollectionEquals(messenger.getOutgoingChannels(plugin2), "test:baz", "test:qux");
+        assertCollectionEquals(messenger.getOutgoingChannels(plugin3));
     }
 
     @Test
@@ -206,14 +206,14 @@ public class StandardMessengerTest {
         TestPlugin plugin1 = getPlugin();
         TestPlugin plugin2 = getPlugin();
 
-        assertEquals(messenger.getIncomingChannels());
+        assertCollectionEquals(messenger.getIncomingChannels());
 
         messenger.registerIncomingPluginChannel(plugin1, "test:foo", new TestMessageListener("test:foo", "test:bar".getBytes()));
         messenger.registerIncomingPluginChannel(plugin1, "test:bar", new TestMessageListener("test:foo", "test:bar".getBytes()));
         messenger.registerIncomingPluginChannel(plugin2, "test:baz", new TestMessageListener("test:foo", "test:bar".getBytes()));
         messenger.registerIncomingPluginChannel(plugin2, "test:baz", new TestMessageListener("test:foo", "test:bar".getBytes()));
 
-        assertEquals(messenger.getIncomingChannels(), "test:foo", "test:bar", "test:baz");
+        assertCollectionEquals(messenger.getIncomingChannels(), "test:foo", "test:bar", "test:baz");
     }
 
     @Test
@@ -228,9 +228,9 @@ public class StandardMessengerTest {
         messenger.registerIncomingPluginChannel(plugin2, "test:baz", new TestMessageListener("test:foo", "test:bar".getBytes()));
         messenger.registerIncomingPluginChannel(plugin2, "test:qux", new TestMessageListener("test:foo", "test:bar".getBytes()));
 
-        assertEquals(messenger.getIncomingChannels(plugin1), "test:foo", "test:bar");
-        assertEquals(messenger.getIncomingChannels(plugin2), "test:baz", "test:qux");
-        assertEquals(messenger.getIncomingChannels(plugin3));
+        assertCollectionEquals(messenger.getIncomingChannels(plugin1), "test:foo", "test:bar");
+        assertCollectionEquals(messenger.getIncomingChannels(plugin2), "test:baz", "test:qux");
+        assertCollectionEquals(messenger.getIncomingChannels(plugin3));
     }
 
     @Test
@@ -244,9 +244,9 @@ public class StandardMessengerTest {
         PluginMessageListenerRegistration registration3 = messenger.registerIncomingPluginChannel(plugin2, "test:baz", new TestMessageListener("test:foo", "test:bar".getBytes()));
         PluginMessageListenerRegistration registration4 = messenger.registerIncomingPluginChannel(plugin2, "test:qux", new TestMessageListener("test:foo", "test:bar".getBytes()));
 
-        assertEquals(messenger.getIncomingChannelRegistrations(plugin1), registration1, registration2);
-        assertEquals(messenger.getIncomingChannelRegistrations(plugin2), registration3, registration4);
-        assertEquals(messenger.getIncomingChannels(plugin3));
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations(plugin1), registration1, registration2);
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations(plugin2), registration3, registration4);
+        assertCollectionEquals(messenger.getIncomingChannels(plugin3));
     }
 
     @Test
@@ -259,9 +259,9 @@ public class StandardMessengerTest {
         PluginMessageListenerRegistration registration3 = messenger.registerIncomingPluginChannel(plugin2, "test:foo", new TestMessageListener("test:foo", "test:bar".getBytes()));
         PluginMessageListenerRegistration registration4 = messenger.registerIncomingPluginChannel(plugin2, "test:bar", new TestMessageListener("test:foo", "test:bar".getBytes()));
 
-        assertEquals(messenger.getIncomingChannelRegistrations("test:foo"), registration1, registration3);
-        assertEquals(messenger.getIncomingChannelRegistrations("test:bar"), registration2, registration4);
-        assertEquals(messenger.getIncomingChannelRegistrations("test:baz"));
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations("test:foo"), registration1, registration3);
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations("test:bar"), registration2, registration4);
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations("test:baz"));
     }
 
     @Test
@@ -277,30 +277,30 @@ public class StandardMessengerTest {
         PluginMessageListenerRegistration registration5 = messenger.registerIncomingPluginChannel(plugin2, "test:baz", new TestMessageListener("test:foo", "test:bar".getBytes()));
         PluginMessageListenerRegistration registration6 = messenger.registerIncomingPluginChannel(plugin2, "test:baz", new TestMessageListener("test:foo", "test:bar".getBytes()));
 
-        assertEquals(messenger.getIncomingChannelRegistrations(plugin1, "test:foo"), registration1, registration2);
-        assertEquals(messenger.getIncomingChannelRegistrations(plugin1, "test:bar"), registration3);
-        assertEquals(messenger.getIncomingChannelRegistrations(plugin2, "test:bar"), registration4);
-        assertEquals(messenger.getIncomingChannelRegistrations(plugin2, "test:baz"), registration5, registration6);
-        assertEquals(messenger.getIncomingChannelRegistrations(plugin1, "test:baz"));
-        assertEquals(messenger.getIncomingChannelRegistrations(plugin3, "test:qux"));
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations(plugin1, "test:foo"), registration1, registration2);
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations(plugin1, "test:bar"), registration3);
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations(plugin2, "test:bar"), registration4);
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations(plugin2, "test:baz"), registration5, registration6);
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations(plugin1, "test:baz"));
+        assertCollectionEquals(messenger.getIncomingChannelRegistrations(plugin3, "test:qux"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidChannel() {
         Messenger messenger = getMessenger();
         TestPlugin plugin = getPlugin();
 
-        messenger.registerOutgoingPluginChannel(plugin, "foo");
+        assertThrows(IllegalArgumentException.class, () -> messenger.registerOutgoingPluginChannel(plugin, "foo"));
     }
 
     @Test
     public void testValidateAndCorrectChannel() {
-        Assert.assertEquals("bungeecord:main", StandardMessenger.validateAndCorrectChannel("BungeeCord"));
-        Assert.assertEquals("BungeeCord", StandardMessenger.validateAndCorrectChannel("bungeecord:main"));
+        assertEquals("bungeecord:main", StandardMessenger.validateAndCorrectChannel("BungeeCord"));
+        assertEquals("BungeeCord", StandardMessenger.validateAndCorrectChannel("bungeecord:main"));
     }
 
-    private static <T> void assertEquals(Collection<T> actual, T... expected) {
-        assertThat("Size of the array", actual.size(), is(expected.length));
+    private static <T> void assertCollectionEquals(Collection<T> actual, T... expected) {
+        assertThat(actual.size(), is(expected.length), "Size of the array");
         assertThat(actual, hasItems(expected));
     }
 }

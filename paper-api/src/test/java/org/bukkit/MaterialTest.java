@@ -1,9 +1,10 @@
 package org.bukkit;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.material.MaterialData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MaterialTest {
     @Test
@@ -30,9 +31,9 @@ public class MaterialTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void matchMaterialByNull() {
-        Material.matchMaterial(null);
+        assertThrows(IllegalArgumentException.class, () -> Material.matchMaterial(null));
     }
 
     @Test

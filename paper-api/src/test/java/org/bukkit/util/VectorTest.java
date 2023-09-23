@@ -1,8 +1,8 @@
 package org.bukkit.util;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.block.BlockFace;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class VectorTest {
 
@@ -14,9 +14,9 @@ public class VectorTest {
         assertTrue(new Vector(1, 0, 0).isNormalized());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNullVectorAxis() {
-        new Vector(0, 1, 0).rotateAroundAxis(null, Math.PI);
+        assertThrows(IllegalArgumentException.class, () -> new Vector(0, 1, 0).rotateAroundAxis(null, Math.PI));
     }
 
     @Test

@@ -1,83 +1,72 @@
 package org.bukkit.util;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import com.google.common.collect.ImmutableList;
-import java.util.List;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class StringUtilStartsWithTest {
 
-    @Parameters(name = "{index}: {0} startsWith {1} == {2}")
-    public static List<Object[]> data() {
-        return ImmutableList.<Object[]>of(
-            new Object[] {
-                "Apple",
-                "Apples",
-                false
-            },
-            new Object[] {
-                "Apples",
-                "Apple",
-                true
-            },
-            new Object[] {
-                "Apple",
-                "Apple",
-                true
-            },
-            new Object[] {
-                "Apple",
-                "apples",
-                false
-            },
-            new Object[] {
-                "apple",
-                "Apples",
-                false
-            },
-            new Object[] {
-                "apple",
-                "apples",
-                false
-            },
-            new Object[] {
-                "Apples",
-                "apPL",
-                true
-            },
-            new Object[] {
-                "123456789",
-                "1234567",
-                true
-            },
-            new Object[] {
-                "",
-                "",
-                true
-            },
-            new Object[] {
-                "string",
-                "",
-                true
-            }
+    public static Stream<Arguments> data() {
+        return Stream.of(
+                Arguments.of(
+                        "Apple",
+                        "Apples",
+                        false
+                ),
+                Arguments.of(
+                        "Apples",
+                        "Apple",
+                        true
+                ),
+                Arguments.of(
+                        "Apple",
+                        "Apple",
+                        true
+                ),
+                Arguments.of(
+                        "Apple",
+                        "apples",
+                        false
+                ),
+                Arguments.of(
+                        "apple",
+                        "Apples",
+                        false
+                ),
+                Arguments.of(
+                        "apple",
+                        "apples",
+                        false
+                ),
+                Arguments.of(
+                        "Apples",
+                        "apPL",
+                        true
+                ),
+                Arguments.of(
+                        "123456789",
+                        "1234567",
+                        true
+                ),
+                Arguments.of(
+                        "",
+                        "",
+                        true
+                ),
+                Arguments.of(
+                        "string",
+                        "",
+                        true
+                )
         );
     }
 
-    @Parameter(0)
-    public String base;
-    @Parameter(1)
-    public String prefix;
-    @Parameter(2)
-    public boolean result;
-
-    @Test
-    public void testFor() {
-        assertThat(base + " starts with " + prefix + ": " + result, StringUtil.startsWithIgnoreCase(base, prefix), is(result));
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testFor(String base, String prefix, boolean result) {
+        assertThat(StringUtil.startsWithIgnoreCase(base, prefix), is(result), base + " starts with " + prefix + ": " + result);
     }
 }

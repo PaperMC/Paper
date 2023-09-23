@@ -1,38 +1,39 @@
 package org.bukkit.util;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class StringUtilTest {
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void nullPrefixTest() {
-        StringUtil.startsWithIgnoreCase("String", null);
+        assertThrows(NullPointerException.class, () -> StringUtil.startsWithIgnoreCase("String", null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void nullStringTest() {
-        StringUtil.startsWithIgnoreCase(null, "String");
+        assertThrows(IllegalArgumentException.class, () -> StringUtil.startsWithIgnoreCase(null, "String"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void nullCollectionTest() {
-        StringUtil.copyPartialMatches("Token", ImmutableList.<String>of(), null);
+        assertThrows(IllegalArgumentException.class, () -> StringUtil.copyPartialMatches("Token", ImmutableList.<String>of(), null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void nullIterableTest() {
-        StringUtil.copyPartialMatches("Token", null, new ArrayList<String>());
+        assertThrows(IllegalArgumentException.class, () -> StringUtil.copyPartialMatches("Token", null, new ArrayList<String>()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void nullTokenTest() {
-        StringUtil.copyPartialMatches(null, ImmutableList.<String>of(), new ArrayList<String>());
+        assertThrows(IllegalArgumentException.class, () -> StringUtil.copyPartialMatches(null, ImmutableList.<String>of(), new ArrayList<String>()));
     }
 
     @Test
@@ -46,13 +47,13 @@ public class StringUtilTest {
         assertThat(list.size(), is(expected.size() * 2));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void copyUnsupportedTest() {
-        StringUtil.copyPartialMatches("token", ImmutableList.of("token1", "token2"), ImmutableList.of());
+        assertThrows(UnsupportedOperationException.class, () -> StringUtil.copyPartialMatches("token", ImmutableList.of("token1", "token2"), ImmutableList.of()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void copyNullTest() {
-        StringUtil.copyPartialMatches("token", Arrays.asList("token1", "token2", null), new ArrayList<String>());
+        assertThrows(IllegalArgumentException.class, () -> StringUtil.copyPartialMatches("token", Arrays.asList("token1", "token2", null), new ArrayList<String>()));
     }
 }

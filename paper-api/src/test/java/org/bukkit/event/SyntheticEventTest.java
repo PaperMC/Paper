@@ -1,13 +1,13 @@
 package org.bukkit.event;
 
+import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.TestPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SyntheticEventTest extends AbstractTestingBase {
     @SuppressWarnings("deprecation")
@@ -28,7 +28,7 @@ public class SyntheticEventTest extends AbstractTestingBase {
         pluginManager.registerEvents(impl, plugin);
         pluginManager.callEvent(event);
 
-        Assert.assertEquals(1, impl.callCount);
+        assertEquals(1, impl.callCount);
     }
 
     public abstract static class Base<E extends Event> implements Listener {

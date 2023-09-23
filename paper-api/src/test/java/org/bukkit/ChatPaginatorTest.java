@@ -1,9 +1,9 @@
 package org.bukkit;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
 import org.bukkit.util.ChatPaginator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ChatPaginatorTest {
     @Test
