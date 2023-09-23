@@ -56,7 +56,7 @@ public enum Attribute implements Keyed {
     /**
      * Maximum absorption of an Entity.
      */
-    MAX_ABSORPTION("generic.max_absorption"),
+    GENERIC_MAX_ABSORPTION("generic.max_absorption"),
     /**
      * Strength with which a horse will jump.
      */
