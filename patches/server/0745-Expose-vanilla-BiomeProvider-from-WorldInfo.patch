@@ -18,10 +18,10 @@ index 6c02d5233c782b0e5049afdf84250687ae71dcde..2503e2b2436a6e07fa22c0e55ad1539b
                  biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index f951c5ff4058f91540eb2da95ca433be5e590196..7efd83f26c26166e51f7c2c6f08cf83291db61c0 100644
+index a68374e527a9d8f29863baf8e18fbd09d45e4185..02faa85848ab286c7219f09e0b2048fdad0cd005 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1224,7 +1224,7 @@ public final class CraftServer implements Server {
+@@ -1223,7 +1223,7 @@ public final class CraftServer implements Server {
          List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
          LevelStem worlddimension = iregistry.get(actualDimension);
  
@@ -31,10 +31,10 @@ index f951c5ff4058f91540eb2da95ca433be5e590196..7efd83f26c26166e51f7c2c6f08cf832
              biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index cda158bb560c32f7dbea05cd4adb3d38f6db5280..6b111e7397af92ac6e80001b783e42a26186b930 100644
+index 99f075d23484301259daabbab0569fc780e02b5b..e138428fe35c075cfffcc931b53f836129307154 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -202,6 +202,30 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -202,6 +202,29 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public int getPlayerCount() {
          return world.players().size();
      }
@@ -45,15 +45,14 @@ index cda158bb560c32f7dbea05cd4adb3d38f6db5280..6b111e7397af92ac6e80001b783e42a2
 +
 +        final net.minecraft.world.level.biome.BiomeSource biomeSource = serverCache.getGenerator().getBiomeSource();
 +        final net.minecraft.world.level.biome.Climate.Sampler sampler = serverCache.randomState().sampler();
-+        final net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry = this.getHandle().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
 +
 +        final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
-+            .map(biome -> CraftBlock.biomeBaseToBiome(biomeRegistry, biome))
++            .map(biome -> org.bukkit.craftbukkit.block.CraftBiome.minecraftHolderToBukkit(biome))
 +            .toList();
 +        return new BiomeProvider() {
 +            @Override
 +            public Biome getBiome(final org.bukkit.generator.WorldInfo worldInfo, final int x, final int y, final int z) {
-+                return CraftBlock.biomeBaseToBiome(biomeRegistry, biomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
++                return org.bukkit.craftbukkit.block.CraftBiome.minecraftHolderToBukkit(biomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
 +            }
 +
 +            @Override
@@ -66,7 +65,7 @@ index cda158bb560c32f7dbea05cd4adb3d38f6db5280..6b111e7397af92ac6e80001b783e42a2
  
      private static final Random rand = new Random();
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
-index 5d655d6cd3e23e0287069f8bdf77601487e862fd..5dbd1a6d314ebbb072cb61360ca5c1043f47a38d 100644
+index 5d655d6cd3e23e0287069f8bdf77601487e862fd..cf57c6e9ce63f7b1d95d91ead2453409a31a5c52 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
 @@ -17,8 +17,14 @@ public class CraftWorldInfo implements WorldInfo {
@@ -101,7 +100,7 @@ index 5d655d6cd3e23e0287069f8bdf77601487e862fd..5dbd1a6d314ebbb072cb61360ca5c104
      @Override
      public String getName() {
          return this.name;
-@@ -65,4 +62,35 @@ public class CraftWorldInfo implements WorldInfo {
+@@ -65,4 +62,34 @@ public class CraftWorldInfo implements WorldInfo {
      public int getMaxHeight() {
          return this.maxHeight;
      }
@@ -118,14 +117,13 @@ index 5d655d6cd3e23e0287069f8bdf77601487e862fd..5dbd1a6d314ebbb072cb61360ca5c104
 +                registryAccess.lookupOrThrow(net.minecraft.core.registries.Registries.NOISE), getSeed());
 +        }
 +
-+        final net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry = CraftWorldInfo.this.registryAccess.registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
 +        final java.util.List<org.bukkit.block.Biome> possibleBiomes = CraftWorldInfo.this.vanillaChunkGenerator.getBiomeSource().possibleBiomes().stream()
-+            .map(biome -> org.bukkit.craftbukkit.block.CraftBlock.biomeBaseToBiome(biomeRegistry, biome))
++            .map(biome -> org.bukkit.craftbukkit.block.CraftBiome.minecraftHolderToBukkit(biome))
 +            .toList();
 +        return new org.bukkit.generator.BiomeProvider() {
 +            @Override
 +            public org.bukkit.block.Biome getBiome(final WorldInfo worldInfo, final int x, final int y, final int z) {
-+                return org.bukkit.craftbukkit.block.CraftBlock.biomeBaseToBiome(biomeRegistry,
++                return org.bukkit.craftbukkit.block.CraftBiome.minecraftHolderToBukkit(
 +                    CraftWorldInfo.this.vanillaChunkGenerator.getBiomeSource().getNoiseBiome(x >> 2, y >> 2, z >> 2, randomState.sampler()));
 +            }
 +
