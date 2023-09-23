@@ -5,11 +5,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.TestPlugin;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
-@TestMethodOrder(MethodOrderer.MethodName.class)
 public class MetadataStoreTest {
     private Plugin pluginX = new TestPlugin("x");
     private Plugin pluginY = new TestPlugin("y");
