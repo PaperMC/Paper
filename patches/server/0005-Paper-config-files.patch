@@ -11,6 +11,7 @@ public org.spigotmc.SpigotWorldConfig getInt(Ljava/lang/String;)I
 public org.spigotmc.SpigotWorldConfig getInt(Ljava/lang/String;I)I
 public org.spigotmc.SpigotWorldConfig getList(Ljava/lang/String;Ljava/lang/Object;)Ljava/util/List;
 public org.spigotmc.SpigotWorldConfig getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+public net.minecraft.server.dedicated.DedicatedServerProperties reload(Lnet/minecraft/core/RegistryAccess;Ljava/util/Properties;Ljoptsimple/OptionSet;)Lnet/minecraft/server/dedicated/DedicatedServerProperties;
 public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
 
 diff --git a/build.gradle.kts b/build.gradle.kts
@@ -440,10 +441,10 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4b3bb5fad1d80c9baea20ca224663b1ebc2b83e9
+index 0000000000000000000000000000000000000000..dcfc085d355410723dbeef369579e1875a7a997b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -0,0 +1,294 @@
+@@ -0,0 +1,293 @@
 +package io.papermc.paper.configuration;
 +
 +import co.aikar.timings.MinecraftTimings;
@@ -466,7 +467,7 @@ index 0000000000000000000000000000000000000000..4b3bb5fad1d80c9baea20ca224663b1e
 +
 +@SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +public class GlobalConfiguration extends ConfigurationPart {
-+    static final int CURRENT_VERSION = 28;
++    static final int CURRENT_VERSION = 29;
 +    private static GlobalConfiguration instance;
 +    public static GlobalConfiguration get() {
 +        return instance;
@@ -611,7 +612,6 @@ index 0000000000000000000000000000000000000000..4b3bb5fad1d80c9baea20ca224663b1e
 +    public Logging logging;
 +
 +    public class Logging extends ConfigurationPart {
-+        public boolean logPlayerIpAddresses = true;
 +        public boolean deobfuscateStacktraces = true;
 +    }
 +
@@ -951,10 +951,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d3068b7748032342edd81e6ea4a7c08988fb28d
+index 0000000000000000000000000000000000000000..9b5c2abaa28fa60cedd9f0111e5eb018f93a0561
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,445 @@
+@@ -0,0 +1,450 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -974,6 +974,7 @@ index 0000000000000000000000000000000000000000..2d3068b7748032342edd81e6ea4a7c08
 +import io.papermc.paper.configuration.serializer.registry.RegistryValueSerializer;
 +import io.papermc.paper.configuration.transformation.Transformations;
 +import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
++import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 +import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
@@ -1212,8 +1213,12 @@ index 0000000000000000000000000000000000000000..2d3068b7748032342edd81e6ea4a7c08
 +        for (NodePath path : RemovedConfigurations.REMOVED_GLOBAL_PATHS) {
 +            builder.addAction(path, TransformAction.remove());
 +        }
-+        // ADD FUTURE TRANSFORMS TO builder HERE
 +        builder.build().apply(node);
++
++        final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
++        V29_LogIPs.apply(versionedBuilder);
++        // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
++        versionedBuilder.build().apply(node);
 +    }
 +
 +    private static final List<Transformations.DefaultsAware> DEFAULT_AWARE_TRANSFORMATIONS = List.of(FeatureSeedsGeneration::apply);
@@ -3372,6 +3377,58 @@ index 0000000000000000000000000000000000000000..ef0e834c164b0ccc1a61b349348e6799
 +            return newPath;
 +        });
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java b/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f250ea5acd2edce924ee52b8ec16a23261f5e90d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java
+@@ -0,0 +1,46 @@
++package io.papermc.paper.configuration.transformation.global.versioned;
++
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.dedicated.DedicatedServer;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.ConfigurateException;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.NodePath;
++import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++import org.spongepowered.configurate.transformation.TransformAction;
++
++import java.util.Properties;
++
++import static org.spongepowered.configurate.NodePath.path;
++
++public class V29_LogIPs implements TransformAction {
++
++    private static final int VERSION = 29;
++    private static final NodePath PATH = path("logging", "log-player-ip-addresses");
++    private static final V29_LogIPs INSTANCE = new V29_LogIPs();
++
++    private V29_LogIPs() {
++    }
++
++    public static void apply(ConfigurationTransformation.VersionedBuilder builder) {
++        builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(PATH, INSTANCE).build());
++    }
++
++    @Nullable
++    @Override
++    public Object[] visitPath(final NodePath path, final ConfigurationNode value) throws ConfigurateException {
++        DedicatedServer server = ((DedicatedServer) MinecraftServer.getServer());
++
++        boolean val = value.getBoolean(server.settings.getProperties().logIPs);
++        server.settings.update((config) -> {
++            Properties newProps = new Properties(config.properties);
++            newProps.setProperty("log-ips", String.valueOf(val));
++            return config.reload(server.registryAccess(), newProps, server.options);
++        });
++
++        value.raw(null);
++
++        return null;
++    }
++
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java b/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java
 new file mode 100644
