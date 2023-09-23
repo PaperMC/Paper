@@ -20616,15 +20616,16 @@ index e96a0ca47e4701ba187555bd92c968345bc85677..73b96f804079288e9c5fcc11da54e61e
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
-index c509a1318bcef38fd4927e38b6ee9846853e2d15..0f7ee2eea68a5c910bdf4d6263ed09cbed592516 100644
+index c509a1318bcef38fd4927e38b6ee9846853e2d15..5de5209e04d631bd6a50e28e8d3abebf148252c1 100644
 --- a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
 +++ b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
-@@ -42,14 +42,21 @@ public class PlayerChunkSender {
+@@ -42,14 +42,22 @@ public class PlayerChunkSender {
          this.pendingChunks.add(chunk.getPos().toLong());
      }
  
 +    // Paper start - rewrite player chunk loader
 +    public static void dropChunkStatic(ServerPlayer player, ChunkPos pos) {
++        player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(pos.toLong()).removePlayer(player);
 +        player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
 +    }
 +    // Paper end - rewrite player chunk loader
@@ -20642,16 +20643,17 @@ index c509a1318bcef38fd4927e38b6ee9846853e2d15..0f7ee2eea68a5c910bdf4d6263ed09cb
          if (this.unacknowledgedBatches < this.maxUnacknowledgedBatches) {
              float f = Math.max(1.0F, this.desiredChunksPerTick);
              this.batchQuota = Math.min(this.batchQuota + this.desiredChunksPerTick, f);
-@@ -75,7 +82,7 @@ public class PlayerChunkSender {
+@@ -75,7 +83,8 @@ public class PlayerChunkSender {
          }
      }
  
 -    private static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) {
 +    public static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) { // Paper - rewrite chunk loader - public
++        handler.player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(chunk.getPos().toLong()).addPlayer(handler.player);
          handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), (BitSet)null, (BitSet)null));
          ChunkPos chunkPos = chunk.getPos();
          DebugPackets.sendPoiPacketsForChunk(world, chunkPos);
-@@ -100,6 +107,7 @@ public class PlayerChunkSender {
+@@ -100,6 +109,7 @@ public class PlayerChunkSender {
      }
  
      public void onChunkBatchReceivedByClient(float desiredBatchSize) {
