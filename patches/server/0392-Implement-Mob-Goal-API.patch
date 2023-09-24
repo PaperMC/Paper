@@ -5,7 +5,7 @@ Subject: [PATCH] Implement Mob Goal API
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index dfb43cf7be60733f3ab142de66139971bca1b1fe..b81b99a7767e3b0d3549e49529e98efdb7334101 100644
+index c26ae39f0d78a4a2427681d1c8fc60c19374155e..ace5cd8aa4fc2a555673b75adb910a1ede3f57fc 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -46,6 +46,7 @@ dependencies {
@@ -13,8 +13,8 @@ index dfb43cf7be60733f3ab142de66139971bca1b1fe..b81b99a7767e3b0d3549e49529e98efd
      runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
  
 +    testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
-     testImplementation("junit:junit:4.13.2")
-     testImplementation("org.hamcrest:hamcrest-library:1.3")
+     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+     testImplementation("org.hamcrest:hamcrest:2.2")
  
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
 new file mode 100644
@@ -809,26 +809,25 @@ index 633cd70f8390c4aa9a9b52054f8b58106ae079e6..83ff2373ba5ec4b862170e0c1ff2d84d
  }
 diff --git a/src/test/java/com/destroystokyo/paper/entity/ai/VanillaMobGoalTest.java b/src/test/java/com/destroystokyo/paper/entity/ai/VanillaMobGoalTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b2d510459bcf90a3611f3d91dae4ccc3d29b4079
+index 0000000000000000000000000000000000000000..654ed436e99dd56f1fe7c1d4f38da34d95ce9349
 --- /dev/null
 +++ b/src/test/java/com/destroystokyo/paper/entity/ai/VanillaMobGoalTest.java
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,106 @@
 +package com.destroystokyo.paper.entity.ai;
 +
-+import org.junit.Assert;
-+import org.junit.Test;
-+
++import io.github.classgraph.ClassGraph;
++import io.github.classgraph.ScanResult;
 +import java.lang.reflect.Field;
 +import java.lang.reflect.Modifier;
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.stream.Collectors;
-+
 +import org.bukkit.entity.Mob;
++import org.junit.jupiter.api.Test;
 +
-+import io.github.classgraph.ClassGraph;
-+import io.github.classgraph.ScanResult;
++import static org.junit.jupiter.api.Assertions.assertNotEquals;
++import static org.junit.jupiter.api.Assertions.fail;
 +
 +public class VanillaMobGoalTest {
 +
@@ -874,7 +873,7 @@ index 0000000000000000000000000000000000000000..b2d510459bcf90a3611f3d91dae4ccc3
 +            System.out.println("Missing from API: ");
 +            for (GoalKey<?> key : missingFromAPI) {
 +                System.out.println("GoalKey<" + key.getEntityClass().getSimpleName() + "> " + key.getNamespacedKey().getKey().toUpperCase() +
-+                                   " = GoalKey.of(" + key.getEntityClass().getSimpleName() + ".class, NamespacedKey.minecraft(\"" + key.getNamespacedKey().getKey() + "\"));");
++                    " = GoalKey.of(" + key.getEntityClass().getSimpleName() + ".class, NamespacedKey.minecraft(\"" + key.getNamespacedKey().getKey() + "\"));");
 +            }
 +            shouldFail = true;
 +        }
@@ -889,7 +888,9 @@ index 0000000000000000000000000000000000000000..b2d510459bcf90a3611f3d91dae4ccc3
 +            deprecated.forEach(System.out::println);
 +        }
 +
-+        if (shouldFail) Assert.fail("See above");
++        if (shouldFail) {
++            fail("See above");
++        }
 +    }
 +
 +    private static boolean hasNoEnclosingClass(Class<?> clazz) {
@@ -902,7 +903,7 @@ index 0000000000000000000000000000000000000000..b2d510459bcf90a3611f3d91dae4ccc3
 +        try (ScanResult scanResult = new ClassGraph().enableAllInfo().whitelistPackages("net.minecraft.world.entity").scan()) {
 +            classes = scanResult.getSubclasses("net.minecraft.world.entity.Mob").loadClasses();
 +        }
-+        Assert.assertNotEquals("There are supposed to be more than 0 entity types!", Collections.emptyList(), classes);
++        assertNotEquals(Collections.emptyList(), classes, "There are supposed to be more than 0 entity types!");
 +
 +        boolean shouldFail = false;
 +        for (Class<?> nmsClass : classes) {
@@ -913,6 +914,8 @@ index 0000000000000000000000000000000000000000..b2d510459bcf90a3611f3d91dae4ccc3
 +            }
 +        }
 +
-+        if (shouldFail) Assert.fail("See above");
++        if (shouldFail) {
++            fail("See above");
++        }
 +    }
 +}

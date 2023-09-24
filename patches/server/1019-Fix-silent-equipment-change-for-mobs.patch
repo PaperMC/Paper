@@ -64,10 +64,10 @@ index 87cae8ed22a2428a1dda8f2a4510e45fbc31eab5..ea8a0961190e9aafda4fed6fecd85097
      }
 diff --git a/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java b/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4845f24e291ed8d643e182f3d6c50746a6ca2ded
+index 0000000000000000000000000000000000000000..7b40accf09e4accc80e7e4367035765212c70056
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,52 @@
 +package io.papermc.paper.entity;
 +
 +import io.github.classgraph.ClassGraph;
@@ -78,21 +78,17 @@ index 0000000000000000000000000000000000000000..4845f24e291ed8d643e182f3d6c50746
 +import io.github.classgraph.ScanResult;
 +import java.util.ArrayList;
 +import java.util.List;
++import java.util.stream.Stream;
 +import org.bukkit.support.AbstractTestingBase;
-+import org.junit.Test;
-+import org.junit.runner.RunWith;
-+import org.junit.runners.Parameterized;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
 +
-+import static org.junit.Assert.fail;
++import static org.junit.jupiter.api.Assertions.fail;
 +
-+@RunWith(Parameterized.class)
 +public class EntitySetItemSlotSilentOverrideTest extends AbstractTestingBase {
 +
-+    @Parameterized.Parameter
-+    public ClassInfo overridesSetItemSlot;
-+
-+    @Parameterized.Parameters(name = "{0}")
-+    public static Iterable<ClassInfo> parameters() {
++    @MethodSource("parameters")
++    public static Stream<ClassInfo> parameters() {
 +        final List<ClassInfo> classInfo = new ArrayList<>();
 +        try (ScanResult scanResult = new ClassGraph()
 +            .enableClassInfo()
@@ -107,12 +103,13 @@ index 0000000000000000000000000000000000000000..4845f24e291ed8d643e182f3d6c50746
 +                }
 +            }
 +        }
-+        return classInfo;
++        return classInfo.stream();
 +    }
 +
-+    @Test
-+    public void checkSetItemSlotSilentOverrides() {
-+        final MethodInfoList setItemSlot = this.overridesSetItemSlot.getDeclaredMethodInfo("setItemSlot");
++    @ParameterizedTest
++    @MethodSource("parameters")
++    public void checkSetItemSlotSilentOverrides(ClassInfo overridesSetItemSlot) {
++        final MethodInfoList setItemSlot = overridesSetItemSlot.getDeclaredMethodInfo("setItemSlot");
 +        for (final MethodInfo methodInfo : setItemSlot) {
 +            for (final MethodParameterInfo methodParameterInfo : methodInfo.getParameterInfo()) {
 +                if ("boolean".equals(methodParameterInfo.getTypeDescriptor().toStringWithSimpleNames())) {
@@ -120,6 +117,6 @@ index 0000000000000000000000000000000000000000..4845f24e291ed8d643e182f3d6c50746
 +                }
 +            }
 +        }
-+        fail(this.overridesSetItemSlot.getName() + " needs to override setItemSlot with the boolean silent parameter as well");
++        fail(overridesSetItemSlot.getName() + " needs to override setItemSlot with the boolean silent parameter as well");
 +    }
 +}

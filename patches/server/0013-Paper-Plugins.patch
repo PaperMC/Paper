@@ -7274,14 +7274,14 @@ index 0000000000000000000000000000000000000000..1d14f530ef888102e47eeeaf0d1a6076
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginDependencyValidationTest.java b/src/test/java/io/papermc/paper/plugin/PluginDependencyValidationTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e08a22a753aba0c83894db7216a50724a9393dfa
+index 0000000000000000000000000000000000000000..ad92ae93acd25af4d223a55a0bcbc2a5740390a9
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/PluginDependencyValidationTest.java
 @@ -0,0 +1,59 @@
 +package io.papermc.paper.plugin;
 +
 +import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
-+import org.junit.Test;
++import org.junit.jupiter.api.Test;
 +
 +import java.util.List;
 +
@@ -7339,7 +7339,7 @@ index 0000000000000000000000000000000000000000..e08a22a753aba0c83894db7216a50724
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java b/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9d393aca5e2de4d046dc1a1232d57318432e4742
+index 0000000000000000000000000000000000000000..a66fd32cf8af310101161c1b820b3468657460f0
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java
 @@ -0,0 +1,148 @@
@@ -7351,9 +7351,9 @@ index 0000000000000000000000000000000000000000..9d393aca5e2de4d046dc1a1232d57318
 +import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +import io.papermc.paper.plugin.provider.PluginProvider;
-+import org.junit.Assert;
-+import org.junit.Before;
-+import org.junit.Test;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.BeforeEach;
++import org.junit.jupiter.api.Test;
 +
 +import java.util.ArrayList;
 +import java.util.HashMap;
@@ -7434,7 +7434,7 @@ index 0000000000000000000000000000000000000000..9d393aca5e2de4d046dc1a1232d57318
 +        setup("RedFire", new String[]{"BrightBlueGrass", "BigPaper"}, new String[]{"BlueFire", "GreenGlass", "BigGrass"}, EMPTY);
 +    }
 +
-+    @Before
++    @BeforeEach
 +    public void loadProviders() {
 +        AtomicInteger currentLoad = new AtomicInteger();
 +        ModernPluginLoadingStrategy<PaperTestPlugin> modernPluginLoadingStrategy = new ModernPluginLoadingStrategy<>(new ProviderConfiguration<>() {
@@ -7458,16 +7458,16 @@ index 0000000000000000000000000000000000000000..9d393aca5e2de4d046dc1a1232d57318
 +        for (PluginProvider<PaperTestPlugin> provider : REGISTERED_PROVIDERS) {
 +            TestPluginMeta pluginMeta = (TestPluginMeta) provider.getMeta();
 +            String identifier = pluginMeta.getName();
-+            Assert.assertTrue("Provider wasn't loaded! (%s)".formatted(identifier), LOAD_ORDER.containsKey(identifier));
++            Assertions.assertTrue(LOAD_ORDER.containsKey(identifier), "Provider wasn't loaded! (%s)".formatted(identifier));
 +
 +            int index = LOAD_ORDER.get(identifier);
 +
 +            // Hard dependencies should be loaded BEFORE
 +            for (String hardDependency : pluginMeta.getPluginDependencies()) {
-+                Assert.assertTrue("Plugin (%s) is missing hard dependency (%s)".formatted(identifier, hardDependency), LOAD_ORDER.containsKey(hardDependency));
++                Assertions.assertTrue(LOAD_ORDER.containsKey(hardDependency), "Plugin (%s) is missing hard dependency (%s)".formatted(identifier, hardDependency));
 +
 +                int dependencyIndex = LOAD_ORDER.get(hardDependency);
-+                Assert.assertTrue("Plugin (%s) was not loaded BEFORE soft dependency. (%s)".formatted(identifier, hardDependency), index > dependencyIndex);
++                Assertions.assertTrue(index > dependencyIndex, "Plugin (%s) was not loaded BEFORE soft dependency. (%s)".formatted(identifier, hardDependency));
 +            }
 +
 +            for (String softDependency : pluginMeta.getPluginSoftDependencies()) {
@@ -7477,7 +7477,7 @@ index 0000000000000000000000000000000000000000..9d393aca5e2de4d046dc1a1232d57318
 +
 +                int dependencyIndex = LOAD_ORDER.get(softDependency);
 +
-+                Assert.assertTrue("Plugin (%s) was not loaded BEFORE soft dependency. (%s)".formatted(identifier, softDependency), index > dependencyIndex);
++                Assertions.assertTrue(index > dependencyIndex, "Plugin (%s) was not loaded BEFORE soft dependency. (%s)".formatted(identifier, softDependency));
 +            }
 +
 +            for (String loadBefore : pluginMeta.getLoadBeforePlugins()) {
@@ -7486,14 +7486,14 @@ index 0000000000000000000000000000000000000000..9d393aca5e2de4d046dc1a1232d57318
 +                }
 +
 +                int dependencyIndex = LOAD_ORDER.get(loadBefore);
-+                Assert.assertTrue("Plugin (%s) was NOT loaded BEFORE loadbefore dependency. (%s)".formatted(identifier, loadBefore), index < dependencyIndex);
++                Assertions.assertTrue(index < dependencyIndex, "Plugin (%s) was NOT loaded BEFORE loadbefore dependency. (%s)".formatted(identifier, loadBefore));
 +            }
 +        }
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginManagerTest.java b/src/test/java/io/papermc/paper/plugin/PluginManagerTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..726eba26470e62b0e94a91418512e242464800ae
+index 0000000000000000000000000000000000000000..b7d69dda2b88218221a3cca6db4445cb58aa0179
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/PluginManagerTest.java
 @@ -0,0 +1,75 @@
@@ -7504,8 +7504,8 @@ index 0000000000000000000000000000000000000000..726eba26470e62b0e94a91418512e242
 +import org.bukkit.permissions.Permission;
 +import org.bukkit.plugin.PluginManager;
 +import org.bukkit.support.AbstractTestingBase;
-+import org.junit.After;
-+import org.junit.Test;
++import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.Test;
 +
 +import static org.hamcrest.MatcherAssert.assertThat;
 +import static org.hamcrest.Matchers.*;
@@ -7566,7 +7566,7 @@ index 0000000000000000000000000000000000000000..726eba26470e62b0e94a91418512e242
 +        assertThat("Permission \"" + name + "\" was not removed", pm.getPermission(name), is(nullValue()));
 +    }
 +
-+    @After
++    @AfterEach
 +    public void tearDown() {
 +        pm.clearPlugins();
 +        assertThat(pm.getPermissions(), is(empty()));
@@ -7574,15 +7574,15 @@ index 0000000000000000000000000000000000000000..726eba26470e62b0e94a91418512e242
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginNamingTest.java b/src/test/java/io/papermc/paper/plugin/PluginNamingTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..860a2bc8200cf41b216a2e37cfbd2f5464d6542c
+index 0000000000000000000000000000000000000000..6c3be5b84ae245652261668a52ce49934ef200a9
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/PluginNamingTest.java
 @@ -0,0 +1,28 @@
 +package io.papermc.paper.plugin;
 +
 +import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
-+import org.junit.Assert;
-+import org.junit.Test;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
 +
 +public class PluginNamingTest {
 +    private static final String TEST_NAME = "Test_Plugin";
@@ -7598,17 +7598,17 @@ index 0000000000000000000000000000000000000000..860a2bc8200cf41b216a2e37cfbd2f54
 +
 +    @Test
 +    public void testName() {
-+        Assert.assertEquals(TEST_NAME, this.pluginMeta.getName());
++        Assertions.assertEquals(TEST_NAME, this.pluginMeta.getName());
 +    }
 +
 +    @Test
 +    public void testDisplayName() {
-+        Assert.assertEquals(TEST_NAME + " v" + TEST_VERSION, this.pluginMeta.getDisplayName());
++        Assertions.assertEquals(TEST_NAME + " v" + TEST_VERSION, this.pluginMeta.getDisplayName());
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/SyntheticEventTest.java b/src/test/java/io/papermc/paper/plugin/SyntheticEventTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..51c08740edffd152c8e2b6d3676ff7f1ce6090c6
+index 0000000000000000000000000000000000000000..2a7408ed5d9a415333212cadd7fefcd03785afbf
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/SyntheticEventTest.java
 @@ -0,0 +1,42 @@
@@ -7619,8 +7619,8 @@ index 0000000000000000000000000000000000000000..51c08740edffd152c8e2b6d3676ff7f1
 +import org.bukkit.event.Event;
 +import org.bukkit.event.EventHandler;
 +import org.bukkit.event.Listener;
-+import org.junit.Assert;
-+import org.junit.Test;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
 +
 +public class SyntheticEventTest {
 +
@@ -7635,7 +7635,7 @@ index 0000000000000000000000000000000000000000..51c08740edffd152c8e2b6d3676ff7f1
 +        paperPluginManager.registerEvents(impl, paperTestPlugin);
 +        paperPluginManager.callEvent(event);
 +
-+        Assert.assertEquals(1, impl.callCount);
++        Assertions.assertEquals(1, impl.callCount);
 +    }
 +
 +    public abstract static class Base<E extends Event> implements Listener {
