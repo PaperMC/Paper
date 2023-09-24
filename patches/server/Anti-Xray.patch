@@ -1099,41 +1099,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public ClientboundLevelChunkWithLightPacket(FriendlyByteBuf buf) {
-diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ChunkMap.java
-+++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
- 
-     }
- 
--    public void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<ClientboundLevelChunkWithLightPacket> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - public
-+    public void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - public // Paper - Anti-Xray - Bypass
-         io.papermc.paper.util.TickThread.ensureTickThread(this.level, pos, "May not update chunk tracking for chunk async"); // Paper - replace chunk loader system
-         io.papermc.paper.util.TickThread.ensureTickThread(player, "May not update chunk tracking for player async"); // Paper - replace chunk loader system
-         if (player.level() == this.level) {
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         });
-     }
- 
--    private void playerLoadedChunk(ServerPlayer player, MutableObject<ClientboundLevelChunkWithLightPacket> cachedDataPacket, LevelChunk chunk) {
--        if (cachedDataPacket.getValue() == null) {
--            cachedDataPacket.setValue(new ClientboundLevelChunkWithLightPacket(chunk, this.lightEngine, (BitSet) null, (BitSet) null));
-+    // Paper start - Anti-Xray - Bypass
-+    private void playerLoadedChunk(ServerPlayer player, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> cachedDataPackets, LevelChunk chunk) {
-+        if (cachedDataPackets.getValue() == null) {
-+            cachedDataPackets.setValue(new java.util.HashMap<>());
-         }
- 
--        player.trackChunk(chunk.getPos(), (Packet) cachedDataPacket.getValue());
-+        Boolean shouldModify = chunk.getLevel().chunkPacketBlockController.shouldModify(player, chunk);
-+        player.trackChunk(chunk.getPos(), (Packet) cachedDataPackets.getValue().computeIfAbsent(shouldModify, (s) -> {
-+            return new ClientboundLevelChunkWithLightPacket(chunk, this.lightEngine, (BitSet) null, (BitSet) null, (Boolean) s);
-+        }));
-+        // Paper end
-         DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
-         List<Entity> list = Lists.newArrayList();
-         List<Entity> list1 = Lists.newArrayList();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -1169,6 +1134,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void destroyAndAck(BlockPos pos, int sequence, String reason) {
+diff --git a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
++++ b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
+@@ -0,0 +0,0 @@ public class PlayerChunkSender {
+ 
+     public static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) { // Paper - rewrite chunk loader - public
+         handler.player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(chunk.getPos().toLong()).addPlayer(handler.player);
+-        handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), (BitSet)null, (BitSet)null));
++        // Paper start - Anti-Xray
++        final boolean shouldModify = world.chunkPacketBlockController.shouldModify(handler.player, chunk);
++        handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), (BitSet)null, (BitSet)null, shouldModify));
++        // Paper end - Anti-Xray
+         ChunkPos chunkPos = chunk.getPos();
+         DebugPackets.sendPoiPacketsForChunk(world, chunkPos);
+     }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
@@ -1470,7 +1451,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 @@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
-             return 1 + this.palette.getSerializedSize() + FriendlyByteBuf.getVarIntSize(this.storage.getSize()) + this.storage.getRaw().length * 8;
+             return 1 + this.palette.getSerializedSize() + VarInt.getByteSize(this.storage.getRaw().length) + this.storage.getRaw().length * 8;
          }
  
 -        public void write(FriendlyByteBuf buf) {
@@ -1482,7 +1463,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (chunkPacketInfo != null) {
 +                chunkPacketInfo.setBits(chunkSectionIndex, this.configuration.bits());
 +                chunkPacketInfo.setPalette(chunkSectionIndex, this.palette);
-+                chunkPacketInfo.setIndex(chunkSectionIndex, buf.writerIndex() + FriendlyByteBuf.getVarIntSize(this.storage.getRaw().length));
++                chunkPacketInfo.setIndex(chunkSectionIndex, buf.writerIndex() + VarInt.getByteSize(this.storage.getRaw().length));
 +            }
 +            // Paper end
 +
