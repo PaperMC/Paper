@@ -29,12 +29,12 @@ index a8d39b7257332ec8b3b711aab2c4b76a867e73bc..231ba23fabeb88b659a7ea9702eebe4a
                  if (map == null) {
                      map = Maps.newEnumMap(EquipmentSlot.class);
                  }
-diff --git a/src/test/java/io/papermc/paper/inventory/item/ExtraArmorSlotTypeMaterialTest.java b/src/test/java/io/papermc/paper/inventory/item/ExtraArmorSlotTypeMaterialTest.java
+diff --git a/src/test/java/io/papermc/paper/inventory/item/ArmorSlotTypeMaterialTest.java b/src/test/java/io/papermc/paper/inventory/item/ArmorSlotTypeMaterialTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0d99bef54594f9c5eda5c19063be765783e89fdd
+index 0000000000000000000000000000000000000000..a706dcbabfe31bf54a552965fa5feb8be34213bf
 --- /dev/null
-+++ b/src/test/java/io/papermc/paper/inventory/item/ExtraArmorSlotTypeMaterialTest.java
-@@ -0,0 +1,47 @@
++++ b/src/test/java/io/papermc/paper/inventory/item/ArmorSlotTypeMaterialTest.java
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.inventory.item;
 +
 +import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
@@ -53,11 +53,11 @@ index 0000000000000000000000000000000000000000..0d99bef54594f9c5eda5c19063be7657
 +
 +import static org.junit.jupiter.api.Assertions.assertEquals;
 +import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertTrue;
 +
-+public class ExtraArmorSlotTypeMaterialTest extends AbstractTestingBase {
++public class ArmorSlotTypeMaterialTest extends AbstractTestingBase {
 +
-+    @MethodSource("parameters")
-+    public static Stream<Object[]> parameters() {
++    public static Stream<Object[]> slotTypeParams() {
 +        final List<Object[]> parameters = new ArrayList<>();
 +        for (final PlayerArmorChangeEvent.SlotType slotType : PlayerArmorChangeEvent.SlotType.values()) {
 +            for (final Material item : slotType.getTypes()) {
@@ -67,9 +67,9 @@ index 0000000000000000000000000000000000000000..0d99bef54594f9c5eda5c19063be7657
 +        return parameters.stream();
 +    }
 +
-+    @ParameterizedTest
-+    @MethodSource("parameters")
-+    public void test(PlayerArmorChangeEvent.SlotType slotType, Material item) {
++    @ParameterizedTest(name = "{argumentsWithNames}")
++    @MethodSource("slotTypeParams")
++    public void testSlotType(PlayerArmorChangeEvent.SlotType slotType, Material item) {
 +        final Item nmsItem = CraftMagicNumbers.getItem(item);
 +        final Equipable equipable = Equipable.get(new ItemStack(nmsItem));
 +        assertNotNull(equipable, item + " isn't equipable");
@@ -81,40 +81,10 @@ index 0000000000000000000000000000000000000000..0d99bef54594f9c5eda5c19063be7657
 +        };
 +        assertEquals(equipable.getEquipmentSlot(), slot, item + " isn't set to the right slot");
 +    }
-+}
-diff --git a/src/test/java/io/papermc/paper/inventory/item/MissingArmorSlotTypeMaterialTest.java b/src/test/java/io/papermc/paper/inventory/item/MissingArmorSlotTypeMaterialTest.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..f2a9515228e4e3af27fce4f30fa4f4a5f0629a1e
---- /dev/null
-+++ b/src/test/java/io/papermc/paper/inventory/item/MissingArmorSlotTypeMaterialTest.java
-@@ -0,0 +1,51 @@
-+package io.papermc.paper.inventory.item;
 +
-+import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
-+import java.util.ArrayList;
-+import java.util.List;
-+import java.util.stream.Stream;
-+import net.minecraft.core.registries.BuiltInRegistries;
-+import net.minecraft.world.entity.EquipmentSlot;
-+import net.minecraft.world.item.Equipable;
-+import net.minecraft.world.item.Item;
-+import net.minecraft.world.item.ItemStack;
-+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-+import org.bukkit.support.AbstractTestingBase;
-+import org.junit.jupiter.params.ParameterizedTest;
-+import org.junit.jupiter.params.provider.MethodSource;
-+
-+import static org.junit.jupiter.api.Assertions.assertTrue;
-+
-+/**
-+ * Test for {@link com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType}
-+ */
-+public class MissingArmorSlotTypeMaterialTest extends AbstractTestingBase {
-+
-+    @MethodSource("parameters")
-+    public static Stream<Object[]> parameters() {
++    public static Stream<Object[]> equipableParams() {
 +        final List<Object[]> parameters = new ArrayList<>();
-+        for (final Item item : BuiltInRegistries.ITEM) {
++        for (final Item item : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 +            final Equipable equipable = Equipable.get(new ItemStack(item));
 +            if (equipable != null) {
 +                parameters.add(new Object[]{equipable, item});
@@ -123,9 +93,9 @@ index 0000000000000000000000000000000000000000..f2a9515228e4e3af27fce4f30fa4f4a5
 +        return parameters.stream();
 +    }
 +
-+    @ParameterizedTest
-+    @MethodSource("parameters")
-+    public void test(Equipable equipable, Item item) {
++    @ParameterizedTest(name = "{argumentsWithNames}")
++    @MethodSource("equipableParams")
++    public void testEquipable(Equipable equipable, Item item) {
 +        final EquipmentSlot equipmentSlot = equipable.getEquipmentSlot();
 +        PlayerArmorChangeEvent.SlotType slotType = switch (equipmentSlot) {
 +            case HEAD -> PlayerArmorChangeEvent.SlotType.HEAD;
