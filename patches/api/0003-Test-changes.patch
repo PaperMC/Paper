@@ -3,7 +3,6 @@ From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 17 Mar 2019 23:04:30 +0000
 Subject: [PATCH] Test changes
 
-- convert to mockito for mocking of types
 - Allow use of TYPE_USE annotations
 - Ignore package-private methods for nullability annotations
 - Add excludes for classes which don't pass
@@ -12,6 +11,23 @@ Subject: [PATCH] Test changes
 Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
+diff --git a/build.gradle.kts b/build.gradle.kts
+index d86ee6acb78d249424c5df98a851178c0f62eec1..75bfb0ab8049ebbb52240abf661d469de5526767 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -106,6 +106,12 @@ tasks.test {
+     useJUnitPlatform()
+ }
+ 
++// Paper start - compile tests with -parameters for better junit parameterized test names
++tasks.compileTestJava {
++    options.compilerArgs.add("-parameters")
++}
++// Paper end
++
+ // Paper start
+ val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
 diff --git a/src/test/java/io/papermc/paper/testing/EmptyTag.java b/src/test/java/io/papermc/paper/testing/EmptyTag.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..77154095cfb8b259bdb318e8ff40cb6f559ebc18
@@ -205,17 +221,46 @@ index 64e7aef6220097edefdff3b98a771b988365930d..abadff47166722fdc756afdbc6ac7242
              return false;
          }
 diff --git a/src/test/java/org/bukkit/BukkitMirrorTest.java b/src/test/java/org/bukkit/BukkitMirrorTest.java
-index 89ca06ebecdaadd5dfc7bc74473ca15ad36f6eff..a07d35a6615e788361ac4c8b8954a2876d1306b2 100644
+index 89ca06ebecdaadd5dfc7bc74473ca15ad36f6eff..0970bcdf094a2026168b574848e4f7045e80db74 100644
 --- a/src/test/java/org/bukkit/BukkitMirrorTest.java
 +++ b/src/test/java/org/bukkit/BukkitMirrorTest.java
-@@ -12,6 +12,7 @@ import org.junit.jupiter.params.provider.MethodSource;
- public class BukkitMirrorTest {
+@@ -28,18 +28,21 @@ public class BukkitMirrorTest {
  
-     public static Stream<Arguments> data() {
-+        if (true) return Stream.of(); // Paper
-         return Stream.of(Server.class.getDeclaredMethods())
-                 .map(method -> {
-                     try {
+     @ParameterizedTest
+     @MethodSource("data")
++    @org.junit.jupiter.api.Disabled // Paper
+     public void isStatic(Method server, String name, Method bukkit) throws Throwable {
+         assertThat(Modifier.isStatic(bukkit.getModifiers()), is(true));
+     }
+ 
+     @ParameterizedTest
+     @MethodSource("data")
++    @org.junit.jupiter.api.Disabled // Paper
+     public void isDeprecated(Method server, String name, Method bukkit) throws Throwable {
+         assertThat(bukkit.isAnnotationPresent(Deprecated.class), is(server.isAnnotationPresent(Deprecated.class)));
+     }
+ 
+     @ParameterizedTest
+     @MethodSource("data")
++    @org.junit.jupiter.api.Disabled // Paper
+     public void returnType(Method server, String name, Method bukkit) throws Throwable {
+         assertThat(bukkit.getReturnType(), is((Object) server.getReturnType()));
+         // assertThat(bukkit.getGenericReturnType(), is(server.getGenericReturnType())); // too strict on <T> type generics
+@@ -47,12 +50,14 @@ public class BukkitMirrorTest {
+ 
+     @ParameterizedTest
+     @MethodSource("data")
++    @org.junit.jupiter.api.Disabled // Paper
+     public void parameterTypes(Method server, String name, Method bukkit) throws Throwable {
+         // assertThat(bukkit.getGenericParameterTypes(), is(server.getGenericParameterTypes())); // too strict on <T> type generics
+     }
+ 
+     @ParameterizedTest
+     @MethodSource("data")
++    @org.junit.jupiter.api.Disabled // Paper
+     public void declaredException(Method server, String name, Method bukkit) throws Throwable {
+         assertThat(bukkit.getGenericExceptionTypes(), is(server.getGenericExceptionTypes()));
+     }
 diff --git a/src/test/java/org/bukkit/support/TestServer.java b/src/test/java/org/bukkit/support/TestServer.java
 index 79173d6ed844f1e640e3aa745a9b560ec5e6a2bc..73ec679ac0d1f398b417bd174b47f9af93351e27 100644
 --- a/src/test/java/org/bukkit/support/TestServer.java

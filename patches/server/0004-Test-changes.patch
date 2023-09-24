@@ -5,7 +5,7 @@ Subject: [PATCH] Test changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 09bd31c939125f97d7e9ebb2b0376af70a035ab0..46089768685b3bdb0620571de6ce81a17c00f5d5 100644
+index 0ced1beb116b1dc43a79415aa154d32cb22d23d0..067440c8cb05bee3539303716a93a4369849a5af 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -12,6 +12,7 @@ dependencies {
@@ -16,12 +16,25 @@ index 09bd31c939125f97d7e9ebb2b0376af70a035ab0..46089768685b3bdb0620571de6ce81a1
      implementation("commons-lang:commons-lang:2.6")
      runtimeOnly("org.xerial:sqlite-jdbc:3.43.0.0")
      runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
+@@ -59,6 +60,12 @@ tasks.compileJava {
+     options.setIncremental(false)
+ }
+ 
++// Paper start - compile tests with -parameters for better junit parameterized test names
++tasks.compileTestJava {
++    options.compilerArgs.add("-parameters")
++}
++// Paper end
++
+ publishing {
+     publications.create<MavenPublication>("maven") {
+         artifact(tasks.shadowJar)
 diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e944e9dca13883c57e93e480ae5adfe51c342532
+index 0000000000000000000000000000000000000000..fd40d6818fe6b511a57f60896cf523a5e871af64
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/testing/DummyServer.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,66 @@
 +package io.papermc.paper.testing;
 +
 +import java.util.logging.Logger;
@@ -78,8 +91,7 @@ index 0000000000000000000000000000000000000000..e944e9dca13883c57e93e480ae5adfe5
 +        });
 +
 +        when(dummyServer.getRegistry(any())).thenAnswer(invocation -> {
-+            // LazyRegistry because the vanilla data hasn't been bootstrapped yet.
-+            return new LazyRegistry(() -> CraftRegistry.createRegistry(invocation.getArgument(0, Class.class), AbstractTestingBase.REGISTRY_CUSTOM));
++            return CraftRegistry.createRegistry(invocation.getArgument(0), org.bukkit.support.AbstractTestingBase.REGISTRY_CUSTOM);
 +        });
 +
 +        final PluginManager pluginManager = new SimplePluginManager(dummyServer, new SimpleCommandMap(dummyServer));
@@ -87,42 +99,6 @@ index 0000000000000000000000000000000000000000..e944e9dca13883c57e93e480ae5adfe5
 +
 +        Bukkit.setServer(dummyServer);
 +
-+    }
-+}
-diff --git a/src/test/java/io/papermc/paper/testing/LazyRegistry.java b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..c88749e839ee1a9cf8439c4218c8a98afbd9c491
---- /dev/null
-+++ b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
-@@ -0,0 +1,30 @@
-+package io.papermc.paper.testing;
-+
-+import java.util.Iterator;
-+import java.util.function.Supplier;
-+import java.util.stream.Stream;
-+import java.util.stream.StreamSupport;
-+import org.bukkit.Keyed;
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.Registry;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+public record LazyRegistry(Supplier<Registry<Keyed>> supplier) implements Registry<Keyed> {
-+
-+    @NotNull
-+    @Override
-+    public Iterator<Keyed> iterator() {
-+        return this.supplier().get().iterator();
-+    }
-+
-+    @Override
-+    public @Nullable Keyed get(@NotNull final NamespacedKey key) {
-+        return this.supplier().get().get(key);
-+    }
-+
-+    @Override
-+    public @NotNull Stream<Keyed> stream() {
-+        return StreamSupport.stream(this.supplier.get().spliterator(), false);
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
