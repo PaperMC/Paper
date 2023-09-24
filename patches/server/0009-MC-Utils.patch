@@ -5467,6 +5467,453 @@ index 0000000000000000000000000000000000000000..808d1449ac44ae86a650932365081fba
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..60c7680d678f9dc6a6a3109b1f6af8150ccd9100
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
+@@ -0,0 +1,203 @@
++package io.papermc.paper.util.player;
++
++import com.destroystokyo.paper.util.maplist.ReferenceList;
++import io.papermc.paper.chunk.system.ChunkSystem;
++import io.papermc.paper.util.CoordinateUtils;
++import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
++import net.minecraft.core.BlockPos;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.level.ChunkPos;
++
++public final class NearbyPlayers {
++
++    public static enum NearbyMapType {
++        GENERAL,
++        GENERAL_SMALL,
++        GENERAL_REALLY_SMALL,
++        TICK_VIEW_DISTANCE,
++        VIEW_DISTANCE;
++    }
++
++    private static final NearbyMapType[] MOB_TYPES = NearbyMapType.values();
++    public static final int TOTAL_MAP_TYPES = MOB_TYPES.length;
++
++    private static final int GENERAL_AREA_VIEW_DISTANCE = 33;
++    private static final int GENERAL_SMALL_VIEW_DISTANCE = 10;
++    private static final int GENERAL_REALLY_SMALL_VIEW_DISTANCE = 3;
++
++    public static final int GENERAL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_AREA_VIEW_DISTANCE << 4);
++    public static final int GENERAL_SMALL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_SMALL_VIEW_DISTANCE << 4);
++    public static final int GENERAL_REALLY_SMALL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_REALLY_SMALL_VIEW_DISTANCE << 4);
++
++    private final ServerLevel world;
++    private final Reference2ReferenceOpenHashMap<ServerPlayer, TrackedPlayer[]> players = new Reference2ReferenceOpenHashMap<>();
++    private final Long2ReferenceOpenHashMap<TrackedChunk> byChunk = new Long2ReferenceOpenHashMap<>();
++
++    public NearbyPlayers(final ServerLevel world) {
++        this.world = world;
++    }
++
++    public void addPlayer(final ServerPlayer player) {
++        final TrackedPlayer[] newTrackers = new TrackedPlayer[TOTAL_MAP_TYPES];
++        if (this.players.put(player, newTrackers) != null) {
++            throw new IllegalStateException("Already have player " + player);
++        }
++
++        final ChunkPos chunk = player.chunkPosition();
++
++        for (int i = 0; i < TOTAL_MAP_TYPES; ++i) {
++            // use 0 for default, will be updated by tickPlayer
++            (newTrackers[i] = new TrackedPlayer(player, MOB_TYPES[i])).add(chunk.x, chunk.z, 0);
++        }
++
++        // update view distances
++        this.tickPlayer(player);
++    }
++
++    public void removePlayer(final ServerPlayer player) {
++        final TrackedPlayer[] players = this.players.remove(player);
++        if (players == null) {
++            throw new IllegalStateException("Don't have player " + player);
++        }
++
++        for (final TrackedPlayer tracker : players) {
++            tracker.remove();
++        }
++    }
++
++    public void tickPlayer(final ServerPlayer player) {
++        final TrackedPlayer[] players = this.players.get(player);
++        if (players == null) {
++            throw new IllegalStateException("Don't have player " + player);
++        }
++
++        final ChunkPos chunk = player.chunkPosition();
++
++        players[NearbyMapType.GENERAL.ordinal()].update(chunk.x, chunk.z, GENERAL_AREA_VIEW_DISTANCE);
++        players[NearbyMapType.GENERAL_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_SMALL_VIEW_DISTANCE);
++        players[NearbyMapType.GENERAL_REALLY_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_REALLY_SMALL_VIEW_DISTANCE);
++        players[NearbyMapType.TICK_VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getTickViewDistance(player));
++        players[NearbyMapType.VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getLoadViewDistance(player));
++    }
++
++    public TrackedChunk getChunk(final ChunkPos pos) {
++        return this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++    }
++
++    public TrackedChunk getChunk(final BlockPos pos) {
++        return this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++    }
++
++    public ReferenceList<ServerPlayer> getPlayers(final BlockPos pos, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public ReferenceList<ServerPlayer> getPlayers(final ChunkPos pos, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public ReferenceList<ServerPlayer> getPlayersByChunk(final int chunkX, final int chunkZ, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public ReferenceList<ServerPlayer> getPlayersByBlock(final int blockX, final int blockZ, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(blockX >> 4, blockZ >> 4));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public static final class TrackedChunk {
++
++        public final ReferenceList<ServerPlayer>[] players = new ReferenceList[TOTAL_MAP_TYPES];
++        private int nonEmptyLists;
++        private int updateCount;
++
++        public boolean isEmpty() {
++            return this.nonEmptyLists == 0;
++        }
++
++        public int getUpdateCount() {
++            return this.updateCount;
++        }
++
++        public ReferenceList<ServerPlayer> getPlayers(final NearbyMapType type) {
++            return this.players[type.ordinal()];
++        }
++
++        public void addPlayer(final ServerPlayer player, final NearbyMapType type) {
++            ++this.updateCount;
++            final int idx = type.ordinal();
++            final ReferenceList<ServerPlayer> list = this.players[idx];
++            if (list == null) {
++                ++this.nonEmptyLists;
++                (this.players[idx] = new ReferenceList<>()).add(player);
++                return;
++            }
++
++            if (!list.add(player)) {
++                throw new IllegalStateException("Already contains player " + player);
++            }
++        }
++
++        public void removePlayer(final ServerPlayer player, final NearbyMapType type) {
++            ++this.updateCount;
++            final int idx = type.ordinal();
++            final ReferenceList<ServerPlayer> list = this.players[idx];
++            if (list == null) {
++                throw new IllegalStateException("Does not contain player " + player);
++            }
++
++            if (!list.remove(player)) {
++                throw new IllegalStateException("Does not contain player " + player);
++            }
++
++            if (list.size() == 0) {
++                this.players[idx] = null;
++                --this.nonEmptyLists;
++            }
++        }
++    }
++
++    private final class TrackedPlayer extends SingleUserAreaMap<ServerPlayer> {
++
++        final NearbyMapType type;
++
++        public TrackedPlayer(final ServerPlayer player, final NearbyMapType type) {
++            super(player);
++            this.type = type;
++        }
++
++        @Override
++        protected void addCallback(final ServerPlayer parameter, final int chunkX, final int chunkZ) {
++            final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
++
++            NearbyPlayers.this.byChunk.computeIfAbsent(chunkKey, (final long keyInMap) -> {
++                return new TrackedChunk();
++            }).addPlayer(parameter, this.type);
++        }
++
++        @Override
++        protected void removeCallback(final ServerPlayer parameter, final int chunkX, final int chunkZ) {
++            final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
++
++            final TrackedChunk chunk = NearbyPlayers.this.byChunk.get(chunkKey);
++            if (chunk == null) {
++                throw new IllegalStateException("Chunk should exist at " + new ChunkPos(chunkKey));
++            }
++
++            chunk.removePlayer(parameter, this.type);
++
++            if (chunk.isEmpty()) {
++                NearbyPlayers.this.byChunk.remove(chunkKey);
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/player/SingleUserAreaMap.java b/src/main/java/io/papermc/paper/util/player/SingleUserAreaMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d603887f4d0464f4463172fd79bcd5298d54983e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/player/SingleUserAreaMap.java
+@@ -0,0 +1,232 @@
++package io.papermc.paper.util.player;
++
++import io.papermc.paper.util.IntegerUtil;
++
++public abstract class SingleUserAreaMap<T> {
++
++    private static final int NOT_SET = Integer.MIN_VALUE;
++
++    private final T parameter;
++    private int lastChunkX = NOT_SET;
++    private int lastChunkZ = NOT_SET;
++    private int distance = NOT_SET;
++
++    public SingleUserAreaMap(final T parameter) {
++        this.parameter = parameter;
++    }
++
++    /* math sign function except 0 returns 1 */
++    protected static int sign(int val) {
++        return 1 | (val >> (Integer.SIZE - 1));
++    }
++
++    protected abstract void addCallback(final T parameter, final int chunkX, final int chunkZ);
++
++    protected abstract void removeCallback(final T parameter, final int chunkX, final int chunkZ);
++
++    private void addToNew(final T parameter, final int chunkX, final int chunkZ, final int distance) {
++        final int maxX = chunkX + distance;
++        final int maxZ = chunkZ + distance;
++
++        for (int cx = chunkX - distance; cx <= maxX; ++cx) {
++            for (int cz = chunkZ - distance; cz <= maxZ; ++cz) {
++                this.addCallback(parameter, cx, cz);
++            }
++        }
++    }
++
++    private void removeFromOld(final T parameter, final int chunkX, final int chunkZ, final int distance) {
++        final int maxX = chunkX + distance;
++        final int maxZ = chunkZ + distance;
++
++        for (int cx = chunkX - distance; cx <= maxX; ++cx) {
++            for (int cz = chunkZ - distance; cz <= maxZ; ++cz) {
++                this.removeCallback(parameter, cx, cz);
++            }
++        }
++    }
++
++    public final boolean add(final int chunkX, final int chunkZ, final int distance) {
++        if (distance < 0) {
++            throw new IllegalArgumentException(Integer.toString(distance));
++        }
++        if (this.lastChunkX != NOT_SET) {
++            return false;
++        }
++        this.lastChunkX = chunkX;
++        this.lastChunkZ = chunkZ;
++        this.distance = distance;
++
++        this.addToNew(this.parameter, chunkX, chunkZ, distance);
++
++        return true;
++    }
++
++    public final boolean update(final int toX, final int toZ, final int newViewDistance) {
++        if (newViewDistance < 0) {
++            throw new IllegalArgumentException(Integer.toString(newViewDistance));
++        }
++        final int fromX = this.lastChunkX;
++        final int fromZ = this.lastChunkZ;
++        final int oldViewDistance = this.distance;
++        if (fromX == NOT_SET) {
++            return false;
++        }
++
++        this.lastChunkX = toX;
++        this.lastChunkZ = toZ;
++        this.distance = newViewDistance;
++
++        final T parameter = this.parameter;
++
++
++        final int dx = toX - fromX;
++        final int dz = toZ - fromZ;
++
++        final int totalX = IntegerUtil.branchlessAbs(fromX - toX);
++        final int totalZ = IntegerUtil.branchlessAbs(fromZ - toZ);
++
++        if (Math.max(totalX, totalZ) > (2 * Math.max(newViewDistance, oldViewDistance))) {
++            // teleported?
++            this.removeFromOld(parameter, fromX, fromZ, oldViewDistance);
++            this.addToNew(parameter, toX, toZ, newViewDistance);
++            return true;
++        }
++
++        if (oldViewDistance != newViewDistance) {
++            // remove loop
++
++            final int oldMinX = fromX - oldViewDistance;
++            final int oldMinZ = fromZ - oldViewDistance;
++            final int oldMaxX = fromX + oldViewDistance;
++            final int oldMaxZ = fromZ + oldViewDistance;
++            for (int currX = oldMinX; currX <= oldMaxX; ++currX) {
++                for (int currZ = oldMinZ; currZ <= oldMaxZ; ++currZ) {
++
++                    // only remove if we're outside the new view distance...
++                    if (Math.max(IntegerUtil.branchlessAbs(currX - toX), IntegerUtil.branchlessAbs(currZ - toZ)) > newViewDistance) {
++                        this.removeCallback(parameter, currX, currZ);
++                    }
++                }
++            }
++
++            // add loop
++
++            final int newMinX = toX - newViewDistance;
++            final int newMinZ = toZ - newViewDistance;
++            final int newMaxX = toX + newViewDistance;
++            final int newMaxZ = toZ + newViewDistance;
++            for (int currX = newMinX; currX <= newMaxX; ++currX) {
++                for (int currZ = newMinZ; currZ <= newMaxZ; ++currZ) {
++
++                    // only add if we're outside the old view distance...
++                    if (Math.max(IntegerUtil.branchlessAbs(currX - fromX), IntegerUtil.branchlessAbs(currZ - fromZ)) > oldViewDistance) {
++                        this.addCallback(parameter, currX, currZ);
++                    }
++                }
++            }
++
++            return true;
++        }
++
++        // x axis is width
++        // z axis is height
++        // right refers to the x axis of where we moved
++        // top refers to the z axis of where we moved
++
++        // same view distance
++
++        // used for relative positioning
++        final int up = sign(dz); // 1 if dz >= 0, -1 otherwise
++        final int right = sign(dx); // 1 if dx >= 0, -1 otherwise
++
++        // The area excluded by overlapping the two view distance squares creates four rectangles:
++        // Two on the left, and two on the right. The ones on the left we consider the "removed" section
++        // and on the right the "added" section.
++        // https://i.imgur.com/MrnOBgI.png is a reference image. Note that the outside border is not actually
++        // exclusive to the regions they surround.
++
++        // 4 points of the rectangle
++        int maxX; // exclusive
++        int minX; // inclusive
++        int maxZ; // exclusive
++        int minZ; // inclusive
++
++        if (dx != 0) {
++            // handle right addition
++
++            maxX = toX + (oldViewDistance * right) + right; // exclusive
++            minX = fromX + (oldViewDistance * right) + right; // inclusive
++            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
++            minZ = toZ - (oldViewDistance * up); // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.addCallback(parameter, currX, currZ);
++                }
++            }
++        }
++
++        if (dz != 0) {
++            // handle up addition
++
++            maxX = toX + (oldViewDistance * right) + right; // exclusive
++            minX = toX - (oldViewDistance * right); // inclusive
++            maxZ = toZ + (oldViewDistance * up) + up; // exclusive
++            minZ = fromZ + (oldViewDistance * up) + up; // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.addCallback(parameter, currX, currZ);
++                }
++            }
++        }
++
++        if (dx != 0) {
++            // handle left removal
++
++            maxX = toX - (oldViewDistance * right); // exclusive
++            minX = fromX - (oldViewDistance * right); // inclusive
++            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
++            minZ = toZ - (oldViewDistance * up); // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.removeCallback(parameter, currX, currZ);
++                }
++            }
++        }
++
++        if (dz != 0) {
++            // handle down removal
++
++            maxX = fromX + (oldViewDistance * right) + right; // exclusive
++            minX = fromX - (oldViewDistance * right); // inclusive
++            maxZ = toZ - (oldViewDistance * up); // exclusive
++            minZ = fromZ - (oldViewDistance * up); // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.removeCallback(parameter, currX, currZ);
++                }
++            }
++        }
++
++        return true;
++    }
++
++    public final boolean remove() {
++        final int chunkX = this.lastChunkX;
++        final int chunkZ = this.lastChunkZ;
++        final int distance = this.distance;
++        if (chunkX == NOT_SET) {
++            return false;
++        }
++
++        this.lastChunkX = this.lastChunkZ = this.distance = NOT_SET;
++
++        this.removeFromOld(this.parameter, chunkX, chunkZ, distance);
++
++        return true;
++    }
++}
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
 index 092bfedfb32c38550d1cab1b696feac6df09131f..9870eccc1dc5c2201f12f8e2affe647f6b0375f8 100644
 --- a/src/main/java/net/minecraft/Util.java
@@ -5580,30 +6027,29 @@ index 929d31aa624f035eb314dece08969b102f5781fc..e94f0361cbca873f05b5b768c68c0933
 +    // Paper end - MC Utils - default query payloads
  }
 diff --git a/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java b/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
-index 44cac39893eb968aa8ea21ee571c0dcb866ce06c..953e7573f6b2ca73a8c27c4d63edec89b173f333 100644
+index 44cac39893eb968aa8ea21ee571c0dcb866ce06c..5151d68ba6ec72a7124f298253c5f0af080b2ea6 100644
 --- a/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
-@@ -15,7 +15,18 @@ public record ServerboundCustomQueryAnswerPacket(int transactionId, @Nullable Cu
+@@ -15,7 +15,17 @@ public record ServerboundCustomQueryAnswerPacket(int transactionId, @Nullable Cu
      }
  
      private static CustomQueryAnswerPayload readPayload(int queryId, FriendlyByteBuf buf) {
 -        return readUnknownPayload(buf);
 +        // Paper start - MC Utils - default query payloads
-+        return new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(
-+            buf.readNullable((buf2) -> {
-+                int i = buf2.readableBytes();
-+                if (i >= 0 && i <= MAX_PAYLOAD_SIZE) {
-+                    return new FriendlyByteBuf(buf2.readBytes(i));
-+                } else {
-+                    throw new IllegalArgumentException("Payload may not be larger than " + MAX_PAYLOAD_SIZE + " bytes");
-+                }
-+            })
-+        );
++        FriendlyByteBuf buffer = buf.readNullable((buf2) -> {
++            int i = buf2.readableBytes();
++            if (i >= 0 && i <= MAX_PAYLOAD_SIZE) {
++                return new FriendlyByteBuf(buf2.readBytes(i));
++            } else {
++                throw new IllegalArgumentException("Payload may not be larger than " + MAX_PAYLOAD_SIZE + " bytes");
++            }
++        });
++        return buffer == null ? null : new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(buffer);
 +        // Paper end - MC Utils - default query payloads
      }
  
      private static CustomQueryAnswerPayload readUnknownPayload(FriendlyByteBuf buf) {
-@@ -40,4 +51,21 @@ public record ServerboundCustomQueryAnswerPacket(int transactionId, @Nullable Cu
+@@ -40,4 +50,21 @@ public record ServerboundCustomQueryAnswerPacket(int transactionId, @Nullable Cu
      public void handle(ServerLoginPacketListener listener) {
          listener.handleCustomQueryPacket(this);
      }
@@ -5920,10 +6366,10 @@ index 1641bdf8725df778ba91bf5cd22c1ebbb3745058..facfdbb87e89f4db33ce13233c2ba436
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb54dd199ce 100644
+index e9cf8686b59c232816b2fde92fc6616f77979a64..10132390dd356461f696971b34df3eeed05c572e 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -167,6 +167,56 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -167,6 +167,62 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      };
      // CraftBukkit end
  
@@ -5934,16 +6380,21 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
 +        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
 +        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
 +        // Note: players need to be explicitly added to distance maps before they can be updated
++        this.nearbyPlayers.addPlayer(player);
 +    }
 +
 +    void removePlayerFromDistanceMaps(ServerPlayer player) {
-+
++        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
++        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
++        // Note: players need to be explicitly added to distance maps before they can be updated
++        this.nearbyPlayers.removePlayer(player);
 +    }
 +
 +    void updateMaps(ServerPlayer player) {
 +        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
 +        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
 +        // Note: players need to be explicitly added to distance maps before they can be updated
++        this.nearbyPlayers.tickPlayer(player);
 +    }
 +    // Paper end
 +    // Paper start
@@ -5975,23 +6426,33 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
 +    public final ChunkHolder getUnloadingChunkHolder(int chunkX, int chunkZ) {
 +        return this.pendingUnloads.get(io.papermc.paper.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
 +    }
++    public final io.papermc.paper.util.player.NearbyPlayers nearbyPlayers;
 +    // Paper end
 +
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
          super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
          this.visibleChunkMap = this.updatingChunkMap.clone();
-@@ -220,6 +270,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -220,7 +276,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.overworldDataStorage = persistentStateManagerFactory;
          this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
          this.setServerViewDistance(viewDistance);
 +        // Paper start
 +        this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
 +        this.regionManagers.add(this.dataRegionManager);
++        this.nearbyPlayers = new io.papermc.paper.util.player.NearbyPlayers(this.level);
 +        // Paper end
++    }
++
++    // Paper start
++    // always use accessor, so folia can override
++    public final io.papermc.paper.util.player.NearbyPlayers getNearbyPlayers() {
++        return this.nearbyPlayers;
      }
++    // Paper end
  
      protected ChunkGenerator generator() {
-@@ -321,6 +375,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         return this.generator;
+@@ -321,6 +389,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }
  
@@ -6007,7 +6468,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
      private CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> getChunkRangeFuture(ChunkHolder centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus) {
          if (margin == 0) {
              ChunkStatus chunkstatus = (ChunkStatus) distanceToStatus.apply(0);
-@@ -417,9 +480,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -417,9 +494,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          };
  
          stringbuilder.append("Updating:").append(System.lineSeparator());
@@ -6019,7 +6480,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
          CrashReport crashreport = CrashReport.forThrowable(exception, "Chunk loading");
          CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Chunk loading");
  
-@@ -461,8 +524,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -461,8 +538,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      holder.setTicketLevel(level);
                  } else {
                      holder = new ChunkHolder(new ChunkPos(pos), level, this.level, this.lightEngine, this.queueSorter, this);
@@ -6034,7 +6495,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
                  this.updatingChunkMap.put(pos, holder);
                  this.modified = true;
              }
-@@ -484,7 +553,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -484,7 +567,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      protected void saveAllChunks(boolean flush) {
          if (flush) {
@@ -6043,7 +6504,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
              MutableBoolean mutableboolean = new MutableBoolean();
  
              do {
-@@ -513,7 +582,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -513,7 +596,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              });
              this.flushWorker();
          } else {
@@ -6052,7 +6513,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
          }
  
      }
-@@ -532,7 +601,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -532,7 +615,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public boolean hasWork() {
@@ -6061,7 +6522,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
      }
  
      private void processUnloads(BooleanSupplier shouldKeepTicking) {
-@@ -543,6 +612,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -543,6 +626,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              ChunkHolder playerchunk = (ChunkHolder) this.updatingChunkMap.remove(j);
  
              if (playerchunk != null) {
@@ -6069,7 +6530,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
                  this.pendingUnloads.put(j, playerchunk);
                  this.modified = true;
                  ++i;
-@@ -560,7 +630,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -560,7 +644,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
          int l = 0;
@@ -6078,7 +6539,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
  
          while (l < 20 && shouldKeepTicking.getAsBoolean() && objectiterator.hasNext()) {
              if (this.saveChunkIfNeeded((ChunkHolder) objectiterator.next())) {
-@@ -578,7 +648,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -578,7 +662,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              if (completablefuture1 != completablefuture) {
                  this.scheduleUnload(pos, holder);
              } else {
@@ -6091,7 +6552,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
                      if (ichunkaccess instanceof LevelChunk) {
                          ((LevelChunk) ichunkaccess).setLoaded(false);
                      }
-@@ -594,7 +668,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -594,7 +682,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      this.lightEngine.tryScheduleUpdate();
                      this.progressListener.onStatusChange(ichunkaccess.getPos(), (ChunkStatus) null);
                      this.chunkSaveCooldowns.remove(ichunkaccess.getPos().toLong());
@@ -6102,7 +6563,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
  
              }
          };
-@@ -1037,7 +1113,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1037,7 +1127,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public int size() {
@@ -6111,7 +6572,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
      }
  
      public DistanceManager getDistanceManager() {
-@@ -1045,19 +1121,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1045,19 +1135,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      protected Iterable<ChunkHolder> getChunks() {
@@ -6136,7 +6597,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
              Optional<ChunkAccess> optional = Optional.ofNullable(playerchunk.getLastAvailable());
              Optional<LevelChunk> optional1 = optional.flatMap((ichunkaccess) -> {
                  return ichunkaccess instanceof LevelChunk ? Optional.of((LevelChunk) ichunkaccess) : Optional.empty();
-@@ -1182,6 +1258,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1182,6 +1272,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
              player.setChunkTrackingView(ChunkTrackingView.EMPTY);
              this.updateChunkTracking(player);
@@ -6144,7 +6605,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
          } else {
              SectionPos sectionposition = player.getLastSectionPos();
  
-@@ -1190,6 +1267,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1190,6 +1281,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  this.distanceManager.removePlayer(sectionposition, player);
              }
  
@@ -6152,7 +6613,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
              this.applyChunkTrackingView(player, ChunkTrackingView.EMPTY);
          }
  
-@@ -1241,6 +1319,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1241,6 +1333,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.updateChunkTracking(player);
          }
  
@@ -6160,7 +6621,7 @@ index e9cf8686b59c232816b2fde92fc6616f77979a64..90dce7ed0d3d3dee3bae6657ac3cbeb5
      }
  
      private void updateChunkTracking(ServerPlayer player) {
-@@ -1493,7 +1572,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1493,7 +1586,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private class ChunkDistanceManager extends DistanceManager {
  
          protected ChunkDistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {

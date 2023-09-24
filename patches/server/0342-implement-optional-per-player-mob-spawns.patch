@@ -4,309 +4,11 @@ Date: Mon, 19 Aug 2019 01:27:58 +0500
 Subject: [PATCH] implement optional per player mob spawns
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java b/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..11de56afaf059b00fa5bec293516bcdce7c4b2b9
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java
-@@ -0,0 +1,241 @@
-+package com.destroystokyo.paper.util;
-+
-+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
-+import java.lang.ref.WeakReference;
-+import java.util.Iterator;
-+
-+/** @author Spottedleaf */
-+public class PooledHashSets<E> {
-+
-+    // we really want to avoid that equals() check as much as possible...
-+    protected final Object2ObjectOpenHashMap<PooledObjectLinkedOpenHashSet<E>, PooledObjectLinkedOpenHashSet<E>> mapPool = new Object2ObjectOpenHashMap<>(64, 0.25f);
-+
-+    protected void decrementReferenceCount(final PooledObjectLinkedOpenHashSet<E> current) {
-+        if (current.referenceCount == 0) {
-+            throw new IllegalStateException("Cannot decrement reference count for " + current);
-+        }
-+        if (current.referenceCount == -1 || --current.referenceCount > 0) {
-+            return;
-+        }
-+
-+        this.mapPool.remove(current);
-+        return;
-+    }
-+
-+    public PooledObjectLinkedOpenHashSet<E> findMapWith(final PooledObjectLinkedOpenHashSet<E> current, final E object) {
-+        final PooledObjectLinkedOpenHashSet<E> cached = current.getAddCache(object);
-+
-+        if (cached != null) {
-+            if (cached.referenceCount != -1) {
-+                ++cached.referenceCount;
-+            }
-+
-+            decrementReferenceCount(current);
-+
-+            return cached;
-+        }
-+
-+        if (!current.add(object)) {
-+            return current;
-+        }
-+
-+        // we use get/put since we use a different key on put
-+        PooledObjectLinkedOpenHashSet<E> ret = this.mapPool.get(current);
-+
-+        if (ret == null) {
-+            ret = new PooledObjectLinkedOpenHashSet<>(current);
-+            current.remove(object);
-+            this.mapPool.put(ret, ret);
-+            ret.referenceCount = 1;
-+        } else {
-+            if (ret.referenceCount != -1) {
-+                ++ret.referenceCount;
-+            }
-+            current.remove(object);
-+        }
-+
-+        current.updateAddCache(object, ret);
-+
-+        decrementReferenceCount(current);
-+        return ret;
-+    }
-+
-+    // rets null if current.size() == 1
-+    public PooledObjectLinkedOpenHashSet<E> findMapWithout(final PooledObjectLinkedOpenHashSet<E> current, final E object) {
-+        if (current.set.size() == 1) {
-+            decrementReferenceCount(current);
-+            return null;
-+        }
-+
-+        final PooledObjectLinkedOpenHashSet<E> cached = current.getRemoveCache(object);
-+
-+        if (cached != null) {
-+            if (cached.referenceCount != -1) {
-+                ++cached.referenceCount;
-+            }
-+
-+            decrementReferenceCount(current);
-+
-+            return cached;
-+        }
-+
-+        if (!current.remove(object)) {
-+            return current;
-+        }
-+
-+        // we use get/put since we use a different key on put
-+        PooledObjectLinkedOpenHashSet<E> ret = this.mapPool.get(current);
-+
-+        if (ret == null) {
-+            ret = new PooledObjectLinkedOpenHashSet<>(current);
-+            current.add(object);
-+            this.mapPool.put(ret, ret);
-+            ret.referenceCount = 1;
-+        } else {
-+            if (ret.referenceCount != -1) {
-+                ++ret.referenceCount;
-+            }
-+            current.add(object);
-+        }
-+
-+        current.updateRemoveCache(object, ret);
-+
-+        decrementReferenceCount(current);
-+        return ret;
-+    }
-+
-+    public static final class PooledObjectLinkedOpenHashSet<E> implements Iterable<E> {
-+
-+        private static final WeakReference NULL_REFERENCE = new WeakReference(null);
-+
-+        final ObjectLinkedOpenHashSet<E> set;
-+        int referenceCount; // -1 if special
-+        int hash; // optimize hashcode
-+
-+        // add cache
-+        WeakReference<E> lastAddObject = NULL_REFERENCE;
-+        WeakReference<PooledObjectLinkedOpenHashSet<E>> lastAddMap = NULL_REFERENCE;
-+
-+        // remove cache
-+        WeakReference<E> lastRemoveObject = NULL_REFERENCE;
-+        WeakReference<PooledObjectLinkedOpenHashSet<E>> lastRemoveMap = NULL_REFERENCE;
-+
-+        public PooledObjectLinkedOpenHashSet() {
-+            this.set = new ObjectLinkedOpenHashSet<>(2, 0.6f);
-+        }
-+
-+        public PooledObjectLinkedOpenHashSet(final E single) {
-+            this();
-+            this.referenceCount = -1;
-+            this.add(single);
-+        }
-+
-+        public PooledObjectLinkedOpenHashSet(final PooledObjectLinkedOpenHashSet<E> other) {
-+            this.set = other.set.clone();
-+            this.hash = other.hash;
-+        }
-+
-+        // from https://github.com/Spottedleaf/ConcurrentUtil/blob/master/src/main/java/ca/spottedleaf/concurrentutil/util/IntegerUtil.java
-+        // generated by https://github.com/skeeto/hash-prospector
-+        static int hash0(int x) {
-+            x *= 0x36935555;
-+            x ^= x >>> 16;
-+            return x;
-+        }
-+
-+        public PooledObjectLinkedOpenHashSet<E> getAddCache(final E element) {
-+            final E currentAdd = this.lastAddObject.get();
-+
-+            if (currentAdd == null || !(currentAdd == element || currentAdd.equals(element))) {
-+                return null;
-+            }
-+
-+            final PooledObjectLinkedOpenHashSet<E> map = this.lastAddMap.get();
-+            if (map == null || map.referenceCount == 0) {
-+                // we need to ret null if ref count is zero as calling code will assume the map is in use
-+                return null;
-+            }
-+
-+            return map;
-+        }
-+
-+        public PooledObjectLinkedOpenHashSet<E> getRemoveCache(final E element) {
-+            final E currentRemove = this.lastRemoveObject.get();
-+
-+            if (currentRemove == null || !(currentRemove == element || currentRemove.equals(element))) {
-+                return null;
-+            }
-+
-+            final PooledObjectLinkedOpenHashSet<E> map = this.lastRemoveMap.get();
-+            if (map == null || map.referenceCount == 0) {
-+                // we need to ret null if ref count is zero as calling code will assume the map is in use
-+                return null;
-+            }
-+
-+            return map;
-+        }
-+
-+        public void updateAddCache(final E element, final PooledObjectLinkedOpenHashSet<E> map) {
-+            this.lastAddObject = new WeakReference<>(element);
-+            this.lastAddMap = new WeakReference<>(map);
-+        }
-+
-+        public void updateRemoveCache(final E element, final PooledObjectLinkedOpenHashSet<E> map) {
-+            this.lastRemoveObject = new WeakReference<>(element);
-+            this.lastRemoveMap = new WeakReference<>(map);
-+        }
-+
-+        boolean add(final E element) {
-+            boolean added =  this.set.add(element);
-+
-+            if (added) {
-+                this.hash += hash0(element.hashCode());
-+            }
-+
-+            return added;
-+        }
-+
-+        boolean remove(Object element) {
-+            boolean removed = this.set.remove(element);
-+
-+            if (removed) {
-+                this.hash -= hash0(element.hashCode());
-+            }
-+
-+            return removed;
-+        }
-+
-+        @Override
-+        public Iterator<E> iterator() {
-+            return this.set.iterator();
-+        }
-+
-+        @Override
-+        public int hashCode() {
-+            return this.hash;
-+        }
-+
-+        @Override
-+        public boolean equals(final Object other) {
-+            if (!(other instanceof PooledObjectLinkedOpenHashSet)) {
-+                return false;
-+            }
-+            if (this.referenceCount == 0) {
-+                return other == this;
-+            } else {
-+                if (other == this) {
-+                    // Unfortunately we are never equal to our own instance while in use!
-+                    return false;
-+                }
-+                return this.hash == ((PooledObjectLinkedOpenHashSet)other).hash && this.set.equals(((PooledObjectLinkedOpenHashSet)other).set);
-+            }
-+        }
-+
-+        @Override
-+        public String toString() {
-+            return "PooledHashSet: size: " + this.set.size() + ", reference count: " + this.referenceCount + ", hash: " +
-+                this.hashCode() + ", identity: " + System.identityHashCode(this) + " map: " + this.set.toString();
-+        }
-+    }
-+} 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index ed43ade8c884f9fe7945ef20c1dd2cf5c70680d3..1f30d06781cea0855be26784c239e71ed1a2f6c3 100644
+index 06e53890fab287846c8d846f1f829650a1b3c09b..847019bf4a81b82e6e11a19aebd69b7270d81b06 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -142,6 +142,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     private final Long2LongMap chunkSaveCooldowns;
-     private final Queue<Runnable> unloadQueue;
-     private int serverViewDistance;
-+    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
- 
-     // Paper - rewrite chunk system
- 
-@@ -153,11 +154,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
-         int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
-         // Note: players need to be explicitly added to distance maps before they can be updated
-+        // Paper start - per player mob spawning
-+        if (this.playerMobDistanceMap != null) {
-+            this.playerMobDistanceMap.add(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
-+        }
-+        // Paper end - per player mob spawning
-     }
- 
-     void removePlayerFromDistanceMaps(ServerPlayer player) {
-         this.level.playerChunkLoader.removePlayer(player); // Paper - replace chunk loader
- 
-+        // Paper start - per player mob spawning
-+        if (this.playerMobDistanceMap != null) {
-+            this.playerMobDistanceMap.remove(player);
-+        }
-+        // Paper end - per player mob spawning
-     }
- 
-     void updateMaps(ServerPlayer player) {
-@@ -165,6 +176,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
-         // Note: players need to be explicitly added to distance maps before they can be updated
-         this.level.playerChunkLoader.updatePlayer(player); // Paper - replace chunk loader
-+
-+        // Paper start - per player mob spawning
-+        if (this.playerMobDistanceMap != null) {
-+            this.playerMobDistanceMap.update(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
-+        }
-+        // Paper end - per player mob spawning
-     }
-     // Paper end
-     // Paper start
-@@ -250,6 +267,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
-         this.regionManagers.add(this.dataRegionManager);
-         // Paper end
-+        this.playerMobDistanceMap = this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets) : null; // Paper
-     }
- 
-     protected ChunkGenerator generator() {
-@@ -275,6 +293,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -289,6 +289,29 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          });
      }
  
@@ -317,16 +19,14 @@ index ed43ade8c884f9fe7945ef20c1dd2cf5c70680d3..1f30d06781cea0855be26784c239e71e
 +        }
 +        int index = entity.getType().getCategory().ordinal();
 +
-+        final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> inRange = this.playerMobDistanceMap.getObjectsInRange(entity.chunkPosition());
++        final com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> inRange =
++            this.getNearbyPlayers().getPlayers(entity.chunkPosition(), io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
 +        if (inRange == null) {
 +            return;
 +        }
-+        final Object[] backingSet = inRange.getBackingSet();
-+        for (int i = 0; i < backingSet.length; i++) {
-+            if (!(backingSet[i] instanceof final ServerPlayer player)) {
-+                continue;
-+            }
-+            ++player.mobCounts[index];
++        final Object[] backingSet = inRange.getRawData();
++        for (int i = 0, len = inRange.size(); i < len; i++) {
++            ++((ServerPlayer)backingSet[i]).mobCounts[index];
 +        }
 +    }
 +
@@ -339,7 +39,7 @@ index ed43ade8c884f9fe7945ef20c1dd2cf5c70680d3..1f30d06781cea0855be26784c239e71e
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 4649e597b86335b33d9e9227d966dd7ad8208096..e655cf837f7bd7d4271dca80b9c6764372336910 100644
+index 4649e597b86335b33d9e9227d966dd7ad8208096..b73d45c205db39ed3e97a127e53371db81e0d63f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -543,7 +543,18 @@ public class ServerChunkCache extends ChunkSource {
@@ -349,45 +49,36 @@ index 4649e597b86335b33d9e9227d966dd7ad8208096..e655cf837f7bd7d4271dca80b9c67643
 -            NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
 +            // Paper start - per player mob spawning
 +            NaturalSpawner.SpawnState spawnercreature_d; // moved down
-+            if ((this.spawnFriendlies || this.spawnEnemies) && this.chunkMap.playerMobDistanceMap != null) { // don't count mobs when animals and monsters are disabled
++            if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
 +                // re-set mob counts
 +                for (ServerPlayer player : this.level.players) {
 +                    Arrays.fill(player.mobCounts, 0);
 +                }
 +                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, null, true);
 +            } else {
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, this.chunkMap.playerMobDistanceMap == null ? new LocalMobCapCalculator(this.chunkMap) : null, false);
++                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
 +            }
 +            // Paper end
              this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
  
              this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index dcb6a1bd3774e63dd14fbd8ddd6ff09c68741379..ad34d1562131a5140c4cc83aa3ea94fab08d12da 100644
+index dcb6a1bd3774e63dd14fbd8ddd6ff09c68741379..55c3416f209178a1a100228d9b1db620c79bc288 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -246,6 +246,11 @@ public class ServerPlayer extends Player {
+@@ -246,6 +246,10 @@ public class ServerPlayer extends Player {
      public boolean queueHealthUpdatePacket = false;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end
 +    // Paper start - mob spawning rework
 +    public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
 +    public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper
-+    public final com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleMobDistanceMap;
-+    // Paper end
++    // Paper end - mob spawning rework
  
      // CraftBukkit start
      public String displayName;
-@@ -383,6 +388,7 @@ public class ServerPlayer extends Player {
-         this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
-         this.bukkitPickUpLoot = true;
-         this.maxHealthCache = this.getMaxHealth();
-+        this.cachedSingleMobDistanceMap = new com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
-     }
- 
-     // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a62668ea5037 100644
+index fe38079d69f3e9987ad5ab077ae09d05017a681a..9df761f5cf043e8d2dffa711c20ab32fe2992331 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -70,6 +70,12 @@ public final class NaturalSpawner {
@@ -421,7 +112,7 @@ index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a626
                  });
              }
          }
-@@ -143,13 +154,37 @@ public final class NaturalSpawner {
+@@ -143,13 +154,35 @@ public final class NaturalSpawner {
                  continue;
              }
  
@@ -433,14 +124,12 @@ index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a626
 +
 +            if (world.paperConfig().entities.spawning.perPlayerMobSpawns) {
 +                int minDiff = Integer.MAX_VALUE;
-+                final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<net.minecraft.server.level.ServerPlayer> inRange = world.getChunkSource().chunkMap.playerMobDistanceMap.getObjectsInRange(chunk.getPos());
++                final com.destroystokyo.paper.util.maplist.ReferenceList<net.minecraft.server.level.ServerPlayer> inRange =
++                    world.chunkSource.chunkMap.getNearbyPlayers().getPlayers(chunk.getPos(), io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
 +                if (inRange != null) {
-+                    final Object[] backingSet = inRange.getBackingSet();
-+                    for (int k = 0; k < backingSet.length; k++) {
-+                        if (!(backingSet[k] instanceof final net.minecraft.server.level.ServerPlayer player)) {
-+                            continue;
-+                        }
-+                        minDiff = Math.min(limit - world.getChunkSource().chunkMap.getMobCountNear(player, enumcreaturetype), minDiff);
++                    final Object[] backingSet = inRange.getRawData();
++                    for (int k = 0, len = inRange.size(); k < len; k++) {
++                        minDiff = Math.min(limit - world.getChunkSource().chunkMap.getMobCountNear((net.minecraft.server.level.ServerPlayer)backingSet[k], enumcreaturetype), minDiff);
 +                    }
 +                }
 +                difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
@@ -461,7 +150,7 @@ index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a626
              }
          }
  
-@@ -158,11 +193,17 @@ public final class NaturalSpawner {
+@@ -158,11 +191,17 @@ public final class NaturalSpawner {
      }
  
      public static void spawnCategoryForChunk(MobCategory group, ServerLevel world, LevelChunk chunk, NaturalSpawner.SpawnPredicate checker, NaturalSpawner.AfterSpawnCallback runner) {
@@ -480,7 +169,7 @@ index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a626
      }
  
      @VisibleForDebug
-@@ -173,15 +214,21 @@ public final class NaturalSpawner {
+@@ -173,15 +212,21 @@ public final class NaturalSpawner {
          });
      }
  
@@ -503,7 +192,7 @@ index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a626
              int k = 0;
  
              while (k < 3) {
-@@ -223,14 +270,14 @@ public final class NaturalSpawner {
+@@ -223,14 +268,14 @@ public final class NaturalSpawner {
                                      // Paper start
                                      PreSpawnStatus doSpawning = isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
                                      if (doSpawning == PreSpawnStatus.ABORT) {
@@ -520,7 +209,7 @@ index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a626
                                          }
  
                                          entityinsentient.moveTo(d0, (double) i, d1, world.random.nextFloat() * 360.0F, 0.0F);
-@@ -243,10 +290,15 @@ public final class NaturalSpawner {
+@@ -243,10 +288,15 @@ public final class NaturalSpawner {
                                                  ++j;
                                                  ++k1;
                                                  runner.run(entityinsentient, chunk);
@@ -538,7 +227,7 @@ index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a626
                                              }
  
                                              if (entityinsentient.isMaxGroupSizeReached(k1)) {
-@@ -268,6 +320,7 @@ public final class NaturalSpawner {
+@@ -268,6 +318,7 @@ public final class NaturalSpawner {
              }
  
          }
@@ -546,7 +235,7 @@ index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a626
      }
  
      private static boolean isRightDistanceToPlayerAndSpawnPoint(ServerLevel world, ChunkAccess chunk, BlockPos.MutableBlockPos pos, double squaredDistance) {
-@@ -567,7 +620,7 @@ public final class NaturalSpawner {
+@@ -567,7 +618,7 @@ public final class NaturalSpawner {
              MobCategory enumcreaturetype = entitytypes.getCategory();
  
              this.mobCategoryCounts.addTo(enumcreaturetype, 1);
@@ -555,7 +244,7 @@ index fe38079d69f3e9987ad5ab077ae09d05017a681a..7983f9a21251cec4857529ad1180a626
          }
  
          public int getSpawnableChunkCount() {
-@@ -583,6 +636,7 @@ public final class NaturalSpawner {
+@@ -583,6 +634,7 @@ public final class NaturalSpawner {
              int i = limit * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
              // CraftBukkit end
  
