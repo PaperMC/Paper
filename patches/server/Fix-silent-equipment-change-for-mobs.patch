@@ -78,21 +78,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.github.classgraph.ScanResult;
 +import java.util.ArrayList;
 +import java.util.List;
++import java.util.stream.Stream;
 +import org.bukkit.support.AbstractTestingBase;
-+import org.junit.Test;
-+import org.junit.runner.RunWith;
-+import org.junit.runners.Parameterized;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
 +
-+import static org.junit.Assert.fail;
++import static org.junit.jupiter.api.Assertions.fail;
 +
-+@RunWith(Parameterized.class)
 +public class EntitySetItemSlotSilentOverrideTest extends AbstractTestingBase {
 +
-+    @Parameterized.Parameter
-+    public ClassInfo overridesSetItemSlot;
-+
-+    @Parameterized.Parameters(name = "{0}")
-+    public static Iterable<ClassInfo> parameters() {
++    @MethodSource("parameters")
++    public static Stream<ClassInfo> parameters() {
 +        final List<ClassInfo> classInfo = new ArrayList<>();
 +        try (ScanResult scanResult = new ClassGraph()
 +            .enableClassInfo()
@@ -107,12 +103,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +        }
-+        return classInfo;
++        return classInfo.stream();
 +    }
 +
-+    @Test
-+    public void checkSetItemSlotSilentOverrides() {
-+        final MethodInfoList setItemSlot = this.overridesSetItemSlot.getDeclaredMethodInfo("setItemSlot");
++    @ParameterizedTest
++    @MethodSource("parameters")
++    public void checkSetItemSlotSilentOverrides(ClassInfo overridesSetItemSlot) {
++        final MethodInfoList setItemSlot = overridesSetItemSlot.getDeclaredMethodInfo("setItemSlot");
 +        for (final MethodInfo methodInfo : setItemSlot) {
 +            for (final MethodParameterInfo methodParameterInfo : methodInfo.getParameterInfo()) {
 +                if ("boolean".equals(methodParameterInfo.getTypeDescriptor().toStringWithSimpleNames())) {
@@ -120,6 +117,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +        }
-+        fail(this.overridesSetItemSlot.getName() + " needs to override setItemSlot with the boolean silent parameter as well");
++        fail(overridesSetItemSlot.getName() + " needs to override setItemSlot with the boolean silent parameter as well");
 +    }
 +}

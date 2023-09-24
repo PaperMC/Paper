@@ -122,21 +122,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.github.classgraph.ScanResult;
 +import java.util.ArrayList;
 +import java.util.List;
++import java.util.stream.Stream;
 +import org.bukkit.support.AbstractTestingBase;
-+import org.junit.Test;
-+import org.junit.runner.RunWith;
-+import org.junit.runners.Parameterized;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
 +
-+import static org.junit.Assert.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertEquals;
 +
-+@RunWith(Parameterized.class)
 +public class BlockPlayerDestroyOverrideTest extends AbstractTestingBase {
 +
-+    @Parameterized.Parameter
-+    public ClassInfo overridesPlayerDestroy;
-+
-+    @Parameterized.Parameters
-+    public static Iterable<ClassInfo> parameters() {
++    @MethodSource("parameters")
++    public static Stream<ClassInfo> parameters() {
 +        final List<ClassInfo> classInfo = new ArrayList<>();
 +        try (ScanResult scanResult = new ClassGraph()
 +            .enableClassInfo()
@@ -151,15 +147,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +        }
-+        return classInfo;
++        return classInfo.stream();
 +    }
 +
-+    @Test
-+    public void checkPlayerDestroyOverrides() {
-+        final MethodInfoList playerDestroy = this.overridesPlayerDestroy.getDeclaredMethodInfo("playerDestroy");
-+        assertEquals(this.overridesPlayerDestroy.getName() + " has multiple playerDestroy methods", 1, playerDestroy.size());
++    @ParameterizedTest
++    @MethodSource("parameters")
++    public void checkPlayerDestroyOverrides(ClassInfo overridesPlayerDestroy) {
++        final MethodInfoList playerDestroy = overridesPlayerDestroy.getDeclaredMethodInfo("playerDestroy");
++        assertEquals(1, playerDestroy.size(), overridesPlayerDestroy.getName() + " has multiple playerDestroy methods");
 +        final MethodInfo next = playerDestroy.iterator().next();
 +        final MethodParameterInfo[] parameterInfo = next.getParameterInfo();
-+        assertEquals(this.overridesPlayerDestroy.getName() + " needs to change it's override of playerDestroy", "boolean", parameterInfo[parameterInfo.length - 1].getTypeDescriptor().toStringWithSimpleNames());
++        assertEquals(overridesPlayerDestroy.getName() + " needs to change its override of playerDestroy", "boolean", parameterInfo[parameterInfo.length - 1].getTypeDescriptor().toStringWithSimpleNames());
 +    }
 +}

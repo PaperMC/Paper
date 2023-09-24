@@ -13,8 +13,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
  
 +    testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
-     testImplementation("junit:junit:4.13.2")
-     testImplementation("org.hamcrest:hamcrest-library:1.3")
+     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+     testImplementation("org.hamcrest:hamcrest:2.2")
  
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
 new file mode 100644
@@ -815,20 +815,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.entity.ai;
 +
-+import org.junit.Assert;
-+import org.junit.Test;
-+
++import io.github.classgraph.ClassGraph;
++import io.github.classgraph.ScanResult;
 +import java.lang.reflect.Field;
 +import java.lang.reflect.Modifier;
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.stream.Collectors;
-+
 +import org.bukkit.entity.Mob;
++import org.junit.jupiter.api.Test;
 +
-+import io.github.classgraph.ClassGraph;
-+import io.github.classgraph.ScanResult;
++import static org.junit.jupiter.api.Assertions.assertNotEquals;
++import static org.junit.jupiter.api.Assertions.fail;
 +
 +public class VanillaMobGoalTest {
 +
@@ -874,7 +873,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            System.out.println("Missing from API: ");
 +            for (GoalKey<?> key : missingFromAPI) {
 +                System.out.println("GoalKey<" + key.getEntityClass().getSimpleName() + "> " + key.getNamespacedKey().getKey().toUpperCase() +
-+                                   " = GoalKey.of(" + key.getEntityClass().getSimpleName() + ".class, NamespacedKey.minecraft(\"" + key.getNamespacedKey().getKey() + "\"));");
++                    " = GoalKey.of(" + key.getEntityClass().getSimpleName() + ".class, NamespacedKey.minecraft(\"" + key.getNamespacedKey().getKey() + "\"));");
 +            }
 +            shouldFail = true;
 +        }
@@ -889,7 +888,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            deprecated.forEach(System.out::println);
 +        }
 +
-+        if (shouldFail) Assert.fail("See above");
++        if (shouldFail) {
++            fail("See above");
++        }
 +    }
 +
 +    private static boolean hasNoEnclosingClass(Class<?> clazz) {
@@ -902,7 +903,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        try (ScanResult scanResult = new ClassGraph().enableAllInfo().whitelistPackages("net.minecraft.world.entity").scan()) {
 +            classes = scanResult.getSubclasses("net.minecraft.world.entity.Mob").loadClasses();
 +        }
-+        Assert.assertNotEquals("There are supposed to be more than 0 entity types!", Collections.emptyList(), classes);
++        assertNotEquals(Collections.emptyList(), classes, "There are supposed to be more than 0 entity types!");
 +
 +        boolean shouldFail = false;
 +        for (Class<?> nmsClass : classes) {
@@ -913,6 +914,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
-+        if (shouldFail) Assert.fail("See above");
++        if (shouldFail) {
++            fail("See above");
++        }
 +    }
 +}
