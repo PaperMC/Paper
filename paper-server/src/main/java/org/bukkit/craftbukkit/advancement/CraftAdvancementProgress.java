@@ -44,7 +44,7 @@ public class CraftAdvancementProgress implements AdvancementProgress {
     @Override
     public Date getDateAwarded(String criteria) {
         CriterionProgress criterion = this.handle.getCriterion(criteria);
-        return (criterion == null) ? null : Date.from(criterion.getObtained());
+        return (criterion == null) ? null : criterion.getObtained() == null ? null : Date.from(criterion.getObtained()); // Paper - fix NPE if criterion isn't obtained
     }
 
     @Override
