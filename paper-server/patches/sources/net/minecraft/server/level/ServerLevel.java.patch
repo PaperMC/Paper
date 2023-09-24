@@ -80,7 +80,7 @@
 +    public final UUID uuid;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
-+
+ 
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
 +    }
@@ -227,7 +227,7 @@
 +        boolean flag2 = minecraftserver.forceSynchronousWrites();
 +        DataFixer datafixer = minecraftserver.getFixerUpper();
 +        EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(new SimpleRegionStorage(new RegionStorageInfo(convertable_conversionsession.getLevelId(), resourcekey, "entities"), convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, DataFixTypes.ENTITY_CHUNK), this, minecraftserver);
- 
++
          this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage);
 -        StructureTemplateManager structuretemplatemanager = server.getStructureManager();
 -        int j = server.getPlayerList().getViewDistance();
@@ -305,13 +305,12 @@
          long j;
  
          if (this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
--            if (this.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
--                j = this.levelData.getDayTime() + 24000L;
--                this.setDayTime(j - j % 24000L);
 +            // CraftBukkit start
 +            j = this.levelData.getDayTime() + 24000L;
 +            TimeSkipEvent event = new TimeSkipEvent(this.getWorld(), TimeSkipEvent.SkipReason.NIGHT_SKIP, (j - j % 24000L) - this.getDayTime());
-+            if (this.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
+             if (this.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
+-                j = this.levelData.getDayTime() + 24000L;
+-                this.setDayTime(j - j % 24000L);
 +                this.getCraftServer().getPluginManager().callEvent(event);
 +                if (!event.isCancelled()) {
 +                    this.setDayTime(this.getDayTime() + event.getSkipAmount());
@@ -718,8 +717,8 @@
      public void removePlayerImmediately(ServerPlayer player, Entity.RemovalReason reason) {
 -        player.remove(reason);
 +        player.remove(reason, null); // CraftBukkit - add Bukkit remove cause
-     }
- 
++    }
++
 +    // CraftBukkit start
 +    public boolean strikeLightning(Entity entitylightning) {
 +        return this.strikeLightning(entitylightning, LightningStrikeEvent.Cause.UNKNOWN);
@@ -733,9 +732,9 @@
 +        }
 +
 +        return this.addFreshEntity(entitylightning);
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public void destroyBlockProgress(int entityId, BlockPos pos, int progress) {
          Iterator iterator = this.server.getPlayerList().getPlayers().iterator();
@@ -940,18 +939,34 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1334,11 +1711,22 @@
+@@ -1334,11 +1711,38 @@
      @Nullable
      @Override
      public MapItemSavedData getMapData(MapId id) {
 -        return (MapItemSavedData) this.getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), id.key());
-+        // CraftBukkit start
-+        MapItemSavedData worldmap = (MapItemSavedData) this.getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), id.key());
-+        if (worldmap != null) {
-+            worldmap.id = id;
++        // Paper start - Call missing map initialize event and set id
++        final DimensionDataStorage storage = this.getServer().overworld().getDataStorage();
++
++        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(id.key());
++        if (cacheEntry == null) { // Cache did not contain, try to load and may init
++            final MapItemSavedData worldmap = storage.get(MapItemSavedData.factory(), id.key()); // get populates the cache
++            if (worldmap != null) { // map was read, init it and return
++                worldmap.id = id;
++                new MapInitializeEvent(worldmap.mapView).callEvent();
++                return worldmap;
++            }
++
++            return null; // Map does not exist, reading failed.
 +        }
-+        return worldmap;
-+        // CraftBukkit end
++
++        // Cache entry exists, update it with the id ref and return.
++        if (cacheEntry.orElse(null) instanceof final MapItemSavedData mapItemSavedData) {
++            mapItemSavedData.id = id;
++            return mapItemSavedData;
++        }
++
++        return null;
++        // Paper end - Call missing map initialize event and set id
      }
  
      @Override
@@ -964,7 +979,7 @@
          this.getServer().overworld().getDataStorage().set(id.key(), state);
      }
  
-@@ -1352,7 +1740,9 @@
+@@ -1352,7 +1756,9 @@
          float f1 = this.levelData.getSpawnAngle();
  
          if (!blockposition1.equals(pos) || f1 != angle) {
@@ -974,7 +989,7 @@
              this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
          }
  
-@@ -1419,6 +1809,11 @@
+@@ -1419,6 +1825,11 @@
              });
              optional1.ifPresent((holder) -> {
                  this.getServer().execute(() -> {
@@ -986,7 +1001,7 @@
                      this.getPoiManager().add(blockposition1, holder);
                      DebugPackets.sendPoiAddedPacket(this, blockposition1);
                  });
-@@ -1649,6 +2044,11 @@
+@@ -1649,6 +2060,11 @@
      @Override
      public void blockUpdated(BlockPos pos, Block block) {
          if (!this.isDebug()) {
@@ -998,7 +1013,7 @@
              this.updateNeighborsAt(pos, block);
          }
  
-@@ -1668,12 +2068,12 @@
+@@ -1668,12 +2084,12 @@
      }
  
      public boolean isFlat() {
@@ -1013,7 +1028,7 @@
      }
  
      @Nullable
-@@ -1696,7 +2096,7 @@
+@@ -1696,7 +2112,7 @@
      private static <T> String getTypeCount(Iterable<T> items, Function<T, String> classifier) {
          try {
              Object2IntOpenHashMap<String> object2intopenhashmap = new Object2IntOpenHashMap();
@@ -1022,7 +1037,7 @@
  
              while (iterator.hasNext()) {
                  T t0 = iterator.next();
-@@ -1705,7 +2105,7 @@
+@@ -1705,7 +2121,7 @@
                  object2intopenhashmap.addTo(s, 1);
              }
  
@@ -1031,7 +1046,7 @@
                  String s1 = (String) entry.getKey();
  
                  return s1 + ":" + entry.getIntValue();
-@@ -1717,6 +2117,7 @@
+@@ -1717,6 +2133,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -1039,7 +1054,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1802,6 +2203,27 @@
+@@ -1802,6 +2219,27 @@
          return this.serverLevelData.getGameRules();
      }
  
@@ -1067,7 +1082,7 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
-@@ -1828,6 +2250,7 @@
+@@ -1828,6 +2266,7 @@
          }
  
          public void onTickingStart(Entity entity) {
@@ -1075,7 +1090,7 @@
              ServerLevel.this.entityTickList.add(entity);
          }
  
-@@ -1836,14 +2259,15 @@
+@@ -1836,14 +2275,15 @@
          }
  
          public void onTrackingStart(Entity entity) {
@@ -1093,7 +1108,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1864,9 +2288,58 @@
+@@ -1864,9 +2304,58 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1152,7 +1167,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1874,7 +2347,7 @@
+@@ -1874,7 +2363,7 @@
              }
  
              if (entity instanceof Mob entityinsentient) {
@@ -1161,7 +1176,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1895,10 +2368,27 @@
+@@ -1895,10 +2384,27 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
