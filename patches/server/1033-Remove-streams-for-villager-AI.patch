@@ -5,7 +5,7 @@ Subject: [PATCH] Remove streams for villager AI
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
-index b45c4f50705f80163d44d9e588f86a5770f5be38..10cbb80c7cd9ba30150d8d935c0d115719c35509 100644
+index b45c4f50705f80163d44d9e588f86a5770f5be38..879e16d4c881a97f95eeff8016f9900d6cfe10c2 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 @@ -52,7 +52,7 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
@@ -36,7 +36,7 @@ index b45c4f50705f80163d44d9e588f86a5770f5be38..10cbb80c7cd9ba30150d8d935c0d1157
          if (this.behaviors.stream().noneMatch((task) -> {
              return task.getStatus() == Behavior.Status.RUNNING;
          })) {
-@@ -77,11 +79,11 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+@@ -77,11 +79,13 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
      @Override
      public final void doStop(ServerLevel world, E entity, long time) {
          this.status = Behavior.Status.STOPPED;
@@ -45,15 +45,17 @@ index b45c4f50705f80163d44d9e588f86a5770f5be38..10cbb80c7cd9ba30150d8d935c0d1157
 -        }).forEach((task) -> {
 -            task.doStop(world, entity, time);
 -        });
++        // Paper start
 +        for (BehaviorControl<? super E> behavior : this.behaviors) {
 +            if (behavior.getStatus() == Behavior.Status.RUNNING) {
 +                behavior.doStop(world, entity, time);
 +            }
 +        }
++        // Paper end
          this.exitErasedMemories.forEach(entity.getBrain()::eraseMemory);
      }
  
-@@ -117,25 +119,31 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+@@ -117,25 +121,31 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
      public static enum RunningPolicy {
          RUN_ONE {
              @Override
@@ -137,10 +139,10 @@ index 1dfcc5cba6ffb463acf161a23fff1ca452184290..61a164c5bfc86faa3f4d04a66e025701
                  break;
              }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
-index 312775d0430f793720211dc29bb293503e799d11..75d9c4f011b5a97def215784c92bb57bbb35d06b 100644
+index 312775d0430f793720211dc29bb293503e799d11..9c6b1027dcda0ff4fd357d3cb70fcf5b9f6127a0 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
-@@ -21,25 +21,30 @@ public class PlayerSensor extends Sensor<LivingEntity> {
+@@ -21,25 +21,51 @@ public class PlayerSensor extends Sensor<LivingEntity> {
  
      @Override
      protected void doTick(ServerLevel world, LivingEntity entity) {
@@ -148,7 +150,28 @@ index 312775d0430f793720211dc29bb293503e799d11..75d9c4f011b5a97def215784c92bb57b
 -        players.removeIf(player -> !EntitySelector.NO_SPECTATORS.test(player) || !entity.closerThan(player, 16.0D));
 -        players.sort(Comparator.comparingDouble(entity::distanceTo));
 +        // Paper start - remove streams
-+        List<Player> players = (List)world.getNearbyPlayers(entity, entity.getX(), entity.getY(), entity.getZ(), 16.0D, EntitySelector.NO_SPECTATORS);
++        io.papermc.paper.util.player.NearbyPlayers nearbyPlayers = world.chunkSource.chunkMap.getNearbyPlayers();
++        net.minecraft.world.phys.Vec3 entityPos = entity.position();
++        com.destroystokyo.paper.util.maplist.ReferenceList<net.minecraft.server.level.ServerPlayer> nearby = nearbyPlayers.getPlayersByChunk(
++            entity.chunkPosition().x,
++            entity.chunkPosition().z,
++            io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.GENERAL_REALLY_SMALL
++        );
++
++        List<Player> players = new java.util.ArrayList<>(nearby == null ? 0 : nearby.size());
++        if (nearby != null) {
++            Object[] rawData = nearby.getRawData();
++            for (int index = 0, len = nearby.size(); index < len; ++index) {
++                net.minecraft.server.level.ServerPlayer player = (net.minecraft.server.level.ServerPlayer)rawData[index];
++                if (player.isSpectator()) {
++                    continue;
++                }
++                if (player.distanceToSqr(entityPos.x, entityPos.y, entityPos.z) >= (16.0 * 16.0)) {
++                    continue;
++                }
++                players.add((Player)player);
++            }
++        }
 +        players.sort((e1, e2) -> Double.compare(entity.distanceToSqr(e1), entity.distanceToSqr(e2)));
          Brain<?> brain = entity.getBrain();
  
