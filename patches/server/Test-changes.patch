@@ -16,6 +16,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      implementation("commons-lang:commons-lang:2.6")
      runtimeOnly("org.xerial:sqlite-jdbc:3.43.0.0")
      runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
+@@ -0,0 +0,0 @@ tasks.compileJava {
+     options.setIncremental(false)
+ }
+ 
++// Paper start - compile tests with -parameters for better junit parameterized test names
++tasks.compileTestJava {
++    options.compilerArgs.add("-parameters")
++}
++// Paper end
++
+ publishing {
+     publications.create<MavenPublication>("maven") {
+         artifact(tasks.shadowJar)
 diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -78,8 +91,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +
 +        when(dummyServer.getRegistry(any())).thenAnswer(invocation -> {
-+            // LazyRegistry because the vanilla data hasn't been bootstrapped yet.
-+            return new LazyRegistry(() -> CraftRegistry.createRegistry(invocation.getArgument(0, Class.class), AbstractTestingBase.REGISTRY_CUSTOM));
++            return CraftRegistry.createRegistry(invocation.getArgument(0), org.bukkit.support.AbstractTestingBase.REGISTRY_CUSTOM);
 +        });
 +
 +        final PluginManager pluginManager = new SimplePluginManager(dummyServer, new SimpleCommandMap(dummyServer));
@@ -87,42 +99,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        Bukkit.setServer(dummyServer);
 +
-+    }
-+}
-diff --git a/src/test/java/io/papermc/paper/testing/LazyRegistry.java b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
-@@ -0,0 +0,0 @@
-+package io.papermc.paper.testing;
-+
-+import java.util.Iterator;
-+import java.util.function.Supplier;
-+import java.util.stream.Stream;
-+import java.util.stream.StreamSupport;
-+import org.bukkit.Keyed;
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.Registry;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+public record LazyRegistry(Supplier<Registry<Keyed>> supplier) implements Registry<Keyed> {
-+
-+    @NotNull
-+    @Override
-+    public Iterator<Keyed> iterator() {
-+        return this.supplier().get().iterator();
-+    }
-+
-+    @Override
-+    public @Nullable Keyed get(@NotNull final NamespacedKey key) {
-+        return this.supplier().get().get(key);
-+    }
-+
-+    @Override
-+    public @NotNull Stream<Keyed> stream() {
-+        return StreamSupport.stream(this.supplier.get().spliterator(), false);
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java

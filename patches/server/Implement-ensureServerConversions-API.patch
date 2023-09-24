@@ -6,6 +6,19 @@ Subject: [PATCH] Implement ensureServerConversions API
 This will take a Bukkit ItemStack and run it through any conversions a server process would perform on it,
 to ensure it meets latest minecraft expectations.
 
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -0,0 +0,0 @@ public final class ItemStack {
+ 
+     // Called to run this stack through the data converter to handle older storage methods and serialized items
+     public void convertStack(int version) {
+-        if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion()) {
++        if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion() && MinecraftServer.getServer() != null) { // Paper - skip conversion if the server doesn't exist (for tests)
+             CompoundTag savedStack = new CompoundTag();
+             this.save(savedStack);
+             savedStack = (CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic(NbtOps.INSTANCE, savedStack), version, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
