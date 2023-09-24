@@ -133,7 +133,7 @@ allprojects {
 
 tasks.collectAtsFromPatches {
     // Uncomment while updating for a new Minecraft version
-    extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
+    // extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
 }
 
 // Uncomment while updating for a new Minecraft version
