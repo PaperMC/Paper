@@ -153,7 +153,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
         return hashCode;
     }
 
-    public Map<String, Object> serialize() {
-        return (Map<String, Object>) CraftNBTTagConfigSerializer.serialize(toTagCompound());
+    public String serialize() {
+        return CraftNBTTagConfigSerializer.serialize(toTagCompound());
     }
 }

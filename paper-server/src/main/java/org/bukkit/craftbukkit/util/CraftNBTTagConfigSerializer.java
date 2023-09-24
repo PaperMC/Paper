@@ -15,6 +15,8 @@ import net.minecraft.nbt.NBTTagDouble;
 import net.minecraft.nbt.NBTTagInt;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
+import net.minecraft.nbt.SnbtPrinterTagVisitor;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftNBTTagConfigSerializer {
 
@@ -23,35 +25,29 @@ public class CraftNBTTagConfigSerializer {
     private static final Pattern DOUBLE = Pattern.compile("[-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?d", Pattern.CASE_INSENSITIVE);
     private static final MojangsonParser MOJANGSON_PARSER = new MojangsonParser(new StringReader(""));
 
-    public static Object serialize(NBTBase base) {
-        if (base instanceof NBTTagCompound) {
-            Map<String, Object> innerMap = new HashMap<>();
-            for (String key : ((NBTTagCompound) base).getAllKeys()) {
-                innerMap.put(key, serialize(((NBTTagCompound) base).get(key)));
-            }
-
-            return innerMap;
-        } else if (base instanceof NBTTagList) {
-            List<Object> baseList = new ArrayList<>();
-            for (int i = 0; i < ((NBTList) base).size(); i++) {
-                baseList.add(serialize((NBTBase) ((NBTList) base).get(i)));
-            }
-
-            return baseList;
-        } else if (base instanceof NBTTagString) {
-            return base.getAsString();
-        } else if (base instanceof NBTTagInt) { // No need to check for doubles, those are covered by the double itself
-            return base.toString() + "i";
-        }
-
-        return base.toString();
+    public static String serialize(@NotNull final NBTBase base) {
+        final SnbtPrinterTagVisitor snbtVisitor = new SnbtPrinterTagVisitor();
+        return snbtVisitor.visit(base);
     }
 
-    public static NBTBase deserialize(Object object) {
+    public static NBTBase deserialize(final Object object) {
+        // The new logic expects the top level object to be a single string, holding the entire nbt tag as SNBT.
+        if (object instanceof final String snbtString) {
+            try {
+                return MojangsonParser.parseTag(snbtString);
+            } catch (final CommandSyntaxException e) {
+                throw new RuntimeException("Failed to deserialise nbt", e);
+            }
+        } else { // Legacy logic is passed to the internal legacy deserialization that attempts to read the old format that *unsuccessfully* attempted to read/write nbt to a full yml tree.
+            return internalLegacyDeserialization(object);
+        }
+    }
+
+    private static NBTBase internalLegacyDeserialization(@NotNull final Object object) {
         if (object instanceof Map) {
             NBTTagCompound compound = new NBTTagCompound();
             for (Map.Entry<String, Object> entry : ((Map<String, Object>) object).entrySet()) {
-                compound.put(entry.getKey(), deserialize(entry.getValue()));
+                compound.put(entry.getKey(), internalLegacyDeserialization(entry.getValue()));
             }
 
             return compound;
@@ -63,7 +59,7 @@ public class CraftNBTTagConfigSerializer {
 
             NBTTagList tagList = new NBTTagList();
             for (Object tag : list) {
-                tagList.add(deserialize(tag));
+                tagList.add(internalLegacyDeserialization(tag));
             }
 
             return tagList;
