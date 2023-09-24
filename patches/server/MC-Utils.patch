@@ -5467,6 +5467,453 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.util.player;
++
++import com.destroystokyo.paper.util.maplist.ReferenceList;
++import io.papermc.paper.chunk.system.ChunkSystem;
++import io.papermc.paper.util.CoordinateUtils;
++import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
++import net.minecraft.core.BlockPos;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.level.ChunkPos;
++
++public final class NearbyPlayers {
++
++    public static enum NearbyMapType {
++        GENERAL,
++        GENERAL_SMALL,
++        GENERAL_REALLY_SMALL,
++        TICK_VIEW_DISTANCE,
++        VIEW_DISTANCE;
++    }
++
++    private static final NearbyMapType[] MOB_TYPES = NearbyMapType.values();
++    public static final int TOTAL_MAP_TYPES = MOB_TYPES.length;
++
++    private static final int GENERAL_AREA_VIEW_DISTANCE = 33;
++    private static final int GENERAL_SMALL_VIEW_DISTANCE = 10;
++    private static final int GENERAL_REALLY_SMALL_VIEW_DISTANCE = 3;
++
++    public static final int GENERAL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_AREA_VIEW_DISTANCE << 4);
++    public static final int GENERAL_SMALL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_SMALL_VIEW_DISTANCE << 4);
++    public static final int GENERAL_REALLY_SMALL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_REALLY_SMALL_VIEW_DISTANCE << 4);
++
++    private final ServerLevel world;
++    private final Reference2ReferenceOpenHashMap<ServerPlayer, TrackedPlayer[]> players = new Reference2ReferenceOpenHashMap<>();
++    private final Long2ReferenceOpenHashMap<TrackedChunk> byChunk = new Long2ReferenceOpenHashMap<>();
++
++    public NearbyPlayers(final ServerLevel world) {
++        this.world = world;
++    }
++
++    public void addPlayer(final ServerPlayer player) {
++        final TrackedPlayer[] newTrackers = new TrackedPlayer[TOTAL_MAP_TYPES];
++        if (this.players.put(player, newTrackers) != null) {
++            throw new IllegalStateException("Already have player " + player);
++        }
++
++        final ChunkPos chunk = player.chunkPosition();
++
++        for (int i = 0; i < TOTAL_MAP_TYPES; ++i) {
++            // use 0 for default, will be updated by tickPlayer
++            (newTrackers[i] = new TrackedPlayer(player, MOB_TYPES[i])).add(chunk.x, chunk.z, 0);
++        }
++
++        // update view distances
++        this.tickPlayer(player);
++    }
++
++    public void removePlayer(final ServerPlayer player) {
++        final TrackedPlayer[] players = this.players.remove(player);
++        if (players == null) {
++            throw new IllegalStateException("Don't have player " + player);
++        }
++
++        for (final TrackedPlayer tracker : players) {
++            tracker.remove();
++        }
++    }
++
++    public void tickPlayer(final ServerPlayer player) {
++        final TrackedPlayer[] players = this.players.get(player);
++        if (players == null) {
++            throw new IllegalStateException("Don't have player " + player);
++        }
++
++        final ChunkPos chunk = player.chunkPosition();
++
++        players[NearbyMapType.GENERAL.ordinal()].update(chunk.x, chunk.z, GENERAL_AREA_VIEW_DISTANCE);
++        players[NearbyMapType.GENERAL_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_SMALL_VIEW_DISTANCE);
++        players[NearbyMapType.GENERAL_REALLY_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_REALLY_SMALL_VIEW_DISTANCE);
++        players[NearbyMapType.TICK_VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getTickViewDistance(player));
++        players[NearbyMapType.VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getLoadViewDistance(player));
++    }
++
++    public TrackedChunk getChunk(final ChunkPos pos) {
++        return this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++    }
++
++    public TrackedChunk getChunk(final BlockPos pos) {
++        return this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++    }
++
++    public ReferenceList<ServerPlayer> getPlayers(final BlockPos pos, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public ReferenceList<ServerPlayer> getPlayers(final ChunkPos pos, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public ReferenceList<ServerPlayer> getPlayersByChunk(final int chunkX, final int chunkZ, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public ReferenceList<ServerPlayer> getPlayersByBlock(final int blockX, final int blockZ, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(blockX >> 4, blockZ >> 4));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public static final class TrackedChunk {
++
++        public final ReferenceList<ServerPlayer>[] players = new ReferenceList[TOTAL_MAP_TYPES];
++        private int nonEmptyLists;
++        private int updateCount;
++
++        public boolean isEmpty() {
++            return this.nonEmptyLists == 0;
++        }
++
++        public int getUpdateCount() {
++            return this.updateCount;
++        }
++
++        public ReferenceList<ServerPlayer> getPlayers(final NearbyMapType type) {
++            return this.players[type.ordinal()];
++        }
++
++        public void addPlayer(final ServerPlayer player, final NearbyMapType type) {
++            ++this.updateCount;
++            final int idx = type.ordinal();
++            final ReferenceList<ServerPlayer> list = this.players[idx];
++            if (list == null) {
++                ++this.nonEmptyLists;
++                (this.players[idx] = new ReferenceList<>()).add(player);
++                return;
++            }
++
++            if (!list.add(player)) {
++                throw new IllegalStateException("Already contains player " + player);
++            }
++        }
++
++        public void removePlayer(final ServerPlayer player, final NearbyMapType type) {
++            ++this.updateCount;
++            final int idx = type.ordinal();
++            final ReferenceList<ServerPlayer> list = this.players[idx];
++            if (list == null) {
++                throw new IllegalStateException("Does not contain player " + player);
++            }
++
++            if (!list.remove(player)) {
++                throw new IllegalStateException("Does not contain player " + player);
++            }
++
++            if (list.size() == 0) {
++                this.players[idx] = null;
++                --this.nonEmptyLists;
++            }
++        }
++    }
++
++    private final class TrackedPlayer extends SingleUserAreaMap<ServerPlayer> {
++
++        final NearbyMapType type;
++
++        public TrackedPlayer(final ServerPlayer player, final NearbyMapType type) {
++            super(player);
++            this.type = type;
++        }
++
++        @Override
++        protected void addCallback(final ServerPlayer parameter, final int chunkX, final int chunkZ) {
++            final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
++
++            NearbyPlayers.this.byChunk.computeIfAbsent(chunkKey, (final long keyInMap) -> {
++                return new TrackedChunk();
++            }).addPlayer(parameter, this.type);
++        }
++
++        @Override
++        protected void removeCallback(final ServerPlayer parameter, final int chunkX, final int chunkZ) {
++            final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
++
++            final TrackedChunk chunk = NearbyPlayers.this.byChunk.get(chunkKey);
++            if (chunk == null) {
++                throw new IllegalStateException("Chunk should exist at " + new ChunkPos(chunkKey));
++            }
++
++            chunk.removePlayer(parameter, this.type);
++
++            if (chunk.isEmpty()) {
++                NearbyPlayers.this.byChunk.remove(chunkKey);
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/player/SingleUserAreaMap.java b/src/main/java/io/papermc/paper/util/player/SingleUserAreaMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/player/SingleUserAreaMap.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.util.player;
++
++import io.papermc.paper.util.IntegerUtil;
++
++public abstract class SingleUserAreaMap<T> {
++
++    private static final int NOT_SET = Integer.MIN_VALUE;
++
++    private final T parameter;
++    private int lastChunkX = NOT_SET;
++    private int lastChunkZ = NOT_SET;
++    private int distance = NOT_SET;
++
++    public SingleUserAreaMap(final T parameter) {
++        this.parameter = parameter;
++    }
++
++    /* math sign function except 0 returns 1 */
++    protected static int sign(int val) {
++        return 1 | (val >> (Integer.SIZE - 1));
++    }
++
++    protected abstract void addCallback(final T parameter, final int chunkX, final int chunkZ);
++
++    protected abstract void removeCallback(final T parameter, final int chunkX, final int chunkZ);
++
++    private void addToNew(final T parameter, final int chunkX, final int chunkZ, final int distance) {
++        final int maxX = chunkX + distance;
++        final int maxZ = chunkZ + distance;
++
++        for (int cx = chunkX - distance; cx <= maxX; ++cx) {
++            for (int cz = chunkZ - distance; cz <= maxZ; ++cz) {
++                this.addCallback(parameter, cx, cz);
++            }
++        }
++    }
++
++    private void removeFromOld(final T parameter, final int chunkX, final int chunkZ, final int distance) {
++        final int maxX = chunkX + distance;
++        final int maxZ = chunkZ + distance;
++
++        for (int cx = chunkX - distance; cx <= maxX; ++cx) {
++            for (int cz = chunkZ - distance; cz <= maxZ; ++cz) {
++                this.removeCallback(parameter, cx, cz);
++            }
++        }
++    }
++
++    public final boolean add(final int chunkX, final int chunkZ, final int distance) {
++        if (distance < 0) {
++            throw new IllegalArgumentException(Integer.toString(distance));
++        }
++        if (this.lastChunkX != NOT_SET) {
++            return false;
++        }
++        this.lastChunkX = chunkX;
++        this.lastChunkZ = chunkZ;
++        this.distance = distance;
++
++        this.addToNew(this.parameter, chunkX, chunkZ, distance);
++
++        return true;
++    }
++
++    public final boolean update(final int toX, final int toZ, final int newViewDistance) {
++        if (newViewDistance < 0) {
++            throw new IllegalArgumentException(Integer.toString(newViewDistance));
++        }
++        final int fromX = this.lastChunkX;
++        final int fromZ = this.lastChunkZ;
++        final int oldViewDistance = this.distance;
++        if (fromX == NOT_SET) {
++            return false;
++        }
++
++        this.lastChunkX = toX;
++        this.lastChunkZ = toZ;
++        this.distance = newViewDistance;
++
++        final T parameter = this.parameter;
++
++
++        final int dx = toX - fromX;
++        final int dz = toZ - fromZ;
++
++        final int totalX = IntegerUtil.branchlessAbs(fromX - toX);
++        final int totalZ = IntegerUtil.branchlessAbs(fromZ - toZ);
++
++        if (Math.max(totalX, totalZ) > (2 * Math.max(newViewDistance, oldViewDistance))) {
++            // teleported?
++            this.removeFromOld(parameter, fromX, fromZ, oldViewDistance);
++            this.addToNew(parameter, toX, toZ, newViewDistance);
++            return true;
++        }
++
++        if (oldViewDistance != newViewDistance) {
++            // remove loop
++
++            final int oldMinX = fromX - oldViewDistance;
++            final int oldMinZ = fromZ - oldViewDistance;
++            final int oldMaxX = fromX + oldViewDistance;
++            final int oldMaxZ = fromZ + oldViewDistance;
++            for (int currX = oldMinX; currX <= oldMaxX; ++currX) {
++                for (int currZ = oldMinZ; currZ <= oldMaxZ; ++currZ) {
++
++                    // only remove if we're outside the new view distance...
++                    if (Math.max(IntegerUtil.branchlessAbs(currX - toX), IntegerUtil.branchlessAbs(currZ - toZ)) > newViewDistance) {
++                        this.removeCallback(parameter, currX, currZ);
++                    }
++                }
++            }
++
++            // add loop
++
++            final int newMinX = toX - newViewDistance;
++            final int newMinZ = toZ - newViewDistance;
++            final int newMaxX = toX + newViewDistance;
++            final int newMaxZ = toZ + newViewDistance;
++            for (int currX = newMinX; currX <= newMaxX; ++currX) {
++                for (int currZ = newMinZ; currZ <= newMaxZ; ++currZ) {
++
++                    // only add if we're outside the old view distance...
++                    if (Math.max(IntegerUtil.branchlessAbs(currX - fromX), IntegerUtil.branchlessAbs(currZ - fromZ)) > oldViewDistance) {
++                        this.addCallback(parameter, currX, currZ);
++                    }
++                }
++            }
++
++            return true;
++        }
++
++        // x axis is width
++        // z axis is height
++        // right refers to the x axis of where we moved
++        // top refers to the z axis of where we moved
++
++        // same view distance
++
++        // used for relative positioning
++        final int up = sign(dz); // 1 if dz >= 0, -1 otherwise
++        final int right = sign(dx); // 1 if dx >= 0, -1 otherwise
++
++        // The area excluded by overlapping the two view distance squares creates four rectangles:
++        // Two on the left, and two on the right. The ones on the left we consider the "removed" section
++        // and on the right the "added" section.
++        // https://i.imgur.com/MrnOBgI.png is a reference image. Note that the outside border is not actually
++        // exclusive to the regions they surround.
++
++        // 4 points of the rectangle
++        int maxX; // exclusive
++        int minX; // inclusive
++        int maxZ; // exclusive
++        int minZ; // inclusive
++
++        if (dx != 0) {
++            // handle right addition
++
++            maxX = toX + (oldViewDistance * right) + right; // exclusive
++            minX = fromX + (oldViewDistance * right) + right; // inclusive
++            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
++            minZ = toZ - (oldViewDistance * up); // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.addCallback(parameter, currX, currZ);
++                }
++            }
++        }
++
++        if (dz != 0) {
++            // handle up addition
++
++            maxX = toX + (oldViewDistance * right) + right; // exclusive
++            minX = toX - (oldViewDistance * right); // inclusive
++            maxZ = toZ + (oldViewDistance * up) + up; // exclusive
++            minZ = fromZ + (oldViewDistance * up) + up; // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.addCallback(parameter, currX, currZ);
++                }
++            }
++        }
++
++        if (dx != 0) {
++            // handle left removal
++
++            maxX = toX - (oldViewDistance * right); // exclusive
++            minX = fromX - (oldViewDistance * right); // inclusive
++            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
++            minZ = toZ - (oldViewDistance * up); // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.removeCallback(parameter, currX, currZ);
++                }
++            }
++        }
++
++        if (dz != 0) {
++            // handle down removal
++
++            maxX = fromX + (oldViewDistance * right) + right; // exclusive
++            minX = fromX - (oldViewDistance * right); // inclusive
++            maxZ = toZ - (oldViewDistance * up); // exclusive
++            minZ = fromZ - (oldViewDistance * up); // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.removeCallback(parameter, currX, currZ);
++                }
++            }
++        }
++
++        return true;
++    }
++
++    public final boolean remove() {
++        final int chunkX = this.lastChunkX;
++        final int chunkZ = this.lastChunkZ;
++        final int distance = this.distance;
++        if (chunkX == NOT_SET) {
++            return false;
++        }
++
++        this.lastChunkX = this.lastChunkZ = this.distance = NOT_SET;
++
++        this.removeFromOld(this.parameter, chunkX, chunkZ, distance);
++
++        return true;
++    }
++}
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/Util.java
@@ -5589,16 +6036,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private static CustomQueryAnswerPayload readPayload(int queryId, FriendlyByteBuf buf) {
 -        return readUnknownPayload(buf);
 +        // Paper start - MC Utils - default query payloads
-+        return new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(
-+            buf.readNullable((buf2) -> {
-+                int i = buf2.readableBytes();
-+                if (i >= 0 && i <= MAX_PAYLOAD_SIZE) {
-+                    return new FriendlyByteBuf(buf2.readBytes(i));
-+                } else {
-+                    throw new IllegalArgumentException("Payload may not be larger than " + MAX_PAYLOAD_SIZE + " bytes");
-+                }
-+            })
-+        );
++        FriendlyByteBuf buffer = buf.readNullable((buf2) -> {
++            int i = buf2.readableBytes();
++            if (i >= 0 && i <= MAX_PAYLOAD_SIZE) {
++                return new FriendlyByteBuf(buf2.readBytes(i));
++            } else {
++                throw new IllegalArgumentException("Payload may not be larger than " + MAX_PAYLOAD_SIZE + " bytes");
++            }
++        });
++        return buffer == null ? null : new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(buffer);
 +        // Paper end - MC Utils - default query payloads
      }
  
@@ -5934,16 +6380,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
 +        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
 +        // Note: players need to be explicitly added to distance maps before they can be updated
++        this.nearbyPlayers.addPlayer(player);
 +    }
 +
 +    void removePlayerFromDistanceMaps(ServerPlayer player) {
-+
++        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
++        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
++        // Note: players need to be explicitly added to distance maps before they can be updated
++        this.nearbyPlayers.removePlayer(player);
 +    }
 +
 +    void updateMaps(ServerPlayer player) {
 +        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
 +        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
 +        // Note: players need to be explicitly added to distance maps before they can be updated
++        this.nearbyPlayers.tickPlayer(player);
 +    }
 +    // Paper end
 +    // Paper start
@@ -5975,6 +6426,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final ChunkHolder getUnloadingChunkHolder(int chunkX, int chunkZ) {
 +        return this.pendingUnloads.get(io.papermc.paper.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
 +    }
++    public final io.papermc.paper.util.player.NearbyPlayers nearbyPlayers;
 +    // Paper end
 +
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
@@ -5987,10 +6439,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start
 +        this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
 +        this.regionManagers.add(this.dataRegionManager);
++        this.nearbyPlayers = new io.papermc.paper.util.player.NearbyPlayers(this.level);
 +        // Paper end
++    }
++
++    // Paper start
++    // always use accessor, so folia can override
++    public final io.papermc.paper.util.player.NearbyPlayers getNearbyPlayers() {
++        return this.nearbyPlayers;
      }
++    // Paper end
  
      protected ChunkGenerator generator() {
+         return this.generator;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }

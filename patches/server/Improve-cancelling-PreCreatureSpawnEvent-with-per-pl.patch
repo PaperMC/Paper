@@ -19,15 +19,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return;
 +        }
 +        int idx = mobCategory.ordinal();
-+        final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> inRange = this.playerMobDistanceMap.getObjectsInRange(chunkX, chunkZ);
-+        if (inRange != null) {
-+            final Object[] set = inRange.getBackingSet();
-+            for (int i = 0; i < set.length; i++) {
-+                if (!(set[i] instanceof ServerPlayer serverPlayer)) {
-+                    continue;
-+                }
-+                ++serverPlayer.mobBackoffCounts[idx];
-+            }
++        final com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> inRange =
++            this.getNearbyPlayers().getPlayersByChunk(chunkX, chunkZ, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
++        if (inRange == null) {
++            return;
++        }
++        final Object[] backingSet = inRange.getRawData();
++        for (int i = 0, len = inRange.size(); i < len; i++) {
++            ++((ServerPlayer)backingSet[i]).mobBackoffCounts[idx];
 +        }
 +    }
 +    // Paper end - per player mob count backoff
@@ -43,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-             if ((this.spawnFriendlies || this.spawnEnemies) && this.chunkMap.playerMobDistanceMap != null) { // don't count mobs when animals and monsters are disabled
+             if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
                  // re-set mob counts
                  for (ServerPlayer player : this.level.players) {
 -                    Arrays.fill(player.mobCounts, 0);
@@ -66,13 +65,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
-     // Paper start - mob spawning rework
      public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
      public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper
+     // Paper end - mob spawning rework
 +    public final int[] mobBackoffCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper - per player mob count backoff
-     public final com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleMobDistanceMap;
-     // Paper end
  
+     // CraftBukkit start
+     public String displayName;
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
