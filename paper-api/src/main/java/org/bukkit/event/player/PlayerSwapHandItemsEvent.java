@@ -31,7 +31,7 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
      *
      * @return item in the main hand
      */
-    @Nullable
+    @NotNull // Paper
     public ItemStack getMainHandItem() {
         return mainHandItem;
     }
@@ -42,7 +42,7 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
      * @param mainHandItem new item in the main hand
      */
     public void setMainHandItem(@Nullable ItemStack mainHandItem) {
-        this.mainHandItem = mainHandItem;
+        this.mainHandItem = mainHandItem == null ? ItemStack.empty() : mainHandItem; // Paper
     }
 
     /**
@@ -50,7 +50,7 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
      *
      * @return item in the off hand
      */
-    @Nullable
+    @NotNull // Paper
     public ItemStack getOffHandItem() {
         return offHandItem;
     }
@@ -61,7 +61,7 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
      * @param offHandItem new item in the off hand
      */
     public void setOffHandItem(@Nullable ItemStack offHandItem) {
-        this.offHandItem = offHandItem;
+        this.offHandItem = offHandItem == null ? ItemStack.empty() : offHandItem; // Paper
     }
 
     @Override
