@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Mon, 25 Sep 2023 17:06:21 +0200
+Subject: [PATCH] Added GrindstoneExtractEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+index a21eadcdfbdc4be803c5793bc97996db3e706071..c346e6972f9c1dff24a3060c843f193fa9af0b13 100644
+--- a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+@@ -4,6 +4,12 @@ import java.util.Iterator;
+ import java.util.Map;
+ import java.util.Map.Entry;
+ import java.util.stream.Collectors;
++// Paper start
++import io.papermc.paper.event.inventory.GrindstoneExtractEvent;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.BlockExpEvent;
++// Paper end
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.Container;
+ import net.minecraft.world.SimpleContainer;
+@@ -96,8 +102,12 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+             @Override
+             public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                 context.execute((world, blockposition) -> {
++                    // Paper start
++                    BlockExpEvent event = new GrindstoneExtractEvent((Player) player.getBukkitEntity(), CraftBlock.at(world, blockposition), stack.asBukkitCopy(),this.getExperienceAmount(world));
++                    Bukkit.getServer().getPluginManager().callEvent(event);
++                    // Paper end
+                     if (world instanceof ServerLevel) {
+-                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper
++                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), event.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper
+                     }
+ 
+                     world.levelEvent(1042, blockposition, 0);
+@@ -327,7 +337,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+                 return ItemStack.EMPTY;
+             }
+ 
+-            slot1.onTake(player, itemstack1);
++            slot1.onTake(player, itemstack); // Paper - itemstack1 is AIR on shift-click
+         }
+ 
+         return itemstack;
