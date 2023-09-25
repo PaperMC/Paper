@@ -49,6 +49,27 @@ public interface Display extends Entity {
     public void setInterpolationDuration(int duration);
 
     /**
+     * Gets the teleport duration of this display.
+     * <ul>
+     *     <li>0 means that updates are applied immediately.</li>
+     *     <li>1 means that the display entity will move from current position to the updated one over one tick.</li>
+     *     <li>Higher values spread the movement over multiple ticks.</li>
+     * </ul>
+     *
+     * @return teleport duration
+     */
+    public int getTeleportDuration();
+
+    /**
+     * Sets the teleport duration of this display.
+     *
+     * @param duration new duration
+     * @throws IllegalArgumentException if duration is not between 0 and 59
+     * @see #getTeleportDuration()
+     */
+    public void setTeleportDuration(int duration);
+
+    /**
      * Gets the view distance/range of this display.
      *
      * @return view range
