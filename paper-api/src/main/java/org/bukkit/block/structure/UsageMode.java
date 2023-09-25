@@ -23,7 +23,7 @@ public enum UsageMode {
      * Used to run specific custom functions, which can only be used for certain
      * Structures. The structure block is removed after this function completes.
      * The data tags (functions) can be found on the
-     * <a href="http://minecraft.gamepedia.com/Structure_Block#Data">wiki</a>.
+     * <a href="https://minecraft.wiki/w/Structure_Block#Data">wiki</a>.
      */
     DATA;
 }

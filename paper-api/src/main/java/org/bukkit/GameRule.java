@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * GameRules dictate certain behavior within Minecraft itself
  * <br>
  * For more information please visit the
- * <a href="https://minecraft.gamepedia.com/Commands/gamerule">Minecraft
+ * <a href="https://minecraft.wiki/w/Commands/gamerule">Minecraft
  * Wiki</a>
  *
  * @param <T> type of rule (Boolean or Integer)

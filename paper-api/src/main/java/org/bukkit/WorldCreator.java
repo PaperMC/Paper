@@ -321,7 +321,7 @@ public class WorldCreator {
      * @param generatorSettings The settings that should be used by the
      * generator
      * @return This object, for chaining
-     * @see <a href="https://minecraft.gamepedia.com/Custom_dimension">Custom
+     * @see <a href="https://minecraft.wiki/w/Custom_dimension">Custom
      * dimension</a> (scroll to "When the generator ID type is
      * <code>minecraft:flat</code>)"
      */

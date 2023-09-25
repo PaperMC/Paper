@@ -223,7 +223,7 @@ public interface Structure extends TileState {
     /**
      * Only applicable while in {@link UsageMode#DATA}. Metadata are specific
      * functions that can be applied to the structure location. Consult the
-     * <a href="https://minecraft.gamepedia.com/Structure_Block#Data">Minecraft
+     * <a href="https://minecraft.wiki/w/Structure_Block#Data">Minecraft
      * wiki</a> for more information.
      *
      * @param metadata the function to perform on the selected location
@@ -233,7 +233,7 @@ public interface Structure extends TileState {
     /**
      * Get the metadata function this structure block will perform when
      * activated. Consult the
-     * <a href="https://minecraft.gamepedia.com/Structure_Block#Data">Minecraft
+     * <a href="https://minecraft.wiki/w/Structure_Block#Data">Minecraft
      * Wiki</a> for more information.
      *
      * @return the function that will be performed when this block is activated

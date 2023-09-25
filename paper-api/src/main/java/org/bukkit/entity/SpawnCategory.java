@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents groups of entities with shared spawn behaviors and mob caps.
  *
- * @see <a href="https://minecraft.fandom.com/wiki/Spawn#Java_Edition_mob_cap">Minecraft Wiki</a>
+ * @see <a href="https://minecraft.wiki/w/Spawn#Java_Edition_mob_cap">Minecraft Wiki</a>
  */
 public enum SpawnCategory {
 

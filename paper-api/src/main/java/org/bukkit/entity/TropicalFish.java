@@ -55,7 +55,7 @@ public interface TropicalFish extends Fish {
 
     /**
      * Enumeration of all different fish patterns. Refer to the
-     * <a href="https://minecraft.gamepedia.com/Fish_(mob)">Minecraft Wiki</a>
+     * <a href="https://minecraft.wiki/w/Fish">Minecraft Wiki</a>
      * for pictures.
      */
     public static enum Pattern {

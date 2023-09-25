@@ -8,9 +8,9 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This enum holds a list of all known {@link LootTable}s offered by Mojang.
  * This list is not guaranteed to be accurate in future versions.
- *
+ * <br>
  * See the
- * <a href="https://minecraft.gamepedia.com/Loot_table#List_of_loot_tables">
+ * <a href="https://minecraft.wiki/w/Loot_table#List_of_loot_tables">
  * Minecraft Wiki</a> for more information on loot tables.
  */
 public enum LootTables implements Keyed {

@@ -12,8 +12,8 @@ import org.jetbrains.annotations.Nullable;
  * LootTables are technical files that represent what items should be in
  * naturally generated containers, what items should be dropped when killing a
  * mob, or what items can be fished.
- *
- * See the <a href="https://minecraft.gamepedia.com/Loot_table">
+ * <br>
+ * See the <a href="https://minecraft.wiki/w/Loot_table">
  * Minecraft Wiki</a> for more information.
  */
 public interface LootTable extends Keyed {

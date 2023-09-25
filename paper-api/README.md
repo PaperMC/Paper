@@ -83,7 +83,7 @@ Code Requirements
 * Do not attempt to fix multiple problems with a single patch or pull request.
 * Avoid moving or renaming classes.
 * All non-private methods and constructors must have specified nullability through [annotations](https://github.com/JetBrains/java-annotations)
-* All classes/methods/fields related to a [Minecraft Experimental Feature](https://minecraft.fandom.com/wiki/Experimental_Gameplay) must be marked with [`@MinecraftExperimental`](https://hub.spigotmc.org/javadocs/spigot/org/bukkit/MinecraftExperimental.html)
+* All classes/methods/fields related to a [Minecraft Experimental Feature](https://minecraft.wiki/w/Experimental_Gameplay) must be marked with [`@MinecraftExperimental`](https://hub.spigotmc.org/javadocs/spigot/org/bukkit/MinecraftExperimental.html)
 * If necessary, you may consider the use of one of the following [ApiStatus Annotations](https://javadoc.io/doc/org.jetbrains/annotations-java5/23.0.0/org/jetbrains/annotations/ApiStatus.html):
   * [`@ApiStatus.Experimental`](https://javadoc.io/doc/org.jetbrains/annotations-java5/23.0.0/org/jetbrains/annotations/ApiStatus.Experimental.html) for API that is subject to change
   * [`@ApiStatus.Internal`](https://javadoc.io/doc/org.jetbrains/annotations-java5/23.0.0/org/jetbrains/annotations/ApiStatus.Internal.html) for API that is intended only for internal use in the Bukkit project and will not adhere to Bukkit's API contract

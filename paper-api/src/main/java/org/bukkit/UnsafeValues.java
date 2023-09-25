@@ -51,8 +51,7 @@ public interface UnsafeValues {
      * The advancement format is governed by Minecraft and has no specified
      * layout.
      * <br>
-     * It is currently a JSON object, as described by the Minecraft Wiki:
-     * http://minecraft.gamepedia.com/Advancements
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancements">Minecraft wiki</a>.
      * <br>
      * Loaded advancements will be stored and persisted across server restarts
      * and reloads.

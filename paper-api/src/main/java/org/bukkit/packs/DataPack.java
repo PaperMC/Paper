@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a data pack.
+ *
+ * @see <a href="https://minecraft.wiki/w/Data_pack">Minecraft wiki</a>
  */
 @ApiStatus.Experimental
 public interface DataPack extends Keyed {
