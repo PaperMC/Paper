@@ -251,7 +251,7 @@ final class CraftPlayerTextures implements PlayerTextures {
         // This produces a new textures property that does not contain any attributes that are specific to official
         // GameProfiles (such as the property signature, timestamp, profileId, playerName, etc.).
         // Information on the format of the textures property:
-        // * https://minecraft.fandom.com/wiki/Head#Item_data
+        // * https://minecraft.wiki/w/Head#Item_data
         // * https://wiki.vg/Mojang_API#UUID_to_Profile_and_Skin.2FCape
         // The order of Json object elements is important.
         JsonObject propertyData = new JsonObject();
