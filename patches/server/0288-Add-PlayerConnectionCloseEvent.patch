@@ -39,23 +39,22 @@ public net.minecraft.server.network.ServerLoginPacketListenerImpl state
 public net.minecraft.server.network.ServerLoginPacketListenerImpl gameProfile
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 6fcbf8205e1852d5193a42bfe1154f62ab01e7ad..9f8fbb8231b60c287c9442365c2f95cde92969b8 100644
+index 6fcbf8205e1852d5193a42bfe1154f62ab01e7ad..25881c890c643ce90bdcda6b094d912bafb0ed75 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -644,6 +644,27 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -644,6 +644,26 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                      packetlistener1.onDisconnect(ichatbasecomponent);
                  }
                  this.pendingActions.clear(); // Free up packet queue.
 +                // Paper start - Add PlayerConnectionCloseEvent
 +                final PacketListener packetListener = this.getPacketListener();
-+                if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl) {
-+                    /* Player was logged in */
-+                    final net.minecraft.server.network.ServerGamePacketListenerImpl playerConnection = (net.minecraft.server.network.ServerGamePacketListenerImpl) packetListener;
-+                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(playerConnection.player.getUUID(),
-+                        playerConnection.player.getScoreboardName(), ((java.net.InetSocketAddress)address).getAddress(), false).callEvent();
-+                } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl) {
++                if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
++                    /* Player was logged in, either game listener or configuration listener */
++                    final com.mojang.authlib.GameProfile profile = commonPacketListener.getOwner();
++                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(),
++                        profile.getName(), ((java.net.InetSocketAddress)address).getAddress(), false).callEvent();
++                } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener) {
 +                    /* Player is login stage */
-+                    final net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener = (net.minecraft.server.network.ServerLoginPacketListenerImpl) packetListener;
 +                    switch (loginListener.state) {
 +                        case VERIFYING:
 +                        case WAITING_FOR_DUPE_DISCONNECT:
