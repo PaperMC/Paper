@@ -48,14 +48,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.pendingActions.clear(); // Free up packet queue.
 +                // Paper start - Add PlayerConnectionCloseEvent
 +                final PacketListener packetListener = this.getPacketListener();
-+                if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl) {
-+                    /* Player was logged in */
-+                    final net.minecraft.server.network.ServerGamePacketListenerImpl playerConnection = (net.minecraft.server.network.ServerGamePacketListenerImpl) packetListener;
-+                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(playerConnection.player.getUUID(),
-+                        playerConnection.player.getScoreboardName(), ((java.net.InetSocketAddress)address).getAddress(), false).callEvent();
-+                } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl) {
++                if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
++                    /* Player was logged in, either game listener or configuration listener */
++                    final com.mojang.authlib.GameProfile profile = commonPacketListener.getOwner();
++                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(),
++                        profile.getName(), ((java.net.InetSocketAddress)address).getAddress(), false).callEvent();
++                } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener) {
 +                    /* Player is login stage */
-+                    final net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener = (net.minecraft.server.network.ServerLoginPacketListenerImpl) packetListener;
 +                    switch (loginListener.state) {
 +                        case VERIFYING:
 +                        case WAITING_FOR_DUPE_DISCONNECT:
