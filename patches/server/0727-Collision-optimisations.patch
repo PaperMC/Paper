@@ -3941,10 +3941,10 @@ index cf469f9daa81da8bc330c9cac7e813db87f9f9af..d9256710e815a5cb55409a80d59df202
  
      private static DiscreteVoxelShape makeSlice(DiscreteVoxelShape voxelSet, Direction.Axis axis, int sliceWidth) {
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
-index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..b9aa58d5209c244fe255ab258bb29a82b121d097 100644
+index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..6bd6385ad82481a099f3556ed2dbd3744888fc34 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
-@@ -16,30 +16,401 @@ import net.minecraft.world.phys.BlockHitResult;
+@@ -16,30 +16,438 @@ import net.minecraft.world.phys.BlockHitResult;
  import net.minecraft.world.phys.Vec3;
  
  public abstract class VoxelShape {
@@ -4220,7 +4220,7 @@ index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..b9aa58d5209c244fe255ab258bb29a82
 +    }
 +
 +    private boolean computeFullBlock() {
-+        final Boolean ret;
++        Boolean ret;
 +        if (this.isEmpty) {
 +            ret = Boolean.FALSE;
 +        } else if ((VoxelShape)(Object)this == Shapes.block()) {
@@ -4228,8 +4228,45 @@ index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..b9aa58d5209c244fe255ab258bb29a82
 +        } else {
 +            final AABB singleAABB = this.singleAABBRepresentation;
 +            if (singleAABB == null) {
-+                // note: Shapes.join(BLOCK, this, NOT_SAME) cannot be empty when voxelSize > 2
-+                ret = Boolean.FALSE;
++                final io.papermc.paper.util.collisions.CachedShapeData shapeData = this.cachedShapeData;
++                final int sMinX = shapeData.minFullX();
++                final int sMinY = shapeData.minFullY();
++                final int sMinZ = shapeData.minFullZ();
++
++                final int sMaxX = shapeData.maxFullX();
++                final int sMaxY = shapeData.maxFullY();
++                final int sMaxZ = shapeData.maxFullZ();
++
++                if (Math.abs(this.rootCoordinatesX[sMinX] + this.offsetX) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(this.rootCoordinatesY[sMinY] + this.offsetY) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(this.rootCoordinatesZ[sMinZ] + this.offsetZ) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++
++                    Math.abs(1.0 - (this.rootCoordinatesX[sMaxX] + this.offsetX)) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(1.0 - (this.rootCoordinatesY[sMaxY] + this.offsetY)) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(1.0 - (this.rootCoordinatesZ[sMaxZ] + this.offsetZ)) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON) {
++
++                    // index = z + y*sizeZ + x*(sizeZ*sizeY)
++
++                    final int sizeY = shapeData.sizeY();
++                    final int sizeZ = shapeData.sizeZ();
++
++                    final long[] bitset = shapeData.voxelSet();
++
++                    ret = Boolean.TRUE;
++
++                    check_full:
++                    for (int x = sMinX; x < sMaxX; ++x) {
++                        for (int y = sMinY; y < sMaxY; ++y) {
++                            final int baseIndex = y*sizeZ + x*(sizeZ*sizeY);
++                            if (!io.papermc.paper.util.collisions.FlatBitsetUtil.isRangeSet(bitset, baseIndex + sMinZ, baseIndex + sMaxZ)) {
++                                ret = Boolean.FALSE;
++                                break check_full;
++                            }
++                        }
++                    }
++                } else {
++                    ret = Boolean.FALSE;
++                }
 +            } else {
 +                ret = Boolean.valueOf(
 +                        Math.abs(singleAABB.minX) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
@@ -4356,7 +4393,7 @@ index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..b9aa58d5209c244fe255ab258bb29a82
      }
  
      public VoxelShape singleEncompassing() {
-@@ -53,19 +424,106 @@ public abstract class VoxelShape {
+@@ -53,19 +461,106 @@ public abstract class VoxelShape {
      protected abstract DoubleList getCoords(Direction.Axis axis);
  
      public boolean isEmpty() {
@@ -4470,7 +4507,7 @@ index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..b9aa58d5209c244fe255ab258bb29a82
      }
  
      public void forAllEdges(Shapes.DoubleLineConsumer consumer) {
-@@ -83,12 +541,43 @@ public abstract class VoxelShape {
+@@ -83,12 +578,43 @@ public abstract class VoxelShape {
          }, true);
      }
  
@@ -4519,7 +4556,7 @@ index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..b9aa58d5209c244fe255ab258bb29a82
      }
  
      public double min(Direction.Axis axis, double from, double to) {
-@@ -115,37 +604,85 @@ public abstract class VoxelShape {
+@@ -115,37 +641,85 @@ public abstract class VoxelShape {
          }) - 1;
      }
  
@@ -4575,11 +4612,11 @@ index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..b9aa58d5209c244fe255ab258bb29a82
 +                return new BlockHitResult(fromBehind, Direction.getNearest(directionOpposite.x, directionOpposite.y, directionOpposite.z).getOpposite(), pos, true);
              }
 +            return clip(singleAABB, start, end, pos);
-+        }
+         }
 +
 +        if (io.papermc.paper.util.CollisionUtil.strictlyContains(this, fromBehindOffsetX, fromBehindOffsetY, fromBehindOffsetZ)) {
 +            return new BlockHitResult(fromBehind, Direction.getNearest(directionOpposite.x, directionOpposite.y, directionOpposite.z).getOpposite(), pos, true);
-         }
++        }
 +
 +        return AABB.clip(this.toAabbs(), start, end, pos);
 +        // Paper end - optimise collisions
@@ -4625,7 +4662,7 @@ index 15e2dfa9a17b4f19768c0cde0ad8031f0122cd33..b9aa58d5209c244fe255ab258bb29a82
      }
  
      public VoxelShape getFaceShape(Direction facing) {
-@@ -180,7 +717,28 @@ public abstract class VoxelShape {
+@@ -180,7 +754,28 @@ public abstract class VoxelShape {
      }
  
      public double collide(Direction.Axis axis, AABB box, double maxDist) {
