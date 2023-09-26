@@ -4220,7 +4220,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private boolean computeFullBlock() {
-+        final Boolean ret;
++        Boolean ret;
 +        if (this.isEmpty) {
 +            ret = Boolean.FALSE;
 +        } else if ((VoxelShape)(Object)this == Shapes.block()) {
@@ -4228,8 +4228,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
 +            final AABB singleAABB = this.singleAABBRepresentation;
 +            if (singleAABB == null) {
-+                // note: Shapes.join(BLOCK, this, NOT_SAME) cannot be empty when voxelSize > 2
-+                ret = Boolean.FALSE;
++                final io.papermc.paper.util.collisions.CachedShapeData shapeData = this.cachedShapeData;
++                final int sMinX = shapeData.minFullX();
++                final int sMinY = shapeData.minFullY();
++                final int sMinZ = shapeData.minFullZ();
++
++                final int sMaxX = shapeData.maxFullX();
++                final int sMaxY = shapeData.maxFullY();
++                final int sMaxZ = shapeData.maxFullZ();
++
++                if (Math.abs(this.rootCoordinatesX[sMinX] + this.offsetX) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(this.rootCoordinatesY[sMinY] + this.offsetY) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(this.rootCoordinatesZ[sMinZ] + this.offsetZ) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++
++                    Math.abs(1.0 - (this.rootCoordinatesX[sMaxX] + this.offsetX)) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(1.0 - (this.rootCoordinatesY[sMaxY] + this.offsetY)) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(1.0 - (this.rootCoordinatesZ[sMaxZ] + this.offsetZ)) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON) {
++
++                    // index = z + y*sizeZ + x*(sizeZ*sizeY)
++
++                    final int sizeY = shapeData.sizeY();
++                    final int sizeZ = shapeData.sizeZ();
++
++                    final long[] bitset = shapeData.voxelSet();
++
++                    ret = Boolean.TRUE;
++
++                    check_full:
++                    for (int x = sMinX; x < sMaxX; ++x) {
++                        for (int y = sMinY; y < sMaxY; ++y) {
++                            final int baseIndex = y*sizeZ + x*(sizeZ*sizeY);
++                            if (!io.papermc.paper.util.collisions.FlatBitsetUtil.isRangeSet(bitset, baseIndex + sMinZ, baseIndex + sMaxZ)) {
++                                ret = Boolean.FALSE;
++                                break check_full;
++                            }
++                        }
++                    }
++                } else {
++                    ret = Boolean.FALSE;
++                }
 +            } else {
 +                ret = Boolean.valueOf(
 +                        Math.abs(singleAABB.minX) <= io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON &&
@@ -4575,11 +4612,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return new BlockHitResult(fromBehind, Direction.getNearest(directionOpposite.x, directionOpposite.y, directionOpposite.z).getOpposite(), pos, true);
              }
 +            return clip(singleAABB, start, end, pos);
-+        }
+         }
 +
 +        if (io.papermc.paper.util.CollisionUtil.strictlyContains(this, fromBehindOffsetX, fromBehindOffsetY, fromBehindOffsetZ)) {
 +            return new BlockHitResult(fromBehind, Direction.getNearest(directionOpposite.x, directionOpposite.y, directionOpposite.z).getOpposite(), pos, true);
-         }
++        }
 +
 +        return AABB.clip(this.toAabbs(), start, end, pos);
 +        // Paper end - optimise collisions
