@@ -31,15 +31,41 @@ public interface DataPack extends Keyed {
     public String getDescription();
 
     /**
-     * Gets the pack version.
+     * Gets the pack format.
      * <br>
-     * This is related to the server version to work.
+     * Pack formats are non-standard and unrelated to the version of Minecraft. For
+     * a list of known pack versions, see the
+     * <a href="https://minecraft.wiki/w/Data_pack#Pack_format">Minecraft Wiki</a>.
      *
      * @return the pack version
-     * @deprecated packs can support multiple versions
+     * @see #getMinSupportedPackFormat()
+     * @see #getMaxSupportedPackFormat()
      */
-    @Deprecated
     public int getPackFormat();
+
+    /**
+     * Gets the minimum supported pack format. If the data pack does not specify a
+     * minimum supported format, {@link #getPackFormat()} is returned.
+     * <br>
+     * Pack formats are non-standard and unrelated to the version of Minecraft. For
+     * a list of known pack versions, see the
+     * <a href="https://minecraft.wiki/w/Data_pack#Pack_format">Minecraft Wiki</a>.
+     *
+     * @return the min pack version supported
+     */
+    public int getMinSupportedPackFormat();
+
+    /**
+     * Gets the maximum supported pack format. If the data pack does not specify a
+     * maximum supported format, {@link #getPackFormat()} is returned.
+     * <br>
+     * Pack formats are non-standard and unrelated to the version of Minecraft. For
+     * a list of known pack versions, see the
+     * <a href="https://minecraft.wiki/w/Data_pack#Pack_format">Minecraft Wiki</a>.
+     *
+     * @return the max pack version supported
+     */
+    public int getMaxSupportedPackFormat();
 
     /**
      * Gets if the data pack is enabled on the server.
