@@ -1,9 +1,13 @@
 package org.bukkit.craftbukkit.packs;
 
+import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.minecraft.server.packs.IResourcePack;
+import net.minecraft.server.packs.metadata.pack.ResourcePackInfo;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.ResourcePackLoader;
+import net.minecraft.util.InclusiveRange;
 import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
 import org.bukkit.NamespacedKey;
@@ -15,9 +19,15 @@ import org.bukkit.packs.DataPack;
 public class CraftDataPack implements DataPack {
 
     private final ResourcePackLoader handle;
+    private final ResourcePackInfo resourcePackInfo;
 
     public CraftDataPack(ResourcePackLoader handler) {
         this.handle = handler;
+        try (IResourcePack iresourcepack = this.handle.resources.openPrimary(this.handle.getId())) {
+            this.resourcePackInfo = iresourcepack.getMetadataSection(ResourcePackInfo.TYPE);
+        } catch (IOException e) { // This is already called in NMS then if in NMS not happen is secure this not throw here
+            throw new RuntimeException(e);
+        }
     }
 
     public ResourcePackLoader getHandle() {
@@ -40,7 +50,17 @@ public class CraftDataPack implements DataPack {
 
     @Override
     public int getPackFormat() {
-        return 0;
+        return this.resourcePackInfo.packFormat();
+    }
+
+    @Override
+    public int getMinSupportedPackFormat() {
+        return this.resourcePackInfo.supportedFormats().orElse(new InclusiveRange<>(this.getPackFormat())).minInclusive();
+    }
+
+    @Override
+    public int getMaxSupportedPackFormat() {
+        return this.resourcePackInfo.supportedFormats().orElse(new InclusiveRange<>(this.getPackFormat())).maxInclusive();
     }
 
     @Override
@@ -89,6 +109,6 @@ public class CraftDataPack implements DataPack {
     @Override
     public String toString() {
         String requestedFeatures = getRequestedFeatures().stream().map(featureFlag -> featureFlag.getKey().toString()).collect(Collectors.joining(","));
-        return "CraftDataPack{rawId=" + this.getRawId() + ",id=" + this.getKey() + ",title=" + this.getTitle() + ",description=" + this.getDescription() + ",packformat=" + this.getPackFormat() + ",compatibility=" + this.getCompatibility() + ",source=" + this.getSource() + ",enabled=" + this.isEnabled() + ",requestedFeatures=[" + requestedFeatures + "]}";
+        return "CraftDataPack{rawId=" + this.getRawId() + ",id=" + this.getKey() + ",title=" + this.getTitle() + ",description=" + this.getDescription() + ",packformat=" + this.getPackFormat() + ",minSupportedPackFormat=" + this.getMinSupportedPackFormat() + ",maxSupportedPackFormat=" + this.getMaxSupportedPackFormat() + ",compatibility=" + this.getCompatibility() + ",source=" + this.getSource() + ",enabled=" + this.isEnabled() + ",requestedFeatures=[" + requestedFeatures + "]}";
     }
 }
