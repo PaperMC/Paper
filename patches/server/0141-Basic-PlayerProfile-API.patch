@@ -17,10 +17,10 @@ public org.bukkit.craftbukkit.profile.CraftPlayerProfile setProperty(Ljava/lang/
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f1bda658e
+index 0000000000000000000000000000000000000000..ddbea2864a9323f1759d41b3769109f0bf16a044
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,401 @@
+@@ -0,0 +1,402 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.yggdrasil.ProfileResult;
@@ -59,7 +59,7 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +    }
 +
 +    public CraftPlayerProfile(UUID id, String name) {
-+        this.profile = new GameProfile(id, name);
++        this.profile = new GameProfile(id != null ? id : Util.NIL_UUID, name != null ? name : "");
 +    }
 +
 +    public CraftPlayerProfile(GameProfile profile) {
@@ -103,16 +103,17 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +    @Nullable
 +    @Override
 +    public UUID getId() {
-+        return profile.getId();
++        return profile.getId() != Util.NIL_UUID ? profile.getId() : null;
 +    }
 +
 +    @Override
 +    @Deprecated(forRemoval = true)
 +    public UUID setId(@Nullable UUID uuid) {
-+        GameProfile prev = this.profile;
-+        this.profile = new GameProfile(uuid, prev.getName());
-+        copyProfileProperties(prev, this.profile);
-+        return prev.getId();
++        final GameProfile previousProfile = this.profile;
++        final UUID previousId = this.getId();
++        this.profile = new GameProfile(previousProfile.getId(), previousProfile.getName());
++        copyProfileProperties(previousProfile, this.profile);
++        return previousId;
 +    }
 +
 +    @Override
@@ -130,7 +131,7 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +    @Deprecated(forRemoval = true)
 +    public String setName(@Nullable String name) {
 +        GameProfile prev = this.profile;
-+        this.profile = new GameProfile(prev.getId(), name);
++        this.profile = new GameProfile(prev.getId(), name != null ? name : "");
 +        copyProfileProperties(prev, this.profile);
 +        return prev.getName();
 +    }
@@ -213,7 +214,7 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +        MinecraftServer server = MinecraftServer.getServer();
 +        String name = profile.getName();
 +        GameProfileCache userCache = server.getProfileCache();
-+        if (profile.getId() == null) {
++        if (this.getId() == null) {
 +            final GameProfile profile;
 +            if (onlineMode) {
 +                profile = lookupUUID ? userCache.get(name).orElse(null) : userCache.getProfileIfCached(name);
@@ -228,11 +229,11 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +            }
 +        }
 +
-+        if ((profile.getName() == null || !hasTextures()) && profile.getId() != null) {
++        if ((profile.getName().isEmpty() || !hasTextures()) && this.getId() != null) {
 +            Optional<GameProfile> optProfile = userCache.get(this.profile.getId());
 +            if (optProfile.isPresent()) {
 +                GameProfile profile = optProfile.get();
-+                if (this.profile.getName() == null) {
++                if (this.profile.getName().isEmpty()) {
 +                    // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
 +                    copyProfileProperties(this.profile, profile);
 +                    this.profile = profile;
@@ -314,7 +315,7 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +        if (this.getId() != null) {
 +            map.put("uniqueId", this.getId().toString());
 +        }
-+        if (this.getName() != null) {
++        if (!this.getName().isEmpty()) {
 +            map.put("name", getName());
 +        }
 +        if (!this.properties.isEmpty()) {
