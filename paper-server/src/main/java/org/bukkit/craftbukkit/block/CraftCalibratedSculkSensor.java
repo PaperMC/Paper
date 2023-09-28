@@ -9,4 +9,13 @@ public class CraftCalibratedSculkSensor extends CraftSculkSensor<CalibratedSculk
     public CraftCalibratedSculkSensor(World world, CalibratedSculkSensorBlockEntity tileEntity) {
         super(world, tileEntity);
     }
+
+    protected CraftCalibratedSculkSensor(CraftCalibratedSculkSensor state) {
+        super(state);
+    }
+
+    @Override
+    public CraftCalibratedSculkSensor copy() {
+        return new CraftCalibratedSculkSensor(this);
+    }
 }

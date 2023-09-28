@@ -23,6 +23,10 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
         super(world, tileEntity);
     }
 
+    protected CraftStructureBlock(CraftStructureBlock state) {
+        super(state);
+    }
+
     @Override
     public String getStructureName() {
         return getSnapshot().getStructureName();
@@ -191,6 +195,11 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
                 access.setBlock(this.getPosition(), data.setValue(net.minecraft.world.level.block.BlockStructure.MODE, tileEntity.getMode()), 2);
             }
         }
+    }
+
+    @Override
+    public CraftStructureBlock copy() {
+        return new CraftStructureBlock(this);
     }
 
     private static boolean isBetween(int num, int min, int max) {

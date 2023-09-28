@@ -19,6 +19,10 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
         super(world, tileEntity);
     }
 
+    protected CraftChest(CraftChest state) {
+        super(state);
+    }
+
     @Override
     public Inventory getSnapshotInventory() {
         return new CraftInventory(this.getSnapshot());
@@ -76,5 +80,10 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
             getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.World) getWorldHandle(), getPosition(), block, openCount, 0);
         }
         getTileEntity().openersCounter.opened = false;
+    }
+
+    @Override
+    public CraftChest copy() {
+        return new CraftChest(this);
     }
 }

@@ -11,6 +11,10 @@ public class CraftSculkSensor<T extends SculkSensorBlockEntity> extends CraftBlo
         super(world, tileEntity);
     }
 
+    protected CraftSculkSensor(CraftSculkSensor<T> state) {
+        super(state);
+    }
+
     @Override
     public int getLastVibrationFrequency() {
         return getSnapshot().getLastVibrationFrequency();
@@ -20,5 +24,10 @@ public class CraftSculkSensor<T extends SculkSensorBlockEntity> extends CraftBlo
     public void setLastVibrationFrequency(int lastVibrationFrequency) {
         Preconditions.checkArgument(0 <= lastVibrationFrequency && lastVibrationFrequency <= 15, "Vibration frequency must be between 0-15");
         getSnapshot().lastVibrationFrequency = lastVibrationFrequency;
+    }
+
+    @Override
+    public CraftSculkSensor<T> copy() {
+        return new CraftSculkSensor<>(this);
     }
 }

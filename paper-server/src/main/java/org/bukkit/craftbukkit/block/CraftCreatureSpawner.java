@@ -18,6 +18,10 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
         super(world, tileEntity);
     }
 
+    protected CraftCreatureSpawner(CraftCreatureSpawner state) {
+        super(state);
+    }
+
     @Override
     public EntityType getSpawnedType() {
         MobSpawnerData spawnData = this.getSnapshot().getSpawner().nextSpawnData;
@@ -135,5 +139,10 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
     @Override
     public void setSpawnRange(int spawnRange) {
         this.getSnapshot().getSpawner().spawnRange = spawnRange;
+    }
+
+    @Override
+    public CraftCreatureSpawner copy() {
+        return new CraftCreatureSpawner(this);
     }
 }

@@ -8,4 +8,13 @@ public class CraftEndPortal extends CraftBlockEntityState<TileEntityEnderPortal>
     public CraftEndPortal(World world, TileEntityEnderPortal tileEntity) {
         super(world, tileEntity);
     }
+
+    protected CraftEndPortal(CraftEndPortal state) {
+        super(state);
+    }
+
+    @Override
+    public CraftEndPortal copy() {
+        return new CraftEndPortal(this);
+    }
 }

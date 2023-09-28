@@ -9,4 +9,13 @@ public class CraftSuspiciousSand extends CraftBrushableBlock implements Suspicio
     public CraftSuspiciousSand(World world, BrushableBlockEntity tileEntity) {
         super(world, tileEntity);
     }
+
+    protected CraftSuspiciousSand(CraftSuspiciousSand state) {
+        super(state);
+    }
+
+    @Override
+    public CraftSuspiciousSand copy() {
+        return new CraftSuspiciousSand(this);
+    }
 }

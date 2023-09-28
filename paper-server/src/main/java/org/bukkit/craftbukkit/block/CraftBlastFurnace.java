@@ -9,4 +9,13 @@ public class CraftBlastFurnace extends CraftFurnace<TileEntityBlastFurnace> impl
     public CraftBlastFurnace(World world, TileEntityBlastFurnace tileEntity) {
         super(world, tileEntity);
     }
+
+    protected CraftBlastFurnace(CraftBlastFurnace state) {
+        super(state);
+    }
+
+    @Override
+    public CraftBlastFurnace copy() {
+        return new CraftBlastFurnace(this);
+    }
 }

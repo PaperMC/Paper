@@ -11,6 +11,10 @@ public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand> 
         super(world, tileEntity);
     }
 
+    protected CraftCommandBlock(CraftCommandBlock state) {
+        super(state);
+    }
+
     @Override
     public String getCommand() {
         return getSnapshot().getCommandBlock().getCommand();
@@ -29,5 +33,10 @@ public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand> 
     @Override
     public void setName(String name) {
         getSnapshot().getCommandBlock().setName(CraftChatMessage.fromStringOrNull(name != null ? name : "@"));
+    }
+
+    @Override
+    public CraftCommandBlock copy() {
+        return new CraftCommandBlock(this);
     }
 }

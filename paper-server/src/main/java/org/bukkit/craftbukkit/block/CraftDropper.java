@@ -17,6 +17,10 @@ public class CraftDropper extends CraftLootable<TileEntityDropper> implements Dr
         super(world, tileEntity);
     }
 
+    protected CraftDropper(CraftDropper state) {
+        super(state);
+    }
+
     @Override
     public Inventory getSnapshotInventory() {
         return new CraftInventory(this.getSnapshot());
@@ -41,5 +45,10 @@ public class CraftDropper extends CraftLootable<TileEntityDropper> implements Dr
 
             drop.dispenseFrom(world.getHandle(), this.getHandle(), this.getPosition());
         }
+    }
+
+    @Override
+    public CraftDropper copy() {
+        return new CraftDropper(this);
     }
 }

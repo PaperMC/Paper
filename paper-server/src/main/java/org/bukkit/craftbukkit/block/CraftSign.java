@@ -27,6 +27,12 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
         this.back = new CraftSignSide(this.getSnapshot().getBackText());
     }
 
+    protected CraftSign(CraftSign<T> state) {
+        super(state);
+        this.front = new CraftSignSide(this.getSnapshot().getFrontText());
+        this.back = new CraftSignSide(this.getSnapshot().getBackText());
+    }
+
     @Override
     public String[] getLines() {
         return front.getLines();
@@ -103,6 +109,11 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
         getSnapshot().setText(back.applyLegacyStringToSignSide(), false);
 
         super.applyTo(sign);
+    }
+
+    @Override
+    public CraftSign<T> copy() {
+        return new CraftSign<T>(this);
     }
 
     public static void openSign(Sign sign, Player player, Side side) {

@@ -18,6 +18,10 @@ public class CraftShulkerBox extends CraftLootable<TileEntityShulkerBox> impleme
         super(world, tileEntity);
     }
 
+    protected CraftShulkerBox(CraftShulkerBox state) {
+        super(state);
+    }
+
     @Override
     public Inventory getSnapshotInventory() {
         return new CraftInventory(this.getSnapshot());
@@ -59,5 +63,10 @@ public class CraftShulkerBox extends CraftLootable<TileEntityShulkerBox> impleme
             world.playSound(null, getPosition(), SoundEffects.SHULKER_BOX_OPEN, SoundCategory.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
         }
         getTileEntity().opened = false;
+    }
+
+    @Override
+    public CraftShulkerBox copy() {
+        return new CraftShulkerBox(this);
     }
 }

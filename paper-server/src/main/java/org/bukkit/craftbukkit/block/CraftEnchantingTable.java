@@ -11,6 +11,10 @@ public class CraftEnchantingTable extends CraftBlockEntityState<TileEntityEnchan
         super(world, tileEntity);
     }
 
+    protected CraftEnchantingTable(CraftEnchantingTable state) {
+        super(state);
+    }
+
     @Override
     public String getCustomName() {
         TileEntityEnchantTable enchant = this.getSnapshot();
@@ -29,5 +33,10 @@ public class CraftEnchantingTable extends CraftBlockEntityState<TileEntityEnchan
         if (!this.getSnapshot().hasCustomName()) {
             enchantingTable.setCustomName(null);
         }
+    }
+
+    @Override
+    public CraftEnchantingTable copy() {
+        return new CraftEnchantingTable(this);
     }
 }

@@ -28,6 +28,13 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         this.load(snapshot);
     }
 
+    protected CraftBlockEntityState(CraftBlockEntityState<T> state) {
+        super(state);
+        this.tileEntity = createSnapshot(state.snapshot);
+        this.snapshot = tileEntity;
+        load(snapshot);
+    }
+
     public void refreshSnapshot() {
         this.load(tileEntity);
     }
@@ -41,6 +48,12 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         T snapshot = (T) TileEntity.loadStatic(getPosition(), getHandle(), nbtTagCompound);
 
         return snapshot;
+    }
+
+    // Loads the specified data into the snapshot TileEntity.
+    public void loadData(NBTTagCompound nbtTagCompound) {
+        snapshot.load(nbtTagCompound);
+        load(snapshot);
     }
 
     // copies the TileEntity-specific data, retains the position
@@ -117,5 +130,10 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
     public Packet<PacketListenerPlayOut> getUpdatePacket(@NotNull Location location) {
         T vanillaTileEntitiy = (T) TileEntity.loadStatic(CraftLocation.toBlockPosition(location), getHandle(), getSnapshotNBT());
         return PacketPlayOutTileEntityData.create(vanillaTileEntitiy);
+    }
+
+    @Override
+    public CraftBlockEntityState<T> copy() {
+        return new CraftBlockEntityState<>(this);
     }
 }

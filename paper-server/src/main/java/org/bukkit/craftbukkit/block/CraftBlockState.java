@@ -50,6 +50,15 @@ public class CraftBlockState implements BlockState {
         data = blockData;
     }
 
+    // Creates a unplaced copy (world == null copy)
+    protected CraftBlockState(CraftBlockState state) {
+        this.world = null;
+        this.position = state.getPosition().immutable();
+        this.data = state.data;
+        this.flag = state.flag;
+        setWorldHandle(state.getWorldHandle());
+    }
+
     public void setWorldHandle(GeneratorAccess generatorAccess) {
         if (generatorAccess instanceof net.minecraft.world.level.World) {
             this.weakWorld = null;
@@ -317,5 +326,10 @@ public class CraftBlockState implements BlockState {
 
     protected void requirePlaced() {
         Preconditions.checkState(isPlaced(), "The blockState must be placed to call this method");
+    }
+
+    @Override
+    public CraftBlockState copy() {
+        return new CraftBlockState(this);
     }
 }

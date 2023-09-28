@@ -17,6 +17,10 @@ public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookSh
         super(world, tileEntity);
     }
 
+    protected CraftChiseledBookshelf(CraftChiseledBookshelf state) {
+        super(state);
+    }
+
     @Override
     public int getLastInteractedSlot() {
         return getSnapshot().getLastInteractedSlot();
@@ -66,5 +70,10 @@ public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookSh
         }
 
         return ChiseledBookShelfBlock.getHitSlot(faceVector);
+    }
+
+    @Override
+    public CraftChiseledBookshelf copy() {
+        return new CraftChiseledBookshelf(this);
     }
 }

@@ -11,6 +11,10 @@ public class CraftEnderChest extends CraftBlockEntityState<TileEntityEnderChest>
         super(world, tileEntity);
     }
 
+    protected CraftEnderChest(CraftEnderChest state) {
+        super(state);
+    }
+
     @Override
     public void open() {
         requirePlaced();
@@ -35,5 +39,10 @@ public class CraftEnderChest extends CraftBlockEntityState<TileEntityEnderChest>
             getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.World) getWorldHandle(), getPosition(), block, openCount, 0);
         }
         getTileEntity().openersCounter.opened = false;
+    }
+
+    @Override
+    public CraftEnderChest copy() {
+        return new CraftEnderChest(this);
     }
 }

@@ -14,6 +14,10 @@ public class CraftLectern extends CraftBlockEntityState<TileEntityLectern> imple
         super(world, tileEntity);
     }
 
+    protected CraftLectern(CraftLectern state) {
+        super(state);
+    }
+
     @Override
     public int getPage() {
         return getSnapshot().getPage();
@@ -47,5 +51,10 @@ public class CraftLectern extends CraftBlockEntityState<TileEntityLectern> imple
         }
 
         return result;
+    }
+
+    @Override
+    public CraftLectern copy() {
+        return new CraftLectern(this);
     }
 }

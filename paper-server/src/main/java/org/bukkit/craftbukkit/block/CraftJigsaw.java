@@ -9,4 +9,13 @@ public class CraftJigsaw extends CraftBlockEntityState<TileEntityJigsaw> impleme
     public CraftJigsaw(World world, TileEntityJigsaw tileEntity) {
         super(world, tileEntity);
     }
+
+    protected CraftJigsaw(CraftJigsaw state) {
+        super(state);
+    }
+
+    @Override
+    public CraftJigsaw copy() {
+        return new CraftJigsaw(this);
+    }
 }

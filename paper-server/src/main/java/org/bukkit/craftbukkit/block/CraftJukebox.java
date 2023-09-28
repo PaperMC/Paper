@@ -20,6 +20,10 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         super(world, tileEntity);
     }
 
+    protected CraftJukebox(CraftJukebox state) {
+        super(state);
+    }
+
     @Override
     public JukeboxInventory getSnapshotInventory() {
         return new CraftInventoryJukebox(this.getSnapshot());
@@ -146,5 +150,10 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         boolean result = !jukebox.getFirstItem().isEmpty();
         jukebox.popOutRecord();
         return result;
+    }
+
+    @Override
+    public CraftJukebox copy() {
+        return new CraftJukebox(this);
     }
 }

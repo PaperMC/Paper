@@ -12,6 +12,10 @@ public class CraftHopper extends CraftLootable<TileEntityHopper> implements Hopp
         super(world, tileEntity);
     }
 
+    protected CraftHopper(CraftHopper state) {
+        super(state);
+    }
+
     @Override
     public Inventory getSnapshotInventory() {
         return new CraftInventory(this.getSnapshot());
@@ -24,5 +28,10 @@ public class CraftHopper extends CraftLootable<TileEntityHopper> implements Hopp
         }
 
         return new CraftInventory(this.getTileEntity());
+    }
+
+    @Override
+    public CraftHopper copy() {
+        return new CraftHopper(this);
     }
 }

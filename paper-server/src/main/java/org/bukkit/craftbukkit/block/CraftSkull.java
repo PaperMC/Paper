@@ -31,6 +31,10 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
         super(world, tileEntity);
     }
 
+    protected CraftSkull(CraftSkull state) {
+        super(state);
+    }
+
     @Override
     public void load(TileEntitySkull skull) {
         super.load(skull);
@@ -198,5 +202,10 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
         if (getSkullType() == SkullType.PLAYER) {
             skull.setOwner(profile);
         }
+    }
+
+    @Override
+    public CraftSkull copy() {
+        return new CraftSkull(this);
     }
 }

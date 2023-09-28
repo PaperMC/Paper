@@ -9,4 +9,13 @@ public class CraftDaylightDetector extends CraftBlockEntityState<TileEntityLight
     public CraftDaylightDetector(World world, TileEntityLightDetector tileEntity) {
         super(world, tileEntity);
     }
+
+    protected CraftDaylightDetector(CraftDaylightDetector state) {
+        super(state);
+    }
+
+    @Override
+    public CraftDaylightDetector copy() {
+        return new CraftDaylightDetector(this);
+    }
 }

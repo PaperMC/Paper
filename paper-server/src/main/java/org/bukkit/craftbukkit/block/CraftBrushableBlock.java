@@ -16,6 +16,10 @@ public class CraftBrushableBlock extends CraftBlockEntityState<BrushableBlockEnt
         super(world, tileEntity);
     }
 
+    protected CraftBrushableBlock(CraftBrushableBlock state) {
+        super(state);
+    }
+
     @Override
     public ItemStack getItem() {
         return CraftItemStack.asBukkitCopy(getSnapshot().getItem());
@@ -63,5 +67,10 @@ public class CraftBrushableBlock extends CraftBlockEntityState<BrushableBlockEnt
     private void setLootTable(LootTable table, long seed) {
         MinecraftKey key = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
         getSnapshot().setLootTable(key, seed);
+    }
+
+    @Override
+    public CraftBrushableBlock copy() {
+        return new CraftBrushableBlock(this);
     }
 }

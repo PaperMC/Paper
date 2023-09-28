@@ -1,0 +1,38 @@
+--- a/net/minecraft/world/level/levelgen/structure/StructureStart.java
++++ b/net/minecraft/world/level/levelgen/structure/StructureStart.java
+@@ -31,6 +31,7 @@
+     private int references;
+     @Nullable
+     private volatile StructureBoundingBox cachedBoundingBox;
++    public org.bukkit.event.world.AsyncStructureGenerateEvent.Cause generationEventCause = org.bukkit.event.world.AsyncStructureGenerateEvent.Cause.WORLD_GENERATION; // CraftBukkit
+ 
+     public StructureStart(Structure structure, ChunkCoordIntPair chunkcoordintpair, int i, PiecesContainer piecescontainer) {
+         this.structure = structure;
+@@ -91,6 +92,8 @@
+             StructureBoundingBox structureboundingbox1 = ((StructurePiece) list.get(0)).boundingBox;
+             BlockPosition blockposition = structureboundingbox1.getCenter();
+             BlockPosition blockposition1 = new BlockPosition(blockposition.getX(), structureboundingbox1.minY(), blockposition.getZ());
++            // CraftBukkit start
++            /*
+             Iterator iterator = list.iterator();
+ 
+             while (iterator.hasNext()) {
+@@ -100,6 +103,18 @@
+                     structurepiece.postProcess(generatoraccessseed, structuremanager, chunkgenerator, randomsource, structureboundingbox, chunkcoordintpair, blockposition1);
+                 }
+             }
++            */
++            List<StructurePiece> pieces = list.stream().filter(piece -> piece.getBoundingBox().intersects(structureboundingbox)).toList();
++            if (!pieces.isEmpty()) {
++                org.bukkit.craftbukkit.util.TransformerGeneratorAccess transformerAccess = new org.bukkit.craftbukkit.util.TransformerGeneratorAccess();
++                transformerAccess.setHandle(generatoraccessseed);
++                transformerAccess.setStructureTransformer(new org.bukkit.craftbukkit.util.CraftStructureTransformer(generationEventCause, generatoraccessseed, structuremanager, structure, structureboundingbox, chunkcoordintpair));
++                for (StructurePiece piece : pieces) {
++                    piece.postProcess(transformerAccess, structuremanager, chunkgenerator, randomsource, structureboundingbox, chunkcoordintpair, blockposition1);
++                }
++                transformerAccess.getStructureTransformer().discard();
++            }
++            // CraftBukkit end
+ 
+             this.structure.afterPlace(generatoraccessseed, structuremanager, chunkgenerator, randomsource, structureboundingbox, chunkcoordintpair, this.pieceContainer);
+         }

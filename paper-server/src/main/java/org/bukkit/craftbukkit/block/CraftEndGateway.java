@@ -14,6 +14,10 @@ public class CraftEndGateway extends CraftBlockEntityState<TileEntityEndGateway>
         super(world, tileEntity);
     }
 
+    protected CraftEndGateway(CraftEndGateway state) {
+        super(state);
+    }
+
     @Override
     public Location getExitLocation() {
         BlockPosition pos = this.getSnapshot().exitPortal;
@@ -58,5 +62,10 @@ public class CraftEndGateway extends CraftBlockEntityState<TileEntityEndGateway>
         if (this.getSnapshot().exitPortal == null) {
             endGateway.exitPortal = null;
         }
+    }
+
+    @Override
+    public CraftEndGateway copy() {
+        return new CraftEndGateway(this);
     }
 }

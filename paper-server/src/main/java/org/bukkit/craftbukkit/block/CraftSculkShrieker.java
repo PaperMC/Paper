@@ -13,6 +13,10 @@ public class CraftSculkShrieker extends CraftBlockEntityState<SculkShriekerBlock
         super(world, tileEntity);
     }
 
+    protected CraftSculkShrieker(CraftSculkShrieker state) {
+        super(state);
+    }
+
     @Override
     public int getWarningLevel() {
         return getSnapshot().warningLevel;
@@ -29,5 +33,10 @@ public class CraftSculkShrieker extends CraftBlockEntityState<SculkShriekerBlock
 
         EntityPlayer entityPlayer = (player == null) ? null : ((CraftPlayer) player).getHandle();
         getTileEntity().tryShriek(world.getHandle(), entityPlayer);
+    }
+
+    @Override
+    public CraftSculkShrieker copy() {
+        return new CraftSculkShrieker(this);
     }
 }

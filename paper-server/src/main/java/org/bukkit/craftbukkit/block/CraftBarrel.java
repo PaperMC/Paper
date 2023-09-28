@@ -15,6 +15,10 @@ public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barr
         super(world, tileEntity);
     }
 
+    protected CraftBarrel(CraftBarrel state) {
+        super(state);
+    }
+
     @Override
     public Inventory getSnapshotInventory() {
         return new CraftInventory(this.getSnapshot());
@@ -57,5 +61,10 @@ public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barr
             }
         }
         getTileEntity().openersCounter.opened = false;
+    }
+
+    @Override
+    public CraftBarrel copy() {
+        return new CraftBarrel(this);
     }
 }

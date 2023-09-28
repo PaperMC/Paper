@@ -12,6 +12,10 @@ public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> im
         super(world, tileEntity);
     }
 
+    protected CraftBrewingStand(CraftBrewingStand state) {
+        super(state);
+    }
+
     @Override
     public BrewerInventory getSnapshotInventory() {
         return new CraftInventoryBrewer(this.getSnapshot());
@@ -44,5 +48,10 @@ public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> im
     @Override
     public void setFuelLevel(int level) {
         this.getSnapshot().fuel = level;
+    }
+
+    @Override
+    public CraftBrewingStand copy() {
+        return new CraftBrewingStand(this);
     }
 }

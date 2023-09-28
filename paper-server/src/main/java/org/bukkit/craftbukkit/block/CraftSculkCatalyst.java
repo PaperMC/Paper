@@ -13,6 +13,10 @@ public class CraftSculkCatalyst extends CraftBlockEntityState<SculkCatalystBlock
         super(world, tileEntity);
     }
 
+    protected CraftSculkCatalyst(CraftSculkCatalyst state) {
+        super(state);
+    }
+
     @Override
     public void bloom(Block block, int charge) {
         Preconditions.checkArgument(block != null, "block cannot be null");
@@ -22,5 +26,10 @@ public class CraftSculkCatalyst extends CraftBlockEntityState<SculkCatalystBlock
         // bloom() is for visual blooming effect, cursors are what changes the blocks.
         getTileEntity().getListener().bloom(world.getHandle(), getPosition(), getHandle(), world.getHandle().getRandom());
         getTileEntity().getListener().getSculkSpreader().addCursors(new BlockPosition(block.getX(), block.getY(), block.getZ()), charge);
+    }
+
+    @Override
+    public CraftSculkCatalyst copy() {
+        return new CraftSculkCatalyst(this);
     }
 }

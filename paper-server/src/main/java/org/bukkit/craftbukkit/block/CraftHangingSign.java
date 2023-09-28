@@ -9,4 +9,13 @@ public class CraftHangingSign extends CraftSign<HangingSignBlockEntity> implemen
     public CraftHangingSign(World world, HangingSignBlockEntity tileEntity) {
         super(world, tileEntity);
     }
+
+    protected CraftHangingSign(CraftHangingSign state) {
+        super(state);
+    }
+
+    @Override
+    public CraftHangingSign copy() {
+        return new CraftHangingSign(this);
+    }
 }
