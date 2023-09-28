@@ -7,6 +7,7 @@ import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +47,15 @@ public interface BlockState extends Metadatable {
      */
     @NotNull
     BlockData getBlockData();
+
+    /**
+     * Returns a copy of this BlockState as an unplaced BlockState.
+     *
+     * @return a copy of the block state
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    BlockState copy();
 
     /**
      * Gets the type of this block state.
