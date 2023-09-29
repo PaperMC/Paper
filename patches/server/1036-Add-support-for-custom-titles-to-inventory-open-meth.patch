@@ -1,0 +1,139 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TrollyLoki <trollyloki@gmail.com>
+Date: Thu, 28 Sep 2023 23:20:20 -0400
+Subject: [PATCH] Add support for custom titles to inventory open methods in
+ CraftHumanEntity
+
+All the relevant methods open instances of SimpleMenuProvider, which has a title field that is now set based on new method parameters.
+
+== AT ==
+public-f net.minecraft.world.SimpleMenuProvider title
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 017e97c1618b8ee4640b36a0ec1b07026047bfc3..d31aebe7efdabc48f2a44c25d1ea60fc189aefb5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -374,8 +374,22 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         player.initMenu(container);
+     }
+ 
++    // Paper start - helper method for setting titles
++    private void modifyMenuProviderTitle(MenuProvider menuProvider, net.kyori.adventure.text.Component title) {
++        if (title == null) {
++            return;
++        }
++
++        if (menuProvider instanceof net.minecraft.world.SimpleMenuProvider simple) {
++            simple.title = io.papermc.paper.adventure.PaperAdventure.asVanilla(title);
++        } else {
++            throw new IllegalArgumentException("Unsupported inventory for custom title");
++        }
++    }
++    // Paper end
++
+     @Override
+-    public InventoryView openWorkbench(Location location, boolean force) {
++    public InventoryView openWorkbench(Location location, boolean force, net.kyori.adventure.text.Component title) { // Paper - add title parameter
+         if (location == null) {
+             location = getLocation();
+         }
+@@ -385,7 +399,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+                 return null;
+             }
+         }
+-        this.getHandle().openMenu(((CraftingTableBlock) Blocks.CRAFTING_TABLE).getMenuProvider(null, this.getHandle().level(), CraftLocation.toBlockPosition(location)));
++        // Paper start - modify title
++        MenuProvider menuProvider = ((CraftingTableBlock) Blocks.CRAFTING_TABLE).getMenuProvider(null, this.getHandle().level(), CraftLocation.toBlockPosition(location));
++        modifyMenuProviderTitle(menuProvider, title);
++        this.getHandle().openMenu(menuProvider);
++        // Paper end
+         if (force) {
+             this.getHandle().containerMenu.checkReachable = false;
+         }
+@@ -393,7 +411,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+     }
+ 
+     @Override
+-    public InventoryView openEnchanting(Location location, boolean force) {
++    public InventoryView openEnchanting(Location location, boolean force, net.kyori.adventure.text.Component title) { // Paper - add title parameter
+         if (location == null) {
+             location = getLocation();
+         }
+@@ -416,6 +434,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+                 return new net.minecraft.world.inventory.EnchantmentMenu(syncId, inventory, net.minecraft.world.inventory.ContainerLevelAccess.create(this.getHandle().level(), pos));
+             }, Component.translatable("container.enchant"));
+         }
++        modifyMenuProviderTitle(menuProvider, title);
+         this.getHandle().openMenu(menuProvider);
+         // Paper end
+ 
+@@ -464,7 +483,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+     }
+ 
+     @Override
+-    public InventoryView openMerchant(Villager villager, boolean force) {
++    public InventoryView openMerchant(Villager villager, boolean force) { // Paper - add title parameter
+         Preconditions.checkNotNull(villager, "villager cannot be null");
+ 
+         return this.openMerchant((Merchant) villager, force);
+@@ -505,36 +524,36 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+ 
+     // Paper start - Add additional containers
+     @Override
+-    public InventoryView openAnvil(Location location, boolean force) {
+-        return this.openInventory(location, force, Material.ANVIL);
++    public InventoryView openAnvil(Location location, boolean force, net.kyori.adventure.text.Component title) {
++        return this.openInventory(location, force, Material.ANVIL, title);
+     }
+ 
+     @Override
+-    public InventoryView openCartographyTable(Location location, boolean force) {
+-        return this.openInventory(location, force, Material.CARTOGRAPHY_TABLE);
++    public InventoryView openCartographyTable(Location location, boolean force, net.kyori.adventure.text.Component title) {
++        return this.openInventory(location, force, Material.CARTOGRAPHY_TABLE, title);
+     }
+ 
+     @Override
+-    public InventoryView openGrindstone(Location location, boolean force) {
+-        return this.openInventory(location, force, Material.GRINDSTONE);
++    public InventoryView openGrindstone(Location location, boolean force, net.kyori.adventure.text.Component title) {
++        return this.openInventory(location, force, Material.GRINDSTONE, title);
+     }
+ 
+     @Override
+-    public InventoryView openLoom(Location location, boolean force) {
+-        return this.openInventory(location, force, Material.LOOM);
++    public InventoryView openLoom(Location location, boolean force, net.kyori.adventure.text.Component title) {
++        return this.openInventory(location, force, Material.LOOM, title);
+     }
+ 
+     @Override
+-    public InventoryView openSmithingTable(Location location, boolean force) {
+-        return this.openInventory(location, force, Material.SMITHING_TABLE);
++    public InventoryView openSmithingTable(Location location, boolean force, net.kyori.adventure.text.Component title) {
++        return this.openInventory(location, force, Material.SMITHING_TABLE, title);
+     }
+ 
+     @Override
+-    public InventoryView openStonecutter(Location location, boolean force) {
+-        return this.openInventory(location, force, Material.STONECUTTER);
++    public InventoryView openStonecutter(Location location, boolean force, net.kyori.adventure.text.Component title) {
++        return this.openInventory(location, force, Material.STONECUTTER, title);
+     }
+ 
+-    private InventoryView openInventory(Location location, boolean force, Material material) {
++    private InventoryView openInventory(Location location, boolean force, Material material, net.kyori.adventure.text.Component title) {
+         org.spigotmc.AsyncCatcher.catchOp("open" + material);
+         if (location == null) {
+             location = this.getLocation();
+@@ -561,7 +580,9 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         } else {
+             throw new IllegalArgumentException("Unsupported inventory type: " + material);
+         }
+-        this.getHandle().openMenu(block.getMenuProvider(null, this.getHandle().level(), new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
++        MenuProvider menuProvider = block.getMenuProvider(null, this.getHandle().level(), new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
++        modifyMenuProviderTitle(menuProvider, title);
++        this.getHandle().openMenu(menuProvider);
+         this.getHandle().containerMenu.checkReachable = !force;
+         return this.getHandle().containerMenu.getBukkitView();
+     }
