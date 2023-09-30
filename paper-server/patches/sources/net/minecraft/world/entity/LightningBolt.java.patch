@@ -11,7 +11,24 @@
  
  public class LightningBolt extends Entity {
  
-@@ -94,7 +98,7 @@
+@@ -44,6 +48,7 @@
+     private ServerPlayer cause;
+     private final Set<Entity> hitEntities = Sets.newHashSet();
+     private int blocksSetOnFire;
++    public boolean isEffect; // Paper - Properly handle lightning effects api
+ 
+     public LightningBolt(EntityType<? extends LightningBolt> type, Level world) {
+         super(type, world);
+@@ -82,7 +87,7 @@
+     @Override
+     public void tick() {
+         super.tick();
+-        if (this.life == 2) {
++        if (!this.isEffect && this.life == 2) { // Paper - Properly handle lightning effects api
+             if (this.level().isClientSide()) {
+                 this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 10000.0F, 0.8F + this.random.nextFloat() * 0.2F, false);
+                 this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.WEATHER, 2.0F, 0.5F + this.random.nextFloat() * 0.2F, false);
+@@ -94,7 +99,7 @@
                  }
  
                  this.powerLightningRod();
@@ -20,7 +37,7 @@
                  this.gameEvent(GameEvent.LIGHTNING_STRIKE);
              }
          }
-@@ -120,7 +124,7 @@
+@@ -120,7 +125,7 @@
                      }
                  }
  
@@ -29,16 +46,25 @@
              } else if (this.life < -this.random.nextInt(10)) {
                  --this.flashes;
                  this.life = 1;
-@@ -129,7 +133,7 @@
+@@ -129,7 +134,7 @@
              }
          }
  
 -        if (this.life >= 0) {
-+        if (this.life >= 0 && !this.visualOnly) { // CraftBukkit - add !this.visualOnly
++        if (this.life >= 0 && !this.isEffect) { // CraftBukkit - add !this.visualOnly // Paper - Properly handle lightning effects api
              if (!(this.level() instanceof ServerLevel)) {
                  this.level().setSkyFlashTime(2);
              } else if (!this.visualOnly) {
-@@ -169,8 +173,12 @@
+@@ -158,7 +163,7 @@
+     }
+ 
+     private void spawnFire(int spreadAttempts) {
+-        if (!this.visualOnly) {
++        if (!this.visualOnly && !this.isEffect) {  // Paper - Properly handle lightning effects api
+             Level world = this.level();
+ 
+             if (world instanceof ServerLevel) {
+@@ -169,8 +174,12 @@
                      BlockState iblockdata = BaseFireBlock.getState(this.level(), blockposition);
  
                      if (this.level().getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level(), blockposition)) {
@@ -53,7 +79,7 @@
                      }
  
                      for (int j = 0; j < spreadAttempts; ++j) {
-@@ -178,8 +186,12 @@
+@@ -178,8 +187,12 @@
  
                          iblockdata = BaseFireBlock.getState(this.level(), blockposition1);
                          if (this.level().getBlockState(blockposition1).isAir() && iblockdata.canSurvive(this.level(), blockposition1)) {
@@ -68,7 +94,7 @@
                          }
                      }
  
-@@ -190,7 +202,7 @@
+@@ -190,7 +203,7 @@
  
      }
  
@@ -77,7 +103,7 @@
          BlockState iblockdata = world.getBlockState(pos);
          BlockPos blockposition1;
          BlockState iblockdata1;
-@@ -204,24 +216,29 @@
+@@ -204,24 +217,29 @@
          }
  
          if (iblockdata1.getBlock() instanceof WeatheringCopper) {
@@ -111,7 +137,7 @@
  
              if (optional.isEmpty()) {
                  break;
-@@ -232,7 +249,7 @@
+@@ -232,7 +250,7 @@
  
      }
  
@@ -120,7 +146,7 @@
          Iterator iterator = BlockPos.randomInCube(world.random, 10, pos, 1).iterator();
  
          BlockPos blockposition1;
-@@ -247,8 +264,10 @@
+@@ -247,8 +265,10 @@
              iblockdata = world.getBlockState(blockposition1);
          } while (!(iblockdata.getBlock() instanceof WeatheringCopper));
  

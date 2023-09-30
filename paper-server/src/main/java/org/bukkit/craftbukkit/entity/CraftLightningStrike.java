@@ -13,7 +13,7 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
 
     @Override
     public boolean isEffect() {
-        return this.getHandle().visualOnly;
+        return this.getHandle().isEffect; // Paper - Properly handle lightning effects api
     }
 
     public int getFlashes() {
