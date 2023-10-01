@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.legacy;
 
 import static org.junit.jupiter.api.Assertions.*;
+import com.google.common.base.Charsets;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +26,7 @@ public class PersistentDataContainerLegacyTest extends AbstractTestingBase {
         try (final InputStream input = getClass().getClassLoader().getResourceAsStream("pdc/legacy_pdc.yml")) {
             assertNotNull(input, "Legacy pdc yaml was null");
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, Charsets.UTF_8))) {
                 legacyConfig = YamlConfiguration.loadConfiguration(reader);
             }
         } catch (IOException e) {
