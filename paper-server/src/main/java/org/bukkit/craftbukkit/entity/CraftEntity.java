@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Set;
@@ -13,6 +14,7 @@ import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.server.level.PlayerChunkMap;
 import net.minecraft.server.level.WorldServer;
+import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
@@ -22,7 +24,6 @@ import net.minecraft.world.entity.EntityFlying;
 import net.minecraft.world.entity.EntityLightning;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EntityTameableAnimal;
-import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.GlowSquid;
 import net.minecraft.world.entity.Interaction;
 import net.minecraft.world.entity.Marker;
@@ -163,7 +164,6 @@ import net.minecraft.world.entity.vehicle.EntityMinecartTNT;
 import net.minecraft.world.phys.AxisAlignedBB;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
-import org.bukkit.Registry;
 import org.bukkit.Server;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -177,7 +177,6 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.EntityType;
@@ -915,6 +914,23 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean isVisibleByDefault() {
         return getHandle().visibleByDefault;
+    }
+
+    @Override
+    public Set<Player> getTrackedBy() {
+        Preconditions.checkState(!entity.generation, "Cannot get tracking players during world generation");
+        ImmutableSet.Builder<Player> players = ImmutableSet.builder();
+
+        WorldServer world = ((CraftWorld) getWorld()).getHandle();
+        PlayerChunkMap.EntityTracker entityTracker = world.getChunkSource().chunkMap.entityMap.get(getEntityId());
+
+        if (entityTracker != null) {
+            for (ServerPlayerConnection connection : entityTracker.seenBy) {
+                players.add(connection.getPlayer().getBukkitEntity());
+            }
+        }
+
+        return players.build();
     }
 
     @Override
