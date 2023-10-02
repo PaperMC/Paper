@@ -548,6 +548,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean isVisibleByDefault();
 
     /**
+     * Get all players that are currently tracking this entity.
+     * <p>
+     * 'Tracking' means that this entity has been sent to the player and that
+     * they are receiving updates on its state. Note that the client's {@code
+     * 'Entity Distance'} setting does not affect the range at which entities
+     * are tracked.
+     *
+     * @return the players tracking this entity, or an empty set if none
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    Set<Player> getTrackedBy();
+
+    /**
      * Sets whether the entity has a team colored (default: white) glow.
      *
      * <b>nb: this refers to the 'Glowing' entity property, not whether a
