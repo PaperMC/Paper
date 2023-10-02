@@ -46,32 +46,35 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     public static <B extends Keyed> Registry<?> createRegistry(Class<B> bukkitClass, IRegistryCustom registryHolder) {
         if (bukkitClass == GameEvent.class) {
-            return new CraftRegistry<>(registryHolder.registryOrThrow(Registries.GAME_EVENT), CraftGameEvent::new);
+            return new CraftRegistry<>(GameEvent.class, registryHolder.registryOrThrow(Registries.GAME_EVENT), CraftGameEvent::new);
         }
         if (bukkitClass == MusicInstrument.class) {
-            return new CraftRegistry<>(registryHolder.registryOrThrow(Registries.INSTRUMENT), CraftMusicInstrument::new);
+            return new CraftRegistry<>(MusicInstrument.class, registryHolder.registryOrThrow(Registries.INSTRUMENT), CraftMusicInstrument::new);
         }
         if (bukkitClass == Structure.class) {
-            return new CraftRegistry<>(registryHolder.registryOrThrow(Registries.STRUCTURE), CraftStructure::new);
+            return new CraftRegistry<>(Structure.class, registryHolder.registryOrThrow(Registries.STRUCTURE), CraftStructure::new);
         }
         if (bukkitClass == StructureType.class) {
-            return new CraftRegistry<>(BuiltInRegistries.STRUCTURE_TYPE, CraftStructureType::new);
+            return new CraftRegistry<>(StructureType.class, BuiltInRegistries.STRUCTURE_TYPE, CraftStructureType::new);
         }
         if (bukkitClass == TrimMaterial.class) {
-            return new CraftRegistry<>(registryHolder.registryOrThrow(Registries.TRIM_MATERIAL), CraftTrimMaterial::new);
+            return new CraftRegistry<>(TrimMaterial.class, registryHolder.registryOrThrow(Registries.TRIM_MATERIAL), CraftTrimMaterial::new);
         }
         if (bukkitClass == TrimPattern.class) {
-            return new CraftRegistry<>(registryHolder.registryOrThrow(Registries.TRIM_PATTERN), CraftTrimPattern::new);
+            return new CraftRegistry<>(TrimPattern.class, registryHolder.registryOrThrow(Registries.TRIM_PATTERN), CraftTrimPattern::new);
         }
 
         return null;
     }
 
+    private final Class<B> bukkitClass;
     private final Map<NamespacedKey, B> cache = new HashMap<>();
     private final IRegistry<M> minecraftRegistry;
     private final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
+    private boolean init;
 
-    public CraftRegistry(IRegistry<M> minecraftRegistry, BiFunction<NamespacedKey, M, B> minecraftToBukkit) {
+    public CraftRegistry(Class<B> bukkitClass, IRegistry<M> minecraftRegistry, BiFunction<NamespacedKey, M, B> minecraftToBukkit) {
+        this.bukkitClass = bukkitClass;
         this.minecraftRegistry = minecraftRegistry;
         this.minecraftToBukkit = minecraftToBukkit;
     }
@@ -81,6 +84,27 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         B cached = cache.get(namespacedKey);
         if (cached != null) {
             return cached;
+        }
+
+        // Make sure that the bukkit class is loaded before creating an instance.
+        // This ensures that only one instance with a given key is created.
+        //
+        // Without this code (when bukkit class is not loaded):
+        // Registry#get -> #createBukkit -> (load class -> create default) -> put in cache
+        // Result: Registry#get != <bukkitClass>.<field> for possible one registry item
+        //
+        // With this code (when bukkit class is not loaded):
+        // Registry#get -> (load class -> create default) -> Registry#get -> get from cache
+        // Result: Registry#get == <bukkitClass>.<field>
+        if (!init) {
+            init = true;
+            try {
+                Class.forName(bukkitClass.getName());
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Could not load registry class " + bukkitClass, e);
+            }
+
+            return get(namespacedKey);
         }
 
         B bukkit = createBukkit(namespacedKey, minecraftRegistry.getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElse(null));
