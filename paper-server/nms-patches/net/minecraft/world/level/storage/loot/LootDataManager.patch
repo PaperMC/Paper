@@ -1,14 +1,15 @@
 --- a/net/minecraft/world/level/storage/loot/LootDataManager.java
 +++ b/net/minecraft/world/level/storage/loot/LootDataManager.java
-@@ -30,6 +30,7 @@
-     public static final LootDataId<LootTable> EMPTY_LOOT_TABLE_KEY = new LootDataId<>(LootDataType.TABLE, LootTables.EMPTY);
-     private Map<LootDataId<?>, ?> elements = Map.of();
-     private Multimap<LootDataType<?>, MinecraftKey> typeKeys = ImmutableMultimap.of();
-+    public Map<?, MinecraftKey> lootTableToKey = ImmutableMap.of(); // CraftBukkit
+@@ -21,6 +21,8 @@
+ import net.minecraft.server.packs.resources.ResourceDataJson;
+ import net.minecraft.util.profiling.GameProfilerFiller;
+ import net.minecraft.world.level.storage.loot.parameters.LootContextParameterSets;
++import org.bukkit.craftbukkit.CraftLootTable;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.slf4j.Logger;
  
-     public LootDataManager() {}
- 
-@@ -87,7 +88,7 @@
+ public class LootDataManager implements IReloadListener, LootDataResolver {
+@@ -87,7 +89,7 @@
              @Nullable
              @Override
              public <T> T getElement(LootDataId<T> lootdataid) {
@@ -17,15 +18,19 @@
              }
          });
  
-@@ -99,16 +100,21 @@
+@@ -97,18 +99,25 @@
+         lootcollector.getProblems().forEach((s, s1) -> {
+             LootDataManager.LOGGER.warn("Found loot table element validation problem in {}: {}", s, s1);
          });
++        // CraftBukkit start
++        map1.forEach((key, lootTable) -> {
++            if (object instanceof LootTable table) {
++                table.craftLootTable = new CraftLootTable(CraftNamespacedKey.fromMinecraft(key.location()), table);
++            }
++        });
++        // CraftBukkit end
          this.elements = map1;
          this.typeKeys = com_google_common_collect_immutablemultimap_builder.build();
-+        // CraftBukkit start - build a reversed registry map
-+        ImmutableMap.Builder<Object, MinecraftKey> lootTableToKeyBuilder = ImmutableMap.builder();
-+        this.elements.forEach((key, lootTable) -> lootTableToKeyBuilder.put((Object) lootTable, key.location()));
-+        this.lootTableToKey = lootTableToKeyBuilder.build();
-+        // CraftBukkit end
      }
  
      private static <T> void castAndValidate(LootCollector lootcollector, LootDataId<T> lootdataid, Object object) {
