@@ -316,14 +316,14 @@ public class CraftChunk implements Chunk {
             sectionBlockIDs[i] = ChunkRegionLoader.BLOCK_STATE_CODEC.parse(DynamicOpsNBT.INSTANCE, data.getCompound("block_states")).get().left().get();
 
             LevelLightEngine lightengine = worldServer.getLightEngine();
-            NibbleArray skyLightArray = lightengine.getLayerListener(EnumSkyBlock.SKY).getDataLayerData(SectionPosition.of(x, i, z));
+            NibbleArray skyLightArray = lightengine.getLayerListener(EnumSkyBlock.SKY).getDataLayerData(SectionPosition.of(x, chunk.getSectionYFromSectionIndex(i), z)); // SPIGOT-7498: Convert section index
             if (skyLightArray == null) {
                 sectionSkyLights[i] = emptyLight;
             } else {
                 sectionSkyLights[i] = new byte[2048];
                 System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
             }
-            NibbleArray emitLightArray = lightengine.getLayerListener(EnumSkyBlock.BLOCK).getDataLayerData(SectionPosition.of(x, i, z));
+            NibbleArray emitLightArray = lightengine.getLayerListener(EnumSkyBlock.BLOCK).getDataLayerData(SectionPosition.of(x, chunk.getSectionYFromSectionIndex(i), z)); // SPIGOT-7498: Convert section index
             if (emitLightArray == null) {
                 sectionEmitLights[i] = emptyLight;
             } else {
