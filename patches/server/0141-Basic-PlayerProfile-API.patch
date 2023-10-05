@@ -17,10 +17,10 @@ public org.bukkit.craftbukkit.profile.CraftPlayerProfile setProperty(Ljava/lang/
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f1bda658e
+index 0000000000000000000000000000000000000000..b7da8606e24b216b39020130fd2c42c7cd387a3a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,401 @@
+@@ -0,0 +1,402 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.yggdrasil.ProfileResult;
@@ -59,7 +59,7 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +    }
 +
 +    public CraftPlayerProfile(UUID id, String name) {
-+        this.profile = new GameProfile(id, name);
++        this.profile = new GameProfile(id != null ? id : Util.NIL_UUID, name != null ? name : "");
 +    }
 +
 +    public CraftPlayerProfile(GameProfile profile) {
@@ -103,16 +103,17 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +    @Nullable
 +    @Override
 +    public UUID getId() {
-+        return profile.getId();
++        return profile.getId().equals(Util.NIL_UUID) ? null : profile.getId();
 +    }
 +
 +    @Override
 +    @Deprecated(forRemoval = true)
 +    public UUID setId(@Nullable UUID uuid) {
-+        GameProfile prev = this.profile;
-+        this.profile = new GameProfile(uuid, prev.getName());
-+        copyProfileProperties(prev, this.profile);
-+        return prev.getId();
++        final GameProfile previousProfile = this.profile;
++        final UUID previousId = this.getId();
++        this.profile = new GameProfile(previousProfile.getId(), previousProfile.getName());
++        copyProfileProperties(previousProfile, this.profile);
++        return previousId;
 +    }
 +
 +    @Override
@@ -130,7 +131,7 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +    @Deprecated(forRemoval = true)
 +    public String setName(@Nullable String name) {
 +        GameProfile prev = this.profile;
-+        this.profile = new GameProfile(prev.getId(), name);
++        this.profile = new GameProfile(prev.getId(), name != null ? name : "");
 +        copyProfileProperties(prev, this.profile);
 +        return prev.getName();
 +    }
@@ -213,7 +214,7 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +        MinecraftServer server = MinecraftServer.getServer();
 +        String name = profile.getName();
 +        GameProfileCache userCache = server.getProfileCache();
-+        if (profile.getId() == null) {
++        if (this.getId() == null) {
 +            final GameProfile profile;
 +            if (onlineMode) {
 +                profile = lookupUUID ? userCache.get(name).orElse(null) : userCache.getProfileIfCached(name);
@@ -228,11 +229,11 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +            }
 +        }
 +
-+        if ((profile.getName() == null || !hasTextures()) && profile.getId() != null) {
++        if ((profile.getName().isEmpty() || !hasTextures()) && this.getId() != null) {
 +            Optional<GameProfile> optProfile = userCache.get(this.profile.getId());
 +            if (optProfile.isPresent()) {
 +                GameProfile profile = optProfile.get();
-+                if (this.profile.getName() == null) {
++                if (this.profile.getName().isEmpty()) {
 +                    // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
 +                    copyProfileProperties(this.profile, profile);
 +                    this.profile = profile;
@@ -314,7 +315,7 @@ index 0000000000000000000000000000000000000000..e513ce5bcb5070b8a57737228904381f
 +        if (this.getId() != null) {
 +            map.put("uniqueId", this.getId().toString());
 +        }
-+        if (this.getName() != null) {
++        if (!this.getName().isEmpty()) {
 +            map.put("name", getName());
 +        }
 +        if (!this.properties.isEmpty()) {
@@ -614,7 +615,7 @@ index c70cd016e1978931d115cfca94664897f0158196..eac9658fa4cab7a651e10e4e18c679e0
          String s1 = name.toLowerCase(Locale.ROOT);
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 0ef8750c7c862a44dfb0e15602ef819790c9f1a4..cfb0846381f5ebfe33fc4074f21fb0993812f75c 100644
+index 0ef8750c7c862a44dfb0e15602ef819790c9f1a4..a230e2ac2de48d4d5d963e1de2bd87999b4ad2fc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -263,6 +263,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
@@ -635,7 +636,7 @@ index 0ef8750c7c862a44dfb0e15602ef819790c9f1a4..cfb0846381f5ebfe33fc4074f21fb099
          CraftItemFactory.instance();
      }
  
-@@ -2681,5 +2685,37 @@ public final class CraftServer implements Server {
+@@ -2681,5 +2685,42 @@ public final class CraftServer implements Server {
      public boolean suggestPlayerNamesWhenNullTabCompletions() {
          return io.papermc.paper.configuration.GlobalConfiguration.get().commands.suggestPlayerNamesWhenNullTabCompletions;
      }
@@ -661,14 +662,19 @@ index 0ef8750c7c862a44dfb0e15602ef819790c9f1a4..cfb0846381f5ebfe33fc4074f21fb099
 +    @Override
 +    public com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name) {
 +        Player player = uuid != null ? Bukkit.getPlayer(uuid) : (name != null ? Bukkit.getPlayerExact(name) : null);
-+        if (player == null) return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
++        if (player == null) {
++            return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
++        }
 +
 +        if (java.util.Objects.equals(uuid, player.getUniqueId()) && java.util.Objects.equals(name, player.getName())) {
 +            return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player);
 +        }
 +
-+        final com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(uuid, name);
-+        profile.getProperties().putAll(((CraftPlayer)player).getHandle().getGameProfile().getProperties());
++        final com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(
++            uuid != null ? uuid : net.minecraft.Util.NIL_UUID,
++            name != null ? name : ""
++        );
++        profile.getProperties().putAll(((CraftPlayer) player).getHandle().getGameProfile().getProperties());
 +        return new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
 +    }
      // Paper end
