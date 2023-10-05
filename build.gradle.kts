@@ -137,9 +137,9 @@ tasks.collectAtsFromPatches {
 }
 
 // Uncomment while updating for a new Minecraft version
-tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches> {
-    filterPatches.set(false)
-}
+// tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches> {
+//     filterPatches.set(false)
+// }
 
 tasks.register("printMinecraftVersion") {
     doLast {
