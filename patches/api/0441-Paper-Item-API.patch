@@ -5,7 +5,7 @@ Subject: [PATCH] Paper Item API
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 149f9088fe806467656e8b1c4157df60fda69ba7..a90074480a3506f439cf8f38ee4b196053bcc96d 100644
+index 639651972fddce4dff63a0f0a7e566a15b9e2dd6..63499c28ddda588134c38c502de8de1a6da9d50f 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -36,6 +36,7 @@ dependencies {
@@ -122,7 +122,7 @@ index 0000000000000000000000000000000000000000..9733d750bfc0bcabf995fe54ba8c9d2c
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ad5bf6a0c3389a7505827441ab9cb39c10d79759
+index 0000000000000000000000000000000000000000..bffb3b2d33360e70f8d421609121b7893dc8f3cc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
 @@ -0,0 +1,128 @@
@@ -183,7 +183,7 @@ index 0000000000000000000000000000000000000000..ad5bf6a0c3389a7505827441ab9cb39c
 +    PropertyKey<TropicalFishVariant> TROPICAL_FISH_BUCKET_VARIANT = PropertyKey.of("BucketVariantTag", TropicalFishVariant.class);
 +
 +    // SuspiciousStewMeta
-+    PropertyKey<List<StewEffect>> STEW_EFFECTS = PropertyKey.of("Effects", TypeFactory.parameterizedClass(List.class, StewEffect.class));
++    PropertyKey<List<StewEffect>> STEW_EFFECTS = PropertyKey.of("effects", TypeFactory.parameterizedClass(List.class, StewEffect.class));
 +
 +    // CraftMetaSkull
 +    // Can be a STRING or a skull profile
@@ -256,10 +256,10 @@ index 0000000000000000000000000000000000000000..ad5bf6a0c3389a7505827441ab9cb39c
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java b/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fd286c088caa098447ae857d341a09ea6a936f45
+index 0000000000000000000000000000000000000000..a3232752c57b0b9a6c1ae7aac429166a2db987b2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import org.bukkit.potion.PotionEffectType;
@@ -278,13 +278,12 @@ index 0000000000000000000000000000000000000000..fd286c088caa098447ae857d341a09ea
 +    @NotNull PotionEffectType effect();
 +
 +    /**
-+     * Gets the duration override for this
-+     * stew effect instance.
++     * Gets the duration for this stew effect instnace.
++     * By default, this will be 160 ticks.
 +     *
 +     * @return duration override
 +     */
-+    @Nullable
-+    Integer duration();
++    int duration();
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java b/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java
 new file mode 100644
@@ -552,13 +551,13 @@ index 0000000000000000000000000000000000000000..ffee1712ff301a681fd2efa42a893df6
 +    boolean isEmpty();
 +}
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index c661eab343ae76488de701630424e2d589f44fc0..922e090910285f15f28590efeb4baec36cfc4ff5 100644
+index 9237e2fca0557890b718de9029207a552396e45a..7475c0b5b881b8024579bb70d5f7e73e3d8324c8 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -249,5 +249,9 @@ public interface UnsafeValues {
-      * @throws IllegalStateException if no biome by the given key is registered.
-      */
+@@ -250,5 +250,9 @@ public interface UnsafeValues {
      void setBiomeKey(RegionAccessor accessor, int x, int y, int z, NamespacedKey biomeKey);
+ 
+     String getStatisticCriteriaKey(@NotNull org.bukkit.Statistic statistic);
 +
 +    io.papermc.paper.property.MutablePropertyView getPropertyHolder(ItemStack itemStack);
 +
@@ -566,12 +565,12 @@ index c661eab343ae76488de701630424e2d589f44fc0..922e090910285f15f28590efeb4baec3
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index d15a74c38576c49df61cfab02c70fc5d8c0dd5f7..c14d7b79bfefa602c6f37d7b419840ef7fd685db 100644
+index 0af73cc04edb93b9772136d4d808f657ea40e733..392a4c7b2fa8f631765a862d811d9ee9a68c5488 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -985,5 +985,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-     public @NotNull ItemStack damage(int amount, @NotNull org.bukkit.entity.LivingEntity livingEntity) {
-         return livingEntity.damageItemStack(this, amount);
+@@ -1004,5 +1004,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     public boolean isEmpty() {
+         return type.isAir() || amount <= 0;
      }
 +
 +    @NotNull

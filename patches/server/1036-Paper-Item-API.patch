@@ -1243,7 +1243,7 @@ index 0000000000000000000000000000000000000000..f7c6ed02cb0b96064dab81aef845735c
 +}
 diff --git a/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..773b9e80d9ba47d61e83ae04d60aaef7b959833d
+index 0000000000000000000000000000000000000000..d23fc5046ec4111d0bcde1b198663daa7b22560b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
 @@ -0,0 +1,99 @@
@@ -1292,7 +1292,7 @@ index 0000000000000000000000000000000000000000..773b9e80d9ba47d61e83ae04d60aaef7
 +
 +        ITEM_CONTEXT.register(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, new TropicalFishVariantNbt());
 +
-+        ITEM_CONTEXT.register(ItemProperties.STEW_EFFECTS, new StewEffectsListNbt());
++        ITEM_CONTEXT.register(ItemProperties.STEW_EFFECTS, new WrappedListNbt<>(new StewEffectNbt()));
 +
 +        ITEM_CONTEXT.register(ItemProperties.SKULL_OWNER, new GameProfileNbt());
 +        ITEM_CONTEXT.register(ItemProperties.SKULL_OWNER_NAME, StringPrimitive.INSTANCE);
@@ -1432,15 +1432,17 @@ index 0000000000000000000000000000000000000000..b8f9b584ca86b1348d0980a2ded20a55
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/NbtPlatformAdapter.java b/src/main/java/io/papermc/paper/property/nbt/NbtPlatformAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5597f4ada7073269a6f1c0f4f911eddc216f1408
+index 0000000000000000000000000000000000000000..bf21a05350487312123caa9ec4c56c861ab3bf36
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/NbtPlatformAdapter.java
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,84 @@
 +package io.papermc.paper.property.nbt;
 +
 +import io.papermc.paper.property.PropertyKey;
 +import io.papermc.paper.property.adapter.ValueTypeAdapter;
++import net.minecraft.nbt.ListTag;
 +import net.minecraft.nbt.Tag;
++import net.minecraft.nbt.TagType;
 +
 +public interface NbtPlatformAdapter<TYPE> extends ValueTypeAdapter<TYPE, NbtPropertyHolder> {
 +    TypeValidationStrategy getTypeValidation();
@@ -1461,6 +1463,26 @@ index 0000000000000000000000000000000000000000..5597f4ada7073269a6f1c0f4f911eddc
 +        // Used for tag methods
 +        int getRawValidationId();
 +
++
++        class ListTypeValidation implements TypeValidationStrategy {
++
++            private final TypeValidationStrategy listTypeValidation = new SimpleTypeValidation(Tag.TAG_LIST);
++            private final TagType<?> type;
++
++            public ListTypeValidation(TagType<?> type) {
++                this.type = type;
++            }
++
++            @Override
++            public boolean validateTag(Tag tag) {
++                return this.listTypeValidation.validateTag(tag) && ((ListTag) tag).getType() == this.type;
++            }
++
++            @Override
++            public int getRawValidationId() {
++                return this.listTypeValidation.getRawValidationId();
++            }
++        }
 +
 +        class SimpleTypeValidation implements TypeValidationStrategy {
 +
@@ -3558,59 +3580,48 @@ index 0000000000000000000000000000000000000000..fc009ba9f87550da8a34735951bef2a3
 +        return CraftPotionUtil.fromBukkit(type);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java
+diff --git a/src/main/java/io/papermc/paper/property/nbt/types/StewEffectNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectNbt.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8e1f7979efac1add047e80494b08277dd625a806
+index 0000000000000000000000000000000000000000..581bb02ffa641130f733a46378f9f6d078a910aa
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java
-@@ -0,0 +1,49 @@
++++ b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectNbt.java
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.inventory.item.properties.StewEffect;
-+import io.papermc.paper.property.PropertyKey;
-+import io.papermc.paper.property.nbt.AdapterContext;
-+import io.papermc.paper.property.nbt.NbtPropertyHolder;
-+import io.papermc.paper.property.nbt.primitives.IntegerPrimitive;
-+import net.minecraft.core.registries.BuiltInRegistries;
-+import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.nbt.Tag;
-+import net.minecraft.world.effect.MobEffect;
-+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import io.papermc.paper.property.nbt.primitives.NbtPrimitiveWrapper;
++import net.minecraft.world.level.block.SuspiciousEffectHolder;
++import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 +import org.bukkit.potion.PotionEffectType;
 +import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +
-+public class StewEffectsListNbt extends AbstractListNbtPlatformAdapter<StewEffect> {
++public class StewEffectNbt extends NbtPrimitiveWrapper<StewEffect, SuspiciousEffectHolder.EffectEntry> {
 +
-+    private static final PropertyKey<Integer> EFFECT = PropertyKey.of("EffectId", Integer.class);
-+    private static final PropertyKey<Integer> EFFECT_DURATION = PropertyKey.of("EffectDuration", Integer.class);
-+
-+    private static final AdapterContext CONTEXT = AdapterContext.of((context) -> {
-+        context.register(EFFECT, IntegerPrimitive.INSTANCE);
-+        context.register(EFFECT_DURATION, IntegerPrimitive.INSTANCE);
-+    });
-+
-+    @Override
-+    public StewEffect deserialize(Tag tag) {
-+        NbtPropertyHolder attributeHolder = NbtPropertyHolder.simpleBlob((CompoundTag) tag, CONTEXT);
-+
-+        Integer duration = attributeHolder.get(EFFECT_DURATION);
-+        MobEffect mobEffect = MobEffect.byId(attributeHolder.get(EFFECT));
-+        PotionEffectType type = PotionEffectType.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.MOB_EFFECT.getKey(mobEffect)));
-+
-+        return new StewEffectImpl(type, duration);
++    public StewEffectNbt() {
++        super(new CodecNbt<>(SuspiciousEffectHolder.EffectEntry.CODEC));
 +    }
 +
 +    @Override
-+    public Tag serialize(StewEffect type) {
-+        NbtPropertyHolder attributeHolder = NbtPropertyHolder.simpleBlob(new CompoundTag(), CONTEXT);
-+        attributeHolder.set(EFFECT, BuiltInRegistries.MOB_EFFECT.getId(BuiltInRegistries.MOB_EFFECT.get(CraftNamespacedKey.toMinecraft(type.effect().getKey()))));
-+        attributeHolder.set(EFFECT_DURATION, type.duration());
-+
-+        return attributeHolder.getCompoundTag();
++    public StewEffect fromPrimitive(final SuspiciousEffectHolder.EffectEntry primitive) {
++        return new StewEffectImpl(CraftPotionEffectType.minecraftToBukkit(primitive.effect()), primitive.duration());
 +    }
 +
-+    public record StewEffectImpl(@NotNull PotionEffectType effect, @Nullable Integer duration) implements StewEffect {
++    @Override
++    public SuspiciousEffectHolder.EffectEntry toPrimitive(final StewEffect type) {
++        return new SuspiciousEffectHolder.EffectEntry(CraftPotionEffectType.bukkitToMinecraft(type.effect()), type.duration());
++    }
++
++    public record StewEffectImpl(PotionEffectType effectType, int duration) implements StewEffect {
++
++        @Override
++        public @NotNull PotionEffectType effect() {
++            return this.effectType;
++        }
++
++        @Override
++        public int duration() {
++            return this.duration;
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/TropicalFishVariantNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/TropicalFishVariantNbt.java
@@ -3728,24 +3739,24 @@ index 716021520c228b5bbced525b751f5d4126d882eb..9176555d0fbc4c3ed3bd37bb5514048d
          @Override
          public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 9b9a9606e5be94b394606f2306e7b7a5ed781e1d..a7e5a7ea9107bb05677a53bd06c5764aef0a4376 100644
+index 193ad79f57255b1ea4cf7930071b4f4988dc2b04..a646225c14ae88a8c925d4df55ba96ff97a04582 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1597,8 +1597,7 @@ public class CraftEventFactory {
+@@ -1639,8 +1639,7 @@ public class CraftEventFactory {
                  if (editBookEvent.isSigning()) {
                      itemInHand.setItem(Items.WRITTEN_BOOK);
                  }
 -                CraftMetaBook meta = (CraftMetaBook) editBookEvent.getNewBookMeta();
 -                CraftItemStack.setItemMeta(itemInHand, meta);
 +                itemInHand.getOrCreateTag().merge(((io.papermc.paper.item.meta.PaperMeta) editBookEvent.getNewBookMeta()).getPropertyHolder().getCompoundTag()); // Paper
+             } else {
+                 player.getBukkitEntity().updateInventory(); // SPIGOT-7484
              }
-         }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index b4850f4da500771e890247d9ed7f7d027460a718..79af91c0a03c3bf122b4b3960c60e5f1a4ab9333 100644
+index 57f4cf40359fe9bb427eb0134660d00839a63c86..6eaa02d4f3ab0061a531dc5784c363b306295586 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -42,19 +42,35 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -46,19 +46,35 @@ public final class CraftItemFactory implements ItemFactory {
              return false;
          }
  
@@ -3786,7 +3797,7 @@ index b4850f4da500771e890247d9ed7f7d027460a718..79af91c0a03c3bf122b4b3960c60e5f1
          switch (material) {
          case AIR:
              return null;
-@@ -367,20 +383,19 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -371,20 +387,19 @@ public final class CraftItemFactory implements ItemFactory {
          }
  
          if (meta1 != null) {
@@ -3813,7 +3824,7 @@ index b4850f4da500771e890247d9ed7f7d027460a718..79af91c0a03c3bf122b4b3960c60e5f1
          /*
           * This couldn't be done inside of the objects themselves, else force recursion.
           * This is a fairly clean way of implementing it, by dividing the methods into purposes and letting each method perform its own function.
-@@ -406,8 +421,18 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -410,8 +425,18 @@ public final class CraftItemFactory implements ItemFactory {
      @Override
      public ItemMeta asMetaFor(ItemMeta meta, Material material) {
          Preconditions.checkArgument(material != null, "Material cannot be null");
@@ -3834,7 +3845,7 @@ index b4850f4da500771e890247d9ed7f7d027460a718..79af91c0a03c3bf122b4b3960c60e5f1
      }
  
      @Override
-@@ -436,7 +461,7 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -440,7 +465,7 @@ public final class CraftItemFactory implements ItemFactory {
  
      @Override
      public Material updateMaterial(ItemMeta meta, Material material) throws IllegalArgumentException {
@@ -3842,12 +3853,12 @@ index b4850f4da500771e890247d9ed7f7d027460a718..79af91c0a03c3bf122b4b3960c60e5f1
 +        return material; // Paper - not needed on modern
      }
  
-     // Paper start
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index f62ef038af2dfe7525e72c8b8e30a3fa9ce2b451..508498519b01c9fd4639e16f2d08108ba0ed8b18 100644
+index 6556d7ab09826bb5a99f11385eddc26b67e44d68..b6c6b30857a063ac6be637a9dab22e66607ef2c0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -101,7 +101,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -118,7 +118,7 @@ public final class CraftItemStack extends ItemStack {
      private CraftItemStack(Material type, int amount, short durability, ItemMeta itemMeta) {
          this.setType(type);
          this.setAmount(amount);
@@ -3856,7 +3867,7 @@ index f62ef038af2dfe7525e72c8b8e30a3fa9ce2b451..508498519b01c9fd4639e16f2d08108b
          this.setItemMeta(itemMeta);
      }
  
-@@ -281,13 +281,21 @@ public final class CraftItemStack extends ItemStack {
+@@ -309,13 +309,21 @@ public final class CraftItemStack extends ItemStack {
      }
      // Paper start
      public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta meta) {
@@ -3879,7 +3890,7 @@ index f62ef038af2dfe7525e72c8b8e30a3fa9ce2b451..508498519b01c9fd4639e16f2d08108b
          // Paper end
          if (!CraftItemStack.hasItemMeta(item)) {
              return CraftItemFactory.instance().getItemMeta(material); // Paper
-@@ -625,11 +633,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -653,11 +661,7 @@ public final class CraftItemStack extends ItemStack {
              item.setItem(newItem);
          }
  
@@ -3892,7 +3903,7 @@ index f62ef038af2dfe7525e72c8b8e30a3fa9ce2b451..508498519b01c9fd4639e16f2d08108b
          // SpigotCraft#463 this is required now by the Vanilla client, so mimic ItemStack constructor in ensuring it
          if (item.getItem() != null && item.getItem().canBeDepleted()) {
              item.setDamageValue(item.getDamageValue());
-@@ -666,10 +670,55 @@ public final class CraftItemStack extends ItemStack {
+@@ -694,10 +698,55 @@ public final class CraftItemStack extends ItemStack {
  
      @Override
      public boolean hasItemMeta() {
@@ -3950,10 +3961,10 @@ index f62ef038af2dfe7525e72c8b8e30a3fa9ce2b451..508498519b01c9fd4639e16f2d08108b
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 076e06908a0cf97f86a64a15ca0231c5b0f06fec..975e6c67bd7718fa5eb444d28974d5d9b6248322 100644
+index aeca803cc0434d9de9434987d6e43b70353e305b..2af0802d7694ee41691f300653230a56216f7160 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -112,7 +112,7 @@ import java.util.Collections;
+@@ -113,7 +113,7 @@ import java.util.Collections;
   * <li> SerializableMeta.Deserializers deserializer()
   */
  @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
@@ -3962,7 +3973,7 @@ index 076e06908a0cf97f86a64a15ca0231c5b0f06fec..975e6c67bd7718fa5eb444d28974d5d9
  
      static class ItemMetaKey {
  
-@@ -195,7 +195,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -196,7 +196,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
              String type = SerializableMeta.getString(map, SerializableMeta.TYPE_FIELD, false);
              Constructor<? extends CraftMetaItem> constructor = SerializableMeta.constructorMap.get(type);
@@ -3971,7 +3982,7 @@ index 076e06908a0cf97f86a64a15ca0231c5b0f06fec..975e6c67bd7718fa5eb444d28974d5d9
              if (constructor == null) {
                  throw new IllegalArgumentException(type + " is not a valid " + SerializableMeta.TYPE_FIELD);
              }
-@@ -693,6 +693,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -696,6 +696,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
          return result;
      }
@@ -3983,7 +3994,7 @@ index 076e06908a0cf97f86a64a15ca0231c5b0f06fec..975e6c67bd7718fa5eb444d28974d5d9
  
      @Overridden
      void applyToItem(CompoundTag itemTag) {
-@@ -1414,6 +1419,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1421,6 +1426,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public final Map<String, Object> serialize() {
@@ -3992,22 +4003,12 @@ index 076e06908a0cf97f86a64a15ca0231c5b0f06fec..975e6c67bd7718fa5eb444d28974d5d9
          map.put(SerializableMeta.TYPE_FIELD, SerializableMeta.classMap.get(getClass()));
          this.serialize(map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 83cef5ec27c31f133a23cd27349f722799c786ea..376624f37c3d02aa5223b610dcf4f95727a19e54 100644
+index 96f6e0554baf5915dd1f5b93f3bcfe7a13393c29..4539b7f5a95eaeeda16835af4cbf5f79ed185692 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -56,8 +56,8 @@ import org.bukkit.craftbukkit.CraftEquipmentSlot;
- import org.bukkit.craftbukkit.CraftFeatureFlag;
- import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
- import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
--import org.bukkit.craftbukkit.block.CraftBlock;
- import org.bukkit.craftbukkit.block.data.CraftBlockData;
-+import org.bukkit.craftbukkit.block.CraftBlock;
- import org.bukkit.craftbukkit.inventory.CraftItemStack;
- import org.bukkit.craftbukkit.legacy.CraftLegacy;
- import org.bukkit.entity.EntityType;
-@@ -622,6 +622,28 @@ public final class CraftMagicNumbers implements UnsafeValues {
-         net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biomeBase = cra.getHandle().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME).getHolderOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BIOME, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(biomeKey)));
-         cra.setBiome(x, y, z, biomeBase);
+@@ -610,6 +610,27 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         if (statistic.getType() != org.bukkit.Statistic.Type.UNTYPED) return "minecraft.custom:minecraft." + statistic.getKey().getKey();
+         return org.bukkit.craftbukkit.CraftStatistic.getNMSStatistic(statistic).getName();
      }
 +
 +    @Override
@@ -4030,13 +4031,12 @@ index 83cef5ec27c31f133a23cd27349f722799c786ea..376624f37c3d02aa5223b610dcf4f957
 +    public ItemStack newItem(Material material, int count) {
 +        return CraftItemStack.asCraftCopy(new ItemStack(material, count));
 +    }
-+
      // Paper end
  
      /**
 diff --git a/src/test/java/io/papermc/paper/item/ItemPropertyKeyRegistrationTest.java b/src/test/java/io/papermc/paper/item/ItemPropertyKeyRegistrationTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b8a5835025f2310ead682b3ba27d3c0184cc7f52
+index 0000000000000000000000000000000000000000..71b18a4587d10d5ab24057db1e2eb664e780c667
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemPropertyKeyRegistrationTest.java
 @@ -0,0 +1,32 @@
@@ -4045,7 +4045,7 @@ index 0000000000000000000000000000000000000000..b8a5835025f2310ead682b3ba27d3c01
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
 +import io.papermc.paper.item.property.ItemPropertyRegistration;
 +import io.papermc.paper.property.PropertyKey;
-+import org.junit.Test;
++import org.junit.jupiter.api.Test;
 +
 +import java.lang.reflect.Field;
 +import java.util.ArrayList;
@@ -4074,7 +4074,7 @@ index 0000000000000000000000000000000000000000..b8a5835025f2310ead682b3ba27d3c01
 +}
 diff --git a/src/test/java/io/papermc/paper/item/MetaComparisonTest.java b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05e070d56f
+index 0000000000000000000000000000000000000000..ccd59abd3ead84298734059c7a9c3a7144a23dfb
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 @@ -0,0 +1,283 @@
@@ -4102,8 +4102,8 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +import org.bukkit.potion.PotionEffectType;
 +import org.bukkit.support.AbstractTestingBase;
 +import org.bukkit.util.Consumer;
-+import org.junit.Assert;
-+import org.junit.Test;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
 +
 +import java.util.UUID;
 +
@@ -4119,10 +4119,10 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +        meta.setCustomModelData(1);
 +
 +        ItemMeta converted = FACTORY.asMetaFor(meta, Material.GOLD_INGOT);
-+        Assert.assertEquals(converted.getCustomModelData(), meta.getCustomModelData());
++        Assertions.assertEquals(converted.getCustomModelData(), meta.getCustomModelData());
 +
 +        ItemMeta convertedAdvanced = FACTORY.asMetaFor(meta, Material.PLAYER_HEAD);
-+        Assert.assertEquals(convertedAdvanced.getCustomModelData(), meta.getCustomModelData());
++        Assertions.assertEquals(convertedAdvanced.getCustomModelData(), meta.getCustomModelData());
 +    }
 +
 +    @Test
@@ -4134,10 +4134,10 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +        meta.setPlayerProfile(profile);
 +
 +        SkullMeta converted = (SkullMeta) FACTORY.asMetaFor(meta, Material.PLAYER_HEAD);
-+        Assert.assertEquals(converted.getPlayerProfile(), meta.getPlayerProfile());
++        Assertions.assertEquals(converted.getPlayerProfile(), meta.getPlayerProfile());
 +
 +        SkullMeta downgraded = (SkullMeta) FACTORY.asMetaFor(FACTORY.asMetaFor(meta, Material.STONE), Material.PLAYER_HEAD);
-+        Assert.assertNull(downgraded.getPlayerProfile());
++        Assertions.assertNull(downgraded.getPlayerProfile());
 +    }
 +
 +    @Test
@@ -4149,10 +4149,10 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +        meta.setColor(color);
 +
 +        PotionMeta converted = (PotionMeta) FACTORY.asMetaFor(meta, Material.POTION);
-+        Assert.assertEquals(converted.getColor(), color);
++        Assertions.assertEquals(converted.getColor(), color);
 +
 +        PotionMeta downgraded = (PotionMeta) FACTORY.asMetaFor(FACTORY.asMetaFor(meta, Material.STONE), Material.POTION);
-+        Assert.assertNull(downgraded.getColor());
++        Assertions.assertNull(downgraded.getColor());
 +    }
 +
 +
@@ -4160,8 +4160,8 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +    public void testNullMeta() {
 +        ItemStack itemStack = new ItemStack(Material.AIR);
 +
-+        Assert.assertFalse(itemStack.hasItemMeta());
-+        Assert.assertNull(itemStack.getItemMeta());
++        Assertions.assertFalse(itemStack.hasItemMeta());
++        Assertions.assertNull(itemStack.getItemMeta());
 +    }
 +
 +    @Test
@@ -4171,7 +4171,7 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +
 +        testSetAndGet(nmsItemStack,
 +            (meta) -> ((PotionMeta) meta).addCustomEffect(potionEffect, true),
-+            (meta) -> Assert.assertEquals(potionEffect, ((PotionMeta) meta).getCustomEffects().get(0))
++            (meta) -> Assertions.assertEquals(potionEffect, ((PotionMeta) meta).getCustomEffects().get(0))
 +        );
 +    }
 +
@@ -4180,8 +4180,8 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +        ItemStack stack = new ItemStack(Material.STICK, 1);
 +
 +        testSetAndGet(stack,
-+            (meta) -> Assert.assertTrue(meta.addEnchant(Enchantment.DAMAGE_ALL, 1, true)),
-+            (meta) -> Assert.assertEquals(1, meta.getEnchantLevel(Enchantment.DAMAGE_ALL))
++            (meta) -> Assertions.assertTrue(meta.addEnchant(Enchantment.DAMAGE_ALL, 1, true)),
++            (meta) -> Assertions.assertEquals(1, meta.getEnchantLevel(Enchantment.DAMAGE_ALL))
 +        );
 +    }
 +
@@ -4194,16 +4194,16 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +        testSetAndGet(stack,
 +            (meta) -> ((SkullMeta) meta).setPlayerProfile(profile),
 +            (meta) -> {
-+                Assert.assertTrue(((SkullMeta) meta).hasOwner());
-+                Assert.assertEquals(profile, ((SkullMeta) meta).getPlayerProfile());
++                Assertions.assertTrue(((SkullMeta) meta).hasOwner());
++                Assertions.assertEquals(profile, ((SkullMeta) meta).getPlayerProfile());
 +            }
 +        );
 +
 +        testSetAndGet(stack,
 +            (meta) -> ((SkullMeta) meta).setOwner("Owen1212055"),
 +            (meta) -> {
-+                Assert.assertTrue(((SkullMeta) meta).hasOwner());
-+                Assert.assertEquals("Owen1212055", ((SkullMeta) meta).getOwner());
++                Assertions.assertTrue(((SkullMeta) meta).hasOwner());
++                Assertions.assertEquals("Owen1212055", ((SkullMeta) meta).getOwner());
 +            }
 +        );
 +    }
@@ -4215,21 +4215,21 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +        // Legacy string
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).setAuthor("Owen1212055"),
-+            (meta) -> Assert.assertEquals("Owen1212055", ((BookMeta) meta).getAuthor())
++            (meta) -> Assertions.assertEquals("Owen1212055", ((BookMeta) meta).getAuthor())
 +        );
 +
 +        // Component Colored
 +        Component coloredName = Component.text("Owen1212055", NamedTextColor.DARK_GRAY);
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).author(coloredName),
-+            (meta) -> Assert.assertEquals(coloredName, ((BookMeta) meta).author())
++            (meta) -> Assertions.assertEquals(coloredName, ((BookMeta) meta).author())
 +        );
 +
 +        // Simple text
 +        Component name = Component.text("Owen1212055");
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).author(name),
-+            (meta) -> Assert.assertEquals(name, ((BookMeta) meta).author())
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).author())
 +        );
 +    }
 +
@@ -4240,21 +4240,21 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +        // Legacy string
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).setTitle("Owen1212055"),
-+            (meta) -> Assert.assertEquals("Owen1212055", ((BookMeta) meta).getTitle())
++            (meta) -> Assertions.assertEquals("Owen1212055", ((BookMeta) meta).getTitle())
 +        );
 +
 +        // Component Colored
 +        Component coloredName = Component.text("Owen1212055", NamedTextColor.DARK_GRAY);
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).title(coloredName),
-+            (meta) -> Assert.assertEquals(coloredName, ((BookMeta) meta).title())
++            (meta) -> Assertions.assertEquals(coloredName, ((BookMeta) meta).title())
 +        );
 +
 +        // Simple text
 +        Component name = Component.text("Owen1212055");
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).title(name),
-+            (meta) -> Assert.assertEquals(name, ((BookMeta) meta).title())
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).title())
 +        );
 +    }
 +
@@ -4269,28 +4269,28 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +        // Legacy string
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPage("Owen1212055"),
-+            (meta) -> Assert.assertEquals("Owen1212055", ((BookMeta) meta).getPage(1))
++            (meta) -> Assertions.assertEquals("Owen1212055", ((BookMeta) meta).getPage(1))
 +        );
 +
 +        // Legacy string colored
 +        String translatedLegacy = ChatColor.translateAlternateColorCodes('&', "&7Owen1212055");
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPage(translatedLegacy),
-+            (meta) -> Assert.assertEquals(translatedLegacy, ((BookMeta) meta).getPage(1))
++            (meta) -> Assertions.assertEquals(translatedLegacy, ((BookMeta) meta).getPage(1))
 +        );
 +
 +        // Component Colored
 +        Component coloredName = Component.text("Owen1212055", NamedTextColor.DARK_GRAY);
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPages(coloredName),
-+            (meta) -> Assert.assertEquals(coloredName, ((BookMeta) meta).page(1))
++            (meta) -> Assertions.assertEquals(coloredName, ((BookMeta) meta).page(1))
 +        );
 +
 +        // Simple text
 +        Component name = Component.text("Owen1212055");
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPages(name),
-+            (meta) -> Assert.assertEquals(name, ((BookMeta) meta).page(1))
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).page(1))
 +        );
 +
 +        // Simple text + hover... should NOT be saved
@@ -4299,7 +4299,7 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +            .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Hover")));
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPages(nameWithHover),
-+            (meta) -> Assert.assertEquals(name, ((BookMeta) meta).page(1))
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).page(1))
 +        );
 +    }
 +
@@ -4313,28 +4313,28 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +        // Legacy string
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPage("Owen1212055"),
-+            (meta) -> Assert.assertEquals("Owen1212055", ((BookMeta) meta).getPage(1))
++            (meta) -> Assertions.assertEquals("Owen1212055", ((BookMeta) meta).getPage(1))
 +        );
 +
 +        // Legacy string colored
 +        String translatedLegacy = ChatColor.translateAlternateColorCodes('&', "&7Owen1212055");
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPage(translatedLegacy),
-+            (meta) -> Assert.assertEquals(translatedLegacy, ((BookMeta) meta).getPage(1))
++            (meta) -> Assertions.assertEquals(translatedLegacy, ((BookMeta) meta).getPage(1))
 +        );
 +
 +        // Component Colored
 +        Component coloredName = Component.text("Owen1212055", NamedTextColor.DARK_GRAY);
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPages(coloredName),
-+            (meta) -> Assert.assertEquals(coloredName, ((BookMeta) meta).page(1))
++            (meta) -> Assertions.assertEquals(coloredName, ((BookMeta) meta).page(1))
 +        );
 +
 +        // Simple text
 +        Component name = Component.text("Owen1212055");
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPages(name),
-+            (meta) -> Assert.assertEquals(name, ((BookMeta) meta).page(1))
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).page(1))
 +        );
 +
 +        // Simple text + hover... should be saved
@@ -4342,7 +4342,7 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +            .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Hover")));
 +        testSetAndGet(stack,
 +            (meta) -> ((BookMeta) meta).addPages(nameWithHover),
-+            (meta) -> Assert.assertEquals(nameWithHover, ((BookMeta) meta).page(1))
++            (meta) -> Assertions.assertEquals(nameWithHover, ((BookMeta) meta).page(1))
 +        );
 +    }
 +
@@ -4363,7 +4363,7 @@ index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05
 +}
 diff --git a/src/test/java/io/papermc/paper/item/MetaSerializationTest.java b/src/test/java/io/papermc/paper/item/MetaSerializationTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5a5acb6979b269e0d4560a6fffa216aafa52ac83
+index 0000000000000000000000000000000000000000..8f52e30e8bb2a5c5c6edc531216cb9f2314d62cf
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/MetaSerializationTest.java
 @@ -0,0 +1,23 @@
@@ -4373,8 +4373,8 @@ index 0000000000000000000000000000000000000000..5a5acb6979b269e0d4560a6fffa216aa
 +import org.bukkit.Material;
 +import org.bukkit.inventory.ItemStack;
 +import org.bukkit.inventory.meta.LeatherArmorMeta;
-+import org.junit.Assert;
-+import org.junit.Test;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
 +
 +public class MetaSerializationTest {
 +
@@ -4387,12 +4387,12 @@ index 0000000000000000000000000000000000000000..5a5acb6979b269e0d4560a6fffa216aa
 +
 +        ItemStack deserialized = ItemStack.deserialize(itemStack.serialize());
 +        LeatherArmorMeta armorMeta = (LeatherArmorMeta) deserialized.getItemMeta();
-+        Assert.assertEquals(armorMeta.getColor(), Color.BLUE);
++        Assertions.assertEquals(armorMeta.getColor(), Color.BLUE);
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/item/MetaTestIntegrity.java b/src/test/java/io/papermc/paper/item/MetaTestIntegrity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b3543709b77f4399070d3111ce228cf80c007a35
+index 0000000000000000000000000000000000000000..7fdd5b40b729dabb6fad3e20856fa4abfc9a2b8c
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/MetaTestIntegrity.java
 @@ -0,0 +1,32 @@
@@ -4405,8 +4405,8 @@ index 0000000000000000000000000000000000000000..b3543709b77f4399070d3111ce228cf8
 +import org.bukkit.inventory.meta.Damageable;
 +import org.bukkit.inventory.meta.ItemMeta;
 +import org.bukkit.support.AbstractTestingBase;
-+import org.junit.Assert;
-+import org.junit.Test;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
 +
 +import java.util.List;
 +
@@ -4425,25 +4425,26 @@ index 0000000000000000000000000000000000000000..b3543709b77f4399070d3111ce228cf8
 +
 +        NbtPropertyHolder propertyHolder =  ((PaperMeta) meta).getPropertyHolder();
 +
-+        Assert.assertTrue(propertyHolder.isEmpty());
++        Assertions.assertTrue(propertyHolder.isEmpty());
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java b/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..88f8ea886872d40b86fc4127cf831e06181c10c1
+index 0000000000000000000000000000000000000000..d865ffd7702808ab60aac4f80583a433a9321bdb
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,40 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
 +import io.papermc.paper.property.MutablePropertyView;
++import org.apache.logging.log4j.core.util.Assert;
 +import org.bukkit.Material;
 +import org.bukkit.inventory.ItemFlag;
 +import org.bukkit.inventory.ItemStack;
 +import org.bukkit.support.AbstractTestingBase;
-+import org.junit.Assert;
-+import org.junit.Test;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
 +
 +import java.util.Collections;
 +import java.util.Set;
@@ -4459,22 +4460,22 @@ index 0000000000000000000000000000000000000000..88f8ea886872d40b86fc4127cf831e06
 +        Set<ItemFlag> flags = propertyView.getOrCreate(ItemProperties.HIDE_FLAGS);
 +        flags.add(ItemFlag.HIDE_DYE);
 +
-+        Assert.assertTrue(propertyView.getOrCreate(ItemProperties.HIDE_FLAGS).contains(ItemFlag.HIDE_DYE));
++        Assertions.assertTrue(propertyView.getOrCreate(ItemProperties.HIDE_FLAGS).contains(ItemFlag.HIDE_DYE));
 +        flags.remove(ItemFlag.HIDE_DYE);
-+        Assert.assertFalse(propertyView.getOrCreate(ItemProperties.HIDE_FLAGS).contains(ItemFlag.HIDE_DYE));
-+        Assert.assertTrue(flags.isEmpty());
++        Assertions.assertFalse(propertyView.getOrCreate(ItemProperties.HIDE_FLAGS).contains(ItemFlag.HIDE_DYE));
++        Assertions.assertTrue(flags.isEmpty());
 +
 +        Collections.addAll(flags, ItemFlag.values());
-+        Assert.assertEquals(flags.size(), ItemFlag.values().length);
++        Assertions.assertEquals(flags.size(), ItemFlag.values().length);
 +        for (ItemFlag flag : ItemFlag.values()) {
-+            Assert.assertTrue(flags.contains(flag));
++            Assertions.assertTrue(flags.contains(flag));
 +        }
 +        flags.remove(ItemFlag.HIDE_ARMOR_TRIM);
-+        Assert.assertFalse(flags.contains(ItemFlag.HIDE_ARMOR_TRIM));
++        Assertions.assertFalse(flags.contains(ItemFlag.HIDE_ARMOR_TRIM));
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
-index f482cb4dc5394de3cf88b4c4e13c18f9c61caf45..0f8cb1a20c1772c3af6382a0716d6ef7bc753170 100644
+index 88894731a6a21d74ce78d15c16e34d8a363f39cf..add4d72f0f58db60227f1d88cd394dbcf9f92698 100644
 --- a/src/test/java/io/papermc/paper/testing/DummyServer.java
 +++ b/src/test/java/io/papermc/paper/testing/DummyServer.java
 @@ -1,6 +1,9 @@
@@ -4495,7 +4496,7 @@ index f482cb4dc5394de3cf88b4c4e13c18f9c61caf45..0f8cb1a20c1772c3af6382a0716d6ef7
  import static org.mockito.Mockito.any;
  import static org.mockito.Mockito.mock;
  import static org.mockito.Mockito.when;
-@@ -61,6 +65,25 @@ public final class DummyServer {
+@@ -60,6 +64,25 @@ public final class DummyServer {
          final PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(dummyServer, new SimpleCommandMap(dummyServer), null);
          when(dummyServer.getPluginManager()).thenReturn(pluginManager);
  
@@ -4522,7 +4523,7 @@ index f482cb4dc5394de3cf88b4c4e13c18f9c61caf45..0f8cb1a20c1772c3af6382a0716d6ef7
  
      }
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
-index 13025119b32388f3e50503a355ef7d03837fd232..e92ab80ef66944b46ff6a51ae930eaba69a9a85b 100644
+index db18d8de0a7c86f54a2411de25cf2a60faa1dea8..c3e05c34a0f8c6249b044dc196c078755ba6d2dd 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
 @@ -90,28 +90,29 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
@@ -4592,17 +4593,17 @@ index 13025119b32388f3e50503a355ef7d03837fd232..e92ab80ef66944b46ff6a51ae930eaba
  
          itemMeta.getCustomTagContainer().setCustomTag(this.requestKey("custom-long"), ItemTagType.LONG, 4L); //Add random primitive values
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/FactoryItemMaterialTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/FactoryItemMaterialTest.java
-index e706d547c03f3e07d56fdc7327fadd98f98ccc20..9c593a512d0ba416824c202b270024c18e8c5e0d 100644
+index 35f4d51dd84f3c3e5121598353dceda97a753bfe..d5378918304db37ae3c342b840f16f66fdcb06ab 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/FactoryItemMaterialTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/FactoryItemMaterialTest.java
-@@ -67,22 +67,20 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
- 
-     @Test
-     public void generalCase() {
+@@ -65,23 +65,21 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+     @ParameterizedTest
+     @MethodSource("data")
+     public void generalCase(Material material) {
 -        CraftMetaItem meta = (CraftMetaItem) FactoryItemMaterialTest.factory.getItemMeta(material);
 +        ItemMeta meta = FactoryItemMaterialTest.factory.getItemMeta(material); // Paper
          if (meta == null) {
-             assertThat(this.material, is(Material.AIR));
+             assertThat(material, is(Material.AIR));
          } else {
              assertTrue(FactoryItemMaterialTest.factory.isApplicable(meta, material));
 -            assertTrue(meta.applicableTo(material));
@@ -4613,32 +4614,34 @@ index e706d547c03f3e07d56fdc7327fadd98f98ccc20..9c593a512d0ba416824c202b270024c1
          }
      }
  
-     @Test
-     public void asMetaFor() {
+     @ParameterizedTest
+     @MethodSource("data")
+     public void asMetaFor(Material material) {
 -        final CraftMetaItem baseMeta = (CraftMetaItem) FactoryItemMaterialTest.factory.getItemMeta(material);
-+        final ItemMeta baseMeta = FactoryItemMaterialTest.factory.getItemMeta(material);
++        final ItemMeta baseMeta = FactoryItemMaterialTest.factory.getItemMeta(material); // Paper
          if (baseMeta == null) {
-             assertThat(this.material, is(Material.AIR));
+             assertThat(material, is(Material.AIR));
              return;
-@@ -91,7 +89,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+@@ -90,7 +88,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
          for (Material other : FactoryItemMaterialTest.materials) {
              final ItemStack bukkitStack = new ItemStack(other);
              final CraftItemStack craftStack = CraftItemStack.asCraftCopy(bukkitStack);
 -            final CraftMetaItem otherMeta = (CraftMetaItem) FactoryItemMaterialTest.factory.asMetaFor(baseMeta, other);
 +            final ItemMeta otherMeta = FactoryItemMaterialTest.factory.asMetaFor(baseMeta, other);
  
-             final String testName = FactoryItemMaterialTest.name(this.material, other);
+             final String testName = FactoryItemMaterialTest.name(material, other);
  
-@@ -103,7 +101,6 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
-             assertTrue(testName, FactoryItemMaterialTest.factory.isApplicable(otherMeta, craftStack));
-             assertTrue(testName, FactoryItemMaterialTest.factory.isApplicable(otherMeta, bukkitStack));
-             assertTrue(testName, FactoryItemMaterialTest.factory.isApplicable(otherMeta, other));
--            assertTrue(testName, otherMeta.applicableTo(other));
+@@ -102,7 +100,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+             assertTrue(FactoryItemMaterialTest.factory.isApplicable(otherMeta, craftStack), testName);
+             assertTrue(FactoryItemMaterialTest.factory.isApplicable(otherMeta, bukkitStack), testName);
+             assertTrue(FactoryItemMaterialTest.factory.isApplicable(otherMeta, other), testName);
+-            assertTrue(otherMeta.applicableTo(other), testName);
++            // Paper - remove isApplicable check
          }
      }
  
-@@ -112,8 +109,8 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
-         if (this.material == Material.AIR) {
+@@ -112,8 +110,8 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+         if (material == Material.AIR) {
              return;
          }
 -        final CraftMetaItem baseMeta = (CraftMetaItem) FactoryItemMaterialTest.factory.getItemMeta(material);
@@ -4646,31 +4649,30 @@ index e706d547c03f3e07d56fdc7327fadd98f98ccc20..9c593a512d0ba416824c202b270024c1
 +        final ItemMeta baseMeta = FactoryItemMaterialTest.factory.getItemMeta(material); // Paper
 +        final ItemMeta baseMetaClone = baseMeta.clone(); // Paper
  
-         final ItemStack baseMetaStack = new ItemStack(this.material);
+         final ItemStack baseMetaStack = new ItemStack(material);
          baseMetaStack.setItemMeta(baseMeta);
-@@ -134,7 +131,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+@@ -134,7 +132,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
          for (Material other : FactoryItemMaterialTest.materials) {
-             final String testName = FactoryItemMaterialTest.name(this.material, other);
+             final String testName = FactoryItemMaterialTest.name(material, other);
  
 -            final CraftMetaItem otherMeta = (CraftMetaItem) FactoryItemMaterialTest.factory.asMetaFor(baseMetaClone, other);
 +            final ItemMeta otherMeta = FactoryItemMaterialTest.factory.asMetaFor(baseMetaClone, other); // Paper
  
              if (otherMeta == null) {
-                 assertThat(testName, other, is(Material.AIR));
+                 assertThat(other, is(Material.AIR), testName);
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaImplementationOverrideTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaImplementationOverrideTest.java
-index 2cab00db9881b69714f1c250348b622c8092ab8f..ed68f6d4f415a0b26f56c8e29dd0cba5b0c60b69 100644
+index 0ee9e6c371c5b68f174369dd36956c8b0d0ad95b..dd1a97a8b5a932b9ca56520d49fdaaf2ad1da4c6 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaImplementationOverrideTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaImplementationOverrideTest.java
-@@ -17,15 +17,15 @@ import org.junit.runners.Parameterized.Parameters;
+@@ -15,14 +15,14 @@ import org.junit.jupiter.params.provider.Arguments;
+ import org.junit.jupiter.params.provider.MethodSource;
  
- @RunWith(Parameterized.class)
  public class ItemMetaImplementationOverrideTest {
 -    static final Class<CraftMetaItem> parent = CraftMetaItem.class;
 +    static final Class<io.papermc.paper.item.meta.PaperMeta> parent = io.papermc.paper.item.meta.PaperMeta.class; // Paper
  
-     @Parameters(name = "[{index}]:{1}")
-     public static List<Object[]> data() {
-         final List<Object[]> testData = new ArrayList<Object[]>();
+     public static Stream<Arguments> data() {
+         final List<Arguments> testData = new ArrayList<>();
 -        List<Class<? extends CraftMetaItem>> classes = new ArrayList<Class<? extends CraftMetaItem>>();
 +        List<Class<? extends io.papermc.paper.item.meta.PaperMeta>> classes = new ArrayList<Class<? extends io.papermc.paper.item.meta.PaperMeta>>(); // Paper
  
@@ -4681,10 +4683,10 @@ index 2cab00db9881b69714f1c250348b622c8092ab8f..ed68f6d4f415a0b26f56c8e29dd0cba5
                  classes.add(clazz);
              }
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
-index 6930e7fdbe1f42020afb9c089c77da60408dacd7..d636d304502e844e55fffd7decdf654b8740db98 100644
+index ceca8b6a4a11753bef7ad341c34ccda60114c6b5..2c4ca6b34707133a01aad08315bc1500f231f5f6 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
-@@ -225,11 +225,11 @@ public class ItemMetaTest extends AbstractTestingBase {
+@@ -226,12 +226,11 @@ public class ItemMetaTest extends AbstractTestingBase {
          for (Item item : BuiltInRegistries.ITEM) {
              if (item instanceof net.minecraft.world.item.SpawnEggItem) {
                  Material material = CraftMagicNumbers.getMaterial(item);
@@ -4692,14 +4694,15 @@ index 6930e7fdbe1f42020afb9c089c77da60408dacd7..d636d304502e844e55fffd7decdf654b
 +                // Paper - remove API item builder
                  ItemMeta baseMetaItem = CraftItemStack.getItemMeta(item.getDefaultInstance());
  
--                assertTrue(material + " is not handled in CraftItemFactory", baseMeta instanceof CraftMetaSpawnEgg);
--                assertTrue(material + " is not applicable to CraftMetaSpawnEgg", baseMeta.applicableTo(material));
+-                assertTrue(baseMeta instanceof CraftMetaSpawnEgg, material + " is not handled in CraftItemFactory");
+-                assertTrue(baseMeta.applicableTo(material), material + " is not applicable to CraftMetaSpawnEgg");
+-                assertTrue(baseMetaItem instanceof SpawnEggMeta, material + " is not handled in CraftItemStack");
 +                // Paper - remove craft meta spawn egg check
 +                // Paper - remove isApplicable check
-                 assertTrue(material + " is not handled in CraftItemStack", baseMetaItem instanceof SpawnEggMeta);
              }
          }
-@@ -241,7 +241,7 @@ public class ItemMetaTest extends AbstractTestingBase {
+     }
+@@ -242,7 +241,7 @@ public class ItemMetaTest extends AbstractTestingBase {
          CraftMetaTropicalFishBucket.class,
          CraftMetaAxolotlBucket.class
      );
@@ -4708,7 +4711,7 @@ index 6930e7fdbe1f42020afb9c089c77da60408dacd7..d636d304502e844e55fffd7decdf654b
      public void testEntityTagMeta() {
          for (final Item item : BuiltInRegistries.ITEM) {
              if (item instanceof net.minecraft.world.item.HangingEntityItem || item instanceof net.minecraft.world.item.MobBucketItem) {
-@@ -256,7 +256,7 @@ public class ItemMetaTest extends AbstractTestingBase {
+@@ -257,7 +256,7 @@ public class ItemMetaTest extends AbstractTestingBase {
      }
      // Paper end
  
@@ -4718,10 +4721,10 @@ index 6930e7fdbe1f42020afb9c089c77da60408dacd7..d636d304502e844e55fffd7decdf654b
          final List<StackProvider> providers = Arrays.asList(
              new StackProvider(Material.WRITABLE_BOOK) {
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
-index 9e84a0bddd7dc168d62be05675e73bfd49000125..01d7ba06f2c5671941c10e2dcac6437091058b7b 100644
+index 5b42b4c61c1f44051b6ec32913c42558038697ff..0d6f5adf9b91f199cf12f7e6b5912d5a465a376f 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
-@@ -89,28 +89,29 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+@@ -91,28 +91,29 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
      /*
          Removing a tag
       */
@@ -4764,7 +4767,7 @@ index 9e84a0bddd7dc168d62be05675e73bfd49000125..01d7ba06f2c5671941c10e2dcac64370
          stack.setItemMeta(meta);
  
          YamlConfiguration configuration = new YamlConfiguration();
-@@ -126,7 +127,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+@@ -128,7 +129,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
      @Test
      public void testCorrectType() {
          ItemStack stack = new ItemStack(Material.DIAMOND);
@@ -4773,7 +4776,7 @@ index 9e84a0bddd7dc168d62be05675e73bfd49000125..01d7ba06f2c5671941c10e2dcac64370
  
          meta.getPersistentDataContainer().set(this.requestKey("int"), PersistentDataType.STRING, "1");
          meta.getPersistentDataContainer().set(this.requestKey("double"), PersistentDataType.STRING, "1.33");
-@@ -146,8 +147,10 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+@@ -148,8 +149,10 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
          assertEquals(newStack.getItemMeta().getPersistentDataContainer().get(this.requestKey("double"), PersistentDataType.STRING), "1.33");
      }
  
