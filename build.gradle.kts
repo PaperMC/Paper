@@ -5,7 +5,7 @@ plugins {
     java
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
-    id("io.papermc.paperweight.core") version "1.5.6"
+    id("io.papermc.paperweight.core") version "1.5.7"
 }
 
 allprojects {
@@ -131,15 +131,15 @@ allprojects {
     }
 }
 
-tasks.collectAtsFromPatches {
-    // Uncomment while updating for a new Minecraft version
-    // extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
-}
-
 // Uncomment while updating for a new Minecraft version
+/*
+tasks.collectAtsFromPatches {
+    extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
+}
 tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches> {
     filterPatches.set(false)
 }
+ */
 
 tasks.register("printMinecraftVersion") {
     doLast {
