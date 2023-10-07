@@ -3725,6 +3725,40 @@ index 0000000000000000000000000000000000000000..7810eb42379ca0baeb42f617c06a4e20
 +
 +public record EnchantmentPairImpl(@NotNull Enchantment enchantment, int level) implements io.papermc.paper.inventory.item.properties.EnchantmentPair {
 +}
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 4697df75fdee2023c41260bed211e3e3d90d2b9b..1f58d239772087163b2a5c88bd6956904c62d553 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -160,17 +160,18 @@ public final class ItemStack {
+     // Paper start
+     private static final java.util.Comparator<? super CompoundTag> enchantSorter = java.util.Comparator.comparing(o -> o.getString("id"));
+     private void processEnchantOrder(@Nullable CompoundTag tag) {
+-        if (tag == null || !tag.contains("Enchantments", 9)) {
+-            return;
+-        }
+-        ListTag list = tag.getList("Enchantments", 10);
+-        if (list.size() < 2) {
+-            return;
+-        }
+-        try {
+-            //noinspection unchecked
+-            list.sort((java.util.Comparator<? super net.minecraft.nbt.Tag>) enchantSorter); // Paper
+-        } catch (Exception ignored) {}
++        // TODO: DROP
++        // if (tag == null || !tag.contains("Enchantments", 9)) {
++        //     return;
++        // }
++        // ListTag list = tag.getList("Enchantments", 10);
++        // if (list.size() < 2) {
++        //     return;
++        // }
++        // try {
++        //     //noinspection unchecked
++        //     list.sort((java.util.Comparator<? super net.minecraft.nbt.Tag>) enchantSorter); // Paper
++        // } catch (Exception ignored) {}
+     }
+ 
+     private void processText() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
 index 716021520c228b5bbced525b751f5d4126d882eb..9176555d0fbc4c3ed3bd37bb5514048dc886a606 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
@@ -3753,7 +3787,7 @@ index 193ad79f57255b1ea4cf7930071b4f4988dc2b04..a646225c14ae88a8c925d4df55ba96ff
                  player.getBukkitEntity().updateInventory(); // SPIGOT-7484
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 57f4cf40359fe9bb427eb0134660d00839a63c86..6eaa02d4f3ab0061a531dc5784c363b306295586 100644
+index 57f4cf40359fe9bb427eb0134660d00839a63c86..3f1a884ed6d5dea26d56b578ef2f47d4931bc756 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -46,19 +46,35 @@ public final class CraftItemFactory implements ItemFactory {
@@ -3824,6 +3858,15 @@ index 57f4cf40359fe9bb427eb0134660d00839a63c86..6eaa02d4f3ab0061a531dc5784c363b3
          /*
           * This couldn't be done inside of the objects themselves, else force recursion.
           * This is a fairly clean way of implementing it, by dividing the methods into purposes and letting each method perform its own function.
+@@ -394,7 +409,7 @@ public final class CraftItemFactory implements ItemFactory {
+          *
+          * Doing it this way fills all conditions of the .equals() method.
+          */
+-        return meta1.equalsCommon(meta2) && meta1.notUncommon(meta2) && meta2.notUncommon(meta1);
++        return meta1.getPropertyHolder().equals(meta2.getPropertyHolder()); // Paper
+     }
+ 
+     public static CraftItemFactory instance() {
 @@ -410,8 +425,18 @@ public final class CraftItemFactory implements ItemFactory {
      @Override
      public ItemMeta asMetaFor(ItemMeta meta, Material material) {
