@@ -478,4 +478,4 @@ everything like usual.
 > in Windows like described here:
 > <https://docs.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>
 
-[MappingViewer]: https://nms.screamingsandals.org/
+[MappingViewer]: https://mappings.cephx.dev/
