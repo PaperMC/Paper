@@ -4,63 +4,60 @@ Date: Sat, 11 Apr 2020 13:10:58 +0200
 Subject: [PATCH] Brand support
 
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 4a4002b666c70c7065cad0743377cd13e443aa37..54d0b44eba475f17a908e09d9b56a94a7f050672 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -271,6 +271,7 @@ public class ServerPlayer extends Player {
+     public boolean isRealPlayer; // Paper
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
+     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
++    public @Nullable String clientBrandName = null; // Paper - Brand name
+ 
+     // Paper start - replace player chunk loader
+     private final java.util.concurrent.atomic.AtomicReference<io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances> viewDistances = new java.util.concurrent.atomic.AtomicReference<>(new io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances(-1, -1, -1));
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index d1808bf9dc19fad84da5eb3b4c3d549bc624b00a..f4f410f99b475b9c2f7992a3917e3b5c2a2800ba 100644
+index d1808bf9dc19fad84da5eb3b4c3d549bc624b00a..e8133a1ec975b7f63926acc7d6ab9291a2107084 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -54,6 +54,8 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -54,6 +54,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      private int latency;
      private volatile boolean suspendFlushingOnServerThread = false;
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
-+    private @Nullable String clientBrandName = null; // Paper - Brand name
 +    protected static final ResourceLocation MINECRAFT_BRAND = new ResourceLocation("brand"); // Paper - Brand support
  
      public ServerCommonPacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, CommonListenerCookie commonlistenercookie, ServerPlayer player) { // CraftBukkit
          this.server = minecraftserver;
-@@ -109,6 +111,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -109,6 +110,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
 +        // Paper start - handle brand payload packet
 +        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload brandPayload) {
-+            this.clientBrandName = brandPayload.brand();
++            this.player.clientBrandName = brandPayload.brand();
 +        }
 +        // Paper end - handle brand payload
          if (!(packet.payload() instanceof ServerboundCustomPayloadPacket.UnknownPayload)) {
              return;
          }
-@@ -140,6 +147,15 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -140,6 +146,15 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
              try {
                  byte[] data = new byte[payload.readableBytes()];
                  payload.readBytes(data);
 +                // Paper start - Brand support - Retain this incase upstream decides to 'break' the new mechanism in favour of backwards compat...
 +                if (identifier.equals(MINECRAFT_BRAND)) {
 +                    try {
-+                        this.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.copiedBuffer(data)).readUtf(256);
++                        this.player.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.copiedBuffer(data)).readUtf(256);
 +                    } catch (StringIndexOutOfBoundsException ex) {
-+                        this.clientBrandName = "illegal";
++                        this.player.clientBrandName = "illegal";
 +                    }
 +                }
 +                // Paper end
                  this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
-@@ -149,6 +165,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
- 
-     }
- 
-+    // Paper start - brand support
-+    @Nullable
-+    public String getClientBrandName() {
-+        return this.clientBrandName;
-+    }
-+    // Paper end
-+
-     public final boolean isDisconnected() {
-         return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper
-     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index f4a15de92c3af88624f337c36fadbea67d339064..28c80b15f83947cf44f71da9f9d971f2d6e5dd5b 100644
+index f4a15de92c3af88624f337c36fadbea67d339064..0656ea43e1d508d8f6af308475942c28d77655a4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -3007,6 +3007,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -70,7 +67,7 @@ index f4a15de92c3af88624f337c36fadbea67d339064..28c80b15f83947cf44f71da9f9d971f2
 +    // Paper start - brand support
 +    @Override
 +    public String getClientBrandName() {
-+        return getHandle().connection != null ? getHandle().connection.getClientBrandName() : null;
++        return getHandle().clientBrandName;
 +    }
 +    // Paper end
 +
