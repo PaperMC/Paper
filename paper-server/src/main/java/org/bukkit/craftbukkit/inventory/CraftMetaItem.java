@@ -481,7 +481,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             setCustomModelData(customModelData);
         }
 
-        Map blockData = SerializableMeta.getObject(Map.class, map, BLOCK_DATA.BUKKIT, true);
+        Object blockData = SerializableMeta.getObject(Object.class, map, BLOCK_DATA.BUKKIT, true);
         if (blockData != null) {
             this.blockData = (NBTTagCompound) CraftNBTTagConfigSerializer.deserialize(blockData);
         }
