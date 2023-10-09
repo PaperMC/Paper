@@ -3575,10 +3575,10 @@ index 0000000000000000000000000000000000000000..1b090f1e79b996e52097afc49c1cec85
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c4d1dbbd39ba0cdc9176ffa6d350d2aa50380211
+index 0000000000000000000000000000000000000000..15ee41452992714108efe53b708b5a4e1da7c1ff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
-@@ -0,0 +1,894 @@
+@@ -0,0 +1,902 @@
 +package io.papermc.paper.chunk.system.entity;
 +
 +import com.destroystokyo.paper.util.maplist.EntityList;
@@ -3781,7 +3781,15 @@ index 0000000000000000000000000000000000000000..c4d1dbbd39ba0cdc9176ffa6d350d2aa
 +
 +    @Override
 +    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final AbortableIterationConsumer<U> action) {
-+        for (final Entity entity : this.entityById.values()) {
++        final Int2ReferenceOpenHashMap<Entity> entityCopy;
++
++        this.entityByLock.readLock();
++        try {
++            entityCopy = this.entityById.clone();
++        } finally {
++            this.entityByLock.tryUnlockRead();
++        }
++        for (final Entity entity : entityCopy.values()) {
 +            final Visibility visibility = EntityLookup.getEntityStatus(entity);
 +            if (!visibility.isAccessible()) {
 +                continue;
