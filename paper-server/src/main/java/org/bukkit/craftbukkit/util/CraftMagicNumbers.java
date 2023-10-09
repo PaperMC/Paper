@@ -25,6 +25,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.critereon.LootDeserializationContext;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.DynamicOpsNBT;
 import net.minecraft.nbt.MojangsonParser;
 import net.minecraft.nbt.NBTBase;
@@ -39,6 +40,7 @@ import net.minecraft.util.datafix.fixes.DataConverterTypes;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.alchemy.PotionRegistry;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.storage.SavedFile;
@@ -53,11 +55,13 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftFeatureFlag;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.CraftLegacy;
+import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
@@ -65,6 +69,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.potion.PotionType;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
@@ -372,6 +377,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public FeatureFlag getFeatureFlag(NamespacedKey namespacedKey) {
         Preconditions.checkArgument(namespacedKey != null, "NamespaceKey cannot be null");
         return CraftFeatureFlag.getFromNMS(namespacedKey);
+    }
+
+    @Override
+    public PotionType.InternalPotionData getInternalPotionData(NamespacedKey namespacedKey) {
+        PotionRegistry potionRegistry = CraftRegistry.getMinecraftRegistry(Registries.POTION)
+                .getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElseThrow();
+
+        return new CraftPotionType(namespacedKey, potionRegistry);
     }
 
     /**

@@ -3,8 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
@@ -14,13 +12,16 @@ import org.bukkit.Particle;
 import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
+import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.bukkit.projectiles.ProjectileSource;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud {
 
@@ -203,12 +204,27 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
     @Override
     public void setBasePotionData(PotionData data) {
         Preconditions.checkArgument(data != null, "PotionData cannot be null");
-        getHandle().setPotion(BuiltInRegistries.POTION.get(new MinecraftKey(CraftPotionUtil.fromBukkit(data))));
+
+        getHandle().setPotion(CraftPotionType.bukkitToMinecraft(CraftPotionUtil.fromBukkit(data)));
     }
 
     @Override
     public PotionData getBasePotionData() {
-        return CraftPotionUtil.toBukkit((BuiltInRegistries.POTION.getKey(getHandle().potion)).toString());
+        return CraftPotionUtil.toBukkit(CraftPotionType.minecraftToBukkit(getHandle().getPotion()));
+    }
+
+    @Override
+    public void setBasePotionType(@NotNull PotionType potionType) {
+        // TODO: 10/6/23 Change PotionType.UNCRAFTABLE to PotionType.EMPTY in error message
+        Preconditions.checkArgument(potionType != null, "PotionType cannot be null use PotionType.UNCRAFTABLE to represent no effect instead.");
+
+        getHandle().setPotion(CraftPotionType.bukkitToMinecraft(potionType));
+    }
+
+    @NotNull
+    @Override
+    public PotionType getBasePotionType() {
+        return CraftPotionType.minecraftToBukkit(getHandle().getPotion());
     }
 
     @Override

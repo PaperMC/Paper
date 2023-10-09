@@ -29,7 +29,7 @@ public class PotionTest extends AbstractTestingBase {
             effects.put(enumType, enumType.name());
         }
 
-        assertEquals(effects.entrySet().size(), PotionType.values().length - /* PotionTypes with no/shared Effects */ 6);
+        assertEquals(effects.entrySet().size(), PotionType.values().length - /* PotionTypes with no/shared Effects */ (6 + 22 /* There are 22 new strong / long potion types */));
     }
 
     @Test
