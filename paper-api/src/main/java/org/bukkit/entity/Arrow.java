@@ -5,6 +5,7 @@ import org.bukkit.Color;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,16 +15,35 @@ public interface Arrow extends AbstractArrow {
      * Sets the underlying potion data
      *
      * @param data PotionData to set the base potion state to
+     * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #setBasePotionType} instead.
      */
+    @Deprecated
     void setBasePotionData(@NotNull PotionData data);
 
     /**
      * Returns the potion data about the base potion
      *
      * @return a PotionData object
+     * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #getBasePotionType()} instead.
      */
     @NotNull
+    @Deprecated
     PotionData getBasePotionData();
+
+    /**
+     * Sets the underlying potion type
+     *
+     * @param type PotionType to set the base potion state to
+     */
+    void setBasePotionType(@NotNull PotionType type);
+
+    /**
+     * Returns the potion type about the base potion
+     *
+     * @return a PotionType object
+     */
+    @NotNull
+    PotionType getBasePotionType();
 
     /**
      * Gets the color of this arrow.

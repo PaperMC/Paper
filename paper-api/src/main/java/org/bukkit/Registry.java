@@ -24,6 +24,7 @@ import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.loot.LootTables;
+import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -155,6 +156,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Material
      */
     Registry<Material> MATERIAL = new SimpleRegistry<>(Material.class, (mat) -> !mat.isLegacy());
+    /**
+     * Server potions.
+     *
+     * @see PotionType
+     */
+    Registry<PotionType> POTION = new SimpleRegistry<>(PotionType.class);
     /**
      * Server statistics.
      *

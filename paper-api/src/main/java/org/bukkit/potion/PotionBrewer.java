@@ -40,7 +40,9 @@ public interface PotionBrewer {
      * @param upgraded Whether the potion is upgraded
      * @param extended Whether the potion is extended
      * @return The list of effects
+     * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link PotionType#getPotionEffects()} instead
      */
     @NotNull
+    @Deprecated
     public Collection<PotionEffect> getEffects(@NotNull PotionType type, boolean upgraded, boolean extended);
 }

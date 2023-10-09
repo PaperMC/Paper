@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -91,4 +92,12 @@ public interface UnsafeValues {
 
     @Nullable
     FeatureFlag getFeatureFlag(@NotNull NamespacedKey key);
+
+    /**
+     * Do not use, method will get removed, and the plugin won't run
+     *
+     * @param key of the potion type
+     * @return an internal potion data
+     */
+    PotionType.InternalPotionData getInternalPotionData(NamespacedKey key);
 }
