@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
@@ -54,13 +53,12 @@ import net.minecraft.world.entity.item.EntityFallingBlock;
 import net.minecraft.world.entity.item.EntityItem;
 import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.entity.projectile.EntityArrow;
-import net.minecraft.world.entity.projectile.EntityTippedArrow;
 import net.minecraft.world.entity.raid.PersistentRaid;
-import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.RayTrace;
 import net.minecraft.world.level.biome.BiomeBase;
+import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunkExtension;
@@ -91,6 +89,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.DragonBattle;
+import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
@@ -102,7 +101,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
-import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.util.CraftBiomeSearchResult;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -137,6 +136,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
+import org.bukkit.util.BiomeSearchResult;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
@@ -1881,6 +1881,30 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         return new CraftStructureSearchResult(CraftStructure.minecraftToBukkit(found.getSecond().value(), getHandle().registryAccess()), CraftLocation.toBukkit(found.getFirst(), this));
+    }
+
+    @Override
+    public BiomeSearchResult locateNearestBiome(Location origin, int radius, Biome... biomes) {
+        return locateNearestBiome(origin, radius, 32, 64, biomes);
+    }
+
+    @Override
+    public BiomeSearchResult locateNearestBiome(Location origin, int radius, int horizontalInterval, int verticalInterval, Biome... biomes) {
+        BlockPosition originPos = BlockPosition.containing(origin.getX(), origin.getY(), origin.getZ());
+        Set<Holder<BiomeBase>> holders = new HashSet<>();
+
+        for (Biome biome : biomes) {
+            holders.add(CraftBiome.bukkitToMinecraftHolder(biome));
+        }
+
+        Climate.Sampler sampler = getHandle().getChunkSource().randomState().sampler();
+        // The given predicate is evaluated once at the start of the search, so performance isn't a large concern.
+        Pair<BlockPosition, Holder<BiomeBase>> found = getHandle().getChunkSource().getGenerator().getBiomeSource().findClosestBiome3d(originPos, radius, horizontalInterval, verticalInterval, holders::contains, sampler, getHandle());
+        if (found == null) {
+            return null;
+        }
+
+        return new CraftBiomeSearchResult(CraftBiome.minecraftHolderToBukkit(found.getSecond()), new Location(this, found.getFirst().getX(), found.getFirst().getY(), found.getFirst().getZ()));
     }
 
     @Override
