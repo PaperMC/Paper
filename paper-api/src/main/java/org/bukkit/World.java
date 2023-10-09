@@ -33,6 +33,7 @@ import org.bukkit.metadata.Metadatable;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
+import org.bukkit.util.BiomeSearchResult;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
@@ -2637,6 +2638,59 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable
     StructureSearchResult locateNearestStructure(@NotNull Location origin, @NotNull Structure structure, int radius, boolean findUnexplored);
+
+    /**
+     * Find the closest nearby location with a biome matching the provided
+     * {@link Biome}(s). Finding biomes can, and will, block if the world is looking
+     * in chunks that have not generated yet. This can lead to the world temporarily
+     * freezing while locating a biome.
+     * <p>
+     * <b>Note:</b> This will <i>not</i> reflect changes made to the world after
+     * generation, this method only sees the biome at the time of world generation.
+     * This will <i>not</i> load or generate chunks.
+     * <p>
+     * If multiple biomes are provided {@link BiomeSearchResult#getBiome()} will
+     * indicate which one was located.
+     * <p>
+     * This method will use a horizontal interval of 32 and a vertical interval of
+     * 64, equal to the /locate command.
+     *
+     * @param origin where to start looking for a biome
+     * @param radius the radius, in blocks, around which to search
+     * @param biomes the biomes to search for
+     * @return a BiomeSearchResult containing the closest {@link Location} and
+     *         {@link Biome}, or null if no biome was found.
+     * @see #locateNearestBiome(Location, int, int, int, Biome...)
+     */
+    @Nullable
+    BiomeSearchResult locateNearestBiome(@NotNull Location origin, int radius, @NotNull Biome... biomes);
+
+    /**
+     * Find the closest nearby location with a biome matching the provided
+     * {@link Biome}(s). Finding biomes can, and will, block if the world is looking
+     * in chunks that have not generated yet. This can lead to the world temporarily
+     * freezing while locating a biome.
+     * <p>
+     * <b>Note:</b> This will <i>not</i> reflect changes made to the world after
+     * generation, this method only sees the biome at the time of world generation.
+     * This will <i>not</i> load or generate chunks.
+     * <p>
+     * If multiple biomes are provided {@link BiomeSearchResult#getBiome()} will
+     * indicate which one was located. Higher values for {@code horizontalInterval}
+     * and {@code verticalInterval} will result in faster searches, but may lead to
+     * small biomes being missed.
+     *
+     * @param origin             where to start looking for a biome
+     * @param radius             the radius, in blocks, around which to search
+     * @param horizontalInterval the horizontal distance between each check
+     * @param verticalInterval   the vertical distance between each check
+     * @param biomes             the biomes to search for
+     * @return a BiomeSearchResult containing the closest {@link Location} and
+     *         {@link Biome}, or null if no biome was found.
+     * @see #locateNearestBiome(Location, int, Biome...)
+     */
+    @Nullable
+    BiomeSearchResult locateNearestBiome(@NotNull Location origin, int radius, int horizontalInterval, int verticalInterval, @NotNull Biome... biomes);
 
     /**
      * Finds the nearest raid close to the given location.
