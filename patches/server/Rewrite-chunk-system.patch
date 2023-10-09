@@ -3781,7 +3781,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final AbortableIterationConsumer<U> action) {
-+        for (final Entity entity : this.entityById.values()) {
++        final Int2ReferenceOpenHashMap<Entity> entityCopy;
++
++        this.entityByLock.readLock();
++        try {
++            entityCopy = this.entityById.clone();
++        } finally {
++            this.entityByLock.tryUnlockRead();
++        }
++        for (final Entity entity : entityCopy.values()) {
 +            final Visibility visibility = EntityLookup.getEntityStatus(entity);
 +            if (!visibility.isAccessible()) {
 +                continue;
