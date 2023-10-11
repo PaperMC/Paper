@@ -1,7 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Xander <xander.dekeijzer@student.hu.nl>
-Co-authored-by: TheRealRyGuy <ryan@ryguy.me>
-Date: Wed, 11 Oct 2023 21:21:05 +0200
+Date: Wed, 11 Oct 2023 23:11:53 +0200
 Subject: [PATCH] Add more native map methods to PDC
 
 
@@ -212,3 +211,165 @@ index 91cb4a28afa5d83e6de10dab834ed63e2eb3b76f..c2eab2278ff9cc0b7fbc17281ccb2a41
          Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
  
          return this.customDataTags.containsKey(key.toString());
+diff --git a/src/test/java/io/papermc/paper/persistence/PersistentDataContainerTest.java b/src/test/java/io/papermc/paper/persistence/PersistentDataContainerTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e5a5dda6fb46aa58cd0e0b1235a0b121f7d0c66e
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/persistence/PersistentDataContainerTest.java
+@@ -0,0 +1,156 @@
++package io.papermc.paper.persistence;
++
++import net.kyori.adventure.key.Key;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
++import org.bukkit.persistence.PersistentDataType;
++import org.junit.jupiter.api.Test;
++
++import java.util.NoSuchElementException;
++import java.util.function.Supplier;
++
++import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertNotEquals;
++import static org.junit.jupiter.api.Assertions.assertNull;
++import static org.junit.jupiter.api.Assertions.assertThrows;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++import static org.junit.jupiter.api.Assertions.assertFalse;
++
++public class PersistentDataContainerTest {
++    
++    static private CraftPersistentDataContainer createContainer() {
++        CraftPersistentDataTypeRegistry registry = new CraftPersistentDataTypeRegistry();
++        CraftPersistentDataContainer container = new CraftPersistentDataContainer(registry);
++        return container;
++    }
++    
++    @Test
++    public void basicTest() {
++        CraftPersistentDataContainer container = createContainer();
++        Key key = new NamespacedKey("test", "key");
++        
++        container.put(key, PersistentDataType.STRING, "value");
++        assertTrue(container.has(key));
++        
++        String value = container.get(key, PersistentDataType.STRING);
++        assertEquals(value, "value");
++        
++        container.remove(key);
++        assertFalse(container.has(key));
++    }
++    
++    @Test
++    public void putIfAbsentTest() {
++        CraftPersistentDataContainer container = createContainer();
++        Key key = new NamespacedKey("test", "key");
++        
++        container.putIfAbsent(key, PersistentDataType.STRING, "value");
++        String value = container.get(key, PersistentDataType.STRING);
++        assertEquals(value, "value");
++        
++        container.putIfAbsent(key, PersistentDataType.STRING, "value2");
++        String value2 = container.get(key, PersistentDataType.STRING);
++        assertNotEquals(value2, "value2");
++        assertEquals(value2, "value");
++    }
++    
++    @Test
++    public void computeIfAbsentTest() {
++        CraftPersistentDataContainer container = createContainer();
++        Key key = new NamespacedKey("test", "key");
++        
++        assertNull(container.computeIfAbsent(key, PersistentDataType.STRING, (Key _key) -> null));
++        assertFalse(container.has(key));
++
++        assertEquals(container.computeIfAbsent(key, PersistentDataType.STRING, (Key _key) -> "value"), "value");
++        assertEquals(container.get(key, PersistentDataType.STRING), "value");
++
++        assertEquals(container.computeIfAbsent(key, PersistentDataType.STRING, (Key _key) -> "value2"), "value");
++        assertEquals(container.get(key, PersistentDataType.STRING), "value");
++    }
++    
++    @Test
++    public void computeIfPresentTest() {
++        CraftPersistentDataContainer container = createContainer();
++        Key key = new NamespacedKey("test", "key");
++        
++        container.computeIfPresent(key, PersistentDataType.STRING, (Key _key, String _value) -> "value2");
++        assertFalse(container.has(key));
++        
++        container.put(key, PersistentDataType.STRING, "value");
++        container.computeIfPresent(key, PersistentDataType.STRING, (Key _key, String _value) -> "value2");
++        assertEquals(container.get(key, PersistentDataType.STRING), "value2");
++        
++        container.computeIfPresent(key, PersistentDataType.STRING, (Key _key, String _value) -> null);
++        assertFalse(container.has(key));
++    }
++    
++    @Test
++    public void computeTest() {
++        CraftPersistentDataContainer container = createContainer();
++        Key key = new NamespacedKey("test", "key");
++        
++        assertEquals(container.compute(key, PersistentDataType.STRING, (Key _key, String _value) -> "value"), "value");
++        assertEquals(container.get(key, PersistentDataType.STRING), "value");
++
++        assertEquals(container.compute(key, PersistentDataType.STRING, (Key _key, String _value) -> "value2"), "value2");
++        assertEquals(container.get(key, PersistentDataType.STRING), "value2");
++
++        assertNull(container.compute(key, PersistentDataType.STRING, (Key _key, String _value) -> null));
++        assertFalse(container.has(key));
++    }
++    
++    @Test
++    public void getOrThrowTest() {
++        CraftPersistentDataContainer container = createContainer();
++        Key key = new NamespacedKey("test", "key");
++        
++        assertThrows(NoSuchElementException.class, () -> container.getOrThrow(key, PersistentDataType.STRING));
++        assertThrows(NoSuchElementException.class, () -> container.getOrThrow(key, PersistentDataType.STRING, NoSuchElementException::new));
++        
++        container.put(key, PersistentDataType.STRING, "value");
++        
++        assertDoesNotThrow(() -> container.getOrThrow(key, PersistentDataType.STRING));
++        assertDoesNotThrow(() -> container.getOrThrow(key, PersistentDataType.STRING, NoSuchElementException::new));
++    }
++    
++    @Test
++    public void replaceTest() {
++        CraftPersistentDataContainer container = createContainer();
++        Key key = new NamespacedKey("test", "key");
++        
++        assertFalse(container.replace(key, PersistentDataType.STRING, "value", "value2"));
++        assertFalse(container.has(key));
++        
++        assertNull(container.replace(key, PersistentDataType.STRING, "value2"));
++        assertFalse(container.has(key));
++        
++        container.put(key, PersistentDataType.STRING, "value");
++        
++        assertFalse(container.replace(key, PersistentDataType.STRING, "value2", "value"));
++        assertEquals(container.get(key, PersistentDataType.STRING), "value");
++        
++        assertTrue(container.replace(key, PersistentDataType.STRING, "value", "value2"));
++        assertEquals(container.get(key, PersistentDataType.STRING), "value2");
++        
++        assertEquals(container.replace(key, PersistentDataType.STRING, "value"), "value2");
++    }
++    
++    @Test
++    public void mergeTest() {
++        CraftPersistentDataContainer container = createContainer();
++        Key key = new NamespacedKey("test", "key");
++        
++        assertEquals(container.merge(key, PersistentDataType.STRING, "value", (String cur, String val) -> "value2"), "value");
++        assertEquals(container.get(key, PersistentDataType.STRING), "value");
++        
++        assertEquals(container.merge(key, PersistentDataType.STRING, "value", (String cur, String val) -> "value2"), "value2");
++        assertEquals(container.get(key, PersistentDataType.STRING), "value2");
++        
++        assertNull(container.merge(key, PersistentDataType.STRING, "value", (String cur, String val) -> null));
++        assertFalse(container.has(key));
++    }
++    
++}
