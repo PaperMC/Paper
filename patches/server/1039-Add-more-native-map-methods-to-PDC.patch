@@ -1,0 +1,214 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Xander <xander.dekeijzer@student.hu.nl>
+Co-authored-by: TheRealRyGuy <ryan@ryguy.me>
+Date: Wed, 11 Oct 2023 21:21:05 +0200
+Subject: [PATCH] Add more native map methods to PDC
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+index 91cb4a28afa5d83e6de10dab834ed63e2eb3b76f..c2eab2278ff9cc0b7fbc17281ccb2a41c257c81c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+@@ -34,6 +34,13 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+ 
+     @Override
+     public <T, Z> void set(NamespacedKey key, PersistentDataType<T, Z> type, Z value) {
++        // Paper start
++        put(key, type, value);
++    }
++    
++    @Override
++    public <T, Z> void put(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type, Z value) {
++        // Paper end
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+         Preconditions.checkArgument(type != null, "The provided type cannot be null");
+         Preconditions.checkArgument(value != null, "The provided value cannot be null");
+@@ -43,6 +50,13 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+ 
+     @Override
+     public <T, Z> boolean has(NamespacedKey key, PersistentDataType<T, Z> type) {
++        // Paper start
++        return has((net.kyori.adventure.key.Key) key, type);
++    }
++
++    @Override
++    public <T, Z> boolean has(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type) {
++        // Paper end
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+         Preconditions.checkArgument(type != null, "The provided type cannot be null");
+ 
+@@ -56,6 +70,13 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+ 
+     @Override
+     public <T, Z> Z get(NamespacedKey key, PersistentDataType<T, Z> type) {
++        // Paper start
++        return get((net.kyori.adventure.key.Key) key, type);
++    }
++
++    @Override
++    public <T, Z> Z get(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type) {
++        // Paper end
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+         Preconditions.checkArgument(type != null, "The provided type cannot be null");
+ 
+@@ -89,6 +110,13 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+ 
+     @Override
+     public void remove(NamespacedKey key) {
++        // Paper start
++        remove((net.kyori.adventure.key.Key) key);
++    }
++
++    @Override
++    public void remove(net.kyori.adventure.key.Key key) {
++        // Paper end
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+ 
+         this.customDataTags.remove(key.toString());
+@@ -161,9 +189,146 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     public void clear() {
+         this.customDataTags.clear();
+     }
++    
++    @Override
++    public <T, Z> void putIfAbsent(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type, Z value) {
++        Preconditions.checkArgument(key != null, "The key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        Preconditions.checkArgument(value != null, "The provided value cannot be null");
++        
++        Z z = get(key, type);
++        if (z == null) {
++            put(key, type, value);
++        }
++    }
++    
++    @Override
++    public <T, Z> Z computeIfAbsent(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type, java.util.function.Function<? super net.kyori.adventure.key.Key, ? extends Z> mappingFunction) {
++        Preconditions.checkArgument(key != null, "The key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        Preconditions.checkArgument(mappingFunction != null, "The provided mappingFunction cannot be null");
++        
++        Z z;
++        if ((z = get(key, type)) == null) {
++            Z newValue;
++            if ((newValue = mappingFunction.apply(key)) != null) {
++                put(key, type, newValue);
++                return newValue;
++            }
++        }
++
++        return z;
++    }
++
++    @Override
++    public <T, Z> Z computeIfPresent(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type, java.util.function.BiFunction<? super net.kyori.adventure.key.Key, ? super Z, ? extends Z> remappingFunction) {
++        Preconditions.checkArgument(key != null, "The key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        Preconditions.checkArgument(remappingFunction != null, "The provided remappingFunction cannot be null");
++        
++        Z oldValue;
++        if ((oldValue = get(key, type)) != null) {
++            Z newValue = remappingFunction.apply(key, oldValue);
++            if (newValue != null) {
++                put(key, type, newValue);
++                return newValue;
++            } else {
++                remove(key);
++                return null;
++            }
++        } else {
++            return null;
++        }
++    }
++
++    @Override
++    public <T, Z> Z compute(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type, java.util.function.BiFunction<? super net.kyori.adventure.key.Key, ? super Z, ? extends Z> remappingFunction) {
++        Preconditions.checkArgument(key != null, "The key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        Preconditions.checkArgument(remappingFunction != null, "The provided remappingFunction cannot be null");
++        
++        Z oldValue = get(key, type);
++
++        Z newValue = remappingFunction.apply(key, oldValue);
++        if (newValue == null) {
++            if (oldValue != null || has(key, type)) {
++                remove(key);
++                return null;
++            } else {
++                return null;
++            }
++        } else {
++            put(key, type, newValue);
++            return newValue;
++        }
++    }
++
++    @Override
++    public <T, Z, X extends Throwable> Z getOrThrow(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type, java.util.function.Supplier<X> exceptionSupplier) throws X {
++        Preconditions.checkArgument(key != null, "The key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        Preconditions.checkArgument(exceptionSupplier != null, "The provided exceptionSupplier cannot be null");
++        
++        Z value = get(key, type);
++        if (value == null) {
++            throw exceptionSupplier.get();
++        } else {
++            return value;
++        }
++    }
++
++    @Override
++    public <T, Z> boolean replace(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type, Z oldValue, Z newValue) {
++        Preconditions.checkArgument(key != null, "The key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        Preconditions.checkArgument(oldValue != null, "The provided oldValue cannot be null");
++        Preconditions.checkArgument(newValue != null, "The provided newValue cannot be null");
++        
++        Z curValue = get(key, type);
++        if (!Objects.equals(curValue, oldValue) || (curValue == null && !has(key))) {
++            return false;
++        }
++        put(key, type, newValue);
++        return true;
++    }
++
++    @Override
++    public <T, Z> Z replace(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type, Z value) {
++        Preconditions.checkArgument(key != null, "The key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        Preconditions.checkArgument(value != null, "The provided value cannot be null");
++        
++        Z curvalue;
++        if (((curvalue = get(key, type)) != null) || has(key)) {
++            put(key, type, value);
++        }
++        return curvalue;
++    }
++
++    @Override
++    public <T, Z> Z merge(net.kyori.adventure.key.Key key, PersistentDataType<T, Z> type, Z value, java.util.function.BiFunction<? super Z, ? super Z, ? extends Z> remappingFunction) {
++        Preconditions.checkArgument(key != null, "The key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        Preconditions.checkArgument(value != null, "The provided value cannot be null");
++        Preconditions.checkArgument(remappingFunction != null, "The provided remappingFunction cannot be null");
++        
++        Z oldValue = get(key, type);
++        Z newValue = (oldValue == null) ? value : remappingFunction.apply(oldValue, value);
++        if (newValue == null) {
++            remove(key);
++        } else {
++            put(key, type, newValue);
++        }
++        return newValue;
++    }
+ 
+     @Override
+     public boolean has(NamespacedKey key) {
++        return has((net.kyori.adventure.key.Key) key);
++    }
++    
++    @Override
++    public boolean has(net.kyori.adventure.key.Key key) {
+         Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
+ 
+         return this.customDataTags.containsKey(key.toString());

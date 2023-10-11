@@ -1,0 +1,350 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Xander <xander.dekeijzer@student.hu.nl>
+Date: Wed, 11 Oct 2023 22:46:36 +0200
+Subject: [PATCH] Add more native map methods to PDC
+
+
+diff --git a/src/main/java/org/bukkit/persistence/PersistentDataContainer.java b/src/main/java/org/bukkit/persistence/PersistentDataContainer.java
+index 57609b7793122e135fa0c3b926500849379637b2..2e84af18c5237a3184aa0af106f21625a6daa1cd 100644
+--- a/src/main/java/org/bukkit/persistence/PersistentDataContainer.java
++++ b/src/main/java/org/bukkit/persistence/PersistentDataContainer.java
+@@ -153,18 +153,335 @@ public interface PersistentDataContainer {
+     PersistentDataAdapterContext getAdapterContext();
+ 
+     // Paper start
++
++    /**
++     * Stores a metadata value on the {@link PersistentDataHolder} instance.
++     * <p>
++     * This API cannot be used to manipulate minecraft data, as the values will
++     * be stored using your namespace. This method will override any existing
++     * value the {@link PersistentDataHolder} may have stored under the provided
++     * key.
++     *
++     * @param key the key this value will be stored under
++     * @param type the type this tag uses
++     * @param value the value stored in the tag
++     * @param <T> the generic java type of the tag value
++     * @param <Z> the generic type of the object to store
++     *
++     * @throws NullPointerException if the key is null
++     * @throws NullPointerException if the type is null
++     * @throws NullPointerException if the value is null. Removing a tag should
++     * be done using {@link #remove(net.kyori.adventure.key.Key)}
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     * the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> void put(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value);
++
++    /**
++     * Returns if the persistent metadata provider has metadata registered
++     * matching the provided parameters.
++     * <p>
++     * This method will only return if the found value has the same primitive
++     * data type as the provided key.
++     * <p>
++     * Storing a value using a custom {@link PersistentDataType} implementation
++     * will not store the complex data type. Therefore storing a UUID (by
++     * storing a byte[]) will match has("key" ,
++     * {@link PersistentDataType#BYTE_ARRAY}). Likewise a stored byte[] will
++     * always match your UUID {@link PersistentDataType} even if it is not 16
++     * bytes long.
++     * <p>
++     * This method is only usable for custom object keys. Overwriting existing
++     * tags, like the the display name, will not work as the values are stored
++     * using your namespace.
++     *
++     * @param key the key the value is stored under
++     * @param type the type which primitive storage type has to match the value
++     * @param <T> the generic type of the stored primitive
++     * @param <Z> the generic type of the eventually created complex object
++     *
++     * @return if a value
++     *
++     * @throws NullPointerException if the key to look up is null
++     * @throws NullPointerException if the type to cast the found object to is
++     * null
++     */
++    <T, Z> boolean has(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type);
++
++    /**
++     * Returns the metadata value that is stored on the
++     * {@link PersistentDataHolder} instance.
++     *
++     * @param key the key to look up in the custom tag map
++     * @param type the type the value must have and will be casted to
++     * @param <T> the generic type of the stored primitive
++     * @param <Z> the generic type of the eventually created complex object
++     *
++     * @return the value or {@code null} if no value was mapped under the given
++     * value
++     *
++     * @throws NullPointerException if the key to look up is null
++     * @throws NullPointerException if the type to cast the found object to is
++     * null
++     * @throws IllegalArgumentException if the value exists under the given key,
++     * but cannot be access using the given type
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     * the {@link
++     * PersistentDataType#getPrimitiveType()}
++     */
++    @Nullable
++    <T, Z> Z get(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type);
++
++    /**
++     * Removes a custom key from the {@link PersistentDataHolder} instance.
++     *
++     * @param key the key
++     *
++     * @throws NullPointerException if the provided key is null
++     */
++    void remove(@NotNull net.kyori.adventure.key.Key key);
++    
++    /**
++     * Stores a metadata value on the {@link PersistentDataHolder} instance.
++     * <p>
++     * This API cannot be used to manipulate minecraft data, as the values will
++     * be stored using your namespace. This method will not override any existing
++     * value the {@link PersistentDataHolder} may have stored under the provided
++     * key.
++     *
++     * @param key   the key this value will be stored under
++     * @param type  the type this tag uses
++     * @param value the value stored in the tag
++     * @param <T>   the generic java type of the tag value
++     * @param <Z>   the generic type of the object to store
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws NullPointerException     if the value is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> void putIfAbsent(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value);
++
++    /**
++     * If the specified key is not already associated with a metadata value (or is mapped
++     * to {@code null}), attempts to compute its value using the given mapping
++     * function and enters it into the {@link PersistentDataContainer}.
++     *
++     * <p>If the mapping function returns {@code null}, no mapping is recorded.
++     * If the mapping function itself throws an (unchecked) exception, the
++     * exception is rethrown, and no mapping is recorded.
++     *
++     * @param key             key with which the specified value is to be associated
++     * @param type            the type this tag uses
++     * @param mappingFunction the mapping function to compute a value
++     * @param <T>             the generic java type of the tag value
++     * @param <Z>             the generic type of the object to store
++     *
++     * @return the current (existing or computed) value associated with
++     * the specified key, or null if the computed value is null
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws NullPointerException     if the mappingFunction is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> @Nullable Z computeIfAbsent(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull java.util.function.Function<? super net.kyori.adventure.key.Key, ? extends Z> mappingFunction);
++
++    /**
++     * If the value for the specified key is present and non-null, attempts to
++     * compute a new mapping given the key and its current mapped value in the {@link PersistentDataContainer}.
++     *
++     * <p>If the remapping function returns {@code null}, the mapping is removed.
++     * If the remapping function itself throws an (unchecked) exception, the
++     * exception is rethrown, and the current mapping is left unchanged.
++     *
++     * @param key               key with which the specified value is to be associated
++     * @param type              the type this tag uses
++     * @param remappingFunction the remapping function to compute a value
++     * @param <T>               the generic java type of the tag value
++     * @param <Z>               the generic type of the object to store
++     *
++     * @return the new value associated with the specified key, or null if none
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws NullPointerException     if the remappingFunction is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> @Nullable Z computeIfPresent(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull java.util.function.BiFunction<? super net.kyori.adventure.key.Key, ? super Z, ? extends Z> remappingFunction);
++
++    /**
++     * Attempts to compute a mapping for the specified key and its current
++     * mapped value (or {@code null} if there is no current mapping).
++     *
++     * <p>If the remapping function returns {@code null}, the mapping is removed
++     * (or remains absent if initially absent). If the remapping function
++     * itself throws an (unchecked) exception, the exception is rethrown, and
++     * the current mapping is left unchanged.
++     *
++     * @param key               key with which the specified value is to be associated
++     * @param type              the type this tag uses
++     * @param remappingFunction the remapping function to compute a value
++     * @param <T>               the generic java type of the tag value
++     * @param <Z>               the generic type of the object to store
++     *
++     * @return the new value associated with the specified key, or null if none
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws NullPointerException     if the remappingFunction is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> @Nullable Z compute(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull java.util.function.BiFunction<? super net.kyori.adventure.key.Key, ? super Z, ? extends Z> remappingFunction);
++
++    /**
++     * Returns the metadata value that is stored on the
++     * {@link PersistentDataHolder} instance. If the value does not exist in the
++     * container, the provided exception is thrown.
++     *
++     * @param key               key with which the specified value is to be associated
++     * @param type              the type this tag uses
++     * @param exceptionSupplier the exception to throw
++     * @param <T>               the generic java type of the tag value
++     * @param <Z>               the generic type of the object to store
++     * @param <X>               the exception type you want to throw
++     *
++     * @return The currently existing metadata within your {@link PersistentDataHolder} instance, if present
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws NullPointerException     if the exceptionSupplier is null
++     * @throws X                        If there was no metadata element bound to your key and type
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z, X extends Throwable> @NotNull Z getOrThrow(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull java.util.function.Supplier<X> exceptionSupplier) throws X;
++
++    /**
++     * Returns the metadata value that is stored on the
++     * {@link PersistentDataHolder} instance. If the value does not exist in the
++     * container, a {@link java.util.NoSuchElementException} is thrown.
++     *
++     * @param key  the key this value will be stored under
++     * @param type the type this tag uses
++     * @param <T>  the generic java type of the tag value
++     * @param <Z>  the generic type of the object to store
++     *
++     * @return the currently existing metadata within your {@link PersistentDataHolder} instance, if present
++     *
++     * @throws NullPointerException             if the key is null
++     * @throws NullPointerException             if the type is null
++     * @throws java.util.NoSuchElementException If there was no metadata element bound to your key and type
++     * @throws IllegalArgumentException         if no suitable adapter will be found for
++     *                                          the {@link PersistentDataType#getPrimitiveType()}
++     */
++    default <T, Z> @NotNull Z getOrThrow(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type) {
++        com.google.common.base.Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
++        com.google.common.base.Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        return getOrThrow(key, type, () -> new java.util.NoSuchElementException("Key " + key.asString() + " was not present in PDC " + this.getClass().getName()));
++    }
++
++    /**
++     * Replaces the metadata value that is stored on the {@link PersistentDataHolder}
++     * instance with newValue only if the value is currently set to oldValue
++     *
++     * @param key      the key this value will be stored under
++     * @param type     the type this tag uses
++     * @param oldValue value expected to be associated with the specified key
++     * @param newValue value to be associated with the specified key
++     * @param <T>      the generic java type of the tag value
++     * @param <Z>      the generic type of the object to store
++     *
++     * @return {@code true} if the value was replaced
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws NullPointerException     if the oldValue is null
++     * @throws NullPointerException     if the newValue is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> boolean replace(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z oldValue, @NotNull Z newValue);
++
++    /**
++     * Stores a metadata value on the {@link PersistentDataHolder} instance.
++     * <p>
++     * This API cannot be used to manipulate minecraft data, as the values will
++     * be stored using your namespace. This method will override any existing
++     * value the {@link PersistentDataHolder} may have stored under the provided
++     * key and returns the metadata currently stored under that key.
++     *
++     * @param key   the key this value will be stored under
++     * @param type  the type this tag uses
++     * @param value the value stored in the tag
++     * @param <T>   the generic java type of the tag value
++     * @param <Z>   the generic type of the object to store
++     *
++     * @return the previous existing metadata within your {@link PersistentDataHolder} instance, or {@code null} if there was no mapping for the key.
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws NullPointerException     if the value is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> @Nullable Z replace(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value);
++
++    /**
++     * Attempts to merge a mapping for the specified key if it is already associated
++     * with a value, otherwise maps the given non-null value paramater.
++     *
++     * <p>If the remapping function returns {@code null}, the mapping is removed
++     * (or remains absent if initially absent). If the remapping function
++     * itself throws an (unchecked) exception, the exception is rethrown, and
++     * the current mapping is left unchanged.
++     *
++     * @param key               key with which the specified value is to be associated
++     * @param type              the type this tag uses
++     * @param value             the value to use to merge with
++     * @param remappingFunction the remapping function to compute a value
++     * @param <T>               the generic java type of the tag value
++     * @param <Z>               the generic type of the object to store
++     *
++     * @return the new value associated with the specified key, or null if none
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws NullPointerException     if the value is null
++     * @throws NullPointerException     if the remappingFunction is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> @Nullable Z merge(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value, @NotNull java.util.function.BiFunction<? super Z, ? super Z, ? extends Z> remappingFunction);
++
+     /**
+      * Returns if the persistent metadata provider has metadata registered
+-     * matching the provided key.
+-     * 
++     * matching the provided {@link NamespacedKey}.
++     *
+      * @param key the key for which existence should be checked.
+-     * 
++     *
+      * @return whether the key exists
+-     * 
++     *
+      * @throws NullPointerException if the key to look up is null
+      */
+     boolean has(@NotNull NamespacedKey key);
+ 
++    /**
++     * Returns if the persistent metadata provider has metadata registered
++     * matching the provided {@link net.kyori.adventure.key.Key}.
++     *
++     * @param key the key for which existence should be checked.
++     *
++     * @return whether the key exists
++     *
++     * @throws NullPointerException if the key to look up is null
++     */
++    boolean has(@NotNull net.kyori.adventure.key.Key key);
++
+     /**
+      * Serialize this {@link PersistentDataContainer} instance to a
+      * byte array.
