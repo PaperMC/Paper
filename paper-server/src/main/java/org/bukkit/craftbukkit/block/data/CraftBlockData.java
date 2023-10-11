@@ -688,6 +688,20 @@ public class CraftBlockData implements BlockData {
         return this.state.isFaceSturdy(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CraftBlock.blockFaceToNotch(face), CraftBlockSupport.toNMS(support));
     }
 
+    // Paper start
+    @Override
+    public org.bukkit.util.VoxelShape getCollisionShape(Location location) {
+        Preconditions.checkArgument(location != null, "location must not be null");
+
+        CraftWorld world = (CraftWorld) location.getWorld();
+        Preconditions.checkArgument(world != null, "location must not have a null world");
+
+        BlockPos position = CraftLocation.toBlockPosition(location);
+        net.minecraft.world.phys.shapes.VoxelShape shape = this.state.getCollisionShape(world.getHandle(), position);
+        return new org.bukkit.craftbukkit.util.CraftVoxelShape(shape);
+    }
+    // Paper end
+
     @Override
     public Color getMapColor() {
         return Color.fromRGB(this.state.getMapColor(null, null).col);
