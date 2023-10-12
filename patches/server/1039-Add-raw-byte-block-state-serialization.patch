@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TrollyLoki <trollyloki@gmail.com>
+Date: Thu, 12 Oct 2023 11:05:19 -0400
+Subject: [PATCH] Add raw byte block state serialization
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+index 716021520c228b5bbced525b751f5d4126d882eb..4c498eb645e57d0cbb2860d08e4d18174e9f8d12 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+@@ -231,13 +231,17 @@ public final class CraftBlockStates {
+         return CraftBlockStates.getBlockState(block, true);
+     }
+     public static BlockState getBlockState(Block block, boolean useSnapshot) {
++        return CraftBlockStates.getBlockState(block, useSnapshot, null, null);
++    }
++    // customTileEntity is ignored if customBlockData is null
++    public static BlockState getBlockState(Block block, boolean useSnapshot, net.minecraft.world.level.block.state.BlockState customBlockData, BlockEntity customTileEntity) {
+         // Paper end
+         Preconditions.checkNotNull(block, "block is null");
+         CraftBlock craftBlock = (CraftBlock) block;
+         CraftWorld world = (CraftWorld) block.getWorld();
+         BlockPos blockPosition = craftBlock.getPosition();
+-        net.minecraft.world.level.block.state.BlockState blockData = craftBlock.getNMS();
+-        BlockEntity tileEntity = craftBlock.getHandle().getBlockEntity(blockPosition);
++        net.minecraft.world.level.block.state.BlockState blockData = customBlockData != null ? customBlockData : craftBlock.getNMS(); // Paper - use customBlockData if provided
++        BlockEntity tileEntity = customBlockData != null ? customTileEntity : craftBlock.getHandle().getBlockEntity(blockPosition); // Paper - use customTileEntity if customBlockData provided
+         // Paper start - block state snapshots
+         boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
+         CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 806fb1064a1769d1251f2a2b04372275754d2aeb..b461a2ec1a9f5d9ea0050991d3570bd8574d047a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -53,6 +53,7 @@ import org.bukkit.craftbukkit.CraftEquipmentSlot;
+ import org.bukkit.craftbukkit.CraftFeatureFlag;
+ import org.bukkit.craftbukkit.attribute.CraftAttribute;
+ import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
++import org.bukkit.craftbukkit.block.CraftBlockEntityState;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.craftbukkit.legacy.CraftLegacy;
+@@ -506,6 +507,42 @@ public final class CraftMagicNumbers implements UnsafeValues {
+             .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
+     }
+ 
++    @Override
++    public byte[] serializeBlock(org.bukkit.block.BlockState blockState) {
++        Preconditions.checkNotNull(blockState, "null cannot be serialized");
++        Preconditions.checkArgument(blockState instanceof org.bukkit.craftbukkit.block.CraftBlockState, "only CraftBlockStates can be serialized");
++        org.bukkit.craftbukkit.block.CraftBlockState craftBlockState = (org.bukkit.craftbukkit.block.CraftBlockState) blockState;
++
++        CompoundTag compound = new CompoundTag();
++        compound.put("BlockState", net.minecraft.nbt.NbtUtils.writeBlockState(craftBlockState.getHandle()));
++        if (craftBlockState instanceof CraftBlockEntityState<?>) {
++            compound.put("BlockEntity", ((CraftBlockEntityState<?>) craftBlockState).getSnapshotNBT());
++        }
++        return serializeNbtToBytes(compound);
++    }
++
++    @Override
++    public org.bukkit.block.BlockState deserializeBlock(byte[] data, org.bukkit.block.Block block) {
++        Preconditions.checkNotNull(data, "null cannot be deserialized");
++        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
++        Preconditions.checkArgument(block instanceof org.bukkit.craftbukkit.block.CraftBlock, "can only deserialize to CraftBlocks");
++        org.bukkit.craftbukkit.block.CraftBlock craftBlock = (org.bukkit.craftbukkit.block.CraftBlock) block;
++
++        CompoundTag compound = deserializeNbtFromBytes(data);
++        int dataVersion = compound.getInt("DataVersion");
++
++        CompoundTag blockStateCompound = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.BLOCK_STATE, compound.getCompound("BlockState"), dataVersion, getDataVersion());
++        BlockState blockData = net.minecraft.nbt.NbtUtils.readBlockState(craftBlock.getCraftWorld().getHandle().holderLookup(net.minecraft.core.registries.Registries.BLOCK), blockStateCompound);
++
++        net.minecraft.world.level.block.entity.BlockEntity tileEntity = null;
++        if (compound.contains("BlockEntity", NBT.TAG_COMPOUND)) {
++            CompoundTag blockEntityCompound = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.TILE_ENTITY, compound.getCompound("BlockEntity"), dataVersion, getDataVersion());
++            tileEntity = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(craftBlock.getPosition(), blockData, blockEntityCompound);
++        }
++
++        return org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(craftBlock, false, blockData, tileEntity);
++    }
++
+     private byte[] serializeNbtToBytes(CompoundTag compound) {
+         compound.putInt("DataVersion", getDataVersion());
+         java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
