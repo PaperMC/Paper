@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Thu, 12 Oct 2023 18:34:08 +0200
+Subject: [PATCH] Add LivingEntity#getPotionEffects
+
+
+diff --git a/src/main/java/net/minecraft/world/effect/MobEffectInstance.java b/src/main/java/net/minecraft/world/effect/MobEffectInstance.java
+index 68e1b8271475996020af50b3b2cf04cd25aa6c85..68153123d338952e2a533acc433e948d15f23d40 100644
+--- a/src/main/java/net/minecraft/world/effect/MobEffectInstance.java
++++ b/src/main/java/net/minecraft/world/effect/MobEffectInstance.java
+@@ -327,6 +327,17 @@ public class MobEffectInstance implements Comparable<MobEffectInstance> {
+         return (this.getDuration() <= 32147 || mobEffectInstance.getDuration() <= 32147) && (!this.isAmbient() || !mobEffectInstance.isAmbient()) ? ComparisonChain.start().compareFalseFirst(this.isAmbient(), mobEffectInstance.isAmbient()).compareFalseFirst(this.isInfiniteDuration(), mobEffectInstance.isInfiniteDuration()).compare(this.getDuration(), mobEffectInstance.getDuration()).compare(this.getEffect().getColor(), mobEffectInstance.getEffect().getColor()).result() : ComparisonChain.start().compare(this.isAmbient(), mobEffectInstance.isAmbient()).compare(this.getEffect().getColor(), mobEffectInstance.getEffect().getColor()).result();
+     }
+ 
++    // Paper start
++    @org.jetbrains.annotations.NotNull
++    public java.util.List<MobEffectInstance> getHiddenEffects() {
++        java.util.List<MobEffectInstance> effects = new java.util.ArrayList<>();
++        for(MobEffectInstance effect = this.hiddenEffect; effect != null; effect = effect.hiddenEffect) {
++            effects.add(effect);
++        }
++        return effects;
++    }
++    // Paper end
++
+     public static class FactorData {
+         public static final Codec<MobEffectInstance.FactorData> CODEC = RecordCodecBuilder.create((instance) -> {
+             return instance.group(ExtraCodecs.NON_NEGATIVE_INT.fieldOf("padding_duration").forGetter((data) -> {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index fe2124694eb080cab685a1ce1f6a66e2fcdf6a17..4973e7347f7bde43bbcc64fa6128f8a4059e4931 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -503,6 +503,20 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return effects;
+     }
+ 
++    // Paper start
++    @Override
++    public Collection<PotionEffect> getPotionEffects() {
++        List<PotionEffect> effects = new ArrayList<PotionEffect>();
++        for (MobEffectInstance handle : this.getHandle().activeEffects.values()) {
++            effects.add(new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible()));
++            for(MobEffectInstance effect : handle.getHiddenEffects()) {
++                effects.add(new PotionEffect(CraftPotionEffectType.minecraftToBukkit(effect.getEffect()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.isVisible()));
++            }
++        }
++        return effects;
++    }
++    // Paper end
++
+     // Paper start - LivingEntity#clearActivePotionEffects();
+     @Override
+     public boolean clearActivePotionEffects() {
