@@ -3,8 +3,9 @@ From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 Date: Sun, 5 Dec 2021 14:58:17 -0500
 Subject: [PATCH] Expand FallingBlock API
 
- - add auto expire setting
- - add setter for block data
+- add auto expire setting
+- add setter for block data
+- add accessors for block state
 
 == AT ==
 public net.minecraft.world.entity.item.FallingBlockEntity blockState
@@ -53,25 +54,43 @@ index 5164c2bfb32275beff01b6e76dfbd9d031231bc6..e6f75a9cac46c8e3ddba664a9d5b27b6
  
      public void setHurtsEntities(float fallHurtAmount, int fallHurtMax) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
-index e85a5dcae1a752c48dc457d05191355d72ca4443..3b77e8c7aea8e0ee28a0df2bda73ab1c9d6dc62b 100644
+index e85a5dcae1a752c48dc457d05191355d72ca4443..7012cff716bd634419be0f8dd80e0f93261fd1cd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
-@@ -33,6 +33,14 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
+@@ -33,6 +33,32 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
      public BlockData getBlockData() {
          return CraftBlockData.fromData(this.getHandle().getBlockState());
      }
 +    // Paper start
 +    @Override
-+    public void setBlockData(@org.jetbrains.annotations.NotNull final BlockData blockData) {
++    public void setBlockData(final BlockData blockData) {
 +        Preconditions.checkNotNull(blockData, "blockData");
 +        this.getHandle().blockState = ((CraftBlockData) blockData).getState();
++        this.getHandle().blockData = null;
++        this.update();
++    }
++
++    @Override
++    public org.bukkit.block.BlockState getPlacedBlockState() {
++        return org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.getHandle().blockState, this.getHandle().blockData);
++    }
++
++    @Override
++    public void setPlacedBlockState(final org.bukkit.block.BlockState blockState) {
++        Preconditions.checkNotNull(blockState, "blockState");
++        this.getHandle().blockState = ((CraftBlockData) blockState.getBlockData()).getState();
++        if (blockState instanceof org.bukkit.craftbukkit.block.CraftBlockEntityState<?> tileEntity) {
++            this.getHandle().blockData = tileEntity.getSnapshotNBT();
++        } else {
++            this.getHandle().blockData = null;
++        }
 +        this.update();
 +    }
 +    // Paper end
  
      @Override
      public boolean getDropItem() {
-@@ -101,4 +109,15 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
+@@ -101,4 +127,15 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
              this.setHurtEntities(true);
          }
      }
