@@ -21,6 +21,7 @@ import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.DumperOptions;
@@ -1267,9 +1268,9 @@ public final class PluginDescriptionFile {
 
     /**
      * @return internal use
-     * @deprecated Internal use
+     * @apiNote Internal use
      */
-    @Deprecated
+    @ApiStatus.Internal
     @NotNull
     public String getRawName() {
         return rawName;

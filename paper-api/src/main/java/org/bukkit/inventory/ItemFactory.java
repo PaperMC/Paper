@@ -8,6 +8,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -155,9 +156,9 @@ public interface ItemFactory {
      * @param material material
      * @return updated material
      * @throws IllegalArgumentException if bad material or data
-     * @deprecated for internal use only
+     * @apiNote for internal use only
      */
-    @Deprecated
+    @ApiStatus.Internal
     @NotNull
     Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
 
