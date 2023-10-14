@@ -91,6 +91,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+         this.advancements = server.getPlayerList().getPlayerAdvancements(this);
+         this.setMaxUpStep(1.0F);
+         // this.fudgeSpawnLocation(world); // Paper - don't move to spawn on login, only first join
+-        this.updateOptions(clientOptions);
++        this.updateOptionsNoEvents(clientOptions); // Paper - don't call options events on login
+ 
+         this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
+ 
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
          }
      }
  
@@ -114,6 +123,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit start
          if (getMainArm() != clientOptions.mainHand()) {
              PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+             this.server.server.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerLocaleChangeEvent(this.getBukkitEntity(), this.language, clientOptions.language())); // Paper
+         }
+         // CraftBukkit end
++        // Paper start - don't call options events on login
++        updateOptionsNoEvents(clientOptions);
++    }
++    public void updateOptionsNoEvents(ClientInformation clientOptions) {
++        // Paper end
+         this.language = clientOptions.language();
+         this.adventure$locale = net.kyori.adventure.translation.Translator.parseLocale(this.language); // Paper
+         this.requestedViewDistance = clientOptions.viewDistance();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
