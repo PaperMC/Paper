@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: froobynooby <froobynooby@froobworld.com>
+Date: Sat, 14 Oct 2023 10:46:03 +0930
+Subject: [PATCH] Don't call options events on login
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 76157319b79d7fefe38cb2cc10b2d79c12667e3d..ba972d1661426d7e30f6f61bad3b9608e66ea721 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -413,7 +413,7 @@ public class ServerPlayer extends Player {
+         this.advancements = server.getPlayerList().getPlayerAdvancements(this);
+         this.setMaxUpStep(1.0F);
+         // this.fudgeSpawnLocation(world); // Paper - don't move to spawn on login, only first join
+-        this.updateOptions(clientOptions);
++        this.updateOptionsNoEvents(clientOptions); // Paper - don't call options events on login
+ 
+         this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
+ 
+@@ -2050,6 +2050,11 @@ public class ServerPlayer extends Player {
+             this.server.server.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerLocaleChangeEvent(this.getBukkitEntity(), this.language, clientOptions.language())); // Paper
+         }
+         // CraftBukkit end
++        // Paper start - don't call options events on login
++        updateOptionsNoEvents(clientOptions);
++    }
++    public void updateOptionsNoEvents(ClientInformation clientOptions) {
++        // Paper end
+         this.language = clientOptions.language();
+         this.adventure$locale = net.kyori.adventure.translation.Translator.parseLocale(this.language); // Paper
+         this.requestedViewDistance = clientOptions.viewDistance();
