@@ -5,18 +5,9 @@ Subject: [PATCH] Add Grindstone experience reward API
 
 
 diff --git a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
-index a21eadcdfbdc4be803c5793bc97996db3e706071..93f1ec2e492335c3862e07f33e38fb71e143c627 100644
+index a21eadcdfbdc4be803c5793bc97996db3e706071..416c4daea3227cfd89ccdfd56a176a2d92d35c7f 100644
 --- a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
-@@ -36,7 +36,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
-             return this.bukkitEntity;
-         }
- 
--        CraftInventoryGrindstone inventory = new CraftInventoryGrindstone(this.repairSlots, this.resultSlots);
-+        CraftInventoryGrindstone inventory = new CraftInventoryGrindstone(this.repairSlots, this.resultSlots, this); // Paper
-         this.bukkitEntity = new CraftInventoryView(this.player, inventory, this);
-         return this.bukkitEntity;
-     }
 @@ -52,6 +52,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
      private final Container resultSlots;
      final Container repairSlots;
@@ -30,7 +21,7 @@ index a21eadcdfbdc4be803c5793bc97996db3e706071..93f1ec2e492335c3862e07f33e38fb71
                  context.execute((world, blockposition) -> {
                      if (world instanceof ServerLevel) {
 -                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper
-+                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), experienceReward, org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper // Paper - calculate experience amount for event
++                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), experienceReward, org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper // Paper - predetermined experience amount from event
                      }
 +                    experienceReward = 0; // Paper
  
@@ -120,31 +111,26 @@ index a21eadcdfbdc4be803c5793bc97996db3e706071..93f1ec2e492335c3862e07f33e38fb71
  
      private void createResult() {
          ItemStack itemstack = this.repairSlots.getItem(0);
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryGrindstone.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryGrindstone.java
-index 9adf5a4440c75d1659693bfb4f8b492861ab0199..afb10e36da3a4766a1b8ad066c0dc4b5afef75c6 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryGrindstone.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryGrindstone.java
-@@ -4,8 +4,22 @@ import net.minecraft.world.Container;
- import org.bukkit.inventory.GrindstoneInventory;
- 
- public class CraftInventoryGrindstone extends CraftResultInventory implements GrindstoneInventory {
-+    private final net.minecraft.world.inventory.GrindstoneMenu container; // Paper
- 
--    public CraftInventoryGrindstone(Container inventory, Container resultInventory) {
-+    public CraftInventoryGrindstone(Container inventory, Container resultInventory, net.minecraft.world.inventory.GrindstoneMenu container) { // Paper
-         super(inventory, resultInventory);
-+        this.container = container; // Paper
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 193ad79f57255b1ea4cf7930071b4f4988dc2b04..b1e040377d3737256392514ae8734d212e3bbb67 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1769,7 +1769,7 @@ public class CraftEventFactory {
+         if (view.getTopInventory() instanceof org.bukkit.inventory.AnvilInventory) {
+             event = new PrepareAnvilEvent(view, result);
+         } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
+-            event = new PrepareGrindstoneEvent(view, result);
++            event = new PrepareGrindstoneEvent(view, result, ((net.minecraft.world.inventory.GrindstoneMenu) container).experienceReward);
+         } else if (view.getTopInventory() instanceof org.bukkit.inventory.SmithingInventory) {
+             event = new PrepareSmithingEvent(view, result);
+         } else {
+@@ -1777,6 +1777,9 @@ public class CraftEventFactory {
+         }
+         event.callEvent();
+         event.getInventory().setItem(resultSlot, event.getResult());
++        if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
++            ((net.minecraft.world.inventory.GrindstoneMenu) container).experienceReward = ((PrepareGrindstoneEvent) event).getExperienceReward();
++        }
+         container.broadcastChanges();;
      }
-+    // Paper start
-+    @Override
-+    public int getExperienceReward() {
-+        return container.experienceReward;
-+    }
-+
-+    @Override
-+    public void setExperienceReward(final int experienceReward) {
-+        com.google.common.base.Preconditions.checkArgument(experienceReward >= 0, "The new experience reward must not be negative");
-+        container.experienceReward = experienceReward;
-+    }
-+    // Paper end
- }
+     // Paper end
