@@ -3416,6 +3416,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
     // Paper end
 
+    // Paper start
+    @Override
+    public Duration getIdleDuration() {
+        return Duration.ofMillis(net.minecraft.Util.getMillis() - this.getHandle().getLastActionTime());
+    }
+
+    @Override
+    public void resetIdleDuration() {
+        this.getHandle().resetLastActionTime();
+    }
+    // Paper end
+
     public Player.Spigot spigot()
     {
         return this.spigot;
