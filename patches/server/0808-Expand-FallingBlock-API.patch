@@ -54,43 +54,42 @@ index 5164c2bfb32275beff01b6e76dfbd9d031231bc6..e6f75a9cac46c8e3ddba664a9d5b27b6
  
      public void setHurtsEntities(float fallHurtAmount, int fallHurtMax) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
-index e85a5dcae1a752c48dc457d05191355d72ca4443..7012cff716bd634419be0f8dd80e0f93261fd1cd 100644
+index e85a5dcae1a752c48dc457d05191355d72ca4443..a8bed9c1d129ac31486af8b65e26aa245920d6b5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
-@@ -33,6 +33,32 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
+@@ -33,6 +33,31 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
      public BlockData getBlockData() {
          return CraftBlockData.fromData(this.getHandle().getBlockState());
      }
 +    // Paper start
 +    @Override
 +    public void setBlockData(final BlockData blockData) {
-+        Preconditions.checkNotNull(blockData, "blockData");
-+        this.getHandle().blockState = ((CraftBlockData) blockData).getState();
++        Preconditions.checkArgument(blockData != null, "blockData");
++        final net.minecraft.world.level.block.state.BlockState oldState = this.getHandle().blockState, newState = ((CraftBlockData) blockData).getState();
++        this.getHandle().blockState = newState;
 +        this.getHandle().blockData = null;
-+        this.update();
++
++        if (oldState != newState) this.update();
 +    }
 +
 +    @Override
-+    public org.bukkit.block.BlockState getPlacedBlockState() {
++    public org.bukkit.block.BlockState getBlockState() {
 +        return org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.getHandle().blockState, this.getHandle().blockData);
 +    }
 +
 +    @Override
-+    public void setPlacedBlockState(final org.bukkit.block.BlockState blockState) {
-+        Preconditions.checkNotNull(blockState, "blockState");
-+        this.getHandle().blockState = ((CraftBlockData) blockState.getBlockData()).getState();
-+        if (blockState instanceof org.bukkit.craftbukkit.block.CraftBlockEntityState<?> tileEntity) {
-+            this.getHandle().blockData = tileEntity.getSnapshotNBT();
-+        } else {
-+            this.getHandle().blockData = null;
-+        }
-+        this.update();
++    public void setBlockState(final org.bukkit.block.BlockState blockState) {
++        Preconditions.checkArgument(blockState != null, "blockState");
++        // Calls #update if needed, the block data compound tag is not synced with the client and hence can be mutated after the sync with clients.
++        // The call also clears any potential old block data.
++        this.setBlockData(blockState.getBlockData());
++        if (blockState instanceof final org.bukkit.craftbukkit.block.CraftBlockEntityState<?> tileEntity) this.getHandle().blockData = tileEntity.getSnapshotNBT();
 +    }
 +    // Paper end
  
      @Override
      public boolean getDropItem() {
-@@ -101,4 +127,15 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
+@@ -101,4 +126,15 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
              this.setHurtEntities(true);
          }
      }
