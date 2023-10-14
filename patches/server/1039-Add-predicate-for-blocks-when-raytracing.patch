@@ -47,7 +47,7 @@ index 799837c172a5f7856c78e6fe2595c575f3058a5e..8d9a6f39bef955c9610bd37f90ef47d8
              Vec3 vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 0e670de77a7f9926e295e1dd63d909bed1a959ca..4e1822a94c0e52654d6afcb3bb6236b3098b6459 100644
+index 0e670de77a7f9926e295e1dd63d909bed1a959ca..4fd9a64a225d8418c88e3f75e704d496f1a22f36 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -1117,9 +1117,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -70,7 +70,7 @@ index 0e670de77a7f9926e295e1dd63d909bed1a959ca..4e1822a94c0e52654d6afcb3bb6236b3
  
          Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
          direction.checkFinite();
-@@ -1169,9 +1177,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1169,9 +1177,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks) {
@@ -84,19 +84,17 @@ index 0e670de77a7f9926e295e1dd63d909bed1a959ca..4e1822a94c0e52654d6afcb3bb6236b3
 -        Preconditions.checkArgument(this.equals(start.getWorld()), "Location start cannot be in a different world");
 -        start.checkFinite();
 +        Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
-+        org.bukkit.util.NumberConversions.checkFinite(start.x(), "x not finite");
-+        org.bukkit.util.NumberConversions.checkFinite(start.y(), "y not finite");
-+        org.bukkit.util.NumberConversions.checkFinite(start.z(), "z not finite");
++        Preconditions.checkArgument(start.isFinite(), "Location start is not finite.");
 +        // Paper end
  
          Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
          direction.checkFinite();
-@@ -1184,16 +1201,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1184,16 +1199,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          }
  
          Vector dir = direction.clone().normalize().multiply(maxDistance);
 -        Vec3 startPos = CraftLocation.toVec3D(start);
-+        Vec3 startPos = new Vec3(start.x(), start.y(), start.z()); // Paper
++        Vec3 startPos = io.papermc.paper.util.MCUtil.toVec3(start); // Paper
          Vec3 endPos = startPos.add(dir.getX(), dir.getY(), dir.getZ());
 -        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), null));
 +        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), null), passThrough); // Paper - use method with passThrough predicate
