@@ -5,6 +5,8 @@ import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -61,26 +63,37 @@ final class PluginClassLoader extends URLClassLoader {
         this.url = file.toURI().toURL();
         this.libraryLoader = libraryLoader;
 
+        Class<?> jarClass;
         try {
-            Class<?> jarClass;
-            try {
-                jarClass = Class.forName(description.getMain(), true, this);
-            } catch (ClassNotFoundException ex) {
-                throw new InvalidPluginException("Cannot find main class `" + description.getMain() + "'", ex);
-            }
+            jarClass = Class.forName(description.getMain(), true, this);
+        } catch (ClassNotFoundException ex) {
+            throw new InvalidPluginException("Cannot find main class `" + description.getMain() + "'", ex);
+        }
 
-            Class<? extends JavaPlugin> pluginClass;
-            try {
-                pluginClass = jarClass.asSubclass(JavaPlugin.class);
-            } catch (ClassCastException ex) {
-                throw new InvalidPluginException("main class `" + description.getMain() + "' does not extend JavaPlugin", ex);
-            }
+        Class<? extends JavaPlugin> pluginClass;
+        try {
+            pluginClass = jarClass.asSubclass(JavaPlugin.class);
+        } catch (ClassCastException ex) {
+            throw new InvalidPluginException("main class `" + description.getMain() + "' must extend JavaPlugin", ex);
+        }
 
-            plugin = pluginClass.newInstance();
+        Constructor<? extends JavaPlugin> pluginConstructor;
+        try {
+            pluginConstructor = pluginClass.getDeclaredConstructor();
+        } catch (NoSuchMethodException ex) {
+            throw new InvalidPluginException("main class `" + description.getMain() + "' must have a public no-args constructor", ex);
+        }
+
+        try {
+            plugin = pluginConstructor.newInstance();
         } catch (IllegalAccessException ex) {
-            throw new InvalidPluginException("No public constructor", ex);
+            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor must be public", ex);
         } catch (InstantiationException ex) {
-            throw new InvalidPluginException("Abnormal plugin type", ex);
+            throw new InvalidPluginException("main class `" + description.getMain() + "' must not be abstract", ex);
+        } catch (IllegalArgumentException ex) {
+            throw new InvalidPluginException("Could not invoke main class `" + description.getMain() + "' constructor", ex);
+        } catch (ExceptionInInitializerError | InvocationTargetException ex) {
+            throw new InvalidPluginException("Exception initializing main class `" + description.getMain() + "'", ex);
         }
     }
 
