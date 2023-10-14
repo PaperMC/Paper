@@ -3782,6 +3782,29 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     void increaseWardenWarningLevel();
     // Paper end
 
+    // Paper start
+    /**
+     * The idle duration is reset when the player
+     * sends specific action packets.
+     * <p>
+     * After the idle duration exceeds {@link org.bukkit.Bukkit#getIdleTimeout()}, the
+     * player will be kicked for {@link org.bukkit.event.player.PlayerKickEvent.Cause#IDLING}.
+     *
+     * @return the current idle duration of this player
+     */
+    @NotNull Duration getIdleDuration();
+
+    /**
+     * Resets this player's idle duration.
+     * <p>
+     * After the idle duration exceeds {@link org.bukkit.Bukkit#getIdleTimeout()}, the
+     * player will be kicked for {@link org.bukkit.event.player.PlayerKickEvent.Cause#IDLING}.
+     *
+     * @see #getIdleDuration()
+     */
+    void resetIdleDuration();
+    // Paper end
+
     @NotNull
     @Override
     Spigot spigot();
