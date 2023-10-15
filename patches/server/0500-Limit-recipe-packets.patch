@@ -5,7 +5,7 @@ Subject: [PATCH] Limit recipe packets
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index d8174c67d31fa8b6730a80a8e2399eed5737f838..a32e63f4ffff849aa13daf831b1e436c1112dde2 100644
+index d8174c67d31fa8b6730a80a8e2399eed5737f838..44dd71b7789a7e66a6d2a94c241b535a2f4cbb86 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -254,6 +254,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -24,11 +24,10 @@ index d8174c67d31fa8b6730a80a8e2399eed5737f838..a32e63f4ffff849aa13daf831b1e436c
          /* Use thread-safe field access instead
          if (this.chatSpamTickCount > 0) {
              --this.chatSpamTickCount;
-@@ -2974,6 +2976,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2974,6 +2976,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void handlePlaceRecipe(ServerboundPlaceRecipePacket packet) {
-+        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
 +        // Paper start
 +        if (!org.bukkit.Bukkit.isPrimaryThread()) {
 +            if (this.recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
