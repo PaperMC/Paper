@@ -4850,6 +4850,38 @@ index 0d536d72ac918fbd403397ff369d10143ee9c204..6051e5f272838ef23276a90e21c2fc82
  
      public static <T> TicketType<T> create(String name, Comparator<T> argumentComparator) {
          return new TicketType<>(name, argumentComparator, 0L);
+diff --git a/src/main/java/net/minecraft/server/level/WorldGenRegion.java b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
+index e96a0ca47e4701ba187555bd92c968345bc85677..33091331ec742767611fad1ab2a324fa334650c5 100644
+--- a/src/main/java/net/minecraft/server/level/WorldGenRegion.java
++++ b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
+@@ -107,6 +107,27 @@ public class WorldGenRegion implements WorldGenLevel {
+         }
+     }
+ 
++    // Paper start - starlight
++    @Override
++    public int getBrightness(final net.minecraft.world.level.LightLayer lightLayer, final BlockPos blockPos) {
++        final ChunkAccess chunk = this.getChunk(blockPos.getX() >> 4, blockPos.getZ() >> 4);
++        if (!chunk.isLightCorrect()) {
++            return 0;
++        }
++        return this.getLightEngine().getLayerListener(lightLayer).getLightValue(blockPos);
++    }
++
++
++    @Override
++    public int getRawBrightness(final BlockPos blockPos, final int subtract) {
++        final ChunkAccess chunk = this.getChunk(blockPos.getX() >> 4, blockPos.getZ() >> 4);
++        if (!chunk.isLightCorrect()) {
++            return 0;
++        }
++        return this.getLightEngine().getRawBrightness(blockPos, subtract);
++    }
++    // Paper end - starlight
++
+     public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
+         return this.level.getChunkSource().chunkMap.isOldChunkAround(chunkPos, checkRadius);
+     }
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 index 2b8e88a75e9a974e1ecafe0360a9d69b79326d11..6c171199dcc30f56a6d0ab7ecf398b505d145067 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
