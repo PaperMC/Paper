@@ -4981,7 +4981,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - rewrite light engine
  
      public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biomeRegistry, long inhabitedTime, @Nullable LevelChunkSection[] sectionArray, @Nullable BlendingData blendingData) {
++        // Paper start - rewrite light engine
++        if (!(this instanceof ImposterProtoChunk)) {
++            this.setBlockNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(heightLimitView));
++            this.setSkyNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(heightLimitView));
++        }
++        // Paper end - rewrite light engine
          this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
+         this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
+         this.upgradeData = upgradeData;
 @@ -0,0 +0,0 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
          this.inhabitedTime = inhabitedTime;
          this.postProcessing = new ShortList[heightLimitView.getSectionsCount()];
@@ -5132,17 +5140,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
  
-     public LevelChunk(Level world, ChunkPos pos, UpgradeData upgradeData, LevelChunkTicks<Block> blockTickScheduler, LevelChunkTicks<Fluid> fluidTickScheduler, long inhabitedTime, @Nullable LevelChunkSection[] sectionArrayInitializer, @Nullable LevelChunk.PostLoadProcessor entityLoader, @Nullable BlendingData blendingData) {
-         super(pos, upgradeData, world, world.registryAccess().registryOrThrow(Registries.BIOME), inhabitedTime, sectionArrayInitializer, blendingData);
-+        // Paper start - rewrite light engine
-+        this.setBlockNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world));
-+        this.setSkyNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world));
-+        // Paper end - rewrite light engine
-         this.tickersInLevel = Maps.newHashMap();
-         this.level = (ServerLevel) world; // CraftBukkit - type
-         this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap();
-@@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
- 
      public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
          this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), entityLoader, protoChunk.getBlendingData());
 +        // Paper start - rewrite light engine
@@ -5189,19 +5186,6 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
-@@ -0,0 +0,0 @@ public class ProtoChunk extends ChunkAccess {
- 
-     public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] sections, ProtoChunkTicks<Block> blockTickScheduler, ProtoChunkTicks<Fluid> fluidTickScheduler, LevelHeightAccessor world, Registry<Biome> biomeRegistry, @Nullable BlendingData blendingData) {
-         super(pos, upgradeData, world, biomeRegistry, 0L, sections, blendingData);
-+        // Paper start - rewrite light engine
-+        if (!(this instanceof ImposterProtoChunk)) {
-+            this.setBlockNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world));
-+            this.setSkyNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world));
-+        }
-+        // Paper end - rewrite light engine
-         this.blockTicks = blockTickScheduler;
-         this.fluidTicks = fluidTickScheduler;
-     }
 @@ -0,0 +0,0 @@ public class ProtoChunk extends ChunkAccess {
                      }
  
