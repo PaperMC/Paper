@@ -6,7 +6,7 @@ Subject: [PATCH] Fix strikeLightningEffect powers lightning rods and clears
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 17610196db7a1c6feb2cf74a02479a8691aa323f..ca811a3dcc751fcf663b5ef49c892097b20bfb83 100644
+index 17610196db7a1c6feb2cf74a02479a8691aa323f..ef7a721df01723cc64c2ddffa536cd842997282b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -997,7 +997,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -14,12 +14,12 @@ index 17610196db7a1c6feb2cf74a02479a8691aa323f..ca811a3dcc751fcf663b5ef49c892097
                  if (entitylightning != null) {
                      entitylightning.moveTo(Vec3.atBottomCenterOf(blockposition));
 -                    entitylightning.setVisualOnly(flag1);
-+                    entitylightning.setSkeletonTrap(flag1); // Paper
++                    entitylightning.skeletonTrap = flag1; // Paper
                      this.strikeLightning(entitylightning, org.bukkit.event.weather.LightningStrikeEvent.Cause.WEATHER); // CraftBukkit
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
-index 471275c5362b61ce8b5b9dd5c85b3e93cabd3f76..14244fb611ce0c68429831b42d36e412df73a49a 100644
+index 471275c5362b61ce8b5b9dd5c85b3e93cabd3f76..829778169b74e1543d034fd3294ce39151f48800 100644
 --- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
 +++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
 @@ -46,6 +46,7 @@ public class LightningBolt extends Entity {
@@ -30,20 +30,7 @@ index 471275c5362b61ce8b5b9dd5c85b3e93cabd3f76..14244fb611ce0c68429831b42d36e412
  
      public LightningBolt(EntityType<? extends LightningBolt> type, Level world) {
          super(type, world);
-@@ -59,6 +60,12 @@ public class LightningBolt extends Entity {
-         this.visualOnly = cosmetic;
-     }
- 
-+    // Paper start
-+    public void setSkeletonTrap(boolean skeletonTrap) {
-+        this.skeletonTrap = skeletonTrap;
-+    }
-+    //Paper end
-+
-     @Override
-     public SoundSource getSoundSource() {
-         return SoundSource.WEATHER;
-@@ -86,7 +93,7 @@ public class LightningBolt extends Entity {
+@@ -86,7 +87,7 @@ public class LightningBolt extends Entity {
      @Override
      public void tick() {
          super.tick();
@@ -52,7 +39,7 @@ index 471275c5362b61ce8b5b9dd5c85b3e93cabd3f76..14244fb611ce0c68429831b42d36e412
              if (this.level().isClientSide()) {
                  this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 10000.0F, 0.8F + this.random.nextFloat() * 0.2F, false);
                  this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.WEATHER, 2.0F, 0.5F + this.random.nextFloat() * 0.2F, false);
-@@ -133,10 +140,10 @@ public class LightningBolt extends Entity {
+@@ -133,7 +134,7 @@ public class LightningBolt extends Entity {
              }
          }
  
@@ -60,12 +47,8 @@ index 471275c5362b61ce8b5b9dd5c85b3e93cabd3f76..14244fb611ce0c68429831b42d36e412
 +        if (this.life >= 0 && !this.visualOnly && !this.skeletonTrap) { // CraftBukkit - add !this.visualOnly // Paper
              if (!(this.level() instanceof ServerLevel)) {
                  this.level().setSkyFlashTime(2);
--            } else if (!this.visualOnly) {
-+            } else { // Paper
-                 list = this.level().getEntities((Entity) this, new AABB(this.getX() - 3.0D, this.getY() - 3.0D, this.getZ() - 3.0D, this.getX() + 3.0D, this.getY() + 6.0D + 3.0D, this.getZ() + 3.0D), Entity::isAlive);
-                 iterator = list.iterator();
- 
-@@ -162,13 +169,13 @@ public class LightningBolt extends Entity {
+             } else if (!this.visualOnly) {
+@@ -162,7 +163,7 @@ public class LightningBolt extends Entity {
      }
  
      private void spawnFire(int spreadAttempts) {
@@ -74,24 +57,8 @@ index 471275c5362b61ce8b5b9dd5c85b3e93cabd3f76..14244fb611ce0c68429831b42d36e412
              BlockPos blockposition = this.blockPosition();
              BlockState iblockdata = BaseFireBlock.getState(this.level(), blockposition);
  
-             if (this.level().getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level(), blockposition)) {
-                 // CraftBukkit start - add "!visualOnly"
--                if (!this.visualOnly && !CraftEventFactory.callBlockIgniteEvent(this.level(), blockposition, this).isCancelled()) {
-+                if (!CraftEventFactory.callBlockIgniteEvent(this.level(), blockposition, this).isCancelled()) { // Paper
-                     this.level().setBlockAndUpdate(blockposition, iblockdata);
-                     ++this.blocksSetOnFire;
-                 }
-@@ -181,7 +188,7 @@ public class LightningBolt extends Entity {
-                 iblockdata = BaseFireBlock.getState(this.level(), blockposition1);
-                 if (this.level().getBlockState(blockposition1).isAir() && iblockdata.canSurvive(this.level(), blockposition1)) {
-                     // CraftBukkit start - add "!visualOnly"
--                    if (!this.visualOnly && !CraftEventFactory.callBlockIgniteEvent(this.level(), blockposition1, this).isCancelled()) {
-+                    if (!CraftEventFactory.callBlockIgniteEvent(this.level(), blockposition1, this).isCancelled()) { // Paper
-                         this.level().setBlockAndUpdate(blockposition1, iblockdata);
-                         ++this.blocksSetOnFire;
-                     }
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
-index d00fb16ae3b94dfcb10fd1a7c1671595e2ff1855..bb9309e8ac7f13da5fdf80b9111ce0477cad59ed 100644
+index d00fb16ae3b94dfcb10fd1a7c1671595e2ff1855..b6c935736e8c0b8997c3f9a185f382b6258a7166 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
 @@ -42,7 +42,7 @@ public class SkeletonTrapGoal extends Goal {
@@ -99,7 +66,7 @@ index d00fb16ae3b94dfcb10fd1a7c1671595e2ff1855..bb9309e8ac7f13da5fdf80b9111ce047
          if (entitylightning != null) {
              entitylightning.moveTo(this.horse.getX(), this.horse.getY(), this.horse.getZ());
 -            entitylightning.setVisualOnly(true);
-+            entitylightning.setSkeletonTrap(true); // Paper
++            entitylightning.skeletonTrap = true; // Paper
              worldserver.strikeLightning(entitylightning, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRAP); // CraftBukkit
              Skeleton entityskeleton = this.createSkeleton(difficultydamagescaler, this.horse);
  
