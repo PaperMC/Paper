@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Fri, 20 Oct 2023 19:50:22 +0200
+Subject: [PATCH] Fix NPE in SculkBloomEvent world access
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/SculkSpreader.java b/src/main/java/net/minecraft/world/level/block/SculkSpreader.java
+index de90a216321f7d82310a0d1c915fefe64360534c..6010c6cc727cee90f61e15848bd111385c6d52fb 100644
+--- a/src/main/java/net/minecraft/world/level/block/SculkSpreader.java
++++ b/src/main/java/net/minecraft/world/level/block/SculkSpreader.java
+@@ -62,7 +62,7 @@ public class SculkSpreader {
+     private final int additionalDecayRate;
+     private List<SculkSpreader.ChargeCursor> cursors = new ArrayList();
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    Level level; // CraftBukkit
++    public Level level; // CraftBukkit // Paper - package-private -> public
+ 
+     public SculkSpreader(boolean worldGen, TagKey<Block> replaceableTag, int extraBlockChance, int maxDistance, int spreadChance, int decayChance) {
+         this.isWorldGeneration = worldGen;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+index 6c378e3485fef4e8b8906c33a45a23e6f77e9cdd..8c4987075d8bcae85a7048c38ca97b455fb387eb 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+@@ -32,9 +32,16 @@ public class SculkCatalystBlockEntity extends BlockEntity implements GameEventLi
+     public SculkCatalystBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.SCULK_CATALYST, pos, state);
+         this.catalystListener = new SculkCatalystBlockEntity.CatalystListener(state, new BlockPositionSource(pos));
+-        catalystListener.level = level; // CraftBukkit
+     }
+ 
++    // Paper start
++    @Override
++    public void setLevel(Level level) {
++        super.setLevel(level);
++        this.catalystListener.sculkSpreader.level = level;
++    }
++    // Paper end
++
+     public static void serverTick(Level world, BlockPos pos, BlockState state, SculkCatalystBlockEntity blockEntity) {
+         org.bukkit.craftbukkit.event.CraftEventFactory.sourceBlockOverride = blockEntity.getBlockPos(); // CraftBukkit - SPIGOT-7068: Add source block override, not the most elegant way but better than passing down a BlockPosition up to five methods deep.
+         blockEntity.catalystListener.getSculkSpreader().updateCursors(world, pos, world.getRandom(), true);
+@@ -64,7 +71,6 @@ public class SculkCatalystBlockEntity extends BlockEntity implements GameEventLi
+         final SculkSpreader sculkSpreader;
+         private final BlockState blockState;
+         private final PositionSource positionSource;
+-        private Level level; // CraftBukkit
+ 
+         public CatalystListener(BlockState state, PositionSource positionSource) {
+             this.blockState = state;
