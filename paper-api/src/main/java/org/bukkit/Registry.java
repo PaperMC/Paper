@@ -157,6 +157,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     Registry<Material> MATERIAL = new SimpleRegistry<>(Material.class, (mat) -> !mat.isLegacy());
     /**
+     * Server particles.
+     *
+     * @see Particle
+     */
+    Registry<Particle> PARTICLE_TYPE = new SimpleRegistry<>(Particle.class, (par) -> par.register);
+    /**
      * Server potions.
      *
      * @see PotionType
