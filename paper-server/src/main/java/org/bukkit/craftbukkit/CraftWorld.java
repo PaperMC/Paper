@@ -1788,12 +1788,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
+        particle = CraftParticle.convertLegacy(particle);
+        data = CraftParticle.convertLegacy(data);
         if (data != null) {
             Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
         }
         getHandle().sendParticles(
                 null, // Sender
-                CraftParticle.toNMS(particle, data), // Particle
+                CraftParticle.createParticleParam(particle, data), // Particle
                 x, y, z, // Position
                 count,  // Count
                 offsetX, offsetY, offsetZ, // Random offset
