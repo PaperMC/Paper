@@ -5,30 +5,14 @@ Subject: [PATCH] More World API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 013d7f6107230e3e530ff86cc9219ca0a6681ec6..085faebd53c0d620fe4e9aa5f0fc88b0e96d0b10 100644
+index 31fda85d5da2cbf4af199fd2431b258592f14af4..4d5e34a9ad59c3ed3b39630f0fd4e119ea3326e0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2088,6 +2088,69 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2089,6 +2089,53 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          return new CraftStructureSearchResult(CraftStructure.minecraftToBukkit(found.getSecond().value(), this.getHandle().registryAccess()), CraftLocation.toBukkit(found.getFirst(), this));
      }
  
 +    // Paper start
-+    @Override
-+    public Location locateNearestBiome(Location origin, Biome biome, int radius) {
-+        return this.locateNearestBiome(origin, biome, radius, 8);
-+    }
-+
-+    @Override
-+    public Location locateNearestBiome(Location origin, Biome biome, int radius, int step) {
-+        BlockPos originPos = io.papermc.paper.util.MCUtil.toBlockPos(origin);
-+        Pair<BlockPos, Holder<net.minecraft.world.level.biome.Biome>> pair = getHandle().findClosestBiome3d(holder -> holder.is(CraftNamespacedKey.toMinecraft(biome.getKey())), originPos, radius, step, step);
-+        if (pair == null) {
-+            return null;
-+        }
-+        BlockPos nearest = pair.getFirst();
-+        return new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
-+    }
-+
 +    @Override
 +    public boolean isUltrawarm() {
 +        return getHandle().dimensionType().ultraWarm();
@@ -76,8 +60,8 @@ index 013d7f6107230e3e530ff86cc9219ca0a6681ec6..085faebd53c0d620fe4e9aa5f0fc88b0
 +    // Paper end
 +
      @Override
-     public Raid locateNearestRaid(Location location, int radius) {
-         Preconditions.checkArgument(location != null, "Location cannot be null");
+     public BiomeSearchResult locateNearestBiome(Location origin, int radius, Biome... biomes) {
+         return this.locateNearestBiome(origin, radius, 32, 64, biomes);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftVector.java b/src/main/java/org/bukkit/craftbukkit/util/CraftVector.java
 index 3071ac1ac0e733d73dade49597a39f7d156bbc04..967445b2eb158454100a27369a1f463d69f54f27 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftVector.java
