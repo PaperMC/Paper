@@ -6,7 +6,7 @@ Subject: [PATCH] Fix PotionEffect ignores icon flag
 Co-authored-by: Tamion <70228790+notTamion@users.noreply.github.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 9ba85d099d0e6893dc3489ce0753119348e937b3..6f62d2ab8a4e3789c9c859ae769bb3e25ad5006d 100644
+index 9ba85d099d0e6893dc3489ce0753119348e937b3..fd006bc0f14ebd3a2d5373611480a84a2d93bb0b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 @@ -443,7 +443,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -14,7 +14,7 @@ index 9ba85d099d0e6893dc3489ce0753119348e937b3..6f62d2ab8a4e3789c9c859ae769bb3e2
      @Override
      public boolean addPotionEffect(PotionEffect effect, boolean force) {
 -        this.getHandle().addEffect(new MobEffectInstance(CraftPotionEffectType.bukkitToMinecraft(effect.getType()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()), EntityPotionEffectEvent.Cause.PLUGIN);
-+        this.getHandle().addEffect(new MobEffectInstance(CraftPotionEffectType.bukkitToMinecraft(effect.getType()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles(), effect.hasIcon()), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
++        this.getHandle().addEffect(CraftPotionUtil.fromBukkit(effect), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
          return true;
      }
  
@@ -23,7 +23,7 @@ index 9ba85d099d0e6893dc3489ce0753119348e937b3..6f62d2ab8a4e3789c9c859ae769bb3e2
      public PotionEffect getPotionEffect(PotionEffectType type) {
          MobEffectInstance handle = this.getHandle().getEffect(CraftPotionEffectType.bukkitToMinecraft(type));
 -        return (handle == null) ? null : new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible());
-+        return (handle == null) ? null : new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible(), handle.showIcon()); // Paper
++        return (handle == null) ? null : CraftPotionUtil.toBukkit(handle); // Paper
      }
  
      @Override
@@ -32,7 +32,7 @@ index 9ba85d099d0e6893dc3489ce0753119348e937b3..6f62d2ab8a4e3789c9c859ae769bb3e2
          List<PotionEffect> effects = new ArrayList<PotionEffect>();
          for (MobEffectInstance handle : this.getHandle().activeEffects.values()) {
 -            effects.add(new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible()));
-+            effects.add(new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible(), handle.showIcon())); // Paper
++            effects.add(CraftPotionUtil.toBukkit(handle)); // Paper
          }
          return effects;
      }
