@@ -142,7 +142,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             // SPIGOT-6558: Set initial textures
             tag.put(SKULL_OWNER.NBT, serializedProfile);
             // Fill in textures
-            PlayerProfile ownerProfile = getOwnerProfile();
+            PlayerProfile ownerProfile = new CraftPlayerProfile(profile); // getOwnerProfile may return null
             if (ownerProfile.getTextures().isEmpty()) {
                 ownerProfile.update().thenAccept((filledProfile) -> {
                     setOwnerProfile(filledProfile);
