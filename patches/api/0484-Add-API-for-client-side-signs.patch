@@ -1,0 +1,121 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukas Planz <me@md5lukas.de>
+Date: Mon, 2 Oct 2023 15:47:27 +0200
+Subject: [PATCH] Add API for client-side signs
+
+
+diff --git a/src/main/java/io/papermc/paper/event/packet/UncheckedSignChangeEvent.java b/src/main/java/io/papermc/paper/event/packet/UncheckedSignChangeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..501c1d5cb62d4929509ae2415f424f6f04f09909
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/packet/UncheckedSignChangeEvent.java
+@@ -0,0 +1,85 @@
++package io.papermc.paper.event.packet;
++
++import io.papermc.paper.math.BlockPosition;
++import net.kyori.adventure.text.Component;
++import org.bukkit.block.sign.Side;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++import java.util.List;
++
++/**
++ * Called when a sign edit packet has been received, but the location at which the sign should be edited
++ * has not yet been checked for the existence of a real sign.
++ * <p>
++ * Cancelling this event will prevent further processing of the sign change, but needs further handling
++ * by the plugin because the local world might be in an inconsistent state.
++ */
++public class UncheckedSignChangeEvent extends PlayerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++    private boolean cancel = false;
++    private final BlockPosition block;
++    private final Side side;
++    private final List<Component> lines;
++
++    @ApiStatus.Internal
++    public UncheckedSignChangeEvent(final @NotNull Player editor, @NotNull final BlockPosition block, final @NotNull Side side, @NotNull final List<@NotNull Component> lines) {
++        super(editor);
++        this.block = block;
++        this.side = side;
++        this.lines = lines;
++    }
++
++    /**
++     * Gets the location at which a potential sign was edited.
++     *
++     * @return location where the change happened
++     */
++    public @NotNull BlockPosition getBlock() {
++        return block;
++    }
++
++    /**
++     * Gets which side of the sign was edited.
++     *
++     * @return {@link Side} that was edited
++     */
++    public @NotNull Side getSide() {
++        return side;
++    }
++
++    /**
++     * Gets the lines that the player has entered.
++     *
++     * @return the lines
++     */
++    public @NotNull @Unmodifiable List<@NotNull Component> getLines() {
++        return lines;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancel;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancel = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index f2e1b98880503a9933a20ebcf0ba91413c859a08..14313a8b425f174d518bbad3e219fa130c86c0f6 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -3382,6 +3382,19 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param side The side to edit
+      */
+     public void openSign(@NotNull Sign sign, @NotNull Side side);
++    // Paper start - Add API for client-side signs
++    /**
++     * Open a sign for editing by the player.
++     * <p>
++     * The sign must only be placed locally for the player, which can be done with {@link #sendBlockChange(Location, BlockData)} and {@link #sendBlockUpdate(Location, TileState)}.
++     * A side-effect of this is that no events will be called for this action.
++     * </p>
++     *
++     * @param block The block where the client has a sign placed
++     * @param side The side to edit
++     */
++    void openLocalSign(@NotNull io.papermc.paper.math.BlockPosition block, @NotNull Side side);
++    // Paper end - Add API for client-side signs
+ 
+     /**
+      * Shows the demo screen to the player, this screen is normally only seen in
