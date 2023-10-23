@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DigitalRegent <misterwener@gmail.com>
+Date: Sat, 11 Apr 2020 13:10:58 +0200
+Subject: [PATCH] Brand support
+
+
+diff --git a/src/main/java/io/papermc/paper/network/payload/BrandPayload.java b/src/main/java/io/papermc/paper/network/payload/BrandPayload.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..da940967dd1f84093506f9d845d8ee8aaa53c693
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/network/payload/BrandPayload.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.network.payload;
++
++import net.minecraft.network.FriendlyByteBuf;
++import net.minecraft.resources.ResourceLocation;
++import org.jetbrains.annotations.NotNull;
++import java.nio.charset.StandardCharsets;
++
++public record BrandPayload(@NotNull String raw, @NotNull String brand) implements ReadableMessage {
++
++    public static final ResourceLocation ID = new ResourceLocation("brand");
++
++    public BrandPayload(final FriendlyByteBuf buf) {
++        this(buf.toString(StandardCharsets.UTF_8), buf.readUtf());
++    }
++
++    @Override
++    public byte[] message() {
++        return raw.getBytes(StandardCharsets.UTF_8);
++    }
++
++    @Override
++    public void write(final FriendlyByteBuf buf) {
++        buf.writeUtf(this.brand);
++    }
++
++    @Override
++    public @NotNull ResourceLocation id() {
++        return ID;
++    }
++}
+diff --git a/src/main/java/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java b/src/main/java/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java
+index 41c5a048ce768f067f0c8324ab30eccb7d13c3db..c566f552d38462386793ee1206791cc666806271 100644
+--- a/src/main/java/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java
+@@ -17,6 +17,7 @@ public record ServerboundCustomPayloadPacket(CustomPacketPayload payload) implem
+         ImmutableMap.<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>>builder()
+             .put(io.papermc.paper.network.payload.ChannelPayload.REGISTER, io.papermc.paper.network.payload.ChannelPayload.Register::new)
+             .put(io.papermc.paper.network.payload.ChannelPayload.UNREGISTER, io.papermc.paper.network.payload.ChannelPayload.Unregister::new)
++            .put(io.papermc.paper.network.payload.BrandPayload.ID, io.papermc.paper.network.payload.BrandPayload::new) // Paper - brand support
+             .build();
+     // Paper end - Rewrite custom payload handler
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 2c2b1aef3f510edb9bb124581739f06692ab5673..567bfcdf5c946d09bb8188435ee13930082dccf5 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -271,6 +271,7 @@ public class ServerPlayer extends Player {
+     public boolean isRealPlayer; // Paper
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
+     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
++    public @Nullable String clientBrandName = null; // Paper - Brand name
+ 
+     // Paper start - replace player chunk loader
+     private final java.util.concurrent.atomic.AtomicReference<io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances> viewDistances = new java.util.concurrent.atomic.AtomicReference<>(new io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances(-1, -1, -1));
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 568a1252acb00a8547e95cf529fdf3be7f3ca839..efc5543670af2b8bb83b862d4d7e70bbad5cda8c 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -131,6 +131,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             }
+             return;
+         }
++        // Paper start - handle brand payload packet
++        else if (packet.payload() instanceof io.papermc.paper.network.payload.BrandPayload brandPayload) {
++            this.player.clientBrandName = brandPayload.brand();
++        }
++        // Paper end - handle brand payload
+ 
+         // Dispatch Message
+         if (packet.payload() instanceof io.papermc.paper.network.payload.ReadableMessage payload) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index b92cc9f8d62cc3bfefe42c4c1fb08af4731dd48f..7b1404ac481ea9a059197b9f752327ef0bf72c5c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -3009,6 +3009,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // Paper end
+     };
+ 
++    // Paper start - brand support
++    @Override
++    public String getClientBrandName() {
++        return getHandle().clientBrandName;
++    }
++    // Paper end
++
+     public Player.Spigot spigot()
+     {
+         return this.spigot;

@@ -88,10 +88,10 @@ index c68bac4727f6b2ca95fc8c438303097af14286f2..bb629ec263959c8268de88ca807bddb6
                  return Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason);
              }, true);
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index d660041805bcd1bb97cf347d8b1cfe5c65469f56..a0328cfbe4184a2c1dc895e96fa3fefbdc52bf09 100644
+index 5d17a500a38a200730ffd170c267e3edc9937ad9..5bdce47cd05c5d12b2b844a820bdc542f7f4b8f4 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -94,7 +94,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -93,7 +93,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          } else if (!this.isSingleplayerOwner()) {
              // Paper start - This needs to be handled on the main thread for plugins
              server.submit(() -> {
@@ -100,34 +100,34 @@ index d660041805bcd1bb97cf347d8b1cfe5c65469f56..a0328cfbe4184a2c1dc895e96fa3fefb
              });
              // Paper endg
          }
-@@ -130,7 +130,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -116,7 +116,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                  }
-             } catch (Exception ex) {
-                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t register custom payload", ex);
+             } catch (final Exception exception) {
+                 ServerGamePacketListenerImpl.LOGGER.error("Couldn't register custom payload", exception);
 -                this.disconnect("Invalid payload REGISTER!");
 +                this.disconnect("Invalid payload REGISTER!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
              }
-         } else if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_UNREGISTER)) {
-             try {
-@@ -140,7 +140,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             return;
+         } else if (packet.payload() instanceof io.papermc.paper.network.payload.ChannelPayload.Unregister payload) {
+@@ -127,7 +127,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                  }
-             } catch (Exception ex) {
-                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t unregister custom payload", ex);
+             } catch (final Exception exception) {
+                 ServerGamePacketListenerImpl.LOGGER.error("Couldn't unregister custom payload", exception);
 -                this.disconnect("Invalid payload UNREGISTER!");
 +                this.disconnect("Invalid payload UNREGISTER!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
              }
-         } else {
-             try {
-@@ -158,7 +158,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
-                 this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
-             } catch (Exception ex) {
-                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
+             return;
+         }
+@@ -143,7 +143,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+                 this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), payload.id().toString(), payload.message());
+             } catch (final Exception exception) {
+                 ServerGamePacketListenerImpl.LOGGER.error("Couldn't dispatch custom payload", exception);
 -                this.disconnect("Invalid custom payload!");
 +                this.disconnect("Invalid custom payload!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
              }
          }
- 
-@@ -174,7 +174,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     }
+@@ -205,7 +205,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          PacketUtils.ensureRunningOnSameThread(packet, this, (BlockableEventLoop) this.server);
          if (packet.getAction() == ServerboundResourcePackPacket.Action.DECLINED && this.server.isResourcePackRequired()) {
              ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack rejection", this.playerProfile().getName());
@@ -136,7 +136,7 @@ index d660041805bcd1bb97cf347d8b1cfe5c65469f56..a0328cfbe4184a2c1dc895e96fa3fefb
          }
          // Paper start
          PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.getAction().ordinal()];
-@@ -194,7 +194,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -225,7 +225,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          if (this.keepAlivePending) {
              if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
                  ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // more info
@@ -145,7 +145,7 @@ index d660041805bcd1bb97cf347d8b1cfe5c65469f56..a0328cfbe4184a2c1dc895e96fa3fefb
              }
          } else {
              if (elapsedTime >= 15000L) { // 15 seconds
-@@ -247,18 +247,28 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -278,18 +278,28 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      }
  
      // CraftBukkit start
@@ -178,7 +178,7 @@ index d660041805bcd1bb97cf347d8b1cfe5c65469f56..a0328cfbe4184a2c1dc895e96fa3fefb
          // Paper end
          // CraftBukkit start - fire PlayerKickEvent
          if (this.processedDisconnect) {
-@@ -268,7 +278,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -299,7 +309,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
              Waitable waitable = new Waitable() {
                  @Override
                  protected Object evaluate() {
@@ -187,7 +187,7 @@ index d660041805bcd1bb97cf347d8b1cfe5c65469f56..a0328cfbe4184a2c1dc895e96fa3fefb
                      return null;
                  }
              };
-@@ -287,7 +297,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -318,7 +328,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
          net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? this.player.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(this.player.getScoreboardName())); // Paper - Adventure
  
