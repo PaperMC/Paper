@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SuprexDE <login@suprexde.de>
+Date: Wed, 25 Oct 2023 17:00:33 +0200
+Subject: [PATCH] Remove kick signed message
+
+
+diff --git a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
+index c0a80824a0307ea673805015119cc834b268f0dc..6e73659b9d94377366a8cdf9f5bf725eee2439d2 100644
+--- a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
++++ b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
+@@ -38,15 +38,8 @@ public class SignedMessageChain {
+                 throw new SignedMessageChain.DecodeException(Component.translatable("chat.disabled.expiredProfileKey"), false);
+             } else {
+                 PlayerChatMessage playerChatMessage = new PlayerChatMessage(signedMessageLink, signature, body, (Component)null, FilterMask.PASS_THROUGH);
+-                if (!playerChatMessage.verify(signatureValidator)) {
+-                    throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.unsigned_chat"), true, org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event causes
+-                } else {
+-                    if (playerChatMessage.hasExpiredServer(Instant.now())) {
+-                        LOGGER.warn("Received expired chat: '{}'. Is the client/server system time unsynchronized?", (Object)body.content());
+-                    }
+-
+-                    return playerChatMessage;
+-                }
++                playerChatMessage.verify(signatureValidator);
++                return playerChatMessage;
+             }
+         };
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java b/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
+index 20ba0a0c9eae28658888a77dd2170f629bbcb65b..6956c3aed1001b8ad4982935955979f8ae643503 100644
+--- a/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
++++ b/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
+@@ -23,11 +23,11 @@ public record ProfilePublicKey(ProfilePublicKey.Data data) {
+     public static final Codec<ProfilePublicKey> TRUSTED_CODEC = ProfilePublicKey.Data.CODEC.xmap(ProfilePublicKey::new, ProfilePublicKey::data);
+ 
+     public static ProfilePublicKey createValidated(SignatureValidator servicesSignatureVerifier, UUID playerUuid, ProfilePublicKey.Data publicKeyData) throws ProfilePublicKey.ValidationException {
+-        if (!publicKeyData.validateSignature(servicesSignatureVerifier, playerUuid)) {
+-            throw new ProfilePublicKey.ValidationException(INVALID_SIGNATURE, org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PUBLIC_KEY_SIGNATURE); // Paper - kick event causes
+-        } else {
++        //if (!publicKeyData.validateSignature(servicesSignatureVerifier, playerUuid)) {
++            //throw new ProfilePublicKey.ValidationException(INVALID_SIGNATURE, org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PUBLIC_KEY_SIGNATURE); // Paper - kick event causes
++        // else {
+             return new ProfilePublicKey(publicKeyData);
+-        }
++        //}
+     }
+ 
+     public SignatureValidator createSignatureValidator() {
