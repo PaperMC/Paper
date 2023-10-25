@@ -18,17 +18,27 @@
  public class EntityPotion extends EntityProjectileThrowable implements ItemSupplier {
  
      public static final double SPLASH_RANGE = 4.0D;
-@@ -99,7 +110,7 @@
+@@ -99,11 +110,11 @@
  
              if (flag) {
                  this.applyWater();
 -            } else if (!list.isEmpty()) {
 +            } else if (true || !list.isEmpty()) { // CraftBukkit - Call event even if no effects to apply
                  if (this.isLingering()) {
-                     this.makeAreaOfEffectCloud(itemstack, potionregistry);
+-                    this.makeAreaOfEffectCloud(itemstack, potionregistry);
++                    this.makeAreaOfEffectCloud(itemstack, potionregistry, movingobjectposition); // CraftBukkit - Pass MovingObjectPosition
                  } else {
-@@ -148,6 +159,7 @@
-     private void applySplash(List<MobEffect> list, @Nullable Entity entity) {
+-                    this.applySplash(list, movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY ? ((MovingObjectPositionEntity) movingobjectposition).getEntity() : null);
++                    this.applySplash(list, movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY ? ((MovingObjectPositionEntity) movingobjectposition).getEntity() : null, movingobjectposition); // CraftBukkit - Pass MovingObjectPosition
+                 }
+             }
+ 
+@@ -145,9 +156,10 @@
+ 
+     }
+ 
+-    private void applySplash(List<MobEffect> list, @Nullable Entity entity) {
++    private void applySplash(List<MobEffect> list, @Nullable Entity entity, MovingObjectPosition position) { // CraftBukkit - Pass MovingObjectPosition
          AxisAlignedBB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
          List<EntityLiving> list1 = this.level().getEntitiesOfClass(EntityLiving.class, axisalignedbb);
 +        Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
@@ -50,7 +60,7 @@
 -                        while (iterator1.hasNext()) {
 -                            MobEffect mobeffect = (MobEffect) iterator1.next();
 -                            MobEffectList mobeffectlist = mobeffect.getEffect();
-+        org.bukkit.event.entity.PotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPotionSplashEvent(this, affected);
++        org.bukkit.event.entity.PotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPotionSplashEvent(this, position, affected);
 +        if (!event.isCancelled() && list != null && !list.isEmpty()) { // do not process effects if there are no effects to process
 +            Entity entity1 = this.getEffectSource();
 +            for (LivingEntity victim : event.getAffectedEntities()) {
@@ -100,13 +110,22 @@
                          }
                      }
                  }
+@@ -194,7 +231,7 @@
+ 
+     }
+ 
+-    private void makeAreaOfEffectCloud(ItemStack itemstack, PotionRegistry potionregistry) {
++    private void makeAreaOfEffectCloud(ItemStack itemstack, PotionRegistry potionregistry, MovingObjectPosition position) { // CraftBukkit - Pass MovingObjectPosition
+         EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
+         Entity entity = this.getOwner();
+ 
 @@ -221,7 +258,14 @@
              entityareaeffectcloud.setFixedColor(nbttagcompound.getInt("CustomPotionColor"));
          }
  
 -        this.level().addFreshEntity(entityareaeffectcloud);
 +        // CraftBukkit start
-+        org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, entityareaeffectcloud);
++        org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, position, entityareaeffectcloud);
 +        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved())) {
 +            this.level().addFreshEntity(entityareaeffectcloud);
 +        } else {

@@ -787,19 +787,45 @@ public class CraftEventFactory {
     /**
      * PotionSplashEvent
      */
-    public static PotionSplashEvent callPotionSplashEvent(EntityPotion potion, Map<LivingEntity, Double> affectedEntities) {
+    public static PotionSplashEvent callPotionSplashEvent(EntityPotion potion, MovingObjectPosition position, Map<LivingEntity, Double> affectedEntities) {
         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
 
-        PotionSplashEvent event = new PotionSplashEvent(thrownPotion, affectedEntities);
+        Block hitBlock = null;
+        BlockFace hitFace = null;
+        if (position.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
+            MovingObjectPositionBlock positionBlock = (MovingObjectPositionBlock) position;
+            hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
+            hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
+        }
+
+        org.bukkit.entity.Entity hitEntity = null;
+        if (position.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
+            hitEntity = ((MovingObjectPositionEntity) position).getEntity().getBukkitEntity();
+        }
+
+        PotionSplashEvent event = new PotionSplashEvent(thrownPotion, hitEntity, hitBlock, hitFace, affectedEntities);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 
-    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(EntityPotion potion, EntityAreaEffectCloud cloud) {
+    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(EntityPotion potion, MovingObjectPosition position, EntityAreaEffectCloud cloud) {
         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
         AreaEffectCloud effectCloud = (AreaEffectCloud) cloud.getBukkitEntity();
 
-        LingeringPotionSplashEvent event = new LingeringPotionSplashEvent(thrownPotion, effectCloud);
+        Block hitBlock = null;
+        BlockFace hitFace = null;
+        if (position.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
+            MovingObjectPositionBlock positionBlock = (MovingObjectPositionBlock) position;
+            hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
+            hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
+        }
+
+        org.bukkit.entity.Entity hitEntity = null;
+        if (position.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
+            hitEntity = ((MovingObjectPositionEntity) position).getEntity().getBukkitEntity();
+        }
+
+        LingeringPotionSplashEvent event = new LingeringPotionSplashEvent(thrownPotion, hitEntity, hitBlock, hitFace, effectCloud);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
@@ -1344,9 +1370,23 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static ExpBottleEvent callExpBottleEvent(Entity entity, int exp) {
+    public static ExpBottleEvent callExpBottleEvent(Entity entity, MovingObjectPosition position, int exp) {
         ThrownExpBottle bottle = (ThrownExpBottle) entity.getBukkitEntity();
-        ExpBottleEvent event = new ExpBottleEvent(bottle, exp);
+
+        Block hitBlock = null;
+        BlockFace hitFace = null;
+        if (position.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
+            MovingObjectPositionBlock positionBlock = (MovingObjectPositionBlock) position;
+            hitBlock = CraftBlock.at(entity.level(), positionBlock.getBlockPos());
+            hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
+        }
+
+        org.bukkit.entity.Entity hitEntity = null;
+        if (position.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
+            hitEntity = ((MovingObjectPositionEntity) position).getEntity().getBukkitEntity();
+        }
+
+        ExpBottleEvent event = new ExpBottleEvent(bottle, hitEntity, hitBlock, hitFace, exp);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
