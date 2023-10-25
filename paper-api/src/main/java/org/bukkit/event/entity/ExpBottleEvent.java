@@ -1,8 +1,12 @@
 package org.bukkit.event.entity;
 
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a ThrownExpBottle hits and releases experience.
@@ -12,8 +16,13 @@ public class ExpBottleEvent extends ProjectileHitEvent {
     private int exp;
     private boolean showEffect = true;
 
+    @Deprecated
     public ExpBottleEvent(@NotNull final ThrownExpBottle bottle, final int exp) {
-        super(bottle);
+        this(bottle, null, null, null, exp);
+    }
+
+    public ExpBottleEvent(@NotNull final ThrownExpBottle bottle, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace, final int exp) {
+        super(bottle, hitEntity, hitBlock, hitFace);
         this.exp = exp;
     }
 
