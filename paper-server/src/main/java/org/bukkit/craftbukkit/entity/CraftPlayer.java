@@ -1134,7 +1134,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void sendEquipmentChange(LivingEntity entity, EquipmentSlot slot, ItemStack item) {
-        this.sendEquipmentChange(entity, Map.of(slot, item));
+        this.sendEquipmentChange(entity, java.util.Collections.singletonMap(slot, item)); // Paper - replace Map.of to allow null values
     }
 
     @Override
