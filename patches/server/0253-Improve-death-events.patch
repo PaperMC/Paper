@@ -19,7 +19,7 @@ public net.minecraft.world.entity.LivingEntity getDeathSound()Lnet/minecraft/sou
 public net.minecraft.world.entity.LivingEntity getSoundVolume()F
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 63d0b6a241c9ef2e6f7b13e7354e59083a2ffb0a..ba938eb9844157cccedb5f673a44720538912bc5 100644
+index 0f5e616ebb90e187ea38b6489e6f4f5467f1a9c3..de062ef7553a7edff3d0fa6f50a9987bb62b9e09 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -241,6 +241,10 @@ public class ServerPlayer extends Player {
@@ -70,7 +70,7 @@ index 63d0b6a241c9ef2e6f7b13e7354e59083a2ffb0a..ba938eb9844157cccedb5f673a447205
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 05595ff2336b25712b59b8ad6b11163dd333e6c0..96e9616f4ceedf95ec94854a0b1d8526a80057f5 100644
+index 16fb709582d5311c4b59d72974467eaa1c61a2ab..73b30df698142abf569c232630ec1d953b79ab96 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -260,6 +260,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -243,7 +243,7 @@ index 2b5f5aed31bd235a213f57b9d65b0ea1fae8de08..df0cc02f9bbea857226765c6066a2b94
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Fox.java b/src/main/java/net/minecraft/world/entity/animal/Fox.java
-index 0d4b86411d2d064b04334b508b1cb65695afaebd..df06cad9447982ebe57d07c9967cb68c6dd20ca3 100644
+index 65592c6bd1874e08037e0e5287b370e3924aea3f..74c5eec21fe447c525e204b504f40d0d363039bb 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Fox.java
 @@ -712,15 +712,25 @@ public class Fox extends Animal implements VariantHolder<Fox.Type> {
@@ -301,7 +301,7 @@ index bb399f775a5530a01f59332848c8ab9b8eceb2b5..14edfe103e61024b569f33de0b6608f3
      public void addAdditionalSaveData(CompoundTag nbt) {
          super.addAdditionalSaveData(nbt);
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index 5176e17e39719def9a97473b87cebf1719653e60..86c08e36779af6f85932c1c346c54594f543db0d 100644
+index 1047d9a46314e264ab3f72122aedefd161c7851d..91b9ec5831f439426a853ba9ac7a3f225629b099 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -492,8 +492,10 @@ public class ArmorStand extends LivingEntity {
@@ -354,7 +354,7 @@ index 5176e17e39719def9a97473b87cebf1719653e60..86c08e36779af6f85932c1c346c54594
 @@ -620,10 +624,10 @@ public class ArmorStand extends LivingEntity {
          }
  
-         drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
+         this.drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
 -        this.brokenByAnything(damageSource);
 +        return this.brokenByAnything(damageSource); // Paper
      }
@@ -377,7 +377,7 @@ index 5176e17e39719def9a97473b87cebf1719653e60..86c08e36779af6f85932c1c346c54594
  
      @Override
      public void kill() {
--        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event
+-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.drops); // CraftBukkit - call event
 +        // Paper start
 +        kill(true);
 +    }
@@ -385,14 +385,14 @@ index 5176e17e39719def9a97473b87cebf1719653e60..86c08e36779af6f85932c1c346c54594
 +    public void kill(boolean callEvent) {
 +        if (callEvent) {
 +        // Paper end
-+        org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event // Paper - make cancellable
++        org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.drops); // CraftBukkit - call event // Paper - make cancellable
 +        if (event.isCancelled()) return; // Paper - make cancellable
 +        } // Paper
          this.remove(Entity.RemovalReason.KILLED);
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 9c988b83338c5cf2cbe12aabc729b9184bb3e97d..92e64162181b73e5201e1e3e52db9e372c765a75 100644
+index c72dc80c65484d6fac3b37f6be3f8c678df0a432..39bd2e89f218efc8f851b3bbb86677bdd05a315e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -2343,7 +2343,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -412,7 +412,7 @@ index 9c988b83338c5cf2cbe12aabc729b9184bb3e97d..92e64162181b73e5201e1e3e52db9e37
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index ffa0129a4ad3ed12b2afabaea43544f49b330207..87be89a5e2d8b885f6f077433d4a7e402e8c7d49 100644
+index d9038b215a13c0290b718a41612581dce6e30213..78fed280b403c8934485aeb617e011faabe331a0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -865,9 +865,16 @@ public class CraftEventFactory {

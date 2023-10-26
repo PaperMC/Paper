@@ -9,7 +9,7 @@ thread dumps at an interval until the point of crash.
 This will help diagnose what was going on in that time before the crash.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 52f5c91d71a8fc86d14c3c4c9e258b9cf70ad57b..41bad67b3a6b8ccdcf9467858cb7d9c0e0a03f0e 100644
+index beebc3ed13b200a0d6585387bb7e06a6aaa07940..88c1c7d0dd8efddcde6d8d81cb89b09c2f6fee2a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1029,6 +1029,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -17,11 +17,11 @@ index 52f5c91d71a8fc86d14c3c4c9e258b9cf70ad57b..41bad67b3a6b8ccdcf9467858cb7d9c0
  
              // Spigot start
 +            org.spigotmc.WatchdogThread.hasStarted = true; // Paper
-             Arrays.fill( recentTps, 20 );
+             Arrays.fill( this.recentTps, 20 );
              long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
              lastTick = start - TICK_TIME; // Paper
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 5a3f0a6e3f663718993cf3679ffc96c4af140e4d..cdc020e1787c258ba283d86a25ab153237b0e194 100644
+index b916f11cb3799aecf1edd9c2002f4c631754e89f..e3754d916ce38d0e0e8b8dbb623016ee6ebf4800 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -197,6 +197,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -33,7 +33,7 @@ index 5a3f0a6e3f663718993cf3679ffc96c4af140e4d..cdc020e1787c258ba283d86a25ab1532
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics();
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 14a56b1153e87630065a58a6477573bef1597d12..37ce30dea4c46eeb301b986de5920c16d46990a1 100644
+index 2cb21d2eed25074ede3a7be8f3c5e2a97547d356..a2aced2fbe7d9f3cc42d2c4b5bfde2838ab44360 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -917,6 +917,7 @@ public final class CraftServer implements Server {
@@ -53,20 +53,20 @@ index 14a56b1153e87630065a58a6477573bef1597d12..37ce30dea4c46eeb301b986de5920c16
  
      @Override
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index ddc5f2d9aa7dda6aff132392927e3d7e3674dbff..3ac48dafe2300ff4cf4591569fec9ce4916503cd 100644
+index 99c82b9c82770df22a043d1927a1ad820e95d724..1eafb92fdf3c6ddce5f5f847bd9034287e2d4b84 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -229,7 +229,7 @@ public class SpigotConfig
          SpigotConfig.restartScript = SpigotConfig.getString( "settings.restart-script", SpigotConfig.restartScript );
          SpigotConfig.restartMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.restart", "Server is restarting" ) );
          SpigotConfig.commands.put( "restart", new RestartCommand( "restart" ) );
--        WatchdogThread.doStart( timeoutTime, restartOnCrash );
-+        // WatchdogThread.doStart( timeoutTime, restartOnCrash ); // Paper - moved to after paper config initialization
+-        WatchdogThread.doStart( SpigotConfig.timeoutTime, SpigotConfig.restartOnCrash );
++        // WatchdogThread.doStart( SpigotConfig.timeoutTime, SpigotConfig.restartOnCrash ); // Paper - moved to after paper config initialization
      }
  
      public static boolean bungee;
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index a9897c494b3dc56d900356d74030359832febbaa..b47d043144c499b1499f6b4be5a16a3f75c9fcb8 100644
+index e2bafc68e88c733873638ce7695b684d119f55da..230d55820778e84c1c8aa2b013ae0e5e35568ea1 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -14,6 +14,10 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
@@ -157,4 +157,4 @@ index a9897c494b3dc56d900356d74030359832febbaa..b47d043144c499b1499f6b4be5a16a3f
 +                sleep( 1000 ); // Paper - Reduce check time to every second instead of every ten seconds, more consistent and allows for short timeout
              } catch ( InterruptedException ex )
              {
-                 interrupt();
+                 this.interrupt();

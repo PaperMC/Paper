@@ -82,20 +82,20 @@ index d088479d160dbd2fc90b48a30553be141db8eef2..15add3f4dfd718ec09bb1db4f2222346
      public static class DataItem<T> {
  
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index db5368bf4970c63f21ef1e5fc7428787c90de4dd..9372f2363b13dca1b5ae77a509daaec7fbbf5e4f 100644
+index bfa2e9919275a1eb5d83403c5ed88eee245e3194..c4425cd7357049e74e825b824e30b9691ad93196 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -2648,7 +2648,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
                              // Entity in bucket - SPIGOT-4048 and SPIGOT-6859a
                              if ((entity instanceof Bucketable && entity instanceof LivingEntity && origItem != null && origItem.asItem() == Items.WATER_BUCKET) && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem)) {
--                                send(new ClientboundAddEntityPacket(entity));
+-                                ServerGamePacketListenerImpl.this.send(new ClientboundAddEntityPacket(entity));
 +                                entity.getEntityData().resendPossiblyDesyncedEntity(player); // Paper - The entire mob gets deleted, so resend it.
-                                 player.containerMenu.sendAllDataToRemote();
+                                 ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
                              }
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 255f7ab2560e493770bd99a8404f3c122cfca2ad..a56995333931685eecf6ea90ff1a89d38b4a2336 100644
+index ce04374971e679b4883d8a6ebba4c6832b606a65..19a01b59ce3e75a0ed48e8fc7678063576d9a2b0 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -357,7 +357,7 @@ public abstract class PlayerList {
@@ -122,7 +122,7 @@ index 37596c7b65f280be00e8e59ae18bd1aceae21080..eca18540aeb0b0d4098477d73b14c78a
              }
              entity.playSound(((Bucketable) entity).getPickupSound(), 1.0F, 1.0F);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 8733255559e63d8709d2502e58f16decdf1714ae..6759dad436d9e82f9c959e2c183e6e95c37abdcb 100644
+index 53bda7a59a3abf6f99a044df5f2c44bedf1af501..dc1cc4db2195d4f346bdc5f39e2e14dba454f13d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -1258,7 +1258,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
@@ -139,7 +139,7 @@ index 8733255559e63d8709d2502e58f16decdf1714ae..6759dad436d9e82f9c959e2c183e6e95
  
      private static PermissibleBase getPermissibleBase() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java
-index 4dbe8af49fcb4d2c2f517083c013d83f64225b4b..58489a6a34e66cd6fc0d0e28141a3ebc32ac0e05 100644
+index 0801bcdee8fcff0d388d302387e4f1d587e0a283..2fcd9b836d42e3549a3b6b921c57a4c103146dff 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java
 @@ -39,9 +39,11 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {

@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ce626187e7ffda51a54225fa6e43b817c6c19db8..086be61bfc8a43076b502bbf00e9f2d2785495d3 100644
+index 6155d6e3c361bb4a0381e7065a7b603b783a47a6..d13a0f5a3b95b0d0ca80c760f757087c88eceaeb 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -277,7 +277,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -94,7 +94,7 @@ index ce626187e7ffda51a54225fa6e43b817c6c19db8..086be61bfc8a43076b502bbf00e9f2d2
 @@ -949,7 +1000,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
              // Spigot start
-             Arrays.fill( recentTps, 20 );
+             Arrays.fill( this.recentTps, 20 );
 -            long curTime, tickSection = Util.getMillis(), tickCount = 1;
 +            long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
 +            lastTick = start - TICK_TIME; // Paper
@@ -145,7 +145,7 @@ index ce626187e7ffda51a54225fa6e43b817c6c19db8..086be61bfc8a43076b502bbf00e9f2d2
                  this.startMetricsRecordingTick();
                  this.profiler.push("tick");
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 53168d866c59d38c83e9c532109bb2b4371459d2..733b2dec7eb1bf7d1fa392750b2872076b23f3ab 100644
+index e2f17636045abf56c04567d8cd7f0dfcdeee0f7e..2aa305814e2207cd80cf4630fda8e1adf456db54 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2478,6 +2478,17 @@ public final class CraftServer implements Server {
@@ -167,7 +167,7 @@ index 53168d866c59d38c83e9c532109bb2b4371459d2..733b2dec7eb1bf7d1fa392750b287207
      private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
      {
 diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-index 4ab81a99f906e3f28e026d0e50b5b943c1bdcfb5..bf970bf3356a914459c2d6db93537ce2d32c7e18 100644
+index d9ec48be0fdd2bfea938aa29e36b0f6ffa839ab2..9eb2823cc8f83bad2626fc77578b0162d9ed5782 100644
 --- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 +++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 @@ -15,6 +15,12 @@ public class TicksPerSecondCommand extends Command
