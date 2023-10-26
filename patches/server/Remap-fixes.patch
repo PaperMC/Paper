@@ -88,6 +88,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          private LootContextParamSet paramSet;
          private Optional<ResourceLocation> randomSequence;
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftParticle.java b/src/main/java/org/bukkit/craftbukkit/CraftParticle.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftParticle.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftParticle.java
+@@ -0,0 +0,0 @@ public abstract class CraftParticle<D> implements Keyed {
+         private static final BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> VOID_FUNCTION = (name, particle) -> new CraftParticle<>(name, particle, Void.class) {
+             @Override
+             public ParticleOptions createParticleParam(Void data) {
+-                return (SimpleParticleType) CraftParticle.this.getHandle();
++                return (SimpleParticleType) this.getHandle(); // Paper - fix?
+             }
+         };
+ 
+@@ -0,0 +0,0 @@ public abstract class CraftParticle<D> implements Keyed {
+             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> itemStackFunction = (name, particle) -> new CraftParticle<>(name, particle, ItemStack.class) {
+                 @Override
+                 public ParticleOptions createParticleParam(ItemStack data) {
+-                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) CraftParticle.this.getHandle(), CraftItemStack.asNMSCopy(data));
++                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) this.getHandle(), CraftItemStack.asNMSCopy(data)); // Paper - fix?
+                 }
+             };
+ 
+             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> blockDataFunction = (name, particle) -> new CraftParticle<>(name, particle, BlockData.class) {
+                 @Override
+                 public ParticleOptions createParticleParam(BlockData data) {
+-                    return new BlockParticleOption((net.minecraft.core.particles.ParticleType<BlockParticleOption>) CraftParticle.this.getHandle(), ((CraftBlockData) data).getState());
++                    return new BlockParticleOption((net.minecraft.core.particles.ParticleType<BlockParticleOption>) this.getHandle(), ((CraftBlockData) data).getState()); // Paper - fix?
+                 }
+             };
+ 
 diff --git a/src/test/java/org/bukkit/DyeColorsTest.java b/src/test/java/org/bukkit/DyeColorsTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/DyeColorsTest.java
@@ -118,6 +148,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          assertThat(color, is(Color.fromRGB(nmsColor)));
      }
  }
+diff --git a/src/test/java/org/bukkit/ParticleTest.java b/src/test/java/org/bukkit/ParticleTest.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/ParticleTest.java
++++ b/src/test/java/org/bukkit/ParticleTest.java
+@@ -0,0 +0,0 @@ public class ParticleTest extends AbstractTestingBase {
+                 Check in CraftParticle if the conversion is still correct.
+                 """, bukkit.getKey()));
+ 
+-        DataResult<Tag> encoded = assertDoesNotThrow(() -> minecraft.codec().encodeStart(DynamicOpsNBT.INSTANCE, particleParam),
++        DataResult<Tag> encoded = assertDoesNotThrow(() -> minecraft.codec().encodeStart(NbtOps.INSTANCE, particleParam), // Paper - remap fix
+                 String.format("""
+                         Could not encoded particle param for particle %s.
+                         This can indicated, that the wrong particle param is created in CraftParticle.
 diff --git a/src/test/java/org/bukkit/RegistryConstantsTest.java b/src/test/java/org/bukkit/RegistryConstantsTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/RegistryConstantsTest.java
