@@ -10,7 +10,7 @@ Adds an option to control the force mode of the particle.
 This adds a new Builder API which is much friendlier to use.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 445b8839d2a7a5ec2debb853d606e499c2a1f20b..4c1911140197568685524721e3140739bca039c7 100644
+index 445b8839d2a7a5ec2debb853d606e499c2a1f20b..365fb14d498a0baecbdc001ce634cc8e81a15b75 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1719,12 +1719,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -20,7 +20,7 @@ index 445b8839d2a7a5ec2debb853d606e499c2a1f20b..4c1911140197568685524721e3140739
 +        // Paper start - Particle API Expansion
 +        return sendParticles(players, sender, t0, d0, d1, d2, i, d3, d4, d5, d6, force);
 +    }
-+    public <T extends ParticleOptions> int sendParticles(List<ServerPlayer> receivers, ServerPlayer sender, T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, boolean force) {
++    public <T extends ParticleOptions> int sendParticles(List<ServerPlayer> receivers, @Nullable ServerPlayer sender, T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, boolean force) {
 +        // Paper end
          ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(t0, force, d0, d1, d2, (float) d3, (float) d4, (float) d5, (float) d6, i);
          // CraftBukkit end
@@ -34,26 +34,28 @@ index 445b8839d2a7a5ec2debb853d606e499c2a1f20b..4c1911140197568685524721e3140739
  
              if (this.sendParticles(entityplayer, force, d0, d1, d2, packetplayoutworldparticles)) { // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 9fc72dd4db44fa65c2d4e8d30cf8c19f0fb556a0..c8d960d1fc8b44f64e84abb38f12e3825d2c97bc 100644
+index 1f08be117261f8b567bb4d46f2f21a6515c39aef..6d9de4dbbc0d224ebad03d4279dd45a7d3303848 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1864,11 +1864,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1864,13 +1864,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
--        if (data != null) {
 +        // Paper start - Particle API Expansion
 +        spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, force);
 +    }
++    @Override
 +    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
 +        // Paper end
-+        if (data != null && !particle.getDataType().isInstance(data)) {
+         particle = CraftParticle.convertLegacy(particle);
+         data = CraftParticle.convertLegacy(data);
+         if (data != null) {
              Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
          }
          this.getHandle().sendParticles(
 -                null, // Sender
 +                receivers == null ? getHandle().players() : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API Expansion
 +                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API Expansion
-                 CraftParticle.toNMS(particle, data), // Particle
+                 CraftParticle.createParticleParam(particle, data), // Particle
                  x, y, z, // Position
                  count,  // Count
