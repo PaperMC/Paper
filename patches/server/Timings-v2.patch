@@ -970,9 +970,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (event.isCancelled()) {
                  return;
              }
--            ConsoleInput serverCommand = new ConsoleInput(event.getCommand(), wrapper);
--            server.dispatchServerCommand(event.getSender(), serverCommand);
-+
 +            // Paper start
 +            command.set(event.getCommand());
 +            if (event.getCommand().toLowerCase().startsWith("timings") && event.getCommand().toLowerCase().matches("timings (report|paste|get|merged|seperate)")) {
@@ -987,8 +984,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                co.aikar.timings.Timings.generateReport(new co.aikar.timings.TimingsReportListener(sender, waitable));
 +            } else {
 +            // Paper end
-+                ConsoleInput serverCommand = new ConsoleInput(event.getCommand(), wrapper);
-+                server.dispatchServerCommand(event.getSender(), serverCommand);
+             ConsoleInput serverCommand = new ConsoleInput(event.getCommand(), wrapper);
+             this.server.dispatchServerCommand(event.getSender(), serverCommand);
 +            } // Paper
          });
 +        // Paper start
@@ -1074,7 +1071,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              gameprofilerfiller.incrementCounter("getChunkCacheMiss");
--            level.timings.syncChunkLoadTimer.startTiming(); // Spigot
+-            this.level.timings.syncChunkLoadTimer.startTiming(); // Spigot
              CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkFutureMainThread(x, z, leastStatus, create);
              ServerChunkCache.MainThreadExecutor chunkproviderserver_b = this.mainThreadProcessor;
  
@@ -1082,7 +1079,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (!completablefuture.isDone()) { // Paper
 +                this.level.timings.syncChunkLoad.startTiming(); // Paper
              chunkproviderserver_b.managedBlock(completablefuture::isDone);
--            level.timings.syncChunkLoadTimer.stopTiming(); // Spigot
+-            this.level.timings.syncChunkLoadTimer.stopTiming(); // Spigot
 +                this.level.timings.syncChunkLoad.stopTiming(); // Paper
 +            } // Paper
              ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
@@ -1109,7 +1106,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          this.level.timings.doChunkUnload.startTiming(); // Spigot
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-             boolean flag1 = level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && worlddata.getGameTime() % level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
+             boolean flag1 = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && worlddata.getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
  
              gameprofilerfiller.push("naturalSpawnCount");
 +            this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
@@ -1183,8 +1180,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.updateSkyBrightness();
          this.tickTime();
          gameprofilerfiller.popPush("tickPending");
--        timings.doTickPending.startTiming(); // Spigot
-+        timings.scheduledBlocks.startTiming(); // Paper
+-        this.timings.doTickPending.startTiming(); // Spigot
++        this.timings.scheduledBlocks.startTiming(); // Paper
          if (!this.isDebug()) {
              j = this.getGameTime();
              gameprofilerfiller.push("blockTicks");
@@ -1192,8 +1189,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.fluidTicks.tick(j, 65536, this::tickFluid);
              gameprofilerfiller.pop();
          }
--        timings.doTickPending.stopTiming(); // Spigot
-+        timings.scheduledBlocks.stopTiming(); // Paper
+-        this.timings.doTickPending.stopTiming(); // Spigot
++        this.timings.scheduledBlocks.stopTiming(); // Paper
  
          gameprofilerfiller.popPush("raid");
 +        this.timings.raids.startTiming(); // Paper - timings
@@ -1204,7 +1201,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.getChunkSource().tick(shouldKeepTicking, true);
 +        this.timings.chunkProviderTick.stopTiming(); // Paper - timings
          gameprofilerfiller.popPush("blockEvents");
-         timings.doSounds.startTiming(); // Spigot
+         this.timings.doSounds.startTiming(); // Spigot
          this.runBlockEvents();
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
          }
@@ -1258,7 +1255,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
          if (!savingDisabled) {
-             org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
+             org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(this.getWorld())); // CraftBukkit
 +            try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) { // Paper
              if (progressListener != null) {
                  progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
@@ -1530,17 +1527,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          });
          // CraftBukkit end
 -        this.timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
-+        timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
-         this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
-         this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
++        this.timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
+         this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
+         this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
      }
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
-         timings.tileEntityTick.stopTiming(); // Spigot
+         this.timings.tileEntityTick.stopTiming(); // Spigot
          this.tickingBlockEntities = false;
 +        co.aikar.timings.TimingHistory.tileEntityTicks += this.blockEntityTickers.size(); // Paper
          gameprofilerfiller.pop();
-         spigotConfig.currentPrimedTnt = 0; // Spigot
+         this.spigotConfig.currentPrimedTnt = 0; // Spigot
      }
  
      public <T extends Entity> void guardEntityTick(Consumer<T> tickConsumer, T entity) {
@@ -2115,7 +2112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          final int animalActivationRange = world.spigotConfig.animalActivationRange;
 @@ -0,0 +0,0 @@ public class ActivationRange
  
-             world.getEntities().get(maxBB, ActivationRange::activateEntity);
+             world.getEntities().get(ActivationRange.maxBB, ActivationRange::activateEntity);
          }
 -        SpigotTimings.entityActivationCheckTimer.stopTiming();
 +        MinecraftTimings.entityActivationCheckTimer.stopTiming();

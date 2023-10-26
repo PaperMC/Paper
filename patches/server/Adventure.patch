@@ -2500,7 +2500,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
 +        } else if (false) { // Paper
              Player player = this.getCraftPlayer();
-             AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(server));
+             AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  }
@@ -2555,8 +2555,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  CraftIconCache icon = server.server.getServerIcon();
  
                  ServerListPingEvent() {
--                    super(connection.hostname, ((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), server.getMotd(), server.getPlayerList().getMaxPlayers());
-+                    super(connection.hostname, ((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), server.server.motd(), server.getPlayerList().getMaxPlayers()); // Paper - Adventure
+-                    super(ServerStatusPacketListenerImpl.this.connection.hostname, ((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), server.getMotd(), server.getPlayerList().getMaxPlayers());
++                    super(ServerStatusPacketListenerImpl.this.connection.hostname, ((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), server.server.motd(), server.getPlayerList().getMaxPlayers()); // Paper - Adventure
                  }
  
                  @Override
@@ -2979,7 +2979,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-         return Thread.currentThread().equals(console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
+         return Thread.currentThread().equals(this.console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
 +    // Paper start - Adventure
@@ -3337,9 +3337,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            // Lazy initialization:
 -            Component[] messages = this.signText.getMessages(false);
 -            this.lines = new String[messages.length];
--            System.arraycopy(CraftSign.revertComponents(messages), 0, lines, 0, lines.length);
--            this.originalLines = new String[lines.length];
--            System.arraycopy(lines, 0, originalLines, 0, originalLines.length);
+-            System.arraycopy(CraftSign.revertComponents(messages), 0, this.lines, 0, this.lines.length);
+-            this.originalLines = new String[this.lines.length];
+-            System.arraycopy(this.lines, 0, this.originalLines, 0, this.originalLines.length);
 -        }
 -        return this.lines;
 +        // Paper start
@@ -3372,7 +3372,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public SignText applyLegacyStringToSignSide() {
          if (this.lines != null) {
--            for (int i = 0; i < lines.length; i++) {
+-            for (int i = 0; i < this.lines.length; i++) {
 -                String line = (this.lines[i] == null) ? "" : this.lines[i];
 -                if (line.equals(this.originalLines[i])) {
 +            // Paper start
@@ -3656,7 +3656,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void setDisplayName(final String name) {
 +        this.getHandle().adventure$displayName = name != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(name) : net.kyori.adventure.text.Component.text(this.getName()); // Paper
-         this.getHandle().displayName = name == null ? getName() : name;
+         this.getHandle().displayName = name == null ? this.getName() : name;
      }
  
 +    // Paper start
@@ -3684,7 +3684,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
      @Override
      public String getPlayerListName() {
-         return this.getHandle().listName == null ? getName() : CraftChatMessage.fromComponent(this.getHandle().listName);
+         return this.getHandle().listName == null ? this.getName() : CraftChatMessage.fromComponent(this.getHandle().listName);
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
@@ -3696,14 +3696,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public String getPlayerListHeader() {
--        return (this.playerListHeader == null) ? null : CraftChatMessage.fromComponent(playerListHeader);
-+        return (this.playerListHeader == null) ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(playerListHeader);
+-        return (this.playerListHeader == null) ? null : CraftChatMessage.fromComponent(this.playerListHeader);
++        return (this.playerListHeader == null) ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.playerListHeader);
      }
  
      @Override
      public String getPlayerListFooter() {
--        return (this.playerListFooter == null) ? null : CraftChatMessage.fromComponent(playerListFooter);
-+        return (this.playerListFooter == null) ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(playerListFooter); // Paper - Adventure
+-        return (this.playerListFooter == null) ? null : CraftChatMessage.fromComponent(this.playerListFooter);
++        return (this.playerListFooter == null) ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.playerListFooter); // Paper - Adventure
      }
  
      @Override
@@ -4178,7 +4178,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
              @Override
              public String getTitle() {
-                 return title;
+                 return this.title;
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
@@ -4583,7 +4583,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public String getDisplayName() {
-         return CraftChatMessage.fromJSONComponent(displayName);
+         return CraftChatMessage.fromJSONComponent(this.displayName);
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return this.lore != null && !this.lore.isEmpty();
      }
@@ -4740,7 +4740,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class CraftMapRenderer extends MapRenderer {
              }
  
-             MapDecoration decoration = worldMap.decorations.get(key);
+             MapDecoration decoration = this.worldMap.decorations.get(key);
 -            cursors.addCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), decoration.type().getIcon(), true, CraftChatMessage.fromComponent(decoration.name()));
 +            cursors.addCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), decoration.type().getIcon(), true, decoration.name() == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(decoration.name())); // Paper
          }
@@ -4978,14 +4978,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
 -    HashSet<Player> makeReference() {
 +    protected HashSet<Player> makeReference() { // Paper - protected
-         Preconditions.checkState(reference == null, "Reference already created!");
-         List<ServerPlayer> players = this.server.getPlayerList().players;
+         Preconditions.checkState(this.reference == null, "Reference already created!");
+-        List<ServerPlayer> players = this.server.getPlayerList().players;
 +        // Paper start
 +        return makePlayerSet(this.server);
 +    }
 +    public static HashSet<Player> makePlayerSet(final MinecraftServer server) {
-+        // Paper end
 +        List<ServerPlayer> players = server.getPlayerList().players;
++        // Paper end
          HashSet<Player> reference = new HashSet<Player>(players.size());
          for (ServerPlayer player : players) {
              reference.add(player.getBukkitEntity());

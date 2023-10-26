@@ -16767,7 +16767,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          try {
              if (!this.initServer()) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             Arrays.fill( recentTps, 20 );
+             Arrays.fill( this.recentTps, 20 );
              long curTime, tickSection = Util.getMillis(), tickCount = 1;
              while (this.running) {
 +                // Paper start - rewrite chunk system
@@ -19524,7 +19524,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                return super.pollTask();
              }
 -        } finally {
--            chunkMap.callbackExecutor.run();
+-            ServerChunkCache.this.chunkMap.callbackExecutor.run();
 -        }
 -        // CraftBukkit end
 +            return super.pollTask() | ServerChunkCache.this.level.chunkTaskScheduler.executeMainThreadTask(); // Paper - rewrite chunk system
@@ -22593,17 +22593,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public boolean isEntitiesLoaded() {
--        return this.getCraftWorld().getHandle().entityManager.areEntitiesLoaded(ChunkPos.asLong(x, z));
+-        return this.getCraftWorld().getHandle().entityManager.areEntitiesLoaded(ChunkPos.asLong(this.x, this.z));
 +        return this.getCraftWorld().getHandle().areEntitiesLoaded(io.papermc.paper.util.CoordinateUtils.getChunkKey(this.x, this.z)); // Paper - rewrite chunk system
      }
  
      @Override
 @@ -0,0 +0,0 @@ public class CraftChunk implements Chunk {
-             this.getWorld().getChunkAt(x, z); // Transient load for this tick
+             this.getWorld().getChunkAt(this.x, this.z); // Transient load for this tick
          }
  
 -        PersistentEntitySectionManager<net.minecraft.world.entity.Entity> entityManager = this.getCraftWorld().getHandle().entityManager;
--        long pair = ChunkPos.asLong(x, z);
+-        long pair = ChunkPos.asLong(this.x, this.z);
 -
 -        if (entityManager.areEntitiesLoaded(pair)) {
 -            return entityManager.getEntities(new ChunkPos(this.x, this.z)).stream()
@@ -22647,7 +22647,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        return entityManager.getEntities(new ChunkPos(this.x, this.z)).stream()
 -                .map(net.minecraft.world.entity.Entity::getBukkitEntity)
 -                .filter(Objects::nonNull).toArray(Entity[]::new);
-+        return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - rewrite chunk system
++        return this.getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - rewrite chunk system
      }
  
      @Override
@@ -22677,7 +22677,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public boolean isPrimaryThread() {
--        return Thread.currentThread().equals(console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
+-        return Thread.currentThread().equals(this.console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
 +        return io.papermc.paper.util.TickThread.isTickThread(); // Paper - rewrite chunk system
      }
  
@@ -22749,13 +22749,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot start
      @Override
      public int getViewDistance() {
--        return world.spigotConfig.viewDistance;
+-        return this.world.spigotConfig.viewDistance;
 +        return this.getHandle().playerChunkLoader.getAPIViewDistance(); // Paper - replace player chunk loader
      }
  
      @Override
      public int getSimulationDistance() {
--        return world.spigotConfig.simulationDistance;
+-        return this.world.spigotConfig.simulationDistance;
 +        return this.getHandle().playerChunkLoader.getAPITickDistance(); // Paper - replace player chunk loader
      }
      // Spigot end
@@ -22947,9 +22947,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              ActivationType.ANIMAL.boundingBox = player.getBoundingBox().inflate( animalActivationRange, 256, animalActivationRange );
              ActivationType.MONSTER.boundingBox = player.getBoundingBox().inflate( monsterActivationRange, 256, monsterActivationRange );
  
--            world.getEntities().get(maxBB, ActivationRange::activateEntity);
+-            world.getEntities().get(ActivationRange.maxBB, ActivationRange::activateEntity);
 +            // Paper start
-+            java.util.List<Entity> entities = world.getEntities((Entity)null, maxBB, null);
++            java.util.List<Entity> entities = world.getEntities((Entity)null, ActivationRange.maxBB, null);
 +            for (int i = 0; i < entities.size(); i++) {
 +                Entity entity = entities.get(i);
 +                ActivationRange.activateEntity(entity);
