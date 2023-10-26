@@ -1100,7 +1100,7 @@ index be89e5b8c1ea7f85aef267a15986affa5fa1fd4b..43472855136f26b282d94fd241853d86
  
      public ClientboundLevelChunkWithLightPacket(FriendlyByteBuf buf) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 27386e814ae956dbb9f2025bcb682456d7cd0eaf..1c30b2f5aa49b2e377bea4278215929a0baa172c 100644
+index 82510154e6a0cef509316b1f8c71021cca39a323..85a2a237c4f84120d0a148c17b4b602c2c8c55e1 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -566,7 +566,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -1113,7 +1113,7 @@ index 27386e814ae956dbb9f2025bcb682456d7cd0eaf..1c30b2f5aa49b2e377bea4278215929a
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index bdf11a98614c9c12d3112f437651be81d0d9872a..58a1a54b676922ef0862dcab98e7aada5de80311 100644
+index 58277908737a1f3da89e5df827e108e2381396ff..f47fcae72d48cd410a4ac3e0a4bd21f42fae7eec 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -49,7 +49,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
@@ -1151,7 +1151,7 @@ index 5de5209e04d631bd6a50e28e8d3abebf148252c1..19b3f4fa7678a038bf25efc2a8b46dda
          DebugPackets.sendPoiPacketsForChunk(world, chunkPos);
      }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 9a6ed3aa55f988ed30669fab2a2513741eda399b..7a1886585bd00dc8213ce22130b8b6fea52c5cf6 100644
+index addaa87d68591dced30e304dc3880588a45234d6..4b0a7ef056ff7dd687d5135ac748ee57d556121e 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -175,6 +175,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -1173,8 +1173,8 @@ index 9a6ed3aa55f988ed30669fab2a2513741eda399b..7a1886585bd00dc8213ce22130b8b6fe
          this.generator = gen;
 @@ -279,6 +280,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.keepSpawnInMemory = this.paperConfig().spawn.keepSpawnLoaded; // Paper
-         this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
-         this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
+         this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
+         this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
 +        this.chunkPacketBlockController = this.paperConfig().anticheat.antiXray.enabled ? new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
      }
  
@@ -1213,7 +1213,7 @@ index 5e8d2e4245757a0889645ea79ee68afb53f7dde4..f7e5e016a7028a9196e689e950805b0d
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 43cb8c3240fa058557f67d632a713747c1a19a39..44ef27e5c297055f7a2512ae49d68d50cfcde72a 100644
+index d9d2bf31a0e7ad374aa62197c71626a1abfbaf71..4a5491a79281b7cddf5ad5f060567f174b89d14b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -91,7 +91,7 @@ public class LevelChunk extends ChunkAccess {
@@ -1541,7 +1541,7 @@ index 982fb3ef071d6a66f16744717e8e146bef6d9e8c..02beedb84a8bec001270116c6ce496db
      // CraftBukkit end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 6daa3591ba17155718c7ff3260de5180b84bb105..40f0fbd5492ccd9cbb622359c17a23041ede7fb6 100644
+index 593cfd68dc0f3679c684b6a1d2036419d4f3bc0c..b4b2f961d1e4f8b5b199052efefd96bcbfc3e68b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 @@ -53,7 +53,7 @@ public class CraftChunk implements Chunk {
@@ -1554,7 +1554,7 @@ index 6daa3591ba17155718c7ff3260de5180b84bb105..40f0fbd5492ccd9cbb622359c17a2304
      private static final byte[] EMPTY_LIGHT = new byte[2048];
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index e331fc0866ae91b1463879661b04dad16f6117ca..30adaccd8c5a9d9696bede7967f4b9406ffd066e 100644
+index 34905e673683620fc5f0158fea3c16049d09f8f2..c70c64c2ae7bed27f39db12bd2329aa600ae2fe5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2278,7 +2278,7 @@ public final class CraftServer implements Server {
@@ -1567,7 +1567,7 @@ index e331fc0866ae91b1463879661b04dad16f6117ca..30adaccd8c5a9d9696bede7967f4b940
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index ed05b94c3ae1f9a45c604d6e5f371edb8d2d9746..098174ddfec746d4212a5ab8e9d353840d3c49c9 100644
+index 27ec5d989be1288ea32fa115ce37e4d98dc54892..d352f6882adbf642b61e0f3f18abebbe5fff1a9b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -419,11 +419,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
