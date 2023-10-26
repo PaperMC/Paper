@@ -139,6 +139,8 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         super.applyToItem(tag);
 
         if (profile != null) {
+            checkForInconsistency();
+
             // SPIGOT-6558: Set initial textures
             tag.put(SKULL_OWNER.NBT, serializedProfile);
             // Fill in textures
@@ -283,6 +285,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (meta instanceof CraftMetaSkull) {
             CraftMetaSkull that = (CraftMetaSkull) meta;
 
+            checkForInconsistency();
             // SPIGOT-5403: equals does not check properties
             return (this.profile != null ? that.profile != null && this.serializedProfile.equals(that.serializedProfile) : that.profile == null) && Objects.equals(this.noteBlockSound, that.noteBlockSound);
         }
@@ -305,5 +308,16 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             return builder.put(NOTE_BLOCK_SOUND.BUKKIT, namespacedKeyNB);
         }
         return builder;
+    }
+
+    private void checkForInconsistency() {
+        if (profile != null && serializedProfile == null) {
+            // SPIGOT-7510: Fix broken reflection usage from plugins
+            Bukkit.getLogger().warning("""
+                    Found inconsistent skull meta, this should normally not happen and is not a Bukkit / Spigot issue, but one from a plugin you are using.
+                    Bukkit will attempt to fix it this time for you, but may not be able to do this every time.
+                    If you see this message after typing a command from a plugin, please report this to the plugin developer, they should use the api instead of relying on reflection (and doing it the wrong way).""");
+            serializedProfile = GameProfileSerializer.writeGameProfile(new NBTTagCompound(), profile);
+        }
     }
 }
