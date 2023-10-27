@@ -20,7 +20,7 @@ public net.minecraft.world.entity.projectile.Projectile canHitEntity(Lnet/minecr
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index a3ee89cb4acfa475076e65f06f1047232bcf684f..3abcb29ff95c29b9b178e0a02d98bf26d60be173 100644
+index 40307233e5bc67d538f580bc514a033c64d1316a..2886f4437d8361cde39922b87e9cc8e5d386e0ad 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 @@ -100,6 +100,11 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
@@ -37,12 +37,30 @@ index a3ee89cb4acfa475076e65f06f1047232bcf684f..3abcb29ff95c29b9b178e0a02d98bf26
              Potion potionregistry = PotionUtils.getPotion(itemstack);
 @@ -113,7 +118,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
                  if (this.isLingering()) {
-                     showParticles = this.makeAreaOfEffectCloud(itemstack, potionregistry); // Paper
+                     showParticles = this.makeAreaOfEffectCloud(itemstack, potionregistry, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
                  } else {
--                    showParticles = this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null); // Paper
-+                    showParticles = this.applySplash(list, hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null); // Paper - nullable hitResult
+-                    showParticles = this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
++                    showParticles = this.applySplash(list, hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper - nullable hitResult
                  }
              }
+ 
+@@ -175,7 +180,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+ 
+     }
+ 
+-    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean
++    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean & nullable hitResult
+         AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
+         List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
+         Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
+@@ -252,7 +257,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+ 
+     }
+ 
+-    private boolean makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean
++    private boolean makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean & nullable hitResult
+         AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
+         Entity entity = this.getOwner();
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
 index 91c2d0b40d3fca86938cd454e1415a4eea3df7c7..2c376687349825833e6d9a5ca92ce6afb98c36a3 100644
@@ -490,6 +508,57 @@ index c628594b981f276acae7b9337100d811f919631b..c8b65210d2416b5a293cb4bcc1b71f56
 +    }
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 98926c017b41226006b7bcd0e106d493c3fec3c1..0d8a13fc70c139291fa26d6e8f9c38dbbc512e7d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -832,19 +832,19 @@ public class CraftEventFactory {
+     /**
+      * PotionSplashEvent
+      */
+-    public static PotionSplashEvent callPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, HitResult position, Map<LivingEntity, Double> affectedEntities) {
++    public static PotionSplashEvent callPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult position, Map<LivingEntity, Double> affectedEntities) { // Paper - nullable hitResult
+         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
+ 
+         Block hitBlock = null;
+         BlockFace hitFace = null;
+-        if (position.getType() == HitResult.Type.BLOCK) {
++        if (position != null && position.getType() == HitResult.Type.BLOCK) { // Paper - nullable hitResult
+             BlockHitResult positionBlock = (BlockHitResult) position;
+             hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
+             hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
+         }
+ 
+         org.bukkit.entity.Entity hitEntity = null;
+-        if (position.getType() == HitResult.Type.ENTITY) {
++        if (position != null && position.getType() == HitResult.Type.ENTITY) { // Paper - nullable hitResult
+             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
+         }
+ 
+@@ -853,20 +853,20 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, HitResult position, net.minecraft.world.entity.AreaEffectCloud cloud) {
++    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult position, net.minecraft.world.entity.AreaEffectCloud cloud) { // Paper - nullable hitResult
+         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
+         AreaEffectCloud effectCloud = (AreaEffectCloud) cloud.getBukkitEntity();
+ 
+         Block hitBlock = null;
+         BlockFace hitFace = null;
+-        if (position.getType() == HitResult.Type.BLOCK) {
++        if (position != null && position.getType() == HitResult.Type.BLOCK) { // Paper
+             BlockHitResult positionBlock = (BlockHitResult) position;
+             hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
+             hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
+         }
+ 
+         org.bukkit.entity.Entity hitEntity = null;
+-        if (position.getType() == HitResult.Type.ENTITY) {
++        if (position != null && position.getType() == HitResult.Type.ENTITY) { // Paper
+             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
+         }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 index 221a2ccc4bf840aa301931f26c1198b36ec317fe..5f8f601f5711f4e7aa3f3a6ca047fd75264d0d04 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
