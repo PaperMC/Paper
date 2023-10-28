@@ -37,12 +37,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Potion potionregistry = PotionUtils.getPotion(itemstack);
 @@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
                  if (this.isLingering()) {
-                     showParticles = this.makeAreaOfEffectCloud(itemstack, potionregistry); // Paper
+                     showParticles = this.makeAreaOfEffectCloud(itemstack, potionregistry, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
                  } else {
--                    showParticles = this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null); // Paper
-+                    showParticles = this.applySplash(list, hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null); // Paper - nullable hitResult
+-                    showParticles = this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
++                    showParticles = this.applySplash(list, hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper - nullable hitResult
                  }
              }
+ 
+@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+ 
+     }
+ 
+-    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean
++    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean & nullable hitResult
+         AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
+         List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
+         Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
+@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+ 
+     }
+ 
+-    private boolean makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean
++    private boolean makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean & nullable hitResult
+         AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
+         Entity entity = this.getOwner();
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -490,6 +508,57 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -0,0 +0,0 @@ public class CraftEventFactory {
+     /**
+      * PotionSplashEvent
+      */
+-    public static PotionSplashEvent callPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, HitResult position, Map<LivingEntity, Double> affectedEntities) {
++    public static PotionSplashEvent callPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult position, Map<LivingEntity, Double> affectedEntities) { // Paper - nullable hitResult
+         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
+ 
+         Block hitBlock = null;
+         BlockFace hitFace = null;
+-        if (position.getType() == HitResult.Type.BLOCK) {
++        if (position != null && position.getType() == HitResult.Type.BLOCK) { // Paper - nullable hitResult
+             BlockHitResult positionBlock = (BlockHitResult) position;
+             hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
+             hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
+         }
+ 
+         org.bukkit.entity.Entity hitEntity = null;
+-        if (position.getType() == HitResult.Type.ENTITY) {
++        if (position != null && position.getType() == HitResult.Type.ENTITY) { // Paper - nullable hitResult
+             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
+         }
+ 
+@@ -0,0 +0,0 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, HitResult position, net.minecraft.world.entity.AreaEffectCloud cloud) {
++    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult position, net.minecraft.world.entity.AreaEffectCloud cloud) { // Paper - nullable hitResult
+         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
+         AreaEffectCloud effectCloud = (AreaEffectCloud) cloud.getBukkitEntity();
+ 
+         Block hitBlock = null;
+         BlockFace hitFace = null;
+-        if (position.getType() == HitResult.Type.BLOCK) {
++        if (position != null && position.getType() == HitResult.Type.BLOCK) { // Paper
+             BlockHitResult positionBlock = (BlockHitResult) position;
+             hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
+             hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
+         }
+ 
+         org.bukkit.entity.Entity hitEntity = null;
+-        if (position.getType() == HitResult.Type.ENTITY) {
++        if (position != null && position.getType() == HitResult.Type.ENTITY) { // Paper
+             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
+         }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
