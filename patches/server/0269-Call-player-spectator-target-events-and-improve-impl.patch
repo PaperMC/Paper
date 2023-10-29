@@ -19,10 +19,10 @@ spectate the target entity.
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index ba938eb9844157cccedb5f673a44720538912bc5..be56cbfc2a7d966a8c5fc9c89f99f73c94e23ab6 100644
+index de062ef7553a7edff3d0fa6f50a9987bb62b9e09..ac4bb5d84689a6e4f8f9b425cee5188436d0efce 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1983,6 +1983,19 @@ public class ServerPlayer extends Player {
+@@ -1983,6 +1983,21 @@ public class ServerPlayer extends Player {
  
          this.camera = (Entity) (entity == null ? this : entity);
          if (entity1 != this.camera) {
@@ -30,11 +30,13 @@ index ba938eb9844157cccedb5f673a44720538912bc5..be56cbfc2a7d966a8c5fc9c89f99f73c
 +            if (this.camera == this) {
 +                com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity());
 +                if (!playerStopSpectatingEntityEvent.callEvent()) {
++                    this.camera = entity1; // rollback camera entity again
 +                    return;
 +                }
 +            } else {
 +                com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity(), entity.getBukkitEntity());
 +                if (!playerStartSpectatingEntityEvent.callEvent()) {
++                    this.camera = entity1; // rollback camera entity again
 +                    return;
 +                }
 +            }
@@ -42,11 +44,3 @@ index ba938eb9844157cccedb5f673a44720538912bc5..be56cbfc2a7d966a8c5fc9c89f99f73c
              Level world = this.camera.level();
  
              if (world instanceof ServerLevel) {
-@@ -1998,7 +2011,6 @@ public class ServerPlayer extends Player {
-             this.connection.send(new ClientboundSetCameraPacket(this.camera));
-             this.connection.resetPosition();
-         }
--
-     }
- 
-     @Override
