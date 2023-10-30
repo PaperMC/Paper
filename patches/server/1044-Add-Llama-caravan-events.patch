@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: David Scandurra <david.scandurra@check24.de>
+Date: Mon, 30 Oct 2023 03:41:35 +0100
+Subject: [PATCH] Add Llama caravan events
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/LlamaFollowCaravanGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/LlamaFollowCaravanGoal.java
+index 21725aee29e9120d1c7e1e19f91c21a73a28844f..778a4037f87a8cfe9be0c9ff9db12323cccbe0c2 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/LlamaFollowCaravanGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/LlamaFollowCaravanGoal.java
+@@ -61,7 +61,7 @@ public class LlamaFollowCaravanGoal extends Goal {
+             } else if (!llama.isLeashed() && !this.firstIsLeashed(llama, 1)) {
+                 return false;
+             } else {
+-                this.llama.joinCaravan(llama);
++                this.llama.joinCaravan(llama, io.papermc.paper.event.entity.LlamaJoinCaravanEvent.Reason.AI_GOAL); // Paper - add reason
+                 return true;
+             }
+         } else {
+@@ -97,7 +97,7 @@ public class LlamaFollowCaravanGoal extends Goal {
+ 
+     @Override
+     public void stop() {
+-        this.llama.leaveCaravan();
++        this.llama.leaveCaravan(io.papermc.paper.event.entity.LlamaLeaveCaravanEvent.Reason.LOST_HEAD); // Paper - add reason
+         this.speedModifier = 2.1D;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+index 5f61c97478f005aaaaad1b027118079db7275cf7..72bfb0f59c07af274f8cd58b617da3a038bf3019 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+@@ -437,19 +437,58 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
+         }
+     }
+ 
++    // Paper start - Add Llama caravan events
++    /**
++     * @deprecated Use {@link Llama#leaveCaravan(io.papermc.paper.event.entity.LlamaLeaveCaravanEvent.Reason)}
++     */
++    @Deprecated
++    @io.papermc.paper.annotation.DoNotUse
+     public void leaveCaravan() {
++        leaveCaravan(io.papermc.paper.event.entity.LlamaLeaveCaravanEvent.Reason.UNKNOWN);
++    }
++    // Paper end - Add Llama caravan events
++
++    public void leaveCaravan(io.papermc.paper.event.entity.LlamaLeaveCaravanEvent.Reason reason) { // Paper - add reason
+         if (this.caravanHead != null) {
++            // Paper start - Add Llama caravan events
++            if (!new io.papermc.paper.event.entity.LlamaLeaveCaravanEvent(getBukkitEntity(), reason).callEvent()) {
++                return;
++            }
++            // Paper end - Add Llama caravan events
+             this.caravanHead.caravanTail = null;
+         }
+ 
+         this.caravanHead = null;
+     }
+ 
++    // Paper start - Add Llama caravan events
++    /**
++     * @deprecated Use {@link Llama#joinCaravan(Llama, io.papermc.paper.event.entity.LlamaJoinCaravanEvent.Reason)}
++     */
++    @Deprecated
++    @io.papermc.paper.annotation.DoNotUse
+     public void joinCaravan(Llama llama) {
++        joinCaravan(llama, io.papermc.paper.event.entity.LlamaJoinCaravanEvent.Reason.UNKNOWN);
++    }
++    // Paper end - Add Llama caravan events
++
++    public void joinCaravan(Llama llama, io.papermc.paper.event.entity.LlamaJoinCaravanEvent.Reason reason) { // Paper - add reason
++        // Paper start - Add Llama caravan events
++        if (!new io.papermc.paper.event.entity.LlamaJoinCaravanEvent(getBukkitEntity(), llama.getBukkitEntity(), reason).callEvent()) {
++            return;
++        }
++        // Paper end - Add Llama caravan events
+         this.caravanHead = llama;
+         this.caravanHead.caravanTail = this;
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.craftbukkit.entity.CraftLlama getBukkitEntity() {
++        return (org.bukkit.craftbukkit.entity.CraftLlama) super.getBukkitEntity();
++    }
++    // Paper end
++
+     public boolean hasCaravanTail() {
+         return this.caravanTail != null;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
+index 0ad16ee7b33582d214dab41eeee378d52c8e38ed..5e211b4f5d22b892a942fe3b7919e15b7a4de177 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
+@@ -67,12 +67,12 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
+ 
+     @Override
+     public void joinCaravan(@org.jetbrains.annotations.NotNull Llama llama) {
+-        this.getHandle().joinCaravan(((CraftLlama) llama).getHandle());
++        this.getHandle().joinCaravan(((CraftLlama) llama).getHandle(), io.papermc.paper.event.entity.LlamaJoinCaravanEvent.Reason.PLUGIN); // Paper - add reason
+     }
+ 
+     @Override
+     public void leaveCaravan() {
+-        this.getHandle().leaveCaravan();
++        this.getHandle().leaveCaravan(io.papermc.paper.event.entity.LlamaLeaveCaravanEvent.Reason.PLUGIN); // Paper - add reason
+     }
+ 
+     @Override
