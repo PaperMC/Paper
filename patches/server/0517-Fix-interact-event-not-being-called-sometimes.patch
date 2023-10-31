@@ -11,7 +11,7 @@ Subject: [PATCH] Fix interact event not being called sometimes
 Co-authored-by: Moulberry <james.jenour@protonmail.com>
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index a32e63f4ffff849aa13daf831b1e436c1112dde2..63535d38c0f7a7fbf19a1e91747f6989d0f72a60 100644
+index 059d2521bb2b86ccafd4b51a014bc6822692d854..95cc9134244eb226480969674201cd234a055964 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1733,7 +1733,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -24,13 +24,13 @@ index a32e63f4ffff849aa13daf831b1e436c1112dde2..63535d38c0f7a7fbf19a1e91747f6989
                              }
                          }
 @@ -2295,13 +2295,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-         double d3 = player.gameMode.getGameModeForPlayer() == GameType.CREATIVE ? 5.0D : 4.5D;
+         double d3 = this.player.gameMode.getGameModeForPlayer() == GameType.CREATIVE ? 5.0D : 4.5D;
          // SPIGOT-5607: Only call interact event if no block or entity is being clicked. Use bukkit ray trace method, because it handles blocks and entities at the same time
          // SPIGOT-7429: Make sure to call PlayerInteractEvent for spectators and non-pickable entities
 -        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.1, entity -> {
 +        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.0, entity -> { // Paper - change raySize from 0.1 to 0.0
              Entity handle = ((CraftEntity) entity).getHandle();
-             return entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity) && !handle.isSpectator() && handle.isPickable() && !handle.isPassengerOfSameVehicle(player);
+             return entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity) && !handle.isSpectator() && handle.isPickable() && !handle.isPassengerOfSameVehicle(this.player);
          });
          if (result == null) {
              CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);

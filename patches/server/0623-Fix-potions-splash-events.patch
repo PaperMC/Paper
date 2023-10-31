@@ -8,7 +8,7 @@ Fixes SPIGOT-6221: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-6
 Fix splash events cancellation that still show particles/sound
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index 50712c4c7f007123a0735acf958fd860d4e76cf8..a3ee89cb4acfa475076e65f06f1047232bcf684f 100644
+index b87077c47a0131c5f4ca085b6b32e657043a9e1a..40307233e5bc67d538f580bc514a033c64d1316a 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 @@ -105,56 +105,77 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
@@ -22,11 +22,11 @@ index 50712c4c7f007123a0735acf958fd860d4e76cf8..a3ee89cb4acfa475076e65f06f104723
 +                showParticles = this.applyWater(); // Paper
              } else if (true || !list.isEmpty()) { // CraftBukkit - Call event even if no effects to apply
                  if (this.isLingering()) {
--                    this.makeAreaOfEffectCloud(itemstack, potionregistry);
-+                    showParticles = this.makeAreaOfEffectCloud(itemstack, potionregistry); // Paper
+-                    this.makeAreaOfEffectCloud(itemstack, potionregistry, hitResult); // CraftBukkit - Pass MovingObjectPosition
++                    showParticles = this.makeAreaOfEffectCloud(itemstack, potionregistry, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
                  } else {
--                    this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null);
-+                    showParticles = this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null); // Paper
+-                    this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition
++                    showParticles = this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
                  }
              }
  
@@ -99,8 +99,8 @@ index 50712c4c7f007123a0735acf958fd860d4e76cf8..a3ee89cb4acfa475076e65f06f104723
  
      }
  
--    private void applySplash(List<MobEffectInstance> statusEffects, @Nullable Entity entity) {
-+    private boolean applySplash(List<MobEffectInstance> statusEffects, @Nullable Entity entity) { // Paper
+-    private void applySplash(List<MobEffectInstance> list, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition
++    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
          List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
          Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
@@ -120,16 +120,16 @@ index 50712c4c7f007123a0735acf958fd860d4e76cf8..a3ee89cb4acfa475076e65f06f104723
  
      }
  
--    private void makeAreaOfEffectCloud(ItemStack stack, Potion potion) {
-+    private boolean makeAreaOfEffectCloud(ItemStack stack, Potion potion) { // Paper
+-    private void makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, HitResult position) { // CraftBukkit - Pass MovingObjectPosition
++    private boolean makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean
          AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
          Entity entity = this.getOwner();
  
 @@ -244,10 +267,12 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
-         entityareaeffectcloud.setPotion(potion);
-         Iterator iterator = PotionUtils.getCustomEffects(stack).iterator();
+         entityareaeffectcloud.setPotion(potionregistry);
+         Iterator iterator = PotionUtils.getCustomEffects(itemstack).iterator();
  
-+        boolean noEffects = potion.getEffects().isEmpty(); // Paper
++        boolean noEffects = potionregistry.getEffects().isEmpty(); // Paper
          while (iterator.hasNext()) {
              MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
  
@@ -137,11 +137,11 @@ index 50712c4c7f007123a0735acf958fd860d4e76cf8..a3ee89cb4acfa475076e65f06f104723
 +            noEffects = false; // Paper
          }
  
-         CompoundTag nbttagcompound = stack.getTag();
+         CompoundTag nbttagcompound = itemstack.getTag();
 @@ -258,12 +283,13 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
  
          // CraftBukkit start
-         org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, entityareaeffectcloud);
+         org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, position, entityareaeffectcloud);
 -        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved())) {
 +        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved() || (noEffects && entityareaeffectcloud.effects.isEmpty() && entityareaeffectcloud.getPotion().getEffects().isEmpty()))) { // Paper - don't spawn area effect cloud if the effects were empty and not changed during the event handling
              this.level().addFreshEntity(entityareaeffectcloud);

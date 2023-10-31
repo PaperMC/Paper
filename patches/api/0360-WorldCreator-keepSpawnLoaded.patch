@@ -5,24 +5,70 @@ Subject: [PATCH] WorldCreator#keepSpawnLoaded
 
 
 diff --git a/src/main/java/org/bukkit/WorldCreator.java b/src/main/java/org/bukkit/WorldCreator.java
-index 29f0bb4d5bb1d5ef1b6bd64726ca84c25091f9e4..649256cb267bcf05ef4c15699cbf4e7e7e99b612 100644
+index afc0ce2eaa7cf48d1255fec7377103b1f7a99734..58e3e3e0e772640b3944b4acb5a92d96431728a7 100644
 --- a/src/main/java/org/bukkit/WorldCreator.java
 +++ b/src/main/java/org/bukkit/WorldCreator.java
-@@ -22,6 +22,7 @@ public class WorldCreator {
+@@ -23,7 +23,7 @@ public class WorldCreator {
      private boolean generateStructures = true;
      private String generatorSettings = "";
      private boolean hardcore = false;
+-    private boolean keepSpawnInMemory = true;
 +    private net.kyori.adventure.util.TriState keepSpawnLoaded = net.kyori.adventure.util.TriState.NOT_SET; // Paper
  
      /**
       * Creates an empty WorldCreationOptions for the given world name
-@@ -573,4 +574,32 @@ public class WorldCreator {
+@@ -123,7 +123,7 @@ public class WorldCreator {
+         type = world.getWorldType();
+         generateStructures = world.canGenerateStructures();
+         hardcore = world.isHardcore();
+-        keepSpawnInMemory = world.getKeepSpawnInMemory();
++        this.keepSpawnLoaded = net.kyori.adventure.util.TriState.byBoolean(world.getKeepSpawnInMemory()); // Paper
+ 
+         return this;
+     }
+@@ -146,7 +146,7 @@ public class WorldCreator {
+         generateStructures = creator.generateStructures();
+         generatorSettings = creator.generatorSettings();
+         hardcore = creator.hardcore();
+-        keepSpawnInMemory = creator.keepSpawnInMemory();
++        keepSpawnLoaded = creator.keepSpawnLoaded(); // Paper
+ 
+         return this;
+     }
+@@ -470,21 +470,23 @@ public class WorldCreator {
+      *
+      * @param keepSpawnInMemory Whether the spawn chunks will be kept loaded
+      * @return This object, for chaining
++     * @deprecated use {@link #keepSpawnLoaded(net.kyori.adventure.util.TriState)}
+      */
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public WorldCreator keepSpawnInMemory(boolean keepSpawnInMemory) {
+-        this.keepSpawnInMemory = keepSpawnInMemory;
+-
+-        return this;
++        return this.keepSpawnLoaded(net.kyori.adventure.util.TriState.byBoolean(keepSpawnInMemory)); // Paper
+     }
+ 
+     /**
+      * Gets whether or not the spawn chunks will be kept loaded.
+      *
+      * @return True if the spawn chunks will be kept loaded
++     * @deprecated use {@link #keepSpawnLoaded()}
+      */
++    @Deprecated(forRemoval = true) // Paper
+     public boolean keepSpawnInMemory() {
+-        return keepSpawnInMemory;
++        return this.keepSpawnLoaded() == net.kyori.adventure.util.TriState.TRUE; // Paper
+     }
+ 
+     /**
+@@ -594,4 +596,31 @@ public class WorldCreator {
  
          return result;
      }
 +
-+    // Paper start
-+
++    // Paper start - keep spawn loaded tristate
 +    /**
 +     * Returns the current intent to keep the world loaded, @see {@link WorldCreator#keepSpawnLoaded(net.kyori.adventure.util.TriState)}
 +     *
@@ -42,10 +88,10 @@ index 29f0bb4d5bb1d5ef1b6bd64726ca84c25091f9e4..649256cb267bcf05ef4c15699cbf4e7e
 +     */
 +    @NotNull
 +    public WorldCreator keepSpawnLoaded(@NotNull net.kyori.adventure.util.TriState keepSpawnLoaded) {
-+        java.util.Objects.requireNonNull(keepSpawnLoaded, "keepSpawnLoaded");
++        Preconditions.checkArgument(keepSpawnLoaded != null, "keepSpawnLoaded");
 +        this.keepSpawnLoaded = keepSpawnLoaded;
 +        return this;
 +    }
 +
-+    // Paper end
++    // Paper end - keep spawn loaded tristate
  }

@@ -36,7 +36,7 @@ index b5f54ee82905e3e6ab5bfde35ab625f5feeb1393..c0a80824a0307ea673805015119cc834
  
          public boolean shouldDisconnect() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 171ee674689042ec571c15bfde529bede7056f07..7e4f3b7a5790292b3b8439fb4696d9d6cfec0167 100644
+index 1400fd3f8eb38c15e85221b5805080e1d792215f..d74313b58b660f3c03b8a6db4f80b6b073b6b795 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -2151,7 +2151,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -88,7 +88,7 @@ index c68bac4727f6b2ca95fc8c438303097af14286f2..bb629ec263959c8268de88ca807bddb6
                  return Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason);
              }, true);
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 95d37df1b51453722d47eb07e2e0247f308fa171..125a9d1ae394db4b0d5418756d50e32feca83344 100644
+index d660041805bcd1bb97cf347d8b1cfe5c65469f56..a0328cfbe4184a2c1dc895e96fa3fefbdc52bf09 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -94,7 +94,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -107,7 +107,7 @@ index 95d37df1b51453722d47eb07e2e0247f308fa171..125a9d1ae394db4b0d5418756d50e32f
 -                this.disconnect("Invalid payload REGISTER!");
 +                this.disconnect("Invalid payload REGISTER!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
              }
-         } else if (identifier.equals(CUSTOM_UNREGISTER)) {
+         } else if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_UNREGISTER)) {
              try {
 @@ -140,7 +140,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                  }
@@ -197,7 +197,7 @@ index 95d37df1b51453722d47eb07e2e0247f308fa171..125a9d1ae394db4b0d5418756d50e32f
          if (this.cserver.getServer().isRunning()) {
              this.cserver.getPluginManager().callEvent(event);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 4a5c462998d833e5377c79cf5ded843a8cc71d48..9cd00fce9dadd65020de9c48524416d6d3c82bc4 100644
+index 24e3f3ee7f8af6ec9d61afd8e80e0909ee48c8f0..7f030cac8b3bc7d2d4b1c32ef5edc360473881f2 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -340,7 +340,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -392,8 +392,8 @@ index 4a5c462998d833e5377c79cf5ded843a8cc71d48..9cd00fce9dadd65020de9c48524416d6
          // Spigot Start
          if ( entity == this.player && !this.player.isSpectator() )
          {
--            disconnect( "Cannot interact with self!" );
-+            disconnect( "Cannot interact with self!" , org.bukkit.event.player.PlayerKickEvent.Cause.SELF_INTERACTION ); // Paper - kick event cause
+-            this.disconnect( "Cannot interact with self!" );
++            this.disconnect( "Cannot interact with self!" , org.bukkit.event.player.PlayerKickEvent.Cause.SELF_INTERACTION ); // Paper - kick event cause
              return;
          }
          // Spigot End
@@ -434,7 +434,7 @@ index 4a5c462998d833e5377c79cf5ded843a8cc71d48..9cd00fce9dadd65020de9c48524416d6
  
              }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 8d7e99a331b21f2efbb60936974395b9c12ad5d6..9a1f1548b7f095946edb105ddfd64932bf64a2df 100644
+index 2726c54dc57e584352fde31f1638b0d1416b14ad..0139313fb1b06da9df19317748862700c1b5b6e9 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -665,7 +665,7 @@ public abstract class PlayerList {
@@ -488,7 +488,7 @@ index 6724d0a1af13e97bc1d3bd94fd43fef742a0deab..20ba0a0c9eae28658888a77dd2170f62
      }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 6216a1b2c5fbfeafcce4fee81d7b12a14a8f594b..a068e2ae2e419b8b6a8cc560754613a55717c399 100644
+index a4869668643bcfe11c4a0f33d02e4b800da29a48..dad0a07790579bc3d8b018e1c5e281d4fe9633ba 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -586,7 +586,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -527,7 +527,7 @@ index 6216a1b2c5fbfeafcce4fee81d7b12a14a8f594b..a068e2ae2e419b8b6a8cc560754613a5
              if (msg.startsWith("/")) {
                  this.getHandle().connection.handleCommand(msg);
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index 29b39dff0aceaa902f701162a42d3f2f881d6d5a..6a8fc3bc43183538f5717c0b34f83b47fd081bad 100644
+index 631457374fda492776f4af0515cee2e43a934d2c..da7d5efd76c9ef92e9ce22860fec791890a687be 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
 @@ -73,7 +73,7 @@ public class RestartCommand extends Command
