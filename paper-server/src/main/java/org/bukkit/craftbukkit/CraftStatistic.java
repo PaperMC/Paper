@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableBiMap;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
+import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.stats.ServerStatisticManager;
 import net.minecraft.stats.StatisticList;
 import net.minecraft.world.entity.EntityTypes;
@@ -199,12 +200,12 @@ public enum CraftStatistic {
         return null;
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic) {
-        incrementStatistic(manager, statistic, 1);
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityPlayer player) {
+        incrementStatistic(manager, statistic, 1, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic) {
-        decrementStatistic(manager, statistic, 1);
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityPlayer player) {
+        decrementStatistic(manager, statistic, 1, player);
     }
 
     public static int getStatistic(ServerStatisticManager manager, Statistic statistic) {
@@ -213,30 +214,37 @@ public enum CraftStatistic {
         return manager.getValue(CraftStatistic.getNMSStatistic(statistic));
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, int amount) {
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        setStatistic(manager, statistic, getStatistic(manager, statistic) + amount);
+        setStatistic(manager, statistic, getStatistic(manager, statistic) + amount, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, int amount) {
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        setStatistic(manager, statistic, getStatistic(manager, statistic) - amount);
+        setStatistic(manager, statistic, getStatistic(manager, statistic) - amount, player);
     }
 
-    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, int newValue) {
+    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, int newValue, EntityPlayer player) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(statistic.getType() == Type.UNTYPED, "Must supply additional parameter for this statistic");
         Preconditions.checkArgument(newValue >= 0, "Value must be greater than or equal to 0");
         net.minecraft.stats.Statistic nmsStatistic = CraftStatistic.getNMSStatistic(statistic);
-        manager.setValue(null, nmsStatistic, newValue);;
+        manager.setValue(null, nmsStatistic, newValue);
+
+        // Update scoreboards
+        if (player != null) {
+            player.level().getCraftServer().getScoreboardManager().getScoreboardScores(nmsStatistic, player.getScoreboardName(), score -> {
+                score.setScore(newValue);
+            });
+        }
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material) {
-        incrementStatistic(manager, statistic, material, 1);
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material, EntityPlayer player) {
+        incrementStatistic(manager, statistic, material, 1, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material) {
-        decrementStatistic(manager, statistic, material, 1);
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material, EntityPlayer player) {
+        decrementStatistic(manager, statistic, material, 1, player);
     }
 
     public static int getStatistic(ServerStatisticManager manager, Statistic statistic, Material material) {
@@ -248,17 +256,17 @@ public enum CraftStatistic {
         return manager.getValue(nmsStatistic);
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material, int amount) {
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        setStatistic(manager, statistic, material, getStatistic(manager, statistic, material) + amount);
+        setStatistic(manager, statistic, material, getStatistic(manager, statistic, material) + amount, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material, int amount) {
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        setStatistic(manager, statistic, material, getStatistic(manager, statistic, material) - amount);
+        setStatistic(manager, statistic, material, getStatistic(manager, statistic, material) - amount, player);
     }
 
-    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, Material material, int newValue) {
+    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, Material material, int newValue, EntityPlayer player) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
         Preconditions.checkArgument(newValue >= 0, "Value must be greater than or equal to 0");
@@ -266,14 +274,21 @@ public enum CraftStatistic {
         net.minecraft.stats.Statistic nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
         Preconditions.checkArgument(nmsStatistic != null, "The supplied Material %s does not have a corresponding statistic", material);
         manager.setValue(null, nmsStatistic, newValue);
+
+        // Update scoreboards
+        if (player != null) {
+            player.level().getCraftServer().getScoreboardManager().getScoreboardScores(nmsStatistic, player.getScoreboardName(), score -> {
+                score.setScore(newValue);
+            });
+        }
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType) {
-        incrementStatistic(manager, statistic, entityType, 1);
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, EntityPlayer player) {
+        incrementStatistic(manager, statistic, entityType, 1, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType) {
-        decrementStatistic(manager, statistic, entityType, 1);
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, EntityPlayer player) {
+        decrementStatistic(manager, statistic, entityType, 1, player);
     }
 
     public static int getStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType) {
@@ -285,17 +300,17 @@ public enum CraftStatistic {
         return manager.getValue(nmsStatistic);
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int amount) {
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        setStatistic(manager, statistic, entityType, getStatistic(manager, statistic, entityType) + amount);
+        setStatistic(manager, statistic, entityType, getStatistic(manager, statistic, entityType) + amount, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int amount) {
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        setStatistic(manager, statistic, entityType, getStatistic(manager, statistic, entityType) - amount);
+        setStatistic(manager, statistic, entityType, getStatistic(manager, statistic, entityType) - amount, player);
     }
 
-    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int newValue) {
+    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int newValue, EntityPlayer player) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
         Preconditions.checkArgument(newValue >= 0, "Value must be greater than or equal to 0");
@@ -303,5 +318,12 @@ public enum CraftStatistic {
         net.minecraft.stats.Statistic nmsStatistic = CraftStatistic.getEntityStatistic(statistic, entityType);
         Preconditions.checkArgument(nmsStatistic != null, "The supplied EntityType %s does not have a corresponding statistic", entityType);
         manager.setValue(null, nmsStatistic, newValue);
+
+        // Update scoreboards
+        if (player != null) {
+            player.level().getCraftServer().getScoreboardManager().getScoreboardScores(nmsStatistic, player.getScoreboardName(), score -> {
+                score.setScore(newValue);
+            });
+        }
     }
 }
