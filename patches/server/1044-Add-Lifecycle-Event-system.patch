@@ -7,6 +7,58 @@ This event system is separate from Bukkit's event system and is
 meant for managing resources across reloads and from points in the
 PluginBootstrap.
 
+diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java
+index 30b50e6294c6eaade5e17cfaf34600d122e6251c..52cb4d077859da6b387264dd7240acd23bf312a3 100644
+--- a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java
++++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java
+@@ -1,6 +1,10 @@
+ package io.papermc.paper.plugin.bootstrap;
+ 
++import com.google.common.base.Preconditions;
+ import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventHandler;
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventType;
+ import io.papermc.paper.plugin.provider.PluginProvider;
+ import java.nio.file.Path;
+ import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+@@ -12,6 +16,7 @@ public final class PluginBootstrapContextImpl implements BootstrapContext {
+     private final Path dataFolder;
+     private final ComponentLogger logger;
+     private final Path pluginSource;
++    private boolean allowLifecycleEventHandlerRegistration = true; // Paper - lifecycle events
+ 
+     public PluginBootstrapContextImpl(PluginMeta config, Path dataFolder, ComponentLogger logger, Path pluginSource) {
+         this.config = config;
+@@ -45,4 +50,28 @@ public final class PluginBootstrapContextImpl implements BootstrapContext {
+     public @NotNull Path getPluginSource() {
+         return this.pluginSource;
+     }
++
++    // Paper start - lifecycle event system
++    public void lockLifecycleEventRegistration() {
++        this.allowLifecycleEventHandlerRegistration = false;
++    }
++
++    @Override
++    public <E extends LifecycleEvent, T extends LifecycleEventType<? super BootstrapContext, ? super E>> void handleLifecycleEvent(@NotNull final T lifecycleEventType, final @NotNull LifecycleEventHandler<? super E> lifecycleEventHandler) {
++        Preconditions.checkState(this.allowLifecycleEventHandlerRegistration, "Cannot add lifecycle event handlers after bootstrap");
++        BootstrapContext.super.handleLifecycleEvent(lifecycleEventType, lifecycleEventHandler);
++    }
++
++    @Override
++    public <E extends LifecycleEvent, T extends LifecycleEventType<? super BootstrapContext, ? super E>> void handleLifecycleEventAsMonitor(@NotNull final T lifecycleEventType, final @NotNull LifecycleEventHandler<? super E> lifecycleEventHandler) {
++        Preconditions.checkState(this.allowLifecycleEventHandlerRegistration, "Cannot add lifecycle event handlers after bootstrap");
++        BootstrapContext.super.handleLifecycleEventAsMonitor(lifecycleEventType, lifecycleEventHandler);
++    }
++
++    @Override
++    public <E extends LifecycleEvent, T extends LifecycleEventType.Prioritized<? super BootstrapContext, ? super E>> void handleLifecycleEventWithPriority(@NotNull final T lifecycleEventType, final @NotNull LifecycleEventHandler<? super E> lifecycleEventHandler, final int priority) {
++        Preconditions.checkState(this.allowLifecycleEventHandlerRegistration, "Cannot add lifecycle event handlers after bootstrap");
++        BootstrapContext.super.handleLifecycleEventWithPriority(lifecycleEventType, lifecycleEventHandler, priority);
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..b9b34a4d54890c415335147b660393f03a8a8ba3
@@ -67,10 +119,10 @@ index 0000000000000000000000000000000000000000..b9b34a4d54890c415335147b660393f0
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aaf1ce6aa3de64704753949d832fcdd0988460eb
+index 0000000000000000000000000000000000000000..26392bbe0828c0430ca5d27f3843c9652da55751
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,39 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -89,7 +141,6 @@ index 0000000000000000000000000000000000000000..aaf1ce6aa3de64704753949d832fcdd0
 +    }
 +
 +    @SuppressWarnings("unchecked")
-+
 +    @Override
 +    public <O extends LifecycleEventOwner<O>, E extends LifecycleEvent, T extends LifecycleEventType<? super O, ? super E>> void registerAsMonitor(final O owner, final T eventType, final LifecycleEventHandler<? super E> lifecycleEventHandler) {
 +        ((AbstractLifecycleEventType<? super O, E>) eventType).registerAsMonitor(owner, lifecycleEventHandler);
@@ -356,22 +407,25 @@ index 9c7552968b8c017c71a7a77557a66a03ed89f125..773060422cc89778c2696d5c7f1361d9
              this.server.getMessenger().unregisterIncomingPluginChannel(plugin);
              this.server.getMessenger().unregisterOutgoingPluginChannel(plugin);
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-index 31ec730e63adf82bf9ac02331bc7f186b98c35cf..f7fca2c07cbd193eceb2d49a4f1ed3face0180c2 100644
+index 8ef13e4f00a61db0dab9ef63231d77adcfaba5ab..79ec67dd6dc71f83e23f722811369723c155195d 100644
 --- a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-@@ -32,6 +32,7 @@ public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootst
+@@ -30,8 +30,9 @@ public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootst
+             @Override
+             public boolean load(PluginProvider<PluginBootstrap> provider, PluginBootstrap provided) {
                  try {
-                     BootstrapContext context = PluginBootstrapContextImpl.of(provider, PluginInitializerManager.instance().pluginDirectoryPath());
+-                    BootstrapContext context = PluginBootstrapContextImpl.create(provider, PluginInitializerManager.instance().pluginDirectoryPath());
++                    PluginBootstrapContextImpl context = PluginBootstrapContextImpl.create(provider, PluginInitializerManager.instance().pluginDirectoryPath()); // Paper - lifecycle events
                      provided.bootstrap(context);
-+                    // TODO somehow lock lifecycle event handler creation for this BootstrapContext object (might require changing it away from a record)
++                    context.lockLifecycleEventRegistration(); // Paper - lifecycle events
                      return true;
                  } catch (Throwable e) {
                      LOGGER.error("Failed to run bootstrapper for %s. This plugin will not be loaded.".formatted(provider.getSource()), e);
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index dae36c6452ccd57a436dd918547b64d59957ab0a..7ab5397a7696989d7ef03eec346ea534ce6681ff 100644
+index ec268189b19b6fa5c4521f96ce211a531db35ec5..390434cd3c4e54d543272048736109aed9fcd5b1 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -130,6 +130,9 @@ public class Main {
+@@ -138,6 +138,9 @@ public class Main {
              Path path1 = Paths.get("server.properties");
              DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
  
@@ -382,18 +436,18 @@ index dae36c6452ccd57a436dd918547b64d59957ab0a..7ab5397a7696989d7ef03eec346ea534
              Path path2 = Paths.get("eula.txt");
              Eula eula = new Eula(path2);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 435f5ee3388f5da93df938c43ea2578f7d586407..383fe5696e066a4993e357eb2286de1a74fde5a3 100644
+index 8f31413c939cc2b0454ad3d9a1b618dbae449d00..bf538301717738d2db2f0f5ee7f64a71cf0b30e9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -635,6 +635,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -626,6 +626,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
          this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
 +        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.callStaticRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.LifecycleEvents.DUMMY_STATIC, new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar()); // Paper
          this.connection.acceptConnections();
      }
-     // CraftBukkit end
-@@ -2092,6 +2093,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+@@ -2096,6 +2097,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
              org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
