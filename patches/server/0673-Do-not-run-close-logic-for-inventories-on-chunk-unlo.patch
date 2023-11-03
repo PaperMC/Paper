@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 11 Mar 2021 03:03:32 -0800
+Subject: [PATCH] Do not run close logic for inventories on chunk unload
+
+Still call the event and change the active container though. We
+want to avoid close logic because it's possible to load the
+chunk through it. This should also be OK from a leak prevention/
+state desync POV because the TE is getting unloaded anyways.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index a11bd2d9f5b2fb248cc322ea61886050fa2e73a9..80f2a1204bee79daf0cae9310ce8d552c59e66fe 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1555,9 +1555,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // Spigot Start
+         for (net.minecraft.world.level.block.entity.BlockEntity tileentity : chunk.getBlockEntities().values()) {
+             if (tileentity instanceof net.minecraft.world.Container) {
++                // Paper start - this area looks like it can load chunks, change the behavior
++                // chests for example can apply physics to the world
++                // so instead we just change the active container and call the event
+                 for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((net.minecraft.world.Container) tileentity).getViewers())) {
+-                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper
++                    ((org.bukkit.craftbukkit.entity.CraftHumanEntity)h).getHandle().closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper
+                 }
++                // Paper end
+             }
+         }
+         // Spigot End
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 6b92189b6dddee7e632c142430eaa784d22adbca..c6d56a225cdaffc0b08eb4805e6bdcb0223fbd91 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1617,6 +1617,18 @@ public class ServerPlayer extends Player {
+         this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
+         this.doCloseContainer();
+     }
++    // Paper start - special close for unloaded inventory
++    @Override
++    public void closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        // copied from above
++        CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
++        // Paper end
++        // copied from below
++        this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
++        this.containerMenu = this.inventoryMenu;
++        // do not run close logic
++    }
++    // Paper end - special close for unloaded inventory
+ 
+     @Override
+     public void doCloseContainer() {
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 39f011a3c5e0eaa24ab95738329ba98aa07a5f36..b40961ad53437a5aa603f658ed56fca827de5716 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -508,6 +508,11 @@ public abstract class Player extends LivingEntity {
+         this.containerMenu = this.inventoryMenu;
+     }
+     // Paper end
++    // Paper start - special close for unloaded inventory
++    public void closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        this.containerMenu = this.inventoryMenu;
++    }
++    // Paper end - special close for unloaded inventory
+ 
+     public void closeContainer() {
+         this.containerMenu = this.inventoryMenu;
