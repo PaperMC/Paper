@@ -4,6 +4,23 @@ Date: Mon, 11 Sep 2023 12:01:57 +1000
 Subject: [PATCH] Add slot sanity checks in container clicks
 
 
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8bca5ba75977c0a61197eb47c94f0456d66b29a4..33be0db006cca66f38f2105924466b0210139848 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2980,6 +2980,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             break;
+                         case SWAP:
+                             if ((packet.getButtonNum() >= 0 && packet.getButtonNum() < 9) || packet.getButtonNum() == 40) {
++                                // Paper start
++                                if (packet.getSlotNum() < 0) {
++                                    action = InventoryAction.NOTHING;
++                                    break;
++                                }
++                                // Paper end
+                                 click = (packet.getButtonNum() == 40) ? ClickType.SWAP_OFFHAND : ClickType.NUMBER_KEY;
+                                 Slot clickedSlot = this.player.containerMenu.getSlot(packet.getSlotNum());
+                                 if (clickedSlot.mayPickup(this.player)) {
 diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
 index 3ef712299fe248602b0b117c0a8e285cdf4e05c2..5d298b11f74cd2da47e6613ced621ab62aa73a7b 100644
 --- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
