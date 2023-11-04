@@ -6,7 +6,7 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 8b892c96eae2395093fcbfd696731fefd2003941..c210a1d4d779cc64ff7f5ae2d2c63b249ceb6205 100644
+index 80ffd7fd14893c70da92dddb5ec37d409c76b729..dd300f1048b806c1292ac09dd232fd3eb24a7bf0 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -36,6 +36,7 @@ dependencies {
@@ -523,8 +523,28 @@ index 1931db6936773657bd43b9b16de950cb3e7a2303..36a78cc103ddf1cc7ccddefc0b3fd6ce
      }
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
+diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
+index 45b4f1c295eda2fcc5067a4b21de247218ef117f..d364bd57b1675c8b21d781c2bc16c3e65800455c 100644
+--- a/src/main/java/net/minecraft/network/PacketEncoder.java
++++ b/src/main/java/net/minecraft/network/PacketEncoder.java
+@@ -47,7 +47,14 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+ 
+                     JvmProfiler.INSTANCE.onPacketSent(codecData.protocol(), i, channelHandlerContext.channel().remoteAddress(), k);
+                 } catch (Throwable var13) {
+-                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", i, packet.isSkippable(), var13); // Paper - Give proper error message
++                    // Paper start - Give proper error message
++                    String packetName = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(packet.getClass().getName());
++                    if (packetName.contains(".")) {
++                        packetName = packetName.substring(packetName.lastIndexOf(".") + 1);
++                    }
++
++                    LOGGER.error("Packet encoding of packet {} (ID: {}) threw (skippable? {})", packetName, i, packet.isSkippable(), var13);
++                    // Paper end
+                     if (packet.isSkippable()) {
+                         throw new SkipPacketException(var13);
+                     }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index f43e5a83b9220eb23a777fa7490b49aac440bea0..1f8dcc331505890ba72777b5d0cda2427e0ccfd1 100644
+index 378a6665159b3e62062df4ded024bcc1604f5300..474492c3f02f99e801885a983b9c110a8656c7b5 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -195,6 +195,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -536,7 +556,7 @@ index f43e5a83b9220eb23a777fa7490b49aac440bea0..1f8dcc331505890ba72777b5d0cda242
          paperConfigurations.initializeWorldDefaultsConfiguration();
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 19e7424d3098625b967e9fabb9681ffd9f09d16c..8467ea174dd48010b94b3f3c84ce097ecbb2ef14 100644
+index f58ec7dd3ce18f916d0a2fe08a137cdaf111cbc1..754e8de31e27264deebc94b1d3a9a51b5ca7e965 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -221,7 +221,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -612,7 +632,7 @@ index 5db27d7bcaaa2eeaeeb08401513d8d23f6cb63c7..ce43cb0152ba07c6c21e08142d65813d
                              }
                         }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 9b96d67acfae823598695e7ed5c61a5118bd0e0b..3e9758fa40bf93fe3d315cc66389193bd57bc393 100644
+index 12af77215bfd6df3b6802a567ac3c013a4cdf06a..fa170cc1ce7011d201295b89718292d696c7fc24 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -600,7 +600,7 @@ public class LevelChunk extends ChunkAccess {
@@ -641,7 +661,7 @@ index 3c1992e212a6d6f1db4d5b807b38d71913619fc0..9c1aff17aabd062640e3f451a2ef8c50
  
      CraftAsyncScheduler() {
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index a9bd33b58a6a3296b70eaaaea3adbee74724e448..7071327fab87d53e794374c701d7c2748c439aaa 100644
+index 5ca863aa1859922fa359eba32539229db40e5b98..dca163ff5436f1007383c8261cac1ac7c0613f23 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -105,7 +105,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
