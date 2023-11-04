@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 9 Dec 2022 01:47:23 -0800
+Subject: [PATCH] fix Instruments
+
+properly handle Player#playNote
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 7569b59b75adf4c7870cc95aad92ccc949a8a070..f496824194613851ea3eb500b12fe7b9351fea88 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -726,29 +726,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+         if (this.getHandle().connection == null) return;
+ 
+-        Sound instrumentSound = switch (instrument.ordinal()) {
+-            case 0 -> Sound.BLOCK_NOTE_BLOCK_HARP;
+-            case 1 -> Sound.BLOCK_NOTE_BLOCK_BASEDRUM;
+-            case 2 -> Sound.BLOCK_NOTE_BLOCK_SNARE;
+-            case 3 -> Sound.BLOCK_NOTE_BLOCK_HAT;
+-            case 4 -> Sound.BLOCK_NOTE_BLOCK_BASS;
+-            case 5 -> Sound.BLOCK_NOTE_BLOCK_FLUTE;
+-            case 6 -> Sound.BLOCK_NOTE_BLOCK_BELL;
+-            case 7 -> Sound.BLOCK_NOTE_BLOCK_GUITAR;
+-            case 8 -> Sound.BLOCK_NOTE_BLOCK_CHIME;
+-            case 9 -> Sound.BLOCK_NOTE_BLOCK_XYLOPHONE;
+-            case 10 -> Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE;
+-            case 11 -> Sound.BLOCK_NOTE_BLOCK_COW_BELL;
+-            case 12 -> Sound.BLOCK_NOTE_BLOCK_DIDGERIDOO;
+-            case 13 -> Sound.BLOCK_NOTE_BLOCK_BIT;
+-            case 14 -> Sound.BLOCK_NOTE_BLOCK_BANJO;
+-            case 15 -> Sound.BLOCK_NOTE_BLOCK_PLING;
+-            case 16 -> Sound.BLOCK_NOTE_BLOCK_XYLOPHONE;
+-            default -> null;
+-        };
+-
+-        float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
+-        this.getHandle().connection.send(new ClientboundSoundPacket(CraftSound.bukkitToMinecraftHolder(instrumentSound), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f, this.getHandle().getRandom().nextLong()));
++        // Paper start - fix all this (modeled off of NoteBlock)
++        net.minecraft.world.level.block.state.properties.NoteBlockInstrument noteBlockInstrument = CraftBlockData.toNMS(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
++        float pitch;
++        if (noteBlockInstrument.isTunable()) {
++            pitch = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
++        } else {
++            pitch = 1.0f;
++        }
++        if (!noteBlockInstrument.hasCustomSound()) {
++            this.getHandle().connection.send(new ClientboundSoundPacket(noteBlockInstrument.getSoundEvent(), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, pitch, this.getHandle().getRandom().nextLong()));
++        }
++        // Paper end
+     }
+ 
+     @Override
