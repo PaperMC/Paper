@@ -5,7 +5,7 @@ Subject: [PATCH] incremental chunk and player saving
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index a106f5f573c9eec1f56fa88f7398ac28d231b5e5..04258e07f806acd9a0d659b682e0119a5dc23adf 100644
+index 219e191ff4d590aee9b7a704ba6fe84c3c12f43a..a5353af5ff47b5be7dac9a4e55989ad9490cf30f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -855,7 +855,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -53,7 +53,7 @@ index a106f5f573c9eec1f56fa88f7398ac28d231b5e5..04258e07f806acd9a0d659b682e0119a
          // Paper start - move executeAll() into full server tick timing
          try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index a8c1620ec48adcd2bb116d48f8bb2d4af50f5f43..7d7dc8246f44d6ffd46b05f917ffbdb9cc24372b 100644
+index e27067e72a49e127aa4abb17f5ed1df09f943f3c..4e58f31e4852a0811f85596653f6db630a75b069 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -452,6 +452,15 @@ public class ServerChunkCache extends ChunkSource {
@@ -73,7 +73,7 @@ index a8c1620ec48adcd2bb116d48f8bb2d4af50f5f43..7d7dc8246f44d6ffd46b05f917ffbdb9
      public void close() throws IOException {
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 8467ea174dd48010b94b3f3c84ce097ecbb2ef14..5826536978724b54080d7d4ee61aa79800d57800 100644
+index 754e8de31e27264deebc94b1d3a9a51b5ca7e965..0ff614ea19ff5420c506fe402caf230b1e0a3a36 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1283,6 +1283,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -115,7 +115,7 @@ index 8467ea174dd48010b94b3f3c84ce097ecbb2ef14..5826536978724b54080d7d4ee61aa798
          // Paper start - rewrite chunk system - add close param
          this.save(progressListener, flush, savingDisabled, false);
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 6d411d6ccef650225f37275ec7c5033991408f25..4f98f80f6d8bebba33bad37fe6a722f778f93ed8 100644
+index a3c1797549e3b149f425f857bbf8564c5ef1e30e..2c2b1aef3f510edb9bb124581739f06692ab5673 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -184,6 +184,7 @@ import org.bukkit.inventory.MainHand;
@@ -127,10 +127,10 @@ index 6d411d6ccef650225f37275ec7c5033991408f25..4f98f80f6d8bebba33bad37fe6a722f7
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      public ServerGamePacketListenerImpl connection;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 8b4c98ff8c411ee6f4efdf4839f9b34ea79fd599..76ab209f27afb88dfb26b8a45a6b36328f63ed45 100644
+index ac6c1c1cf0d736c31a4e3666cb9e10ba8bc1c7c5..3c7257d745406b4675155d7990a6661db7391d6b 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -522,6 +522,7 @@ public abstract class PlayerList {
+@@ -554,6 +554,7 @@ public abstract class PlayerList {
  
      protected void save(ServerPlayer player) {
          if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
@@ -138,7 +138,7 @@ index 8b4c98ff8c411ee6f4efdf4839f9b34ea79fd599..76ab209f27afb88dfb26b8a45a6b3632
          this.playerIo.save(player);
          ServerStatsCounter serverstatisticmanager = (ServerStatsCounter) player.getStats(); // CraftBukkit
  
-@@ -1119,10 +1120,22 @@ public abstract class PlayerList {
+@@ -1151,10 +1152,22 @@ public abstract class PlayerList {
      }
  
      public void saveAll() {
