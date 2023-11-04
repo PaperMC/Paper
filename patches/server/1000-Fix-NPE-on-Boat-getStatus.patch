@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LemonCaramel <admin@caramel.moe>
+Date: Mon, 10 Apr 2023 20:48:26 +0900
+Subject: [PATCH] Fix NPE on Boat getStatus
+
+Boat status is null until the entity is added to the world and the tick() method is called.
+
+== AT ==
+public net.minecraft.world.entity.vehicle.Boat getStatus()Lnet/minecraft/world/entity/vehicle/Boat$Status;
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+index d161cbf9c83cd78593864850b98f688da2c85aa5..859f233197ebe738511011e36668c4eb5d4b7d8e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+@@ -88,6 +88,17 @@ public class CraftBoat extends CraftVehicle implements Boat {
+ 
+     @Override
+     public Status getStatus() {
++        // Paper start
++        final net.minecraft.world.entity.vehicle.Boat handle = this.getHandle();
++        if (handle.status == null) {
++            if (handle.valid && !handle.updatingSectionStatus) {
++                // Don't actually set the status because it would skew the old status check in the next tick
++                return CraftBoat.boatStatusFromNms(handle.getStatus());
++            } else {
++                return Status.NOT_IN_WORLD;
++            }
++        }
++        // Paper end
+         return CraftBoat.boatStatusFromNms(this.getHandle().status);
+     }
+ 

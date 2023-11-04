@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 4 Nov 2021 11:50:40 -0700
+Subject: [PATCH] Add isCollidable methods to various places
+
+== AT ==
+public net.minecraft.world.level.block.state.BlockBehaviour hasCollision
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index 29be71311755de77ce854f874b1fe2b093b997cf..6027b675ca032d7c8f6d43624dcfca69d26849ff 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -456,6 +456,11 @@ public class CraftBlock implements Block {
+     public boolean isSolid() {
+         return this.getNMS().blocksMotion();
+     }
++
++    @Override
++    public boolean isCollidable() {
++        return getNMS().getBlock().hasCollision;
++    }
+     // Paper end
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
+index aca63719790429d3d7c7c59a1931a98221c70fc0..31bb92c026a4a2de0e8d3500f6ecf35b60d61fb9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
+@@ -331,4 +331,11 @@ public class CraftBlockState implements BlockState {
+     public CraftBlockState copy() {
+         return new CraftBlockState(this);
+     }
++
++    // Paper start
++    @Override
++    public boolean isCollidable() {
++        return this.data.getBlock().hasCollision;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 19c07e2c4b6010bf673f79e58fdbaa41275c4fba..4e4852a1973df20023b7213b18b032d7244a4c1f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -575,6 +575,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         var supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.LivingEntity>) net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
+         return new io.papermc.paper.attribute.UnmodifiableAttributeMap(supplier);
+     }
++
++    @Override
++    public boolean isCollidable(Material material) {
++        Preconditions.checkArgument(material.isBlock(), material + " is not a block");
++        return getBlock(material).hasCollision;
++    }
+     // Paper end
+ 
+     /**
