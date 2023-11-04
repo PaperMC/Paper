@@ -8,10 +8,47 @@ Subject: [PATCH] Optimize Hoppers
 * Return true when a plugin cancels inventory move item event instead of false, as false causes pulls to cycle through all items.
   However, pushes do not exhibit the same behavior, so this is not something plugins could of been relying on.
 * Add option (Default on) to cooldown hoppers when they fail to move an item due to full inventory
-* Skip subsequent InventoryMoveItemEvents if a plugin does not use the item after first event fire for an iteration
+* Skip subsequent InventoryMoveItemEvents if a plugin does not use the item after first event fire for an iteration by tracking changes to the event via an internal event implementation.
 * Don't check for Entities with Inventories if the block above us is also occluding (not just Inventoried)
 * Remove Streams from Item Suck In and restore restore 1.12 AABB checks which is simpler and no voxel allocations (was doing TWO Item Suck ins)
 
+diff --git a/src/main/java/io/papermc/paper/event/inventory/PaperInventoryMoveItemEvent.java b/src/main/java/io/papermc/paper/event/inventory/PaperInventoryMoveItemEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5c42823726e70ce6c9d0121d074315488e8b3f60
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/inventory/PaperInventoryMoveItemEvent.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.event.inventory;
++
++import org.bukkit.event.inventory.InventoryMoveItemEvent;
++import org.bukkit.inventory.Inventory;
++import org.bukkit.inventory.ItemStack;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++
++@DefaultQualifier(NonNull.class)
++public class PaperInventoryMoveItemEvent extends InventoryMoveItemEvent {
++
++    public boolean calledSetItem;
++    public boolean calledGetItem;
++
++    public PaperInventoryMoveItemEvent(final @NotNull Inventory sourceInventory, final @NotNull ItemStack itemStack, final @NotNull Inventory destinationInventory, final boolean didSourceInitiate) {
++        super(sourceInventory, itemStack, destinationInventory, didSourceInitiate);
++    }
++
++    @Override
++    public ItemStack getItem() {
++        this.calledGetItem = true;
++        return super.getItem();
++    }
++
++    @Override
++    public void setItem(final ItemStack itemStack) {
++        super.setItem(itemStack);
++        this.calledSetItem = true;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index ebc35224004375b77039342926876a408995b04d..9fff00b3706a97ba71a80f2ba39577b229325e02 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -68,7 +105,7 @@ index 5bdad1866386908b9fef74d15862eb107fabe68f..370a25d2deb54f10a35ee24d9e7e92fb
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index f98367830e87d5f1428448931f756d9277699563..1d9b23c6e458caddc2c738164e6c079cd85d3ce9 100644
+index f98367830e87d5f1428448931f756d9277699563..d4dcf7fe26474ae07374e7761d823bc5c8b54f97 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -151,6 +151,43 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -230,7 +267,7 @@ index f98367830e87d5f1428448931f756d9277699563..1d9b23c6e458caddc2c738164e6c079c
 +    @Nullable
 +    private static ItemStack callPushMoveEvent(Container iinventory, ItemStack itemstack, HopperBlockEntity hopper) {
 +        final Inventory destinationInventory = getInventory(iinventory);
-+        final InventoryMoveItemEvent event = new InventoryMoveItemEvent(hopper.getOwner(false).getInventory(),
++        final io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent event = new io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent(hopper.getOwner(false).getInventory(),
 +            CraftItemStack.asCraftMirror(itemstack), destinationInventory, true);
 +        final boolean result = event.callEvent();
 +        if (!event.calledGetItem && !event.calledSetItem) {
@@ -254,7 +291,7 @@ index f98367830e87d5f1428448931f756d9277699563..1d9b23c6e458caddc2c738164e6c079c
 +        final Inventory destination = getInventory(hopper);
 +
 +        // Mirror is safe as no plugins ever use this item
-+        final InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, CraftItemStack.asCraftMirror(itemstack), destination, false);
++        final io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent event = new io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent(sourceInventory, CraftItemStack.asCraftMirror(itemstack), destination, false);
 +        final boolean result = event.callEvent();
 +        if (!event.calledGetItem && !event.calledSetItem) {
 +            skipPullModeEventFire = true;
