@@ -21,11 +21,48 @@ index ff4d0f970990187e9b46324b5cf051fcc546119f..844eff88c9ad95871900c2d8aa3136b3
  publishing {
      publications.create<MavenPublication>("maven") {
          artifact(tasks.shadowJar)
+diff --git a/src/test/java/io/papermc/paper/util/EmptyTag.java b/src/test/java/io/papermc/paper/util/EmptyTag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6eb95a5e2534974c0e52e2b78b04e7c2b2f28525
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/util/EmptyTag.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.util;
++
++import java.util.Collections;
++import java.util.Set;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Tag;
++import org.jetbrains.annotations.NotNull;
++
++public record EmptyTag(NamespacedKey key) implements Tag<Keyed> {
++
++    @SuppressWarnings("deprecation")
++    public EmptyTag() {
++        this(NamespacedKey.randomKey());
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return this.key;
++    }
++
++    @Override
++    public boolean isTagged(@NotNull final Keyed item) {
++        return false;
++    }
++
++    @Override
++    public @NotNull Set<Keyed> getValues() {
++        return Collections.emptySet();
++    }
++}
 diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
-index d96efc9aa90debcca5f237c949ba11b10070223a..efa4452cd20231051cdac1b497d7bfafb72bed78 100644
+index d96efc9aa90debcca5f237c949ba11b10070223a..d1253a07a90aa4cc29d0140795203a71118c827a 100644
 --- a/src/test/java/org/bukkit/support/DummyServer.java
 +++ b/src/test/java/org/bukkit/support/DummyServer.java
-@@ -38,6 +38,14 @@ public final class DummyServer {
+@@ -38,6 +38,15 @@ public final class DummyServer {
  
              when(instance.getRegistry(any())).then(mock -> CraftRegistry.createRegistry(mock.getArgument(0), AbstractTestingBase.REGISTRY_CUSTOM));
  
@@ -35,6 +72,7 @@ index d96efc9aa90debcca5f237c949ba11b10070223a..efa4452cd20231051cdac1b497d7bfaf
 +
 +            final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
 +            when(instance.getPluginManager()).thenReturn(pluginManager);
++            when(instance.getTag(anyString(), any(org.bukkit.NamespacedKey.class), any())).thenAnswer(ignored -> new io.papermc.paper.util.EmptyTag());
 +            // paper end - testing additions
 +
              Bukkit.setServer(instance);
