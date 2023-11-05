@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sun, 5 Nov 2023 09:50:48 +0100
+Subject: [PATCH] Add HiddenPotionEffect API
+
+
+diff --git a/src/main/java/org/bukkit/potion/PotionEffect.java b/src/main/java/org/bukkit/potion/PotionEffect.java
+index 037af5fd6d71a526c0e6620f2db0cd6df9625261..50d36d4a2cfa95d4a87d62ab93653ce3077955f7 100644
+--- a/src/main/java/org/bukkit/potion/PotionEffect.java
++++ b/src/main/java/org/bukkit/potion/PotionEffect.java
+@@ -38,6 +38,7 @@ public class PotionEffect implements ConfigurationSerializable {
+     private final boolean ambient;
+     private final boolean particles;
+     private final boolean icon;
++    private final PotionEffect hiddenEffect; // Paper
+ 
+     /**
+      * Creates a potion effect.
+@@ -48,8 +49,11 @@ public class PotionEffect implements ConfigurationSerializable {
+      * @param ambient the ambient status, see {@link PotionEffect#isAmbient()}
+      * @param particles the particle status, see {@link PotionEffect#hasParticles()}
+      * @param icon the icon status, see {@link PotionEffect#hasIcon()}
++     * @param hiddenEffect the hidden effect, see {@link PotionEffect#getHiddenPotionEffect()}
+      */
+-    public PotionEffect(@NotNull PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, boolean icon) {
++
++    // Paper start
++    public PotionEffect(@NotNull PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, boolean icon, @Nullable PotionEffect hiddenEffect) {
+         Preconditions.checkArgument(type != null, "effect type cannot be null");
+         this.type = type;
+         this.duration = duration;
+@@ -57,6 +61,22 @@ public class PotionEffect implements ConfigurationSerializable {
+         this.ambient = ambient;
+         this.particles = particles;
+         this.icon = icon;
++        this.hiddenEffect = hiddenEffect;
++    }
++    // Paper end
++
++    /**
++     * Creates a potion effect.
++     * @param type effect type
++     * @param duration measured in ticks, see {@link
++     *     PotionEffect#getDuration()}
++     * @param amplifier the amplifier, see {@link PotionEffect#getAmplifier()}
++     * @param ambient the ambient status, see {@link PotionEffect#isAmbient()}
++     * @param particles the particle status, see {@link PotionEffect#hasParticles()}
++     * @param icon the icon status, see {@link PotionEffect#hasIcon()}
++     */
++    public PotionEffect(@NotNull PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, boolean icon) {
++        this(type, duration, amplifier, ambient, particles, icon, null); // Paper - New ctor for HiddenPotionEffect
+     }
+ 
+     /**
+@@ -110,28 +130,45 @@ public class PotionEffect implements ConfigurationSerializable {
+     // Paper start
+     @NotNull
+     public PotionEffect withType(@NotNull PotionEffectType type) {
+-        return new PotionEffect(type, duration, amplifier, ambient, particles, icon);
++        return new PotionEffect(type, duration, amplifier, ambient, particles, icon, hiddenEffect);
+     }
+     @NotNull
+     public PotionEffect withDuration(int duration) {
+-        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
++        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
+     }
+     @NotNull
+     public PotionEffect withAmplifier(int amplifier) {
+-        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
++        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
+     }
+     @NotNull
+     public PotionEffect withAmbient(boolean ambient) {
+-        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
++        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
+     }
+     @NotNull
+     public PotionEffect withParticles(boolean particles) {
+-        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
++        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
+     }
+     @NotNull
+     public PotionEffect withIcon(boolean icon) {
+-        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
++        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
+     }
++    @NotNull
++    public PotionEffect withHiddenEffect(@NotNull PotionEffect hiddenEffect) {
++        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
++    }
++
++    /**
++     * Returns the HiddenPotionEffect. This effect has a lower
++     * amplifier than the current PotionEffect and will become
++     * active after this effect has run out.
++     *
++     * @return The effect amplifier
++     */
++    @Nullable
++    public PotionEffect getHiddenPotionEffect() {
++        return hiddenEffect;
++    }
++
+     // Paper end
+ 
+     @NotNull
