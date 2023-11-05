@@ -591,6 +591,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
 
     /**
      * Adds the given {@link PotionEffect} to the living entity.
+     * <p>
+     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
+     * adding the effect to the entity.
      *
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
@@ -615,6 +618,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     /**
      * Attempts to add all of the given {@link PotionEffect} to the living
      * entity.
+     * <p>
+     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
+     * adding the effect to the entity.
      *
      * @param effects the effects to add
      * @return whether all of the effects could be added
