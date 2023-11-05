@@ -6,24 +6,26 @@ Subject: [PATCH] Add System.out/err catcher
 
 diff --git a/src/main/java/io/papermc/paper/logging/SysoutCatcher.java b/src/main/java/io/papermc/paper/logging/SysoutCatcher.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a8e813ca89b033f061e695288b3383bdcf128531
+index 0000000000000000000000000000000000000000..1995639aee39627d2e0cf8ca9c4b4fa38b64da50
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/logging/SysoutCatcher.java
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,227 @@
 +package io.papermc.paper.logging;
 +
-+import org.bukkit.Bukkit;
-+import org.bukkit.plugin.java.JavaPlugin;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
++import java.io.FilterOutputStream;
 +import java.io.OutputStream;
 +import java.io.PrintStream;
-+import java.util.Objects;
++import java.nio.charset.StandardCharsets;
++import java.util.Formatter;
++import java.util.Locale;
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.concurrent.ConcurrentMap;
 +import java.util.concurrent.TimeUnit;
 +import java.util.logging.Level;
++import org.bukkit.Bukkit;
++import org.bukkit.plugin.java.JavaPlugin;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +public final class SysoutCatcher {
 +    private static final boolean SUPPRESS_NAGS = Boolean.getBoolean("io.papermc.paper.suppress.sout.nags");
@@ -61,7 +63,14 @@ index 0000000000000000000000000000000000000000..a8e813ca89b033f061e695288b3383bd
 +
 +        @Override
 +        public void println(@Nullable final String line) {
-+            final Class<?> clazz = STACK_WALKER.getCallerClass();
++            final Class<?> clazz = STACK_WALKER.walk(stream -> {
++                return stream.filter(it -> {
++                    final Class<?> declr = it.getDeclaringClass();
++                    return !declr.equals(WrappedOutStream.class) && !declr.equals(PrintStream.class) && !declr.equals(FilterOutputStream.class);
++                }).findFirst()
++                    .map(StackWalker.StackFrame::getDeclaringClass)
++                    .orElseThrow();
++            });
 +            try {
 +                final JavaPlugin plugin = JavaPlugin.getProvidingPlugin(clazz);
 +
@@ -96,6 +105,130 @@ index 0000000000000000000000000000000000000000..a8e813ca89b033f061e695288b3383bd
 +                // Just print out normally, with some added information
 +                Bukkit.getLogger().log(this.level, String.format("%s[%s] %s", this.prefix, clazz.getName(), line));
 +            }
++        }
++
++        @Override
++        public void write(final int b) {
++            this.println(b);
++        }
++
++        @Override
++        public void write(@NotNull final byte[] buf, final int off, final int len) {
++            final byte[] bytes = new byte[len];
++            System.arraycopy(buf, off, bytes, 0, len);
++            this.write(bytes);
++        }
++
++        @Override
++        public void write(final byte[] buf) {
++            this.println(new String(buf, StandardCharsets.UTF_8));
++        }
++
++        @Override
++        public void writeBytes(final byte[] buf) {
++            this.write(buf);
++        }
++
++        @Override
++        public void print(final boolean b) {
++            this.println(b);
++        }
++
++        @Override
++        public void print(final char c) {
++            this.println(c);
++        }
++
++        @Override
++        public void print(final int i) {
++            this.println(i);
++        }
++
++        @Override
++        public void print(final long l) {
++            this.println(l);
++        }
++
++        @Override
++        public void print(final float f) {
++            this.println(f);
++        }
++
++        @Override
++        public void print(final double d) {
++            this.println(d);
++        }
++
++        @Override
++        public void print(@NotNull final char[] s) {
++            this.println(s);
++        }
++
++        @Override
++        public void print(@Nullable final String s) {
++            this.println(s);
++        }
++
++        @Override
++        public void print(@Nullable final Object obj) {
++            this.println(obj);
++        }
++
++        @Override
++        public PrintStream format(@NotNull final String format, final Object... args) {
++            this.println(format.formatted(args));
++            return this;
++        }
++
++        @Override
++        public PrintStream format(final Locale l, @NotNull final String format, final Object... args) {
++            this.println(new Formatter(l).format(format, args).toString());
++            return this;
++        }
++
++        @Override
++        public void println() {
++            this.println("");
++        }
++
++        @Override
++        public void println(final boolean x) {
++            this.println(String.valueOf(x));
++        }
++
++        @Override
++        public void println(final char x) {
++            this.println(String.valueOf(x));
++        }
++
++        @Override
++        public void println(final int x) {
++            this.println(String.valueOf(x));
++        }
++
++        @Override
++        public void println(final long x) {
++            this.println(String.valueOf(x));
++        }
++
++        @Override
++        public void println(final float x) {
++            this.println(String.valueOf(x));
++        }
++
++        @Override
++        public void println(final double x) {
++            this.println(String.valueOf(x));
++        }
++
++        @Override
++        public void println(@NotNull final char[] x) {
++            this.println(new String(x));
++        }
++
++        @Override
++        public void println(@Nullable final Object x) {
++            this.println(String.valueOf(String.valueOf(x)));
 +        }
 +    }
 +
