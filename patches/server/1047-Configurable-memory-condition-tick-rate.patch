@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ruViolence <78062896+ruViolence@users.noreply.github.com>
+Date: Wed, 8 Nov 2023 01:25:45 +0800
+Subject: [PATCH] Configurable memory condition tick rate
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/declarative/BehaviorBuilder.java b/src/main/java/net/minecraft/world/entity/ai/behavior/declarative/BehaviorBuilder.java
+index 6f323026b2d6fb5151e8b9dd9466e96eb026ccbd..6aeb432d7e79cbf5c64da934bd6d4d63a7a35e44 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/declarative/BehaviorBuilder.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/declarative/BehaviorBuilder.java
+@@ -333,8 +333,19 @@ public class BehaviorBuilder<E extends LivingEntity, M> implements App<BehaviorB
+     static final class PureMemory<E extends LivingEntity, F extends K1, Value> extends BehaviorBuilder<E, MemoryAccessor<F, Value>> {
+         PureMemory(final MemoryCondition<F, Value> query) {
+             super(new BehaviorBuilder.TriggerWithResult<E, MemoryAccessor<F, Value>>() {
++                // Paper start - memory condition tick rate
++                private final String configKey = query.memory().toString().toLowerCase(java.util.Locale.ROOT);
++                private long endTimestamp;
++                // Paper end
+                 @Override
+                 public MemoryAccessor<F, Value> tryTrigger(ServerLevel serverLevel, E livingEntity, long l) {
++                    // Paper start - memory condition tick rate
++                    int tickRate = java.util.Objects.requireNonNullElse(livingEntity.level().paperConfig().tickRates.memoryCondition.get(livingEntity.getType(), this.configKey), -1);
++                    if (tickRate > -1 && l < endTimestamp + tickRate) {
++                        return null;
++                    }
++                    this.endTimestamp = l;
++                    // Paper end
+                     Brain<?> brain = livingEntity.getBrain();
+                     Optional<Value> optional = brain.getMemoryInternal(query.memory());
+                     return optional == null ? null : query.createAccessor(brain, optional);
