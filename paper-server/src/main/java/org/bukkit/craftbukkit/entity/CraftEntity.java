@@ -766,7 +766,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void playEffect(EntityEffect type) {
-        Preconditions.checkArgument(type != null, "type");
+        Preconditions.checkArgument(type != null, "Type cannot be null");
         Preconditions.checkState(!entity.generation, "Cannot play effect during world generation");
 
         if (type.getApplicable().isInstance(this)) {
