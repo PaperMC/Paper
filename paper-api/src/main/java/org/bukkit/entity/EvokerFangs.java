@@ -21,4 +21,18 @@ public interface EvokerFangs extends Entity {
      * @param owner the {@link LivingEntity} which summoned the fangs
      */
     void setOwner(@Nullable LivingEntity owner);
+
+    /**
+     * Get the delay in ticks until the fang attacks.
+     *
+     * @return the delay
+     */
+    int getAttackDelay();
+
+    /**
+     * Set the delay in ticks until the fang attacks.
+     *
+     * @param delay the delay, must be positive
+     */
+    void setAttackDelay(int delay);
 }
