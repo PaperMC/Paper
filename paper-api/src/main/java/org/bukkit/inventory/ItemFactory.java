@@ -3,7 +3,9 @@ package org.bukkit.inventory;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -172,4 +174,47 @@ public interface ItemFactory {
      */
     @Nullable
     Material getSpawnEgg(@NotNull EntityType type);
+
+    /**
+     * Enchants the given item at the provided level.
+     * <br>
+     * If an item that is air is passed through an error is thrown.
+     *
+     * @param entity the entity to use as a source of randomness
+     * @param item the item to enchant
+     * @param level the level to use, which is the level in the enchantment table
+     * @param allowTreasures allows treasure enchants, e.g. mending, if true.
+     * @return the modified ItemStack, or a copy if the ItemStack cannot be enchanted directly
+     */
+    @NotNull
+    ItemStack enchantItem(@NotNull final Entity entity, @NotNull final ItemStack item, final int level, final boolean allowTreasures);
+
+    /**
+     * Enchants the given item at the provided level.
+     * <br>
+     * If an item that is air is passed through an error is thrown.
+     *
+     * @param world the world to use as a source of randomness
+     * @param item the item to enchant
+     * @param level the level to use, which is the level in the enchantment table
+     * @param allowTreasures allow the treasure enchants, e.g. mending, if true.
+     * @return the modified ItemStack, or a copy if the ItemStack cannot be
+     * enchanted directly
+     */
+    @NotNull
+    ItemStack enchantItem(@NotNull final World world, @NotNull final ItemStack item, final int level, final boolean allowTreasures);
+
+    /**
+     * Enchants the given item at the provided level.
+     * <br>
+     * If an item that is air is passed through an error is thrown.
+     *
+     * @param item the item to enchant
+     * @param level the level to use, which is the level in the enchantment table
+     * @param allowTreasures allow treasure enchantments, e.g. mending, if true.
+     * @return the modified ItemStack, or a copy if the ItemStack cannot be
+     * enchanted directly
+     */
+    @NotNull
+    ItemStack enchantItem(@NotNull final ItemStack item, final int level, final boolean allowTreasures);
 }
