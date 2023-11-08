@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 13:24:16 -0600
+Subject: [PATCH] Allow nerfed mobs to jump
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index ec841a4d9a11f0d9047c202a31f944b340da33c8..6cc544b39b62cf5be582e697a0df13f82fb73a4b 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -111,6 +111,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
+     private final BodyRotationControl bodyRotationControl;
+     protected PathNavigation navigation;
+     public GoalSelector goalSelector;
++    @Nullable public net.minecraft.world.entity.ai.goal.FloatGoal goalFloat; // Paper
+     public GoalSelector targetSelector;
+     @Nullable
+     private LivingEntity target;
+@@ -876,7 +877,15 @@ public abstract class Mob extends LivingEntity implements Targeting {
+     @Override
+     protected final void serverAiStep() {
+         ++this.noActionTime;
+-        if (!this.aware) return; // CraftBukkit
++        // Paper start - Allow nerfed mobs to jump and float
++        if (!this.aware) {
++            if (goalFloat != null) {
++                if (goalFloat.canUse()) goalFloat.tick();
++                this.getJumpControl().tick();
++            }
++            return;
++        }
++        // Paper end
+         this.level().getProfiler().push("sensing");
+         this.sensing.tick();
+         this.level().getProfiler().pop();
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java
+index 01950951ea06e43bedeeede489a112e577617829..7093c62be53fe99ed9880fc8ddaa07440fe4f715 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java
+@@ -9,6 +9,7 @@ public class FloatGoal extends Goal {
+ 
+     public FloatGoal(Mob mob) {
+         this.mob = mob;
++        if (mob.getCommandSenderWorld().paperConfig().entities.behavior.spawnerNerfedMobsShouldJump) mob.goalFloat = this; // Paper
+         this.setFlags(EnumSet.of(Goal.Flag.JUMP));
+         mob.getNavigation().setCanFloat(true);
+     }

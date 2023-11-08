@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MWHunter <s0521458@student.rockvalleycollege.edu>
+Date: Wed, 24 Aug 2022 09:54:11 -0400
+Subject: [PATCH] Stop large look changes from crashing the server
+
+Co-authored-by: Jaren Knodel <Jaren@Knodel.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 351f6c554a3d50ebe2572671c433be5750ac6dd8..e2ccf8badc02b5a21e3fcd6fcac76155d29e472c 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3059,37 +3059,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         this.level().getProfiler().pop();
+         this.level().getProfiler().push("rangeChecks");
+ 
+-        while (this.getYRot() - this.yRotO < -180.0F) {
+-            this.yRotO -= 360.0F;
+-        }
+-
+-        while (this.getYRot() - this.yRotO >= 180.0F) {
+-            this.yRotO += 360.0F;
+-        }
++        // Paper start - stop large pitch and yaw changes from crashing the server
++        this.yRotO += Math.round((this.getYRot() - this.yRotO) / 360.0F) * 360.0F;
+ 
+-        while (this.yBodyRot - this.yBodyRotO < -180.0F) {
+-            this.yBodyRotO -= 360.0F;
+-        }
++        this.yBodyRotO += Math.round((this.yBodyRot - this.yBodyRotO) / 360.0F) * 360.0F;
+ 
+-        while (this.yBodyRot - this.yBodyRotO >= 180.0F) {
+-            this.yBodyRotO += 360.0F;
+-        }
+-
+-        while (this.getXRot() - this.xRotO < -180.0F) {
+-            this.xRotO -= 360.0F;
+-        }
++        this.xRotO += Math.round((this.getXRot() - this.xRotO) / 360.0F) * 360.0F;
+ 
+-        while (this.getXRot() - this.xRotO >= 180.0F) {
+-            this.xRotO += 360.0F;
+-        }
+-
+-        while (this.yHeadRot - this.yHeadRotO < -180.0F) {
+-            this.yHeadRotO -= 360.0F;
+-        }
+-
+-        while (this.yHeadRot - this.yHeadRotO >= 180.0F) {
+-            this.yHeadRotO += 360.0F;
+-        }
++        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
++        // Paper end
+ 
+         this.level().getProfiler().pop();
+         this.animStep += f2;
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index 24b549cb21926a02d736f0bbb991006b9453068d..6d7ac0c8c171834fa8da94f158258a4774d80ec4 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -251,13 +251,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     }
+ 
+     protected static float lerpRotation(float prevRot, float newRot) {
+-        while (newRot - prevRot < -180.0F) {
+-            prevRot -= 360.0F;
+-        }
+-
+-        while (newRot - prevRot >= 180.0F) {
+-            prevRot += 360.0F;
+-        }
++        prevRot += Math.round((newRot - prevRot) / 360.0F) * 360.0F; // Paper - stop large look changes from crashing the server
+ 
+         return Mth.lerp(0.2F, prevRot, newRot);
+     }
