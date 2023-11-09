@@ -98,10 +98,8 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
         if (noteBlockSound == null) {
             Object object = map.get(NOTE_BLOCK_SOUND.BUKKIT);
-            if (object instanceof NamespacedKey) {
-                setNoteBlockSound((NamespacedKey) object);
-            } else {
-                setNoteBlockSound(SerializableMeta.getObject(NamespacedKey.class, map, NOTE_BLOCK_SOUND.BUKKIT, true));
+            if (object != null) {
+                setNoteBlockSound(NamespacedKey.fromString(object.toString()));
             }
         }
     }
@@ -305,7 +303,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         }
         NamespacedKey namespacedKeyNB = this.getNoteBlockSound();
         if (namespacedKeyNB != null) {
-            return builder.put(NOTE_BLOCK_SOUND.BUKKIT, namespacedKeyNB);
+            return builder.put(NOTE_BLOCK_SOUND.BUKKIT, namespacedKeyNB.toString());
         }
         return builder;
     }
