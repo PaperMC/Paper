@@ -1,25 +1,37 @@
 package org.bukkit;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Dolphin;
+import org.bukkit.entity.Egg;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EvokerFangs;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Fox;
+import org.bukkit.entity.Goat;
 import org.bukkit.entity.Guardian;
+import org.bukkit.entity.Hoglin;
 import org.bukkit.entity.IronGolem;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Ravager;
+import org.bukkit.entity.Sheep;
+import org.bukkit.entity.Sniffer;
+import org.bukkit.entity.Snowball;
 import org.bukkit.entity.Squid;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Villager;
+import org.bukkit.entity.Warden;
 import org.bukkit.entity.Witch;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.Zoglin;
 import org.bukkit.entity.ZombieVillager;
+import org.bukkit.entity.minecart.ExplosiveMinecart;
+import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -36,6 +48,11 @@ public enum EntityEffect {
      */
     RABBIT_JUMP(1, Rabbit.class),
     /**
+     * Resets a spawner minecart's delay to 200. Does not effect actual spawning
+     * delay, only the speed at which the entity in the spawner spins
+     */
+    RESET_SPAWNER_MINECART_DELAY(1, SpawnerMinecart.class),
+    /**
      * When mobs get hurt.
      *
      * @deprecated Use {@link LivingEntity#playHurtAnimation(float)}
@@ -47,35 +64,86 @@ public enum EntityEffect {
      * <p>
      * <b>This will cause client-glitches!</b>
      *
-     * @deprecated although this effect may trigger other events on non-living
-     * entities, it's only supported usage is on living ones.
+     * @deprecated split into individual effects
+     * @see #EGG_BREAK
+     * @see #SNOWBALL_BREAK
+     * @see #ENTITY_DEATH
      */
     @Deprecated
     DEATH(3, Entity.class),
-    // PAIL - SPIGOT-3641 duplicate
-    // GOLEM_ATTACK(4, IronGolem.class),
+    /**
+     * Spawns the egg breaking particles
+     */
+    EGG_BREAK(3, Egg.class),
+    /**
+     * Spawns the snowball breaking particles
+     */
+    SNOWBALL_BREAK(3, Snowball.class),
+    /**
+     * Plays the entity death sound and animation
+     * <p>
+     * <b>This will cause client-glitches!</b>
+     */
+    ENTITY_DEATH(3, LivingEntity.class),
+    /**
+     * Plays the fang attack animation
+     */
+    FANG_ATTACK(4, EvokerFangs.class),
+    /**
+     * Plays the hoglin attack animation
+     */
+    HOGLIN_ATTACK(4, Hoglin.class),
+    /**
+     * Plays the iron golem attack animation
+     */
+    IRON_GOLEN_ATTACK(4, IronGolem.class),
+    /**
+     * Plays the ravager attack animation
+     */
+    RAVAGER_ATTACK(4, Ravager.class),
+    /**
+     * Plays the warden attack animation
+     */
+    WARDEN_ATTACK(4, Warden.class),
+    /**
+     * Plays the zoglin attack animation
+     */
+    ZOGLIN_ATTACK(4, Zoglin.class),
     // 5 - unused
     /**
-     * The smoke when taming a wolf fails.
+     * The smoke when taming an entity fails.
      */
     WOLF_SMOKE(6, Tameable.class),
     /**
-     * The hearts when taming a wolf succeeds.
+     * The hearts when taming an entity succeeds.
      */
-    WOLF_HEARTS(7, Wolf.class),
+    WOLF_HEARTS(7, Tameable.class),
     /**
      * When a wolf shakes (after being wet).
+     *
+     * @see EntityEffect#WOLF_SHAKE_STOP
      */
     WOLF_SHAKE(8, Wolf.class),
     // 9 - unused
     /**
      * When an entity eats a LONG_GRASS block.
      *
-     * @deprecated although this effect may trigger other events on non-living
-     * entities, it's only supported usage is on living ones.
+     * @deprecated split into individual effects
+     * @see #SHEEP_EAT_GRASS
+     * @see #TNT_MINECART_IGNITE
      */
     @Deprecated
     SHEEP_EAT(10, Entity.class),
+    /**
+     * Plays the sheep eating grass animation
+     */
+    SHEEP_EAT_GRASS(10, Sheep.class),
+    /**
+     * Causes the TNT minecart to ignite, does not play the ignition sound
+     * <p>
+     * <b>This will cause client-glitches!</b>
+     */
+    TNT_MINECART_IGNITE(10, ExplosiveMinecart.class),
     /**
      * When an Iron Golem gives a rose.
      */
@@ -213,7 +281,57 @@ public enum EntityEffect {
     /**
      * Entity breaks item in boot slot
      */
-    BREAK_EQUIPMENT_BOOTS(52, LivingEntity.class);
+    BREAK_EQUIPMENT_BOOTS(52, LivingEntity.class),
+    /**
+     * Spawns honey block slide particles at the entity's feet
+     */
+    HONEY_BLOCK_SLIDE_PARTICLES(53, Entity.class),
+    /**
+     * Spawns honey block fall particles at the entity's feet
+     */
+    HONEY_BLOCK_FALL_PARTICLES(54, LivingEntity.class),
+    /**
+     * Entity swaps the items in their hand and offhand
+     */
+    SWAP_HAND_ITEMS(55, LivingEntity.class),
+    /**
+     * Stops a wolf that is currently shaking
+     *
+     * @see EntityEffect#WOLF_SHAKE
+     */
+    WOLF_SHAKE_STOP(56, Wolf.class),
+    // 57 - unused
+    /**
+     * Goat lowers its head for ramming
+     *
+     * @see #GOAT_RAISE_HEAD
+     */
+    GOAT_LOWER_HEAD(58, Goat.class),
+    /**
+     * Goat raises its head
+     *
+     * @see #GOAT_LOWER_HEAD
+     */
+    GOAT_RAISE_HEAD(59, Goat.class),
+    /**
+     * Spawns death smoke particles
+     */
+    SPAWN_DEATH_SMOKE(60, LivingEntity.class),
+    /**
+     * Warden shakes its tendrils
+     */
+    WARDEN_TENDRIL_SHAKE(61, Warden.class),
+    /**
+     * Warden performs sonic attack animation <br>
+     * Does not play the sound or fire the beam
+     */
+    WARDEN_SONIC_ATTACK(62, Warden.class),
+    /**
+     * Plays sniffer digging sound <br>
+     * Sniffer must have a target and be in {@link Sniffer.State#SEARCHING} or
+     * {@link Sniffer.State#DIGGING}
+     */
+    SNIFFER_DIG(63, Sniffer.class);
 
     private final byte data;
     private final Class<? extends Entity> applicable;
@@ -224,7 +342,7 @@ public enum EntityEffect {
     }
 
     /**
-     * Gets the data value of this EntityEffect
+     * Gets the data value of this EntityEffect, may not be unique.
      *
      * @return The data value
      * @deprecated Magic value
@@ -242,5 +360,29 @@ public enum EntityEffect {
     @NotNull
     public Class<? extends Entity> getApplicable() {
         return applicable;
+    }
+
+    /**
+     * Checks if this effect is applicable to the given entity.
+     *
+     * @param entity the entity to check
+     * @return true if applicable
+     */
+    public boolean isApplicableTo(@NotNull Entity entity) {
+        Preconditions.checkArgument(entity != null, "Entity cannot be null");
+
+        return isApplicableTo(entity.getClass());
+    }
+
+    /**
+     * Checks if this effect is applicable to the given entity class.
+     *
+     * @param clazz the entity class to check
+     * @return true if applicable
+     */
+    public boolean isApplicableTo(@NotNull Class<? extends Entity> clazz) {
+        Preconditions.checkArgument(clazz != null, "Class cannot be null");
+
+        return applicable.isAssignableFrom(clazz);
     }
 }
