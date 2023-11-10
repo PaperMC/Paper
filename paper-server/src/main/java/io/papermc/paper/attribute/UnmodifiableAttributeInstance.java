@@ -5,6 +5,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 
+import java.util.UUID;
 import java.util.Collection;
 
 public class UnmodifiableAttributeInstance extends CraftAttributeInstance {
@@ -15,6 +16,11 @@ public class UnmodifiableAttributeInstance extends CraftAttributeInstance {
 
     @Override
     public void setBaseValue(double d) {
+        throw new UnsupportedOperationException("Cannot modify default attributes");
+    }
+
+    @Override
+    public void removeModifier(UUID uuid) {
         throw new UnsupportedOperationException("Cannot modify default attributes");
     }
 
