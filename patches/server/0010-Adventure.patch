@@ -1659,7 +1659,7 @@ index 099d76e9b508167c1592215ea799187af6ebc594..2ee328f204acf97b23702b4dc3b13b7f
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
          this(output, pos, rot, world, level, name, displayName, server, entity, false, (commandcontext, flag, j) -> {
 diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
-index d02410383650267d9f022df7accae06b43f6d9b6..517a0c0029b0f0e1ec9d112d40c3d1ae48ab43a6 100644
+index d02410383650267d9f022df7accae06b43f6d9b6..d7535a48a0fe7264d92d5fb8c2063d335db3e7d8 100644
 --- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 +++ b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 @@ -51,10 +51,10 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
@@ -1676,17 +1676,19 @@ index d02410383650267d9f022df7accae06b43f6d9b6..517a0c0029b0f0e1ec9d112d40c3d1ae
                  callback.accept(playerChatMessage2);
              }, executor);
          });
-@@ -62,8 +62,12 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
+@@ -62,8 +62,14 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
  
      private static void resolveDisguisedMessage(Consumer<PlayerChatMessage> callback, CommandSourceStack source, PlayerChatMessage message) {
          ChatDecorator chatDecorator = source.getServer().getChatDecorator();
 -        Component component = chatDecorator.decorate(source.getPlayer(), message.decoratedContent());
 -        callback.accept(message.withUnsignedContent(component));
 +        // Paper start
-+        CompletableFuture<ChatDecorator.Result> componentFuture = chatDecorator.decorate(source.getPlayer(), source, message.decoratedContent());
-+        componentFuture.thenAcceptAsync((result) -> {
-+            callback.accept(message.withUnsignedContent(result.component()));
-+        }, source.getServer().chatExecutor);
++        source.getChatMessageChainer().append(executor -> {
++            CompletableFuture<ChatDecorator.Result> componentFuture = chatDecorator.decorate(source.getPlayer(), source, message.decoratedContent());
++            return componentFuture.thenAcceptAsync((result) -> {
++                callback.accept(message.withUnsignedContent(result.component()));
++            }, executor);
++        });
 +        // Paper end
      }
  
