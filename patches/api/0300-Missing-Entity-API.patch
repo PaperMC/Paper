@@ -76,6 +76,58 @@ index 0000000000000000000000000000000000000000..39ad7d283609d7e427a2ab35b6fad839
 +    SchoolableFish getSchoolLeader();
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/potion/PotionEffectPair.java b/src/main/java/io/papermc/paper/potion/PotionEffectPair.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..60c44aaf3339ab7fc66a342de2a499a5c0917189
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/potion/PotionEffectPair.java
+@@ -0,0 +1,46 @@
++package io.papermc.paper.potion;
++
++import org.bukkit.potion.PotionEffectType;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents an effect paired with a duration.
++ */
++public interface PotionEffectPair {
++
++    /**
++      * Gets the effect type.
++     *
++      * @return type
++      */
++    @NotNull PotionEffectType effect();
++
++    /**
++      * Gets the duration for this effect instance.
++      *
++      * @return duration in ticks
++      */
++    int duration();
++
++    /**
++     * Gets a new instance of PotionEffectPair.
++     *
++     * @param effectType effect type
++     * @param duration duration
++     * @return new instance
++     */
++    @NotNull
++    static PotionEffectPair potionEffectPair(PotionEffectType effectType, int duration) {
++        return new PotionEffectPair() {
++            @Override
++            public @NotNull PotionEffectType effect() {
++                return effectType;
++            }
++
++            @Override
++            public int duration() {
++                return duration;
++            }
++        };
++    }
++}
 diff --git a/src/main/java/org/bukkit/entity/AbstractHorse.java b/src/main/java/org/bukkit/entity/AbstractHorse.java
 index 0d88dce9978243a1f995c5fb448c5d71b01136eb..8b1048c94dffd058eb9fd9144f7f59fc9bd219ad 100644
 --- a/src/main/java/org/bukkit/entity/AbstractHorse.java
@@ -679,10 +731,10 @@ index 11b6d1aba7d1f6ae1f3c822193486f5a1478e105..709c8fc3dde786f45ff13d6ee6c405ff
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/MushroomCow.java b/src/main/java/org/bukkit/entity/MushroomCow.java
-index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..738d547d2a6966122cb2f9f6e94263ee526d9fab 100644
+index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..b2a6095ef4f760e029729856a7eac285724ee3c0 100644
 --- a/src/main/java/org/bukkit/entity/MushroomCow.java
 +++ b/src/main/java/org/bukkit/entity/MushroomCow.java
-@@ -35,4 +35,40 @@ public interface MushroomCow extends Cow {
+@@ -35,4 +35,88 @@ public interface MushroomCow extends Cow {
           */
          BROWN;
      }
@@ -693,25 +745,50 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..738d547d2a6966122cb2f9f6e94263ee
 +     * from this mushroom cow is.
 +     *
 +     * @return duration of the effect (in ticks)
++     * @deprecated Mushroom cows can now hold multiple effects
 +     */
-+    int getStewEffectDuration();
++    @Deprecated(forRemoval = true)
++    default int getStewEffectDuration() {
++        java.util.List<io.papermc.paper.potion.PotionEffectPair> pairs = this.getStewEffects();
++        if (pairs.isEmpty()) {
++            return 160; // Default is 160
++        }
++
++        return this.getStewEffects().get(0).duration();
++    }
 +
 +    /**
 +     * Sets how long the effect applied to stew
 +     * from this mushroom cow is.
 +     *
 +     * @param duration duration of the effect (in ticks)
++     * @deprecated Mushroom cows can now hold multiple effects
 +     */
-+    void setStewEffectDuration(int duration);
++    @Deprecated(forRemoval = true)
++    default void setStewEffectDuration(int duration) {
++        java.util.List<io.papermc.paper.potion.PotionEffectPair> pairs = this.getStewEffects();
++        org.bukkit.potion.PotionEffectType potion = pairs.isEmpty() ? org.bukkit.potion.PotionEffectType.SPEED : pairs.get(0).effect(); // Default? You get speed!
++
++        this.setStewEffects(java.util.List.of(io.papermc.paper.potion.PotionEffectPair.potionEffectPair(potion, duration)));
++    }
 +
 +    /**
 +     * Gets the type of effect applied to stew
 +     * from this mushroom cow is.
 +     *
 +     * @return effect type, or null if an effect is currently not set
++     * @deprecated Mushroom cows can now hold multiple effects
 +     */
++    @Deprecated(forRemoval = true)
 +    @org.jetbrains.annotations.Nullable
-+    org.bukkit.potion.PotionEffectType getStewEffectType();
++    default org.bukkit.potion.PotionEffectType getStewEffectType() {
++        java.util.List<io.papermc.paper.potion.PotionEffectPair> pairs = this.getStewEffects();
++        if (pairs.isEmpty()) {
++            return null;
++        }
++
++        return this.getStewEffects().get(0).effect();
++    }
 +
 +    /**
 +     * Sets the type of effect applied to stew
@@ -719,8 +796,31 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..738d547d2a6966122cb2f9f6e94263ee
 +     *
 +     * @param type new effect type
 +     *             or null if this cow does not give effects
++     * @deprecated Mushroom cows can now hold multiple effects
 +     */
-+    void setStewEffect(@org.jetbrains.annotations.Nullable org.bukkit.potion.PotionEffectType type);
++    @Deprecated(forRemoval = true)
++    default void setStewEffect(@org.jetbrains.annotations.Nullable org.bukkit.potion.PotionEffectType type) {
++        java.util.List<io.papermc.paper.potion.PotionEffectPair> pairs = this.getStewEffects();
++        int duration = pairs.isEmpty() ? 160 : pairs.get(0).duration();
++
++        this.setStewEffects(java.util.List.of(io.papermc.paper.potion.PotionEffectPair.potionEffectPair(type, duration)));
++    }
++
++    /**
++     * Returns an immutable collection of the effects applied to stew
++     * items for this mushroom cow.
++     *
++     * @return immutable effect pair collection
++     */
++    @org.jetbrains.annotations.NotNull
++    java.util.List<io.papermc.paper.potion.PotionEffectPair> getStewEffects();
++
++    /**
++     * Sets effects applied to stew items for this mushroom cow.
++     *
++     * @param effects effect pair collection
++     */
++    void setStewEffects(@org.jetbrains.annotations.NotNull java.util.List<io.papermc.paper.potion.PotionEffectPair> effects);
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Panda.java b/src/main/java/org/bukkit/entity/Panda.java
