@@ -1683,10 +1683,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        Component component = chatDecorator.decorate(source.getPlayer(), message.decoratedContent());
 -        callback.accept(message.withUnsignedContent(component));
 +        // Paper start
-+        CompletableFuture<ChatDecorator.Result> componentFuture = chatDecorator.decorate(source.getPlayer(), source, message.decoratedContent());
-+        componentFuture.thenAcceptAsync((result) -> {
-+            callback.accept(message.withUnsignedContent(result.component()));
-+        }, source.getServer().chatExecutor);
++        source.getChatMessageChainer().append(executor -> {
++            CompletableFuture<ChatDecorator.Result> componentFuture = chatDecorator.decorate(source.getPlayer(), source, message.decoratedContent());
++            return componentFuture.thenAcceptAsync((result) -> {
++                callback.accept(message.withUnsignedContent(result.component()));
++            }, executor);
++        });
 +        // Paper end
      }
  
