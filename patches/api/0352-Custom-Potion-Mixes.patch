@@ -6,7 +6,7 @@ Subject: [PATCH] Custom Potion Mixes
 
 diff --git a/src/main/java/io/papermc/paper/potion/PotionMix.java b/src/main/java/io/papermc/paper/potion/PotionMix.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ae1f30e88fc5048627295187214aa7a288f4c184
+index 0000000000000000000000000000000000000000..3fc922ebf972418b84181cd02e68d8ef0efd739b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/potion/PotionMix.java
 @@ -0,0 +1,105 @@
@@ -42,11 +42,23 @@ index 0000000000000000000000000000000000000000..ae1f30e88fc5048627295187214aa7a2
 +     * @param input the input placed into the bottom 3 slots
 +     * @param ingredient the ingredient placed into the top slot
 +     */
-+    public PotionMix(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice input, @NotNull RecipeChoice ingredient) {
++    public PotionMix(final @NotNull NamespacedKey key, final @NotNull ItemStack result, final @NotNull RecipeChoice input, final @NotNull RecipeChoice ingredient) {
 +        this.key = key;
 +        this.result = result;
 +        this.input = input;
 +        this.ingredient = ingredient;
++    }
++
++    /**
++     * Create a {@link RecipeChoice} based on a Predicate. These RecipeChoices are only
++     * valid for {@link PotionMix}, not anywhere else RecipeChoices may be used.
++     *
++     * @param stackPredicate a predicate for an itemstack.
++     * @return a new RecipeChoice
++     */
++    @Contract(value = "_ -> new", pure = true)
++    public static @NotNull RecipeChoice createPredicateChoice(final @NotNull Predicate<? super ItemStack> stackPredicate) {
++        return new PredicateRecipeChoice(stackPredicate);
 +    }
 +
 +    @Override
@@ -81,18 +93,6 @@ index 0000000000000000000000000000000000000000..ae1f30e88fc5048627295187214aa7a2
 +        return this.ingredient;
 +    }
 +
-+    /**
-+     * Create a {@link RecipeChoice} based on a Predicate. These RecipeChoices are only
-+     * valid for {@link PotionMix}, not anywhere else RecipeChoices may be used.
-+     *
-+     * @param stackPredicate a predicate for an itemstack.
-+     * @return a new RecipeChoice
-+     */
-+    @Contract(value = "_ -> new", pure = true)
-+    public static @NotNull RecipeChoice createPredicateChoice(@NotNull Predicate<ItemStack> stackPredicate) {
-+        return new PredicateRecipeChoice(stackPredicate);
-+    }
-+
 +    @Override
 +    public String toString() {
 +        return "PotionMix{" +
@@ -103,10 +103,10 @@ index 0000000000000000000000000000000000000000..ae1f30e88fc5048627295187214aa7a2
 +    }
 +
 +    @Override
-+    public boolean equals(Object o) {
++    public boolean equals(final Object o) {
 +        if (this == o) return true;
-+        if (o == null || getClass() != o.getClass()) return false;
-+        PotionMix potionMix = (PotionMix) o;
++        if (o == null || this.getClass() != o.getClass()) return false;
++        final PotionMix potionMix = (PotionMix) o;
 +        return this.key.equals(potionMix.key) && this.result.equals(potionMix.result) && this.input.equals(potionMix.input) && this.ingredient.equals(potionMix.ingredient);
 +    }
 +
@@ -117,7 +117,7 @@ index 0000000000000000000000000000000000000000..ae1f30e88fc5048627295187214aa7a2
 +}
 diff --git a/src/main/java/io/papermc/paper/potion/PredicateRecipeChoice.java b/src/main/java/io/papermc/paper/potion/PredicateRecipeChoice.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1bf964605f681469fb364baaa18381c090260a94
+index 0000000000000000000000000000000000000000..3ede1e8f7bf0436fdc5bf395c0f9eaf11c252453
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/potion/PredicateRecipeChoice.java
 @@ -0,0 +1,33 @@
@@ -132,7 +132,7 @@ index 0000000000000000000000000000000000000000..1bf964605f681469fb364baaa18381c0
 +
 +@ApiStatus.Internal
 +@DefaultQualifier(NonNull.class)
-+record PredicateRecipeChoice(Predicate<ItemStack> itemStackPredicate) implements RecipeChoice, Cloneable {
++record PredicateRecipeChoice(Predicate<? super ItemStack> itemStackPredicate) implements RecipeChoice, Cloneable {
 +
 +    @Override
 +    @Deprecated
@@ -144,7 +144,7 @@ index 0000000000000000000000000000000000000000..1bf964605f681469fb364baaa18381c0
 +    public RecipeChoice clone() {
 +        try {
 +            return (PredicateRecipeChoice) super.clone();
-+        } catch (CloneNotSupportedException ex) {
++        } catch (final CloneNotSupportedException ex) {
 +            throw new AssertionError(ex);
 +        }
 +    }
