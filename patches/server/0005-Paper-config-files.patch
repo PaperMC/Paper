@@ -121,16 +121,17 @@ index 0000000000000000000000000000000000000000..042478cf7ce150f1f1bc5cddd7fa40f8
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac09572cf3
+index 0000000000000000000000000000000000000000..c01b4393439838976965823298f12e4762e72eff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
-@@ -0,0 +1,311 @@
+@@ -0,0 +1,355 @@
 +package io.papermc.paper.configuration;
 +
 +import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.level.ServerLevel;
 +import org.checkerframework.checker.nullness.qual.Nullable;
@@ -196,6 +197,10 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +
 +    protected abstract boolean isConfigType(final Type type);
 +
++    protected abstract int globalConfigVersion();
++
++    protected abstract int worldConfigVersion();
++
 +    protected ObjectMapper.Factory.Builder createGlobalObjectMapperFactoryBuilder() {
 +        return this.createObjectMapper();
 +    }
@@ -224,7 +229,7 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +        };
 +    }
 +
-+    public G initializeGlobalConfiguration() throws ConfigurateException {
++    public G initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
 +        return this.initializeGlobalConfiguration(creator(this.globalConfigClass, true));
 +    }
 +
@@ -245,10 +250,12 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +            .path(configFile)
 +            .build();
 +        final ConfigurationNode node;
-+        if (Files.exists(configFile)) {
-+            node = loader.load();
-+        } else {
++        if (Files.notExists(configFile)) {
 +            node = CommentedConfigurationNode.root(loader.defaultOptions());
++            node.node(Configuration.VERSION_FIELD).raw(this.globalConfigVersion());
++        } else {
++            node = loader.load();
++            this.verifyGlobalConfigVersion(node);
 +        }
 +        this.applyGlobalConfigTransformations(node);
 +        final G instance = creator.apply(node);
@@ -256,18 +263,29 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +        return instance;
 +    }
 +
++    protected void verifyGlobalConfigVersion(final ConfigurationNode globalNode) {
++        final ConfigurationNode version = globalNode.node(Configuration.VERSION_FIELD);
++        if (version.virtual()) {
++            LOGGER.warn("The global config file didn't have a version set, assuming latest");
++            version.raw(this.globalConfigVersion());
++        } else if (version.getInt() > this.globalConfigVersion()) {
++            LOGGER.error("Loading a newer configuration than is supported ({} > {})! You may have to backup & delete your global config file to start the server.", version.getInt(), this.globalConfigVersion());
++        }
++    }
++
 +    protected void applyGlobalConfigTransformations(final ConfigurationNode node) throws ConfigurateException {
 +    }
 +
 +    @MustBeInvokedByOverriders
-+    protected ContextMap.Builder createDefaultContextMap() {
++    protected ContextMap.Builder createDefaultContextMap(final RegistryAccess registryAccess) {
 +        return ContextMap.builder()
 +            .put(WORLD_NAME, WORLD_DEFAULTS)
-+            .put(WORLD_KEY, WORLD_DEFAULTS_KEY);
++            .put(WORLD_KEY, WORLD_DEFAULTS_KEY)
++            .put(REGISTRY_ACCESS, registryAccess);
 +    }
 +
-+    public void initializeWorldDefaultsConfiguration() throws ConfigurateException {
-+        final ContextMap contextMap = this.createDefaultContextMap()
++    public void initializeWorldDefaultsConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
++        final ContextMap contextMap = this.createDefaultContextMap(registryAccess)
 +            .put(FIRST_DEFAULT)
 +            .build();
 +        final Path configFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
@@ -275,7 +293,9 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +        final YamlConfigurationLoader loader = result.loader();
 +        final ConfigurationNode node = loader.load();
 +        if (result.isNewFile()) { // add version to new files
-+            node.node(Configuration.VERSION_FIELD).raw(WorldConfiguration.CURRENT_VERSION);
++            node.node(Configuration.VERSION_FIELD).raw(this.worldConfigVersion());
++        } else {
++            this.verifyWorldConfigVersion(contextMap, node);
 +        }
 +        this.applyWorldConfigTransformations(contextMap, node);
 +        final W instance = node.require(this.worldConfigClass);
@@ -316,7 +336,7 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +
 +    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
 +        final Path defaultsConfigFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
-+        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build(), defaultsConfigFile).loader();
++        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap(contextMap.require(REGISTRY_ACCESS)).build(), defaultsConfigFile).loader();
 +        final ConfigurationNode defaultsNode = defaultsLoader.load();
 +
 +        boolean newFile = false;
@@ -334,13 +354,36 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +            .build();
 +        final ConfigurationNode worldNode = worldLoader.load();
 +        if (newFile) { // set the version field if new file
-+            worldNode.node(Configuration.VERSION_FIELD).set(WorldConfiguration.CURRENT_VERSION);
++            worldNode.node(Configuration.VERSION_FIELD).set(this.worldConfigVersion());
++        } else {
++            this.verifyWorldConfigVersion(contextMap, worldNode);
 +        }
 +        this.applyWorldConfigTransformations(contextMap, worldNode);
 +        this.applyDefaultsAwareWorldConfigTransformations(contextMap, worldNode, defaultsNode);
 +        trySaveFileNode(worldLoader, worldNode, worldConfigFile.toString()); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
 +        worldNode.mergeFrom(defaultsNode);
 +        return creator.apply(worldNode);
++    }
++
++    protected void verifyWorldConfigVersion(final ContextMap contextMap, final ConfigurationNode worldNode) {
++        final ConfigurationNode version = worldNode.node(Configuration.VERSION_FIELD);
++        final String worldName = contextMap.require(WORLD_NAME);
++        if (version.virtual()) {
++            if (worldName.equals(WORLD_DEFAULTS)) {
++                LOGGER.warn("The world defaults config file didn't have a version set, assuming latest");
++            } else {
++                LOGGER.warn("The world config file for " + worldName + " didn't have a version set, assuming latest");
++            }
++            version.raw(this.worldConfigVersion());
++        } else if (version.getInt() > this.worldConfigVersion()) {
++            String msg = "Loading a newer configuration than is supported ({} > {})! ";
++            if (worldName.equals(WORLD_DEFAULTS)) {
++                msg += "You may have to backup & delete the world defaults config file to start the server.";
++            } else {
++                msg += "You may have to backup & delete the " + worldName + " config file to start the server.";
++            }
++            LOGGER.error(msg, version.getInt(), this.worldConfigVersion());
++        }
 +    }
 +
 +    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
@@ -423,6 +466,7 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +    public static final ContextKey<String> WORLD_NAME = new ContextKey<>(String.class, "world name"); // TODO remove when we deprecate level names
 +    public static final ContextKey<ResourceLocation> WORLD_KEY = new ContextKey<>(ResourceLocation.class, "world key");
 +    public static final ContextKey<Void> FIRST_DEFAULT = new ContextKey<>(Void.class, "first default");
++    public static final ContextKey<RegistryAccess> REGISTRY_ACCESS = new ContextKey<>(RegistryAccess.class, "registry access");
 +
 +    public record ContextKey<T>(TypeToken<T> type, String name) {
 +
@@ -791,10 +835,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971caca87d6bd
+index 0000000000000000000000000000000000000000..fa1c0aee8c3a4d0868482cf5c703bbfd08e09874
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,457 @@
+@@ -0,0 +1,465 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -824,9 +868,9 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +import io.papermc.paper.configuration.type.Duration;
 +import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
++import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
 +import io.papermc.paper.configuration.type.number.DoubleOr;
 +import io.papermc.paper.configuration.type.number.IntOr;
-+import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
 +import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 +import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
@@ -840,12 +884,14 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +import java.util.List;
 +import java.util.function.Function;
 +import java.util.function.Supplier;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.entity.EntityType;
 +import net.minecraft.world.item.Item;
++import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 +import org.apache.commons.lang3.RandomStringUtils;
 +import org.bukkit.configuration.ConfigurationSection;
@@ -941,6 +987,16 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +    }
 +
 +    @Override
++    protected int globalConfigVersion() {
++        return GlobalConfiguration.CURRENT_VERSION;
++    }
++
++    @Override
++    protected int worldConfigVersion() {
++        return WorldConfiguration.CURRENT_VERSION;
++    }
++
++    @Override
 +    protected YamlConfigurationLoader.Builder createLoaderBuilder() {
 +        return super.createLoaderBuilder()
 +            .defaultOptions(PaperConfigurations::defaultOptions);
@@ -979,15 +1035,15 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +    }
 +
 +    @Override
-+    public GlobalConfiguration initializeGlobalConfiguration() throws ConfigurateException {
-+        GlobalConfiguration configuration = super.initializeGlobalConfiguration();
++    public GlobalConfiguration initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
++        GlobalConfiguration configuration = super.initializeGlobalConfiguration(registryAccess);
 +        GlobalConfiguration.set(configuration);
 +        return configuration;
 +    }
 +
 +    @Override
-+    protected ContextMap.Builder createDefaultContextMap() {
-+        return super.createDefaultContextMap()
++    protected ContextMap.Builder createDefaultContextMap(final RegistryAccess registryAccess) {
++        return super.createDefaultContextMap(registryAccess)
 +            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, SPIGOT_WORLD_DEFAULTS);
 +    }
 +
@@ -1008,6 +1064,7 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +
 +    @Override
 +    protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final ContextMap contextMap) {
++        final RegistryAccess access = contextMap.require(REGISTRY_ACCESS);
 +        return super.createWorldConfigLoaderBuilder(contextMap)
 +            .defaultOptions(options -> options
 +                .header(contextMap.require(WORLD_NAME).equals(WORLD_DEFAULTS) ? WORLD_DEFAULTS_HEADER : WORLD_HEADER.apply(contextMap))
@@ -1025,22 +1082,16 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +                    .register(EngineMode.SERIALIZER)
 +                    .register(NbtPathSerializer.SERIALIZER)
 +                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
-+                    .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registries.ENTITY_TYPE, true))
-+                    .register(new RegistryValueSerializer<>(Item.class, Registries.ITEM, true))
-+                    .register(new RegistryHolderSerializer<>(new TypeToken<ConfiguredFeature<?, ?>>() {}, Registries.CONFIGURED_FEATURE, false))
-+                    .register(new RegistryHolderSerializer<>(Item.class, Registries.ITEM, true))
++                    .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, access, Registries.ENTITY_TYPE, true))
++                    .register(new RegistryValueSerializer<>(Item.class, access, Registries.ITEM, true))
++                    .register(new RegistryValueSerializer<>(Block.class, access, Registries.BLOCK, true))
++                    .register(new RegistryHolderSerializer<>(new TypeToken<ConfiguredFeature<?, ?>>() {}, access, Registries.CONFIGURED_FEATURE, false))
 +                )
 +            );
 +    }
 +
 +    @Override
 +    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
-+        final ConfigurationNode version = node.node(Configuration.VERSION_FIELD);
-+        final String world = contextMap.require(WORLD_NAME);
-+        if (version.virtual()) {
-+            LOGGER.warn("The world config file for " + world + " didn't have a version set, assuming latest");
-+            version.raw(WorldConfiguration.CURRENT_VERSION);
-+        }
 +        ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
 +        for (NodePath path : RemovedConfigurations.REMOVED_WORLD_PATHS) {
 +            builder.addAction(path, TransformAction.remove());
@@ -1103,7 +1154,7 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +    public void reloadConfigs(MinecraftServer server) {
 +        try {
 +            this.initializeGlobalConfiguration(reloader(this.globalConfigClass, GlobalConfiguration.get()));
-+            this.initializeWorldDefaultsConfiguration();
++            this.initializeWorldDefaultsConfiguration(server.registryAccess());
 +            for (ServerLevel level : server.getAllLevels()) {
 +                this.createWorldConfig(createWorldContextMap(level), reloader(this.worldConfigClass, level.paperConfig()));
 +            }
@@ -1113,15 +1164,16 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +    }
 +
 +    private static ContextMap createWorldContextMap(ServerLevel level) {
-+        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig);
++        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess());
 +    }
 +
-+    public static ContextMap createWorldContextMap(Path dir, String levelName, ResourceLocation worldKey, SpigotWorldConfig spigotConfig) {
++    public static ContextMap createWorldContextMap(Path dir, String levelName, ResourceLocation worldKey, SpigotWorldConfig spigotConfig, RegistryAccess registryAccess) {
 +        return ContextMap.builder()
 +            .put(WORLD_DIRECTORY, dir)
 +            .put(WORLD_NAME, levelName)
 +            .put(WORLD_KEY, worldKey)
 +            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, Suppliers.ofInstance(spigotConfig))
++            .put(REGISTRY_ACCESS, registryAccess)
 +            .build();
 +    }
 +
@@ -1338,10 +1390,10 @@ index 0000000000000000000000000000000000000000..351fbbc577556ebbd62222615801a96b
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb48433c33412
+index 0000000000000000000000000000000000000000..84e6fc5bac43ee0499b391827726bc02f6d3e46f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,538 @@
+@@ -0,0 +1,539 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1367,6 +1419,7 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
 +import java.util.Arrays;
++import java.util.IdentityHashMap;
 +import java.util.List;
 +import java.util.Map;
 +import java.util.function.Function;
@@ -1384,8 +1437,6 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +import net.minecraft.world.entity.MobCategory;
 +import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 +import net.minecraft.world.entity.decoration.HangingEntity;
-+import net.minecraft.world.entity.decoration.ItemFrame;
-+import net.minecraft.world.entity.decoration.Painting;
 +import net.minecraft.world.entity.item.ItemEntity;
 +import net.minecraft.world.entity.monster.Vindicator;
 +import net.minecraft.world.entity.monster.Zombie;
@@ -1393,10 +1444,11 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +import net.minecraft.world.item.Item;
 +import net.minecraft.world.item.Items;
 +import net.minecraft.world.level.NaturalSpawner;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 +import org.slf4j.Logger;
 +import org.spigotmc.SpigotWorldConfig;
-+import org.spigotmc.TrackingRange;
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 +import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 +import org.spongepowered.configurate.objectmapping.meta.Required;
@@ -1445,10 +1497,34 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +            public int updateRadius = 2;
 +            public boolean lavaObscures = false;
 +            public boolean usePermission = false;
-+            public List<String> hiddenBlocks = List.of("copper_ore", "deepslate_copper_ore", "raw_copper_block", "gold_ore", "deepslate_gold_ore", "iron_ore", "deepslate_iron_ore", "raw_iron_block",
-+                "coal_ore", "deepslate_coal_ore", "lapis_ore", "deepslate_lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "deepslate_diamond_ore",
-+                "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore", "deepslate_emerald_ore", "ender_chest"); // TODO update type to List<Block>
-+            public List<String> replacementBlocks = List.of("stone", "oak_planks", "deepslate"); // TODO update type to List<Block>
++            public List<Block> hiddenBlocks = List.of(
++                //<editor-fold desc="Anti-Xray Hidden Blocks" defaultstate="collapsed">
++                Blocks.COPPER_ORE,
++                Blocks.DEEPSLATE_COPPER_ORE,
++                Blocks.RAW_COPPER_BLOCK,
++                Blocks.GOLD_ORE,
++                Blocks.DEEPSLATE_GOLD_ORE,
++                Blocks.IRON_ORE,
++                Blocks.DEEPSLATE_IRON_ORE,
++                Blocks.RAW_IRON_BLOCK,
++                Blocks.COAL_ORE,
++                Blocks.DEEPSLATE_COAL_ORE,
++                Blocks.LAPIS_ORE,
++                Blocks.DEEPSLATE_LAPIS_ORE,
++                Blocks.MOSSY_COBBLESTONE,
++                Blocks.OBSIDIAN,
++                Blocks.CHEST,
++                Blocks.DIAMOND_ORE,
++                Blocks.DEEPSLATE_DIAMOND_ORE,
++                Blocks.REDSTONE_ORE,
++                Blocks.DEEPSLATE_REDSTONE_ORE,
++                Blocks.CLAY,
++                Blocks.EMERALD_ORE,
++                Blocks.DEEPSLATE_EMERALD_ORE,
++                Blocks.ENDER_CHEST
++                //</editor-fold>
++            );
++            public List<Block> replacementBlocks = List.of(Blocks.STONE, Blocks.OAK_PLANKS, Blocks.DEEPSLATE);
 +        }
 +    }
 +
@@ -1579,38 +1655,15 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +            public boolean piglinsGuardChests = true;
 +            public double babyZombieMovementModifier = 0.5;
 +            public boolean allowSpiderWorldBorderClimbing = true;
-+            public DoorBreakingDifficulty doorBreakingDifficulty;
 +
-+            public class DoorBreakingDifficulty extends ConfigurationPart { // TODO convert to map at some point
-+                public List<Difficulty> zombie = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                public List<Difficulty> husk = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                @Setting("zombie_villager")
-+                public List<Difficulty> zombieVillager = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                @Setting("zombified_piglin")
-+                public List<Difficulty> zombified_piglin = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                public List<Difficulty> vindicator = Arrays.stream(Difficulty.values()).filter(Vindicator.DOOR_BREAKING_PREDICATE).toList();
-+
-+                // TODO remove when this becomes a proper map
-+                public List<Difficulty> get(EntityType<?> type) {
-+                    return this.getOrDefault(type, null);
++            private static final List<EntityType<?>> ZOMBIE_LIKE = List.of(EntityType.ZOMBIE, EntityType.HUSK, EntityType.ZOMBIE_VILLAGER, EntityType.ZOMBIFIED_PIGLIN);
++            @MergeMap
++            public Map<EntityType<?>, List<Difficulty>> doorBreakingDifficulty = Util.make(new IdentityHashMap<>(), map -> {
++                for (final EntityType<?> type : ZOMBIE_LIKE) {
++                    map.put(type, Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList());
 +                }
-+
-+                public List<Difficulty> getOrDefault(EntityType<?> type, List<Difficulty> fallback) {
-+                    if (type == EntityType.ZOMBIE) {
-+                        return this.zombie;
-+                    } else if (type == EntityType.HUSK) {
-+                        return this.husk;
-+                    } else if (type == EntityType.ZOMBIE_VILLAGER) {
-+                        return this.zombieVillager;
-+                    } else if (type == EntityType.ZOMBIFIED_PIGLIN) {
-+                        return this.zombified_piglin;
-+                    } else if (type == EntityType.VINDICATOR) {
-+                        return this.vindicator;
-+                    } else {
-+                        return fallback;
-+                    }
-+                }
-+            }
++                map.put(EntityType.VINDICATOR, Arrays.stream(Difficulty.values()).filter(Vindicator.DOOR_BREAKING_PREDICATE).toList());
++            });
 +
 +            public boolean disableCreeperLingeringEffect = false;
 +            public boolean enderDragonsDeathAlwaysPlacesDragonEgg = false;
@@ -3012,43 +3065,45 @@ index 0000000000000000000000000000000000000000..36ca88b677e1b55b41c52750948d5b6d
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..18da824fd003c110083a6c08d5db75578171433c
+index 0000000000000000000000000000000000000000..9073c619f14feb7a14bf32a504eb935f6d4cfe2e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,64 @@
 +package io.papermc.paper.configuration.serializer.registry;
 +
 +import io.leangen.geantyref.TypeToken;
++import java.lang.reflect.Type;
++import java.util.function.Predicate;
 +import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.MinecraftServer;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
-+import java.lang.reflect.Type;
-+import java.util.function.Predicate;
-+
 +abstract class RegistryEntrySerializer<T, R> extends ScalarSerializer<T> {
 +
++    private final RegistryAccess registryAccess;
 +    private final ResourceKey<? extends Registry<R>> registryKey;
 +    private final boolean omitMinecraftNamespace;
 +
-+    protected RegistryEntrySerializer(TypeToken<T> type, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
++    protected RegistryEntrySerializer(TypeToken<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
 +        super(type);
++        this.registryAccess = registryAccess;
 +        this.registryKey = registryKey;
 +        this.omitMinecraftNamespace = omitMinecraftNamespace;
 +    }
 +
-+    protected RegistryEntrySerializer(Class<T> type, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
++    protected RegistryEntrySerializer(Class<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
 +        super(type);
++        this.registryAccess = registryAccess;
 +        this.registryKey = registryKey;
 +        this.omitMinecraftNamespace = omitMinecraftNamespace;
 +    }
 +
 +    protected final Registry<R> registry() {
-+        return MinecraftServer.getServer().registryAccess().registryOrThrow(this.registryKey); // TODO don't depend on MinecraftServer#getServer
++        return this.registryAccess.registryOrThrow(this.registryKey);
 +    }
 +
 +    protected abstract T convertFromResourceKey(ResourceKey<R> key) throws SerializationException;
@@ -3080,7 +3135,7 @@ index 0000000000000000000000000000000000000000..18da824fd003c110083a6c08d5db7557
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c03c1f277ff8167e8b3e4bfa0f4dfc86834f82f3
+index 0000000000000000000000000000000000000000..eeae35ede747e473ddba4ca1688f2f6cbc35ce7d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java
 @@ -0,0 +1,34 @@
@@ -3089,22 +3144,22 @@ index 0000000000000000000000000000000000000000..c03c1f277ff8167e8b3e4bfa0f4dfc86
 +import com.google.common.base.Preconditions;
 +import io.leangen.geantyref.TypeFactory;
 +import io.leangen.geantyref.TypeToken;
++import java.util.function.Function;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceKey;
 +import org.spongepowered.configurate.serialize.SerializationException;
-+
-+import java.util.function.Function;
 +
 +public final class RegistryHolderSerializer<T> extends RegistryEntrySerializer<Holder<T>, T> {
 +
 +    @SuppressWarnings("unchecked")
-+    public RegistryHolderSerializer(TypeToken<T> typeToken, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
-+        super((TypeToken<Holder<T>>) TypeToken.get(TypeFactory.parameterizedClass(Holder.class, typeToken.getType())), registryKey, omitMinecraftNamespace);
++    public RegistryHolderSerializer(TypeToken<T> typeToken, final RegistryAccess registryAccess, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        super((TypeToken<Holder<T>>) TypeToken.get(TypeFactory.parameterizedClass(Holder.class, typeToken.getType())), registryAccess, registryKey, omitMinecraftNamespace);
 +    }
 +
-+    public RegistryHolderSerializer(Class<T> type, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
-+        this(TypeToken.get(type), registryKey, omitMinecraftNamespace);
++    public RegistryHolderSerializer(Class<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        this(TypeToken.get(type), registryAccess, registryKey, omitMinecraftNamespace);
 +        Preconditions.checkArgument(type.getTypeParameters().length == 0, "%s must have 0 type parameters", type);
 +    }
 +
@@ -3120,14 +3175,15 @@ index 0000000000000000000000000000000000000000..c03c1f277ff8167e8b3e4bfa0f4dfc86
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryValueSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryValueSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..10d3dd361cd26dc849ebd53c1235aa8e4f7af04d
+index 0000000000000000000000000000000000000000..718377ce91a010a48b2b4a5e59e02ee8a42107a7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryValueSerializer.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,35 @@
 +package io.papermc.paper.configuration.serializer.registry;
 +
 +import io.leangen.geantyref.TypeToken;
 +import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceKey;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
@@ -3136,12 +3192,12 @@ index 0000000000000000000000000000000000000000..10d3dd361cd26dc849ebd53c1235aa8e
 + */
 +public final class RegistryValueSerializer<T> extends RegistryEntrySerializer<T, T> {
 +
-+    public RegistryValueSerializer(TypeToken<T> type, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
-+        super(type, registryKey, omitMinecraftNamespace);
++    public RegistryValueSerializer(TypeToken<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        super(type, registryAccess, registryKey, omitMinecraftNamespace);
 +    }
 +
-+    public RegistryValueSerializer(Class<T> type, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
-+        super(type, registryKey, omitMinecraftNamespace);
++    public RegistryValueSerializer(Class<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        super(type, registryAccess, registryKey, omitMinecraftNamespace);
 +    }
 +
 +    @Override
@@ -3436,10 +3492,10 @@ index 0000000000000000000000000000000000000000..ef0e834c164b0ccc1a61b349348e6799
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java b/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f250ea5acd2edce924ee52b8ec16a23261f5e90d
+index 0000000000000000000000000000000000000000..90071acf589fb2fa1c3480883165b429db54df69
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.configuration.transformation.global.versioned;
 +
 +import net.minecraft.server.MinecraftServer;
@@ -3468,9 +3524,8 @@ index 0000000000000000000000000000000000000000..f250ea5acd2edce924ee52b8ec16a232
 +        builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(PATH, INSTANCE).build());
 +    }
 +
-+    @Nullable
 +    @Override
-+    public Object[] visitPath(final NodePath path, final ConfigurationNode value) throws ConfigurateException {
++    public Object @Nullable [] visitPath(final NodePath path, final ConfigurationNode value) throws ConfigurateException {
 +        DedicatedServer server = ((DedicatedServer) MinecraftServer.getServer());
 +
 +        boolean val = value.getBoolean(server.settings.getProperties().logIPs);
@@ -4832,7 +4887,7 @@ index 71e7beac6cf1e0f813d5ff3e9c51c13491be7139..f1cc27809c1e8612f7c4fa912f5e39c0
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index e62eb92b63c027dfa431f8cc241ab968a3abf3f4..65ea4d909059387e6718ea68a3d9408556d26cbe 100644
+index e62eb92b63c027dfa431f8cc241ab968a3abf3f4..45657deb1ab3ebdfacf2a9bbb591a9a14236840c 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -183,6 +183,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -4840,8 +4895,8 @@ index e62eb92b63c027dfa431f8cc241ab968a3abf3f4..65ea4d909059387e6718ea68a3d94085
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
 +        // Paper start
-+        paperConfigurations.initializeGlobalConfiguration();
-+        paperConfigurations.initializeWorldDefaultsConfiguration();
++        paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
++        paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
 +        // Paper end
  
          this.setPvpAllowed(dedicatedserverproperties.pvp);
@@ -4859,7 +4914,7 @@ index 37ab411817008d4e6194e177d88d50931e53b42e..ca23639f15107ccd43b874ae38fa3727
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index c8e5e99d46c711efa90e446689e55267c70c7254..10968eb004ee01c4fb72aeb93f058747b02998b9 100644
+index c8e5e99d46c711efa90e446689e55267c70c7254..64522a15ecb73087222b33ffb13e29ac048b62a7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -234,7 +234,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -4867,7 +4922,7 @@ index c8e5e99d46c711efa90e446689e55267c70c7254..10968eb004ee01c4fb72aeb93f058747
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
 -        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env);
-+        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig))); // Paper
++        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess()))); // Paper
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
