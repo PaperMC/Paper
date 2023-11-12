@@ -259,6 +259,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
 
+        // Paper start - fix teleport event not being called
+        org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(
+            this, this.getLocation(), location);
+        // cancelling the event is handled differently for players and entities,
+        // entities just stop teleporting, players will still teleport to the "from" location of the event
+        if (!event.callEvent() || event.getTo() == null) {
+            return false;
+        }
+        location = event.getTo();
+        // Paper end
+
         // If this entity is riding another entity, we must dismount before teleporting.
         if (dismount) this.entity.stopRiding(); // Paper - Teleport passenger API
 
