@@ -334,7 +334,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public boolean generateTree(Location location, Random random, TreeType treeType, Consumer<BlockState> consumer) {
+    public boolean generateTree(Location location, Random random, TreeType treeType, Consumer<? super BlockState> consumer) {
         return generateTree(location, random, treeType, (consumer == null) ? null : (block) -> {
             consumer.accept(block);
             return true;
@@ -342,7 +342,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public boolean generateTree(Location location, Random random, TreeType treeType, Predicate<BlockState> predicate) {
+    public boolean generateTree(Location location, Random random, TreeType treeType, Predicate<? super BlockState> predicate) {
         BlockPosition pos = CraftLocation.toBlockPosition(location);
         BlockStateListPopulator populator = new BlockStateListPopulator(getHandle());
         boolean result = generateTree(populator, getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
@@ -534,20 +534,20 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<T> function) throws IllegalArgumentException {
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function) throws IllegalArgumentException {
         return spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
 
     @Override
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, boolean randomizeData, Consumer<T> function) throws IllegalArgumentException {
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, boolean randomizeData, Consumer<? super T> function) throws IllegalArgumentException {
         return spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
     }
 
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
         return spawn(location, clazz, function, reason, true);
     }
 
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<T> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
         net.minecraft.world.entity.Entity entity = createEntity(location, clazz, randomizeData);
 
         return addEntity(entity, reason, function, randomizeData);
@@ -559,7 +559,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason, Consumer<T> function, boolean randomizeData) throws IllegalArgumentException {
+    public <T extends Entity> T addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason, Consumer<? super T> function, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
 
         if (randomizeData && entity instanceof EntityInsentient) {
