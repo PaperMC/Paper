@@ -454,7 +454,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return ItemDrop entity created as a result of this method
      */
     @NotNull
-    public Item dropItem(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<Item> function);
+    public Item dropItem(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<? super Item> function);
 
     /**
      * Drops an item at the specified {@link Location} with a random offset
@@ -476,7 +476,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return ItemDrop entity created as a result of this method
      */
     @NotNull
-    public Item dropItemNaturally(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<Item> function);
+    public Item dropItemNaturally(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<? super Item> function);
 
     /**
      * Creates an {@link Arrow} entity at the given {@link Location}
@@ -642,7 +642,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     non-null collection.
      */
     @NotNull
-    public Collection<Entity> getNearbyEntities(@NotNull Location location, double x, double y, double z, @Nullable Predicate<Entity> filter);
+    public Collection<Entity> getNearbyEntities(@NotNull Location location, double x, double y, double z, @Nullable Predicate<? super Entity> filter);
 
     /**
      * Returns a list of entities within the given bounding box.
@@ -672,7 +672,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     be a non-null collection
      */
     @NotNull
-    public Collection<Entity> getNearbyEntities(@NotNull BoundingBox boundingBox, @Nullable Predicate<Entity> filter);
+    public Collection<Entity> getNearbyEntities(@NotNull BoundingBox boundingBox, @Nullable Predicate<? super Entity> filter);
 
     /**
      * Performs a ray trace that checks for entity collisions.
@@ -727,7 +727,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #rayTraceEntities(Location, Vector, double, double, Predicate)
      */
     @Nullable
-    public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, @Nullable Predicate<Entity> filter);
+    public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, @Nullable Predicate<? super Entity> filter);
 
     /**
      * Performs a ray trace that checks for entity collisions.
@@ -747,7 +747,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     is no hit
      */
     @Nullable
-    public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<Entity> filter);
+    public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
 
     /**
      * Performs a ray trace that checks for block collisions using the blocks'
@@ -843,7 +843,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     entity, or <code>null</code> if there is no hit
      */
     @Nullable
-    public RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<Entity> filter);
+    public RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter);
 
     /**
      * Gets the default spawn {@link Location} of this world

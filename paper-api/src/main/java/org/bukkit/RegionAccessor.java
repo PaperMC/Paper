@@ -182,7 +182,7 @@ public interface RegionAccessor {
      * @param stateConsumer The consumer which should get called for every block which gets changed
      * @return true if the tree was created successfully, otherwise false
      */
-    boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Consumer<BlockState> stateConsumer);
+    boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Consumer<? super BlockState> stateConsumer);
 
     /**
      * Creates a tree at the given {@link Location}
@@ -202,7 +202,7 @@ public interface RegionAccessor {
      * @param statePredicate The predicate which should get used to test if a block should be set or not.
      * @return true if the tree was created successfully, otherwise false
      */
-    boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Predicate<BlockState> statePredicate);
+    boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Predicate<? super BlockState> statePredicate);
 
     /**
      * Creates a entity at the given {@link Location}
@@ -309,7 +309,7 @@ public interface RegionAccessor {
      *     {@link Entity} requested cannot be spawned
      */
     @NotNull
-    <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function) throws IllegalArgumentException;
+    <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<? super T> function) throws IllegalArgumentException;
 
     /**
      * Creates a new entity at the given {@link Location} with the supplied
@@ -347,7 +347,7 @@ public interface RegionAccessor {
      * @throws IllegalArgumentException if either the world or clazz parameter are null.
      */
     @NotNull
-    public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, boolean randomizeData, @Nullable Consumer<T> function) throws IllegalArgumentException;
+    public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException;
 
     /**
      * Gets the highest non-empty (impassable) coordinate at the given
