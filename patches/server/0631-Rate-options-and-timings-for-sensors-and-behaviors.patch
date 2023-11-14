@@ -28,37 +28,40 @@ index 4bd813161a5d76a83cdbd0a9209b9ea9e60ffe1b..e2764186bd6b838ed5cd86c15597a08d
       * Get a named timer for the specified tile entity type to track type specific timings.
       * @param entity
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-index 4ea437253539e3ee533ca9da77a337cbf4d1e807..57ef7fbba3028c28231abf7b7ae78aa019323536 100644
+index 4ea437253539e3ee533ca9da77a337cbf4d1e807..07adec6ce15f9bf37863f881b4ed209520f339a2 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-@@ -13,6 +13,10 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+@@ -13,6 +13,18 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
      private long endTimestamp;
      private final int minDuration;
      private final int maxDuration;
 +    // Paper start - configurable behavior tick rate and timings
 +    private final String configKey;
 +    private final co.aikar.timings.Timing timing;
-+    // Paper end
- 
-     public Behavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState) {
-         this(requiredMemoryState, 60);
-@@ -26,6 +30,15 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
-         this.minDuration = minRunTime;
-         this.maxDuration = maxRunTime;
-         this.entryCondition = requiredMemoryState;
-+        // Paper start - configurable behavior tick rate and timings
-+        String key = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName());
++    public static String getConfigKey(String behaviorClass) {
++        String key = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(behaviorClass);
 +        int lastSeparator = key.lastIndexOf('.');
 +        if (lastSeparator != -1) {
 +            key = key.substring(lastSeparator + 1);
 +        }
-+        this.configKey = key.toLowerCase(java.util.Locale.ROOT);
++        return key.toLowerCase(java.util.Locale.ROOT);
++    }
++    // Paper end
+ 
+     public Behavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState) {
+         this(requiredMemoryState, 60);
+@@ -26,6 +38,10 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+         this.minDuration = minRunTime;
+         this.maxDuration = maxRunTime;
+         this.entryCondition = requiredMemoryState;
++        // Paper start - configurable behavior tick rate and timings
++        this.configKey = getConfigKey(this.getClass().getName());
 +        this.timing = co.aikar.timings.MinecraftTimings.getBehaviorTimings(configKey);
 +        // Paper end
      }
  
      @Override
-@@ -35,11 +48,19 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+@@ -35,11 +51,19 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
  
      @Override
      public final boolean tryStart(ServerLevel world, E entity, long time) {
@@ -78,7 +81,7 @@ index 4ea437253539e3ee533ca9da77a337cbf4d1e807..57ef7fbba3028c28231abf7b7ae78aa0
              return true;
          } else {
              return false;
-@@ -51,11 +72,13 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+@@ -51,11 +75,13 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
  
      @Override
      public final void tickOrStop(ServerLevel world, E entity, long time) {
@@ -92,6 +95,75 @@ index 4ea437253539e3ee533ca9da77a337cbf4d1e807..57ef7fbba3028c28231abf7b7ae78aa0
  
      }
  
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/OneShot.java b/src/main/java/net/minecraft/world/entity/ai/behavior/OneShot.java
+index dde5c53550ddbdfc8288f725468924b35ea5b05e..c5b6212ddebb6d7c66038ef39144a827df76d5f3 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/OneShot.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/OneShot.java
+@@ -6,6 +6,20 @@ import net.minecraft.world.entity.ai.behavior.declarative.Trigger;
+ 
+ public abstract class OneShot<E extends LivingEntity> implements BehaviorControl<E>, Trigger<E> {
+     private Behavior.Status status = Behavior.Status.STOPPED;
++    // Paper start - configurable behavior tick rate and timings
++    private final String configKey;
++    private final co.aikar.timings.Timing timing;
++    private long lastRun;
++
++    public OneShot() {
++        this("unknown");
++    }
++
++    public OneShot(String configKey) {
++        this.configKey = configKey;
++        this.timing = co.aikar.timings.MinecraftTimings.getBehaviorTimings(configKey);
++    }
++    // Paper end
+ 
+     @Override
+     public final Behavior.Status getStatus() {
+@@ -14,10 +28,22 @@ public abstract class OneShot<E extends LivingEntity> implements BehaviorControl
+ 
+     @Override
+     public final boolean tryStart(ServerLevel world, E entity, long time) {
++        // Paper start - behavior tick rate and timings
++        int tickRate = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.behavior.get(entity.getType(), this.configKey), -1);
++        if (tickRate > -1 && time < this.lastRun + tickRate) {
++            return false;
++        }
++        this.timing.startTiming();
++        // Paper end
+         if (this.trigger(world, entity, time)) {
+             this.status = Behavior.Status.RUNNING;
++            // Paper start - behavior tick rate and timings
++            this.lastRun = time;
++            this.timing.stopTiming();
++            // Paper end
+             return true;
+         } else {
++            this.timing.stopTiming(); // Paper - behavior timings
+             return false;
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/declarative/BehaviorBuilder.java b/src/main/java/net/minecraft/world/entity/ai/behavior/declarative/BehaviorBuilder.java
+index 6f323026b2d6fb5151e8b9dd9466e96eb026ccbd..4294b0e86884ba0f3cb497bfe877dcea14f48ab5 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/declarative/BehaviorBuilder.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/declarative/BehaviorBuilder.java
+@@ -35,7 +35,15 @@ public class BehaviorBuilder<E extends LivingEntity, M> implements App<BehaviorB
+ 
+     public static <E extends LivingEntity> OneShot<E> create(Function<BehaviorBuilder.Instance<E>, ? extends App<BehaviorBuilder.Mu<E>, Trigger<E>>> creator) {
+         final BehaviorBuilder.TriggerWithResult<E, Trigger<E>> triggerWithResult = get(creator.apply(instance()));
+-        return new OneShot<E>() {
++        // Paper start - configurable tick rates
++        java.lang.StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
++        String callingClass = null;
++        if (stackTraceElements.length > 2) {
++            callingClass = stackTraceElements[2].getClassName();
++        }
++        final String configKey = callingClass == null ? "unknown" : net.minecraft.world.entity.ai.behavior.Behavior.getConfigKey(callingClass);
++        // Paper end
++        return new OneShot<E>(configKey) { // Paper
+             @Override
+             public boolean trigger(ServerLevel world, E entity, long time) {
+                 Trigger<E> trigger = triggerWithResult.tryTrigger(world, entity, time);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
 index 7970eebbd6935402223e6bba962bb8ba7d861dfd..fcdb9bde8e1605e30dde3e580491522d4b62cdc0 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
