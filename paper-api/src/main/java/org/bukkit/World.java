@@ -680,6 +680,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * This may not consider entities in currently unloaded chunks. Some
      * implementations may impose artificial restrictions on the maximum
      * distance.
+     * <p>
+     * <b>Note:</b> Due to display entities having a zero size hitbox, this method will not detect them.
+     * To detect display entities use {@link #rayTraceEntities(Location, Vector, double, double)} with a positive raySize
      *
      * @param start the start position
      * @param direction the ray direction
@@ -702,7 +705,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param direction the ray direction
      * @param maxDistance the maximum distance
      * @param raySize entity bounding boxes will be uniformly expanded (or
-     *     shrinked) by this value before doing collision checks
+     *     shrunk) by this value before doing collision checks
      * @return the closest ray trace hit result, or <code>null</code> if there
      *     is no hit
      * @see #rayTraceEntities(Location, Vector, double, double, Predicate)
@@ -716,6 +719,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * This may not consider entities in currently unloaded chunks. Some
      * implementations may impose artificial restrictions on the maximum
      * distance.
+     * <p>
+     * <b>Note:</b> Due to display entities having a zero size hitbox, this method will not detect them.
+     * To detect display entities use {@link #rayTraceEntities(Location, Vector, double, double, Predicate)} with a positive raySize
      *
      * @param start the start position
      * @param direction the ray direction
@@ -740,7 +746,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param direction the ray direction
      * @param maxDistance the maximum distance
      * @param raySize entity bounding boxes will be uniformly expanded (or
-     *     shrinked) by this value before doing collision checks
+     *     shrunk) by this value before doing collision checks
      * @param filter only entities that fulfill this predicate are considered,
      *     or <code>null</code> to consider all entities
      * @return the closest ray trace hit result, or <code>null</code> if there
@@ -836,7 +842,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param ignorePassableBlocks whether to ignore passable but collidable
      *     blocks (ex. tall grass, signs, fluids, ..)
      * @param raySize entity bounding boxes will be uniformly expanded (or
-     *     shrinked) by this value before doing collision checks
+     *     shrunk) by this value before doing collision checks
      * @param filter only entities that fulfill this predicate are considered,
      *     or <code>null</code> to consider all entities
      * @return the closest ray trace hit result with either a block or an
