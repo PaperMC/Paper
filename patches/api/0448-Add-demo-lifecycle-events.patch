@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 15 Nov 2023 20:56:28 -0800
+Subject: [PATCH] Add demo lifecycle events
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/DummyResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/DummyResourceRegistrar.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..359bedf119d44e1a7f80d6edc16fe5f0a5afc2ac
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/DummyResourceRegistrar.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper.plugin.lifecycle.dummy;
++
++import io.papermc.paper.plugin.lifecycle.event.registrar.ResourceRegistrar;
++
++public class DummyResourceRegistrar implements ResourceRegistrar {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/NonRegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/NonRegistrarEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5d18c53467f4c5277c5fc245aa2ce0d1ad827617
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/NonRegistrarEvent.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.plugin.lifecycle.dummy;
++
++import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++
++public class NonRegistrarEvent implements LifecycleEvent {
++
++    public void someNonRegistrarRelatedThing() {
++        System.out.println("non registrar event");
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/RegisterAnywhereEvent.java b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/RegisterAnywhereEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ddd11ed48560b959e402dab6fbe3ad97be97149d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/RegisterAnywhereEvent.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper.plugin.lifecycle.dummy;
++
++import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++
++public class RegisterAnywhereEvent implements LifecycleEvent {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEvents.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEvents.java
+index 23fe47b451c48cfd742dcd21478609f8dbf0ac44..e77d0d045565fddf80dee869df28394fe4977522 100644
+--- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEvents.java
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEvents.java
+@@ -2,6 +2,10 @@ package io.papermc.paper.plugin.lifecycle.event;
+ 
+ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
+ import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++import io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar;
++import io.papermc.paper.plugin.lifecycle.dummy.NonRegistrarEvent;
++import io.papermc.paper.plugin.lifecycle.dummy.RegisterAnywhereEvent;
++import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
+ import java.util.ArrayList;
+ import java.util.List;
+ import org.bukkit.plugin.Plugin;
+@@ -12,6 +16,11 @@ public final class LifecycleEvents {
+ 
+     static final List<LifecycleEventType<?, ?>> LIFECYCLE_EVENT_TYPES = new ArrayList<>();
+ 
++    public static final LifecycleEventType<BootstrapContext, RegistrarEvent.Reloadable<DummyResourceRegistrar>> DUMMY = bootstrap("dummy");
++    public static final LifecycleEventType.Prioritized<Plugin, RegistrarEvent<DummyResourceRegistrar>> DUMMY_STATIC = pluginPrioritized("dummy_static");
++    public static final LifecycleEventType<BootstrapContext, NonRegistrarEvent> NON_REGISTRAR_RELATED_EVENT = bootstrap("non_registrar");
++    public static final LifecycleEventType<LifecycleEventOwner, RegisterAnywhereEvent> REGISTER_ANYWHERE_EVENT = simple("register_anywhere", LifecycleEventOwner.class);
++
+     @ApiStatus.Internal
+     private static <E extends LifecycleEvent> LifecycleEventType<Plugin, E> plugin(final String name) {
+         return simple(name, Plugin.class);
