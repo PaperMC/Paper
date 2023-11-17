@@ -75,8 +75,10 @@ import org.bukkit.Effect;
 import org.bukkit.FeatureFlag;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameRule;
+import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Note;
 import org.bukkit.Particle;
 import org.bukkit.Raid;
 import org.bukkit.Registry;
@@ -1539,6 +1541,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    public void playNote(@NotNull Location loc, @NotNull Instrument instrument, @NotNull Note note) {
+        playSound(loc, instrument.getSound(), org.bukkit.SoundCategory.RECORDS, 3f, note.getPitch());
+    }
+
+    @Override
     public void playSound(Location loc, Sound sound, float volume, float pitch) {
         playSound(loc, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
     }
@@ -1550,24 +1557,34 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        if (loc == null || sound == null || category == null) return;
-
-        double x = loc.getX();
-        double y = loc.getY();
-        double z = loc.getZ();
-
-        getHandle().playSound(null, x, y, z, CraftSound.bukkitToMinecraft(sound), SoundCategory.valueOf(category.name()), volume, pitch);
+        playSound(loc, sound, category, volume, pitch, getHandle().random.nextLong());;
     }
 
     @Override
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
+        playSound(loc, sound, category, volume, pitch, getHandle().random.nextLong());
+    }
+
+    @Override
+    public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (loc == null || sound == null || category == null) return;
 
         double x = loc.getX();
         double y = loc.getY();
         double z = loc.getZ();
 
-        PacketPlayOutNamedSoundEffect packet = new PacketPlayOutNamedSoundEffect(Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), SoundCategory.valueOf(category.name()), x, y, z, volume, pitch, getHandle().getRandom().nextLong());
+        getHandle().playSeededSound(null, x, y, z, CraftSound.bukkitToMinecraft(sound), SoundCategory.valueOf(category.name()), volume, pitch, seed);
+    }
+
+    @Override
+    public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
+        if (loc == null || sound == null || category == null) return;
+
+        double x = loc.getX();
+        double y = loc.getY();
+        double z = loc.getZ();
+
+        PacketPlayOutNamedSoundEffect packet = new PacketPlayOutNamedSoundEffect(Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), SoundCategory.valueOf(category.name()), x, y, z, volume, pitch, seed);
         world.getServer().getPlayerList().broadcast(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.dimension(), packet);
     }
 
@@ -1583,9 +1600,19 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
+        playSound(entity, sound, category, volume, pitch, getHandle().random.nextLong());
+    }
+
+    @Override
+    public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
+        playSound(entity, sound, category, volume, pitch, getHandle().random.nextLong());
+    }
+
+    @Override
+    public void playSound(Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (!(entity instanceof CraftEntity craftEntity) || entity.getWorld() != this || sound == null || category == null) return;
 
-        PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(CraftSound.bukkitToMinecraftHolder(sound), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, getHandle().getRandom().nextLong());
+        PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(CraftSound.bukkitToMinecraftHolder(sound), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
         PlayerChunkMap.EntityTracker entityTracker = getHandle().getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
         if (entityTracker != null) {
             entityTracker.broadcastAndSend(packet);
@@ -1593,10 +1620,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
+    public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (!(entity instanceof CraftEntity craftEntity) || entity.getWorld() != this || sound == null || category == null) return;
 
-        PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, getHandle().getRandom().nextLong());
+        PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
         PlayerChunkMap.EntityTracker entityTracker = getHandle().getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
         if (entityTracker != null) {
             entityTracker.broadcastAndSend(packet);
