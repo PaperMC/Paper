@@ -304,4 +304,11 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
         return centerChunkZ;
     }
     // Paper end - Add more LimitedRegion API
+    // Paper start - Fluid API
+    @Override
+    public io.papermc.paper.block.fluid.FluidData getFluidData(int x, int y, int z) {
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        return super.getFluidData(x, y, z);
+    }
+    // Paper end
 }

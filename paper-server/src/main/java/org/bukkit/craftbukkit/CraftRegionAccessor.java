@@ -108,6 +108,13 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         return CraftBlock.at(this.getHandle(), new BlockPos(x, y, z)).getState();
     }
 
+    // Paper start - FluidState API
+    @Override
+    public io.papermc.paper.block.fluid.FluidData getFluidData(final int x, final int y, final int z) {
+        return io.papermc.paper.block.fluid.PaperFluidData.createData(getHandle().getFluidState(new BlockPos(x, y, z)));
+    }
+    // Paper end
+
     @Override
     public BlockData getBlockData(Location location) {
         return this.getBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ());
