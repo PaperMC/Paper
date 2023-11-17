@@ -102,6 +102,41 @@ public interface RegionAccessor extends Keyed { // Paper
     @NotNull
     BlockState getBlockState(int x, int y, int z);
 
+    // Paper start - FluidState API
+    /**
+     * Gets the {@link io.papermc.paper.block.fluid.FluidData} at the specified position.
+     *
+     * @param x The x-coordinate of the position
+     * @param y The y-coordinate of the position
+     * @param z The z-coordinate of the position
+     * @return The {@link io.papermc.paper.block.fluid.FluidData} at the specified position
+     */
+    @NotNull
+    io.papermc.paper.block.fluid.FluidData getFluidData(int x, int y, int z);
+
+    /**
+     * Gets the {@link io.papermc.paper.block.fluid.FluidData} at the given position
+     *
+     * @param position The position of the fluid
+     * @return The fluid data at the given position
+     */
+    @NotNull
+    default io.papermc.paper.block.fluid.FluidData getFluidData(@NotNull io.papermc.paper.math.Position position) {
+        return getFluidData(position.blockX(), position.blockY(), position.blockZ());
+    }
+
+    /**
+     * Gets the {@link io.papermc.paper.block.fluid.FluidData} at the given position
+     *
+     * @param location The location of the fluid
+     * @return The fluid data at the given position
+     */
+    @NotNull
+    default io.papermc.paper.block.fluid.FluidData getFluidData(@NotNull Location location) {
+        return getFluidData(location.blockX(), location.blockY(), location.blockZ());
+    }
+    // Paper end
+
     /**
      * Gets the {@link BlockData} at the given {@link Location}.
      *
