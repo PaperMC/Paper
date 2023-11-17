@@ -391,11 +391,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void setBedSpawnLocation(@Nullable Location location, boolean force);
 
     /**
-     * Play a note for a player at a location. This requires a note block
-     * at the particular location (as far as the client is concerned). This
-     * will not work without a note block. This will not work with cake.
+     * Play a note for the player at a location. <br>
+     * This <i>will</i> work with cake.
      *
-     * @param loc The location of a note block.
+     * @param loc The location to play the note
      * @param instrument The instrument ID.
      * @param note The note ID.
      * @deprecated Magic value
@@ -404,11 +403,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void playNote(@NotNull Location loc, byte instrument, byte note);
 
     /**
-     * Play a note for a player at a location. This requires a note block
-     * at the particular location (as far as the client is concerned). This
-     * will not work without a note block. This will not work with cake.
-     *
-     * @param loc The location of a note block
+     * Play a note for the player at a location. <br>
+     * This <i>will</i> work with cake.
+     * <p>
+     * This method will fail silently when called with {@link Instrument#CUSTOM_HEAD}.
+     * @param loc The location to play the note
      * @param instrument The instrument
      * @param note The note
      */
@@ -470,6 +469,38 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
 
     /**
+     * Play a sound for a player at the location. For sounds with multiple
+     * variations passing the same seed will always play the same variation.
+     * <p>
+     * This function will fail silently if Location or Sound are null.
+     *
+     * @param location The location to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     * @param seed The seed for the sound
+     */
+    public void playSound(@NotNull Location location, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+
+    /**
+     * Play a sound for a player at the location. For sounds with multiple
+     * variations passing the same seed will always play the same variation.
+     * <p>
+     * This function will fail silently if Location or Sound are null. No sound
+     * will be heard by the player if their client does not have the respective
+     * sound for the value passed.
+     *
+     * @param location The location to play the sound
+     * @param sound The internal sound name to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     * @param seed The seed for the sound
+     */
+    public void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+
+    /**
      * Play a sound for a player at the location of the entity.
      * <p>
      * This function will fail silently if Entity or Sound are null.
@@ -518,6 +549,36 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param pitch The pitch of the sound
      */
     public void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a sound for a player at the location of the entity. For sounds with
+     * multiple variations passing the same seed will always play the same variation.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     * @param seed The seed for the sound
+     */
+    public void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+
+    /**
+     * Play a sound for a player at the location of the entity. For sounds with
+     * multiple variations passing the same seed will always play the same variation.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     * @param seed The seed for the sound
+     */
+    public void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Stop the specified sound from playing.

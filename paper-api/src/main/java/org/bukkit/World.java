@@ -2110,6 +2110,18 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void setSpawnLimit(@NotNull SpawnCategory spawnCategory, int limit);
 
     /**
+     * Play a note at the provided Location in the World. <br>
+     * This <i>will</i> work with cake.
+     * <p>
+     * This method will fail silently when called with {@link Instrument#CUSTOM_HEAD}.
+     *
+     * @param loc The location to play the note
+     * @param instrument The instrument
+     * @param note The note
+     */
+    void playNote(@NotNull Location loc, @NotNull Instrument instrument, @NotNull Note note);
+
+    /**
      * Play a Sound at the provided Location in the World.
      * <p>
      * This function will fail silently if Location or Sound are null.
@@ -2164,6 +2176,38 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
 
     /**
+     * Play a Sound at the provided Location in the World. For sounds with multiple
+     * variations passing the same seed will always play the same variation.
+     * <p>
+     * This function will fail silently if Location or Sound are null.
+     *
+     * @param location The location to play the sound
+     * @param sound The sound to play
+     * @param category the category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     * @param seed The seed for the sound
+     */
+    void playSound(@NotNull Location location, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+
+    /**
+     * Play a Sound at the provided Location in the World. For sounds with multiple
+     * variations passing the same seed will always play the same variation.
+     * <p>
+     * This function will fail silently if Location or Sound are null. No sound will
+     * be heard by the players if their clients do not have the respective sound for
+     * the value passed.
+     *
+     * @param location The location to play the sound
+     * @param sound The internal sound name to play
+     * @param category the category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     * @param seed The seed for the sound
+     */
+    void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+
+    /**
      * Play a Sound at the location of the provided entity in the World.
      * <p>
      * This function will fail silently if Entity or Sound are null.
@@ -2212,6 +2256,38 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param pitch The pitch of the sound
      */
     void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a Sound at the location of the provided entity in the World. For sounds
+     * with multiple variations passing the same seed will always play the same
+     * variation.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     * @param seed The seed for the sound
+     */
+    void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+
+    /**
+     * Play a Sound at the location of the provided entity in the World. For sounds
+     * with multiple variations passing the same seed will always play the same
+     * variation.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     * @param seed The seed for the sound
+     */
+    void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Get an array containing the names of all the {@link GameRule}s.
