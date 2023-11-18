@@ -395,6 +395,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      entity.level().gameEvent(entity, GameEvent.EQUIP, entity.position());
                      stack.shrink(1);
                  }
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
+     public int requiredPlayerRange = 16;
+     public int spawnRange = 4;
+     private int tickDelay = 0; // Paper
++    // Paper start - ported from 1.20.3 Fix MC-259321
++    static <B, T extends B> net.minecraft.world.level.entity.EntityTypeTest<B, T> forExactClass(Class<T> clazz) {
++        return new net.minecraft.world.level.entity.EntityTypeTest<>() {
++            @Nullable
++            @Override
++            public T tryCast(B clazz) {
++                return (T)(clazz.equals(clazz.getClass()) ? clazz : null);
++            }
++
++            @Override
++            public Class<? extends B> getBaseClass() {
++                return clazz;
++            }
++        };
++    }
++    // Paper end
+ 
+     public BaseSpawner() {}
+ 
+@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
+                             return;
+                         }
+ 
+-                        int k = world.getEntitiesOfClass(entity.getClass(), (new AABB((double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), (double) (pos.getX() + 1), (double) (pos.getY() + 1), (double) (pos.getZ() + 1))).inflate((double) this.spawnRange)).size();
++                        int k = world.getEntities(forExactClass(entity.getClass()), (new AABB((double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), (double) (pos.getX() + 1), (double) (pos.getY() + 1), (double) (pos.getZ() + 1))).inflate((double) this.spawnRange), net.minecraft.world.entity.EntitySelector.NO_SPECTATORS).size(); // Paper - Fix MC-259321 (only count exact entity types for nearby checks)
+ 
+                         if (k >= this.maxNearbyEntities) {
+                             this.delay(world, pos);
 diff --git a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
