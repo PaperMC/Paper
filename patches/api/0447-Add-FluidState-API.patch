@@ -1,0 +1,171 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: vicisacat <victor.branchu@gmail.com>
+Date: Fri, 17 Nov 2023 20:21:47 +0100
+Subject: [PATCH] Add FluidState API
+
+
+diff --git a/src/main/java/io/papermc/paper/block/fluid/FluidData.java b/src/main/java/io/papermc/paper/block/fluid/FluidData.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9a8be16dc1f12cb6b91e2d6d177a2e16e0ea2975
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/fluid/FluidData.java
+@@ -0,0 +1,75 @@
++package io.papermc.paper.block.fluid;
++
++import io.papermc.paper.math.Position;
++import org.bukkit.Fluid;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
++
++public interface FluidData extends Cloneable {
++
++    /**
++     * Gets the fluid type of this fluid data.
++     *
++     * @return the fluid type
++     */
++    @NotNull Fluid getFluidType();
++
++    /**
++     * Returns a copy of this FluidData.
++     *
++     * @return a copy of the fluid data
++     */
++    @NotNull FluidData clone();
++
++    /**
++     * Returns the flowing direction the liquid as a vector
++     *
++     * @return the flow direction vector
++     */
++    Vector getFlowDirection(World world, Location location);
++
++    /**
++     * Returns the amount of liquid is in the fluid, as in the number of layers.
++     *
++     * @return the amount as an integer, between 0 and 9
++     */
++    int getAmount();
++
++    /**
++     * Returns the height of the fluid in blocks
++     *
++     * @return the height as a float value, representing the height in blocks
++     */
++    float getHeight();
++
++    /**
++     * Returns whether this fluid is the same fluid as the one passed in the parameter
++     *
++     * @param fluid a fluid
++     * @return true if they are the same, false otherwise
++     */
++    boolean is(Fluid fluid);
++
++    /**
++     * Returns whether this fluid is a source block
++     *
++     * @return true if the fluid is a source block, false otherwise
++     */
++    boolean isSource();
++
++    /**
++     * Returns whether this fluid is water.
++     *
++     * @return true if the fluid is water, false otherwise
++     */
++    boolean isWater();
++
++    /**
++     * Returns whether this fluid is lava.
++     *
++     * @return true if the fluid is lava, false otherwise
++     */
++    boolean isLava();
++}
+diff --git a/src/main/java/io/papermc/paper/block/fluid/type/FallingFluid.java b/src/main/java/io/papermc/paper/block/fluid/type/FallingFluid.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..360a27fca76b0e63aa458aa3425a987224a4ac79
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/fluid/type/FallingFluid.java
+@@ -0,0 +1,13 @@
++package io.papermc.paper.block.fluid.type;
++
++import io.papermc.paper.block.fluid.FluidData;
++
++public interface FallingFluid extends FluidData {
++
++    /**
++     * Get if this liquid is falling.
++     *
++     * @return true if falling
++     */
++    boolean isFalling();
++}
+diff --git a/src/main/java/io/papermc/paper/block/fluid/type/Flowing.java b/src/main/java/io/papermc/paper/block/fluid/type/Flowing.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..14589b2de95e0f679fe9785e06648ace56449885
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/fluid/type/Flowing.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.block.fluid.type;
++
++public interface Flowing extends FallingFluid {
++
++    /**
++     * Get the level of the flowing liquid.
++     *
++     * @return the level
++     */
++    int getLevel();
++
++    /**
++     * Get the minimum possible level for the liquid.
++     *
++     * @return the minimum level
++     */
++    int getMinimumLevel();
++
++    /**
++     * Get the maximum possible level for the liquid.
++     *
++     * @return the maximum level
++     */
++    int getMaximumLevel();
++
++}
+diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
+index cbb51dde78f792db4ddac43f144d23ff4b12d25f..440af5ed52bed8fac0d9fa47b9cb1eaf1716f8bd 100644
+--- a/src/main/java/org/bukkit/RegionAccessor.java
++++ b/src/main/java/org/bukkit/RegionAccessor.java
+@@ -102,6 +102,28 @@ public interface RegionAccessor extends Keyed { // Paper
+      */
+     @NotNull
+     BlockState getBlockState(int x, int y, int z);
++    // Paper Start - FluidState API
++
++    /**
++     * Gets the {@link io.papermc.paper.block.fluid.FluidData} at the specified position.
++     *
++     * @param x The x-coordinate of the position
++     * @param y The y-coordinate of the position
++     * @param z The z-coordinate of the position
++     * @return The {@link io.papermc.paper.block.fluid.FluidData} at the specified position
++     */
++    @NotNull
++    public io.papermc.paper.block.fluid.FluidData getFluidAt(int x, int y, int z);
++
++    /**
++     * Gets the {@link io.papermc.paper.block.fluid.FluidData} at the given {@link Location}
++     *
++     * @param location The location of the fluid
++     * @return The fluid data at the given location
++     */
++    @NotNull
++    public io.papermc.paper.block.fluid.FluidData getFluidAt(Location location);
++    // Paper End
+ 
+     /**
+      * Gets the {@link BlockData} at the given {@link Location}.
