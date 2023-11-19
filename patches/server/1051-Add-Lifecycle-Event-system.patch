@@ -51,17 +51,17 @@ index 30b50e6294c6eaade5e17cfaf34600d122e6251c..0d87642efcf446f96f6a5e932bd03d51
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7a28cb68ef78bba70243ae0acdcd6b607094d760
+index 0000000000000000000000000000000000000000..864036e430f14e8b2ab1370ae37ad984c21b0a61
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,53 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
 +import com.mojang.logging.LogUtils;
-+import io.papermc.paper.plugin.lifecycle.event.registrar.ResourceRegistrar;
 +import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEventImpl;
++import io.papermc.paper.plugin.lifecycle.event.registrar.ResourceRegistrar;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.StaticRegistrarEventImpl;
 +import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
 +import org.bukkit.plugin.Plugin;
@@ -70,11 +70,12 @@ index 0000000000000000000000000000000000000000..7a28cb68ef78bba70243ae0acdcd6b60
 +import org.slf4j.Logger;
 +
 +@DefaultQualifier(NonNull.class)
-+public final class LifecycleEventRunner {
++public class LifecycleEventRunner {
++    public static final LifecycleEventRunner INSTANCE = new LifecycleEventRunner();
 +
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
-+    public static <O extends LifecycleEventOwner, E extends LifecycleEvent> void callEvent(final LifecycleEventType<O, E> eventType, final E event) {
++    public <O extends LifecycleEventOwner, E extends LifecycleEvent> void callEvent(final LifecycleEventType<O, E> eventType, final E event) {
 +        final AbstractLifecycleEventType<O, E> lifecycleEventType = (AbstractLifecycleEventType<O, E>) eventType;
 +        lifecycleEventType.forEachHandler(registeredHandler -> {
 +            try {
@@ -85,23 +86,23 @@ index 0000000000000000000000000000000000000000..7a28cb68ef78bba70243ae0acdcd6b60
 +        });
 +    }
 +
-+    public static void unregisterAllEventHandlersFor(final Plugin plugin) {
-+        for (final LifecycleEventType<?, ?> lifecycleEventType : LifecycleEvents.LIFECYCLE_EVENT_TYPES) {
-+            removeEventHandlersOwnedBy(lifecycleEventType, plugin);
++    public void unregisterAllEventHandlersFor(final Plugin plugin) {
++        for (final LifecycleEventType<?, ?> lifecycleEventType : LifecycleEventTypeProviderImpl.instance().eventTypes()) {
++            this.removeEventHandlersOwnedBy(lifecycleEventType, plugin);
 +        }
 +    }
 +
-+    private static <O extends LifecycleEventOwner> void removeEventHandlersOwnedBy(final LifecycleEventType<O, ?> eventType, final Plugin possibleOwner) {
++    private <O extends LifecycleEventOwner> void removeEventHandlersOwnedBy(final LifecycleEventType<O, ?> eventType, final Plugin possibleOwner) {
 +        final AbstractLifecycleEventType<O, ?> lifecycleEventType = (AbstractLifecycleEventType<O, ?>) eventType;
 +        lifecycleEventType.removeMatching(registeredHandler -> registeredHandler.owner().getPluginMeta().getName().equals(possibleOwner.getPluginMeta().getName()));
 +    }
 +
-+    public static <O extends LifecycleEventOwner, R extends ResourceRegistrar> void callStaticRegistrarEvent(final LifecycleEventType<O, RegistrarEvent<R>> lifecycleEventType, final R registrar) {
-+        callEvent(lifecycleEventType, new StaticRegistrarEventImpl<>(registrar));
++    public <O extends LifecycleEventOwner, R extends ResourceRegistrar> void callStaticRegistrarEvent(final LifecycleEventType<O, RegistrarEvent<R>> lifecycleEventType, final R registrar) {
++        this.callEvent(lifecycleEventType, new StaticRegistrarEventImpl<>(registrar));
 +    }
 +
-+    public static <O extends LifecycleEventOwner, R extends ResourceRegistrar> void callReloadableRegistrarEvent(final LifecycleEventType<O, RegistrarEvent.Reloadable<R>> lifecycleEventType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
-+        callEvent(lifecycleEventType, new ReloadableRegistrarEventImpl<>(registrar, cause));
++    public <O extends LifecycleEventOwner, R extends ResourceRegistrar> void callReloadableRegistrarEvent(final LifecycleEventType<O, RegistrarEvent.Reloadable<R>> lifecycleEventType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
++        this.callEvent(lifecycleEventType, new ReloadableRegistrarEventImpl<>(registrar, cause));
 +    }
 +
 +    private LifecycleEventRunner() {
@@ -109,15 +110,18 @@ index 0000000000000000000000000000000000000000..7a28cb68ef78bba70243ae0acdcd6b60
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..febbdfc7ecbd5c6e5be58c134c850acdc396e118
+index 0000000000000000000000000000000000000000..39b96f664eb40829c5e2e832d2993fc54fd77d89
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
 +import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.types.PrioritizedLifecycleEventType;
 +import io.papermc.paper.plugin.lifecycle.event.types.SimpleLifecycleEventType;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
 +import org.bukkit.plugin.Plugin;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -125,14 +129,29 @@ index 0000000000000000000000000000000000000000..febbdfc7ecbd5c6e5be58c134c850acd
 +@DefaultQualifier(NonNull.class)
 +public final class LifecycleEventTypeProviderImpl extends LifecycleEventTypeProvider {
 +
++    private final List<LifecycleEventType<?, ?>> lifecycleEventTypes = new ArrayList<>();
++
++    public static LifecycleEventTypeProviderImpl instance() {
++        return (LifecycleEventTypeProviderImpl) LifecycleEventTypeProvider.PROVIDER;
++    }
++
++    public List<LifecycleEventType<?, ?>> eventTypes() {
++        return Collections.unmodifiableList(this.lifecycleEventTypes);
++    }
++
 +    @Override
 +    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType<O, E> simple(final String name, final Class<? extends O> ownerType) {
-+        return new SimpleLifecycleEventType<>(name, ownerType);
++        return this.add(new SimpleLifecycleEventType<>(name, ownerType));
 +    }
 +
 +    @Override
 +    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritized<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
-+        return new PrioritizedLifecycleEventType<>(name, ownerType);
++        return this.add(new PrioritizedLifecycleEventType<>(name, ownerType));
++    }
++
++    private <O extends LifecycleEventOwner, E extends LifecycleEvent, ET extends LifecycleEventType<O, E>> ET add(final ET eventType) {
++        this.lifecycleEventTypes.add(eventType);
++        return eventType;
 +    }
 +
 +    @Override
