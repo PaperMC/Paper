@@ -207,13 +207,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.configuration.WorldConfiguration;
 +import io.papermc.paper.configuration.type.EngineMode;
++import java.util.ArrayList;
++import java.util.LinkedHashSet;
++import java.util.LinkedList;
++import java.util.List;
++import java.util.Set;
++import java.util.concurrent.Executor;
++import java.util.concurrent.ThreadLocalRandom;
++import java.util.function.IntSupplier;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.core.Direction;
-+import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 +import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
-+import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
@@ -225,13 +231,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.EntityBlock;
 +import net.minecraft.world.level.block.state.BlockState;
-+import net.minecraft.world.level.chunk.*;
++import net.minecraft.world.level.chunk.EmptyLevelChunk;
++import net.minecraft.world.level.chunk.GlobalPalette;
++import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.LevelChunkSection;
++import net.minecraft.world.level.chunk.MissingPaletteEntryException;
++import net.minecraft.world.level.chunk.Palette;
 +import org.bukkit.Bukkit;
-+
-+import java.util.*;
-+import java.util.concurrent.Executor;
-+import java.util.concurrent.ThreadLocalRandom;
-+import java.util.function.IntSupplier;
 +
 +public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
 +
@@ -265,7 +271,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        maxBlockHeight = paperWorldConfig.maxBlockHeight >> 4 << 4;
 +        updateRadius = paperWorldConfig.updateRadius;
 +        usePermission = paperWorldConfig.usePermission;
-+        List<String> toObfuscate;
++        List<Block> toObfuscate;
 +
 +        if (engineMode == EngineMode.HIDE) {
 +            toObfuscate = paperWorldConfig.hiddenBlocks;
@@ -284,11 +290,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            toObfuscate = new ArrayList<>(paperWorldConfig.replacementBlocks);
 +            List<BlockState> presetBlockStateList = new LinkedList<>();
 +
-+            for (String id : paperWorldConfig.hiddenBlocks) {
-+                Block block = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(id)).orElse(null);
++            for (Block block : paperWorldConfig.hiddenBlocks) {
 +
-+                if (block != null && !(block instanceof EntityBlock)) {
-+                    toObfuscate.add(id);
++                if (!(block instanceof EntityBlock)) {
++                    toObfuscate.add(block);
 +                    presetBlockStateList.add(block.defaultBlockState());
 +                }
 +            }
@@ -315,8 +320,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            presetBlockStateBitsEndStoneGlobal = null;
 +        }
 +
-+        for (String id : toObfuscate) {
-+            Block block = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(id)).orElse(null);
++        for (Block block : toObfuscate) {
 +
 +            // Don't obfuscate air because air causes unnecessary block updates and causes block updates to fail in the void
 +            if (block != null && !block.defaultBlockState().isAir()) {
@@ -1107,8 +1111,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig))); // Paper
-+        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig)), executor); // Paper - Async-Anti-Xray - Pass executor
+-        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess()))); // Paper
++        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), executor); // Paper - Async-Anti-Xray - Pass executor
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
