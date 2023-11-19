@@ -14,6 +14,7 @@ import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.banner.Pattern;
+import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -42,6 +43,7 @@ public class ConfigurationSerialization {
         registerClass(Location.class);
         registerClass(AttributeModifier.class);
         registerClass(BoundingBox.class);
+        registerClass(SpawnRule.class);
     }
 
     protected ConfigurationSerialization(@NotNull Class<? extends ConfigurationSerializable> clazz) {

@@ -280,6 +280,24 @@ public interface RegionAccessor {
     Collection<Entity> getEntitiesByClasses(@NotNull Class<?>... classes);
 
     /**
+     * Creates an entity of a specific class at the given {@link Location} but
+     * does not spawn it in the world.
+     * <p>
+     * <b>Note:</b> The created entity keeps a reference to the world it was
+     * created in, care should be taken that the entity does not outlive the
+     * world instance as this will lead to memory leaks.
+     *
+     * @param <T> the class of the {@link Entity} to create
+     * @param location the {@link Location} to create the entity at
+     * @param clazz the class of the {@link Entity} to spawn
+     * @return an instance of the created {@link Entity}
+     * @see #addEntity(Entity)
+     * @see Entity#createSnapshot()
+     */
+    @NotNull
+    <T extends Entity> T createEntity(@NotNull Location location, @NotNull Class<T> clazz);
+
+    /**
      * Spawn an entity of a specific class at the given {@link Location}
      *
      * @param location the {@link Location} to spawn the entity at
@@ -393,4 +411,15 @@ public interface RegionAccessor {
      * {@link HeightMap}
      */
     public int getHighestBlockYAt(@NotNull Location location, @NotNull HeightMap heightMap);
+
+    /**
+     * Spawns a previously created entity in the world. <br>
+     * The provided entity must not have already been spawned in a world.
+     *
+     * @param <T> the generic type of the entity that is being added.
+     * @param entity the entity to add
+     * @return the entity now in the world
+     */
+    @NotNull
+    public <T extends Entity> T addEntity(@NotNull T entity);
 }

@@ -1,6 +1,12 @@
 package org.bukkit.block;
 
+import java.util.Collection;
+import java.util.List;
+import org.bukkit.block.spawner.SpawnRule;
+import org.bukkit.block.spawner.SpawnerEntry;
+import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -17,7 +23,8 @@ public interface CreatureSpawner extends TileState {
     public EntityType getSpawnedType();
 
     /**
-     * Set the spawner's creature type.
+     * Set the spawner's creature type. <br>
+     * This will override any entities that have been added with {@link #addPotentialSpawn}
      *
      * @param creatureType The creature type or null to clear.
      */
@@ -199,4 +206,75 @@ public interface CreatureSpawner extends TileState {
      * @see #getSpawnRange()
      */
     public void setSpawnRange(int spawnRange);
+
+    /**
+     * Gets the {@link EntitySnapshot} that will be spawned by this spawner or null
+     * if no entities have been assigned to this spawner. <br>
+     * <p>
+     * All applicable data from the spawner will be copied, such as custom name,
+     * health, and velocity. <br>
+     *
+     * @return the entity snapshot or null if no entities have been assigned to this
+     *         spawner.
+     */
+    @Nullable
+    public EntitySnapshot getSpawnedEntity();
+
+    /**
+     * Sets the entity that will be spawned by this spawner. <br>
+     * This will override any previous entries that have been added with
+     * {@link #addPotentialSpawn}
+     * <p>
+     * All applicable data from the snapshot will be copied, such as custom name,
+     * health, and velocity. <br>
+     *
+     * @param snapshot the entity snapshot
+     */
+    public void setSpawnedEntity(@NotNull EntitySnapshot snapshot);
+
+    /**
+     * Adds a new {@link EntitySnapshot} to the list of entities this spawner can
+     * spawn.
+     * <p>
+     * The weight will determine how often this entry is chosen to spawn, higher
+     * weighted entries will spawn more often than lower weighted ones. <br>
+     * The {@link SpawnRule} will determine under what conditions this entry can
+     * spawn, passing null will use the default conditions for the given entity.
+     *
+     * @param snapshot  the snapshot that will be spawned
+     * @param weight    the weight
+     * @param spawnRule the spawn rule for this entity, or null
+     */
+    public void addPotentialSpawn(@NotNull EntitySnapshot snapshot, int weight, @Nullable SpawnRule spawnRule);
+
+    /**
+     * Adds a new {@link SpawnerEntry} to the list of entities this spawner can
+     * spawn. <br>
+     *
+     * @param spawnerEntry the spawner entry to use
+     * @see #addPotentialSpawn(EntitySnapshot, int, SpawnRule)
+     */
+    public void addPotentialSpawn(@NotNull final SpawnerEntry spawnerEntry);
+
+    /**
+     * Sets the list of {@link SpawnerEntry} this spawner can spawn. <br>
+     * This will override any previous entries added with
+     * {@link #addPotentialSpawn}
+     *
+     * @param entries the list of entries
+     */
+    public void setPotentialSpawns(@NotNull final Collection<SpawnerEntry> entries);
+
+    /**
+     * Gets a list of potential spawns from this spawner or an empty list if no
+     * entities have been assigned to this spawner. <br>
+     * Changes made to the returned list will not be reflected in the spawner unless
+     * applied with {@link #setPotentialSpawns}
+     *
+     * @return a list of potential spawns from this spawner, or an empty list if no
+     *         entities have been assigned to this spawner
+     * @see #getSpawnedType()
+     */
+    @NotNull
+    public List<SpawnerEntry> getPotentialSpawns();
 }

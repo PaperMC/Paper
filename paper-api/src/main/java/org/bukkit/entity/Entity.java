@@ -26,6 +26,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a base entity in the world
+ * <p>
+ * Not all methods are guaranteed to work/may have side effects when
+ * {@link #isInWorld()} is false.
  */
 public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder {
 
@@ -265,8 +268,8 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean isDead();
 
     /**
-     * Returns false if the entity has died or been despawned for some other
-     * reason.
+     * Returns false if the entity has died, been despawned for some other
+     * reason, or has not been added to the world.
      *
      * @return True if valid.
      */
@@ -714,4 +717,43 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull
     SpawnCategory getSpawnCategory();
+
+    /**
+     * Checks if this entity has been spawned in a world. <br>
+     * Entities not spawned in a world will not tick, be sent to players, or be
+     * saved to the server files.
+     *
+     * @return whether the entity has been spawned in a world
+     */
+    boolean isInWorld();
+
+    /**
+     * Crates an {@link EntitySnapshot} representing the current state of this entity.
+     *
+     * @return a snapshot representing this entity or null if one cannot be made
+     */
+    @Nullable
+    @ApiStatus.Experimental
+    EntitySnapshot createSnapshot();
+
+    /**
+     * Creates a copy of this entity and all its data. Does not spawn the copy in
+     * the world. <br>
+     * <b>Note:</b> Players cannot be copied.
+     *
+     * @return a copy of this entity.
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    Entity copy();
+
+    /**
+     * Creates a copy of this entity and all its data. Spawns the copy at the given location. <br>
+     * <b>Note:</b> Players cannot be copied.
+     * @param to the location to copy to
+     * @return a copy of this entity.
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    Entity copy(@NotNull Location to);
 }
