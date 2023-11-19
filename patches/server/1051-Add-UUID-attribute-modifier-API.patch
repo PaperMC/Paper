@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TonytheMacaroni <tonythemacaroni123@gmail.com>
+Date: Thu, 9 Nov 2023 20:34:44 -0500
+Subject: [PATCH] Add UUID attribute modifier API
+
+
+diff --git a/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java
+index 52439f4b959c74027eb191a3af960c70beb978e8..a2c057d92ea34368c7efc538b6e5b15ef342c54e 100644
+--- a/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java
++++ b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java
+@@ -5,6 +5,7 @@ import org.bukkit.attribute.Attribute;
+ import org.bukkit.attribute.AttributeModifier;
+ import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
+ 
++import java.util.UUID;
+ import java.util.Collection;
+ 
+ public class UnmodifiableAttributeInstance extends CraftAttributeInstance {
+@@ -18,6 +19,11 @@ public class UnmodifiableAttributeInstance extends CraftAttributeInstance {
+         throw new UnsupportedOperationException("Cannot modify default attributes");
+     }
+ 
++    @Override
++    public void removeModifier(UUID uuid) {
++        throw new UnsupportedOperationException("Cannot modify default attributes");
++    }
++
+     @Override
+     public void addModifier(AttributeModifier modifier) {
+         throw new UnsupportedOperationException("Cannot modify default attributes");
+diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java
+index 0029412b1242879deb898524001bb4cc7550fa78..8e8b0a09ef58a4a3ccc31f2e11a0d6b9f3ee9b39 100644
+--- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java
++++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java
+@@ -44,6 +44,21 @@ public class CraftAttributeInstance implements AttributeInstance {
+         return result;
+     }
+ 
++    // Paper start
++    @Override
++    public AttributeModifier getModifier(java.util.UUID uuid) {
++        Preconditions.checkArgument(uuid != null, "UUID cannot be null");
++        net.minecraft.world.entity.ai.attributes.AttributeModifier modifier = this.handle.getModifier(uuid);
++        return modifier == null ? null : CraftAttributeInstance.convert(modifier);
++    }
++
++    @Override
++    public void removeModifier(java.util.UUID uuid) {
++        Preconditions.checkArgument(uuid != null, "UUID cannot be null");
++        this.handle.removeModifier(uuid);
++    }
++    // Paper end
++
+     @Override
+     public void addModifier(AttributeModifier modifier) {
+         Preconditions.checkArgument(modifier != null, "modifier");
