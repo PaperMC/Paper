@@ -823,6 +823,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    public void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, SpawnReason reason) {
+        getHandle().tryAddFreshEntityWithPassengers(entity, reason);
+    }
+
+    @Override
     public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z) {
         return this.getNearbyEntities(location, x, y, z, null);
     }

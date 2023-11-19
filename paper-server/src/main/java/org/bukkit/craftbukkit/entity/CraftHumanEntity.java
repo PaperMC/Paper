@@ -38,6 +38,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
@@ -683,5 +684,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         EntityFireworks fireworks = new EntityFireworks(getHandle().level(), CraftItemStack.asNMSCopy(fireworkItemStack), getHandle());
         boolean success = getHandle().level().addFreshEntity(fireworks, SpawnReason.CUSTOM);
         return success ? (Firework) fireworks.getBukkitEntity() : null;
+    }
+
+    @Override
+    public org.bukkit.entity.Entity copy() {
+        throw new UnsupportedOperationException("Cannot copy human entities");
+    }
+
+    @Override
+    public org.bukkit.entity.Entity copy(Location location) {
+        throw new UnsupportedOperationException("Cannot copy human entities");
     }
 }

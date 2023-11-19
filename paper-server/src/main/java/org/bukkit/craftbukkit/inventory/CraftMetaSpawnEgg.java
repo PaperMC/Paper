@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Sets;
 import java.util.Map;
@@ -9,7 +10,9 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.resources.MinecraftKey;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.entity.CraftEntitySnapshot;
 import org.bukkit.craftbukkit.util.CraftLegacy;
+import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.material.MaterialData;
@@ -214,6 +217,17 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     @Override
     public void setSpawnedType(EntityType type) {
         throw new UnsupportedOperationException("Must change item type to set spawned type");
+    }
+
+    @Override
+    public EntitySnapshot getSpawnedEntity() {
+        return CraftEntitySnapshot.create(this.entityTag);
+    }
+
+    @Override
+    public void setSpawnedEntity(EntitySnapshot snapshot) {
+        Preconditions.checkArgument(snapshot.getEntityType().isSpawnable(), "Entity is not spawnable");
+        this.entityTag = ((CraftEntitySnapshot) snapshot).getData();
     }
 
     @Override

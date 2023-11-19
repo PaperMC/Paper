@@ -64,6 +64,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
@@ -529,6 +530,18 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public abstract Iterable<net.minecraft.world.entity.Entity> getNMSEntities();
 
     @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Entity> T createEntity(Location location, Class<T> clazz) throws IllegalArgumentException {
+        net.minecraft.world.entity.Entity entity = createEntity(location, clazz, true);
+
+        if (!isNormalWorld()) {
+            entity.generation = true;
+        }
+
+        return (T) entity.getBukkitEntity();
+    }
+
+    @Override
     public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException {
         return spawn(location, clazz, null, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
@@ -551,6 +564,19 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         net.minecraft.world.entity.Entity entity = createEntity(location, clazz, randomizeData);
 
         return addEntity(entity, reason, function, randomizeData);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Entity> T addEntity(T entity) {
+        Preconditions.checkArgument(!entity.isInWorld(), "Entity has already been added to a world");
+        net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
+        if (nmsEntity.level() != getHandle().getLevel()) {
+            nmsEntity = nmsEntity.changeDimension(getHandle().getLevel());
+        }
+
+        addEntityWithPassengers(nmsEntity, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        return (T) nmsEntity.getBukkitEntity();
     }
 
     @SuppressWarnings("unchecked")
@@ -580,8 +606,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     public abstract void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
+    public abstract void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
+
     @SuppressWarnings("unchecked")
-    public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz) throws IllegalArgumentException {
+    public net.minecraft.world.entity.Entity makeEntity(Location location, Class<? extends Entity> clazz) throws IllegalArgumentException {
         return createEntity(location, clazz, true);
     }
 
