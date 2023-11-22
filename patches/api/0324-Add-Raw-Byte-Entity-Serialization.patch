@@ -3,28 +3,130 @@ From: Mariell Hoversholm <proximyst@proximyst.com>
 Date: Sun, 24 Oct 2021 16:19:26 -0400
 Subject: [PATCH] Add Raw Byte Entity Serialization
 
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
 
+diff --git a/src/main/java/io/papermc/paper/entity/EntitySerializationFlag.java b/src/main/java/io/papermc/paper/entity/EntitySerializationFlag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ae8551566c67130a6d88d4d7a22a60cdf381fa81
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/EntitySerializationFlag.java
+@@ -0,0 +1,34 @@
++package io.papermc.paper.entity;
++
++import org.bukkit.UnsafeValues;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++
++/**
++ * Represents flags for entity serialization.
++ *
++ * @see UnsafeValues#serializeEntity(Entity, EntitySerializationFlag... serializationFlags)
++ */
++public enum EntitySerializationFlag {
++
++    /**
++     * Serialize invalid (dead, unloaded, etc.) entities.
++     *
++     * @see Entity#isValid()
++     */
++    FORCE,
++    /**
++     * Serialize misc non-savable entities like lighting bolts, fishing bobbers, etc.
++     */
++    MISC,
++    /**
++     * Include passengers in the serialized data.
++     */
++    PASSENGERS,
++    /**
++     * Allow serializing {@link Player}s.
++     * <p>Note: deserializing player data will always fail.
++     */
++    PLAYER;
++
++}
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 7dc808f94c42e821fa125073b1a9b853e16d5b41..fc0356b0600946af0a46312cee16b080a7769ae2 100644
+index 7dc808f94c42e821fa125073b1a9b853e16d5b41..f3ac929e554bc108be1f5fd6ed2710f8a6239039 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -139,6 +139,14 @@ public interface UnsafeValues {
+@@ -139,6 +139,75 @@ public interface UnsafeValues {
  
      ItemStack deserializeItem(byte[] data);
  
-+    byte[] serializeEntity(org.bukkit.entity.Entity entity);
++    /**
++     * Serializes the provided entity.
++     *
++     * @param entity entity
++     * @return serialized entity data
++     * @see #serializeEntity(org.bukkit.entity.Entity, io.papermc.paper.entity.EntitySerializationFlag...)
++     * @see #deserializeEntity(byte[], World, boolean, boolean)
++     */
++    default byte[] serializeEntity(@org.jetbrains.annotations.NotNull org.bukkit.entity.Entity entity) {
++        return serializeEntity(entity, new io.papermc.paper.entity.EntitySerializationFlag[0]);
++    }
 +
-+    default org.bukkit.entity.Entity deserializeEntity(byte[] data, World world) {
++    /**
++     * Serializes the provided entity.
++     *
++     * @param entity entity
++     * @param serializationFlags serialization flags
++     * @return serialized entity data
++     * @see #deserializeEntity(byte[], World, boolean, boolean)
++     */
++    byte[] serializeEntity(@org.jetbrains.annotations.NotNull org.bukkit.entity.Entity entity, @org.jetbrains.annotations.NotNull io.papermc.paper.entity.EntitySerializationFlag... serializationFlags);
++
++    /**
++     * Deserializes the entity from data.
++     * The entity's {@link java.util.UUID} as well as passengers will not be preserved.
++     *
++     * @param data serialized entity data
++     * @param world world
++     * @return deserialized entity
++     *
++     * @see #deserializeEntity(byte[], World, boolean, boolean)
++     * @see #serializeEntity(org.bukkit.entity.Entity, io.papermc.paper.entity.EntitySerializationFlag...)
++     * @see org.bukkit.entity.Entity#spawnAt(Location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason)
++     */
++    default org.bukkit.entity.Entity deserializeEntity(byte[] data, @org.jetbrains.annotations.NotNull World world) {
 +        return deserializeEntity(data, world, false);
 +    }
 +
-+    org.bukkit.entity.Entity deserializeEntity(byte[] data, World world, boolean preserveUUID);
++    /**
++     * Deserializes the entity from data.
++     * The entity's passengers will not be preserved.
++     *
++     * @param data serialized entity data
++     * @param world world
++     * @param preserveUUID whether to preserve uuid
++     * @return deserialized entity
++     *
++     * @see #deserializeEntity(byte[], World, boolean, boolean)
++     * @see #serializeEntity(org.bukkit.entity.Entity, io.papermc.paper.entity.EntitySerializationFlag...)
++     * @see org.bukkit.entity.Entity#spawnAt(Location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason)
++     */
++    default org.bukkit.entity.Entity deserializeEntity(byte[] data, @org.jetbrains.annotations.NotNull World world, boolean preserveUUID) {
++        return deserializeEntity(data, world, preserveUUID, false);
++    }
++
++    /**
++     * Deserializes the entity from data.
++     *
++     * @param data serialized entity data
++     * @param world world
++     * @param preserveUUID whether to preserve uuids of the entity and its passengers
++     * @param preservePassengers whether to preserve passengers
++     * @return deserialized entity
++     *
++     * @see #serializeEntity(org.bukkit.entity.Entity, io.papermc.paper.entity.EntitySerializationFlag...)
++     * @see org.bukkit.entity.Entity#spawnAt(Location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason)
++     */
++    org.bukkit.entity.Entity deserializeEntity(byte[] data, @org.jetbrains.annotations.NotNull World world, boolean preserveUUID, boolean preservePassengers);
 +
      /**
       * Creates and returns the next EntityId available.
       * <p>
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index e0e3af0f229f8af66de70d7b741200e301476677..765777b10f5984b0fbdf22ef884e79745d06b4ff 100644
+index e0e3af0f229f8af66de70d7b741200e301476677..51b4d0fa8d7764527abf994b59aeb2996d2f63c0 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -850,5 +850,32 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
@@ -39,10 +141,10 @@ index e0e3af0f229f8af66de70d7b741200e301476677..765777b10f5984b0fbdf22ef884e7974
 +     * <p>
 +     * Also, this method will fire the same events as a normal entity spawn.
 +     *
-+     * @param location The location to spawn the entity at.
-+     * @return Whether the entity was successfully spawned.
++     * @param location the location to spawn the entity at
++     * @return whether the entity was successfully spawned
 +     */
-+    public default boolean spawnAt(@NotNull Location location) {
++    default boolean spawnAt(@NotNull Location location) {
 +        return spawnAt(location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
@@ -53,10 +155,10 @@ index e0e3af0f229f8af66de70d7b741200e301476677..765777b10f5984b0fbdf22ef884e7974
 +     * <p>
 +     * Also, this method will fire the same events as a normal entity spawn.
 +     *
-+     * @param location The location to spawn the entity at.
-+     * @param reason   The reason for the entity being spawned.
-+     * @return Whether the entity was successfully spawned.
++     * @param location the location to spawn the entity at
++     * @param reason the reason for the entity being spawned
++     * @return whether the entity was successfully spawned
 +     */
-+    public boolean spawnAt(@NotNull Location location, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason);
++    boolean spawnAt(@NotNull Location location, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason);
      // Paper end
  }
