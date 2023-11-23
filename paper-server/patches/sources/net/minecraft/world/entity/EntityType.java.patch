@@ -34,14 +34,14 @@
 +        // CraftBukkit start
 +        return this.spawn(world, stack, player, pos, spawnReason, alignPosition, invertY, spawnReason == EntitySpawnReason.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
 +    }
-+
+ 
+-        if (stack != null) {
+-            consumer = EntityType.createDefaultStackConfig(world, stack, player);
 +    @Nullable
 +    public T spawn(ServerLevel worldserver, @Nullable ItemStack itemstack, @Nullable Player entityhuman, BlockPos blockposition, EntitySpawnReason entityspawnreason, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        // CraftBukkit end
 +        Consumer<T> consumer; // CraftBukkit - decompile error
- 
--        if (stack != null) {
--            consumer = EntityType.createDefaultStackConfig(world, stack, player);
++
 +        if (itemstack != null) {
 +            consumer = EntityType.createDefaultStackConfig(worldserver, itemstack, entityhuman);
          } else {
@@ -125,7 +125,23 @@
                      nbt.loadInto(entity);
                  }
              }
-@@ -657,7 +703,7 @@
+@@ -613,9 +659,15 @@
+     }
+ 
+     public static Optional<Entity> create(CompoundTag nbt, Level world, EntitySpawnReason reason) {
++    // Paper start - Don't fire sync event during generation
++        return create(nbt, world, reason, false);
++    }
++    public static Optional<Entity> create(CompoundTag nbt, Level world, EntitySpawnReason reason, boolean generation) {
++    // Paper end - Don't fire sync event during generation
+         return Util.ifElse(EntityType.by(nbt).map((entitytypes) -> {
+             return entitytypes.create(world, reason);
+         }), (entity) -> {
++            if (generation) entity.generation = true; // Paper - Don't fire sync event during generation
+             entity.load(nbt);
+         }, () -> {
+             EntityType.LOGGER.warn("Skipping Entity with id {}", nbt.getString("id"));
+@@ -657,7 +709,7 @@
              }
  
              return entity;
@@ -134,7 +150,7 @@
      }
  
      public static Stream<Entity> loadEntitiesRecursive(final List<? extends Tag> entityNbtList, final Level world, final EntitySpawnReason reason) {
-@@ -718,7 +764,7 @@
+@@ -718,7 +770,7 @@
  
      @Nullable
      public T tryCast(Entity obj) {
@@ -143,7 +159,7 @@
      }
  
      @Override
-@@ -791,7 +837,7 @@
+@@ -791,7 +843,7 @@
              this.canSpawnFarFromPlayer = spawnGroup == MobCategory.CREATURE || spawnGroup == MobCategory.MISC;
          }
  
