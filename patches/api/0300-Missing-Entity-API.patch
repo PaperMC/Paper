@@ -78,10 +78,10 @@ index 0000000000000000000000000000000000000000..39ad7d283609d7e427a2ab35b6fad839
 +}
 diff --git a/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fb36d426292a56fde16bc3a61e8c25ee36f7789a
+index 0000000000000000000000000000000000000000..d2e1b9d867394e46e9491bf9e9cfa53c843ef16b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,36 @@
 +package io.papermc.paper.potion;
 +
 +import org.bukkit.potion.PotionEffectType;
@@ -90,7 +90,7 @@ index 0000000000000000000000000000000000000000..fb36d426292a56fde16bc3a61e8c25ee
 +/**
 + * Represents an effect paired with a duration.
 + */
-+public interface SuspiciousEffectEntry {
++public sealed interface SuspiciousEffectEntry permits SuspiciousEffectEntryImpl {
 +
 +    /**
 +      * Gets the effect type.
@@ -114,19 +114,21 @@ index 0000000000000000000000000000000000000000..fb36d426292a56fde16bc3a61e8c25ee
 +     * @return new instance
 +     */
 +    @NotNull
-+    static SuspiciousEffectEntry potionEffectPair(PotionEffectType effectType, int duration) {
-+        return new SuspiciousEffectEntry() {
-+            @Override
-+            public @NotNull PotionEffectType effect() {
-+                return effectType;
-+            }
-+
-+            @Override
-+            public int duration() {
-+                return duration;
-+            }
-+        };
++    static SuspiciousEffectEntry suspiciousEffectEntry(PotionEffectType effectType, int duration) {
++        return new SuspiciousEffectEntryImpl(effectType, duration);
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntryImpl.java b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntryImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..46c231dafc2d4d1b645434ab0aceffa63603d325
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntryImpl.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper.potion;
++
++import org.bukkit.potion.PotionEffectType;
++
++record SuspiciousEffectEntryImpl(PotionEffectType effect, int duration) implements SuspiciousEffectEntry {
 +}
 diff --git a/src/main/java/org/bukkit/entity/AbstractHorse.java b/src/main/java/org/bukkit/entity/AbstractHorse.java
 index 0d88dce9978243a1f995c5fb448c5d71b01136eb..8b1048c94dffd058eb9fd9144f7f59fc9bd219ad 100644
@@ -731,7 +733,7 @@ index 11b6d1aba7d1f6ae1f3c822193486f5a1478e105..709c8fc3dde786f45ff13d6ee6c405ff
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/MushroomCow.java b/src/main/java/org/bukkit/entity/MushroomCow.java
-index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..8c48c62ba13356cccb8abb1a897500f646a82791 100644
+index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..2c22c9092a7a0ea9ccc252020b46fb46dcfd0819 100644
 --- a/src/main/java/org/bukkit/entity/MushroomCow.java
 +++ b/src/main/java/org/bukkit/entity/MushroomCow.java
 @@ -35,4 +35,77 @@ public interface MushroomCow extends Cow {
@@ -750,7 +752,7 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..8c48c62ba13356cccb8abb1a897500f6
 +    @Deprecated(forRemoval = true)
 +    @org.jetbrains.annotations.Contract("-> fail")
 +    default int getStewEffectDuration() {
-+        throw new java.lang.UnsupportedOperationException();
++        throw new UnsupportedOperationException("Mushroom cows can now hold multiple effects. Use #getStewEffects");
 +    }
 +
 +    /**
@@ -763,7 +765,7 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..8c48c62ba13356cccb8abb1a897500f6
 +    @Deprecated(forRemoval = true)
 +    @org.jetbrains.annotations.Contract("_ -> fail")
 +    default void setStewEffectDuration(int duration) {
-+        throw new java.lang.UnsupportedOperationException();
++        throw new UnsupportedOperationException("Mushroom cows can now hold multiple effects. Use #setStewEffects");
 +    }
 +
 +    /**
@@ -777,7 +779,7 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..8c48c62ba13356cccb8abb1a897500f6
 +    @Deprecated(forRemoval = true)
 +    @org.jetbrains.annotations.Contract("-> fail")
 +    default org.bukkit.potion.PotionEffectType getStewEffectType() {
-+        throw new java.lang.UnsupportedOperationException();
++        throw new UnsupportedOperationException("Mushroom cows can now hold multiple effects. Use #getStewEffects");
 +    }
 +
 +    /**
@@ -792,7 +794,7 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..8c48c62ba13356cccb8abb1a897500f6
 +    @Deprecated(forRemoval = true)
 +    @org.jetbrains.annotations.Contract("_ -> fail")
 +    default void setStewEffect(@org.jetbrains.annotations.Nullable org.bukkit.potion.PotionEffectType type) {
-+        throw new java.lang.UnsupportedOperationException();
++        throw new UnsupportedOperationException("Mushroom cows can now hold multiple effects. Use #setStewEffects");
 +    }
 +
 +    /**
@@ -801,7 +803,7 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..8c48c62ba13356cccb8abb1a897500f6
 +     *
 +     * @return immutable effect pair collection
 +     */
-+    @org.jetbrains.annotations.NotNull
++    @NotNull
 +    java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> getStewEffects();
 +
 +    /**
@@ -809,7 +811,7 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..8c48c62ba13356cccb8abb1a897500f6
 +     *
 +     * @param effects effect pair collection
 +     */
-+    void setStewEffects(@org.jetbrains.annotations.NotNull java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> effects);
++    void setStewEffects(@NotNull java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> effects);
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Panda.java b/src/main/java/org/bukkit/entity/Panda.java
