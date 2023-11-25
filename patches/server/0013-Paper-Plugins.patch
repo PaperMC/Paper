@@ -3244,7 +3244,7 @@ index 0000000000000000000000000000000000000000..aef19b44075a3b2e8696315baa89117d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..49bcce79139797649c775af65c7310c149611a56
+index 0000000000000000000000000000000000000000..d681222f355af5c4c26f35aaba484a393aee41c6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 @@ -0,0 +1,61 @@
@@ -3305,7 +3305,7 @@ index 0000000000000000000000000000000000000000..49bcce79139797649c775af65c7310c1
 +    }
 +
 +    @Override
-+    public MetaDependencyTree getDependencyTree() {
++    public MetaDependencyTree createDependencyTree() {
 +        return this.dependencyTree;
 +    }
 +}
@@ -4375,7 +4375,7 @@ index 0000000000000000000000000000000000000000..5d50d1d312388e979c0e1cd53a6bf597
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3872f5a9287fc348d57812847ab18eb2d3e4b362
+index 0000000000000000000000000000000000000000..b0e723bcda9b1fc01e6aa5e53e57c09ea4f1a1c8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
 @@ -0,0 +1,79 @@
@@ -4454,7 +4454,7 @@ index 0000000000000000000000000000000000000000..3872f5a9287fc348d57812847ab18eb2
 +    }
 +
 +    @Override
-+    public MetaDependencyTree getDependencyTree() {
++    public MetaDependencyTree createDependencyTree() {
 +        return this.dependencyTree;
 +    }
 +}
@@ -6635,7 +6635,7 @@ index 0000000000000000000000000000000000000000..14ed05945ba5bfeb2b539d4786278b0e
 +
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6db2bacd74a9eec9597bd8e62b1d5c7929655350
+index 0000000000000000000000000000000000000000..2e96308696e131f3f013469a395e5ddda2c5d529
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 @@ -0,0 +1,65 @@
@@ -6695,7 +6695,7 @@ index 0000000000000000000000000000000000000000..6db2bacd74a9eec9597bd8e62b1d5c79
 +    }
 +
 +    @Override
-+    public MetaDependencyTree getDependencyTree() {
++    public MetaDependencyTree createDependencyTree() {
 +        return new BootstrapMetaDependencyTree();
 +    }
 +
@@ -6729,7 +6729,7 @@ index 0000000000000000000000000000000000000000..8ef4806cadabe56264dd861f1a1854b2
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..23269665f5f13bc55a45c2384542f0194235f8b0
+index 0000000000000000000000000000000000000000..39cd3acd3f76b3b0d065e0efb04a3eacea1c2e6b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ProviderStorage.java
 @@ -0,0 +1,21 @@
@@ -6747,7 +6747,7 @@ index 0000000000000000000000000000000000000000..23269665f5f13bc55a45c2384542f019
 +
 +    void register(PluginProvider<T> provider);
 +
-+    MetaDependencyTree getDependencyTree();
++    MetaDependencyTree createDependencyTree();
 +
 +    void enter();
 +
@@ -6832,14 +6832,13 @@ index 0000000000000000000000000000000000000000..cb9b13522a976b82bcb71cef486f11f4
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e4296230c773e68c816d7210a70b42f4bb9a0011
+index 0000000000000000000000000000000000000000..26422904751647a061397ce978bba752149003cd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,93 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.google.common.graph.GraphBuilder;
-+import com.google.common.graph.MutableGraph;
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.entrypoint.dependency.SimpleMetaDependencyTree;
@@ -6874,7 +6873,7 @@ index 0000000000000000000000000000000000000000..e4296230c773e68c816d7210a70b42f4
 +        this.filterLoadingProviders(providerList);
 +
 +        try {
-+            for (ProviderLoadingStrategy.ProviderPair<T> providerPair : this.strategy.loadProviders(providerList, this.getDependencyTree())) {
++            for (ProviderLoadingStrategy.ProviderPair<T> providerPair : this.strategy.loadProviders(providerList, this.createDependencyTree())) {
 +                this.processProvided(providerPair.provider(), providerPair.provided());
 +            }
 +        } catch (PluginGraphCycleException exception) {
@@ -6883,7 +6882,7 @@ index 0000000000000000000000000000000000000000..e4296230c773e68c816d7210a70b42f4
 +    }
 +
 +    @Override
-+    public MetaDependencyTree getDependencyTree() {
++    public MetaDependencyTree createDependencyTree() {
 +        return new SimpleMetaDependencyTree(GraphBuilder.directed().build());
 +    }
 +
