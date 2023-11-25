@@ -69,6 +69,9 @@ https://bugs.mojang.com/browse/MC-153086
 https://bugs.mojang.com/browse/MC-259321
   Fix spawners checking max nearby entities with correct type
 
+https://bugs.mojang.com/browse/MC-200092
+  Fix yaw being ignored for a player's first spawn pos
+
 == AT ==
 public net/minecraft/world/entity/Mob leashInfoTag
 
@@ -139,6 +142,27 @@ index 1f1cdf5516eab738e5d434eb5f2933ff3d7a1359..c5f0439133f3ab609324f21f68027ede
              });
  
              if (!list.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index fdd8ae699ebffcce391321d0c0d48a2bf171de12..0d8d17c03af1ebe033f4e3a4743e018bd819efdb 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -461,14 +461,14 @@ public class ServerPlayer extends Player {
+                 BlockPos blockposition1 = PlayerRespawnLogic.getOverworldRespawnPos(world, blockposition.getX() + j2 - i, blockposition.getZ() + k2 - i);
+ 
+                 if (blockposition1 != null) {
+-                    this.moveTo(blockposition1, 0.0F, 0.0F);
++                    this.moveTo(blockposition1, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+                     if (world.noCollision(this, this.getBoundingBox(), true)) { // Paper - make sure this loads chunks, we default to NOT loading now
+                         break;
+                     }
+                 }
+             }
+         } else {
+-            this.moveTo(blockposition, 0.0F, 0.0F);
++            this.moveTo(blockposition, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+ 
+             while (!world.noCollision(this, this.getBoundingBox(), true) && this.getY() < (double) (world.getMaxBuildHeight() - 1)) { // Paper - make sure this loads chunks, we default to NOT loading now
+                 this.setPos(this.getX(), this.getY() + 1.0D, this.getZ());
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 index 19573bfb05d7f9641964c76e6670e4a7658a1bbd..25cbbc714e86c11dcf05329430a83bba2cd05364 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
