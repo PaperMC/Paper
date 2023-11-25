@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sat, 25 Nov 2023 23:15:22 +0100
+Subject: [PATCH] Add required-plugins config option
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+index 9c7552968b8c017c71a7a77557a66a03ed89f125..688812294909ea0cdaeb10aac88bc74287ed4294 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+@@ -210,6 +210,13 @@ class PaperPluginInstanceManager {
+         if (!(plugin instanceof JavaPlugin javaPlugin)) {
+             throw new IllegalArgumentException("Only expects java plugins.");
+         }
++        // Paper start
++        if (!this.server.isStopping() && org.spigotmc.WatchdogThread.hasStarted && io.papermc.paper.configuration.GlobalConfiguration.get().misc.requiredPlugins.contains(plugin.getName())) {
++            this.server.getLogger().severe("The required Plugin " + plugin.getName() + " got disabled. Stopping Server.");
++            this.server.shutdown();
++            return;
++        }
++        // Paper end
+         if (!plugin.isEnabled()) {
+             return;
+         }
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 1c9742ad81f04052d2c3bc18c7636f45b2fc5160..beab25cd9ed84135547db62d52636d7ee5b83525 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -275,6 +275,13 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         // CraftBukkit end
+ 
+         // Paper start
++        List<String> missingPlugins = new java.util.ArrayList<>(io.papermc.paper.configuration.GlobalConfiguration.get().misc.requiredPlugins);
++        missingPlugins.removeAll(java.util.Arrays.stream(this.server.paperPluginManager.getPlugins()).filter(org.bukkit.plugin.Plugin::isEnabled).map(org.bukkit.plugin.Plugin::getName).toList());
++        if(!missingPlugins.isEmpty()) {
++            DedicatedServer.LOGGER.error("The following required Plugins aren't enabled: " + String.join(", ", missingPlugins) + ". Stopping Server.");
++            return false;
++        }
++
+         boolean usingProxy = org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
+         String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
+         String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
