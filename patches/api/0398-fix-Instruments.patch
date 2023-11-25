@@ -7,7 +7,7 @@ Add missing instrument enums
 fix some wrong javadocs
 
 diff --git a/src/main/java/org/bukkit/Instrument.java b/src/main/java/org/bukkit/Instrument.java
-index de976be7132d05506fde7a839cac3954b0dd8da4..642feb8b4578e6dbd2bf78d859283d20f877051f 100644
+index 032d7b812ddc0a85e316882c8f7de0c5a0a4fd30..8df26e0d7bea77bb257cddbc2ab9e969fa160681 100644
 --- a/src/main/java/org/bukkit/Instrument.java
 +++ b/src/main/java/org/bukkit/Instrument.java
 @@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
@@ -17,65 +17,66 @@ index de976be7132d05506fde7a839cac3954b0dd8da4..642feb8b4578e6dbd2bf78d859283d20
 -     * Piano is the standard instrument for a note block.
 +     * Piano (Harp) is the standard instrument for a note block.
       */
-     PIANO(0x0),
+     PIANO(0x0, Sound.BLOCK_NOTE_BLOCK_HARP),
      /**
 @@ -21,7 +21,7 @@ public enum Instrument {
       */
-     SNARE_DRUM(0x2),
+     SNARE_DRUM(0x2, Sound.BLOCK_NOTE_BLOCK_SNARE),
      /**
 -     * Sticks are normally played when a note block is on top of a glass
 +     * Sticks (Hat) are normally played when a note block is on top of a glass
       * block.
       */
-     STICKS(0x3),
-@@ -78,38 +78,36 @@ public enum Instrument {
+     STICKS(0x3, Sound.BLOCK_NOTE_BLOCK_HAT),
+@@ -78,39 +78,37 @@ public enum Instrument {
      /**
       * Zombie is normally played when a Zombie Head is on top of the note block.
       */
--    ZOMBIE,
-+    ZOMBIE(0x10), // Paper
+-    ZOMBIE(Sound.BLOCK_NOTE_BLOCK_IMITATE_ZOMBIE),
++    ZOMBIE(0x10, Sound.BLOCK_NOTE_BLOCK_IMITATE_ZOMBIE), // Paper
      /**
       * Skeleton is normally played when a Skeleton Head is on top of the note block.
       */
--    SKELETON,
-+    SKELETON(0x11), // Paper
+-    SKELETON(Sound.BLOCK_NOTE_BLOCK_IMITATE_SKELETON),
++    SKELETON(0x11, Sound.BLOCK_NOTE_BLOCK_IMITATE_SKELETON), // Paper
      /**
       * Creeper is normally played when a Creeper Head is on top of the note block.
       */
--    CREEPER,
-+    CREEPER(0x12), // Paper
+-    CREEPER(Sound.BLOCK_NOTE_BLOCK_IMITATE_CREEPER),
++    CREEPER(0x12, Sound.BLOCK_NOTE_BLOCK_IMITATE_CREEPER), // Paper
      /**
       * Dragon is normally played when a Dragon Head is on top of the note block.
       */
--    DRAGON,
-+    DRAGON(0x13), // Paper
+-    DRAGON(Sound.BLOCK_NOTE_BLOCK_IMITATE_ENDER_DRAGON),
++    DRAGON(0x13, Sound.BLOCK_NOTE_BLOCK_IMITATE_ENDER_DRAGON), // Paper
      /**
       * Wither Skeleton is normally played when a Wither Skeleton Head is on top of the note block.
       */
--    WITHER_SKELETON,
-+    WITHER_SKELETON(0x14), // Paper
+-    WITHER_SKELETON(Sound.BLOCK_NOTE_BLOCK_IMITATE_WITHER_SKELETON),
++    WITHER_SKELETON(0x14, Sound.BLOCK_NOTE_BLOCK_IMITATE_WITHER_SKELETON), // Paper
      /**
       * Piglin is normally played when a Piglin Head is on top of the note block.
       */
--    PIGLIN,
-+    PIGLIN(0x15), // Paper
+-    PIGLIN(Sound.BLOCK_NOTE_BLOCK_IMITATE_PIGLIN),
++    PIGLIN(0x15, Sound.BLOCK_NOTE_BLOCK_IMITATE_PIGLIN), // Paper
      /**
       * Custom Sound is normally played when a Player Head with the required data is on top of the note block.
       */
--    CUSTOM_HEAD;
-+    CUSTOM_HEAD(0x16); // Paper
+-    CUSTOM_HEAD(null);
++    CUSTOM_HEAD(0x16, null); // Paper
  
      private final byte type;
+     private final Sound sound;
      private static final Map<Byte, Instrument> BY_DATA = Maps.newHashMap();
  
--    private Instrument() {
--        this(-1);
+-    private Instrument(final Sound sound) {
+-        this(-1, sound);
 -    }
 +    // Paper - remove ctor (the server still uses the byte magic value)
  
-     private Instrument(final int type) {
+     private Instrument(final int type, final Sound sound) {
          this.type = (byte) type;
-@@ -117,9 +115,8 @@ public enum Instrument {
+@@ -130,9 +128,8 @@ public enum Instrument {
  
      /**
       * @return The type ID of this instrument.
@@ -86,7 +87,7 @@ index de976be7132d05506fde7a839cac3954b0dd8da4..642feb8b4578e6dbd2bf78d859283d20
      public byte getType() {
          return this.type;
      }
-@@ -129,9 +126,8 @@ public enum Instrument {
+@@ -142,9 +139,8 @@ public enum Instrument {
       *
       * @param type The type ID
       * @return The instrument
@@ -97,21 +98,6 @@ index de976be7132d05506fde7a839cac3954b0dd8da4..642feb8b4578e6dbd2bf78d859283d20
      @Nullable
      public static Instrument getByType(final byte type) {
          return BY_DATA.get(type);
-diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 4d1d81ddc7638e958f9cd1b10fd26227efc1578d..fdb0b8b81e53c85c865c4a3a895719f5afbffd17 100644
---- a/src/main/java/org/bukkit/entity/Player.java
-+++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -511,9 +511,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-     public void playNote(@NotNull Location loc, byte instrument, byte note);
- 
-     /**
--     * Play a note for a player at a location. This requires a note block
--     * at the particular location (as far as the client is concerned). This
--     * will not work without a note block. This will not work with cake.
-+     * Play a note for a player at a location.
-      *
-      * @param loc The location of a note block
-      * @param instrument The instrument
 diff --git a/src/test/java/org/bukkit/InstrumentTest.java b/src/test/java/org/bukkit/InstrumentTest.java
 index 8c1d88885de7d56c1b7c78d2e6e059b0648c982a..b177a47a5bda05bfe3598ec5e6771b92a73f0edf 100644
 --- a/src/test/java/org/bukkit/InstrumentTest.java

@@ -5,49 +5,39 @@ Subject: [PATCH] Spawn Reason API
 
 
 diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
-index 7c2b1eff41dd43fda84d84e76c05bbbf37c186b8..bc70f4f5b82ce5b92ab0b2612c8fb8126ed1a8c2 100644
+index 656c060aee5d9ce778638253603ed9475a2612a1..b8575fbc7d30a3f4e6862193e3267ab06e91c32f 100644
 --- a/src/main/java/org/bukkit/RegionAccessor.java
 +++ b/src/main/java/org/bukkit/RegionAccessor.java
-@@ -11,6 +11,7 @@ import org.bukkit.block.data.BlockData;
- import org.bukkit.entity.Entity;
- import org.bukkit.entity.EntityType;
- import org.bukkit.entity.LivingEntity;
-+import org.bukkit.event.entity.CreatureSpawnEvent;
- import org.jetbrains.annotations.NotNull;
- import org.jetbrains.annotations.Nullable;
- 
-@@ -309,7 +310,34 @@ public interface RegionAccessor {
+@@ -308,8 +308,31 @@ public interface RegionAccessor {
+      * @throws IllegalArgumentException if either parameter is null or the
       *     {@link Entity} requested cannot be spawned
       */
-     @NotNull
--    <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function) throws IllegalArgumentException;
+-    @NotNull
+-    <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<? super T> function) throws IllegalArgumentException;
 +    // Paper start
-+    public default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function) throws IllegalArgumentException {
-+        return spawn(location, clazz, CreatureSpawnEvent.SpawnReason.CUSTOM, function);
++    default <T extends Entity> @NotNull T spawn(final @NotNull Location location, final @NotNull Class<T> clazz, final @Nullable Consumer<? super T> function) throws IllegalArgumentException {
++        return this.spawn(location, clazz, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM, function);
 +    }
 +
-+    @NotNull
-+    public default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
-+        return spawn(location, clazz, reason, null);
++    default @NotNull <T extends Entity> T spawn(final @NotNull Location location, final @NotNull Class<T> clazz, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) throws IllegalArgumentException {
++        return this.spawn(location, clazz, reason, null);
 +    }
 +
-+    @NotNull
-+    public default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull CreatureSpawnEvent.SpawnReason reason, @Nullable Consumer<T> function) throws IllegalArgumentException {
-+        return spawn(location, clazz, function, reason);
++    default @NotNull <T extends Entity> T spawn(final @NotNull Location location, final @NotNull Class<T> clazz, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason, final @Nullable Consumer<? super T> function) throws IllegalArgumentException {
++        return this.spawn(location, clazz, function, reason);
 +    }
 +
-+    @NotNull
-+    public default Entity spawnEntity(@NotNull Location loc, @NotNull org.bukkit.entity.EntityType type, @NotNull CreatureSpawnEvent.SpawnReason reason) {
-+        return spawn(loc, (Class<Entity>) type.getEntityClass(), reason, null);
++    default @NotNull Entity spawnEntity(final @NotNull Location loc, final @NotNull EntityType type, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) {
++        com.google.common.base.Preconditions.checkArgument(type.getEntityClass() != null, "%s is not a valid EntityType, must have an entity class", type);
++        return this.spawn(loc, type.getEntityClass(), reason, null);
 +    }
 +
-+    @NotNull
-+    public default Entity spawnEntity(@NotNull Location loc, @NotNull org.bukkit.entity.EntityType type, @NotNull CreatureSpawnEvent.SpawnReason reason, @Nullable Consumer<Entity> function) {
-+        return spawn(loc, (Class<Entity>) type.getEntityClass(), reason, function);
++    default @NotNull Entity spawnEntity(final @NotNull Location loc, final @NotNull EntityType type, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason, final @Nullable Consumer<? super Entity> function) {
++        com.google.common.base.Preconditions.checkArgument(type.getEntityClass() != null, "%s is not a valid EntityType, must have an entity class", type);
++        return this.spawn(loc, type.getEntityClass(), reason, function);
 +    }
 +
-+    @NotNull
-+    public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function, @NotNull CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException;
++    <T extends Entity> @NotNull T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<? super T> function, org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) throws IllegalArgumentException;
 +    // Paper end
  
      /**

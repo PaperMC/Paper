@@ -5,7 +5,7 @@ Subject: [PATCH] Add predicate for blocks when raytracing
 
 
 diff --git a/src/main/java/net/minecraft/world/level/BlockGetter.java b/src/main/java/net/minecraft/world/level/BlockGetter.java
-index 799837c172a5f7856c78e6fe2595c575f3058a5e..e2066c52941d20fe01d3381181c3e5bf2d2ccb9a 100644
+index 799837c172a5f7856c78e6fe2595c575f3058a5e..7205865bbe0f83fb35678bddc0977f92980e77b5 100644
 --- a/src/main/java/net/minecraft/world/level/BlockGetter.java
 +++ b/src/main/java/net/minecraft/world/level/BlockGetter.java
 @@ -83,6 +83,12 @@ public interface BlockGetter extends LevelHeightAccessor {
@@ -16,7 +16,7 @@ index 799837c172a5f7856c78e6fe2595c575f3058a5e..e2066c52941d20fe01d3381181c3e5bf
 +        return clip(raytrace1, blockposition, null);
 +    }
 +
-+    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition, java.util.function.Predicate<org.bukkit.block.Block> canCollide) {
++    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
 +            // Paper end
              // Paper start - Prevent raytrace from loading chunks
              BlockState iblockdata = this.getBlockStateIfLoaded(blockposition);
@@ -38,7 +38,7 @@ index 799837c172a5f7856c78e6fe2595c575f3058a5e..e2066c52941d20fe01d3381181c3e5bf
 +        return clip(context, (java.util.function.Predicate<org.bukkit.block.Block>) null);
 +    }
 +
-+    default BlockHitResult clip(ClipContext context, java.util.function.Predicate<org.bukkit.block.Block> canCollide) {
++    default BlockHitResult clip(ClipContext context, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
 +        // Paper end
          return (BlockHitResult) BlockGetter.traverseBlocks(context.getFrom(), context.getTo(), context, (raytrace1, blockposition) -> {
 -            return this.clip(raytrace1, blockposition); // CraftBukkit - moved into separate method
@@ -47,18 +47,18 @@ index 799837c172a5f7856c78e6fe2595c575f3058a5e..e2066c52941d20fe01d3381181c3e5bf
              Vec3 vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 5e350fa39f47d54f6048ea89c1317759f122b8ae..746f88db6b78b3c8ec372bfaacb26ec98f3b1163 100644
+index 44d6a7373fe0c7b6afff31e149174367e9873bf9..30528f527de27c1cc21d1d20a6ed7d54bd93cb5a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1118,9 +1118,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1120,9 +1120,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
-     public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize, Predicate<Entity> filter) {
+     public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize, Predicate<? super Entity> filter) {
 +        // Paper start
 +        return rayTraceEntities((io.papermc.paper.math.Position) start, direction, maxDistance, raySize, filter);
 +    }
 +
-+    public RayTraceResult rayTraceEntities(io.papermc.paper.math.Position start, Vector direction, double maxDistance, double raySize, Predicate<Entity> filter) {
++    public RayTraceResult rayTraceEntities(io.papermc.paper.math.Position start, Vector direction, double maxDistance, double raySize, Predicate<? super Entity> filter) {
          Preconditions.checkArgument(start != null, "Location start cannot be null");
 -        Preconditions.checkArgument(this.equals(start.getWorld()), "Location start cannot be in a different world");
 -        start.checkFinite();
@@ -68,7 +68,7 @@ index 5e350fa39f47d54f6048ea89c1317759f122b8ae..746f88db6b78b3c8ec372bfaacb26ec9
  
          Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
          direction.checkFinite();
-@@ -1170,9 +1176,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1172,9 +1178,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks) {
@@ -77,7 +77,7 @@ index 5e350fa39f47d54f6048ea89c1317759f122b8ae..746f88db6b78b3c8ec372bfaacb26ec9
 +    }
 +
 +    @Override
-+    public RayTraceResult rayTraceBlocks(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, Predicate<Block> canCollide) {
++    public RayTraceResult rayTraceBlocks(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, Predicate<? super Block> canCollide) {
          Preconditions.checkArgument(start != null, "Location start cannot be null");
 -        Preconditions.checkArgument(this.equals(start.getWorld()), "Location start cannot be in a different world");
 -        start.checkFinite();
@@ -87,7 +87,7 @@ index 5e350fa39f47d54f6048ea89c1317759f122b8ae..746f88db6b78b3c8ec372bfaacb26ec9
  
          Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
          direction.checkFinite();
-@@ -1185,16 +1198,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1187,16 +1200,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          }
  
          Vector dir = direction.clone().normalize().multiply(maxDistance);
@@ -101,14 +101,14 @@ index 5e350fa39f47d54f6048ea89c1317759f122b8ae..746f88db6b78b3c8ec372bfaacb26ec9
      }
  
      @Override
-     public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<Entity> filter) {
+     public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter) {
 -        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks);
 +        // Paper start
 +        return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, null);
 +    }
 +
 +    @Override
-+    public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<Entity> filter, Predicate<Block> canCollide) {
++    public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter, Predicate<? super Block> canCollide) {
 +        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, canCollide);
 +        // Paper end
          Vector startVec = null;
