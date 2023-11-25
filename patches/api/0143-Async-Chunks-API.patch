@@ -8,14 +8,14 @@ Adds API's to load or generate chunks asynchronously.
 Also adds utility methods to Entity to teleport asynchronously.
 
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a800de1b73f 100644
+index 213ec372ab639179da65e67a1326c1e08bfbc943..e4a0d57535fa0fb51765ccdbf0e41d0478a28ee5 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -955,6 +955,482 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
-         }
-         return nearby;
+@@ -939,6 +939,472 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      }
-+
+     // Paper end - additional getNearbyEntities API
+ 
++    // Paper start - async chunks API
 +    /**
 +     * This is the Legacy API before Java 8 was supported. Java 8 Consumer is provided,
 +     * as well as future support
@@ -139,8 +139,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(int x, int z, @NotNull java.util.function.Consumer<Chunk> cb) {
-+        getChunkAtAsync(x, z, true).thenAccept(cb).exceptionally((ex) -> {
++    default void getChunkAtAsync(final int x, final int z, final @NotNull Consumer<? super Chunk> cb) {
++        this.getChunkAtAsync(x, z, true).thenAccept(cb).exceptionally((ex) -> {
 +            Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Exception in chunk load callback", ex);
 +            return null;
 +        });
@@ -165,8 +165,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(int x, int z, boolean gen, @NotNull java.util.function.Consumer<Chunk> cb) {
-+        getChunkAtAsync(x, z, gen).thenAccept(cb).exceptionally((ex) -> {
++    default void getChunkAtAsync(final int x, final int z, final boolean gen, final @NotNull Consumer<? super Chunk> cb) {
++        this.getChunkAtAsync(x, z, gen).thenAccept(cb).exceptionally((ex) -> {
 +            Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Exception in chunk load callback", ex);
 +            return null;
 +        });
@@ -189,8 +189,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(@NotNull Location loc, @NotNull java.util.function.Consumer<Chunk> cb) {
-+        getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, true, cb);
++    default void getChunkAtAsync(final @NotNull Location loc, final @NotNull Consumer<? super Chunk> cb) {
++        this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, true, cb);
 +    }
 +
 +    /**
@@ -211,8 +211,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(@NotNull Location loc, boolean gen, @NotNull java.util.function.Consumer<Chunk> cb) {
-+        getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, gen, cb);
++    default void getChunkAtAsync(final @NotNull Location loc, final boolean gen, final @NotNull Consumer<? super Chunk> cb) {
++        this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, gen, cb);
 +    }
 +
 +    /**
@@ -232,8 +232,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(@NotNull Block block, @NotNull java.util.function.Consumer<Chunk> cb) {
-+        getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true, cb);
++    default void getChunkAtAsync(final @NotNull Block block, final @NotNull Consumer<? super Chunk> cb) {
++        this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true, cb);
 +    }
 +
 +    /**
@@ -254,8 +254,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(@NotNull Block block, boolean gen, @NotNull java.util.function.Consumer<Chunk> cb) {
-+        getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen, cb);
++    default void getChunkAtAsync(final @NotNull Block block, final boolean gen, final @NotNull Consumer<? super Chunk> cb) {
++        this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen, cb);
 +    }
 +
 +    /**
@@ -273,9 +273,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param loc Location to load the corresponding chunk from
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(@NotNull Location loc) {
-+        return getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, true);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Location loc) {
++        return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, true);
 +    }
 +
 +    /**
@@ -294,9 +293,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param gen Should the chunk generate if it doesn't exist
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(@NotNull Location loc, boolean gen) {
-+        return getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, gen);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Location loc, final boolean gen) {
++        return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, gen);
 +    }
 +
 +    /**
@@ -314,9 +312,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param block Block to load the corresponding chunk from
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(@NotNull Block block) {
-+        return getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Block block) {
++        return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true);
 +    }
 +
 +    /**
@@ -335,9 +332,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param gen Should the chunk generate if it doesn't exist
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(@NotNull Block block, boolean gen) {
-+        return getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Block block, final boolean gen) {
++        return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen);
 +    }
 +
 +    /**
@@ -357,9 +353,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z) {
-+        return getChunkAtAsync(x, z, true);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z) {
++        return this.getChunkAtAsync(x, z, true);
 +    }
 +
 +    /**
@@ -380,9 +375,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param gen Should we generate a chunk if it doesn't exist or not
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen) {
-+        return getChunkAtAsync(x, z, gen, false);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
++        return this.getChunkAtAsync(x, z, gen, false);
 +    }
 +
 +    /**
@@ -400,9 +394,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param loc Location to load the corresponding chunk from
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(@NotNull Location loc) {
-+        return getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, true, true);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Location loc) {
++        return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, true, true);
 +    }
 +
 +    /**
@@ -421,9 +414,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param gen Should the chunk generate if it doesn't exist
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(@NotNull Location loc, boolean gen) {
-+        return getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, gen, true);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Location loc, final boolean gen) {
++        return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, gen, true);
 +    }
 +
 +    /**
@@ -441,9 +433,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param block Block to load the corresponding chunk from
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(@NotNull Block block) {
-+        return getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true, true);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Block block) {
++        return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true, true);
 +    }
 +
 +    /**
@@ -462,9 +453,8 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param gen Should the chunk generate if it doesn't exist
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(@NotNull Block block, boolean gen) {
-+        return getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen, true);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Block block, final boolean gen) {
++        return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen, true);
 +    }
 +
 +    /**
@@ -484,16 +474,16 @@ index 880ff5ee1237096ac2da115b665dc663c677e57b..fc6b99e4f37179b15254bf0b398b1a80
 +     * @param z Z Coord
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(int x, int z) {
-+        return getChunkAtAsync(x, z, true, true);
++    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final int x, final int z) {
++        return this.getChunkAtAsync(x, z, true, true);
 +    }
 +
-+    @NotNull
-+    java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent);
-     // Paper end
- 
++    java.util.concurrent.@NotNull CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent);
++    // Paper end - async chunks API
++
      /**
+      * Get a list of all players in this World
+      *
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
 index 5fc085f785719933eef7ab1b3cf173579c64739b..711d95bfafac0d415895023bdaac4059395667ab 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
