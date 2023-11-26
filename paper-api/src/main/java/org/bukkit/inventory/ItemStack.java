@@ -307,7 +307,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
             return true;
         }
         Material comparisonType = (this.type.isLegacy()) ? Bukkit.getUnsafe().fromLegacy(this.getData(), true) : this.type; // This may be called from legacy item stacks, try to get the right material
-        return comparisonType == stack.getType() && getDurability() == stack.getDurability() && hasItemMeta() == stack.hasItemMeta() && (hasItemMeta() ? Bukkit.getItemFactory().equals(getItemMeta(), stack.getItemMeta()) : true);
+        return comparisonType == stack.getType() && /* getDurability() == stack.getDurability() && */hasItemMeta() == stack.hasItemMeta() && (hasItemMeta() ? Bukkit.getItemFactory().equals(getItemMeta(), stack.getItemMeta()) : true); // Paper - remove redundant item durability check
     }
 
     @NotNull
