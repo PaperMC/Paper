@@ -9,6 +9,7 @@ pluginManagement {
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.7.0"
+    id("io.papermc.multi-version-catalog") version "1.0.0-SNAPSHOT"
 }
 
 if (!file(".git").exists()) {
@@ -38,6 +39,11 @@ for (name in listOf("Paper-API", "Paper-Server", "Paper-MojangAPI")) {
     include(projName)
     findProject(":$projName")!!.projectDir = file(name)
 }
+
+multiVersionCatalog.fromFiles(
+    "libs",
+    rootProject.children.map { it.projectDir.resolve("gradle/libs.versions.toml") }
+)
 
 mapOf("test-plugin.settings.gradle.kts" to """
         // Uncomment to enable the test plugin module
