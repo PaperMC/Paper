@@ -66,6 +66,12 @@ https://bugs.mojang.com/browse/MC-174630
 https://bugs.mojang.com/browse/MC-153086
   Fix the beacon deactivation sound always playing when broken
 
+https://bugs.mojang.com/browse/MC-259321
+  Fix spawners checking max nearby entities with correct type
+
+https://bugs.mojang.com/browse/MC-200092
+  Fix yaw being ignored for a player's first spawn pos
+
 == AT ==
 public net/minecraft/world/entity/Mob leashInfoTag
 
@@ -124,7 +130,7 @@ index b71be5e7e18f884cf35cc3a940c87e744e00f811..81d3d664d4397e528a02e50469622c4f
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 6b923585821a252943ea6a765c3b02217eb7a21e..008b0944dba1622e682ee21637273fb87f93dd37 100644
+index 1f1cdf5516eab738e5d434eb5f2933ff3d7a1359..c5f0439133f3ab609324f21f68027edebed049c5 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1005,7 +1005,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -136,6 +142,27 @@ index 6b923585821a252943ea6a765c3b02217eb7a21e..008b0944dba1622e682ee21637273fb8
              });
  
              if (!list.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index fdd8ae699ebffcce391321d0c0d48a2bf171de12..0d8d17c03af1ebe033f4e3a4743e018bd819efdb 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -461,14 +461,14 @@ public class ServerPlayer extends Player {
+                 BlockPos blockposition1 = PlayerRespawnLogic.getOverworldRespawnPos(world, blockposition.getX() + j2 - i, blockposition.getZ() + k2 - i);
+ 
+                 if (blockposition1 != null) {
+-                    this.moveTo(blockposition1, 0.0F, 0.0F);
++                    this.moveTo(blockposition1, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+                     if (world.noCollision(this, this.getBoundingBox(), true)) { // Paper - make sure this loads chunks, we default to NOT loading now
+                         break;
+                     }
+                 }
+             }
+         } else {
+-            this.moveTo(blockposition, 0.0F, 0.0F);
++            this.moveTo(blockposition, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+ 
+             while (!world.noCollision(this, this.getBoundingBox(), true) && this.getY() < (double) (world.getMaxBuildHeight() - 1)) { // Paper - make sure this loads chunks, we default to NOT loading now
+                 this.setPos(this.getX(), this.getY() + 1.0D, this.getZ());
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 index 19573bfb05d7f9641964c76e6670e4a7658a1bbd..25cbbc714e86c11dcf05329430a83bba2cd05364 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
@@ -395,6 +422,42 @@ index ca6a2b9840c9ade87ec8effab01d4f184fe876b7..43129ecefcc8beccbcf2978f262b1ce8
                      entity.level().gameEvent(entity, GameEvent.EQUIP, entity.position());
                      stack.shrink(1);
                  }
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index ae2b95f53e875716489821dc9b0a3a35039bfcc9..e4a5871d8f07e2b4c12b94b6372afe3a34b13071 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -46,6 +46,22 @@ public abstract class BaseSpawner {
+     public int requiredPlayerRange = 16;
+     public int spawnRange = 4;
+     private int tickDelay = 0; // Paper
++    // Paper start - ported from 1.20.3 Fix MC-259321
++    static <B, T extends B> net.minecraft.world.level.entity.EntityTypeTest<B, T> forExactClass(Class<T> clazz) {
++        return new net.minecraft.world.level.entity.EntityTypeTest<>() {
++            @Nullable
++            @Override
++            public T tryCast(B entity) {
++                return (T)(clazz.equals(entity.getClass()) ? entity : null);
++            }
++
++            @Override
++            public Class<? extends B> getBaseClass() {
++                return clazz;
++            }
++        };
++    }
++    // Paper end
+ 
+     public BaseSpawner() {}
+ 
+@@ -160,7 +176,7 @@ public abstract class BaseSpawner {
+                             return;
+                         }
+ 
+-                        int k = world.getEntitiesOfClass(entity.getClass(), (new AABB((double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), (double) (pos.getX() + 1), (double) (pos.getY() + 1), (double) (pos.getZ() + 1))).inflate((double) this.spawnRange)).size();
++                        int k = world.getEntities(forExactClass(entity.getClass()), (new AABB((double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), (double) (pos.getX() + 1), (double) (pos.getY() + 1), (double) (pos.getZ() + 1))).inflate((double) this.spawnRange), net.minecraft.world.entity.EntitySelector.NO_SPECTATORS).size(); // Paper - Fix MC-259321 (only count exact entity types for nearby checks)
+ 
+                         if (k >= this.maxNearbyEntities) {
+                             this.delay(world, pos);
 diff --git a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
 index eba153ad0025d92ffb5d8de65f69a8e812b81533..087f3b3cc180e16195efdc0b402701fd9f5d78b4 100644
 --- a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
