@@ -257,6 +257,8 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Mark the entity's removal.
+     *
+     * @throws UnsupportedOperationException if you try to remove a {@link Player} use {@link Player#kickPlayer(String)} in this case instead
      */
     public void remove();
 
