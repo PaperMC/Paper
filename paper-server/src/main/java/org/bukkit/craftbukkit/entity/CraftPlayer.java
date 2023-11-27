@@ -207,6 +207,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public void remove() {
+        // Will lead to an inconsistent player state if we remove the player as any other entity.
+        throw new UnsupportedOperationException(String.format("Cannot remove player %s, use Player#kickPlayer(String) instead.", getName()));
+    }
+
+    @Override
     public boolean isOp() {
         return server.getHandle().isOp(getProfile());
     }
