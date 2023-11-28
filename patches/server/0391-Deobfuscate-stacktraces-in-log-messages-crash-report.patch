@@ -6,14 +6,14 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 80ffd7fd14893c70da92dddb5ec37d409c76b729..dd300f1048b806c1292ac09dd232fd3eb24a7bf0 100644
+index 80ffd7fd14893c70da92dddb5ec37d409c76b729..dfd12484b424fffb529f408b6a9974c21598f9c2 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -36,6 +36,7 @@ dependencies {
      implementation("org.ow2.asm:asm-commons:9.5") // Paper - ASM event executor generation
      implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
-+    implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
++    implementation("net.fabricmc:mapping-io:0.5.0") // Paper - needed to read mappings for stacktrace deobfuscation
      runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
      runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
@@ -123,10 +123,10 @@ index 0bb4aaa546939b67a5d22865190f30478a9337c1..d3e619655382e50e9ac9323ed942502d
  
 diff --git a/src/main/java/io/papermc/paper/util/ObfHelper.java b/src/main/java/io/papermc/paper/util/ObfHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b8b17d046f836c8652ab094db00ab1af84971b2c
+index 0000000000000000000000000000000000000000..e8ff684d8bd994c64ff34f20e1e0601b678244c1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/ObfHelper.java
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,147 @@
 +package io.papermc.paper.util;
 +
 +import java.io.IOException;
@@ -136,6 +136,7 @@ index 0000000000000000000000000000000000000000..b8b17d046f836c8652ab094db00ab1af
 +import java.util.HashMap;
 +import java.util.HashSet;
 +import java.util.Map;
++import java.util.Objects;
 +import java.util.Set;
 +import java.util.function.Function;
 +import java.util.stream.Collectors;
@@ -222,7 +223,7 @@ index 0000000000000000000000000000000000000000..b8b17d046f836c8652ab094db00ab1af
 +                return null;
 +            }
 +            final MemoryMappingTree tree = new MemoryMappingTree();
-+            MappingReader.read(new InputStreamReader(mappingsInputStream, StandardCharsets.UTF_8), MappingFormat.TINY_2, tree);
++            MappingReader.read(new InputStreamReader(mappingsInputStream, StandardCharsets.UTF_8), MappingFormat.TINY_2_FILE, tree);
 +            final Set<ClassMapping> classes = new HashSet<>();
 +
 +            final StringPool pool = new StringPool();
@@ -232,16 +233,16 @@ index 0000000000000000000000000000000000000000..b8b17d046f836c8652ab094db00ab1af
 +                for (final MappingTree.MethodMapping methodMapping : cls.getMethods()) {
 +                    methods.put(
 +                        pool.string(methodKey(
-+                            methodMapping.getName(SPIGOT_NAMESPACE),
-+                            methodMapping.getDesc(SPIGOT_NAMESPACE)
++                            Objects.requireNonNull(methodMapping.getName(SPIGOT_NAMESPACE)),
++                            Objects.requireNonNull(methodMapping.getDesc(SPIGOT_NAMESPACE))
 +                        )),
-+                        pool.string(methodMapping.getName(MOJANG_PLUS_YARN_NAMESPACE))
++                        pool.string(Objects.requireNonNull(methodMapping.getName(MOJANG_PLUS_YARN_NAMESPACE)))
 +                    );
 +                }
 +
 +                final ClassMapping map = new ClassMapping(
-+                    cls.getName(SPIGOT_NAMESPACE).replace('/', '.'),
-+                    cls.getName(MOJANG_PLUS_YARN_NAMESPACE).replace('/', '.'),
++                    Objects.requireNonNull(cls.getName(SPIGOT_NAMESPACE)).replace('/', '.'),
++                    Objects.requireNonNull(cls.getName(MOJANG_PLUS_YARN_NAMESPACE)).replace('/', '.'),
 +                    Map.copyOf(methods)
 +                );
 +                classes.add(map);
