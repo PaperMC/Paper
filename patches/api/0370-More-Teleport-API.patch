@@ -6,10 +6,10 @@ Subject: [PATCH] More Teleport API
 
 diff --git a/src/main/java/io/papermc/paper/entity/LookAnchor.java b/src/main/java/io/papermc/paper/entity/LookAnchor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c8312691c27ae436029ec5011ddf073582b12cba
+index 0000000000000000000000000000000000000000..544eec787ea837f7d29df6519255840d6fe087d7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/LookAnchor.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.entity;
 +
 +import io.papermc.paper.math.Position;
@@ -22,7 +22,6 @@ index 0000000000000000000000000000000000000000..c8312691c27ae436029ec5011ddf0735
 + * @see org.bukkit.entity.Player#lookAt(Position, LookAnchor)
 + * @see org.bukkit.entity.Player#lookAt(Entity, LookAnchor, LookAnchor)
 + */
-+@org.jetbrains.annotations.ApiStatus.Experimental
 +public enum LookAnchor {
 +    /**
 +     * Represents the entity's feet.
@@ -37,15 +36,14 @@ index 0000000000000000000000000000000000000000..c8312691c27ae436029ec5011ddf0735
 +}
 diff --git a/src/main/java/io/papermc/paper/entity/TeleportFlag.java b/src/main/java/io/papermc/paper/entity/TeleportFlag.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dbacefc919fd6ed6a0f5cdaa0f695a12eda9cc3f
+index 0000000000000000000000000000000000000000..c8b5b570d44da9524bfc59c7e11b2ae59d4b79b9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/TeleportFlag.java
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,79 @@
 +package io.papermc.paper.entity;
 +
 +import org.bukkit.Location;
 +import org.bukkit.event.player.PlayerTeleportEvent;
-+import org.jetbrains.annotations.ApiStatus;
 +
 +/**
 + * Represents a flag that can be set on teleportation that may
@@ -54,7 +52,6 @@ index 0000000000000000000000000000000000000000..dbacefc919fd6ed6a0f5cdaa0f695a12
 + * @see EntityState
 + * @see Relative
 + */
-+@ApiStatus.Experimental
 +public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportFlag.Relative {
 +
 +    /**
@@ -68,7 +65,6 @@ index 0000000000000000000000000000000000000000..dbacefc919fd6ed6a0f5cdaa0f695a12
 +     *
 +     * @see org.bukkit.entity.Player#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
 +     */
-+    @ApiStatus.Experimental
 +    enum Relative implements TeleportFlag {
 +        /**
 +         * Represents the player's X coordinate
@@ -96,7 +92,6 @@ index 0000000000000000000000000000000000000000..dbacefc919fd6ed6a0f5cdaa0f695a12
 +     * Represents flags that effect the entity's state on
 +     * teleportation.
 +     */
-+    @ApiStatus.Experimental
 +    enum EntityState implements TeleportFlag {
 +        /**
 +         * If all passengers should not be required to be removed prior to teleportation.
@@ -125,10 +120,10 @@ index 0000000000000000000000000000000000000000..dbacefc919fd6ed6a0f5cdaa0f695a12
 +
 +}
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 77e29cada05da8946d718fe331e28e7553922033..5607404fa0132febdbdaad051a4e9426fe5f1eb6 100644
+index 77e29cada05da8946d718fe331e28e7553922033..a7e0454344b145242a19eb8020c9c67b18368bdd 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -123,10 +123,34 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -123,10 +123,32 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
       *
       * @param yaw the yaw
       * @param pitch the pitch
@@ -144,7 +139,6 @@ index 77e29cada05da8946d718fe331e28e7553922033..5607404fa0132febdbdaad051a4e9426
 +     * @param teleportFlags Flags to be used in this teleportation
 +     * @return <code>true</code> if the teleport was successful
 +     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
 +    default boolean teleport(@NotNull Location location, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags) {
 +        return this.teleport(location, TeleportCause.PLUGIN, teleportFlags);
 +    }
@@ -157,7 +151,6 @@ index 77e29cada05da8946d718fe331e28e7553922033..5607404fa0132febdbdaad051a4e9426
 +     * @param teleportFlags Flags to be used in this teleportation
 +     * @return <code>true</code> if the teleport was successful
 +     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
 +    boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
 +    // Paper end - Teleport API
 +
@@ -168,7 +161,7 @@ diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/buk
 index 0e42cd429a75d10f8628acad319ee3dd2cdf02c3..9794b8f812375ad52b4caceef0bf659d8fbf9d65 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -3118,6 +3118,49 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -3118,6 +3118,45 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      String getClientBrandName();
      // Paper end
  
@@ -179,7 +172,6 @@ index 0e42cd429a75d10f8628acad319ee3dd2cdf02c3..9794b8f812375ad52b4caceef0bf659d
 +     * @param yaw the yaw
 +     * @param pitch the pitch
 +     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
 +    void setRotation(float yaw, float pitch);
 +
 +    /**
@@ -190,7 +182,6 @@ index 0e42cd429a75d10f8628acad319ee3dd2cdf02c3..9794b8f812375ad52b4caceef0bf659d
 +     * @param z z coordinate
 +     * @param playerAnchor What part of the player should face the given position
 +     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
 +    void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor);
 +
 +    /**
@@ -199,7 +190,6 @@ index 0e42cd429a75d10f8628acad319ee3dd2cdf02c3..9794b8f812375ad52b4caceef0bf659d
 +     * @param position Position to look at in the player's current world
 +     * @param playerAnchor What part of the player should face the given position
 +     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
 +    default void lookAt(@NotNull io.papermc.paper.math.Position position, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
 +        this.lookAt(position.x(), position.y(), position.z(), playerAnchor);
 +    }
@@ -211,7 +201,6 @@ index 0e42cd429a75d10f8628acad319ee3dd2cdf02c3..9794b8f812375ad52b4caceef0bf659d
 +     * @param playerAnchor What part of the player should face the entity
 +     * @param entityAnchor What part of the entity the player should face
 +     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
 +    void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor);
 +    // Paper end - Teleport API
 +
@@ -219,7 +208,7 @@ index 0e42cd429a75d10f8628acad319ee3dd2cdf02c3..9794b8f812375ad52b4caceef0bf659d
      @Override
      Spigot spigot();
 diff --git a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
-index 2deae344c88920ab95eefd2f65df5c858e04750b..32f78f2e32280f5c9ee7394b77ed929845f127d2 100644
+index 2deae344c88920ab95eefd2f65df5c858e04750b..ccfb08af8c57ddac3062c2cec28d7ff428082709 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
 @@ -13,8 +13,14 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
@@ -242,7 +231,7 @@ index 2deae344c88920ab95eefd2f65df5c858e04750b..32f78f2e32280f5c9ee7394b77ed9298
      }
  
 +    // Paper start - Teleport API
-+    @org.jetbrains.annotations.ApiStatus.Experimental
++    @org.jetbrains.annotations.ApiStatus.Internal
 +    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, @NotNull java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> teleportFlagSet) {
 +        super(player, from, to);
 +        this.teleportFlagSet = teleportFlagSet;
@@ -253,7 +242,7 @@ index 2deae344c88920ab95eefd2f65df5c858e04750b..32f78f2e32280f5c9ee7394b77ed9298
      /**
       * Gets the cause of this teleportation event
       *
-@@ -88,6 +103,31 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
+@@ -88,6 +103,30 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          UNKNOWN;
      }
  
@@ -275,7 +264,6 @@ index 2deae344c88920ab95eefd2f65df5c858e04750b..32f78f2e32280f5c9ee7394b77ed9298
 +     *
 +     * @return an immutable set of relative teleportation flags
 +     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
 +    @NotNull
 +    public java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> getRelativeTeleportationFlags() {
 +        return this.teleportFlagSet;
