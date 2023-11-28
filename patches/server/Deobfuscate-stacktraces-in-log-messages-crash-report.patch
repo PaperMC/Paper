@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      implementation("org.ow2.asm:asm-commons:9.5") // Paper - ASM event executor generation
      implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
-+    implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
++    implementation("net.fabricmc:mapping-io:0.5.0") // Paper - needed to read mappings for stacktrace deobfuscation
      runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
      runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
@@ -136,6 +136,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.HashMap;
 +import java.util.HashSet;
 +import java.util.Map;
++import java.util.Objects;
 +import java.util.Set;
 +import java.util.function.Function;
 +import java.util.stream.Collectors;
@@ -222,7 +223,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return null;
 +            }
 +            final MemoryMappingTree tree = new MemoryMappingTree();
-+            MappingReader.read(new InputStreamReader(mappingsInputStream, StandardCharsets.UTF_8), MappingFormat.TINY_2, tree);
++            MappingReader.read(new InputStreamReader(mappingsInputStream, StandardCharsets.UTF_8), MappingFormat.TINY_2_FILE, tree);
 +            final Set<ClassMapping> classes = new HashSet<>();
 +
 +            final StringPool pool = new StringPool();
@@ -232,16 +233,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                for (final MappingTree.MethodMapping methodMapping : cls.getMethods()) {
 +                    methods.put(
 +                        pool.string(methodKey(
-+                            methodMapping.getName(SPIGOT_NAMESPACE),
-+                            methodMapping.getDesc(SPIGOT_NAMESPACE)
++                            Objects.requireNonNull(methodMapping.getName(SPIGOT_NAMESPACE)),
++                            Objects.requireNonNull(methodMapping.getDesc(SPIGOT_NAMESPACE))
 +                        )),
-+                        pool.string(methodMapping.getName(MOJANG_PLUS_YARN_NAMESPACE))
++                        pool.string(Objects.requireNonNull(methodMapping.getName(MOJANG_PLUS_YARN_NAMESPACE)))
 +                    );
 +                }
 +
 +                final ClassMapping map = new ClassMapping(
-+                    cls.getName(SPIGOT_NAMESPACE).replace('/', '.'),
-+                    cls.getName(MOJANG_PLUS_YARN_NAMESPACE).replace('/', '.'),
++                    Objects.requireNonNull(cls.getName(SPIGOT_NAMESPACE)).replace('/', '.'),
++                    Objects.requireNonNull(cls.getName(MOJANG_PLUS_YARN_NAMESPACE)).replace('/', '.'),
 +                    Map.copyOf(methods)
 +                );
 +                classes.add(map);
