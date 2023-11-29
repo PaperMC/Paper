@@ -18,10 +18,10 @@ the schedulers depending on the result of the ownership check.
 
 diff --git a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5d5fd906d
+index 0000000000000000000000000000000000000000..f397d3a3dc1b8d8dd66982232e6e6a6542e9be96
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,186 @@
 +package io.papermc.paper.threadedregions;
 +
 +import ca.spottedleaf.concurrentutil.util.Validate;
@@ -69,6 +69,7 @@ index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5
 +    private final Long2ObjectOpenHashMap<List<ScheduledTask>> oneTimeDelayed = new Long2ObjectOpenHashMap<>();
 +
 +    private final ArrayDeque<ScheduledTask> currentlyExecuting = new ArrayDeque<>();
++    private boolean hasScheduledAtLeastOneTask = false;
 +
 +    public EntityScheduler(final CraftEntity entity) {
 +        this.entity = Validate.notNull(entity);
@@ -148,6 +149,7 @@ index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5
 +            if (this.tickCount == RETIRED_TICK_COUNT) {
 +                return false;
 +            }
++            this.hasScheduledAtLeastOneTask = true;
 +            this.oneTimeDelayed.computeIfAbsent(this.tickCount + Math.max(1L, delay), (final long keyInMap) -> {
 +                return new ArrayList<>();
 +            }).add(task);
@@ -162,6 +164,9 @@ index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5
 +     * @throws IllegalStateException If the scheduler is retired.
 +     */
 +    public void executeTick() {
++        if (!this.hasScheduledAtLeastOneTask)
++            return;
++
 +        final Entity thisEntity = this.entity.getHandleRaw();
 +
 +        TickThread.ensureTickThread(thisEntity, "May not tick entity scheduler asynchronously");
@@ -1224,7 +1229,7 @@ index bf77b0dae2ca25437df7386d2196da24d681e2ed..4516991a4d1299d7e93019a4b9bc227b
      public void setLevelCallback(EntityInLevelCallback changeListener) {
          this.levelCallback = changeListener;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 9d86b54a9945d4644f7920e06e5d04faaaa2e8c8..16906e8ba7d05275561d465a08b792137d284c4e 100644
+index 33c1a46e7bd40784850745cc1a48b9f075da219e..db5f7a4e89aa963b640f2299ba3b08cf7c083506 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -310,6 +310,76 @@ public final class CraftServer implements Server {
