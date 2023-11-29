@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Tue, 28 Nov 2023 19:28:37 -0700
+Subject: [PATCH] MergedProperties POC
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 64479f0a892d6847f987d844efe282a6080d607b..655e72cc8500767043875884589423b33de96538 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -12,13 +12,19 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
+ }
+ val alsoShade: Configuration by configurations.creating
+ 
++val versions = MergedProperties.fromAllProjects(project, "versions.properties")
++val adventureVersion by versions
++val log4jVersion by versions
++val mappingIoVersion by versions
++val asmVersion by versions
++
+ dependencies {
+     implementation(project(":paper-api"))
+     implementation(project(":paper-mojangapi"))
+     // Paper start
+     implementation("org.jline:jline-terminal-jansi:3.21.0")
+     implementation("net.minecrell:terminalconsoleappender:1.3.0")
+-    implementation("net.kyori:adventure-text-serializer-ansi:4.14.0") // Keep in sync with adventureVersion from Paper-API build file
++    implementation("net.kyori:adventure-text-serializer-ansi:$adventureVersion")
+     implementation("net.kyori:ansi:1.0.3") // Manually bump beyond above transitive dep
+     /*
+           Required to add the missing Log4j2Plugins.dat file from log4j-core
+@@ -26,18 +32,18 @@ dependencies {
+           all its classes to check if they are plugins.
+           Scanning takes about 1-2 seconds so adding this speeds up the server start.
+      */
+-    implementation("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - implementation
+-    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
++    implementation("org.apache.logging.log4j:log4j-core:$log4jVersion") // Paper - implementation
++    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:$log4jVersion") // Paper - Needed to generate meta for our Log4j plugins
+     runtimeOnly(log4jPlugins.output)
+     alsoShade(log4jPlugins.output)
+     implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
+     // Paper end
+-    implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
+-    implementation("org.ow2.asm:asm:9.5")
+-    implementation("org.ow2.asm:asm-commons:9.5") // Paper - ASM event executor generation
++    implementation("org.apache.logging.log4j:log4j-iostreams:$log4jVersion") // Paper - remove exclusion
++    implementation("org.ow2.asm:asm:$asmVersion")
++    implementation("org.ow2.asm:asm-commons:$asmVersion") // Paper - ASM event executor generation
+     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
+     implementation("commons-lang:commons-lang:2.6")
+-    implementation("net.fabricmc:mapping-io:0.5.0") // Paper - needed to read mappings for stacktrace deobfuscation
++    implementation("net.fabricmc:mapping-io:$mappingIoVersion") // Paper - needed to read mappings for stacktrace deobfuscation
+     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
+     runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
+     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
+diff --git a/versions.properties b/versions.properties
+new file mode 100644
+index 0000000000000000000000000000000000000000..ecdcc6735c3f6e5205a57740bafdbf3c0fbfd36c
+--- /dev/null
++++ b/versions.properties
+@@ -0,0 +1,2 @@
++log4jVersion = 2.19.0
++mappingIoVersion = 0.5.0
