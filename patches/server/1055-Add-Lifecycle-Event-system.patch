@@ -54,10 +54,10 @@ index 30b50e6294c6eaade5e17cfaf34600d122e6251c..0bb7694188d5fb75bb756ce75d0060ea
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f2190599dda61840969045f6ea9237678faccec4
+index 0000000000000000000000000000000000000000..e331e6ddf2333b48efd1179499ebbb70eeaf7e0a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,67 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
 +import com.mojang.logging.LogUtils;
@@ -69,6 +69,7 @@ index 0000000000000000000000000000000000000000..f2190599dda61840969045f6ea923767
 +import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
 +import java.util.ArrayList;
 +import java.util.List;
++import java.util.function.Predicate;
 +import org.bukkit.plugin.Plugin;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -88,6 +89,10 @@ index 0000000000000000000000000000000000000000..f2190599dda61840969045f6ea923767
 +    }
 +
 +    public <O extends LifecycleEventOwner, E extends LifecycleEvent> void callEvent(final LifecycleEventType<O, E, ?> eventType, final E event) {
++        this.callEvent(eventType, event, $ -> true);
++    }
++
++    public <O extends LifecycleEventOwner, E extends LifecycleEvent> void callEvent(final LifecycleEventType<O, E, ?> eventType, final E event, final Predicate<? super O> ownerPredicate) {
 +        final AbstractLifecycleEventType<O, E, ?, ?> lifecycleEventType = (AbstractLifecycleEventType<O, E, ?, ?>) eventType;
 +        lifecycleEventType.forEachHandler(registeredHandler -> {
 +            try {
@@ -95,7 +100,7 @@ index 0000000000000000000000000000000000000000..f2190599dda61840969045f6ea923767
 +            } catch (final Throwable ex) {
 +                LOGGER.error("Could not run '{}' lifecycle event handler from {}", lifecycleEventType.name(), registeredHandler.owner().getPluginMeta().getDisplayName(), ex);
 +            }
-+        });
++        }, handler -> ownerPredicate.test(handler.owner()));
 +    }
 +
 +    public void unregisterAllEventHandlersFor(final Plugin plugin) {
@@ -193,7 +198,7 @@ index 0000000000000000000000000000000000000000..f1be5b9a29435bae0afd2bd951bfe88d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/AbstractLifecycleEventHandlerConfiguration.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/AbstractLifecycleEventHandlerConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..06e7fdd7767258c1fa9ab8f021a52fe17c569b58
+index 0000000000000000000000000000000000000000..684be3273f927bd05a435915e5ceaf3e3c2d4cfe
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/AbstractLifecycleEventHandlerConfiguration.java
 @@ -0,0 +1,26 @@
@@ -220,7 +225,7 @@ index 0000000000000000000000000000000000000000..06e7fdd7767258c1fa9ab8f021a52fe1
 +    public abstract CI config();
 +
 +    public final void registerFrom(final O owner) {
-+        this.type.register(owner, this.handler, this.config());
++        this.type.tryRegister(owner, this.handler, this.config());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/MonitorLifecycleEventHandlerConfigurationImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/MonitorLifecycleEventHandlerConfigurationImpl.java
@@ -341,10 +346,10 @@ index 0000000000000000000000000000000000000000..bd52f3e00e44f891d09a34c2f55283ac
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..01d2629497e362df3baee1ceb359948a3b1b5b3f
+index 0000000000000000000000000000000000000000..b42ac952bb982a4357668ba57719038f323755e9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,49 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
 +import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
@@ -374,27 +379,32 @@ index 0000000000000000000000000000000000000000..01d2629497e362df3baee1ceb359948a
 +        return this.name;
 +    }
 +
-+    protected final void verifyOwner(final O owner) {
++    private void verifyOwner(final O owner) {
 +        if (!this.ownerType.isInstance(owner)) {
 +            throw new IllegalArgumentException("You cannot register the lifecycle event '" + this.name + "' on " + owner);
 +        }
 +    }
 +
-+    public abstract void forEachHandler(Consumer<? super RegisteredHandler<O, E>> consumer);
++    public abstract void forEachHandler(Consumer<? super RegisteredHandler<O, E>> consumer, Predicate<? super RegisteredHandler<O, E>> predicate);
 +
 +    public abstract void removeMatching(Predicate<? super RegisteredHandler<O, E>> predicate);
 +
-+    public abstract void register(final O owner, final LifecycleEventHandler<? super E> handler, CI config);
++    protected abstract void register(O owner, LifecycleEventHandler<? super E> handler, CI config);
++
++    public final void tryRegister(final O owner, final LifecycleEventHandler<? super E> handler, final CI config) {
++        this.verifyOwner(owner);
++        this.register(owner, handler, config);
++    }
 +
 +    public record RegisteredHandler<O, E extends LifecycleEvent>(O owner, LifecycleEventHandler<? super E> lifecycleEventHandler) {
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..de5699153853a58dc8ab9252e5dae1f1bf11eb4e
+index 0000000000000000000000000000000000000000..04bc8aa1997052005e3cfd8115e853ca91b6dd76
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,55 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
 +import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
@@ -421,13 +431,12 @@ index 0000000000000000000000000000000000000000..de5699153853a58dc8ab9252e5dae1f1
 +    }
 +
 +    @Override
-+    public MonitorLifecycleEventHandlerConfigurationImpl<O, E> handler(final LifecycleEventHandler<? super E> handler) {
++    public MonitorLifecycleEventHandlerConfigurationImpl<O, E> newHandler(final LifecycleEventHandler<? super E> handler) {
 +        return new MonitorLifecycleEventHandlerConfigurationImpl<>(handler, this);
 +    }
 +
 +    @Override
-+    public void register(final O owner, final LifecycleEventHandler<? super E> handler, final MonitorLifecycleEventHandlerConfigurationImpl<O, E> config) {
-+        this.verifyOwner(owner);
++    protected void register(final O owner, final LifecycleEventHandler<? super E> handler, final MonitorLifecycleEventHandlerConfigurationImpl<O, E> config) {
 +        final RegisteredHandler<O, E> registeredHandler = new RegisteredHandler<>(owner, handler);
 +        if (!config.isMonitor()) {
 +            this.handlers.add(this.nonMonitorIdx, registeredHandler);
@@ -438,9 +447,11 @@ index 0000000000000000000000000000000000000000..de5699153853a58dc8ab9252e5dae1f1
 +    }
 +
 +    @Override
-+    public void forEachHandler(final Consumer<? super RegisteredHandler<O, E>> consumer) {
++    public void forEachHandler(final Consumer<? super RegisteredHandler<O, E>> consumer, final Predicate<? super RegisteredHandler<O, E>> predicate) {
 +        for (final RegisteredHandler<O, E> handler : this.handlers) {
-+            consumer.accept(handler);
++            if (predicate.test(handler)) {
++                consumer.accept(handler);
++            }
 +        }
 +    }
 +
@@ -451,10 +462,10 @@ index 0000000000000000000000000000000000000000..de5699153853a58dc8ab9252e5dae1f1
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..75abbd3e6ead8f9ca26d7a1de24a5883d67efbd4
+index 0000000000000000000000000000000000000000..674aeb02d0b33a7f0ba0e5b8f1e15e5e720725c5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,65 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
 +import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
@@ -494,25 +505,22 @@ index 0000000000000000000000000000000000000000..75abbd3e6ead8f9ca26d7a1de24a5883
 +    }
 +
 +    @Override
-+    public PrioritizedLifecycleEventHandlerConfiguration<O> handler(final LifecycleEventHandler<? super E> handler) {
++    public PrioritizedLifecycleEventHandlerConfiguration<O> newHandler(final LifecycleEventHandler<? super E> handler) {
 +        return new PrioritizedLifecycleEventHandlerConfigurationImpl<>(handler, this);
 +    }
 +
 +    @Override
-+    public void register(final O owner, final LifecycleEventHandler<? super E> handler, final PrioritizedLifecycleEventHandlerConfigurationImpl<O, E> config) {
-+        this.registerWithPriority(owner, handler, config.priority());
-+    }
-+
-+    public void registerWithPriority(final O owner, final LifecycleEventHandler<? super E> lifecycleEventHandler, final OptionalInt priority) {
-+        this.verifyOwner(owner);
-+        this.handlers.add(new PrioritizedHandler<>(new RegisteredHandler<>(owner, lifecycleEventHandler), priority));
++    protected void register(final O owner, final LifecycleEventHandler<? super E> handler, final PrioritizedLifecycleEventHandlerConfigurationImpl<O, E> config) {
++        this.handlers.add(new PrioritizedHandler<>(new RegisteredHandler<>(owner, handler), config.priority()));
 +        this.handlers.sort(COMPARATOR);
 +    }
 +
 +    @Override
-+    public void forEachHandler(final Consumer<? super RegisteredHandler<O, E>> consumer) {
++    public void forEachHandler(final Consumer<? super RegisteredHandler<O, E>> consumer, final Predicate<? super RegisteredHandler<O, E>> predicate) {
 +        for (final PrioritizedHandler<O, E> handler : this.handlers) {
-+            consumer.accept(handler.handler());
++            if (predicate.test(handler.handler())) {
++                consumer.accept(handler.handler());
++            }
 +        }
 +    }
 +

@@ -24,15 +24,15 @@ public final class TestPlugin extends JavaPlugin implements Listener {
         this.getServer().getPluginManager().registerEvents(this, this);
 
         final LifecycleEventManager<Plugin> lifecycles = this.getLifecycleManager();
-        lifecycles.registerEventHandler(LifecycleEvents.DUMMY_STATIC.handler(event -> {
+        lifecycles.registerEventHandler(LifecycleEvents.DUMMY_STATIC.newHandler(event -> {
             final DummyResourceRegistrar registrar = event.registrar();
             System.out.println("dummy_static hook FIRST");
         }).priority(-1));
-        lifecycles.registerEventHandler(LifecycleEvents.DUMMY_STATIC.handler(event -> {
+        lifecycles.registerEventHandler(LifecycleEvents.DUMMY_STATIC.newHandler(event -> {
             final DummyResourceRegistrar registrar = event.registrar();
             System.out.println("dummy_static hook FOURTH (monitor)");
         }).monitor());
-        lifecycles.registerEventHandler(LifecycleEvents.DUMMY_STATIC.handler(event -> {
+        lifecycles.registerEventHandler(LifecycleEvents.DUMMY_STATIC.newHandler(event -> {
             final DummyResourceRegistrar registrar = event.registrar();
             System.out.println("dummy_static hook THIRD");
         }).priority(100));
@@ -40,7 +40,7 @@ public final class TestPlugin extends JavaPlugin implements Listener {
         // lifecycles.registerEventHandler(LifecycleEvents.DUMMY.handler(event -> { // shouldn't compile
         // }));
 
-        lifecycles.registerEventHandler(LifecycleEvents.REGISTER_ANYWHERE_EVENT.handler(event -> {
+        lifecycles.registerEventHandler(LifecycleEvents.REGISTER_ANYWHERE_EVENT.newHandler(event -> {
 
         }));
     }
