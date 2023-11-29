@@ -6,10 +6,10 @@ Subject: [PATCH] Make banners modifiable with both BannerMeta and
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 83bbfe1ffd0dc8e168064225a02abcaa49df60ed..1df9ab240c3478cc6154fb24cbbc6c3a944673f4 100644
+index 9469b0d5d8a46ac17c3998a4b537a4feb1deb3b0..dfdf95aac56408d302277ea99259205df943b24f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -130,7 +130,7 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -162,7 +162,7 @@ public final class CraftItemFactory implements ItemFactory {
          case WHITE_WALL_BANNER:
          case YELLOW_BANNER:
          case YELLOW_WALL_BANNER:
@@ -19,10 +19,10 @@ index 83bbfe1ffd0dc8e168064225a02abcaa49df60ed..1df9ab240c3478cc6154fb24cbbc6c3a
          case AXOLOTL_SPAWN_EGG:
          case BAT_SPAWN_EGG:
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index f45e4acee69bd95ff2e41feaf44f5414d2e40df0..5d47d47358dfa082e9b7bf142a24bd2e3ac7dd24 100644
+index 654694515b4b9257a41c8623675fa3abc51a1cb7..de9b940eb1220d9062a0f0bfcadab51d7dd678b2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -362,7 +362,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -414,7 +414,7 @@ public final class CraftItemStack extends ItemStack {
              case WHITE_WALL_BANNER:
              case YELLOW_BANNER:
              case YELLOW_WALL_BANNER:
@@ -32,10 +32,10 @@ index f45e4acee69bd95ff2e41feaf44f5414d2e40df0..5d47d47358dfa082e9b7bf142a24bd2e
              case AXOLOTL_SPAWN_EGG:
              case BAT_SPAWN_EGG:
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
-index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990fa8291289 100644
+index d8039afde8a44cbb0112256b3400ced479626331..bbd9985fe6cf2a87dfe4d208c769f1f3f77d0add 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
-@@ -18,7 +18,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+@@ -19,7 +19,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
  import org.bukkit.inventory.meta.BannerMeta;
  
  @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
@@ -44,7 +44,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
  
      private static final Set<Material> BANNER_MATERIALS = Sets.newHashSet(
              Material.BLACK_BANNER,
-@@ -60,13 +60,21 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -61,13 +61,21 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
      static final ItemMetaKey COLOR = new ItemMetaKey("Color", "color");
      static final ItemMetaKey PATTERN = new ItemMetaKey("Pattern", "pattern");
  
@@ -69,7 +69,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
              return;
          }
  
-@@ -75,10 +83,12 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -76,10 +84,12 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
          this.patterns = new ArrayList<Pattern>(banner.patterns);
      }
  
@@ -85,7 +85,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
              return;
          }
  
-@@ -100,12 +110,27 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -101,12 +111,27 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
          }
      }
  
@@ -108,14 +108,14 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
 +        }
 +        // Paper end - Correctly deserialize old BannerMeta to new BlockStateMeta
  
-         String baseStr = SerializableMeta.getString(map, BASE.BUKKIT, true);
+         String baseStr = SerializableMeta.getString(map, CraftMetaBanner.BASE.BUKKIT, true);
          if (baseStr != null) {
 -            this.base = DyeColor.legacyValueOf(baseStr);
 +            this.setBaseColor(DyeColor.legacyValueOf(baseStr)); // Paper - Use setter to correctly update block state
          }
  
-         Iterable<?> rawPatternList = SerializableMeta.getObject(Iterable.class, map, PATTERNS.BUKKIT, true);
-@@ -123,6 +148,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+         Iterable<?> rawPatternList = SerializableMeta.getObject(Iterable.class, map, CraftMetaBanner.PATTERNS.BUKKIT, true);
+@@ -122,6 +147,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
      @Override
      void applyToItem(CompoundTag tag) {
          super.applyToItem(tag);
@@ -123,7 +123,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
  
          CompoundTag entityTag = new CompoundTag();
          if (this.base != null) {
-@@ -144,46 +170,88 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -143,46 +169,88 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
  
      @Override
      public DyeColor getBaseColor() {
@@ -212,15 +212,15 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
          return this.patterns.size();
      }
  
-@@ -191,6 +259,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -190,6 +258,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
      ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
          super.serialize(builder);
  
 +        if (true) return builder; // Paper - Let CraftMetaBlockState serialize for us
          if (this.base != null) {
-             builder.put(BASE.BUKKIT, this.base.toString());
+             builder.put(CraftMetaBanner.BASE.BUKKIT, this.base.toString());
          }
-@@ -206,6 +275,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -205,6 +274,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
      int applyHash() {
          final int original;
          int hash = original = super.applyHash();
@@ -228,7 +228,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
          if (this.base != null) {
              hash = 31 * hash + this.base.hashCode();
          }
-@@ -217,6 +287,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -216,6 +286,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
  
      @Override
      public boolean equalsCommon(CraftMetaItem meta) {
@@ -236,7 +236,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
          if (!super.equalsCommon(meta)) {
              return false;
          }
-@@ -230,11 +301,13 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -229,11 +300,13 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
  
      @Override
      boolean notUncommon(CraftMetaItem meta) {
@@ -250,7 +250,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
          return super.isEmpty() && this.patterns.isEmpty() && this.base == null;
      }
  
-@@ -246,7 +319,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -245,7 +318,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
      @Override
      public CraftMetaBanner clone() {
          CraftMetaBanner meta = (CraftMetaBanner) super.clone();
@@ -260,7 +260,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990f
      }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 1957e82b67b4aa301d12468d5a81d96e621dab49..8413721ba51191555d66dedb14cbb2b6ec99e61e 100644
+index cab86a4fe1e4abc4cbf4e6a053465e578b34be67..17c97a34c04f085618e143e1c0c04aff6c46c555 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 @@ -40,7 +40,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
