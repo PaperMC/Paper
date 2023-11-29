@@ -18,10 +18,10 @@ the schedulers depending on the result of the ownership check.
 
 diff --git a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f397d3a3dc1b8d8dd66982232e6e6a6542e9be96
+index 0000000000000000000000000000000000000000..a79a6e7da5cdcd2ab654791e8ed3fa63958257e0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
-@@ -0,0 +1,186 @@
+@@ -0,0 +1,187 @@
 +package io.papermc.paper.threadedregions;
 +
 +import ca.spottedleaf.concurrentutil.util.Validate;
@@ -69,7 +69,7 @@ index 0000000000000000000000000000000000000000..f397d3a3dc1b8d8dd66982232e6e6a65
 +    private final Long2ObjectOpenHashMap<List<ScheduledTask>> oneTimeDelayed = new Long2ObjectOpenHashMap<>();
 +
 +    private final ArrayDeque<ScheduledTask> currentlyExecuting = new ArrayDeque<>();
-+    private boolean hasScheduledAtLeastOneTask = false;
++    private boolean awaitingFirstTask = false;
 +
 +    public EntityScheduler(final CraftEntity entity) {
 +        this.entity = Validate.notNull(entity);
@@ -149,7 +149,7 @@ index 0000000000000000000000000000000000000000..f397d3a3dc1b8d8dd66982232e6e6a65
 +            if (this.tickCount == RETIRED_TICK_COUNT) {
 +                return false;
 +            }
-+            this.hasScheduledAtLeastOneTask = true;
++            this.awaitingFirstTask = true;
 +            this.oneTimeDelayed.computeIfAbsent(this.tickCount + Math.max(1L, delay), (final long keyInMap) -> {
 +                return new ArrayList<>();
 +            }).add(task);
@@ -164,8 +164,9 @@ index 0000000000000000000000000000000000000000..f397d3a3dc1b8d8dd66982232e6e6a65
 +     * @throws IllegalStateException If the scheduler is retired.
 +     */
 +    public void executeTick() {
-+        if (!this.hasScheduledAtLeastOneTask)
++        if (!this.awaitingFirstTask) {
 +            return;
++        }
 +
 +        final Entity thisEntity = this.entity.getHandleRaw();
 +
