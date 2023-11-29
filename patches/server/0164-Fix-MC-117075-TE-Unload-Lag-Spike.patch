@@ -9,10 +9,10 @@ This is WAY FASTER than using `removeAll` with a list of entries to be removed, 
 
 diff --git a/src/main/java/io/papermc/paper/util/BlockEntityTickersList.java b/src/main/java/io/papermc/paper/util/BlockEntityTickersList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f1c18bd3a98665c530090eb5c70d2435b81e92d1
+index 0000000000000000000000000000000000000000..c82b0f14257e54848fcbde2c0c6ac746d2b8218c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/BlockEntityTickersList.java
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,105 @@
 +package io.papermc.paper.util;
 +
 +import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -56,8 +56,10 @@ index 0000000000000000000000000000000000000000..f1c18bd3a98665c530090eb5c70d2435
 +     */
 +    public void markAsRemoved(final int index) {
 +        // The block entities list always loop starting from 0, so we only need to check if the startSearchFromIndex is -1 and that's it
-+        if (this.startSearchFromIndex == -1)
++        if (this.startSearchFromIndex == -1) {
 +            this.startSearchFromIndex = index;
++        }
++
 +        this.toRemove.add(index);
 +    }
 +
@@ -65,8 +67,9 @@ index 0000000000000000000000000000000000000000..f1c18bd3a98665c530090eb5c70d2435
 +     * Removes elements that have been marked as removed.
 +     */
 +    public void removeMarkedEntries() {
-+        if (this.startSearchFromIndex == -1) // No entries in the list, skip
++        if (this.startSearchFromIndex == -1) { // No entries in the list, skip
 +            return;
++        }
 +
 +        removeAllByIndex(startSearchFromIndex, toRemove);
 +        toRemove.clear();
@@ -75,21 +78,25 @@ index 0000000000000000000000000000000000000000..f1c18bd3a98665c530090eb5c70d2435
 +
 +    /**
 +     * Removes elements by their index.
++     *
++     * @param startSearchFromIndex from where the search should start
++     * @param indexesToBeRemoved list of indexes to be removed
 +     */
-+    private void removeAllByIndex(final int startSearchFromIndex, final IntOpenHashSet c) { // can't use Set<Integer> because we want to avoid autoboxing when using contains
-+        final int requiredMatches = c.size();
-+        if (requiredMatches == 0)
++    private void removeAllByIndex(final int startSearchFromIndex, final IntOpenHashSet indexesToBeRemoved) { // can't use Set<Integer> because we want to avoid autoboxing when using contains
++        final int requiredMatches = indexesToBeRemoved.size();
++        if (requiredMatches == 0) {
 +            return; // exit early, we don't need to do anything
-+
-+        final Object[] a = this.a;
-+        int j = startSearchFromIndex;
++        }
++        
++        final Object[] elements = this.a;
++        int newIndex = startSearchFromIndex;
 +        int matches = 0;
-+        for (int i = startSearchFromIndex; i < size; i++) { // If the user knows the first index to be removed, we can skip a lot of unnecessary comparsions
-+            if (!c.contains(i)) {
++        for (int i = startSearchFromIndex; i < size; i++) { // If the user knows the first index to be removed, we can skip elements lot of unnecessary comparsions
++            if (!indexesToBeRemoved.contains(i)) {
 +                // TODO: It can be possible to optimize this loop by tracking the start/finish and then using arraycopy to "skip" the elements,
-+                //  this would optimize cases where the index to be removed are far apart, HOWEVER it does have a big performance impact if you are doing
++                //  this would optimize cases where the index to be removed are far apart, HOWEVER it does have elements big performance impact if you are doing
 +                //  "arraycopy" for each element
-+                a[j++] = a[i];
++                elements[newIndex++] = elements[i];
 +            } else {
 +                matches++;
 +            }
@@ -101,14 +108,14 @@ index 0000000000000000000000000000000000000000..f1c18bd3a98665c530090eb5c70d2435
 +                if (i != (size - 1)) { // If it isn't the last index...
 +                    // i + 1 because we want to copy the *next* element over
 +                    // and the size - i - 1 is because we want to get the current size, minus the current index (which is i), and then - 1 because we want to copy -1 ahead (remember, we are adding +1 to copy the *next* element)
-+                    System.arraycopy(a, i + 1, a, j, size - i - 1);
++                    System.arraycopy(elements, i + 1, elements, newIndex, size - i - 1);
 +                }
-+                j = size - requiredMatches;
++                newIndex = size - requiredMatches;
 +                break;
 +            }
 +        }
-+        Arrays.fill(a, j, size, null);
-+        size = j;
++        Arrays.fill(elements, newIndex, size, null);
++        size = newIndex;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
