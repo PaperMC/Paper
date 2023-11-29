@@ -4,37 +4,28 @@ Date: Sat, 4 Apr 2015 23:17:52 -0400
 Subject: [PATCH] Complete resource pack API
 
 
-diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 30a6be5487e0bff49d134c5dcae520071763d2ac..f5b8da00f641a401d7ff4641908dd7de55cbe683 100644
---- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1754,8 +1754,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-             ServerGamePacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack rejection", this.player.getName());
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 0a0a9f1be333911b6de7502a9541063ab9ea0164..a258a252e749e3b7ebb1a6304b7f143e93a67178 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -156,7 +156,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack rejection", this.playerProfile().getName());
              this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
          }
--        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), PlayerResourcePackStatusEvent.Status.values()[packet.action.ordinal()])); // CraftBukkit
--
+-        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), PlayerResourcePackStatusEvent.Status.values()[packet.getAction().ordinal()])); // CraftBukkit
 +        // Paper start
-+        PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.action.ordinal()];
++        PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.getAction().ordinal()];
 +        player.getBukkitEntity().setResourcePackStatus(packStatus);
 +        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packStatus)); // CraftBukkit
 +        // Paper end
+ 
      }
  
-     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 120461eb5d4129453ccff4304b376045ccf6f2e7..f4d4164b7a6b4715616712d939f423f0f2ab9e54 100644
+index c87cba2252f091b026c9169ebf1117cd82d7942b..e542d86dbf44e91058ad026e1bf9105d92fa687c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -153,6 +153,7 @@ import org.bukkit.plugin.Plugin;
- import org.bukkit.plugin.messaging.StandardMessenger;
- import org.bukkit.profile.PlayerProfile;
- import org.bukkit.scoreboard.Scoreboard;
-+import org.jetbrains.annotations.NotNull;
- 
- import net.md_5.bungee.api.chat.BaseComponent; // Spigot
- 
-@@ -171,6 +172,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -191,6 +191,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      private double healthScale = 20;
      private CraftWorldBorder clientWorldBorder = null;
      private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
@@ -45,7 +36,7 @@ index 120461eb5d4129453ccff4304b376045ccf6f2e7..f4d4164b7a6b4715616712d939f423f0
  
      public CraftPlayer(CraftServer server, ServerPlayer entity) {
          super(server, entity);
-@@ -2310,6 +2315,45 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2372,6 +2376,45 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      public boolean getAffectsSpawning() {
          return this.getHandle().affectsSpawning;
      }
@@ -62,12 +53,12 @@ index 120461eb5d4129453ccff4304b376045ccf6f2e7..f4d4164b7a6b4715616712d939f423f0
 +
 +    @Override
 +    public void setResourcePack(@NotNull String url, @NotNull String hash, boolean required, net.kyori.adventure.text.Component resourcePackPrompt) {
-+        Validate.notNull(url, "Resource pack URL cannot be null");
-+        Validate.notNull(hash, "Hash cannot be null");
++        Preconditions.checkArgument(url != null, "Resource pack URL cannot be null");
++        Preconditions.checkArgument(hash != null, "Hash cannot be null");
 +        net.minecraft.network.chat.Component promptComponent = resourcePackPrompt != null ?
 +                            io.papermc.paper.adventure.PaperAdventure.asVanilla(resourcePackPrompt) :
 +                           null;
-+        this.getHandle().sendTexturePack(url, hash, required, promptComponent);
++        this.getHandle().connection.send(new ClientboundResourcePackPacket(url, hash, required, promptComponent));
 +    }
 +
 +    @Override

@@ -1,0 +1,251 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 26 May 2023 18:14:44 -0700
+Subject: [PATCH] Code Generation
+
+Currently includes generated key holder classes for types
+used in the Registry Modification API
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 75bfb0ab8049ebbb52240abf661d469de5526767..87e4ee95a8da287b02c13fac5f24f66902bc84c9 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -1,6 +1,7 @@
+ plugins {
+     `java-library`
+     `maven-publish`
++    idea // Paper
+ }
+ 
+ java {
+@@ -46,6 +47,22 @@ dependencies {
+     testImplementation("org.ow2.asm:asm-tree:9.5")
+ }
+ 
++// Paper start
++val generatedApiPath: java.nio.file.Path = rootProject.projectDir.toPath().resolve("paper-api-generator/generated")
++idea {
++    module {
++        generatedSourceDirs.add(generatedApiPath.toFile())
++    }
++}
++sourceSets {
++    main {
++        java {
++            srcDir(generatedApiPath)
++        }
++    }
++}
++// Paper end
++
+ configure<PublishingExtension> {
+     publications.create<MavenPublication>("maven") {
+         from(components["java"])
+@@ -122,3 +139,14 @@ tasks.check {
+     dependsOn(scanJar)
+ }
+ // Paper end
++// Paper start
++val scanJarForOldGeneratedCode = tasks.register("scanJarForOldGeneratedCode", io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
++    mcVersion.set(providers.gradleProperty("mcVersion"))
++    annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
++    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
++    classpath.from(configurations.compileClasspath)
++}
++tasks.check {
++    dependsOn(scanJarForOldGeneratedCode)
++}
++// Paper end
+diff --git a/src/main/java/io/papermc/paper/generated/GeneratedFrom.java b/src/main/java/io/papermc/paper/generated/GeneratedFrom.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2512dba27edfdccbc4430815b6cba048e3d93484
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/generated/GeneratedFrom.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.generated;
++
++import java.lang.annotation.Documented;
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * Used to mark classes which are generated from
++ * a specific version of minecraft.
++ */
++@ApiStatus.Internal
++@Documented
++@Retention(RetentionPolicy.RUNTIME)
++@Target(ElementType.TYPE)
++public @interface GeneratedFrom {
++
++    String value();
++}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5251f922d2d14da35f61098c11694371f591cd2a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -0,0 +1,61 @@
++package io.papermc.paper.registry;
++
++import net.kyori.adventure.key.Keyed;
++import org.bukkit.GameEvent;
++import org.bukkit.block.Biome;
++import org.bukkit.generator.structure.StructureType;
++import org.bukkit.inventory.meta.trim.TrimMaterial;
++import org.bukkit.inventory.meta.trim.TrimPattern;
++import org.jetbrains.annotations.ApiStatus;
++
++import static io.papermc.paper.registry.RegistryKeyImpl.create;
++
++/**
++ * Identifier for a specific registry. For use with
++ * {@link TypedKey} and the registry modification API.
++ * <p>
++ * There are 2 types of registries, identified as "built-in"
++ * or "data-driven". The former are not changeable by datapacks (which
++ * doesn't necessarily mean they aren't changeable in the API) and
++ * are loaded first. "Data-driven" registries are all created by
++ * reading in data from the vanilla and other datapacks.
++ *
++ * @param <T> the value type
++ */
++@SuppressWarnings("unused")
++@ApiStatus.Experimental
++public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
++
++    /* ******************* *
++     * Built-in Registries *
++     * ******************* */
++    /**
++     * Built-in registry for game events
++     * @see io.papermc.paper.registry.keys.GameEventKeys
++     */
++    RegistryKey<GameEvent> GAME_EVENT = create("game_event");
++    /**
++     * Built-in registry for structure types.
++     * @see io.papermc.paper.registry.keys.StructureTypeKeys
++     */
++    RegistryKey<StructureType> STRUCTURE_TYPE = create("worldgen/structure_type");
++
++    /* ********************** *
++     * Data-driven Registries *
++     * ********************** */
++    /**
++     * Data-driven registry for structure types.
++     * @see io.papermc.paper.registry.keys.BiomeKeys
++     */
++    RegistryKey<Biome> BIOME = create("worldgen/biome");
++    /**
++     * Data-driven registry for structure types.
++     * @see io.papermc.paper.registry.keys.TrimMaterialKeys
++     */
++    RegistryKey<TrimMaterial> TRIM_MATERIAL = create("trim_material");
++    /**
++     * Data-driven registry for structure types.
++     * @see io.papermc.paper.registry.keys.TrimPatternKeys
++     */
++    RegistryKey<TrimPattern> TRIM_PATTERN = create("trim_pattern");
++}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9ad300fa1668cb59bbd85ff8091591db69b8c9dc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
+@@ -0,0 +1,19 @@
++package io.papermc.paper.registry;
++
++import com.google.common.collect.Sets;
++import java.util.Set;
++import net.kyori.adventure.key.Key;
++import org.intellij.lang.annotations.Subst;
++import org.jetbrains.annotations.NotNull;
++
++record RegistryKeyImpl<T>(@NotNull Key key) implements RegistryKey<T> {
++
++    static final Set<RegistryKey<?>> REGISTRY_KEYS = Sets.newIdentityHashSet();
++
++    static <T> RegistryKey<T> create(@Subst("some_key") final String key) {
++        final RegistryKey<T> registryKey = new RegistryKeyImpl<>(Key.key(Key.MINECRAFT_NAMESPACE, key));
++        REGISTRY_KEYS.add(registryKey);
++        return registryKey;
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/registry/TypedKey.java b/src/main/java/io/papermc/paper/registry/TypedKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..271454cd1b92ada4301025b57348ea77da9116a1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/TypedKey.java
+@@ -0,0 +1,44 @@
++package io.papermc.paper.registry;
++
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents a key for a value in a specific registry.
++ *
++ * @param <T> the value type for the registry
++ */
++@ApiStatus.Experimental
++public sealed interface TypedKey<T> extends Keyed permits TypedKeyImpl {
++
++    /**
++     * Gets the key for the value in the registry.
++     *
++     * @return the value's key
++     */
++    @Override
++    @NotNull Key key();
++
++    /**
++     * Gets the registry key for the value this key
++     * represents.
++     *
++     * @return the registry key
++     */
++    @NotNull RegistryKey<T> registryKey();
++
++    /**
++     * Create a typed key from a key and a registry key.
++     *
++     * @param registryKey the registry this key is for
++     * @param key the key for the value in the registry
++     * @param <T> value type
++     * @return a new key for the value key and registry key
++     */
++    @ApiStatus.Experimental
++    static <T extends Keyed> @NotNull TypedKey<T> create(final @NotNull RegistryKey<T> registryKey, final @NotNull Key key) {
++        return new TypedKeyImpl<>(key, registryKey);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3c3fd73f7742bb8602e2f9164dd4c1208a412255
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.registry;
++
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.Keyed;
++import org.jetbrains.annotations.NotNull;
++
++record TypedKeyImpl<T extends Keyed>(@NotNull Key key, @NotNull RegistryKey<T> registryKey) implements TypedKey<T> {
++}
+diff --git a/src/main/java/org/bukkit/MinecraftExperimental.java b/src/main/java/org/bukkit/MinecraftExperimental.java
+index 2365a8c620be709b280fb08855752bb0995838fc..b63e24b3c4d2f1a08e39434caa527bb2e0edea22 100644
+--- a/src/main/java/org/bukkit/MinecraftExperimental.java
++++ b/src/main/java/org/bukkit/MinecraftExperimental.java
+@@ -24,4 +24,5 @@ import org.jetbrains.annotations.ApiStatus;
+ })
+ @ApiStatus.Internal
+ public @interface MinecraftExperimental {
++    String value() default ""; // Paper
+ }

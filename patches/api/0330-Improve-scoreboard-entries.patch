@@ -1,0 +1,191 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 4 Nov 2021 12:31:45 -0700
+Subject: [PATCH] Improve scoreboard entries
+
+
+diff --git a/src/main/java/org/bukkit/scoreboard/Objective.java b/src/main/java/org/bukkit/scoreboard/Objective.java
+index a625bcab8e77b05b3341a52c708fae1542b7e3d5..a193ffabb05160b462dee1ba8f687fdbc84405b6 100644
+--- a/src/main/java/org/bukkit/scoreboard/Objective.java
++++ b/src/main/java/org/bukkit/scoreboard/Objective.java
+@@ -148,9 +148,8 @@ public interface Objective {
+      * @return Score tracking the Objective and player specified
+      * @throws IllegalStateException if this objective has been unregistered
+      * @see #getScore(String)
+-     * @deprecated Scoreboards can contain entries that aren't players
+      */
+-    @Deprecated
++    // @Deprecated // Paper
+     @NotNull
+     Score getScore(@NotNull OfflinePlayer player);
+ 
+@@ -164,4 +163,16 @@ public interface Objective {
+      */
+     @NotNull
+     Score getScore(@NotNull String entry);
++
++    // Paper start - improve scoreboard entries
++    /**
++     * Gets an entity's Score for an Objective on this Scoreboard.
++     *
++     * @param entity Entity for the Score
++     * @return Score tracking the Objective and entity specified
++     * @throws IllegalArgumentException if entity is null
++     * @throws IllegalStateException if this objective has been unregistered
++     */
++    @NotNull Score getScoreFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException, IllegalStateException;
++    // Paper end - improve scoreboard entries
+ }
+diff --git a/src/main/java/org/bukkit/scoreboard/Scoreboard.java b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
+index d5723e977d9a25701a4f387f1b26d2414e0fffb8..30e2b9484cdf4c8efd02e2cda97739e3047958bc 100644
+--- a/src/main/java/org/bukkit/scoreboard/Scoreboard.java
++++ b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
+@@ -215,9 +215,8 @@ public interface Scoreboard {
+      * @param player the player whose scores are being retrieved
+      * @return immutable set of all scores tracked for the player
+      * @see #getScores(String)
+-     * @deprecated Scoreboards can contain entries that aren't players
+      */
+-    @Deprecated
++    // @Deprecated // Paper
+     @NotNull
+     Set<Score> getScores(@NotNull OfflinePlayer player);
+ 
+@@ -235,9 +234,8 @@ public interface Scoreboard {
+      *
+      * @param player the player to drop all current scores for
+      * @see #resetScores(String)
+-     * @deprecated Scoreboards can contain entries that aren't players
+      */
+-    @Deprecated
++    // @Deprecated // Paper
+     void resetScores(@NotNull OfflinePlayer player);
+ 
+     /**
+@@ -253,9 +251,8 @@ public interface Scoreboard {
+      * @param player the player to search for
+      * @return the player's Team or null if the player is not on a team
+      * @see #getEntryTeam(String)
+-     * @deprecated Scoreboards can contain entries that aren't players
+      */
+-    @Deprecated
++    // @Deprecated // Paper
+     @Nullable
+     Team getPlayerTeam(@NotNull OfflinePlayer player);
+ 
+@@ -320,4 +317,35 @@ public interface Scoreboard {
+      * @param slot the slot to remove objectives
+      */
+     void clearSlot(@NotNull DisplaySlot slot);
++
++    // Paper start - improve scoreboard entries
++    /**
++     * Gets all scores for an entity on this Scoreboard
++     *
++     * @param entity the entity whose scores are being retrieved
++     * @return immutable set of all scores tracked for the entity
++     * @throws IllegalArgumentException if entity is null
++     * @see #getScores(String)
++     */
++    @NotNull Set<Score> getScoresFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException;
++
++    /**
++     * Removes all scores for an entity on this Scoreboard
++     *
++     * @param entity the entity to drop all current scores for
++     * @throws IllegalArgumentException if entity is null
++     * @see #resetScores(String)
++     */
++    void resetScoresFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException;
++
++    /**
++     * Gets an entity's Team on this Scoreboard
++     *
++     * @param entity the entity to search for
++     * @return the entity's Team or null if the entity is not on a team
++     * @throws IllegalArgumentException if entity is null
++     * @see #getEntryTeam(String)
++     */
++    @Nullable Team getEntityTeam(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException;
++    // Paper end - improve scoreboard entries
+ }
+diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java
+index 4d2b8e10263802432dfeac72666487f9547cd2c5..dff76db4a4c37c760144f00c1aa8f2bcac45ba1f 100644
+--- a/src/main/java/org/bukkit/scoreboard/Team.java
++++ b/src/main/java/org/bukkit/scoreboard/Team.java
+@@ -295,9 +295,8 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience {
+      * @param player the player to add
+      * @throws IllegalStateException if this team has been unregistered
+      * @see #addEntry(String)
+-     * @deprecated Teams can contain entries that aren't players
+      */
+-    @Deprecated
++    // @Deprecated // Paper
+     void addPlayer(@NotNull OfflinePlayer player);
+ 
+     /**
+@@ -317,9 +316,8 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience {
+      * @return if the player was on this team
+      * @throws IllegalStateException if this team has been unregistered
+      * @see #removeEntry(String)
+-     * @deprecated Teams can contain entries that aren't players
+      */
+-    @Deprecated
++    // @Deprecated // Paper
+     boolean removePlayer(@NotNull OfflinePlayer player);
+ 
+     /**
+@@ -345,9 +343,8 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience {
+      * @return true if the player is a member of this team
+      * @throws IllegalStateException if this team has been unregistered
+      * @see #hasEntry(String)
+-     * @deprecated Teams can contain entries that aren't players
+      */
+-    @Deprecated
++    // @Deprecated // Paper
+     boolean hasPlayer(@NotNull OfflinePlayer player);
+     /**
+      * Checks to see if the specified entry is a member of this team.
+@@ -377,6 +374,42 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience {
+      */
+     void setOption(@NotNull Option option, @NotNull OptionStatus status);
+ 
++    // Paper start - improve scoreboard entries
++    /**
++     * This puts the specified entity onto this team for the scoreboard.
++     * <p>
++     * This will remove the entity from any other team on the scoreboard.
++     *
++     * @param entity the entity to add
++     * @throws IllegalArgumentException if entity is null
++     * @throws IllegalStateException if this team has been unregistered
++     * @see #addEntry(String)
++     */
++    void addEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
++
++    /**
++     * Removes the entity from this team.
++     *
++     * @param entity the entity to remove
++     * @return if the entity was on this team
++     * @throws IllegalArgumentException if entity is null
++     * @throws IllegalStateException if this team has been unregistered
++     * @see #removeEntry(String)
++     */
++    boolean removeEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
++
++    /**
++     * Checks to see if the specified entity is a member of this team.
++     *
++     * @param entity the entity to search for
++     * @return true if the entity is a member of this team
++     * @throws IllegalArgumentException if entity is null
++     * @throws IllegalStateException if this team has been unregistered
++     * @see #hasEntry(String)
++     */
++    boolean hasEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
++    // Paper end - improve scoreboard entries
++
+     /**
+      * Represents an option which may be applied to this team.
+      */

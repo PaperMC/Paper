@@ -8,7 +8,7 @@ apply if there are changes made to it from upstream - thus notifying us
 that changes were made.
 
 diff --git a/.gitignore b/.gitignore
-index 11038da2e071699d6561a331565db0c8d7850d0e..317acfec5894101294a55abff61819431e6a5e65 100644
+index 5dd700a956e915c00b25d91dea8d6f285ddab72b..97e78e27ee0eea2c8b24886eeb19164d552323fe 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -1,3 +1,5 @@
@@ -17,7 +17,7 @@ index 11038da2e071699d6561a331565db0c8d7850d0e..317acfec5894101294a55abff6181943
  # Eclipse stuff
  /.classpath
  /.project
-@@ -31,3 +33,7 @@
+@@ -32,3 +34,7 @@
  *.ipr
  *.iws
  .idea/
@@ -27,10 +27,10 @@ index 11038da2e071699d6561a331565db0c8d7850d0e..317acfec5894101294a55abff6181943
 +/.factorypath
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..17e8858e01d80c422947f507e9d77b7532788752
+index 0000000000000000000000000000000000000000..41e77b687df6480adf8f5e21daad105dab208df2
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,91 @@
 +plugins {
 +    `java-library`
 +    `maven-publish`
@@ -41,26 +41,30 @@ index 0000000000000000000000000000000000000000..17e8858e01d80c422947f507e9d77b75
 +    withJavadocJar()
 +}
 +
++val annotationsVersion = "24.0.1"
++val bungeeCordChatVersion = "1.20-R0.1"
++
 +dependencies {
 +    // api dependencies are listed transitively to API consumers
-+    api("com.google.guava:guava:31.1-jre")
-+    api("com.google.code.gson:gson:2.10")
-+    api("net.md-5:bungeecord-chat:1.16-R0.4")
-+    api("org.yaml:snakeyaml:1.33")
++    api("com.google.guava:guava:32.1.2-jre")
++    api("com.google.code.gson:gson:2.10.1")
++    api("net.md-5:bungeecord-chat:$bungeeCordChatVersion")
++    api("org.yaml:snakeyaml:2.2")
 +    api("org.joml:joml:1.10.5")
 +
 +    compileOnly("org.apache.maven:maven-resolver-provider:3.8.5")
 +    compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
 +    compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
 +
-+    val annotations = "org.jetbrains:annotations-java5:23.0.0"
++    val annotations = "org.jetbrains:annotations-java5:$annotationsVersion"
 +    compileOnly(annotations)
 +    testCompileOnly(annotations)
 +
 +    testImplementation("org.apache.commons:commons-lang3:3.12.0")
-+    testImplementation("junit:junit:4.13.2")
-+    testImplementation("org.hamcrest:hamcrest-library:1.3")
-+    testImplementation("org.ow2.asm:asm-tree:9.4")
++    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
++    testImplementation("org.hamcrest:hamcrest:2.2")
++    testImplementation("org.mockito:mockito-core:5.5.0")
++    testImplementation("org.ow2.asm:asm-tree:9.5")
 +}
 +
 +configure<PublishingExtension> {
@@ -96,11 +100,12 @@ index 0000000000000000000000000000000000000000..17e8858e01d80c422947f507e9d77b75
 +    options.use()
 +    options.isDocFilesSubDirs = true
 +    options.links(
-+        "https://guava.dev/releases/31.0.1-jre/api/docs/",
-+        "https://javadoc.io/doc/org.yaml/snakeyaml/1.33/",
-+        "https://javadoc.io/doc/org.jetbrains/annotations-java5/23.0.0/",
-+        "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
++        "https://guava.dev/releases/32.1.2-jre/api/docs/",
++        "https://javadoc.io/doc/org.yaml/snakeyaml/2.2/",
++        "https://javadoc.io/doc/org.jetbrains/annotations-java5/$annotationsVersion/",
++        "https://javadoc.io/doc/net.md-5/bungeecord-chat/$bungeeCordChatVersion/",
 +    )
++    options.tags("apiNote:a:API Note:")
 +
 +    // workaround for https://github.com/gradle/gradle/issues/4046
 +    inputs.dir("src/main/javadoc").withPropertyName("javadoc-sourceset")
@@ -113,12 +118,16 @@ index 0000000000000000000000000000000000000000..17e8858e01d80c422947f507e9d77b75
 +        }
 +    }
 +}
++
++tasks.test {
++    useJUnitPlatform()
++}
 diff --git a/pom.xml b/pom.xml
 deleted file mode 100644
-index 829ebece9d376cbade1422c58759540054fbedbe..0000000000000000000000000000000000000000
+index a464312b63bb62d196d6ec2d55ffcdc85ae4da67..0000000000000000000000000000000000000000
 --- a/pom.xml
 +++ /dev/null
-@@ -1,261 +0,0 @@
+@@ -1,278 +0,0 @@
 -
 -<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 -         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -126,7 +135,7 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -
 -    <groupId>org.spigotmc</groupId>
 -    <artifactId>spigot-api</artifactId>
--    <version>1.19.4-R0.1-SNAPSHOT</version>
+-    <version>1.20.2-R0.1-SNAPSHOT</version>
 -    <packaging>jar</packaging>
 -
 -    <name>Spigot-API</name>
@@ -156,14 +165,14 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>com.google.guava</groupId>
 -            <artifactId>guava</artifactId>
--            <version>31.1-jre</version>
+-            <version>32.1.2-jre</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <!-- bundled with Minecraft, should be kept in sync -->
 -        <dependency>
 -            <groupId>com.google.code.gson</groupId>
 -            <artifactId>gson</artifactId>
--            <version>2.10</version>
+-            <version>2.10.1</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <!-- bundled with Minecraft, should be kept in sync -->
@@ -176,14 +185,14 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>net.md-5</groupId>
 -            <artifactId>bungeecord-chat</artifactId>
--            <version>1.16-R0.4</version>
+-            <version>1.20-R0.1</version>
 -            <type>jar</type>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.yaml</groupId>
 -            <artifactId>snakeyaml</artifactId>
--            <version>1.33</version>
+-            <version>2.2</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <!-- not part of the API proper -->
@@ -209,26 +218,32 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>org.jetbrains</groupId>
 -            <artifactId>annotations-java5</artifactId>
--            <version>23.0.0</version>
+-            <version>24.0.1</version>
 -            <scope>provided</scope>
 -        </dependency>
 -        <!-- testing -->
 -        <dependency>
--            <groupId>junit</groupId>
--            <artifactId>junit</artifactId>
--            <version>4.13.2</version>
+-            <groupId>org.junit.jupiter</groupId>
+-            <artifactId>junit-jupiter</artifactId>
+-            <version>5.10.0</version>
 -            <scope>test</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.hamcrest</groupId>
--            <artifactId>hamcrest-library</artifactId>
--            <version>1.3</version>
+-            <artifactId>hamcrest</artifactId>
+-            <version>2.2</version>
+-            <scope>test</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.mockito</groupId>
+-            <artifactId>mockito-core</artifactId>
+-            <version>5.5.0</version>
 -            <scope>test</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.ow2.asm</groupId>
 -            <artifactId>asm-tree</artifactId>
--            <version>9.4</version>
+-            <version>9.5</version>
 -            <scope>test</scope>
 -        </dependency>
 -    </dependencies>
@@ -238,7 +253,7 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>net.md-5</groupId>
 -                <artifactId>scriptus</artifactId>
--                <version>0.4.1</version>
+-                <version>0.5.0</version>
 -                <executions>
 -                    <execution>
 -                        <phase>initialize</phase>
@@ -251,23 +266,25 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-compiler-plugin</artifactId>
--                <version>3.10.1</version>
+-                <version>3.11.0</version>
 -                <configuration>
 -                    <!-- we use the Eclipse compiler as it doesn't need a JDK -->
 -                    <compilerId>eclipse</compilerId>
+-                    <!-- default changed with version 3.11.0 -->
+-                    <showWarnings>false</showWarnings>
 -                </configuration>
 -                <dependencies>
 -                    <dependency>
 -                        <groupId>org.codehaus.plexus</groupId>
 -                        <artifactId>plexus-compiler-eclipse</artifactId>
--                        <version>2.12.0</version>
+-                        <version>2.13.0</version>
 -                    </dependency>
 -                </dependencies>
 -            </plugin>
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-jar-plugin</artifactId>
--                <version>3.2.2</version>
+-                <version>3.3.0</version>
 -                <configuration>
 -                    <archive>
 -                        <manifest>
@@ -282,7 +299,7 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-shade-plugin</artifactId>
--                <version>3.4.1</version>
+-                <version>3.5.0</version>
 -                <executions>
 -                    <execution>
 -                        <phase>package</phase>
@@ -309,15 +326,24 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-javadoc-plugin</artifactId>
--                <version>3.4.0</version>
+-                <version>3.5.0</version>
 -                <configuration>
 -                    <links>
--                        <link>https://guava.dev/releases/31.0.1-jre/api/docs/</link>
--                        <link>https://javadoc.io/doc/org.yaml/snakeyaml/1.30/</link>
--                        <link>https://javadoc.io/doc/org.jetbrains/annotations-java5/23.0.0/</link>
--                        <link>https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/</link>
+-                        <link>https://guava.dev/releases/31.1-jre/api/docs/</link>
 -                    </links>
+-                    <tags>
+-                        <tag>
+-                            <name>apiNote</name>
+-                            <placement>a</placement>
+-                            <head>API Note:</head>
+-                        </tag>
+-                    </tags>
 -                </configuration>
+-            </plugin>
+-            <plugin>
+-                <groupId>org.apache.maven.plugins</groupId>
+-                <artifactId>maven-surefire-plugin</artifactId>
+-                <version>3.1.0</version>
 -            </plugin>
 -        </plugins>
 -    </build>
@@ -333,7 +359,7 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -                    <plugin>
 -                        <groupId>org.apache.maven.plugins</groupId>
 -                        <artifactId>maven-checkstyle-plugin</artifactId>
--                        <version>3.1.2</version>
+-                        <version>3.3.0</version>
 -                        <executions>
 -                            <execution>
 -                                <phase>process-classes</phase>
@@ -358,7 +384,7 @@ index 829ebece9d376cbade1422c58759540054fbedbe..00000000000000000000000000000000
 -                    <plugin>
 -                        <groupId>org.codehaus.mojo</groupId>
 -                        <artifactId>animal-sniffer-maven-plugin</artifactId>
--                        <version>1.21</version>
+-                        <version>1.23</version>
 -                        <executions>
 -                            <execution>
 -                                <phase>process-classes</phase>

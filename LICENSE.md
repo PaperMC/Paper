@@ -55,4 +55,12 @@ TheFruxz <cedricspitzer@outlook.de>
 Kieran Wallbanks <kieran.wallbanks@gmail.com>
 Denery <dorofeevij@gmail.com>
 Jakubk15 <jakubk15@protonmail.com>
+Redned <redned235@gmail.com>
+Luke Chambers <consolelogluke@gmail.com>
+Emily <emilia.lopezf.1999@gmail.com>
+dawon <dawon@dawon.eu>
+Ollie <69084614+olijeffers0n@users.noreply.github.com>
+Oliwier Miodun <naczs@blueflow.pl>
+aerulion <aerulion@gmail.com>
+Lukas Planz <lukas.planz@web.de>
 ```

@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: The456gamer <the456gamer@the456gamer.dev>
+Date: Mon, 21 Aug 2023 14:13:43 +0100
+Subject: [PATCH] Expose hand during BlockCanBuildEvent
+
+
+diff --git a/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java b/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java
+index a1350c0f74d445dca09eea6e10abac050bb06990..08d09c2a92d8aa6adf6610cc05905d58a76fce1f 100644
+--- a/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java
+@@ -25,10 +25,11 @@ public class BlockCanBuildEvent extends BlockEvent {
+ 
+     protected BlockData blockData;
+     private final Player player;
++    private final org.bukkit.inventory.EquipmentSlot hand; // Paper - expose hand
+ 
+     @Deprecated
+     public BlockCanBuildEvent(@NotNull final Block block, @NotNull final BlockData type, final boolean canBuild) {
+-        this(block, null, type, canBuild);
++        this(block, null, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper - expose hand
+     }
+ 
+     /**
+@@ -37,12 +38,30 @@ public class BlockCanBuildEvent extends BlockEvent {
+      * @param type the id of the block to place
+      * @param canBuild whether we can build
+      */
++    @java.lang.Deprecated // Paper
++    @io.papermc.paper.annotation.DoNotUse // Paper
+     public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild) {
++        this(block, player, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper start - expose hand
++    }
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild, @NotNull final org.bukkit.inventory.EquipmentSlot hand) { // Paper end - expose hand
+         super(block);
+         this.player = player;
+         this.buildable = canBuild;
+         this.blockData = type;
++        this.hand = hand; // Paper
++    }
++    // Paper start
++    /**
++     * Gets the hand the player will use to place the block
++     *
++     * @return the EquipmentSlot representing the players hand.
++     */
++    @NotNull
++    public org.bukkit.inventory.EquipmentSlot getHand() {
++        return hand;
+     }
++    // Paper end
+ 
+     /**
+      * Gets whether or not the block can be built here.

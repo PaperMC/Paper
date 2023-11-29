@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sun, 22 May 2016 20:20:55 -0500
+Subject: [PATCH] Optional TNT doesn't move in water
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index fb16216b54eea81fceaf3edafa69b554ad01c807..90d2fa5b90d64ddb28075a50f4478b464a29a285 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -73,7 +73,7 @@ public class ServerEntity {
+     @Nullable
+     private List<SynchedEntityData.DataValue<?>> trackedDataValues;
+     // CraftBukkit start
+-    private final Set<ServerPlayerConnection> trackedPlayers;
++    final Set<ServerPlayerConnection> trackedPlayers; // Paper - private -> package
+ 
+     public ServerEntity(ServerLevel worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<ServerPlayerConnection> trackedPlayers) {
+         this.trackedPlayers = trackedPlayers;
+diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+index 89fd5d6b373d2705dccc2f22663048f4c2aaa60f..57f9bf73ee14bc8811d0192543caf2b02e890ee0 100644
+--- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
++++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+@@ -98,6 +98,27 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+             }
+         }
+ 
++        // Paper start - Optional prevent TNT from moving in water
++        if (!this.isRemoved() && this.wasTouchingWater && this.level().paperConfig().fixes.preventTntFromMovingInWater) {
++            /*
++             * Author: Jedediah Smith <jedediah@silencegreys.com>
++             */
++            // Send position and velocity updates to nearby players on every tick while the TNT is in water.
++            // This does pretty well at keeping their clients in sync with the server.
++            net.minecraft.server.level.ChunkMap.TrackedEntity ete = ((net.minecraft.server.level.ServerLevel)this.level()).getChunkSource().chunkMap.entityMap.get(this.getId());
++            if (ete != null) {
++                net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket velocityPacket = new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(this);
++                net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket positionPacket = new net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket(this);
++
++                ete.seenBy.stream()
++                    .filter(viewer -> (viewer.getPlayer().getX() - this.getX()) * (viewer.getPlayer().getY() - this.getY()) * (viewer.getPlayer().getZ() - this.getZ()) < 16 * 16)
++                    .forEach(viewer -> {
++                        viewer.send(velocityPacket);
++                        viewer.send(positionPacket);
++                    });
++            }
++        }
++        // Paper end
+     }
+ 
+     private void explode() {
+@@ -147,4 +168,11 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+     public int getFuse() {
+         return (Integer) this.entityData.get(PrimedTnt.DATA_FUSE_ID);
+     }
++
++    // Paper start - Optional prevent TNT from moving in water
++    @Override
++    public boolean isPushedByFluid() {
++        return !level().paperConfig().fixes.preventTntFromMovingInWater && super.isPushedByFluid();
++    }
++    // Paper end
+ }

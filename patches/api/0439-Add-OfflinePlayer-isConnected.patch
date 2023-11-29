@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aeltumn <daniel@goossens.ch>
+Date: Thu, 24 Aug 2023 13:05:07 +0200
+Subject: [PATCH] Add OfflinePlayer#isConnected
+
+This adds an alternative to OfflinePlayer#isOnline that returns true only if the same instance of the player is still online. This is generally more useful than isOnline as it allows you to determine if you have an instance of a Player that still exists. If a player relogs an old Player instance becomes unlinked leading to e.g. messages sent to the old player no longer arriving despite isOnline returning true. Checking against isConnected is more useful there to discard invalid instances.
+
+diff --git a/src/main/java/org/bukkit/OfflinePlayer.java b/src/main/java/org/bukkit/OfflinePlayer.java
+index 9b84cb5abdf3db55cbc7ba19c8cd6955bf4fc5ec..bce07d84cafca677bb6fad78c21b82097f06430c 100644
+--- a/src/main/java/org/bukkit/OfflinePlayer.java
++++ b/src/main/java/org/bukkit/OfflinePlayer.java
+@@ -24,10 +24,26 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+     /**
+      * Checks if this player is currently online
+      *
++     * It should be noted that this will return true if any instance of this player is
++     * online! This instance may have disconnected. If you wish to check if this specific
++     * instance of the player is still online, see {@link OfflinePlayer#isConnected()}.
++     *
+      * @return true if they are online
+      */
+     public boolean isOnline();
+ 
++    // Paper start
++    /**
++     * Checks whether the connection to this player is still valid. This will return
++     * true as long as this specific instance of the player is still connected. This
++     * will return false after this instance has disconnected, even if the same player
++     * has reconnected since.
++     *
++     * @return true if this player instance is connected
++     */
++    public boolean isConnected();
++    // Paper end
++
+     /**
+      * Returns the name of this player
+      * <p>

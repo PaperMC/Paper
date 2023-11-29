@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 1 Aug 2021 09:49:06 +0100
+Subject: [PATCH] Fix incosistency issue with empty map items in CB
+
+
+diff --git a/src/main/java/net/minecraft/world/item/MapItem.java b/src/main/java/net/minecraft/world/item/MapItem.java
+index 53515854d05a0c27a65f71193424236a21b11f5f..c368b437597edf7e165326727ae778a69c3fcc83 100644
+--- a/src/main/java/net/minecraft/world/item/MapItem.java
++++ b/src/main/java/net/minecraft/world/item/MapItem.java
+@@ -73,7 +73,7 @@ public class MapItem extends ComplexItem {
+     public static Integer getMapId(ItemStack stack) {
+         CompoundTag nbttagcompound = stack.getTag();
+ 
+-        return nbttagcompound != null && nbttagcompound.contains("map", 99) ? nbttagcompound.getInt("map") : -1; // CraftBukkit - make new maps for no tag
++        return nbttagcompound != null && nbttagcompound.contains("map", 99) ? nbttagcompound.getInt("map") : null; // CraftBukkit - make new maps for no tag // Paper - don't return invalid ID
+     }
+ 
+     public static int createNewSavedData(Level world, int x, int z, int scale, boolean showIcons, boolean unlimitedTracking, ResourceKey<Level> dimension) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
+index 0c7280621cce9855dcc9569e0aefba77bfd555cb..0c7c67e1eea44487c52ebf650d35b3b43cd00c3a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
+@@ -133,6 +133,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
+ 
+     @Override
+     public int getMapId() {
++        Preconditions.checkState(this.hasMapView(), "Item does not have map associated - check hasMapView() first!"); // Paper - more friendly message
+         return this.mapId;
+     }
+ 

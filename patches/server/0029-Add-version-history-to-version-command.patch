@@ -5,7 +5,7 @@ Subject: [PATCH] Add version history to version command
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-index 351159bbdb0c8045f4983f54dee34430dbcc423e..bf42969859545a8a520923ef1836ffa4a5cc24a0 100644
+index 22a55be34fde453fedd987173d95b8b347a03588..9d687da5bdf398bb3f6c84cdf1249a7213d09f2e 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
 @@ -7,6 +7,8 @@ import com.google.gson.*;
@@ -51,10 +51,10 @@ index 351159bbdb0c8045f4983f54dee34430dbcc423e..bf42969859545a8a520923ef1836ffa4
  }
 diff --git a/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aac3f66cb23d260729c2a48d8710a9de2346aa22
+index 0000000000000000000000000000000000000000..660b2ec6b63a4ceffee44ab11f54dfa7c0d0996f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,153 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.MoreObjects;
@@ -113,6 +113,14 @@ index 0000000000000000000000000000000000000000..aac3f66cb23d260729c2a48d8710a9de
 +            final String version = Bukkit.getVersion();
 +            if (version == null) {
 +                logger.severe("Failed to retrieve current version");
++                return;
++            }
++
++            if (currentData == null) {
++                // Empty file
++                currentData = new VersionData();
++                currentData.setCurrentVersion(version);
++                writeFile(path);
 +                return;
 +            }
 +
@@ -201,11 +209,11 @@ index 0000000000000000000000000000000000000000..aac3f66cb23d260729c2a48d8710a9de
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 8318af4db5fa7242b5cb2ae50fd08174017d6f7d..18f7d73fd8a780753e2249a9fec6bb335ebfdeed 100644
+index 64958f6cb9162de791ac90e08b19368a7fc59064..dbe57c172ed57694912ef940024f8f33577e92bd 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -189,6 +189,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-         paperConfigurations.initializeWorldDefaultsConfiguration();
+         paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
          io.papermc.paper.command.PaperCommands.registerCommands(this);
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics();
 +        com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now

@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 17 Jan 2020 18:44:55 -0800
+Subject: [PATCH] Fix last firework in stack not having effects when dispensed
+ - #2871
+
+CB used the resulting item in the dispenser rather than the item
+dispensed. The resulting item would have size == 0 and therefore
+be convertered to air, hence why the effects disappeared.
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index b1256306601969c05a833b22ab1f16b5b6b4ed15..d500de41d0a61d67aff523fe436da06e625687dd 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -516,7 +516,7 @@ public interface DispenseItemBehavior {
+ 
+                 itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
+                 Vec3 vec3d = DispenseItemBehavior.getEntityPokingOutOfBlockPos(pointer, EntityType.FIREWORK_ROCKET, enumdirection);
+-                FireworkRocketEntity entityfireworks = new FireworkRocketEntity(pointer.level(), stack, vec3d.x(), vec3d.y(), vec3d.z(), true);
++                FireworkRocketEntity entityfireworks = new FireworkRocketEntity(pointer.level(), itemstack1, vec3d.x(), vec3d.y(), vec3d.z(), true); // Paper - GH-2871 - fix last firework in stack having no effects when dispensed
+ 
+                 entityfireworks.shoot((double) enumdirection.getStepX(), (double) enumdirection.getStepY(), (double) enumdirection.getStepZ(), 0.5F, 1.0F);
+                 pointer.level().addFreshEntity(entityfireworks);

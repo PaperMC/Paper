@@ -6,17 +6,16 @@ Subject: [PATCH] Drop falling block and tnt entities at the specified height
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-index 7726bef38c7b9a81fd82960143fd07db18960087..88ea09b2f1c33e9fb528aad1564ae858c3c8b064 100644
+index fd16e26875ac4adfb76affd81724dedafe5b4130..57323813e26964af991dc9aead35fc86f23b602a 100644
 --- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-@@ -140,6 +140,17 @@ public class FallingBlockEntity extends Entity {
+@@ -142,6 +142,16 @@ public class FallingBlockEntity extends Entity {
              }
  
              this.move(MoverType.SELF, this.getDeltaMovement());
-+
 +            // Paper start - Configurable EntityFallingBlock height nerf
-+            if (this.level.paperConfig().fixes.fallingBlockHeightNerf.test(v -> this.getY() > v)) {
-+                if (this.dropItem && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
++            if (this.level().paperConfig().fixes.fallingBlockHeightNerf.test(v -> this.getY() > v)) {
++                if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
 +                    this.spawnAtLocation(block);
 +                }
 +
@@ -24,28 +23,28 @@ index 7726bef38c7b9a81fd82960143fd07db18960087..88ea09b2f1c33e9fb528aad1564ae858
 +                return;
 +            }
 +            // Paper end
-             if (!this.level.isClientSide) {
+             if (!this.level().isClientSide) {
                  BlockPos blockposition = this.blockPosition();
                  boolean flag = this.blockState.getBlock() instanceof ConcretePowderBlock;
 diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-index 6999fa7217a76e1e41c96b8522a2e210a7e6e4cf..c133d51a363900164c1492359be5b1579806d5cb 100644
+index a290daaeebfc110428dd8201f144c2acb06fddfc..415b8822f0dfb14d49bccb2a10ac04025891ddf7 100644
 --- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-@@ -66,6 +66,12 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+@@ -69,6 +69,12 @@ public class PrimedTnt extends Entity implements TraceableEntity {
          }
  
          this.move(MoverType.SELF, this.getDeltaMovement());
 +        // Paper start - Configurable TNT entity height nerf
-+        if (this.level.paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
++        if (this.level().paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
 +            this.discard();
 +            return;
 +        }
 +        // Paper end
          this.setDeltaMovement(this.getDeltaMovement().scale(0.98D));
-         if (this.onGround) {
+         if (this.onGround()) {
              this.setDeltaMovement(this.getDeltaMovement().multiply(0.7D, -0.5D, 0.7D));
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
-index 5b8574af6eae84a5957e4ce6acd4e9722835a320..accfb39539aea045e0c741a74b8bd50c752d326c 100644
+index 137f9052701c5b10ff03b01316ced37220dbf280..1f4031cb7a101a7f25d530380974a627cc29bb09 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
 @@ -53,6 +53,12 @@ public class MinecartTNT extends AbstractMinecart {
@@ -53,11 +52,11 @@ index 5b8574af6eae84a5957e4ce6acd4e9722835a320..accfb39539aea045e0c741a74b8bd50c
          super.tick();
          if (this.fuse > 0) {
 +            // Paper start - Configurable TNT entity height nerf
-+            if (this.level.paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
++            if (this.level().paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
 +                this.discard();
 +                return;
 +            }
 +            // Paper end
              --this.fuse;
-             this.level.addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 0.0D, 0.0D, 0.0D);
+             this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 0.0D, 0.0D, 0.0D);
          } else if (this.fuse == 0) {

@@ -5,10 +5,10 @@ Subject: [PATCH] Custom replacement for eaten items
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 202eed643693363aa1c052f468d6bd15bb072ff8..92da7117f56c1a5087d589f241a8b9dbe55c9b67 100644
+index 0c049587bd99b66b5307cd37da72b1b01f201a86..b819c60cb7640c10594953597e3dde3007ff3be5 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3599,10 +3599,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3696,10 +3696,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
                      this.triggerItemUseEffects(this.useItem, 16);
                      // CraftBukkit start - fire PlayerItemConsumeEvent
                      ItemStack itemstack;
@@ -18,32 +18,31 @@ index 202eed643693363aa1c052f468d6bd15bb072ff8..92da7117f56c1a5087d589f241a8b9db
                          org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 -                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand);
 +                        event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand); // Paper
-                         level.getCraftServer().getPluginManager().callEvent(event);
+                         this.level().getCraftServer().getPluginManager().callEvent(event);
  
                          if (event.isCancelled()) {
-@@ -3616,6 +3617,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3713,6 +3714,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
                      } else {
-                         itemstack = this.useItem.finishUsingItem(this.level, this);
+                         itemstack = this.useItem.finishUsingItem(this.level(), this);
                      }
-+
-+                // Paper start - save the default replacement item and change it if necessary
-+                final ItemStack defaultReplacement = itemstack;
-+                if (event != null && event.getReplacement() != null) {
-+                    itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
-+                }
-+                // Paper end
++                    // Paper start - save the default replacement item and change it if necessary
++                    final ItemStack defaultReplacement = itemstack;
++                    if (event != null && event.getReplacement() != null) {
++                        itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
++                    }
++                    // Paper end
                      // CraftBukkit end
  
                      if (itemstack != this.useItem) {
-@@ -3623,6 +3631,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3720,6 +3727,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
                      }
  
                      this.stopUsingItem();
-+                // Paper start - if the replacement is anything but the default, update the client inventory
-+                if (this instanceof ServerPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
-+                    ((ServerPlayer) this).getBukkitEntity().updateInventory();
-+                }
-+                // Paper end
++                    // Paper start - if the replacement is anything but the default, update the client inventory
++                    if (this instanceof ServerPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
++                        ((ServerPlayer) this).getBukkitEntity().updateInventory();
++                    }
++                    // Paper end
                  }
  
              }
