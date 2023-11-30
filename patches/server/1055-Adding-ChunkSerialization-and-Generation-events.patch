@@ -3,50 +3,6 @@ From: derverdox <mail.ysp@web.de>
 Date: Thu, 30 Nov 2023 01:22:23 +0100
 Subject: [PATCH] Adding ChunkSerialization and Generation events.
 
-
-diff --git a/src/main/java/de/verdox/mccreativelab/worldgen/ChunkDataUtil.java b/src/main/java/de/verdox/mccreativelab/worldgen/ChunkDataUtil.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..682f4ac0708ba8bff474f8dedb14df03dd8e2189
---- /dev/null
-+++ b/src/main/java/de/verdox/mccreativelab/worldgen/ChunkDataUtil.java
-@@ -0,0 +1,37 @@
-+package de.verdox.mccreativelab.worldgen;
-+
-+import io.papermc.paper.event.chunk.ChunkGenerateEvent;
-+import io.papermc.paper.event.chunk.ChunkDeserializeEvent;
-+import io.papermc.paper.event.chunk.ChunkSerializeEvent;
-+import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.LevelChunk;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.CraftChunk;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.persistence.PersistentDataContainer;
-+
-+public class ChunkDataUtil {
-+
-+    public static void callChunkDataCreateEvent(ServerLevel serverLevel, ChunkAccess chunkAccess, PersistentDataContainer persistentDataContainer) {
-+        Bukkit.getPluginManager()
-+              .callEvent(new ChunkGenerateEvent(serverLevel.getWorld(), getCraftChunk(chunkAccess), chunkAccess.locX, chunkAccess.locZ, persistentDataContainer));
-+        chunkAccess.persistentDataContainer.dirty(true);
-+    }
-+
-+    public static void callChunkDataLoadEvent(ServerLevel serverLevel, ChunkAccess chunkAccess, PersistentDataContainer persistentDataContainer) {
-+        Bukkit.getPluginManager().
-+              callEvent(new ChunkDeserializeEvent(serverLevel.getWorld(), getCraftChunk(chunkAccess), chunkAccess.locX, chunkAccess.locZ, persistentDataContainer));
-+    }
-+
-+    public static void callChunkDataSaveEvent(ServerLevel serverLevel, ChunkAccess chunkAccess, PersistentDataContainer persistentDataContainer, boolean unloadingChunk) {
-+        Bukkit.getPluginManager()
-+              .callEvent(new ChunkSerializeEvent(serverLevel.getWorld(), getCraftChunk(chunkAccess), chunkAccess.locX, chunkAccess.locZ, persistentDataContainer, unloadingChunk));
-+        chunkAccess.persistentDataContainer.dirty(true);
-+    }
-+
-+    private static CraftChunk getCraftChunk(ChunkAccess chunkAccess) {
-+        return chunkAccess instanceof LevelChunk chunk ? new CraftChunk(chunk) : null;
-+    }
-+
-+}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 index b66a7d4aab887309579154815a0d4abf9de506b0..9c403423551db5280edaca5869e42e23ae6aa5c2 100644
 --- a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
