@@ -1,0 +1,204 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: derverdox <mail.ysp@web.de>
+Date: Thu, 30 Nov 2023 01:22:24 +0100
+Subject: [PATCH] Adding ChunkSerialization and Generation events.
+
+This patch adds new Chunk events that are called during the serialization / generation process of chunks.
+A problem some developers may face while using the ChunkLoad or ChunkUnload events is the fact that they are called synchronously.
+These proposed events are called during the process.
+
+The use case of such events is that heavy saving / loading tasks from cache to the chunk nbt container or vice versa are executed asynchronously aswell but in the same thread
+that saves / loads / generates the chunk. 
+
+diff --git a/src/main/java/io/papermc/paper/event/chunk/ChunkDataEvent.java b/src/main/java/io/papermc/paper/event/chunk/ChunkDataEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..73c94926c975360f9b7c79f910dd09a0f3346058
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/chunk/ChunkDataEvent.java
+@@ -0,0 +1,61 @@
++package io.papermc.paper.event.chunk;
++
++import org.bukkit.Bukkit;
++import org.bukkit.Chunk;
++import org.bukkit.World;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.bukkit.persistence.PersistentDataContainer;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public abstract class ChunkDataEvent extends Event {
++    private static final HandlerList handlers = new HandlerList();
++    private final World world;
++    private final Chunk chunk;
++    private final int chunkX;
++    private final int chunkZ;
++    private final PersistentDataContainer persistentDataContainer;
++
++    public ChunkDataEvent(@NotNull World world, @Nullable Chunk chunk, int chunkX, int chunkZ, @NotNull PersistentDataContainer chunkPersistentDataContainer) {
++        super(!Bukkit.isPrimaryThread());
++        this.world = world;
++        this.chunk = chunk;
++        this.chunkX = chunkX;
++        this.chunkZ = chunkZ;
++        this.persistentDataContainer = chunkPersistentDataContainer;
++    }
++
++    public int getChunkX() {
++        return chunkX;
++    }
++
++    public int getChunkZ() {
++        return chunkZ;
++    }
++
++    @Nullable
++    public Chunk getChunk() {
++        return this.chunk;
++    }
++
++    @NotNull
++    public World getWorld() {
++        return this.world;
++    }
++
++    @NotNull
++    public PersistentDataContainer getPersistentDataContainer() {
++        return this.persistentDataContainer;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/chunk/ChunkDeserializeEvent.java b/src/main/java/io/papermc/paper/event/chunk/ChunkDeserializeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e90357708c7d06150f446161d7761b6e22fb64d5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/chunk/ChunkDeserializeEvent.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.event.chunk;
++
++import org.bukkit.Chunk;
++import org.bukkit.World;
++import org.bukkit.event.HandlerList;
++import org.bukkit.persistence.PersistentDataContainer;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called when a chunk is loaded from disk.
++ * You can use this event to manipulate the persistent data container of the chunk after it is loaded.
++ * Since by default chunk loading is asynchronously on paper this might be an alternative to the ChunkLoadEvent in some cases.
++ * This event might get called asynchronously.
++ */
++public class ChunkDeserializeEvent extends ChunkDataEvent {
++    private static final HandlerList handlers = new HandlerList();
++    public ChunkDeserializeEvent(@NotNull final World world, @Nullable final Chunk chunk, final int chunkX, final int chunkZ, @NotNull final PersistentDataContainer chunkPersistentDataContainer) {
++        super(world, chunk, chunkX, chunkZ, chunkPersistentDataContainer);
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/chunk/ChunkGenerateEvent.java b/src/main/java/io/papermc/paper/event/chunk/ChunkGenerateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f279d528ce2be534911686a4574596334ea944a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/chunk/ChunkGenerateEvent.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.event.chunk;
++
++import org.bukkit.Chunk;
++import org.bukkit.World;
++import org.bukkit.event.HandlerList;
++import org.bukkit.persistence.PersistentDataContainer;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called when a chunk is generated.
++ * You can use this event to manipulate the persistent data container of the chunk before it is generated.
++ * Since by default chunk generation is asynchronously on paper this might be an alternative to the ChunkLoadEvent in some cases.
++ * This event is might get called asynchronously.
++ */
++public class ChunkGenerateEvent extends ChunkDataEvent {
++    private static final HandlerList handlers = new HandlerList();
++    public ChunkGenerateEvent(@NotNull final World world, @Nullable final Chunk chunk, final int chunkX, final int chunkZ, @NotNull final PersistentDataContainer chunkPersistentDataContainer) {
++        super(world, chunk, chunkX, chunkZ, chunkPersistentDataContainer);
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/chunk/ChunkSerializeEvent.java b/src/main/java/io/papermc/paper/event/chunk/ChunkSerializeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..77d7711f1c8513e4f1895a187cc758c376ab93e7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/chunk/ChunkSerializeEvent.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.event.chunk;
++
++import org.bukkit.Chunk;
++import org.bukkit.World;
++import org.bukkit.event.HandlerList;
++import org.bukkit.persistence.PersistentDataContainer;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called when a chunk is saved to disk.
++ * You can use this event to manipulate the persistent data container of the chunk after it is loaded.
++ * Since by default chunk saving is asynchronously on paper this might be an alternative to the ChunkUnloadEvent in some cases.
++ * This event might get called asynchronously.
++ */
++public class ChunkSerializeEvent extends ChunkDataEvent {
++    private static final HandlerList handlers = new HandlerList();
++    private final boolean unloaded;
++
++    public ChunkSerializeEvent(@NotNull final World world, @Nullable final Chunk chunk, final int chunkX, final int chunkZ, @NotNull final PersistentDataContainer chunkPersistentDataContainer, boolean unloaded) {
++        super(world, chunk, chunkX, chunkZ, chunkPersistentDataContainer);
++        this.unloaded = unloaded;
++    }
++
++    /**
++     * Gets if this chunk was unloaded after being saved
++     * @return true if the chunk is also unloaded
++     */
++    public boolean isUnloaded() {
++        return this.unloaded;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
