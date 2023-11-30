@@ -1,0 +1,185 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: derverdox <mail.ysp@web.de>
+Date: Thu, 30 Nov 2023 13:20:23 +0100
+Subject: [PATCH] Adding CustomModelChoice
+
+CustomModelChoice is used to create recipes that not only compare for materials but also CustomModelData.
+Using the ExactChoice alternative is not a good idea since items can have different lores or attributes.
+This is a great way to implement recipes with the new possibilities of Minecraft custom items.
+
+
+diff --git a/src/main/java/org/bukkit/inventory/CustomItemData.java b/src/main/java/org/bukkit/inventory/CustomItemData.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3adbb5dbe9d53522b1ef528ba4c86d43f1dcef16
+--- /dev/null
++++ b/src/main/java/org/bukkit/inventory/CustomItemData.java
+@@ -0,0 +1,52 @@
++package org.bukkit.inventory;
++
++import org.bukkit.Material;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * CustomItemData representing a vanilla material and a customModelData value.
++ * Is used in {@link RecipeChoice.CustomModelChoice}
++ * @param material The vanilla material
++ * @param customModelData the customModelData value of the item.
++ */
++public record CustomItemData(@NotNull Material material, int customModelData) {
++    /**
++     * Creates an item stack with the material and the customModelData of the CustomItemDataObject
++     * @return the new item stack
++     */
++    public @NotNull ItemStack createStack() {
++        var stack = new ItemStack(material);
++        stack.editMeta(meta -> meta.setCustomModelData(customModelData));
++        return stack;
++    }
++
++    /**
++     * Checks if the provided item stack is equal based on its material and customModelData
++     * @param stackToCheck The item stack to check
++     * @return true if they are equal
++     */
++    public boolean isSame(@Nullable ItemStack stackToCheck) {
++        if(stackToCheck == null)
++            return false;
++        if (!stackToCheck.getType().equals(material))
++            return false;
++        return customModelData == ItemStack.getCustomModelData(stackToCheck);
++    }
++
++    /**
++     * Reads the CustomItemData from an item stack
++     * @param stack The item stack
++     * @return a new CustomItemData object
++     */
++    public static CustomItemData fromItemStack(@NotNull ItemStack stack){
++        return new CustomItemData(stack.getType(), ItemStack.getCustomModelData(stack));
++    }
++    @Override
++    public String toString() {
++        return "CustomItemData{" +
++            "material=" + material +
++            ", customModelData=" + customModelData +
++            '}';
++    }
++}
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 0af73cc04edb93b9772136d4d808f657ea40e733..184cd662885f3ec96308315532631b9740f0a7f7 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
+ import java.util.LinkedHashMap;
+ import java.util.List; // Paper
+ import java.util.Map;
++import java.util.Objects;
+ import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.Translatable;
+@@ -1005,4 +1006,32 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         return type.isAir() || amount <= 0;
+     }
+     // Paper end
++
++    // Paper start - Adding CustomModelChoice to bukkit recipes
++    /**
++     * Helper method to set customModelData of an ItemStack
++     * @param stack the ItemStack
++     * @param customModelData the new customModelData
++     */
++    public static void setCustomModelData(@NotNull ItemStack stack, int customModelData){
++        Objects.requireNonNull(stack);
++        stack.editMeta(meta -> meta.setCustomModelData(customModelData));
++    }
++
++    /**
++     * Helper method to get the customModelData of an ItemStack
++     * @param stack the ItemStack
++     * @return the customModelData
++     */
++
++    public static int getCustomModelData(ItemStack stack){
++        if(stack == null || stack.getType().isAir())
++            return 0;
++        if(!stack.hasItemMeta())
++            return 0;
++        if(!stack.getItemMeta().hasCustomModelData())
++            return 0;
++        return stack.getItemMeta().getCustomModelData();
++    }
++    // Paper end - Adding CustomModelChoice to bukkit recipes
+ }
+diff --git a/src/main/java/org/bukkit/inventory/RecipeChoice.java b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+index 523818cbb0d6c90481ec97123e7fe0e2ff4eea14..f4cd027cb9adb23ae31dacba7d5205e431f2289e 100644
+--- a/src/main/java/org/bukkit/inventory/RecipeChoice.java
++++ b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+@@ -233,4 +233,67 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+             return "ExactChoice{" + "choices=" + choices + '}';
+         }
+     }
++       // Paper start - Adding CustomModelChoice to bukkit recipes
++    /**
++     * Represents a choice of multiple matching materials and customModelData values.
++     */
++    public static class CustomModelChoice implements RecipeChoice {
++        private final List<CustomItemData> choices;
++
++        public CustomModelChoice(List<CustomItemData> customItemDataList) {
++            this.choices = Collections.unmodifiableList(customItemDataList);
++        }
++
++        public CustomModelChoice(CustomItemData customItemData) {
++            this.choices = Collections.unmodifiableList(List.of(customItemData));
++        }
++
++        public CustomModelChoice(Material material, int customModelData) {
++            this.choices = Collections.unmodifiableList(List.of(new CustomItemData(material, customModelData)));
++        }
++
++        @Override
++        public @NotNull ItemStack getItemStack() {
++            var choice = choices.get(0);
++            return choice.createStack();
++        }
++
++        @Override
++        public @NotNull RecipeChoice clone() {
++            return new CustomModelChoice(this.choices);
++        }
++
++        @Override
++        public boolean test(@NotNull ItemStack stackToCheck) {
++            for (CustomItemData choice : choices) {
++                if(choice.isSame(stackToCheck))
++                    return true;
++            }
++            return false;
++        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++            CustomModelChoice that = (CustomModelChoice) o;
++            return Objects.equals(choices, that.choices);
++        }
++
++        @Override
++        public int hashCode() {
++            return Objects.hash(choices);
++        }
++
++        @Override
++        public String toString() {
++            return "CustomModelChoice{" +
++                "choices=" + choices +
++                '}';
++        }
++
++        public List<CustomItemData> getChoices() {
++            return this.choices;
++        }
++    } // Paper end - Adding CustomModelChoice to bukkit recipes
+ }
