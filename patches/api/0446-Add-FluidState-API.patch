@@ -6,16 +6,17 @@ Subject: [PATCH] Add FluidState API
 
 diff --git a/src/main/java/io/papermc/paper/block/fluid/FluidData.java b/src/main/java/io/papermc/paper/block/fluid/FluidData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..847d9be73fc2cfe09bdc7c09423601ca5c9023d2
+index 0000000000000000000000000000000000000000..544c419efdb093e4309dacaa156d72870e45ee59
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/block/fluid/FluidData.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,54 @@
 +package io.papermc.paper.block.fluid;
 +
 +import org.bukkit.Fluid;
 +import org.bukkit.Location;
 +import org.bukkit.util.Vector;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Range;
 +
 +public interface FluidData extends Cloneable {
 +
@@ -34,9 +35,10 @@ index 0000000000000000000000000000000000000000..847d9be73fc2cfe09bdc7c09423601ca
 +    @NotNull FluidData clone();
 +
 +    /**
-+     * Returns the flowing direction the liquid as a vector
++     * Returns the direction of the flow of the liquid at the given location as a vector.
 +     *
-+     * @return the flow direction vector
++     * @param location - the location to check the liquid flow
++     * @return the flow direction vector at the given location
 +     */
 +    Vector getFlowDirection(Location location);
 +
@@ -45,6 +47,7 @@ index 0000000000000000000000000000000000000000..847d9be73fc2cfe09bdc7c09423601ca
 +     *
 +     * @return the amount as an integer, between 0 and 8
 +     */
++    @Range(from = 0, to = 8)
 +    int getAmount();
 +
 +    /**
@@ -113,14 +116,14 @@ index 0000000000000000000000000000000000000000..14589b2de95e0f679fe9785e06648ace
 +
 +}
 diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
-index cbb51dde78f792db4ddac43f144d23ff4b12d25f..938737b2f7b343fec814f6c9d5386b2161cf25f3 100644
+index cbb51dde78f792db4ddac43f144d23ff4b12d25f..49dacfa80dec3dc61d019694534da5c5f4b47857 100644
 --- a/src/main/java/org/bukkit/RegionAccessor.java
 +++ b/src/main/java/org/bukkit/RegionAccessor.java
-@@ -102,6 +102,28 @@ public interface RegionAccessor extends Keyed { // Paper
-      */
+@@ -103,6 +103,31 @@ public interface RegionAccessor extends Keyed { // Paper
      @NotNull
      BlockState getBlockState(int x, int y, int z);
-+    // Paper Start - FluidState API
+ 
++    // Paper start - FluidState API
 +
 +    /**
 +     * Gets the {@link io.papermc.paper.block.fluid.FluidData} at the specified position.
@@ -137,11 +140,14 @@ index cbb51dde78f792db4ddac43f144d23ff4b12d25f..938737b2f7b343fec814f6c9d5386b21
 +     * Gets the {@link io.papermc.paper.block.fluid.FluidData} at the given position
 +     *
 +     * @param position The location of the fluid
-+     * @return The fluid data at the given location
++     * @return The fluid data at the given position
 +     */
 +    @NotNull
-+    io.papermc.paper.block.fluid.FluidData getFluidData(io.papermc.paper.math.Position position);
-+    // Paper End
- 
++    default io.papermc.paper.block.fluid.FluidData getFluidData(io.papermc.paper.math.Position position) {
++        return getFluidData(position.blockX(), position.blockY(), position.blockZ());
++    };
++    // Paper end
++
      /**
       * Gets the {@link BlockData} at the given {@link Location}.
+      *

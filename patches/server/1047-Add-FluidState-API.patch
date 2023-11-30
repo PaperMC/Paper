@@ -6,7 +6,7 @@ Subject: [PATCH] Add FluidState API
 
 diff --git a/src/main/java/io/papermc/paper/block/fluid/PaperFluidData.java b/src/main/java/io/papermc/paper/block/fluid/PaperFluidData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..18ce07fb6fdf01b16499563396bccffac5eeed0c
+index 0000000000000000000000000000000000000000..daab396d0cbb12d23a1db126551027301a319a22
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/block/fluid/PaperFluidData.java
 @@ -0,0 +1,112 @@
@@ -87,7 +87,7 @@ index 0000000000000000000000000000000000000000..18ce07fb6fdf01b16499563396bccffa
 +
 +    @Override
 +    public Vector getFlowDirection(Location location) {
-+        Preconditions.checkNotNull(location.getWorld());
++        Preconditions.checkArgument(location.getWorld() != null, "The location must contain a World!");
 +        return CraftVector.toBukkit(this.state.getFlow(
 +            ((CraftWorld) location.getWorld()).getHandle(), MCUtil.toBlockPosition(location)));
 +    }
@@ -191,24 +191,20 @@ index 0000000000000000000000000000000000000000..017fe1e6892f1cd06e6a9beee53a91ef
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-index 1a17875426468b287c8ea3f559ea516d0218f7a0..16113f76db453a5cf82cbe8b8c936dd2d8d768f6 100644
+index 1a17875426468b287c8ea3f559ea516d0218f7a0..e7d78cd33e3de92fe49c0de6a9f6722ce7b8736d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-@@ -251,6 +251,17 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
-     public BlockState getBlockState(int x, int y, int z) {
+@@ -252,6 +252,13 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
          return CraftBlock.at(this.getHandle(), new BlockPos(x, y, z)).getState();
      }
-+    // Paper Start - FluidState API
+ 
++    // Paper start - FluidState API
 +    @Override
 +    public io.papermc.paper.block.fluid.FluidData getFluidData(final int x, final int y, final int z) {
 +        return io.papermc.paper.block.fluid.PaperFluidData.createData(getHandle().getFluidState(new BlockPos(x, y, z)));
 +    }
++    // Paper end
 +
-+    @Override
-+    public io.papermc.paper.block.fluid.FluidData getFluidData(final io.papermc.paper.math.Position position) {
-+        return getFluidData(position.blockX(), position.blockY(), position.blockZ());
-+    }
-+    // Paper End
- 
      @Override
      public BlockData getBlockData(Location location) {
+         return this.getBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ());
