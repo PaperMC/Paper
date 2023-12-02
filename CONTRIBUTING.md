@@ -236,6 +236,21 @@ There are exceptions, especially in Spigot-related files
 - When in doubt or the code around your change is in a clearly different style,
 use the same style as the surrounding code.
 
+### Imports
+When adding new imports to a class in a file not created by the current patch, use the fully qualified class name
+instead of adding a new import to the top of the file. If you are using a type a significant number of times, you
+can add an import with a comment. However, if its only used a couple of times, the FQN is preferred to prevent future
+patch conflicts in the import section of the file.
+
+```java
+import org.bukkit.event.Event;
+// don't add import here, use FQN like below
+
+public class SomeEvent extends Event {
+    public final org.bukkit.Location newLocation; // Paper - add location
+}
+```
+
 ## Access Transformers
 Sometimes, vanilla or CraftBukkit code already contains a field, method, or type you want to access
 but the visibility is too low (e.g. a private field in an entity class). Paper can use access transformers
