@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: MrPowerGamerBR <git@mrpowergamerbr.com>
 Date: Sun, 26 Nov 2023 13:02:16 -0300
-Subject: [PATCH] Fix MC-117075: TE Unload Lag Spike
+Subject: [PATCH] Fix MC-117075: Block Entities Unload Lag Spike
 
 We replaced the `blockEntityTickers` list with a custom list based on fastutil's `ObjectArrayList` with a small yet huge change for us: A method that allows us to remove a list of indexes from the list.
 
@@ -9,13 +9,14 @@ This is WAY FASTER than using `removeAll` with a list of entries to be removed, 
 
 diff --git a/src/main/java/io/papermc/paper/util/BlockEntityTickersList.java b/src/main/java/io/papermc/paper/util/BlockEntityTickersList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c82b0f14257e54848fcbde2c0c6ac746d2b8218c
+index 0000000000000000000000000000000000000000..f65b2a536b7ef65f457388ae44168d4a7f8ba61e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/BlockEntityTickersList.java
 @@ -0,0 +1,105 @@
 +package io.papermc.paper.util;
 +
 +import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
++import it.unimi.dsi.fastutil.ints.IntSet;
 +import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import net.minecraft.world.level.block.entity.TickingBlockEntity;
 +
@@ -33,7 +34,7 @@ index 0000000000000000000000000000000000000000..c82b0f14257e54848fcbde2c0c6ac746
 + */
 +public final class BlockEntityTickersList extends ObjectArrayList<TickingBlockEntity> {
 +    private final IntOpenHashSet toRemove = new IntOpenHashSet();
-+    private int startSearchFromIndex = -1;
++    private int startSearchFromIndex = Integer.MAX_VALUE;
 +
 +    /** Creates a new array list with {@link #DEFAULT_INITIAL_CAPACITY} capacity. */
 +    public BlockEntityTickersList() {
@@ -55,8 +56,7 @@ index 0000000000000000000000000000000000000000..c82b0f14257e54848fcbde2c0c6ac746
 +     * @param index the index of the item on the list to be marked as removed
 +     */
 +    public void markAsRemoved(final int index) {
-+        // The block entities list always loop starting from 0, so we only need to check if the startSearchFromIndex is -1 and that's it
-+        if (this.startSearchFromIndex == -1) {
++        if (this.startSearchFromIndex > index) {
 +            this.startSearchFromIndex = index;
 +        }
 +
@@ -67,13 +67,13 @@ index 0000000000000000000000000000000000000000..c82b0f14257e54848fcbde2c0c6ac746
 +     * Removes elements that have been marked as removed.
 +     */
 +    public void removeMarkedEntries() {
-+        if (this.startSearchFromIndex == -1) { // No entries in the list, skip
++        if (this.startSearchFromIndex == Integer.MAX_VALUE) { // No entries in the list, skip
 +            return;
 +        }
 +
 +        removeAllByIndex(startSearchFromIndex, toRemove);
 +        toRemove.clear();
-+        this.startSearchFromIndex = -1; // Reset the start search index
++        this.startSearchFromIndex = Integer.MAX_VALUE; // Reset the start search index
 +    }
 +
 +    /**
@@ -82,7 +82,7 @@ index 0000000000000000000000000000000000000000..c82b0f14257e54848fcbde2c0c6ac746
 +     * @param startSearchFromIndex from where the search should start
 +     * @param indexesToBeRemoved list of indexes to be removed
 +     */
-+    private void removeAllByIndex(final int startSearchFromIndex, final IntOpenHashSet indexesToBeRemoved) { // can't use Set<Integer> because we want to avoid autoboxing when using contains
++    private void removeAllByIndex(final int startSearchFromIndex, final IntSet indexesToBeRemoved) { // can't use Set<Integer> because we want to avoid autoboxing when using contains
 +        final int requiredMatches = indexesToBeRemoved.size();
 +        if (requiredMatches == 0) {
 +            return; // exit early, we don't need to do anything
