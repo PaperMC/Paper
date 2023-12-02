@@ -67,7 +67,7 @@ Assuming you have already forked the repository:
 
 1. Clone your fork to your local machine;
 2. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream.
-On Windows, leave out the `./` at the beginning for all `gradlew` commands;
+On Windows, replace the `./` with `.\` at the beginning for all `gradlew` commands;
 3. cd into `Paper-Server` for server changes, and `Paper-API` for API changes.  
 <!--You can also run `./paper server` or `./paper api` for these same directories
 respectively.
