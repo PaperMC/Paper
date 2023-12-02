@@ -78,17 +78,18 @@ index 0000000000000000000000000000000000000000..39ad7d283609d7e427a2ab35b6fad839
 +}
 diff --git a/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d2e1b9d867394e46e9491bf9e9cfa53c843ef16b
+index 0000000000000000000000000000000000000000..c8446678e39e777bd2c9992d5c577f4c7606ce15
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.potion;
 +
 +import org.bukkit.potion.PotionEffectType;
++import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * Represents an effect paired with a duration.
++ * Represents a {@link PotionEffectType} paired with a duration.
 + */
 +public sealed interface SuspiciousEffectEntry permits SuspiciousEffectEntryImpl {
 +
@@ -102,33 +103,34 @@ index 0000000000000000000000000000000000000000..d2e1b9d867394e46e9491bf9e9cfa53c
 +    /**
 +      * Gets the duration for this effect instance.
 +      *
-+      * @return duration in ticks
++      * @return duration (in ticks)
 +      */
 +    int duration();
 +
 +    /**
-+     * Gets a new instance of PotionEffectPair.
++     * Creates a new instance of SuspiciousEffectEntry.
 +     *
 +     * @param effectType effect type
-+     * @param duration duration
-+     * @return new instance
++     * @param duration duration (in ticks)
++     * @return new instance of an entry
 +     */
-+    @NotNull
-+    static SuspiciousEffectEntry suspiciousEffectEntry(PotionEffectType effectType, int duration) {
++    @Contract(value = "_, _ -> new", pure = true)
++    static @NotNull SuspiciousEffectEntry create(final @NotNull PotionEffectType effectType, final int duration) {
 +        return new SuspiciousEffectEntryImpl(effectType, duration);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntryImpl.java b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntryImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..46c231dafc2d4d1b645434ab0aceffa63603d325
+index 0000000000000000000000000000000000000000..e5002ccaef9ea7a9db94296ad0d66cdae050cdd1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntryImpl.java
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,7 @@
 +package io.papermc.paper.potion;
 +
 +import org.bukkit.potion.PotionEffectType;
++import org.jetbrains.annotations.NotNull;
 +
-+record SuspiciousEffectEntryImpl(PotionEffectType effect, int duration) implements SuspiciousEffectEntry {
++record SuspiciousEffectEntryImpl(@NotNull PotionEffectType effect, int duration) implements SuspiciousEffectEntry {
 +}
 diff --git a/src/main/java/org/bukkit/entity/AbstractHorse.java b/src/main/java/org/bukkit/entity/AbstractHorse.java
 index 0d88dce9978243a1f995c5fb448c5d71b01136eb..8b1048c94dffd058eb9fd9144f7f59fc9bd219ad 100644
@@ -733,21 +735,20 @@ index 11b6d1aba7d1f6ae1f3c822193486f5a1478e105..709c8fc3dde786f45ff13d6ee6c405ff
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/MushroomCow.java b/src/main/java/org/bukkit/entity/MushroomCow.java
-index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..2c22c9092a7a0ea9ccc252020b46fb46dcfd0819 100644
+index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..e14194a130ebd872bbc1eb24c7759f0388f3da97 100644
 --- a/src/main/java/org/bukkit/entity/MushroomCow.java
 +++ b/src/main/java/org/bukkit/entity/MushroomCow.java
-@@ -35,4 +35,77 @@ public interface MushroomCow extends Cow {
+@@ -35,4 +35,75 @@ public interface MushroomCow extends Cow {
           */
          BROWN;
      }
 +    // Paper start
-+
 +    /**
 +     * Gets how long the effect applied to stew
 +     * from this mushroom cow is.
 +     *
 +     * @return duration of the effect (in ticks)
-+     * @deprecated Mushroom cows can now hold multiple effects
++     * @deprecated Mushroom cows can now hold multiple effects, use {@link #getStewEffects()}
 +     */
 +    @Deprecated(forRemoval = true)
 +    @org.jetbrains.annotations.Contract("-> fail")
@@ -760,7 +761,7 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..2c22c9092a7a0ea9ccc252020b46fb46
 +     * from this mushroom cow is.
 +     *
 +     * @param duration duration of the effect (in ticks)
-+     * @deprecated Mushroom cows can now hold multiple effects
++     * @deprecated Mushroom cows can now hold multiple effects, use {@link #setStewEffects(java.util.List)}
 +     */
 +    @Deprecated(forRemoval = true)
 +    @org.jetbrains.annotations.Contract("_ -> fail")
@@ -773,7 +774,7 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..2c22c9092a7a0ea9ccc252020b46fb46
 +     * from this mushroom cow is.
 +     *
 +     * @return effect type, or null if an effect is currently not set
-+     * @deprecated Mushroom cows can now hold multiple effects
++     * @deprecated Mushroom cows can now hold multiple effects, use {@link #getStewEffects()}
 +     * @throws UnsupportedOperationException
 +     */
 +    @Deprecated(forRemoval = true)
@@ -788,7 +789,7 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..2c22c9092a7a0ea9ccc252020b46fb46
 +     *
 +     * @param type new effect type
 +     *             or null if this cow does not give effects
-+     * @deprecated Mushroom cows can now hold multiple effects
++     * @deprecated Mushroom cows can now hold multiple effects, use {@link #setStewEffects(java.util.List)}
 +     * @throws UnsupportedOperationException
 +     */
 +    @Deprecated(forRemoval = true)
@@ -801,17 +802,16 @@ index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..2c22c9092a7a0ea9ccc252020b46fb46
 +     * Returns an immutable collection of the effects applied to stew
 +     * items for this mushroom cow.
 +     *
-+     * @return immutable effect pair collection
++     * @return immutable effect entry collection
 +     */
-+    @NotNull
-+    java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> getStewEffects();
++    java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<io.papermc.paper.potion.SuspiciousEffectEntry> getStewEffects();
 +
 +    /**
 +     * Sets effects applied to stew items for this mushroom cow.
 +     *
-+     * @param effects effect pair collection
++     * @param effects effect entry list
 +     */
-+    void setStewEffects(@NotNull java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> effects);
++    void setStewEffects(java.util.@NotNull List<io.papermc.paper.potion.SuspiciousEffectEntry> effects);
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Panda.java b/src/main/java/org/bukkit/entity/Panda.java
