@@ -28,6 +28,7 @@ public net.minecraft.world.entity.animal.AbstractSchoolingFish leader
 public net.minecraft.world.entity.animal.AbstractSchoolingFish schoolSize
 public net.minecraft.world.entity.animal.Rabbit moreCarrotTicks
 public net.minecraft.world.entity.AreaEffectCloud ownerUUID
+public net.minecraft.world.entity.animal.MushroomCow stewEffects
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
@@ -136,6 +137,19 @@ index 41f5b4fc4a4b7d2a54b08869d4afa450f34caf91..63678ff2e40d2ba0a5e97539394b18f9
 +        nearTarget = rollingOverride.toBooleanOrElse(nearTarget); // Paper - Rolling override
          this.setFlag(2, nearTarget);
      }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java b/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
+index 52cc265f1663d648b6bfd03f2ac3e191b1c16d44..e42b0b19019ef74733fd19b08f882cccff920142 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
++++ b/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
+@@ -55,7 +55,7 @@ public class MushroomCow extends Cow implements Shearable, VariantHolder<Mushroo
+     private static final int MUTATE_CHANCE = 1024;
+     private static final String TAG_STEW_EFFECTS = "stew_effects";
+     @Nullable
+-    private List<SuspiciousEffectHolder.EffectEntry> stewEffects;
++    public List<SuspiciousEffectHolder.EffectEntry> stewEffects; // Paper - private -> public (AT does not seem to work for this field)
+     @Nullable
+     private UUID lastLightningBoltUUID;
  
 diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
 index 71a08510a928d4570822282bb31f14013ec3834a..4aeab90e778629c355189dfe79c39c4b21f5f5ac 100644
@@ -357,7 +371,7 @@ index 61d4877b4f74362e38104bfeacb7d66534ad798e..454dd67920826b8b62c2654abfd43fc0
      @Override
      protected EntityHitResult findHitEntity(Vec3 currentPosition, Vec3 nextPosition) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-index c3a26a55f46737a470448c6554d6827b1d6fc89c..c0186224fd64d70770a0e16752d17c0870121d8f 100644
+index b1c0baa5a535c629008960bdc94b6010a147c329..e2e5b64812ee403be59b3586bf8b0334574c011f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
 @@ -829,14 +829,19 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
@@ -861,32 +875,47 @@ index 6152f4d3d58f4b598d5bd92dbd7c5428c5ff8bc5..a5d3845acc607f640dace05a85f00896
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
-index 77cede9c565a3bc404878c9a4028cadc90f6c010..ade11598bee28fea252e3500aaa1daefc506c175 100644
+index 77cede9c565a3bc404878c9a4028cadc90f6c010..c20f470bec5292dde7fbdbf3a6562ae12117521d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
-@@ -27,6 +27,28 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow {
+@@ -27,6 +27,43 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow {
          this.getHandle().setVariant(net.minecraft.world.entity.animal.MushroomCow.MushroomType.values()[variant.ordinal()]);
      }
  
 +    // Paper start
 +    @Override
-+    public int getStewEffectDuration() {
-+        throw new UnsupportedOperationException(); // TODO https://github.com/PaperMC/Paper/issues/9742
++    public java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> getStewEffects() {
++        if (this.getHandle().stewEffects == null) {
++            return java.util.List.of();
++        }
++
++        java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> nmsPairs = new java.util.ArrayList<>(this.getHandle().stewEffects.size());
++        for (final net.minecraft.world.level.block.SuspiciousEffectHolder.EffectEntry effect : this.getHandle().stewEffects) {
++            nmsPairs.add(io.papermc.paper.potion.SuspiciousEffectEntry.create(
++                org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftToBukkit(effect.effect()),
++                effect.duration()
++            ));
++        }
++
++        return java.util.Collections.unmodifiableList(nmsPairs);
 +    }
 +
 +    @Override
-+    public void setStewEffectDuration(int duration) {
-+        throw new UnsupportedOperationException(); // TODO https://github.com/PaperMC/Paper/issues/9742
-+    }
++    public void setStewEffects(final java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> effects) {
++        if (effects.isEmpty()) {
++            this.getHandle().stewEffects = null;
++            return;
++        }
 +
-+    @Override
-+    public org.bukkit.potion.PotionEffectType getStewEffectType() {
-+        throw new UnsupportedOperationException(); // TODO https://github.com/PaperMC/Paper/issues/9742
-+    }
++        java.util.List<net.minecraft.world.level.block.SuspiciousEffectHolder.EffectEntry> nmsPairs = new java.util.ArrayList<>(effects.size());
++        for (final io.papermc.paper.potion.SuspiciousEffectEntry effect : effects) {
++            nmsPairs.add(new net.minecraft.world.level.block.SuspiciousEffectHolder.EffectEntry(
++                org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraft(effect.effect()),
++                effect.duration()
++            ));
++        }
 +
-+    @Override
-+    public void setStewEffect(org.bukkit.potion.PotionEffectType type) {
-+        throw new UnsupportedOperationException(); // TODO https://github.com/PaperMC/Paper/issues/9742
++        this.getHandle().stewEffects = nmsPairs;
 +    }
 +    // Paper end
 +
