@@ -28,6 +28,7 @@ public net.minecraft.world.entity.animal.AbstractSchoolingFish leader
 public net.minecraft.world.entity.animal.AbstractSchoolingFish schoolSize
 public net.minecraft.world.entity.animal.Rabbit moreCarrotTicks
 public net.minecraft.world.entity.AreaEffectCloud ownerUUID
+public net.minecraft.world.entity.animal.MushroomCow stewEffects
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
@@ -136,6 +137,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        nearTarget = rollingOverride.toBooleanOrElse(nearTarget); // Paper - Rolling override
          this.setFlag(2, nearTarget);
      }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java b/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
++++ b/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
+@@ -0,0 +0,0 @@ public class MushroomCow extends Cow implements Shearable, VariantHolder<Mushroo
+     private static final int MUTATE_CHANCE = 1024;
+     private static final String TAG_STEW_EFFECTS = "stew_effects";
+     @Nullable
+-    private List<SuspiciousEffectHolder.EffectEntry> stewEffects;
++    public List<SuspiciousEffectHolder.EffectEntry> stewEffects; // Paper - private -> public (AT does not seem to work for this field)
+     @Nullable
+     private UUID lastLightningBoltUUID;
  
 diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -870,23 +884,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start
 +    @Override
-+    public int getStewEffectDuration() {
-+        throw new UnsupportedOperationException(); // TODO https://github.com/PaperMC/Paper/issues/9742
++    public java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> getStewEffects() {
++        if (this.getHandle().stewEffects == null) {
++            return java.util.List.of();
++        }
++
++        java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> nmsPairs = new java.util.ArrayList<>(this.getHandle().stewEffects.size());
++        for (final net.minecraft.world.level.block.SuspiciousEffectHolder.EffectEntry effect : this.getHandle().stewEffects) {
++            nmsPairs.add(io.papermc.paper.potion.SuspiciousEffectEntry.create(
++                org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftToBukkit(effect.effect()),
++                effect.duration()
++            ));
++        }
++
++        return java.util.Collections.unmodifiableList(nmsPairs);
 +    }
 +
 +    @Override
-+    public void setStewEffectDuration(int duration) {
-+        throw new UnsupportedOperationException(); // TODO https://github.com/PaperMC/Paper/issues/9742
-+    }
++    public void setStewEffects(final java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> effects) {
++        if (effects.isEmpty()) {
++            this.getHandle().stewEffects = null;
++            return;
++        }
 +
-+    @Override
-+    public org.bukkit.potion.PotionEffectType getStewEffectType() {
-+        throw new UnsupportedOperationException(); // TODO https://github.com/PaperMC/Paper/issues/9742
-+    }
++        java.util.List<net.minecraft.world.level.block.SuspiciousEffectHolder.EffectEntry> nmsPairs = new java.util.ArrayList<>(effects.size());
++        for (final io.papermc.paper.potion.SuspiciousEffectEntry effect : effects) {
++            nmsPairs.add(new net.minecraft.world.level.block.SuspiciousEffectHolder.EffectEntry(
++                org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraft(effect.effect()),
++                effect.duration()
++            ));
++        }
 +
-+    @Override
-+    public void setStewEffect(org.bukkit.potion.PotionEffectType type) {
-+        throw new UnsupportedOperationException(); // TODO https://github.com/PaperMC/Paper/issues/9742
++        this.getHandle().stewEffects = nmsPairs;
 +    }
 +    // Paper end
 +
