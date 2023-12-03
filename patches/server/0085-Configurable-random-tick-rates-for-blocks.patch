@@ -1,9 +1,26 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 3 Apr 2016 16:28:17 -0400
-Subject: [PATCH] Configurable Grass Spread Tick Rate
+Subject: [PATCH] Configurable random tick rates for blocks
 
+A general purpose patch that includes config options for the tick rate
+of a variety of blocks that are random ticked.
 
+Co-authored-by: MrPowerGamerBR <git@mrpowergamerbr.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/block/FarmBlock.java b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+index 3b4d8a47e7fe08284b79fab2d147629e902db026..eb6056c5051e5e8a872a10dc993dbd5232787663 100644
+--- a/src/main/java/net/minecraft/world/level/block/FarmBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+@@ -85,6 +85,8 @@ public class FarmBlock extends Block {
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         int i = (Integer) state.getValue(FarmBlock.MOISTURE);
++        if (i > 0 && world.paperConfig().tickRates.wetFarmland != 1 && (world.paperConfig().tickRates.wetFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.wetFarmland != 0)) { return; } // Paper
++        if (i == 0 && world.paperConfig().tickRates.dryFarmland != 1 && (world.paperConfig().tickRates.dryFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.dryFarmland != 0)) { return; } // Paper
+ 
+         if (!FarmBlock.isNearWater(world, pos) && !world.isRainingAt(pos.above())) {
+             if (i > 0) {
 diff --git a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java b/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
 index 1df22561b2d39066b6b30f10ea43edd734e3b50a..1fe07f8f9b28faf076209f7ad235fd5dc948b294 100644
 --- a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
