@@ -1,0 +1,212 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: derverdox <mail.ysp@web.de>
+Date: Mon, 4 Dec 2023 01:54:37 +0100
+Subject: [PATCH] Adding PredicateChoice to Paper API
+
+
+diff --git a/src/main/java/io/papermc/paper/inventory/recipe/RecipeBookExactChoiceRecipe.java b/src/main/java/io/papermc/paper/inventory/recipe/RecipeBookExactChoiceRecipe.java
+index 2a2f8327a5bd3983a3a13fd663beb98906f27312..a4b4d8fe73a5d626906ed859abbdee9591263645 100644
+--- a/src/main/java/io/papermc/paper/inventory/recipe/RecipeBookExactChoiceRecipe.java
++++ b/src/main/java/io/papermc/paper/inventory/recipe/RecipeBookExactChoiceRecipe.java
+@@ -6,25 +6,28 @@ import net.minecraft.world.item.crafting.Recipe;
+ 
+ public abstract class RecipeBookExactChoiceRecipe<C extends Container> implements Recipe<C> {
+ 
+-    private boolean hasExactIngredients;
++    private boolean hasSpecialIngredients;
+ 
+     protected final void checkExactIngredients() {
+         // skip any special recipes
+         if (this.isSpecial()) {
+-            this.hasExactIngredients = false;
++            this.hasSpecialIngredients = false;
+             return;
+         }
+         for (final Ingredient ingredient : this.getIngredients()) {
+             if (!ingredient.isEmpty() && ingredient.exact) {
+-                this.hasExactIngredients = true;
++                this.hasSpecialIngredients = true;
++                return;
++            } else if (!ingredient.isEmpty() && ingredient.getItemPredicate() != null) {
++                this.hasSpecialIngredients = true;
+                 return;
+             }
+         }
+-        this.hasExactIngredients = false;
++        this.hasSpecialIngredients = false;
+     }
+ 
+     @Override
+-    public final boolean hasExactIngredients() {
+-        return this.hasExactIngredients;
++    public final boolean hasSpecialIngredients() {
++        return this.hasSpecialIngredients;
+     }
+ }
+diff --git a/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtraMap.java b/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtraMap.java
+index 63db0b843c5bd11f979e613ba6cfac9d9da956bb..63a161ca3c228263d71d2da86b92970a13d28181 100644
+--- a/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtraMap.java
++++ b/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtraMap.java
+@@ -7,7 +7,9 @@ import it.unimi.dsi.fastutil.ints.IntComparators;
+ import it.unimi.dsi.fastutil.ints.IntList;
+ import it.unimi.dsi.fastutil.objects.Object2IntMap;
+ import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
++import java.util.ArrayList;
+ import java.util.IdentityHashMap;
++import java.util.List;
+ import java.util.Map;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import net.minecraft.core.registries.BuiltInRegistries;
+@@ -18,12 +20,12 @@ import net.minecraft.world.item.crafting.Ingredient;
+ import net.minecraft.world.item.crafting.Recipe;
+ 
+ public final class StackedContentsExtraMap {
+-
+     private final AtomicInteger idCounter = new AtomicInteger(BuiltInRegistries.ITEM.size()); // start at max vanilla stacked contents idx
+     private final Object2IntMap<ItemStack> exactChoiceIds = new Object2IntOpenCustomHashMap<>(ItemStackLinkedSet.TYPE_AND_TAG);
+     private final Int2ObjectMap<ItemStack> idToExactChoice = new Int2ObjectOpenHashMap<>();
+     private final StackedContents contents;
+     public final Map<Ingredient, IntList> extraStackingIds = new IdentityHashMap<>();
++    public final List<Ingredient> predicateChoices = new ArrayList<>();  // Adding PredicateChoice
+ 
+     public StackedContentsExtraMap(final StackedContents contents, final Recipe<?> recipe) {
+         this.exactChoiceIds.defaultReturnValue(-1);
+@@ -32,7 +34,7 @@ public final class StackedContentsExtraMap {
+     }
+ 
+     private void initialize(final Recipe<?> recipe) {
+-        if (recipe.hasExactIngredients()) {
++        if (recipe.hasSpecialIngredients()) {
+             for (final Ingredient ingredient : recipe.getIngredients()) {
+                 if (!ingredient.isEmpty() && ingredient.exact) {
+                     final net.minecraft.world.item.ItemStack[] items = ingredient.getItems();
+@@ -47,6 +49,11 @@ public final class StackedContentsExtraMap {
+                     idList.sort(IntComparators.NATURAL_COMPARATOR);
+                     this.extraStackingIds.put(ingredient, idList);
+                 }
++                // Adding PredicateChoice
++                else if(!ingredient.isEmpty() && ingredient.getItemPredicate() != null){
++                    this.predicateChoices.add(ingredient);
++                    this.extraStackingIds.put(ingredient, new IntArrayList()); // fill id list when accounting stacks
++                }
+             }
+         }
+     }
+@@ -67,6 +74,16 @@ public final class StackedContentsExtraMap {
+     }
+ 
+     public boolean accountStack(final ItemStack stack, final int count) {
++        // We are adding items that pass the predicate test.
++        for(final Ingredient predicateChoice : this.predicateChoices){
++            if(predicateChoice.test(stack)){
++                boolean isStackTypeRegistered = this.exactChoiceIds.getInt(stack) > -1;
++                final int id = this.registerExact(stack);
++                // We only want to add the stacking id to the list one time
++                if(!isStackTypeRegistered)
++                    this.extraStackingIds.get(predicateChoice).add(id);
++            }
++        }
+         if (!this.exactChoiceIds.isEmpty()) {
+             final int id = this.exactChoiceIds.getInt(stack);
+             if (id >= 0) {
+diff --git a/src/main/java/net/minecraft/world/item/crafting/Ingredient.java b/src/main/java/net/minecraft/world/item/crafting/Ingredient.java
+index 06fe5b056d78d42cdf78437eeabe1786d596b7f8..d98201d34c5863a9c1588d64aa0e72b1529a980c 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/Ingredient.java
++++ b/src/main/java/net/minecraft/world/item/crafting/Ingredient.java
+@@ -29,11 +29,14 @@ import net.minecraft.world.entity.player.StackedContents;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.ItemLike;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.inventory.RecipeChoice;
+ 
+ public final class Ingredient implements Predicate<ItemStack> {
+ 
+     public static final Ingredient EMPTY = new Ingredient(Stream.empty());
+     private final Ingredient.Value[] values;
++    @Nullable private RecipeChoice.PredicateChoice.ItemPredicate itemPredicate; // Paper
+     @Nullable
+     public ItemStack[] itemStacks;
+     @Nullable
+@@ -41,7 +44,13 @@ public final class Ingredient implements Predicate<ItemStack> {
+     public boolean exact; // CraftBukkit
+     public static final Codec<Ingredient> CODEC = Ingredient.codec(true);
+     public static final Codec<Ingredient> CODEC_NONEMPTY = Ingredient.codec(false);
+-
++    // Paper start - Adding PredicateChoice
++    public Ingredient(RecipeChoice.PredicateChoice.ItemPredicate itemPredicate) {
++        List<org.bukkit.inventory.ItemStack> bukkitChoices = itemPredicate.recipeBookExamples();
++        this.itemPredicate = itemPredicate;
++        this.values = bukkitChoices.stream().map(CraftItemStack::asNMSCopy).map(ItemValue::new).toArray(Value[]::new);
++    }
++    // Paper end - Adding PredicateChoice
+     public Ingredient(Stream<? extends Ingredient.Value> entries) {
+         this.values = (Ingredient.Value[]) entries.toArray((i) -> {
+             return new Ingredient.Value[i];
+@@ -70,6 +79,11 @@ public final class Ingredient implements Predicate<ItemStack> {
+         } else if (this.isEmpty()) {
+             return itemstack.isEmpty();
+         } else {
++            // Paper start - Adding PredicateChoice
++            if (itemPredicate != null) {
++                return itemPredicate.test(itemstack.getBukkitStack());
++            }
++            // Paper end - Adding PredicateChoice
+             ItemStack[] aitemstack = this.getItems();
+             int i = aitemstack.length;
+ 
+@@ -269,4 +283,10 @@ public final class Ingredient implements Predicate<ItemStack> {
+             return Collections.singleton(this.item);
+         }
+     }
++    // Paper start - Adding PredicateChoice
++    @Nullable
++    public RecipeChoice.PredicateChoice.ItemPredicate getItemPredicate() {
++        return itemPredicate;
++    }
++    // Paper end - Adding PredicateChoice
+ }
+diff --git a/src/main/java/net/minecraft/world/item/crafting/Recipe.java b/src/main/java/net/minecraft/world/item/crafting/Recipe.java
+index 80387cd1bee2bd4c024073cee74222828f9f2c17..6fbbf255fe061943b72324d1484c7b9e885f8535 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/Recipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/Recipe.java
+@@ -67,7 +67,7 @@ public interface Recipe<C extends Container> {
+     org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id); // CraftBukkit
+ 
+     // Paper start - improved exact choice recipes
+-    default boolean hasExactIngredients() {
++    default boolean hasSpecialIngredients() {
+         return false;
+     }
+     // Paper end
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
+index 13d25d118eb4d3ef35a4cdfb9bbde9ed83f6c04b..8b308da84b59c04e0b80d419d4eea602f01abcbf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
+@@ -30,7 +30,13 @@ public interface CraftRecipe extends Recipe {
+         } else if (bukkit instanceof RecipeChoice.ExactChoice) {
+             stack = new Ingredient(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> new net.minecraft.world.item.crafting.Ingredient.ItemValue(CraftItemStack.asNMSCopy(mat))));
+             stack.exact = true;
+-        } else {
++        }
++        // Paper start - Adding PredicateChoice
++        else if(bukkit instanceof RecipeChoice.PredicateChoice predicateChoice){
++            stack = new Ingredient(predicateChoice.getItemPredicate());
++        }
++        // Paper end - Adding PredicateChoice
++        else {
+             throw new IllegalArgumentException("Unknown recipe stack instance " + bukkit);
+         }
+ 
+@@ -48,7 +54,10 @@ public interface CraftRecipe extends Recipe {
+         if (list.itemStacks.length == 0) {
+             return null;
+         }
+-
++        // Paper start - Adding PredicateChoice
++        if(list.getItemPredicate() != null)
++            return new RecipeChoice.PredicateChoice(list.getItemPredicate());
++        // Paper end - Adding PredicateChoice
+         if (list.exact) {
+             List<org.bukkit.inventory.ItemStack> choices = new ArrayList<>(list.itemStacks.length);
+             for (net.minecraft.world.item.ItemStack i : list.itemStacks) {

@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: derverdox <mail.ysp@web.de>
+Date: Mon, 4 Dec 2023 01:54:38 +0100
+Subject: [PATCH] Adding PredicateChoice to Paper API
+
+
+diff --git a/src/main/java/org/bukkit/inventory/RecipeChoice.java b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+index 523818cbb0d6c90481ec97123e7fe0e2ff4eea14..6b9bbead57166d7622cf31b96c252d56fafc05fb 100644
+--- a/src/main/java/org/bukkit/inventory/RecipeChoice.java
++++ b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+@@ -233,4 +233,64 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+             return "ExactChoice{" + "choices=" + choices + '}';
+         }
+     }
++
++    /**
++     * Represents a choice that matches when the item predicate is fulfilled.
++     */
++    public static class PredicateChoice implements RecipeChoice {
++        private final ItemPredicate itemPredicate;
++
++        public PredicateChoice(ItemPredicate itemPredicate) {
++            Preconditions.checkArgument(itemPredicate != null, "itemPredicate");
++            Preconditions.checkArgument(!itemPredicate.recipeBookExamples().isEmpty(), "Must have at least one template");
++            this.itemPredicate = itemPredicate;
++        }
++
++        @Override
++        public final boolean test(final ItemStack stack) {
++            return itemPredicate.test(stack);
++        }
++
++        @Override
++        public @NotNull ItemStack getItemStack() {
++            ItemStack stack = new ItemStack(itemPredicate.recipeBookExamples().get(0));
++            // For compat
++            if (itemPredicate.recipeBookExamples().size() > 1) {
++                stack.setDurability(Short.MAX_VALUE);
++            }
++
++            return stack;
++        }
++
++        @Override
++        public PredicateChoice clone() {
++            return new PredicateChoice(new ItemPredicate() {
++                @Override
++                public List<ItemStack> recipeBookExamples() {
++                    return List.copyOf(itemPredicate.recipeBookExamples());
++                }
++
++                @Override
++                public boolean test(final ItemStack stack) {
++                    return itemPredicate.test(stack);
++                }
++            });
++        }
++
++        public ItemPredicate getItemPredicate() {
++            return itemPredicate;
++        }
++
++        @Override
++        public boolean equals(final Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++            PredicateChoice that = (PredicateChoice) o;
++            return Objects.equals(itemPredicate, that.itemPredicate);
++        }
++
++        public static interface ItemPredicate extends Predicate<ItemStack> {
++            List<ItemStack> recipeBookExamples();
++        }
++    }
+ }
