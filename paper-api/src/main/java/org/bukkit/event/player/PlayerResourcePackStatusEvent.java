@@ -60,6 +60,22 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
         /**
          * The client accepted the pack and is beginning a download of it.
          */
-        ACCEPTED;
+        ACCEPTED,
+        /**
+         * The client successfully downloaded the pack.
+         */
+        DOWNLOADED,
+        /**
+         * The pack URL was invalid.
+         */
+        INVALID_URL,
+        /**
+         * The client was unable to reload the pack.
+         */
+        FAILED_RELOAD,
+        /**
+         * The pack was discarded by the client.
+         */
+        DISCARDED;
     }
 }
