@@ -1,6 +1,8 @@
 package org.bukkit.event.inventory;
 
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.inventory.InventoryHolder;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -142,6 +144,12 @@ public enum InventoryType {
      * Pseudo jukebox inventory with 1 slot of undefined type.
      */
     JUKEBOX(1, "Jukebox", false),
+    /**
+     * A crafter inventory, with 9 CRAFTING slots.
+     */
+    @MinecraftExperimental
+    @ApiStatus.Experimental
+    CRAFTER(9, "Crafter"),
     /**
      * The new smithing inventory, with 3 CRAFTING slots and 1 RESULT slot.
      *

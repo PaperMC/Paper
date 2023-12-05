@@ -131,6 +131,12 @@ public enum Particle implements Keyed {
     SHRIEK("shriek", Integer.class),
     CHERRY_LEAVES("cherry_leaves"),
     EGG_CRACK("egg_crack"),
+    DUST_PLUME("dust_plume"),
+    WHITE_SMOKE("white_smoke"),
+    GUST("gust"),
+    GUST_EMITTER("gust_emitter"),
+    GUST_DUST("gust_dust"),
+    TRIAL_SPAWNER_DETECTION("trial_spawner_detection"),
     /**
      * Uses {@link BlockData} as DataType
      */

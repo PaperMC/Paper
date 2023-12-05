@@ -962,6 +962,18 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla tag representing entities which are not controlled by their mount.
      */
     Tag<EntityType> ENTITY_TYPES_NON_CONTROLLING_RIDER = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("non_controlling_rider"), EntityType.class);
+    /**
+     * Vanilla tag representing entities which deflect arrows.
+     */
+    Tag<EntityType> ENTITY_TYPES_DEFLECTS_ARROWS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("deflects_arrows"), EntityType.class);
+    /**
+     * Vanilla tag representing entities which deflect tridents.
+     */
+    Tag<EntityType> ENTITY_TYPES_DEFLECTS_TRIDENTS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("deflects_tridents"), EntityType.class);
+    /**
+     * Vanilla tag representing entities which can turn in boats.
+     */
+    Tag<EntityType> ENTITY_TYPES_CAN_TURN_IN_BOATS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_turn_in_boats"), EntityType.class);
 
     /**
      * Returns whether or not this tag has an entry for the specified item.
