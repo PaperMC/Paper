@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 12 Aug 2018 02:33:39 -0400
+Subject: [PATCH] Use a Queue for Queueing Commands
+
+Lists are bad as Queues mmmkay.
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index adae2d7f9ced8ce6d2e15aafb8b53ef85e79b6d1..90b261b23f6731f60a7d4f412a6bf4c6c6aa7095 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -69,7 +69,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     static final Logger LOGGER = LogUtils.getLogger();
+     private static final int CONVERSION_RETRY_DELAY_MS = 5000;
+     private static final int CONVERSION_RETRIES = 2;
+-    private final List<ConsoleInput> consoleInput = Collections.synchronizedList(Lists.newArrayList());
++    private final java.util.Queue<ConsoleInput> serverCommandQueue = new java.util.concurrent.ConcurrentLinkedQueue<>(); // Paper - use a proper queuemmands
+     @Nullable
+     private QueryThreadGs4 queryThreadGs4;
+     // private final RemoteControlCommandListener rconConsoleSource; // CraftBukkit - remove field
+@@ -439,13 +439,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             return;
+         }
+         // Paper end - rewrite chunk system
+-        this.consoleInput.add(new ConsoleInput(command, commandSource));
++        this.serverCommandQueue.add(new ConsoleInput(command, commandSource)); // Paper - use proper queue
+     }
+ 
+     public void handleConsoleInputs() {
+         MinecraftTimings.serverCommandTimer.startTiming(); // Spigot
+-        while (!this.consoleInput.isEmpty()) {
+-            ConsoleInput servercommand = (ConsoleInput) this.consoleInput.remove(0);
++        // Paper start - use proper queue
++        ConsoleInput servercommand;
++        while ((servercommand = this.serverCommandQueue.poll()) != null) {
++            // Paper end
+ 
+             // CraftBukkit start - ServerCommand for preprocessing
+             ServerCommandEvent event = new ServerCommandEvent(this.console, servercommand.msg);
