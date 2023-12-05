@@ -2,6 +2,7 @@ package org.bukkit.loot;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,15 +34,25 @@ public enum LootTables implements Keyed {
     ANCIENT_CITY("chests/ancient_city"),
     ANCIENT_CITY_ICE_BOX("chests/ancient_city_ice_box"),
     RUINED_PORTAL("chests/ruined_portal"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_REWARD("chests/trial_chambers/reward"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_SUPPLY("chests/trial_chambers/supply"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_CORRIDOR("chests/trial_chambers/corridor"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_INTERSECTION("chests/trial_chambers/intersection"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_INTERSECTION_BARREL("chests/trial_chambers/intersection_barrel"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_ENTRANCE("chests/trial_chambers/entrance"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_CORRIDOR_DISPENSER("dispensers/trial_chambers/corridor"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_CHAMBER_DISPENSER("dispensers/trial_chambers/chamber"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_WATER_DISPENSER("dispensers/trial_chambers/water"),
+    @MinecraftExperimental
     TRIAL_CHAMBERS_CORRIDOR_POT("pots/trial_chambers/corridor"),
     SHIPWRECK_MAP("chests/shipwreck_map"),
     SHIPWRECK_SUPPLY("chests/shipwreck_supply"),
