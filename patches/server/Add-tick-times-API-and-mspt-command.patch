@@ -129,9 +129,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     private net.kyori.adventure.text.Component motd; // Paper - Adventure
      private int playerIdleTimeout;
-     public final long[] tickTimes;
+     private final long[] tickTimesNanos;
+     private long aggregatedTickTimesNanos;
 +    // Paper start
 +    public final TickTimes tickTimes5s = new TickTimes(100);
 +    public final TickTimes tickTimes10s = new TickTimes(200);
@@ -141,19 +141,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private KeyPair keyPair;
      @Nullable
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         this.averageTickTime = this.averageTickTime * 0.8F + (float) j / 1000000.0F * 0.19999999F;
-         long k = Util.getNanos();
+         this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) j / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
+         long l = Util.getNanos();
  
 +        // Paper start
 +        tickTimes5s.add(this.tickCount, j);
 +        tickTimes10s.add(this.tickCount, j);
 +        tickTimes60s.add(this.tickCount, j);
 +        // Paper end
-         this.logTickTime(k - i);
+         this.logTickTime(l - i);
          this.profiler.pop();
          org.spigotmc.WatchdogThread.tick(); // Spigot
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     public static record ServerResourcePackInfo(String url, String hash, boolean isRequired, @Nullable Component prompt) {
+     public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
  
      }
 +
