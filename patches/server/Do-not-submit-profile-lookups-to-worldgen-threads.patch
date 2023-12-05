@@ -14,9 +14,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
 @@ -0,0 +0,0 @@ public class Util {
-     private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
-     private static final AtomicInteger WORKER_COUNT = new AtomicInteger(1);
      private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
+     private static final ExecutorService IO_POOL = makeIoExecutor("IO-Worker-", false);
+     private static final ExecutorService DOWNLOAD_POOL = makeIoExecutor("Download-", true);
 +    // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
 +    public static final ExecutorService PROFILE_EXECUTOR = Executors.newFixedThreadPool(2, new java.util.concurrent.ThreadFactory() {
 +
@@ -33,8 +33,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    });
 +    // Paper end - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
-     private static final ExecutorService IO_POOL = makeIoExecutor();
      private static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT);
+     private static final int LINEAR_LOOKUP_THRESHOLD = 8;
      public static final long NANOS_PER_MILLI = 1000000L;
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -61,7 +61,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }, Util.PROFILE_EXECUTOR); // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
      }
  
-     private static boolean hasTextures(GameProfile profile) {
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
