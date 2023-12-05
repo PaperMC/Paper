@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 8 Aug 2021 16:26:46 -0700
+Subject: [PATCH] Do not submit profile lookups to worldgen threads
+
+They block. On network I/O.
+
+If enough tasks are submitted the server will eventually stall
+out due to a sync load, as the worldgen threads will be
+stalling on profile lookups.
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 9870eccc1dc5c2201f12f8e2affe647f6b0375f8..30237ca94a36197ce21369bdcc7bb1dfafe02680 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -82,6 +82,22 @@ public class Util {
+     private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
+     private static final AtomicInteger WORKER_COUNT = new AtomicInteger(1);
+     private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
++    // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
++    public static final ExecutorService PROFILE_EXECUTOR = Executors.newFixedThreadPool(2, new java.util.concurrent.ThreadFactory() {
++
++        private final AtomicInteger count = new AtomicInteger();
++
++        @Override
++        public Thread newThread(Runnable run) {
++            Thread ret = new Thread(run);
++            ret.setName("Profile Lookup Executor #" + this.count.getAndIncrement());
++            ret.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
++                LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable);
++            });
++            return ret;
++        }
++    });
++    // Paper end - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
+     private static final ExecutorService IO_POOL = makeIoExecutor();
+     private static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT);
+     public static final long NANOS_PER_MILLI = 1000000L;
+diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+index 82f6404e5c4c5b2c9aea1b1c27ebee1d3c7ee9dc..c70cd016e1978931d115cfca94664897f0158196 100644
+--- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
++++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+@@ -167,7 +167,7 @@ public class GameProfileCache {
+             } else {
+                 CompletableFuture<Optional<GameProfile>> completablefuture1 = CompletableFuture.supplyAsync(() -> {
+                     return this.get(username);
+-                }, Util.backgroundExecutor()).whenCompleteAsync((optional, throwable) -> {
++                }, Util.PROFILE_EXECUTOR).whenCompleteAsync((optional, throwable) -> { // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
+                     this.requests.remove(username);
+                 }, this.executor);
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+index cf7e64eac9e3eb395a0be0a2a4fa0175a731b6e7..f5162f7171c348ff523b18e577246561d79e1c20 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+@@ -222,7 +222,7 @@ public class SkullBlockEntity extends BlockEntity {
+             } else {
+                 return Optional.empty();
+             }
+-        }, Util.backgroundExecutor());
++        }, Util.PROFILE_EXECUTOR); // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
+     }
+ 
+     private static boolean hasTextures(GameProfile profile) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
+index 1a0ba852b89b09ba2c118903f29ae7aeabe8ed45..2fff882c02aa84ab7b14b267bc6e28b5ad94def6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
++++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
+@@ -125,7 +125,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+ 
+     @Override
+     public CompletableFuture<PlayerProfile> update() {
+-        return CompletableFuture.supplyAsync(this::getUpdatedProfile, Util.backgroundExecutor());
++        return CompletableFuture.supplyAsync(this::getUpdatedProfile, Util.PROFILE_EXECUTOR); // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
+     }
+ 
+     private CraftPlayerProfile getUpdatedProfile() {

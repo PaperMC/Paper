@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BuildTools <46540330+willkroboth@users.noreply.github.com>
+Date: Fri, 19 Aug 2022 16:11:51 -0400
+Subject: [PATCH] Add method isTickingWorlds() to Bukkit.
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 011d4e3c6fe3ffb0636506f5447c0097b297a957..458d98cc385718a86e0ef0eb90ff9ce64d77066a 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -776,12 +776,26 @@ public final class Bukkit {
+         return server.getWorlds();
+     }
+ 
++    // Paper start
++    /**
++     * Gets whether the worlds are being ticked right now.
++     *
++     * @return true if the worlds are being ticked, false otherwise.
++     */
++    public static boolean isTickingWorlds(){
++        return server.isTickingWorlds();
++    }
++    // Paper end
++
+     /**
+      * Creates or loads a world with the given name using the specified
+      * options.
+      * <p>
+      * If the world is already loaded, it will just return the equivalent of
+      * getWorld(creator.name()).
++     * <p>
++     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
++     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
+      *
+      * @param creator the options to use when creating the world
+      * @return newly created or loaded world
+@@ -793,6 +807,9 @@ public final class Bukkit {
+ 
+     /**
+      * Unloads a world with the given name.
++     * <p>
++     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
++     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
+      *
+      * @param name Name of the world to unload
+      * @param save whether to save the chunks before unloading
+@@ -804,6 +821,9 @@ public final class Bukkit {
+ 
+     /**
+      * Unloads the given world.
++     * <p>
++     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
++     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
+      *
+      * @param world the world to unload
+      * @param save whether to save the chunks before unloading
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 5e5b5aedeaaca24aebe59ec2cfd0adde2ca4a7f5..383f1fcddaa50a8c94282c7a828912d73accfb62 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -649,34 +649,55 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     @NotNull
+     public List<World> getWorlds();
+ 
++    // Paper start
++    /**
++     * Gets whether the worlds are being ticked right now.
++     *
++     * @return true if the worlds are being ticked, false otherwise.
++     */
++    public boolean isTickingWorlds();
++    // Paper end
++
+     /**
+      * Creates or loads a world with the given name using the specified
+      * options.
+      * <p>
+      * If the world is already loaded, it will just return the equivalent of
+      * getWorld(creator.name()).
++     * <p>
++     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
++     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
+      *
+      * @param creator the options to use when creating the world
+      * @return newly created or loaded world
++     * @throws IllegalStateException when {@link #isTickingWorlds() isTickingWorlds} is true
+      */
+     @Nullable
+     public World createWorld(@NotNull WorldCreator creator);
+ 
+     /**
+      * Unloads a world with the given name.
++     * <p>
++     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
++     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
+      *
+      * @param name Name of the world to unload
+      * @param save whether to save the chunks before unloading
+      * @return true if successful, false otherwise
++     * @throws IllegalStateException when {@link #isTickingWorlds() isTickingWorlds} is true
+      */
+     public boolean unloadWorld(@NotNull String name, boolean save);
+ 
+     /**
+      * Unloads the given world.
++     * <p>
++     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
++     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
+      *
+      * @param world the world to unload
+      * @param save whether to save the chunks before unloading
+      * @return true if successful, false otherwise
++     * @throws IllegalStateException when {@link #isTickingWorlds() isTickingWorlds} is true
+      */
+     public boolean unloadWorld(@NotNull World world, boolean save);
+ 

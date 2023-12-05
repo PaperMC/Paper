@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 21 Jul 2018 14:27:34 -0400
+Subject: [PATCH] Duplicate UUID Resolve Option
+
+Due to a bug in https://github.com/PaperMC/Paper/commit/2e29af3df05ec0a383f48be549d1c03200756d24
+which was added all the way back in March of 2016, it was unknown (potentially not at the time)
+that an entity might actually change the seed of the random object.
+
+At some point, EntitySquid did start setting the seed. Due to this shared random, this caused
+every entity to use a Random object with a predictable seed.
+
+This has caused entities to potentially generate with the same UUID....
+
+Over the years, servers have had entities disappear, but no sign of trouble
+because CraftBukkit removed the log lines indicating that something was wrong.
+
+We have fixed the root issue causing duplicate UUID's, however we now have chunk
+files full of entities that have the same UUID as another entity!
+
+When these chunks load, the 2nd entity will not be added to the world correctly.
+
+If that chunk loads in a different order in the future, then it will reverse and the
+missing one is now the one added to the world and not the other. This results in very
+inconsistent entity behavior.
+
+This change allows you to recover any duplicate entity by generating a new UUID for it.
+This also lets you delete them instead if you don't want to risk having new entities added to
+the world that you previously did not see.
+
+But for those who are ok with leaving this inconsistent behavior, you may use WARN or NOTHING options.
+
+It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
+
+diff --git a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
+index cbeaadaecf816070b3a37938c8e683180939afc4..95e5073a68e4dd38b70e8268daf2160922c3a12f 100644
+--- a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
++++ b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
+@@ -74,7 +74,17 @@ public final class ChunkSystem {
+     }
+ 
+     public static void onEntityPreAdd(final ServerLevel level, final Entity entity) {
+-
++        // Paper start - duplicate uuid resolving
++        if (net.minecraft.server.level.ChunkMap.checkDupeUUID(level, entity)) {
++            return;
++        }
++        if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level().paperConfig().entities.spawning.duplicateUuid.mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.NOTHING) {
++            if (((Entity) entity).addedToWorldStack != null) {
++                ((Entity) entity).addedToWorldStack.printStackTrace();
++            }
++            net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((Entity) entity).printStackTrace();
++        }
++        // Paper end - duplicate uuid resolving
+     }
+ 
+     public static void onChunkHolderCreate(final ServerLevel level, final ChunkHolder holder) {
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 15e423cdb61547ddffb4497f5c51e101f5dbe8af..cfef1d3ca1975c459556f583f0a09c2a888c0792 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -534,6 +534,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                     entity.discard();
+                     needsRemoval = true;
+                 }
++                checkDupeUUID(world, entity); // Paper
+                 return !needsRemoval;
+             }), position); // Paper - rewrite chunk system
+             // CraftBukkit end
+@@ -545,6 +546,49 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
++    // Paper start
++    // rets true if to prevent the entity from being added
++    public static boolean checkDupeUUID(ServerLevel level, Entity entity) {
++        io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode mode = level.paperConfig().entities.spawning.duplicateUuid.mode;
++        if (mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.WARN
++            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.DELETE
++            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN) {
++            return false;
++        }
++        Entity other = level.getEntity(entity.getUUID());
++
++        if (other == null || other == entity) {
++            return false;
++        }
++
++        if (mode == io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN && other != null && !other.isRemoved()
++            && Objects.equals(other.getEncodeId(), entity.getEncodeId())
++            && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < level.paperConfig().entities.spawning.duplicateUuid.safeRegenDeleteRange
++        ) {
++            if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + " because it was near the duplicate and likely an actual duplicate. See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
++            entity.discard();
++            return true;
++        }
++        if (other != null && !other.isRemoved()) {
++            switch (mode) {
++                case SAFE_REGEN: {
++                    entity.setUUID(java.util.UUID.randomUUID());
++                    if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", regenerated UUID for " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
++                    break;
++                }
++                case DELETE: {
++                    if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
++                    entity.discard();
++                    return true;
++                }
++                default:
++                    if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", doing nothing to " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
++                    break;
++            }
++        }
++        return false;
++    }
++    // Paper end
+     public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> prepareTickingChunk(ChunkHolder holder) {
+         throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }

@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 21 Aug 2021 17:25:54 -0700
+Subject: [PATCH] API for updating recipes on clients
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 2bafcb26c144a84d1b955c8cdf122cca6628afc4..07e6e66c73827afbbaf3bff35474c98ffb1f4393 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -960,6 +960,26 @@ public final class Bukkit {
+         server.reloadData();
+     }
+ 
++    // Paper start - update reloadable data
++    /**
++     * Updates all advancement, tag, and recipe data for all connected clients.
++     * Useful for updating clients to new advancements/recipes/tags.
++     * @see #updateRecipes()
++     */
++    public static void updateResources() {
++        server.updateResources();
++    }
++
++    /**
++     * Updates recipe data and the recipe book for all connected clients. Useful for
++     * updating clients to new recipes.
++     * @see #updateResources()
++     */
++    public static void updateRecipes() {
++        server.updateRecipes();
++    }
++    // Paper end - update reloadable data
++
+     /**
+      * Returns the primary logger associated with this server instance.
+      *
+@@ -1014,6 +1034,20 @@ public final class Bukkit {
+         return server.addRecipe(recipe);
+     }
+ 
++    // Paper start - method to send recipes immediately
++    /**
++     * Adds a recipe to the crafting manager.
++     *
++     * @param recipe the recipe to add
++     * @param resendRecipes true to update the client with the full set of recipes
++     * @return true if the recipe was added, false if it wasn't for some reason
++     */
++    @Contract("null, _ -> false")
++    public static boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
++        return server.addRecipe(recipe, resendRecipes);
++    }
++    // Paper end - method to send recipes immediately
++
+     /**
+      * Get a list of all recipes for a given item. The stack size is ignored
+      * in comparisons. If the durability is -1, it will match any data value.
+@@ -1205,6 +1239,24 @@ public final class Bukkit {
+         return server.removeRecipe(key);
+     }
+ 
++    // Paper start - method to resend recipes
++    /**
++     * Remove a recipe from the server.
++     * <p>
++     * <b>Note that removing a recipe may cause permanent loss of data
++     * associated with that recipe (eg whether it has been discovered by
++     * players).</b>
++     *
++     * @param key NamespacedKey of recipe to remove.
++     * @param resendRecipes true to update all clients on the new recipe list.
++     *                      Will only update if a recipe was actually removed
++     * @return True if recipe was removed
++     */
++    public static boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
++        return server.removeRecipe(key, resendRecipes);
++    }
++    // Paper end - method to resend recipes
++
+     /**
+      * Gets a list of command aliases defined in the server properties.
+      *
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index cd1df326ef937863e427f47e1c8ac8720c01f75d..7142f0f4105ccbc594e5d120b2270fd5e8bb5470 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -812,6 +812,22 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     public void reloadData();
+ 
++    // Paper start - update reloadable data
++    /**
++     * Updates all advancement, tag, and recipe data to all connected clients.
++     * Useful for updating clients to new advancements/recipes/tags.
++     * @see #updateRecipes()
++     */
++    void updateResources();
++
++    /**
++     * Updates recipe data and the recipe book to each player. Useful for
++     * updating clients to new recipes.
++     * @see #updateResources()
++     */
++    void updateRecipes();
++    // Paper end - update reloadable data
++
+     /**
+      * Returns the primary logger associated with this server instance.
+      *
+@@ -847,15 +863,34 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     public boolean dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException;
+ 
+     /**
+-     * Adds a recipe to the crafting manager.
++     * Adds a recipe to the crafting manager. Recipes added with
++     * this method won't be sent to the client automatically. Use
++     * {@link #updateRecipes()} or {@link #updateResources()} to
++     * update clients to new recipes added.
++     * <p>
++     * Player's still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
++     * before seeing them in their recipe book.
+      *
+      * @param recipe the recipe to add
+      * @return true if the recipe was added, false if it wasn't for some
+      *     reason
++     * @see #addRecipe(Recipe, boolean)
+      */
+     @Contract("null -> false")
+     public boolean addRecipe(@Nullable Recipe recipe);
+ 
++    // Paper start - method to send recipes immediately
++    /**
++     * Adds a recipe to the crafting manager.
++     *
++     * @param recipe the recipe to add
++     * @param resendRecipes true to update the client with the full set of recipes
++     * @return true if the recipe was added, false if it wasn't for some reason
++     */
++    @Contract("null, _ -> false")
++    boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes);
++    // Paper end - method to send recipes immediately
++
+     /**
+      * Get a list of all recipes for a given item. The stack size is ignored
+      * in comparisons. If the durability is -1, it will match any data value.
+@@ -1024,6 +1059,22 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     public boolean removeRecipe(@NotNull NamespacedKey key);
+ 
++    // Paper start - method to resend recipes
++    /**
++     * Remove a recipe from the server.
++     * <p>
++     * <b>Note that removing a recipe may cause permanent loss of data
++     * associated with that recipe (eg whether it has been discovered by
++     * players).</b>
++     *
++     * @param key NamespacedKey of recipe to remove.
++     * @param resendRecipes true to update all clients on the new recipe list.
++     *                      Will only update if a recipe was actually removed
++     * @return True if recipe was removed
++     */
++    boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes);
++    // Paper end - method to resend recipes
++
+     /**
+      * Gets a list of command aliases defined in the server properties.
+      *

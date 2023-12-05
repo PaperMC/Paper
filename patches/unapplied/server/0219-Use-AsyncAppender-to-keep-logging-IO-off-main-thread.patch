@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Thu, 12 Aug 2021 04:46:41 -0700
+Subject: [PATCH] Use AsyncAppender to keep logging IO off main thread
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 8c17b903f077d3f7281b0090b9aefdbf1b59a17c..ce9ef2199364029c658812851d02047b982d92eb 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -37,6 +37,7 @@ dependencies {
+     implementation("commons-lang:commons-lang:2.6")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
+     runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
++    runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
+ 
+     runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.5")
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index 88957220d5574e5590e8a545605d76c0c7b0a10e..ea4e2161c0bd43884055cc6b8d70b2139f70e720 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -29,15 +29,18 @@
+             </Policies>
+             <DefaultRolloverStrategy max="1000"/>
+         </RollingRandomAccessFile>
++        <Async name="Async">
++            <AppenderRef ref="File"/>
++            <AppenderRef ref="TerminalConsole" level="info"/>
++            <AppenderRef ref="ServerGuiConsole" level="info"/>
++        </Async>
+     </Appenders>
+     <Loggers>
+         <Root level="info">
+             <filters>
+                 <MarkerFilter marker="NETWORK_PACKETS" onMatch="DENY" onMismatch="NEUTRAL" />
+             </filters>
+-            <AppenderRef ref="File"/>
+-            <AppenderRef ref="TerminalConsole" level="info"/>
+-            <AppenderRef ref="ServerGuiConsole" level="info"/>
++            <AppenderRef ref="Async"/>
+         </Root>
+     </Loggers>
+ </Configuration>

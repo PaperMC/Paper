@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Professor Bloodstone <git@bloodstone.dev>
+Date: Sun, 20 Jun 2021 01:48:31 +0200
+Subject: [PATCH] Add Git information to version command/on startup
+
+
+diff --git a/src/main/java/io/papermc/paper/util/JarManifests.java b/src/main/java/io/papermc/paper/util/JarManifests.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..909617079db61b675cc7b60b44ef96b306076343
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/JarManifests.java
+@@ -0,0 +1,37 @@
++package io.papermc.paper.util;
++
++import java.io.IOException;
++import java.io.InputStream;
++import java.net.URL;
++import java.util.Collections;
++import java.util.Map;
++import java.util.WeakHashMap;
++import java.util.jar.Manifest;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@ApiStatus.Internal
++public final class JarManifests {
++    private JarManifests() {
++    }
++
++    private static final Map<ClassLoader, Manifest> MANIFESTS = Collections.synchronizedMap(new WeakHashMap<>());
++
++    public static @Nullable Manifest manifest(final @NotNull Class<?> clazz) {
++        return MANIFESTS.computeIfAbsent(clazz.getClassLoader(), classLoader -> {
++            final String classLocation = "/" + clazz.getName().replace(".", "/") + ".class";
++            final URL resource = clazz.getResource(classLocation);
++            if (resource == null) {
++                return null;
++            }
++            final String classFilePath = resource.toString().replace("\\", "/");
++            final String archivePath = classFilePath.substring(0, classFilePath.length() - classLocation.length());
++            try (final InputStream stream = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
++                return new Manifest(stream);
++            } catch (final IOException ex) {
++                return null;
++            }
++        });
++    }
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 9f52c092d906622e2eade3bc9d8baac6816f9f3a..869d57b429fbe2694d1444db56c56619abfae920 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -57,6 +57,7 @@ import org.bukkit.util.CachedServerIcon;
+ import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++import io.papermc.paper.util.JarManifests; // Paper
+ 
+ /**
+  * Represents the Bukkit core, for version and Server singleton handling
+@@ -106,7 +107,25 @@ public final class Bukkit {
+         }
+ 
+         Bukkit.server = server;
+-        server.getLogger().info("This server is running " + getName() + " version " + getVersion() + " (Implementing API version " + getBukkitVersion() + ")");
++        // Paper start - add git information
++        server.getLogger().info(getVersionMessage());
++    }
++    /**
++      * Gets message describing the version server is running.
++      *
++      * @return message describing the version server is running
++      */
++    @NotNull
++    public static String getVersionMessage() {
++        final var manifest = JarManifests.manifest(Bukkit.getServer().getClass());
++        final String gitBranch = manifest == null ? null : manifest.getMainAttributes().getValue("Git-Branch");
++        final String gitCommit = manifest == null ? null : manifest.getMainAttributes().getValue("Git-Commit");
++        String branchMsg = " on " + gitBranch;
++        if ("master".equals(gitBranch) || "main".equals(gitBranch)) {
++            branchMsg = "";  // Don't show branch on main/master
++        }
++        return "This server is running " + getName() + " version " + getVersion() + " (Implementing API version " + getBukkitVersion() + ") (Git: " + gitCommit + branchMsg + ")";
++        // Paper end
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+index b437cf212a63aa96a9492db8d01d5d37061aee23..fd5d9881abfd930bb883120f018f76dc78b62b14 100644
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -256,7 +256,7 @@ public class VersionCommand extends BukkitCommand {
+     private void setVersionMessage(final @NotNull Component msg) {
+         lastCheck = System.currentTimeMillis();
+         final Component message = Component.textOfChildren(
+-            Component.text("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")", NamedTextColor.WHITE),
++            Component.text(Bukkit.getVersionMessage(), NamedTextColor.WHITE),
+             Component.newline(),
+             msg
+         );

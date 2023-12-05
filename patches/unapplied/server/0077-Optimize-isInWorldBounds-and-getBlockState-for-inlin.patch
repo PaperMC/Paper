@@ -1,0 +1,166 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Mar 2016 02:07:55 -0600
+Subject: [PATCH] Optimize isInWorldBounds and getBlockState for inlining
+
+Hot methods, so reduce # of instructions for the method.
+
+Move is valid location test to the BlockPosition class so that it can access local variables.
+
+Replace all calls to the new place to the unnecessary forward.
+
+Optimize getType and getBlockData to manually inline and optimize the calls
+
+diff --git a/src/main/java/net/minecraft/core/Vec3i.java b/src/main/java/net/minecraft/core/Vec3i.java
+index 1b29c6872ebe54351f28c1f1f38b22561ba785ee..40950db0c242c65dfd4de247c86249354d12108f 100644
+--- a/src/main/java/net/minecraft/core/Vec3i.java
++++ b/src/main/java/net/minecraft/core/Vec3i.java
+@@ -31,6 +31,12 @@ public class Vec3i implements Comparable<Vec3i> {
+         });
+     }
+ 
++    // Paper start
++    public final boolean isInsideBuildHeightAndWorldBoundsHorizontal(net.minecraft.world.level.LevelHeightAccessor levelHeightAccessor) {
++        return getX() >= -30000000 && getZ() >= -30000000 && getX() < 30000000 && getZ() < 30000000 && !levelHeightAccessor.isOutsideBuildHeight(getY());
++    }
++    // Paper end
++
+     public Vec3i(int x, int y, int z) {
+         this.x = x;
+         this.y = y;
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 374e37bc235aa17c7bf8fa4197f7ec244fda8664..a9d04b3fd53532b4b380123fceab1ab5e4b206c2 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -368,7 +368,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     // Paper end
+ 
+     public boolean isInWorldBounds(BlockPos pos) {
+-        return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
++        return pos.isInsideBuildHeightAndWorldBoundsHorizontal(this); // Paper - use better/optimized check
+     }
+ 
+     public static boolean isInSpawnableBounds(BlockPos pos) {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+index 3e5addb60ae8f466dad09edb3ae1fc88fe2681e9..5e8d2e4245757a0889645ea79ee68afb53f7dde4 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+@@ -172,6 +172,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
+         return GameEventListenerRegistry.NOOP;
+     }
+ 
++    public abstract BlockState getBlockState(final int x, final int y, final int z); // Paper
+     @Nullable
+     public abstract BlockState setBlockState(BlockPos pos, BlockState state, boolean moved);
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
+index f49cc61840c6588fca301b4c5c3aaeede03a323e..785fa679860413b736122f8e88a92e683cbdd99f 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
+@@ -55,6 +55,12 @@ public class EmptyLevelChunk extends LevelChunk {
+     public void setBlockEmptinessMap(final boolean[] emptinessMap) {}
+     // Paper end - starlight
+ 
++    // Paper start
++    @Override
++    public BlockState getBlockState(int x, int y, int z) {
++        return Blocks.VOID_AIR.defaultBlockState();
++    }
++    // Paper end
+     @Override
+     public BlockState getBlockState(BlockPos pos) {
+         return Blocks.VOID_AIR.defaultBlockState();
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
+index 60e760b42dd6471a229dfd45490dcf8c51979d35..4a3ac7dedf5cb1e76f16ec4f18e82afc717d0ced 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
+@@ -91,6 +91,12 @@ public class ImposterProtoChunk extends ProtoChunk {
+     public BlockState getBlockState(BlockPos pos) {
+         return this.wrapped.getBlockState(pos);
+     }
++    // Paper start
++    @Override
++    public final BlockState getBlockState(final int x, final int y, final int z) {
++        return this.wrapped.getBlockStateFinal(x, y, z);
++    }
++    // Paper end
+ 
+     @Override
+     public FluidState getFluidState(BlockPos pos) {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index c050a5d39087722dad6bb31f95b7b04fe7e8b767..47815824811a0ca82d70e585cc4d66a521129380 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -292,12 +292,29 @@ public class LevelChunk extends ChunkAccess {
+         }
+     }
+ 
++    // Paper start - Optimize getBlockData to reduce instructions
+     @Override
+     public BlockState getBlockState(BlockPos pos) {
+-        int i = pos.getX();
+-        int j = pos.getY();
+-        int k = pos.getZ();
++        return this.getBlockStateFinal(pos.getX(), pos.getY(), pos.getZ());
++    }
++
++    @Override
++    public BlockState getBlockState(final int x, final int y, final int z) {
++        return this.getBlockStateFinal(x, y, z);
++    }
++    public final BlockState getBlockStateFinal(final int x, final int y, final int z) {
++        // Method body / logic copied from below
++        final int i = this.getSectionIndex(y);
++        if (i < 0 || i >= this.sections.length || this.sections[i].nonEmptyBlockCount == 0 || this.sections[i].hasOnlyAir()) {
++            return Blocks.AIR.defaultBlockState();
++        }
++        // Inlined ChunkSection.getType() and DataPaletteBlock.a(int,int,int)
++        return this.sections[i].states.get((y & 15) << 8 | (z & 15) << 4 | x & 15);
+ 
++    }
++
++    public BlockState getBlockState_unused(int i, int j, int k) {
++        // Paper end
+         if (this.level.isDebug()) {
+             BlockState iblockdata = null;
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
+index d59392c322936ce89b759ac9787c8f4f0b228af6..2c3ea88bac229df67bd742e16d2106d80bcc8889 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
+@@ -19,7 +19,7 @@ public class LevelChunkSection {
+     public static final int SECTION_HEIGHT = 16;
+     public static final int SECTION_SIZE = 4096;
+     public static final int BIOME_CONTAINER_BITS = 2;
+-    private short nonEmptyBlockCount;
++    short nonEmptyBlockCount; // Paper - package-private
+     private short tickingBlockCount;
+     private short tickingFluidCount;
+     public final PalettedContainer<BlockState> states;
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
+index 7da1ed9640211b0e064162dcdb0000538e7b30f3..7aa585875dad5296526bb5d67fc5ea0f8875e452 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
+@@ -86,14 +86,18 @@ public class ProtoChunk extends ChunkAccess {
+ 
+     @Override
+     public BlockState getBlockState(BlockPos pos) {
+-        int i = pos.getY();
+-        if (this.isOutsideBuildHeight(i)) {
++        // Paper start
++        return getBlockState(pos.getX(), pos.getY(), pos.getZ());
++    }
++    public BlockState getBlockState(final int x, final int y, final int z) {
++        if (this.isOutsideBuildHeight(y)) {
+             return Blocks.VOID_AIR.defaultBlockState();
+         } else {
+-            LevelChunkSection levelChunkSection = this.getSection(this.getSectionIndex(i));
+-            return levelChunkSection.hasOnlyAir() ? Blocks.AIR.defaultBlockState() : levelChunkSection.getBlockState(pos.getX() & 15, i & 15, pos.getZ() & 15);
++            LevelChunkSection levelChunkSection = this.getSections()[this.getSectionIndex(y)];
++            return levelChunkSection.hasOnlyAir() ? Blocks.AIR.defaultBlockState() : levelChunkSection.getBlockState(x & 15, y & 15, z & 15);
+         }
+     }
++    // Paper end
+ 
+     @Override
+     public FluidState getFluidState(BlockPos pos) {

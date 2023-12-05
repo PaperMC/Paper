@@ -1,0 +1,671 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Fri, 9 Jun 2017 19:03:43 +0200
+Subject: [PATCH] Use TerminalConsoleAppender for console improvements
+
+Rewrite console improvements (console colors, tab completion,
+persistent input line, ...) using JLine 3.x and TerminalConsoleAppender.
+
+Also uses the new ANSIComponentSerializer to serialize components when
+logging them via the ComponentLogger, or when sending messages to the
+console, for hex color support.
+
+New features:
+  - Support console colors for Vanilla commands
+  - Add console colors for warnings and errors
+  - Server can now be turned off safely using CTRL + C. JLine catches
+    the signal and the implementation shuts down the server cleanly.
+  - Support console colors and persistent input line when running in
+    IntelliJ IDEA
+
+Other changes:
+  - Server starts 1-2 seconds faster thanks to optimizations in Log4j
+    configuration
+
+Co-Authored-By: Emilia Kond <emilia@rymiel.space>
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 3aca132fcbd7dce2b26ac17f8e365d5f22d61e8d..526f9e79502a6b0055807a6b831602271b704b23 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -6,9 +6,30 @@ plugins {
+     id("com.github.johnrengelman.shadow")
+ }
+ 
++val log4jPlugins = sourceSets.create("log4jPlugins")
++configurations.named(log4jPlugins.compileClasspathConfigurationName) {
++    extendsFrom(configurations.compileClasspath.get())
++}
++val alsoShade: Configuration by configurations.creating
++
+ dependencies {
+     implementation(project(":paper-api"))
+-    implementation("jline:jline:2.12.1")
++    // Paper start
++    implementation("org.jline:jline-terminal-jansi:3.21.0")
++    implementation("net.minecrell:terminalconsoleappender:1.3.0")
++    implementation("net.kyori:adventure-text-serializer-ansi:4.14.0") // Keep in sync with adventureVersion from Paper-API build file
++    implementation("net.kyori:ansi:1.0.3") // Manually bump beyond above transitive dep
++    /*
++          Required to add the missing Log4j2Plugins.dat file from log4j-core
++          which has been removed by Mojang. Without it, log4j has to classload
++          all its classes to check if they are plugins.
++          Scanning takes about 1-2 seconds so adding this speeds up the server start.
++     */
++    runtimeOnly("org.apache.logging.log4j:log4j-core:2.19.0")
++    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
++    runtimeOnly(log4jPlugins.output)
++    alsoShade(log4jPlugins.output)
++    // Paper end
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
+     implementation("org.ow2.asm:asm:9.5")
+     implementation("org.ow2.asm:asm-commons:9.5") // Paper - ASM event executor generation
+@@ -79,7 +100,7 @@ relocation {
+ }
+ 
+ tasks.shadowJar {
+-    configurations = listOf(project.configurations.vanillaServer.get())
++    configurations = listOf(project.configurations.vanillaServer.get(), alsoShade)
+     archiveClassifier.set("mojang-mapped")
+ 
+     for (relocation in relocation.relocations.get()) {
+diff --git a/src/log4jPlugins/java/io/papermc/paper/console/StripANSIConverter.java b/src/log4jPlugins/java/io/papermc/paper/console/StripANSIConverter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..91547f6e6fe90006713beb2818da634304bdd236
+--- /dev/null
++++ b/src/log4jPlugins/java/io/papermc/paper/console/StripANSIConverter.java
+@@ -0,0 +1,51 @@
++package io.papermc.paper.console;
++
++import org.apache.logging.log4j.core.LogEvent;
++import org.apache.logging.log4j.core.config.Configuration;
++import org.apache.logging.log4j.core.config.plugins.Plugin;
++import org.apache.logging.log4j.core.layout.PatternLayout;
++import org.apache.logging.log4j.core.pattern.ConverterKeys;
++import org.apache.logging.log4j.core.pattern.LogEventPatternConverter;
++import org.apache.logging.log4j.core.pattern.PatternConverter;
++import org.apache.logging.log4j.core.pattern.PatternFormatter;
++import org.apache.logging.log4j.core.pattern.PatternParser;
++
++import java.util.List;
++import java.util.regex.Pattern;
++
++@Plugin(name = "stripAnsi", category = PatternConverter.CATEGORY)
++@ConverterKeys({"stripAnsi"})
++public final class StripANSIConverter extends LogEventPatternConverter {
++    final private Pattern ANSI_PATTERN = Pattern.compile("\\e\\[[\\d;]*[^\\d;]");
++
++    private final List<PatternFormatter> formatters;
++
++    private StripANSIConverter(List<PatternFormatter> formatters) {
++        super("stripAnsi", null);
++        this.formatters = formatters;
++    }
++
++    @Override
++    public void format(LogEvent event, StringBuilder toAppendTo) {
++        int start = toAppendTo.length();
++        for (PatternFormatter formatter : formatters) {
++            formatter.format(event, toAppendTo);
++        }
++        String content = toAppendTo.substring(start);
++        content = ANSI_PATTERN.matcher(content).replaceAll("");
++
++        toAppendTo.setLength(start);
++        toAppendTo.append(content);
++    }
++
++    public static StripANSIConverter newInstance(Configuration config, String[] options) {
++        if (options.length != 1) {
++            LOGGER.error("Incorrect number of options on stripAnsi. Expected exactly 1, received " + options.length);
++            return null;
++        }
++
++        PatternParser parser = PatternLayout.createPatternParser(config);
++        List<PatternFormatter> formatters = parser.parse(options[0]);
++        return new StripANSIConverter(formatters);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a4070b59e261f0f1ac4beec47b11492f4724bf27
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+@@ -0,0 +1,41 @@
++package com.destroystokyo.paper.console;
++
++import net.minecraft.server.dedicated.DedicatedServer;
++import net.minecrell.terminalconsole.SimpleTerminalConsole;
++import org.bukkit.craftbukkit.command.ConsoleCommandCompleter;
++import org.jline.reader.LineReader;
++import org.jline.reader.LineReaderBuilder;
++
++public final class PaperConsole extends SimpleTerminalConsole {
++
++    private final DedicatedServer server;
++
++    public PaperConsole(DedicatedServer server) {
++        this.server = server;
++    }
++
++    @Override
++    protected LineReader buildReader(LineReaderBuilder builder) {
++        return super.buildReader(builder
++                .appName("Paper")
++                .variable(LineReader.HISTORY_FILE, java.nio.file.Paths.get(".console_history"))
++                .completer(new ConsoleCommandCompleter(this.server))
++        );
++    }
++
++    @Override
++    protected boolean isRunning() {
++        return !this.server.isStopped() && this.server.isRunning();
++    }
++
++    @Override
++    protected void runCommand(String command) {
++        this.server.handleConsoleInput(command, this.server.createCommandSourceStack());
++    }
++
++    @Override
++    protected void shutdown() {
++        this.server.halt(false);
++    }
++
++}
+diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8f07539a82f449ad217e316a7513a1708781fb63
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
+@@ -0,0 +1,26 @@
++package com.destroystokyo.paper.console;
++
++import net.kyori.adventure.audience.MessageType;
++import net.kyori.adventure.identity.Identity;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import org.apache.logging.log4j.LogManager;
++import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
++
++public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
++
++    private static final ComponentLogger LOGGER = ComponentLogger.logger(LogManager.getRootLogger().getName());
++
++    @Override
++    public void sendRawMessage(String message) {
++        final Component msg = LegacyComponentSerializer.legacySection().deserialize(message);
++        this.sendMessage(Identity.nil(), msg, MessageType.SYSTEM);
++    }
++
++    @Override
++    public void sendMessage(Identity identity, Component message, MessageType type) {
++        LOGGER.info(message);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+index 3dc613116c086444ece88bcb0a569eeea953074f..db54a9c32578defa02fa58dc694c96684a4885ac 100644
+--- a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
++++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+@@ -20,6 +20,7 @@ import net.kyori.adventure.text.TranslatableComponent;
+ import net.kyori.adventure.text.flattener.ComponentFlattener;
+ import net.kyori.adventure.text.format.TextColor;
+ import net.kyori.adventure.text.serializer.ComponentSerializer;
++import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
+ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+ import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
+ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+@@ -107,6 +108,9 @@ public final class PaperAdventure {
+     public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale"); // init after FLATTENER because classloading triggered here might create a logger
+     @Deprecated
+     public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
++
++    public static final ANSIComponentSerializer ANSI_SERIALIZER = ANSIComponentSerializer.builder().flattener(FLATTENER).build();
++
+     private static final Codec<CompoundTag, String, IOException, IOException> NBT_CODEC = new Codec<CompoundTag, String, IOException, IOException>() {
+         @Override
+         public @NotNull CompoundTag decode(final @NotNull String encoded) throws IOException {
+diff --git a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
+index c3631efda9c7fa531a8a9f18fbee7b5f8655382b..769f6489632302627fa1730cc08e77f51eb54eb4 100644
+--- a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
++++ b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
+@@ -1,9 +1,11 @@
+ package io.papermc.paper.adventure.providers;
+ 
+ import io.papermc.paper.adventure.PaperAdventure;
++import java.util.Locale;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+ import net.kyori.adventure.text.logger.slf4j.ComponentLoggerProvider;
++import net.kyori.adventure.translation.GlobalTranslator;
+ import org.jetbrains.annotations.NotNull;
+ import org.slf4j.LoggerFactory;
+ 
+@@ -14,6 +16,6 @@ public class ComponentLoggerProviderImpl implements ComponentLoggerProvider {
+     }
+ 
+     private String serialize(final Component message) {
+-        return PaperAdventure.asPlain(message, null);
++        return PaperAdventure.ANSI_SERIALIZER.serialize(GlobalTranslator.render(message, Locale.getDefault()));
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 182ae975a0a9bf4ade6932d1bb1a376f77af130a..73155c8cb02a6156c1e48f9c75f512441f8b85a1 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -164,7 +164,7 @@ import com.mojang.datafixers.util.Pair;
+ import com.mojang.serialization.DynamicOps;
+ import com.mojang.serialization.Lifecycle;
+ import java.util.Random;
+-import jline.console.ConsoleReader;
++// import jline.console.ConsoleReader; // Paper
+ import joptsimple.OptionSet;
+ import net.minecraft.core.HolderLookup;
+ import net.minecraft.resources.RegistryOps;
+@@ -278,7 +278,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public org.bukkit.craftbukkit.CraftServer server;
+     public OptionSet options;
+     public org.bukkit.command.ConsoleCommandSender console;
+-    public ConsoleReader reader;
++    //public ConsoleReader reader; // Paper
+     public static int currentTick = 0; // Paper - Further improve tick loop
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+     public int autosavePeriod;
+@@ -361,7 +361,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.options = options;
+         this.worldLoader = worldLoader;
+         this.vanillaCommandDispatcher = worldstem.dataPackResources().commands; // CraftBukkit
++        // Paper start - Handled by TerminalConsoleAppender
+         // Try to see if we're actually running in a terminal, disable jline if not
++        /*
+         if (System.console() == null && System.getProperty("jline.terminal") == null) {
+             System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
+             Main.useJline = false;
+@@ -382,6 +384,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 MinecraftServer.LOGGER.warn((String) null, ex);
+             }
+         }
++        */
++        // Paper end
+         Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
+         // CraftBukkit end
+         this.paperConfigurations = services.paperConfigurations(); // Paper
+@@ -1114,7 +1118,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 org.spigotmc.WatchdogThread.doStop(); // Spigot
+                 // CraftBukkit start - Restore terminal to original settings
+                 try {
+-                    this.reader.getTerminal().restore();
++                    net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
+                 } catch (Exception ignored) {
+                 }
+                 // CraftBukkit end
+@@ -1586,7 +1590,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     @Override
+     public void sendSystemMessage(Component message) {
+-        MinecraftServer.LOGGER.info(message.getString());
++        MinecraftServer.LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
+     }
+ 
+     public KeyPair getKeyPair() {
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 1989bbc4bcceb86ab49786b0c93ff48f3836e904..567c8fdbb0e21ec9cfc511f8c7487340785d3c62 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -98,6 +98,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                 if (!org.bukkit.craftbukkit.Main.useConsole) {
+                     return;
+                 }
++                // Paper start - Use TerminalConsoleAppender
++                new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
++                /*
+                 jline.console.ConsoleReader bufferedreader = DedicatedServer.this.reader;
+ 
+                 // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
+@@ -129,7 +132,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                             continue;
+                         }
+                         if (s.trim().length() > 0) { // Trim to filter lines which are just spaces
+-                            DedicatedServer.this.handleConsoleInput(s, DedicatedServer.this.createCommandSourceStack());
++                            DedicatedServer.this.issueCommand(s, DedicatedServer.this.getServerCommandListener());
+                         }
+                         // CraftBukkit end
+                     }
+@@ -137,6 +140,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                     DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
+                 }
+ 
++                */
++                // Paper end
+             }
+         };
+ 
+@@ -148,6 +153,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+         global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
+ 
++        // Paper start - Not needed with TerminalConsoleAppender
++        final org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
++        /*
+         final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
+         for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
+             if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
+@@ -156,6 +164,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+ 
+         new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader).start();
++        */
++        // Paper end
+ 
+         System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
+         System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
+diff --git a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+index 75083eeb9b413e6dd5375007360dce6857a08fff..d292fdb165436f0b9b46b32110f5e09ad0e517a1 100644
+--- a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
++++ b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+@@ -166,7 +166,7 @@ public class MinecraftServerGui extends JComponent {
+         this.finalizers.forEach(Runnable::run);
+     }
+ 
+-    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})*)?[m|K]"); // CraftBukkit
++    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\e\\[[\\d;]*[^\\d;]"); // CraftBukkit // Paper
+     public void print(JTextArea textArea, JScrollPane scrollPane, String message) {
+         if (!SwingUtilities.isEventDispatchThread()) {
+             SwingUtilities.invokeLater(() -> {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 6dad42086e598c86a27358e12c5b72a0a79b38ee..daabc5739b7bf6b1cbeb497fe0e9b7ed6ed30975 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -162,8 +162,7 @@ public abstract class PlayerList {
+ 
+     public PlayerList(MinecraftServer server, LayeredRegistryAccess<RegistryLayer> registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
+         this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
+-        server.console = org.bukkit.craftbukkit.command.ColouredConsoleSender.getInstance();
+-        server.reader.addCompleter(new org.bukkit.craftbukkit.command.ConsoleCommandCompleter(server.server));
++        server.console = new com.destroystokyo.paper.console.TerminalConsoleCommandSender(); // Paper
+         // CraftBukkit end
+ 
+         this.bans = new UserBanList(PlayerList.USERBANLIST_FILE);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index e8fbecb9abee37946dd8055c1e4d8e95df324998..7019a52796afe0fd438833c3b9690499ec120202 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -43,7 +43,7 @@ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ import java.util.stream.Collectors;
+ import javax.imageio.ImageIO;
+-import jline.console.ConsoleReader;
++// import jline.console.ConsoleReader;
+ import net.minecraft.advancements.AdvancementHolder;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+@@ -1296,9 +1296,13 @@ public final class CraftServer implements Server {
+         return this.logger;
+     }
+ 
++    // Paper start - JLine update
++    /*
+     public ConsoleReader getReader() {
+         return this.console.reader;
+     }
++    */
++    // Paper end
+ 
+     @Override
+     public PluginCommand getPluginCommand(String name) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index d8ca6256ad2bedc7afb92162a0e1a5487011bfbc..6f359e225eb11f22c61beb6463f9918002ce0086 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -13,7 +13,6 @@ import java.util.logging.Logger;
+ import joptsimple.OptionParser;
+ import joptsimple.OptionSet;
+ import joptsimple.util.PathConverter;
+-import org.fusesource.jansi.AnsiConsole;
+ 
+ public class Main {
+     public static boolean useJline = true;
+@@ -220,6 +219,8 @@ public class Main {
+             }
+ 
+             try {
++                // Paper start - Handled by TerminalConsoleAppender
++                /*
+                 // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
+                 String jline_UnsupportedTerminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 'U', 'n', 's', 'u', 'p', 'p', 'o', 'r', 't', 'e', 'd', 'T', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
+                 String jline_terminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 't', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
+@@ -237,9 +238,18 @@ public class Main {
+                     // This ensures the terminal literal will always match the jline implementation
+                     System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, jline.UnsupportedTerminal.class.getName());
+                 }
++                */
++
++                if (options.has("nojline")) {
++                    System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false");
++                    useJline = false;
++                }
++                // Paper end
+ 
+                 if (options.has("noconsole")) {
+                     Main.useConsole = false;
++                    useJline = false; // Paper
++                    System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
+                 }
+ 
+                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+@@ -267,7 +277,7 @@ public class Main {
+                     System.out.println("Unable to read system info");
+                 }
+                 // Paper end
+-
++                System.setProperty( "library.jansi.version", "Paper" ); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
+                 System.out.println("Loading libraries, please wait...");
+                 net.minecraft.server.Main.main(options);
+             } catch (Throwable t) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java b/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java
+index bcf1c36d07b79520a39643d3a01020a67b1c9ef2..217e7e3b9db04c7fc5f6518f39cc9d3488f9128d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java
+@@ -5,15 +5,13 @@ import java.util.EnumMap;
+ import java.util.Map;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+-import jline.Terminal;
++//import jline.Terminal;
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.command.ConsoleCommandSender;
+ import org.bukkit.craftbukkit.CraftServer;
+-import org.fusesource.jansi.Ansi;
+-import org.fusesource.jansi.Ansi.Attribute;
+ 
+-public class ColouredConsoleSender extends CraftConsoleCommandSender {
++public class ColouredConsoleSender /*extends CraftConsoleCommandSender */{/* // Paper - disable
+     private final Terminal terminal;
+     private final Map<ChatColor, String> replacements = new EnumMap<ChatColor, String>(ChatColor.class);
+     private final ChatColor[] colors = ChatColor.values();
+@@ -93,5 +91,5 @@ public class ColouredConsoleSender extends CraftConsoleCommandSender {
+         } else {
+             return new ColouredConsoleSender();
+         }
+-    }
++    }*/ // Paper
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
+index 0b4c62387c1093652ac15b64a8703249de4cf088..d24acf28f5ed023acc550bcf877e4b9800ec8c9f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
+@@ -4,50 +4,73 @@ import java.util.Collections;
+ import java.util.List;
+ import java.util.concurrent.ExecutionException;
+ import java.util.logging.Level;
+-import jline.console.completer.Completer;
++import net.minecraft.server.dedicated.DedicatedServer;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.util.Waitable;
++
++// Paper start - JLine update
++import org.jline.reader.Candidate;
++import org.jline.reader.Completer;
++import org.jline.reader.LineReader;
++import org.jline.reader.ParsedLine;
++// Paper end
+ import org.bukkit.event.server.TabCompleteEvent;
+ 
+ public class ConsoleCommandCompleter implements Completer {
+-    private final CraftServer server;
++    private final DedicatedServer server; // Paper - CraftServer -> DedicatedServer
+ 
+-    public ConsoleCommandCompleter(CraftServer server) {
++    public ConsoleCommandCompleter(DedicatedServer server) { // Paper - CraftServer -> DedicatedServer
+         this.server = server;
+     }
+ 
++    // Paper start - Change method signature for JLine update
+     @Override
+-    public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
++    public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
++        final CraftServer server = this.server.server;
++        final String buffer = line.line();
++        // Paper end
+         Waitable<List<String>> waitable = new Waitable<List<String>>() {
+             @Override
+             protected List<String> evaluate() {
+-                List<String> offers = ConsoleCommandCompleter.this.server.getCommandMap().tabComplete(ConsoleCommandCompleter.this.server.getConsoleSender(), buffer);
++                List<String> offers = server.getCommandMap().tabComplete(server.getConsoleSender(), buffer); // Paper - Remove "this."
+ 
+-                TabCompleteEvent tabEvent = new TabCompleteEvent(ConsoleCommandCompleter.this.server.getConsoleSender(), buffer, (offers == null) ? Collections.EMPTY_LIST : offers);
+-                ConsoleCommandCompleter.this.server.getPluginManager().callEvent(tabEvent);
++                TabCompleteEvent tabEvent = new TabCompleteEvent(server.getConsoleSender(), buffer, (offers == null) ? Collections.EMPTY_LIST : offers); // Paper - Remove "this."
++                server.getPluginManager().callEvent(tabEvent); // Paper - Remove "this."
+ 
+                 return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
+             }
+         };
+-        this.server.getServer().processQueue.add(waitable);
++        server.getServer().processQueue.add(waitable); // Paper - Remove "this."
+         try {
+             List<String> offers = waitable.get();
+             if (offers == null) {
+-                return cursor;
++                return; // Paper - Method returns void
++            }
++
++            // Paper start - JLine update
++            for (String completion : offers) {
++                if (completion.isEmpty()) {
++                    continue;
++                }
++
++                candidates.add(new Candidate(completion));
+             }
+-            candidates.addAll(offers);
++            // Paper end
+ 
++            // Paper start - JLine handles cursor now
++            /*
+             final int lastSpace = buffer.lastIndexOf(' ');
+             if (lastSpace == -1) {
+                 return cursor - buffer.length();
+             } else {
+                 return cursor - (buffer.length() - lastSpace - 1);
+             }
++            */
++            // Paper end
+         } catch (ExecutionException e) {
+-            this.server.getLogger().log(Level.WARNING, "Unhandled exception when tab completing", e);
++            server.getLogger().log(Level.WARNING, "Unhandled exception when tab completing", e); // Paper - Remove "this."
+         } catch (InterruptedException e) {
+             Thread.currentThread().interrupt();
+         }
+-        return cursor;
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
+index 8390f5b5b957b5435efece26507a89756d0a7b3c..c6e8441e299f477ddb22c1ce2618710763978f1a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
+@@ -16,7 +16,7 @@ public class ServerShutdownThread extends Thread {
+             this.server.close();
+         } finally {
+             try {
+-                this.server.reader.getTerminal().restore();
++                net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
+             } catch (Exception e) {
+             }
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/TerminalConsoleWriterThread.java b/src/main/java/org/bukkit/craftbukkit/util/TerminalConsoleWriterThread.java
+index 1d8b279f3cbe6fde6bb1bfc4985c4133b0d4a95d..cdc52bbe5c6ae4688615a7732b10071f7f51718e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/TerminalConsoleWriterThread.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/TerminalConsoleWriterThread.java
+@@ -5,12 +5,12 @@ import java.io.IOException;
+ import java.io.OutputStream;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+-import jline.console.ConsoleReader;
++//import jline.console.ConsoleReader;
+ import org.bukkit.craftbukkit.Main;
+-import org.fusesource.jansi.Ansi;
+-import org.fusesource.jansi.Ansi.Erase;
++//import org.fusesource.jansi.Ansi;
++//import org.fusesource.jansi.Ansi.Erase;
+ 
+-public class TerminalConsoleWriterThread extends Thread {
++public class TerminalConsoleWriterThread /*extends Thread*/ {/* // Paper - disable
+     private final ConsoleReader reader;
+     private final OutputStream output;
+ 
+@@ -54,5 +54,5 @@ public class TerminalConsoleWriterThread extends Thread {
+                 Logger.getLogger(TerminalConsoleWriterThread.class.getName()).log(Level.SEVERE, null, ex);
+             }
+         }
+-    }
++    }*/
+ }
+diff --git a/src/main/resources/log4j2.component.properties b/src/main/resources/log4j2.component.properties
+new file mode 100644
+index 0000000000000000000000000000000000000000..0694b21465fb9e4164e71862ff24b62241b191f2
+--- /dev/null
++++ b/src/main/resources/log4j2.component.properties
+@@ -0,0 +1 @@
++log4j.skipJansi=true
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index 722ca84968cbbbdeffd09939abff0cccd0a84010..a994ec0f8621b1f267b40049306f63479c050e2f 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -1,17 +1,14 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <Configuration status="WARN" packages="com.mojang.util">
+     <Appenders>
+-        <Console name="SysOut" target="SYSTEM_OUT">
+-            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %msg%n" />
+-        </Console>
+         <Queue name="ServerGuiConsole">
+             <PatternLayout pattern="[%d{HH:mm:ss} %level]: %msg%n" />
+         </Queue>
+-        <Queue name="TerminalConsole">
+-            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %msg%n" />
+-        </Queue>
++        <TerminalConsole name="TerminalConsole">
++            <PatternLayout pattern="%highlightError{[%d{HH:mm:ss} %level]: %msg%n%xEx}" />
++        </TerminalConsole>
+         <RollingRandomAccessFile name="File" fileName="logs/latest.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log.gz">
+-            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %msg%n" />
++            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %stripAnsi{%msg}%n" />
+             <Policies>
+                 <TimeBasedTriggeringPolicy />
+                 <OnStartupTriggeringPolicy />
+@@ -24,10 +21,9 @@
+             <filters>
+                 <MarkerFilter marker="NETWORK_PACKETS" onMatch="DENY" onMismatch="NEUTRAL" />
+             </filters>
+-            <AppenderRef ref="SysOut" level="info"/>
+             <AppenderRef ref="File"/>
+-            <AppenderRef ref="ServerGuiConsole" level="info"/>
+             <AppenderRef ref="TerminalConsole" level="info"/>
++            <AppenderRef ref="ServerGuiConsole" level="info"/>
+         </Root>
+     </Loggers>
+ </Configuration>

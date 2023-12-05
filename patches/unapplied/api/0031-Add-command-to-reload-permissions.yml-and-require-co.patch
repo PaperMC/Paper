@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William <admin@domnian.com>
+Date: Fri, 18 Mar 2016 03:28:07 -0400
+Subject: [PATCH] Add command to reload permissions.yml and require confirm to
+ reload
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 3118da2ad367b5bd547769214112ea5299c95866..7b467aedbcf3a6174bfb12ded3b27775a7eaf45c 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2276,6 +2276,13 @@ public final class Bukkit {
+     public static org.bukkit.command.CommandMap getCommandMap() {
+         return server.getCommandMap();
+     }
++
++    /**
++     * Reload the Permissions in permissions.yml
++     */
++    public static void reloadPermissions() {
++        server.reloadPermissions();
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index d94483d1481f233897faf378e6b34b6b97f02caf..c5591e82e14e299facfc767a20f2eed77354caac 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2012,4 +2012,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     @NotNull
+     Spigot spigot();
+     // Spigot end
++
++    void reloadPermissions(); // Paper
+ }
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index 50cc311be7904cc8fc6070a21c8e4de3a489fd20..5fa9d648bc780e874f658597f1a24715bccac5cb 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -13,15 +13,35 @@ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(@NotNull String name) {
+         super(name);
+         this.description = "Reloads the server configuration and plugins";
+-        this.usageMessage = "/reload";
++        this.usageMessage = "/reload [permissions]"; // Paper
+         this.setPermission("bukkit.command.reload");
+         this.setAliases(Arrays.asList("rl"));
+     }
+ 
+     @Override
+-    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
++    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) { // Paper
+         if (!testPermission(sender)) return true;
+ 
++        // Paper start - Reload permissions.yml & require confirm
++        boolean confirmed = System.getProperty("LetMeReload") != null;
++        if (args.length == 1) {
++            if (args[0].equalsIgnoreCase("permissions")) {
++                Bukkit.getServer().reloadPermissions();
++                Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Permissions successfully reloaded.", net.kyori.adventure.text.format.NamedTextColor.GREEN));
++                return true;
++            } else if ("confirm".equalsIgnoreCase(args[0])) {
++                confirmed = true;
++            } else {
++                Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Usage: " + usageMessage, net.kyori.adventure.text.format.NamedTextColor.RED));
++                return true;
++            }
++        }
++        if (!confirmed) {
++            Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Are you sure you wish to reload your server? Doing so may cause bugs and memory leaks. It is recommended to restart instead of using /reload. To confirm, please type ", net.kyori.adventure.text.format.NamedTextColor.RED).append(net.kyori.adventure.text.Component.text("/reload confirm", net.kyori.adventure.text.format.NamedTextColor.YELLOW)));
++            return true;
++        }
++        // Paper end
++
+         Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
+         Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
+         Bukkit.reload();
+@@ -33,6 +53,6 @@ public class ReloadCommand extends BukkitCommand {
+     @NotNull
+     @Override
+     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
+-        return Collections.emptyList();
++        return java.util.Collections.singletonList("permissions"); // Paper
+     }
+ }

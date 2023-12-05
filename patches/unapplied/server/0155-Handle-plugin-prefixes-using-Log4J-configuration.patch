@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Thu, 21 Sep 2017 16:14:55 +0200
+Subject: [PATCH] Handle plugin prefixes using Log4J configuration
+
+Display logger name in the console for all loggers except the
+root logger, Bukkit's logger ("Minecraft") and Minecraft loggers.
+Since plugins now use the plugin name as logger name this will
+restore the plugin prefixes without having to prepend them manually
+to the log messages.
+
+Logger prefixes are shown by default for all loggers except for
+the root logger, the Minecraft/Mojang loggers and the Bukkit loggers.
+This may cause additional prefixes to be disabled for plugins bypassing
+the plugin logger.
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 526f9e79502a6b0055807a6b831602271b704b23..8c17b903f077d3f7281b0090b9aefdbf1b59a17c 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -25,7 +25,7 @@ dependencies {
+           all its classes to check if they are plugins.
+           Scanning takes about 1-2 seconds so adding this speeds up the server start.
+      */
+-    runtimeOnly("org.apache.logging.log4j:log4j-core:2.19.0")
++    implementation("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - implementation
+     log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
+     runtimeOnly(log4jPlugins.output)
+     alsoShade(log4jPlugins.output)
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index 0fca20580d81c461e903c8cbd1cf090f5d5083c6..bf368d3ab947f027eaffb5498c45429bf702788c 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -290,7 +290,7 @@ public class SpigotConfig
+     private static void playerSample()
+     {
+         SpigotConfig.playerSample = SpigotConfig.getInt( "settings.sample-count", 12 );
+-        System.out.println( "Server Ping Player Sample Count: " + SpigotConfig.playerSample );
++        Bukkit.getLogger().log( Level.INFO, "Server Ping Player Sample Count: {0}", playerSample ); // Paper - Use logger
+     }
+ 
+     public static int playerShuffle;
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index a994ec0f8621b1f267b40049306f63479c050e2f..bba2de3f3feb5e6a876f9df1eee6da0c7d93e271 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -5,10 +5,22 @@
+             <PatternLayout pattern="[%d{HH:mm:ss} %level]: %msg%n" />
+         </Queue>
+         <TerminalConsole name="TerminalConsole">
+-            <PatternLayout pattern="%highlightError{[%d{HH:mm:ss} %level]: %msg%n%xEx}" />
++            <PatternLayout>
++                <LoggerNamePatternSelector defaultPattern="%highlightError{[%d{HH:mm:ss} %level]: [%logger] %msg%n%xEx}">
++                    <!-- Log root, Minecraft, Mojang and Bukkit loggers without prefix -->
++                    <PatternMatch key=",net.minecraft.,Minecraft,com.mojang."
++                                  pattern="%highlightError{[%d{HH:mm:ss} %level]: %msg%n%xEx}" />
++                </LoggerNamePatternSelector>
++            </PatternLayout>
+         </TerminalConsole>
+         <RollingRandomAccessFile name="File" fileName="logs/latest.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log.gz">
+-            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %stripAnsi{%msg}%n" />
++            <PatternLayout>
++                <LoggerNamePatternSelector defaultPattern="[%d{HH:mm:ss}] [%t/%level]: [%logger] %stripAnsi{%msg}%n">
++                    <!-- Log root, Minecraft, Mojang and Bukkit loggers without prefix -->
++                    <PatternMatch key=",net.minecraft.,Minecraft,com.mojang."
++                                  pattern="[%d{HH:mm:ss}] [%t/%level]: %stripAnsi{%msg}%n" />
++                </LoggerNamePatternSelector>
++            </PatternLayout>
+             <Policies>
+                 <TimeBasedTriggeringPolicy />
+                 <OnStartupTriggeringPolicy />

@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakub Zacek <dawon@dawon.eu>
+Date: Sun, 24 Apr 2022 22:56:59 +0200
+Subject: [PATCH] Add PlayerInventorySlotChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 0d8d17c03af1ebe033f4e3a4743e018bd819efdb..04961c33f4d89c491c5b6eb2a53b948feca17807 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -372,6 +372,25 @@ public class ServerPlayer extends Player {
+ 
+                 }
+             }
++            // Paper start
++            @Override
++            public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack oldStack, ItemStack stack) {
++                Slot slot = handler.getSlot(slotId);
++                if (!(slot instanceof ResultSlot)) {
++                    if (slot.container == ServerPlayer.this.getInventory()) {
++                        if (io.papermc.paper.event.player.PlayerInventorySlotChangeEvent.getHandlerList().getRegisteredListeners().length == 0) {
++                            CriteriaTriggers.INVENTORY_CHANGED.trigger(ServerPlayer.this, ServerPlayer.this.getInventory(), stack);
++                            return;
++                        }
++                        io.papermc.paper.event.player.PlayerInventorySlotChangeEvent event = new io.papermc.paper.event.player.PlayerInventorySlotChangeEvent(ServerPlayer.this.getBukkitEntity(), slotId, CraftItemStack.asBukkitCopy(oldStack), CraftItemStack.asBukkitCopy(stack));
++                        event.callEvent();
++                        if (event.shouldTriggerAdvancements()) {
++                            CriteriaTriggers.INVENTORY_CHANGED.trigger(ServerPlayer.this, ServerPlayer.this.getInventory(), stack);
++                        }
++                    }
++                }
++            }
++            // Paper end
+ 
+             @Override
+             public void dataChanged(AbstractContainerMenu handler, int property, int value) {}
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index 1a19c6dc49cac784ca56d92ec755d6ead9811b20..176c8048f2fb3822fc14af9bfe5676c9d0768ca3 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -302,7 +302,7 @@ public abstract class AbstractContainerMenu {
+             while (iterator.hasNext()) {
+                 ContainerListener icrafting = (ContainerListener) iterator.next();
+ 
+-                icrafting.slotChanged(this, slot, itemstack2);
++                icrafting.slotChanged(this, slot, itemstack1, itemstack2); // Paper
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/inventory/ContainerListener.java b/src/main/java/net/minecraft/world/inventory/ContainerListener.java
+index 0e19cc55646625bf32a354d3df2dc2d6bcff96f4..8ca9c14310b1e809662dd4ca6d35668992c2fc8d 100644
+--- a/src/main/java/net/minecraft/world/inventory/ContainerListener.java
++++ b/src/main/java/net/minecraft/world/inventory/ContainerListener.java
+@@ -5,5 +5,11 @@ import net.minecraft.world.item.ItemStack;
+ public interface ContainerListener {
+     void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack stack);
+ 
++    // Paper start
++    default void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack oldStack, ItemStack stack) {
++        slotChanged(handler, slotId, stack);
++    }
++    // Paper end
++
+     void dataChanged(AbstractContainerMenu handler, int property, int value);
+ }

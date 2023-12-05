@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 13 May 2020 23:01:26 -0400
+Subject: [PATCH] Protect Bedrock and End Portal/Frames from being destroyed
+
+This fixes exploits that let players destroy bedrock by Pistons, explosions
+and Mushrooom/Tree generation.
+
+These blocks are designed to not be broken except by creative players/commands.
+So protect them from a multitude of methods of destroying them.
+
+A config is provided if you rather let players use these exploits, and let
+them destroy the worlds End Portals and get on top of the nether easy.
+
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index c0227cda09b9ca508c1de1fbe1e57afd743a9426..93529defa5d36bb9b4c69eedda9b7ac3d0a189ce 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -169,6 +169,7 @@ public class Explosion {
+                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
+                             BlockPos blockposition = BlockPos.containing(d4, d5, d6);
+                             BlockState iblockdata = this.level.getBlockState(blockposition);
++                            if (!iblockdata.isDestroyable()) continue; // Paper
+                             FluidState fluid = iblockdata.getFluidState(); // Paper
+ 
+                             if (!this.level.isInWorldBounds(blockposition)) {
+@@ -371,7 +372,7 @@ public class Explosion {
+                 }
+                 // CraftBukkit end
+ 
+-                if (!iblockdata.isAir()) {
++                if (!iblockdata.isAir() && iblockdata.isDestroyable()) { // Paper
+                     BlockPos blockposition1 = blockposition.immutable();
+ 
+                     this.level.getProfiler().push("explosion_blocks");
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 046fa6e5b2013c0872176592dd8cc6681a9b308a..7825f6185a9a73dd395cdb6d86947d33d8512200 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -518,6 +518,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
+         // CraftBukkit start - tree generation
+         if (this.captureTreeGeneration) {
++            // Paper start
++            BlockState type = getBlockState(pos);
++            if (!type.isDestroyable()) return false;
++            // Paper end
+             CraftBlockState blockstate = this.capturedBlockStates.get(pos);
+             if (blockstate == null) {
+                 blockstate = CapturedBlockState.getTreeBlockState(this, pos, flags);
+diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
+index 7646b66bc5ba0288608de0d836c7307e02eebe67..36b196c8834c4eb873bfca0b12f1fc2b421ea071 100644
+--- a/src/main/java/net/minecraft/world/level/block/Block.java
++++ b/src/main/java/net/minecraft/world/level/block/Block.java
+@@ -88,6 +88,19 @@ public class Block extends BlockBehaviour implements ItemLike {
+     protected final StateDefinition<Block, BlockState> stateDefinition;
+     private BlockState defaultBlockState;
+     // Paper start
++    public final boolean isDestroyable() {
++        return io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits ||
++            this != Blocks.BEDROCK &&
++            this != Blocks.END_PORTAL_FRAME &&
++            this != Blocks.END_PORTAL &&
++            this != Blocks.END_GATEWAY &&
++            this != Blocks.COMMAND_BLOCK &&
++            this != Blocks.REPEATING_COMMAND_BLOCK &&
++            this != Blocks.CHAIN_COMMAND_BLOCK &&
++            this != Blocks.BARRIER &&
++            this != Blocks.STRUCTURE_BLOCK &&
++            this != Blocks.JIGSAW;
++    }
+     public co.aikar.timings.Timing timing;
+     public co.aikar.timings.Timing getTiming() {
+         if (timing == null) {
+diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+index e4e4ad933db6484589dc2b51ef2f5a6745ffb891..6b0f70907236065bc2769541bf430ccc66df5081 100644
+--- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+@@ -199,6 +199,12 @@ public class PistonBaseBlock extends DirectionalBlock {
+     @Override
+     public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
+         Direction enumdirection = (Direction) state.getValue(PistonBaseBlock.FACING);
++        // Paper start - prevent retracting when we're facing the wrong way (we were replaced before retraction could occur)
++        Direction directionQueuedAs = Direction.from3DDataValue(data & 7); // Paper - copied from below
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits && enumdirection != directionQueuedAs) {
++            return false;
++        }
++        // Paper end - prevent retracting when we're facing the wrong way
+         BlockState iblockdata1 = (BlockState) state.setValue(PistonBaseBlock.EXTENDED, true);
+ 
+         if (!world.isClientSide) {
+@@ -232,7 +238,7 @@ public class PistonBaseBlock extends DirectionalBlock {
+             BlockState iblockdata2 = (BlockState) ((BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(MovingPistonBlock.FACING, enumdirection)).setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
+ 
+             world.setBlock(pos, iblockdata2, 20);
+-            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata2, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true));
++            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata2, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - diff on change
+             world.blockUpdated(pos, iblockdata2.getBlock());
+             iblockdata2.updateNeighbourShapes(world, pos, 2);
+             if (this.isSticky) {
+@@ -261,7 +267,14 @@ public class PistonBaseBlock extends DirectionalBlock {
+                     }
+                 }
+             } else {
+-                world.removeBlock(pos.relative(enumdirection), false);
++                // Paper start - fix headless pistons breaking blocks
++                BlockPos headPos = pos.relative(enumdirection);
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits || world.getBlockState(headPos) == Blocks.PISTON_HEAD.defaultBlockState().setValue(FACING, enumdirection)) { // double check to make sure we're not a headless piston.
++                    world.removeBlock(headPos, false);
++                } else {
++                    ((ServerLevel)world).getChunkSource().blockChanged(headPos); // ... fix client desync
++                }
++                // Paper end - fix headless pistons breaking blocks
+             }
+ 
+             world.playSound((Player) null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.15F + 0.6F);
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+index 916d7b35145345cb3bf5ca46df38eae0512c4e95..a5942b6683d38f067f8ca1dfbe467b72df242632 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -229,7 +229,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+     /** @deprecated */
+     @Deprecated
+     public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
+-        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
++        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper;
+     }
+ 
+     /** @deprecated */
+@@ -891,6 +891,12 @@ public abstract class BlockBehaviour implements FeatureElement {
+             return this.legacySolid;
+         }
+ 
++        // Paper start
++        public final boolean isDestroyable() {
++            return getBlock().isDestroyable();
++        }
++        // Paper end
++
+         public boolean isValidSpawn(BlockGetter world, BlockPos pos, EntityType<?> type) {
+             return this.getBlock().properties.isValidSpawn.test(this.asState(), world, pos, type);
+         }
+@@ -994,7 +1000,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+         }
+ 
+         public PushReaction getPistonPushReaction() {
+-            return this.pushReaction;
++            return !this.isDestroyable() ? PushReaction.BLOCK : this.pushReaction; // Paper
+         }
+ 
+         public boolean isSolidRender(BlockGetter world, BlockPos pos) {
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+index ed5210c63d964be7c28f59df315766794ec3ea1f..08325c055b04355089d75031522c7b74d83c6cca 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+@@ -221,6 +221,13 @@ public class PortalForcer {
+         for (int j = -1; j < 3; ++j) {
+             for (int k = -1; k < 4; ++k) {
+                 temp.setWithOffset(pos, portalDirection.getStepX() * j + enumdirection1.getStepX() * distanceOrthogonalToPortal, k, portalDirection.getStepZ() * j + enumdirection1.getStepZ() * distanceOrthogonalToPortal);
++                // Paper start - prevent destroying unbreakable blocks
++                if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits) {
++                    if (!this.level.getBlockState(temp).isDestroyable()) {
++                        return false;
++                    }
++                }
++                // Paper end - prevent destroying unbreakable blocks
+                 if (k < 0 && !this.level.getBlockState(temp).isSolid()) {
+                     return false;
+                 }

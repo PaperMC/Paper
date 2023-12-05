@@ -1,0 +1,223 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 7 Oct 2021 14:34:59 -0700
+Subject: [PATCH] Custom Potion Mixes
+
+
+diff --git a/src/main/java/io/papermc/paper/potion/PotionMix.java b/src/main/java/io/papermc/paper/potion/PotionMix.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3fc922ebf972418b84181cd02e68d8ef0efd739b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/potion/PotionMix.java
+@@ -0,0 +1,105 @@
++package io.papermc.paper.potion;
++
++import java.util.function.Predicate;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.RecipeChoice;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Objects;
++
++/**
++ * Represents a potion mix made in a Brewing Stand.
++ */
++@ApiStatus.NonExtendable
++public class PotionMix implements Keyed {
++
++    private final NamespacedKey key;
++    private final ItemStack result;
++    private final RecipeChoice input;
++    private final RecipeChoice ingredient;
++
++    /**
++     * Creates a new potion mix. Add it to the server with {@link org.bukkit.potion.PotionBrewer#addPotionMix(PotionMix)}.
++     *
++     * @param key a unique key for the mix
++     * @param result the resulting itemstack that will appear in the 3 bottom slots
++     * @param input the input placed into the bottom 3 slots
++     * @param ingredient the ingredient placed into the top slot
++     */
++    public PotionMix(final @NotNull NamespacedKey key, final @NotNull ItemStack result, final @NotNull RecipeChoice input, final @NotNull RecipeChoice ingredient) {
++        this.key = key;
++        this.result = result;
++        this.input = input;
++        this.ingredient = ingredient;
++    }
++
++    /**
++     * Create a {@link RecipeChoice} based on a Predicate. These RecipeChoices are only
++     * valid for {@link PotionMix}, not anywhere else RecipeChoices may be used.
++     *
++     * @param stackPredicate a predicate for an itemstack.
++     * @return a new RecipeChoice
++     */
++    @Contract(value = "_ -> new", pure = true)
++    public static @NotNull RecipeChoice createPredicateChoice(final @NotNull Predicate<? super ItemStack> stackPredicate) {
++        return new PredicateRecipeChoice(stackPredicate);
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return this.key;
++    }
++
++    /**
++     * Gets the resulting itemstack after the brew has finished.
++     *
++     * @return the result itemstack
++     */
++    public @NotNull ItemStack getResult() {
++        return this.result;
++    }
++
++    /**
++     * Gets the input for the bottom 3 slots in the brewing stand.
++     *
++     * @return the bottom 3 slot ingredients
++     */
++    public @NotNull RecipeChoice getInput() {
++        return this.input;
++    }
++
++    /**
++     * Gets the ingredient in the top slot of the brewing stand.
++     *
++     * @return the top slot input
++     */
++    public @NotNull RecipeChoice getIngredient() {
++        return this.ingredient;
++    }
++
++    @Override
++    public String toString() {
++        return "PotionMix{" +
++            "result=" + this.result +
++            ", base=" + this.input +
++            ", addition=" + this.ingredient +
++            '}';
++    }
++
++    @Override
++    public boolean equals(final Object o) {
++        if (this == o) return true;
++        if (o == null || this.getClass() != o.getClass()) return false;
++        final PotionMix potionMix = (PotionMix) o;
++        return this.key.equals(potionMix.key) && this.result.equals(potionMix.result) && this.input.equals(potionMix.input) && this.ingredient.equals(potionMix.ingredient);
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hash(this.key, this.result, this.input, this.ingredient);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/potion/PredicateRecipeChoice.java b/src/main/java/io/papermc/paper/potion/PredicateRecipeChoice.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3ede1e8f7bf0436fdc5bf395c0f9eaf11c252453
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/potion/PredicateRecipeChoice.java
+@@ -0,0 +1,33 @@
++package io.papermc.paper.potion;
++
++import java.util.function.Predicate;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.RecipeChoice;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++@DefaultQualifier(NonNull.class)
++record PredicateRecipeChoice(Predicate<? super ItemStack> itemStackPredicate) implements RecipeChoice, Cloneable {
++
++    @Override
++    @Deprecated
++    public ItemStack getItemStack() {
++        throw new UnsupportedOperationException("PredicateRecipeChoice does not support this");
++    }
++
++    @Override
++    public RecipeChoice clone() {
++        try {
++            return (PredicateRecipeChoice) super.clone();
++        } catch (final CloneNotSupportedException ex) {
++            throw new AssertionError(ex);
++        }
++    }
++
++    @Override
++    public boolean test(final ItemStack itemStack) {
++        return this.itemStackPredicate.test(itemStack);
++    }
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 5e8518372a30595f5f8f254e31a130645e75772e..011d4e3c6fe3ffb0636506f5447c0097b297a957 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2568,6 +2568,15 @@ public final class Bukkit {
+     public static io.papermc.paper.datapack.DatapackManager getDatapackManager() {
+         return server.getDatapackManager();
+     }
++
++    /**
++     * Gets the potion brewer.
++     *
++     * @return the potion brewer
++     */
++    public static @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer() {
++        return server.getPotionBrewer();
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 204e68a63cf32d3b58a9fadabde5780608f47421..5e5b5aedeaaca24aebe59ec2cfd0adde2ca4a7f5 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2238,5 +2238,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     @NotNull
+     io.papermc.paper.datapack.DatapackManager getDatapackManager();
++
++    /**
++     * Gets the potion brewer.
++     *
++     * @return the potion brewer
++     */
++    @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/potion/PotionBrewer.java b/src/main/java/org/bukkit/potion/PotionBrewer.java
+index 2072f048e10eba829cef047d854b5a22c8f055a3..eb189e170bc4975c5378f95f86ecf2cc880bd931 100644
+--- a/src/main/java/org/bukkit/potion/PotionBrewer.java
++++ b/src/main/java/org/bukkit/potion/PotionBrewer.java
+@@ -45,4 +45,25 @@ public interface PotionBrewer {
+     @NotNull
+     @Deprecated
+     public Collection<PotionEffect> getEffects(@NotNull PotionType type, boolean upgraded, boolean extended);
++
++    // Paper start
++    /**
++     * Adds a new potion mix recipe.
++     *
++     * @param potionMix the potion mix to add
++     */
++    void addPotionMix(@NotNull io.papermc.paper.potion.PotionMix potionMix);
++
++    /**
++     * Removes a potion mix recipe.
++     *
++     * @param key the key of the mix to remove
++     */
++    void removePotionMix(@NotNull org.bukkit.NamespacedKey key);
++
++    /**
++     * Resets potion mixes to their default, removing all custom ones.
++     */
++    void resetPotionMixes();
++    // Paper end
+ }

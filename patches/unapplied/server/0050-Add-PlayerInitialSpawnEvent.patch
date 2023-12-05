@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Steve Anton <anxuiz.nx@gmail.com>
+Date: Thu, 3 Mar 2016 00:09:38 -0600
+Subject: [PATCH] Add PlayerInitialSpawnEvent
+
+For modifying a player's initial spawn location as they join the server
+
+This is a duplicate API from spigot, so use our duplicate subclass and
+improve setPosition to use raw
+
+== AT ==
+public net.minecraft.world.entity.Entity setRot(FF)V
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index afaa046ff1adf717ef8356cc276a55d63abc0aba..703f006bee56bc198f0711ad464570fca406284c 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -228,7 +228,7 @@ public abstract class PlayerList {
+ 
+         // Spigot start - spawn location event
+         Player spawnPlayer = player.getBukkitEntity();
+-        org.spigotmc.event.player.PlayerSpawnLocationEvent ev = new org.spigotmc.event.player.PlayerSpawnLocationEvent(spawnPlayer, spawnPlayer.getLocation());
++        org.spigotmc.event.player.PlayerSpawnLocationEvent ev = new com.destroystokyo.paper.event.player.PlayerInitialSpawnEvent(spawnPlayer, spawnPlayer.getLocation()); // Paper use our duplicate event
+         this.cserver.getPluginManager().callEvent(ev);
+ 
+         Location loc = ev.getSpawnLocation();
+@@ -236,7 +236,10 @@ public abstract class PlayerList {
+ 
+         player.spawnIn(worldserver1);
+         player.gameMode.setLevel((ServerLevel) player.level());
+-        player.absMoveTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
++        // Paper start - set raw so we aren't fully joined to the world (not added to chunk or world)
++        player.setPosRaw(loc.getX(), loc.getY(), loc.getZ());
++        player.setRot(loc.getYaw(), loc.getPitch());
++        // Paper end
+         // Spigot end
+ 
+         // CraftBukkit - Moved message to after join

@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 17 Oct 2021 15:39:41 -0400
+Subject: [PATCH] Add Shearable API
+
+
+diff --git a/src/main/java/io/papermc/paper/entity/Shearable.java b/src/main/java/io/papermc/paper/entity/Shearable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d5793790ab6a47525ad33033517361205756338
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/Shearable.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.entity;
++
++import net.kyori.adventure.sound.Sound;
++import org.bukkit.entity.Entity;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents an entity that can be sheared.
++ */
++public interface Shearable extends Entity {
++
++    /**
++     * Forces the entity to be sheared and then play the effect as if it were sheared by a player.
++     * This will cause the entity to be sheared, even if {@link Shearable#readyToBeSheared()} is false.
++     * <p>
++     * Some shearing behavior may cause the entity to no longer be valid
++     * due to it being replaced by a different entity.
++     */
++    default void shear() {
++        this.shear(Sound.Source.PLAYER);
++    }
++
++    /**
++     * Forces the entity to be sheared and then play the effect as if it were sheared by the provided source.
++     * This will cause the entity to be sheared, even if {@link Shearable#readyToBeSheared()} is false.
++     * <p>
++     * Some shearing behavior may cause the entity to no longer be valid
++     * due to it being replaced by a different entity.
++     * <p>
++     * This simulates the behavior of an actual shearing, which may cause events like EntityTransformEvent to be called
++     * for mooshrooms, and EntityDropItemEvent to be called for sheep.
++     *
++     * @param source Sound source to play any sound effects on
++     */
++    void shear(@NotNull Sound.Source source);
++
++    /**
++     * Gets if the entity would be able to be sheared or not naturally using shears.
++     *
++     * @return if the entity can be sheared
++     */
++    boolean readyToBeSheared();
++}
+diff --git a/src/main/java/org/bukkit/entity/MushroomCow.java b/src/main/java/org/bukkit/entity/MushroomCow.java
+index e14194a130ebd872bbc1eb24c7759f0388f3da97..a6020bf1e927c1478b5ab90ec9a6ee21f03579da 100644
+--- a/src/main/java/org/bukkit/entity/MushroomCow.java
++++ b/src/main/java/org/bukkit/entity/MushroomCow.java
+@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a mushroom {@link Cow}
+  */
+-public interface MushroomCow extends Cow {
++public interface MushroomCow extends Cow, io.papermc.paper.entity.Shearable { // Paper
+ 
+     /**
+      * Get the variant of this cow.
+diff --git a/src/main/java/org/bukkit/entity/Sheep.java b/src/main/java/org/bukkit/entity/Sheep.java
+index f4ce312ccd927a8b64f4266b35a0a53b85e591f3..97388d46cee225dedc0b61a12e7b60b3424732c8 100644
+--- a/src/main/java/org/bukkit/entity/Sheep.java
++++ b/src/main/java/org/bukkit/entity/Sheep.java
+@@ -5,7 +5,7 @@ import org.bukkit.material.Colorable;
+ /**
+  * Represents a Sheep.
+  */
+-public interface Sheep extends Animals, Colorable {
++public interface Sheep extends Animals, Colorable, io.papermc.paper.entity.Shearable { // Paper - Shear API
+ 
+     /**
+      * @return Whether the sheep is sheared.
+diff --git a/src/main/java/org/bukkit/entity/Snowman.java b/src/main/java/org/bukkit/entity/Snowman.java
+index 10f8f6d45ae9280651c3ebddd1f90acbd7d6ff29..7fbfdb07585c7b28acea1f0c1f58ada0cc744441 100644
+--- a/src/main/java/org/bukkit/entity/Snowman.java
++++ b/src/main/java/org/bukkit/entity/Snowman.java
+@@ -5,7 +5,7 @@ import com.destroystokyo.paper.entity.RangedEntity;
+ /**
+  * Represents a snowman entity
+  */
+-public interface Snowman extends Golem, RangedEntity { // Paper
++public interface Snowman extends Golem, RangedEntity, io.papermc.paper.entity.Shearable { // Paper
+ 
+     /**
+      * Gets whether this snowman is in "derp mode", meaning it is not wearing a

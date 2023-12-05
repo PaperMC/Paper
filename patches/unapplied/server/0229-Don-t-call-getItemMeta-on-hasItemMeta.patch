@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hugo Manrique <hugmanrique@gmail.com>
+Date: Thu, 26 Jul 2018 14:10:23 +0200
+Subject: [PATCH] Don't call getItemMeta on hasItemMeta
+
+Spigot 1.13 checks if any field (which are manually copied from the ItemStack's "tag" NBT tag) on the ItemMeta class of an ItemStack is set.
+
+We could just check if the "tag" NBT tag is empty, albeit that would break some plugins. The only general tag added on 1.13 is "Damage", and we can just check if the "tag" NBT tag contains any other tag that's not "Damage" (https://minecraft.wiki/wiki/Player.dat_format#Item_structure) making the `hasItemStack` method behave as before.
+
+Returns true if getDamage() == 0 or has damage tag or other tag is set.
+Check the `ItemMetaTest#testTaggedButNotMeta` method to see how this method behaves.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 4fa1085532e9374aad3c877ca6aba1b251640cc8..221a2ccc4bf840aa301931f26c1198b36ec317fe 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -678,7 +678,7 @@ public final class CraftItemStack extends ItemStack {
+ 
+     @Override
+     public boolean hasItemMeta() {
+-        return CraftItemStack.hasItemMeta(this.handle) && !CraftItemFactory.instance().equals(this.getItemMeta(), null);
++        return CraftItemStack.hasItemMeta(this.handle) && (this.handle.getDamageValue() != 0 || (this.handle.getTag() != null && this.handle.getTag().tags.size() >= (this.handle.getTag().contains(CraftMetaItem.DAMAGE.NBT) ? 2 : 1))); // Paper - keep 1.12 CraftBukkit behavior without calling getItemMeta
+     }
+ 
+     static boolean hasItemMeta(net.minecraft.world.item.ItemStack item) {
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+index 3effe3c3b7ad949bc786e1b6e560553f2ca3f233..937ddd3a2b9e1df2c8835079923c339178f08459 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+@@ -108,6 +108,34 @@ public class ItemMetaTest extends AbstractTestingBase {
+         assertThat(itemMeta.hasConflictingEnchant(null), is(false));
+     }
+ 
++    // Paper start
++    private void testItemMeta(ItemStack stack) {
++        assertThat(stack.hasItemMeta(), is(false), "Should not have ItemMeta");
++
++        stack.setDurability((short) 0);
++        assertThat(stack.hasItemMeta(), is(false), "ItemStack with zero durability should not have ItemMeta");
++
++        stack.setDurability((short) 2);
++        assertThat(stack.hasItemMeta(), is(true), "ItemStack with non-zero durability should have ItemMeta");
++
++        stack.setLore(java.util.Collections.singletonList("Lore"));
++        assertThat(stack.hasItemMeta(), is(true), "ItemStack with lore and durability should have ItemMeta");
++
++        stack.setDurability((short) 0);
++        assertThat(stack.hasItemMeta(), is(true), "ItemStack with lore should have ItemMeta");
++
++        stack.setLore(null);
++    }
++
++    @Test
++    public void testHasItemMeta() {
++        ItemStack itemStack = new ItemStack(Material.SHEARS);
++
++        testItemMeta(itemStack);
++        testItemMeta(CraftItemStack.asCraftCopy(itemStack));
++    }
++    // Paper end
++
+     @Test
+     public void testConflictingStoredEnchantment() {
+         EnchantmentStorageMeta itemMeta = (EnchantmentStorageMeta) Bukkit.getItemFactory().getItemMeta(Material.ENCHANTED_BOOK);

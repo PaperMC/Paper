@@ -1,0 +1,790 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 17 Jun 2023 11:52:41 +0200
+Subject: [PATCH] Folia scheduler and owned region API
+
+Pulling Folia API to Paper is primarily intended for plugins
+that want to target both Paper and Folia without unnecessary
+compatibility layers.
+
+Add both a location based scheduler, an entity based scheduler,
+and a global region scheduler.
+
+Owned region API may be useful for plugins which want to perform
+operations over large areas outside of the buffer zone provided
+by the regionaliser, as it is not guaranteed that anything
+outside of the buffer zone is owned. Then, the plugins may use
+the schedulers depending on the result of the ownership check.
+
+diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/AsyncScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/AsyncScheduler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d9cdd04660c5e60e494a8fed91ae437e6cb733ed
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/AsyncScheduler.java
+@@ -0,0 +1,51 @@
++package io.papermc.paper.threadedregions.scheduler;
++
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.concurrent.TimeUnit;
++import java.util.function.Consumer;
++
++/**
++ * Scheduler that may be used by plugins to schedule tasks to execute asynchronously from the server tick process.
++ */
++public interface AsyncScheduler {
++
++    /**
++     * Schedules the specified task to be executed asynchronously immediately.
++     * @param plugin Plugin which owns the specified task.
++     * @param task Specified task.
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    @NotNull ScheduledTask runNow(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task);
++
++    /**
++     * Schedules the specified task to be executed asynchronously after the time delay has passed.
++     * @param plugin Plugin which owns the specified task.
++     * @param task Specified task.
++     * @param delay The time delay to pass before the task should be executed.
++     * @param unit The time unit for the time delay.
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    @NotNull ScheduledTask runDelayed(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task, long delay,
++                                             @NotNull TimeUnit unit);
++
++    /**
++     * Schedules the specified task to be executed asynchronously after the initial delay has passed,
++     * and then periodically executed with the specified period.
++     * @param plugin Plugin which owns the specified task.
++     * @param task Specified task.
++     * @param initialDelay The time delay to pass before the first execution of the task.
++     * @param period The time between task executions after the first execution of the task.
++     * @param unit The time unit for the initial delay and period.
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    @NotNull ScheduledTask runAtFixedRate(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task,
++                                                 long initialDelay, long period, @NotNull TimeUnit unit);
++
++    /**
++     * Attempts to cancel all tasks scheduled by the specified plugin.
++     * @param plugin Specified plugin.
++     */
++    void cancelTasks(@NotNull Plugin plugin);
++}
+diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/EntityScheduler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9f69e189be8202a0ab1450540f5d12187ba6c987
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/EntityScheduler.java
+@@ -0,0 +1,104 @@
++package io.papermc.paper.threadedregions.scheduler;
++
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.function.Consumer;
++
++/**
++ * An entity can move between worlds with an arbitrary tick delay, be temporarily removed
++ * for players (i.e end credits), be partially removed from world state (i.e inactive but not removed),
++ * teleport between ticking regions, teleport between worlds, and even be removed entirely from the server.
++ * The uncertainty of an entity's state can make it difficult to schedule tasks without worrying about undefined
++ * behaviors resulting from any of the states listed previously.
++ *
++ * <p>
++ * This class is designed to eliminate those states by providing an interface to run tasks only when an entity
++ * is contained in a world, on the owning thread for the region, and by providing the current Entity object.
++ * The scheduler also allows a task to provide a callback, the "retired" callback, that will be invoked
++ * if the entity is removed before a task that was scheduled could be executed. The scheduler is also
++ * completely thread-safe, allowing tasks to be scheduled from any thread context. The scheduler also indicates
++ * properly whether a task was scheduled successfully (i.e scheduler not retired), thus the code scheduling any task
++ * knows whether the given callbacks will be invoked eventually or not - which may be critical for off-thread
++ * contexts.
++ * </p>
++ */
++public interface EntityScheduler {
++
++    /**
++     * Schedules a task with the given delay. If the task failed to schedule because the scheduler is retired (entity
++     * removed), then returns {@code false}. Otherwise, either the run callback will be invoked after the specified delay,
++     * or the retired callback will be invoked if the scheduler is retired.
++     * Note that the retired callback is invoked in critical code, so it should not attempt to remove the entity, remove
++     * other entities, load chunks, load worlds, modify ticket levels, etc.
++     *
++     * <p>
++     * It is guaranteed that the run and retired callback are invoked on the region which owns the entity.
++     * </p>
++     * @param run The callback to run after the specified delay, may not be null.
++     * @param retired Retire callback to run if the entity is retired before the run callback can be invoked, may be null.
++     * @param delay The delay in ticks before the run callback is invoked. Any value less-than 1 is treated as 1.
++     * @return {@code true} if the task was scheduled, which means that either the run function or the retired function
++     *         will be invoked (but never both), or {@code false} indicating neither the run nor retired function will be invoked
++     *         since the scheduler has been retired.
++     */
++    boolean execute(@NotNull Plugin plugin, @NotNull Runnable run, @Nullable Runnable retired, long delay);
++
++    /**
++     * Schedules a task to execute on the next tick. If the task failed to schedule because the scheduler is retired (entity
++     * removed), then returns {@code null}. Otherwise, either the task callback will be invoked after the specified delay,
++     * or the retired callback will be invoked if the scheduler is retired.
++     * Note that the retired callback is invoked in critical code, so it should not attempt to remove the entity, remove
++     * other entities, load chunks, load worlds, modify ticket levels, etc.
++     *
++     * <p>
++     * It is guaranteed that the task and retired callback are invoked on the region which owns the entity.
++     * </p>
++     * @param plugin The plugin that owns the task
++     * @param task The task to execute
++     * @param retired Retire callback to run if the entity is retired before the run callback can be invoked, may be null.
++     * @return The {@link ScheduledTask} that represents the scheduled task, or {@code null} if the entity has been removed.
++     */
++    @Nullable ScheduledTask run(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task,
++                                       @Nullable Runnable retired);
++
++    /**
++     * Schedules a task with the given delay. If the task failed to schedule because the scheduler is retired (entity
++     * removed), then returns {@code null}. Otherwise, either the task callback will be invoked after the specified delay,
++     * or the retired callback will be invoked if the scheduler is retired.
++     * Note that the retired callback is invoked in critical code, so it should not attempt to remove the entity, remove
++     * other entities, load chunks, load worlds, modify ticket levels, etc.
++     *
++     * <p>
++     * It is guaranteed that the task and retired callback are invoked on the region which owns the entity.
++     * </p>
++     * @param plugin The plugin that owns the task
++     * @param task The task to execute
++     * @param retired Retire callback to run if the entity is retired before the run callback can be invoked, may be null.
++     * @param delayTicks The delay, in ticks.
++     * @return The {@link ScheduledTask} that represents the scheduled task, or {@code null} if the entity has been removed.
++     */
++    @Nullable ScheduledTask runDelayed(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task,
++                                              @Nullable Runnable retired, long delayTicks);
++
++    /**
++     * Schedules a repeating task with the given delay and period. If the task failed to schedule because the scheduler
++     * is retired (entity removed), then returns {@code null}. Otherwise, either the task callback will be invoked after
++     * the specified delay, or the retired callback will be invoked if the scheduler is retired.
++     * Note that the retired callback is invoked in critical code, so it should not attempt to remove the entity, remove
++     * other entities, load chunks, load worlds, modify ticket levels, etc.
++     *
++     * <p>
++     * It is guaranteed that the task and retired callback are invoked on the region which owns the entity.
++     * </p>
++     * @param plugin The plugin that owns the task
++     * @param task The task to execute
++     * @param retired Retire callback to run if the entity is retired before the run callback can be invoked, may be null.
++     * @param initialDelayTicks The initial delay, in ticks.
++     * @param periodTicks The period, in ticks.
++     * @return The {@link ScheduledTask} that represents the scheduled task, or {@code null} if the entity has been removed.
++     */
++    @Nullable ScheduledTask runAtFixedRate(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task,
++                                                  @Nullable Runnable retired, long initialDelayTicks, long periodTicks);
++}
+diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/GlobalRegionScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/GlobalRegionScheduler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..365b53fea8dee09cdc11f4399dea5f00c6ee70e2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/GlobalRegionScheduler.java
+@@ -0,0 +1,58 @@
++package io.papermc.paper.threadedregions.scheduler;
++
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.function.Consumer;
++
++/**
++ * The global region task scheduler may be used to schedule tasks that will execute on the global region.
++ * <p>
++ * The global region is responsible for maintaining world day time, world game time, weather cycle,
++ * sleep night skipping, executing commands for console, and other misc. tasks that do not belong to any specific region.
++ * </p>
++ */
++public interface GlobalRegionScheduler {
++
++    /**
++     * Schedules a task to be executed on the global region.
++     * @param plugin The plugin that owns the task
++     * @param run The task to execute
++     */
++    void execute(@NotNull Plugin plugin, @NotNull Runnable run);
++
++    /**
++     * Schedules a task to be executed on the global region on the next tick.
++     * @param plugin The plugin that owns the task
++     * @param task The task to execute
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    @NotNull ScheduledTask run(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task);
++
++    /**
++     * Schedules a task to be executed on the global region after the specified delay in ticks.
++     * @param plugin The plugin that owns the task
++     * @param task The task to execute
++     * @param delayTicks The delay, in ticks.
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    @NotNull ScheduledTask runDelayed(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task, long delayTicks);
++
++    /**
++     * Schedules a repeating task to be executed on the global region after the initial delay with the
++     * specified period.
++     * @param plugin The plugin that owns the task
++     * @param task The task to execute
++     * @param initialDelayTicks The initial delay, in ticks.
++     * @param periodTicks The period, in ticks.
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    @NotNull ScheduledTask runAtFixedRate(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task,
++                                                 long initialDelayTicks, long periodTicks);
++
++    /**
++     * Attempts to cancel all tasks scheduled by the specified plugin.
++     * @param plugin Specified plugin.
++     */
++     void cancelTasks(@NotNull Plugin plugin);
++}
+diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/RegionScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/RegionScheduler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7557e170f84cde7292869fbd92b44b0e6eb43b4f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/RegionScheduler.java
+@@ -0,0 +1,127 @@
++package io.papermc.paper.threadedregions.scheduler;
++
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.entity.Entity;
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.function.Consumer;
++
++/**
++ * The region task scheduler can be used to schedule tasks by location to be executed on the region which owns the location.
++ * <p>
++ * <b>Note</b>: It is entirely inappropriate to use the region scheduler to schedule tasks for entities.
++ * If you wish to schedule tasks to perform actions on entities, you should be using {@link Entity#getScheduler()}
++ * as the entity scheduler will "follow" an entity if it is teleported, whereas the region task scheduler
++ * will not.
++ * </p>
++ */
++public interface RegionScheduler {
++
++    /**
++     * Schedules a task to be executed on the region which owns the location.
++     *
++     * @param plugin The plugin that owns the task
++     * @param world  The world of the region that owns the task
++     * @param chunkX The chunk X coordinate of the region that owns the task
++     * @param chunkZ The chunk Z coordinate of the region that owns the task
++     * @param run    The task to execute
++     */
++    void execute(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ, @NotNull Runnable run);
++
++    /**
++     * Schedules a task to be executed on the region which owns the location.
++     *
++     * @param plugin   The plugin that owns the task
++     * @param location The location at which the region executing should own
++     * @param run      The task to execute
++     */
++    default void execute(@NotNull Plugin plugin, @NotNull Location location, @NotNull Runnable run) {
++        this.execute(plugin, location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4, run);
++    }
++
++    /**
++     * Schedules a task to be executed on the region which owns the location on the next tick.
++     *
++     * @param plugin The plugin that owns the task
++     * @param world  The world of the region that owns the task
++     * @param chunkX The chunk X coordinate of the region that owns the task
++     * @param chunkZ The chunk Z coordinate of the region that owns the task
++     * @param task   The task to execute
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    @NotNull ScheduledTask run(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ, @NotNull Consumer<ScheduledTask> task);
++
++    /**
++     * Schedules a task to be executed on the region which owns the location on the next tick.
++     *
++     * @param plugin   The plugin that owns the task
++     * @param location The location at which the region executing should own
++     * @param task     The task to execute
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    default @NotNull ScheduledTask run(@NotNull Plugin plugin, @NotNull Location location, @NotNull Consumer<ScheduledTask> task) {
++        return this.run(plugin, location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4, task);
++    }
++
++    /**
++     * Schedules a task to be executed on the region which owns the location after the specified delay in ticks.
++     *
++     * @param plugin     The plugin that owns the task
++     * @param world      The world of the region that owns the task
++     * @param chunkX     The chunk X coordinate of the region that owns the task
++     * @param chunkZ     The chunk Z coordinate of the region that owns the task
++     * @param task       The task to execute
++     * @param delayTicks The delay, in ticks.
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    @NotNull ScheduledTask runDelayed(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ, @NotNull Consumer<ScheduledTask> task,
++                                      long delayTicks);
++
++    /**
++     * Schedules a task to be executed on the region which owns the location after the specified delay in ticks.
++     *
++     * @param plugin     The plugin that owns the task
++     * @param location   The location at which the region executing should own
++     * @param task       The task to execute
++     * @param delayTicks The delay, in ticks.
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    default @NotNull ScheduledTask runDelayed(@NotNull Plugin plugin, @NotNull Location location, @NotNull Consumer<ScheduledTask> task,
++                                              long delayTicks) {
++        return this.runDelayed(plugin, location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4, task, delayTicks);
++    }
++
++    /**
++     * Schedules a repeating task to be executed on the region which owns the location after the initial delay with the
++     * specified period.
++     *
++     * @param plugin            The plugin that owns the task
++     * @param world             The world of the region that owns the task
++     * @param chunkX            The chunk X coordinate of the region that owns the task
++     * @param chunkZ            The chunk Z coordinate of the region that owns the task
++     * @param task              The task to execute
++     * @param initialDelayTicks The initial delay, in ticks.
++     * @param periodTicks       The period, in ticks.
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    @NotNull ScheduledTask runAtFixedRate(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ, @NotNull Consumer<ScheduledTask> task,
++                                          long initialDelayTicks, long periodTicks);
++
++    /**
++     * Schedules a repeating task to be executed on the region which owns the location after the initial delay with the
++     * specified period.
++     *
++     * @param plugin            The plugin that owns the task
++     * @param location          The location at which the region executing should own
++     * @param task              The task to execute
++     * @param initialDelayTicks The initial delay, in ticks.
++     * @param periodTicks       The period, in ticks.
++     * @return The {@link ScheduledTask} that represents the scheduled task.
++     */
++    default @NotNull ScheduledTask runAtFixedRate(@NotNull Plugin plugin, @NotNull Location location, @NotNull Consumer<ScheduledTask> task,
++                                                  long initialDelayTicks, long periodTicks) {
++        return this.runAtFixedRate(plugin, location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4, task, initialDelayTicks, periodTicks);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/ScheduledTask.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/ScheduledTask.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a6b50c9d8af589cc4747e14d343d2045216c249c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/ScheduledTask.java
+@@ -0,0 +1,112 @@
++package io.papermc.paper.threadedregions.scheduler;
++
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents a task scheduled to a scheduler.
++ */
++public interface ScheduledTask {
++
++    /**
++     * Returns the plugin that scheduled this task.
++     * @return the plugin that scheduled this task.
++     */
++    @NotNull Plugin getOwningPlugin();
++
++    /**
++     * Returns whether this task executes on a fixed period, as opposed to executing only once.
++     * @return whether this task executes on a fixed period, as opposed to executing only once.
++     */
++    boolean isRepeatingTask();
++
++    /**
++     * Attempts to cancel this task, returning the result of the attempt. In all cases, if the task is currently
++     * being executed no attempt is made to halt the task, however any executions in the future are halted.
++     * @return the result of the cancellation attempt.
++     */
++    @NotNull CancelledState cancel();
++
++    /**
++     * Returns the current execution state of this task.
++     * @return the current execution state of this task.
++     */
++    @NotNull ExecutionState getExecutionState();
++
++    /**
++     * Returns whether the current execution state is {@link ExecutionState#CANCELLED} or {@link ExecutionState#CANCELLED_RUNNING}.
++     * @return whether the current execution state is {@link ExecutionState#CANCELLED} or {@link ExecutionState#CANCELLED_RUNNING}.
++     */
++    default boolean isCancelled() {
++        final ExecutionState state = this.getExecutionState();
++        return state == ExecutionState.CANCELLED || state == ExecutionState.CANCELLED_RUNNING;
++    }
++
++    /**
++     * Represents the result of attempting to cancel a task.
++     */
++    enum CancelledState {
++        /**
++         * The task (repeating or not) has been successfully cancelled by the caller thread. The task is not executing
++         * currently, and it will not begin execution in the future.
++         */
++        CANCELLED_BY_CALLER,
++        /**
++         * The task (repeating or not) is already cancelled. The task is not executing currently, and it will not
++         * begin execution in the future.
++         */
++        CANCELLED_ALREADY,
++
++        /**
++         * The task is not a repeating task, and could not be cancelled because the task is being executed.
++         */
++        RUNNING,
++        /**
++         * The task is not a repeating task, and could not be cancelled because the task has already finished execution.
++         */
++        ALREADY_EXECUTED,
++
++        /**
++         * The caller thread successfully stopped future executions of a repeating task, but the task is currently
++         * being executed.
++         */
++        NEXT_RUNS_CANCELLED,
++
++        /**
++         * The repeating task's future executions are cancelled already, but the task is currently
++         * being executed.
++         */
++        NEXT_RUNS_CANCELLED_ALREADY,
++    }
++
++    /**
++     * Represents the current execution state of the task.
++     */
++    enum ExecutionState {
++        /**
++         * The task is currently not executing, but may begin execution in the future.
++         */
++        IDLE,
++
++        /**
++         * The task is currently executing.
++         */
++        RUNNING,
++
++        /**
++         * The task is not repeating, and the task finished executing.
++         */
++        FINISHED,
++
++        /**
++         * The task is not executing and will not begin execution in the future. If this task is not repeating, then
++         * this task was never executed.
++         */
++        CANCELLED,
++
++        /**
++         * The task is repeating and currently executing, but future executions are cancelled and will not occur.
++         */
++        CANCELLED_RUNNING;
++    }
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 458d98cc385718a86e0ef0eb90ff9ce64d77066a..2bafcb26c144a84d1b955c8cdf122cca6628afc4 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2599,6 +2599,141 @@ public final class Bukkit {
+     }
+     // Paper end
+ 
++    // Paper start - Folia region threading API
++    /**
++     * Returns the region task scheduler. The region task scheduler can be used to schedule
++     * tasks by location to be executed on the region which owns the location.
++     * <p>
++     * <b>Note</b>: It is entirely inappropriate to use the region scheduler to schedule tasks for entities.
++     * If you wish to schedule tasks to perform actions on entities, you should be using {@link Entity#getScheduler()}
++     * as the entity scheduler will "follow" an entity if it is teleported, whereas the region task scheduler
++     * will not.
++     * </p>
++     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
++     * @return the region task scheduler
++     */
++    public static @NotNull io.papermc.paper.threadedregions.scheduler.RegionScheduler getRegionScheduler() {
++        return server.getRegionScheduler();
++    }
++
++    /**
++     * Returns the async task scheduler. The async task scheduler can be used to schedule tasks
++     * that execute asynchronously from the server tick process.
++     * @return the async task scheduler
++     */
++    public static @NotNull io.papermc.paper.threadedregions.scheduler.AsyncScheduler getAsyncScheduler() {
++        return server.getAsyncScheduler();
++    }
++
++    /**
++     * Returns the global region task scheduler. The global task scheduler can be used to schedule
++     * tasks to execute on the global region.
++     * <p>
++     * The global region is responsible for maintaining world day time, world game time, weather cycle,
++     * sleep night skipping, executing commands for console, and other misc. tasks that do not belong to any specific region.
++     * </p>
++     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
++     * @return the global region scheduler
++     */
++    public static @NotNull io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler getGlobalRegionScheduler() {
++        return server.getGlobalRegionScheduler();
++    }
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunk at the specified world and block position.
++     * @param world Specified world.
++     * @param position Specified block position.
++     */
++    public static boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position) {
++        return server.isOwnedByCurrentRegion(world, position);
++    }
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunks centered at the specified block position within the specified square radius.
++     * Specifically, this function checks that every chunk with position x in [centerX - radius, centerX + radius] and
++     * position z in [centerZ - radius, centerZ + radius] is owned by the current ticking region.
++     * @param world Specified world.
++     * @param position Specified block position.
++     * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
++     *                           radius, but rather a <i>Chebyshev Distance</i>.
++     */
++    public static boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position, int squareRadiusChunks) {
++        return server.isOwnedByCurrentRegion(world, position, squareRadiusChunks);
++    }
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunk at the specified world and block position as included in the specified location.
++     * @param location Specified location, must have a non-null world.
++     */
++    public static boolean isOwnedByCurrentRegion(@NotNull Location location) {
++        return server.isOwnedByCurrentRegion(location);
++    }
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunks centered at the specified world and block position as included in the specified location
++     * within the specified square radius.
++     * Specifically, this function checks that every chunk with position x in [centerX - radius, centerX + radius] and
++     * position z in [centerZ - radius, centerZ + radius] is owned by the current ticking region.
++     * @param location Specified location, must have a non-null world.
++     * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
++     *                           radius, but rather a <i>Chebyshev Distance</i>.
++     */
++    public static boolean isOwnedByCurrentRegion(@NotNull Location location, int squareRadiusChunks) {
++        return server.isOwnedByCurrentRegion(location, squareRadiusChunks);
++    }
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunk at the specified block position.
++     * @param block Specified block position.
++     */
++    public static boolean isOwnedByCurrentRegion(@NotNull org.bukkit.block.Block block) {
++        return server.isOwnedByCurrentRegion(block.getLocation());
++    }
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunk at the specified world and chunk position.
++     * @param world Specified world.
++     * @param chunkX Specified x-coordinate of the chunk position.
++     * @param chunkZ Specified z-coordinate of the chunk position.
++     */
++    public static boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ) {
++        return server.isOwnedByCurrentRegion(world, chunkX, chunkZ);
++    }
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunks centered at the specified world and chunk position within the specified
++     * square radius.
++     * Specifically, this function checks that every chunk with position x in [centerX - radius, centerX + radius] and
++     * position z in [centerZ - radius, centerZ + radius] is owned by the current ticking region.
++     * @param world Specified world.
++     * @param chunkX Specified x-coordinate of the chunk position.
++     * @param chunkZ Specified z-coordinate of the chunk position.
++     * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
++     *                           radius, but rather a <i>Chebyshev Distance</i>.
++     */
++    public static boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ, int squareRadiusChunks) {
++        return server.isOwnedByCurrentRegion(world, chunkX, chunkZ, squareRadiusChunks);
++    }
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the specified entity. Note that this function is the only appropriate method of checking
++     * for ownership of an entity, as retrieving the entity's location is undefined unless the entity is owned
++     * by the current region.
++     * @param entity Specified entity.
++     */
++    public static boolean isOwnedByCurrentRegion(@NotNull Entity entity) {
++        return server.isOwnedByCurrentRegion(entity);
++    }
++    // Paper end - Folia region threading API
++
+     @NotNull
+     public static Server.Spigot spigot() {
+         return server.spigot();
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 383f1fcddaa50a8c94282c7a828912d73accfb62..cd1df326ef937863e427f47e1c8ac8720c01f75d 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2267,4 +2267,119 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
+     // Paper end
++
++    // Paper start - Folia region threading API
++    /**
++     * Returns the Folia region task scheduler. The region task scheduler can be used to schedule
++     * tasks by location to be executed on the region which owns the location.
++     * <p>
++     * <b>Note</b>: It is entirely inappropriate to use the region scheduler to schedule tasks for entities.
++     * If you wish to schedule tasks to perform actions on entities, you should be using {@link Entity#getScheduler()}
++     * as the entity scheduler will "follow" an entity if it is teleported, whereas the region task scheduler
++     * will not.
++     * </p>
++     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
++     * @return the region task scheduler
++     */
++    @NotNull io.papermc.paper.threadedregions.scheduler.RegionScheduler getRegionScheduler();
++
++    /**
++     * Returns the Folia async task scheduler. The async task scheduler can be used to schedule tasks
++     * that execute asynchronously from the server tick process.
++     * @return the async task scheduler
++     */
++    @NotNull io.papermc.paper.threadedregions.scheduler.AsyncScheduler getAsyncScheduler();
++
++    /**
++     * Returns the Folia global region task scheduler. The global task scheduler can be used to schedule
++     * tasks to execute on the global region.
++     * <p>
++     * The global region is responsible for maintaining world day time, world game time, weather cycle,
++     * sleep night skipping, executing commands for console, and other misc. tasks that do not belong to any specific region.
++     * </p>
++     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
++     * @return the global region scheduler
++     */
++    @NotNull io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler getGlobalRegionScheduler();
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunk at the specified world and block position.
++     * @param world Specified world.
++     * @param position Specified block position.
++     */
++    boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position);
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunks centered at the specified block position within the specified square radius.
++     * Specifically, this function checks that every chunk with position x in [centerX - radius, centerX + radius] and
++     * position z in [centerZ - radius, centerZ + radius] is owned by the current ticking region.
++     * @param world Specified world.
++     * @param position Specified block position.
++     * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
++     *                           radius, but rather a <i>Chebyshev Distance</i>.
++     */
++    boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position, int squareRadiusChunks);
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunk at the specified world and block position as included in the specified location.
++     * @param location Specified location, must have a non-null world.
++     */
++    boolean isOwnedByCurrentRegion(@NotNull Location location);
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunks centered at the specified world and block position as included in the specified location
++     * within the specified square radius.
++     * Specifically, this function checks that every chunk with position x in [centerX - radius, centerX + radius] and
++     * position z in [centerZ - radius, centerZ + radius] is owned by the current ticking region.
++     * @param location Specified location, must have a non-null world.
++     * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
++     *                           radius, but rather a <i>Chebyshev Distance</i>.
++     */
++    boolean isOwnedByCurrentRegion(@NotNull Location location, int squareRadiusChunks);
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunk at the specified block position.
++     * @param block Specified block position.
++     */
++    default boolean isOwnedByCurrentRegion(@NotNull org.bukkit.block.Block block) {
++        return isOwnedByCurrentRegion(block.getLocation());
++    }
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunk at the specified world and chunk position.
++     * @param world Specified world.
++     * @param chunkX Specified x-coordinate of the chunk position.
++     * @param chunkZ Specified z-coordinate of the chunk position.
++     */
++    boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ);
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the chunks centered at the specified world and chunk position within the specified
++     * square radius.
++     * Specifically, this function checks that every chunk with position x in [centerX - radius, centerX + radius] and
++     * position z in [centerZ - radius, centerZ + radius] is owned by the current ticking region.
++     * @param world Specified world.
++     * @param chunkX Specified x-coordinate of the chunk position.
++     * @param chunkZ Specified z-coordinate of the chunk position.
++     * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
++     *                           radius, but rather a <i>Chebyshev Distance</i>.
++     */
++    boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ, int squareRadiusChunks);
++
++    /**
++     * Returns whether the current thread is ticking a region and that the region being ticked
++     * owns the specified entity. Note that this function is the only appropriate method of checking
++     * for ownership of an entity, as retrieving the entity's location is undefined unless the entity is owned
++     * by the current region.
++     * @param entity Specified entity.
++     */
++    boolean isOwnedByCurrentRegion(@NotNull Entity entity);
++    // Paper end - Folia region threading API
+ }
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 07f111b944209dbd395620bae603c42752d1cf25..6602ce33224a337764f8e94422bad3912e3d545b 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -1005,4 +1005,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+      */
+     boolean wouldCollideUsing(@NotNull BoundingBox boundingBox);
+     // Paper End - Collision API
++
++    // Paper start - Folia schedulers
++    /**
++     * Returns the task scheduler for this entity. The entity scheduler can be used to schedule tasks
++     * that are guaranteed to always execute on the tick thread that owns the entity.
++     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link org.bukkit.Server#getScheduler()} instead.</b></p>
++     * @return the task scheduler for this entity.
++     * @see io.papermc.paper.threadedregions.scheduler.EntityScheduler
++     */
++    @NotNull io.papermc.paper.threadedregions.scheduler.EntityScheduler getScheduler();
++    // Paper end - Folia schedulers
+ }

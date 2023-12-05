@@ -1,0 +1,302 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 24 Jan 2022 00:09:02 -0800
+Subject: [PATCH] Add missing InventoryHolders to inventories
+
+
+diff --git a/src/main/java/net/minecraft/world/Container.java b/src/main/java/net/minecraft/world/Container.java
+index da5ff65fade5cdf14fad3705c08b48896bc4c36d..d6cbe98e67fdbf8db46338a88ab1356dd63b50a3 100644
+--- a/src/main/java/net/minecraft/world/Container.java
++++ b/src/main/java/net/minecraft/world/Container.java
+@@ -100,7 +100,7 @@ public interface Container extends Clearable {
+ 
+     java.util.List<org.bukkit.entity.HumanEntity> getViewers();
+ 
+-    org.bukkit.inventory.InventoryHolder getOwner();
++    org.bukkit.inventory.@org.jetbrains.annotations.Nullable InventoryHolder getOwner(); // Paper - annotation
+ 
+     void setMaxStackSize(int size);
+ 
+diff --git a/src/main/java/net/minecraft/world/SimpleContainer.java b/src/main/java/net/minecraft/world/SimpleContainer.java
+index 9d1ee40456a8d7001eee654a62e62cab2626305a..ecd6cb02ef326c8e1d7fba8138d806f3107b5ac0 100644
+--- a/src/main/java/net/minecraft/world/SimpleContainer.java
++++ b/src/main/java/net/minecraft/world/SimpleContainer.java
+@@ -30,7 +30,7 @@ public class SimpleContainer implements Container, StackedContentsCompatible {
+     // CraftBukkit start - add fields and methods
+     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+     private int maxStack = MAX_STACK;
+-    protected org.bukkit.inventory.InventoryHolder bukkitOwner;
++    protected @Nullable org.bukkit.inventory.InventoryHolder bukkitOwner; // Paper - annotation
+ 
+     public List<ItemStack> getContents() {
+         return this.items;
+@@ -58,6 +58,11 @@ public class SimpleContainer implements Container, StackedContentsCompatible {
+     }
+ 
+     public org.bukkit.inventory.InventoryHolder getOwner() {
++        // Paper start
++        if (this.bukkitOwner == null && this.bukkitOwnerCreator != null) {
++            this.bukkitOwner = this.bukkitOwnerCreator.get();
++        }
++        // Paper end
+         return this.bukkitOwner;
+     }
+ 
+@@ -86,6 +91,13 @@ public class SimpleContainer implements Container, StackedContentsCompatible {
+     public SimpleContainer(int size) {
+         this(size, null);
+     }
++    // Paper start
++    private @Nullable java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> bukkitOwnerCreator;
++    public SimpleContainer(java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> bukkitOwnerCreator, int size) {
++        this(size);
++        this.bukkitOwnerCreator = bukkitOwnerCreator;
++    }
++    // Paper end
+ 
+     public SimpleContainer(int i, org.bukkit.inventory.InventoryHolder owner) {
+         this.bukkitOwner = owner;
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index aea228ea9fee51c25a03ce1c54bf9dff0741e053..82f18790b9dc55b039ae03600a80a46d56a87521 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -1025,4 +1025,15 @@ public abstract class AbstractContainerMenu {
+         this.stateId = this.stateId + 1 & 32767;
+         return this.stateId;
+     }
++
++    // Paper start - add missing BlockInventoryHolder to inventories
++    // The reason this is a supplier, is that the createHolder method uses the bukkit InventoryView#getTopInventory to get the inventory in question
++    // and that can't be obtained safely until the AbstractContainerMenu has been fully constructed. Using a supplier lazily
++    // initializes the InventoryHolder safely.
++    protected final Supplier<org.bukkit.inventory.BlockInventoryHolder> createBlockHolder(final ContainerLevelAccess context) {
++        //noinspection ConstantValue
++        Preconditions.checkArgument(context != null, "context was null");
++        return () -> context.createBlockHolder(this);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+index a6e712606ece631502ae4c7513403092df77524f..25af92ec0d086160020cade97b0ddf7f6546e159 100644
+--- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+@@ -41,7 +41,7 @@ public class BeaconMenu extends AbstractContainerMenu {
+     public BeaconMenu(int syncId, Container inventory, ContainerData propertyDelegate, ContainerLevelAccess context) {
+         super(MenuType.BEACON, syncId);
+         this.player = (Inventory) inventory; // CraftBukkit - TODO: check this
+-        this.beacon = new SimpleContainer(1) {
++        this.beacon = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper
+             @Override
+             public boolean canPlaceItem(int slot, ItemStack stack) {
+                 return stack.is(ItemTags.BEACON_PAYMENT_ITEMS);
+diff --git a/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java b/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java
+index 819187dbcf468d9278ce33bd97688476aab53f8e..09be5db3c09262e8bc56c4e20a48fe648f09237c 100644
+--- a/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java
+@@ -52,7 +52,7 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+ 
+     public CartographyTableMenu(int syncId, Inventory inventory, final ContainerLevelAccess context) {
+         super(MenuType.CARTOGRAPHY_TABLE, syncId);
+-        this.container = new SimpleContainer(2) {
++        this.container = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper
+             @Override
+             public void setChanged() {
+                 CartographyTableMenu.this.slotsChanged(this);
+@@ -66,7 +66,7 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+             }
+             // CraftBukkit end
+         };
+-        this.resultContainer = new ResultContainer() {
++        this.resultContainer = new ResultContainer(this.createBlockHolder(context)) { // Paper
+             @Override
+             public void setChanged() {
+                 CartographyTableMenu.this.slotsChanged(this);
+diff --git a/src/main/java/net/minecraft/world/inventory/ContainerLevelAccess.java b/src/main/java/net/minecraft/world/inventory/ContainerLevelAccess.java
+index f00a957a0f55e69f93e6d7dc80193304447c3dcb..d2f19b44ce4ab663a68ee330de4d4582ae9f3f00 100644
+--- a/src/main/java/net/minecraft/world/inventory/ContainerLevelAccess.java
++++ b/src/main/java/net/minecraft/world/inventory/ContainerLevelAccess.java
+@@ -21,6 +21,18 @@ public interface ContainerLevelAccess {
+         return new org.bukkit.Location(this.getWorld().getWorld(), this.getPosition().getX(), this.getPosition().getY(), this.getPosition().getZ());
+     }
+     // CraftBukkit end
++    // Paper start
++    default boolean isBlock() {
++        return false;
++    }
++
++    default org.bukkit.inventory.@org.jetbrains.annotations.Nullable BlockInventoryHolder createBlockHolder(AbstractContainerMenu menu) {
++        if (!this.isBlock()) {
++            return null;
++        }
++        return new org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder(this, menu.getBukkitView().getTopInventory());
++    }
++    // Paper end
+ 
+     ContainerLevelAccess NULL = new ContainerLevelAccess() {
+         @Override
+@@ -48,6 +60,12 @@ public interface ContainerLevelAccess {
+                 return pos;
+             }
+             // CraftBukkit end
++            // Paper start
++            @Override
++            public boolean isBlock() {
++                return true;
++            }
++            // Paper end
+ 
+             @Override
+             public <T> Optional<T> evaluate(BiFunction<Level, BlockPos, T> getter) {
+diff --git a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
+index c2d6265933dc4ceed80e2bd517970d02164a63df..c5c509fbb915c60dfa95aac8510684d0b9f8b0ff 100644
+--- a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
+@@ -61,7 +61,7 @@ public class EnchantmentMenu extends AbstractContainerMenu {
+ 
+     public EnchantmentMenu(int syncId, Inventory playerInventory, ContainerLevelAccess context) {
+         super(MenuType.ENCHANTMENT, syncId);
+-        this.enchantSlots = new SimpleContainer(2) {
++        this.enchantSlots = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+diff --git a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+index 24187a7ce812cb83a9a736bec8dce9e68ccc0798..076c2b2938c9b88b7e71dbc2aa9d8c7e90d4fe75 100644
+--- a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+@@ -59,8 +59,8 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+ 
+     public GrindstoneMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context) {
+         super(MenuType.GRINDSTONE, syncId);
+-        this.resultSlots = new ResultContainer();
+-        this.repairSlots = new SimpleContainer(2) {
++        this.resultSlots = new ResultContainer(this.createBlockHolder(context)); // Paper
++        this.repairSlots = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+diff --git a/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java b/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
+index ff770b9ce68a62418de0c7ed389650626fa1dcb2..c2cf5a8e788637c6264cf43d712a5be223ff1cc5 100644
+--- a/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
+@@ -18,7 +18,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+     protected final Player player;
+     protected final Container inputSlots;
+     private final List<Integer> inputSlotIndexes;
+-    protected final ResultContainer resultSlots = new ResultContainer();
++    protected final ResultContainer resultSlots; // Paper - delay field init
+     private final int resultSlotIndex;
+ 
+     protected abstract boolean mayPickup(Player player, boolean present);
+@@ -30,6 +30,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+     public ItemCombinerMenu(@Nullable MenuType<?> type, int syncId, Inventory playerInventory, ContainerLevelAccess context) {
+         super(type, syncId);
+         this.access = context;
++        this.resultSlots = new ResultContainer(this.createBlockHolder(this.access)); // Paper - delay field init
+         this.player = playerInventory.player;
+         ItemCombinerMenuSlotDefinition itemcombinermenuslotdefinition = this.createInputSlotDefinitions();
+ 
+@@ -96,7 +97,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+     protected abstract ItemCombinerMenuSlotDefinition createInputSlotDefinitions();
+ 
+     private SimpleContainer createContainer(int size) {
+-        return new SimpleContainer(size) {
++        return new SimpleContainer(this.createBlockHolder(this.access), size) { // Paper
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+index e28c1cdf4763e9db3e29b3c0f08d65f978017931..146006af2af0881de199a0607a1b8f33de4c3f4f 100644
+--- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+@@ -73,7 +73,7 @@ public class LoomMenu extends AbstractContainerMenu {
+         this.selectablePatterns = List.of();
+         this.slotUpdateListener = () -> {
+         };
+-        this.inputContainer = new SimpleContainer(3) {
++        this.inputContainer = new SimpleContainer(this.createBlockHolder(context), 3) { // Paper
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+@@ -88,7 +88,7 @@ public class LoomMenu extends AbstractContainerMenu {
+             }
+             // CraftBukkit end
+         };
+-        this.outputContainer = new SimpleContainer(1) {
++        this.outputContainer = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+diff --git a/src/main/java/net/minecraft/world/inventory/ResultContainer.java b/src/main/java/net/minecraft/world/inventory/ResultContainer.java
+index d4592218d761eb38402e3d95c642e80a708cb333..3e268c4d93241fad72a366c8c8f477e650d5a3db 100644
+--- a/src/main/java/net/minecraft/world/inventory/ResultContainer.java
++++ b/src/main/java/net/minecraft/world/inventory/ResultContainer.java
+@@ -29,7 +29,12 @@ public class ResultContainer implements Container, RecipeCraftingHolder {
+     }
+ 
+     public org.bukkit.inventory.InventoryHolder getOwner() {
+-        return null; // Result slots don't get an owner
++        // Paper start
++        if (this.holder == null && this.holderCreator != null) {
++            this.holder = this.holderCreator.get();
++        }
++        return this.holder; // Result slots don't get an owner
++        // Paper end - yes they do
+     }
+ 
+     // Don't need a transaction; the InventoryCrafting keeps track of it for us
+@@ -53,6 +58,14 @@ public class ResultContainer implements Container, RecipeCraftingHolder {
+         return null;
+     }
+     // CraftBukkit end
++    // Paper start
++    private @Nullable java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> holderCreator;
++    private @Nullable org.bukkit.inventory.InventoryHolder holder;
++    public ResultContainer(java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> holderCreator) {
++        this();
++        this.holderCreator = holderCreator;
++    }
++    // Paper end
+ 
+     public ResultContainer() {
+         this.itemStacks = NonNullList.withSize(1, ItemStack.EMPTY);
+diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+index aa1d1466d0a7b76967a41d948b7a4114fe06242f..f8129dcdcae12ed66ec58e8c749fa88ec3cd85d8 100644
+--- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -68,7 +68,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+         this.input = ItemStack.EMPTY;
+         this.slotUpdateListener = () -> {
+         };
+-        this.container = new SimpleContainer(1) {
++        this.container = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+@@ -83,7 +83,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+             }
+             // CraftBukkit end
+         };
+-        this.resultContainer = new ResultContainer();
++        this.resultContainer = new ResultContainer(this.createBlockHolder(context)); // Paper
+         this.access = context;
+         this.level = playerInventory.player.level();
+         this.inputSlot = this.addSlot(new Slot(this.container, 0, 20, 33));
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftBlockInventoryHolder.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftBlockInventoryHolder.java
+index 7ae484b0fa5bf5494c6ead15f7f1c0fa840ae270..04585d2bc27dc8a165238ee9d2612e179b66fb63 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftBlockInventoryHolder.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftBlockInventoryHolder.java
+@@ -17,6 +17,13 @@ public class CraftBlockInventoryHolder implements BlockInventoryHolder {
+         this.block = CraftBlock.at(world, pos);
+         this.inventory = new CraftInventory(inv);
+     }
++    // Paper start
++    public CraftBlockInventoryHolder(net.minecraft.world.inventory.ContainerLevelAccess levelAccess, Inventory inventory) {
++        com.google.common.base.Preconditions.checkArgument(levelAccess.isBlock());
++        this.block = CraftBlock.at(levelAccess.getWorld(), levelAccess.getPosition());
++        this.inventory = inventory;
++    }
++    // Paper end
+ 
+     @Override
+     public Block getBlock() {

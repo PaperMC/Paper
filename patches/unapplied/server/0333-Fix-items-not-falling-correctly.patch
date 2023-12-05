@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AJMFactsheets <AJMFactsheets@gmail.com>
+Date: Fri, 17 Jan 2020 17:17:54 -0600
+Subject: [PATCH] Fix items not falling correctly
+
+Since 1.14, Mojang has added an optimization which skips checking if
+an item should fall every fourth tick.
+
+However, Spigot's entity activation range class also has an
+optimization which skips ticking active entities every fourth tick.
+This can result in a state where an item will never properly fall
+due to its move method never being called.
+
+This patch resolves the conflict by offsetting checking Spigot's entity
+activation range check from an item's move method.
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 2edc55f09b79ac75788a0ded8b3d2a6800674470..9b9d491c7c41590c93d606414902329b6636419f 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -150,7 +150,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                 }
+             }
+ 
+-            if (!this.onGround() || this.getDeltaMovement().horizontalDistanceSqr() > 9.999999747378752E-6D || (this.tickCount + this.getId()) % 4 == 0) {
++            if (!this.onGround() || this.getDeltaMovement().horizontalDistanceSqr() > 9.999999747378752E-6D || (this.tickCount + this.getId()) % 4 == 0) { // Paper - Diff on change
+                 this.move(MoverType.SELF, this.getDeltaMovement());
+                 float f1 = 0.98F;
+ 
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index e4efed4e50188b71ff30238b3517a924b45b24b8..d5374072a97f791964033d107f023b3cc657b343 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -257,7 +257,7 @@ public class ActivationRange
+                 isActive = true;
+             }
+             // Add a little performance juice to active entities. Skip 1/4 if not immune.
+-        } else if ( !entity.defaultActivationState && entity.tickCount % 4 == 0 && !ActivationRange.checkEntityImmunities( entity ) )
++        } else if ( !entity.defaultActivationState && (entity.tickCount + entity.getId()) % 4 == 0 && !ActivationRange.checkEntityImmunities( entity ) ) // Paper - Ensure checking item movement is offset from Spigot's entity activation range check
+         {
+             isActive = false;
+         }

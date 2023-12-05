@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 12 Mar 2021 17:09:40 -0800
+Subject: [PATCH] Item Rarity API
+
+
+diff --git a/src/main/java/io/papermc/paper/inventory/ItemRarity.java b/src/main/java/io/papermc/paper/inventory/ItemRarity.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..74ef8395cc040ce488c2acaa416db20272cc2734
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/ItemRarity.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.inventory;
++
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.TextColor;
++import org.jetbrains.annotations.NotNull;
++
++public enum ItemRarity {
++
++    COMMON(NamedTextColor.WHITE),
++    UNCOMMON(NamedTextColor.YELLOW),
++    RARE(NamedTextColor.AQUA),
++    EPIC(NamedTextColor.LIGHT_PURPLE);
++
++    TextColor color;
++
++    ItemRarity(TextColor color) {
++        this.color = color;
++    }
++
++    /**
++     * Gets the color formatting associated with the rarity.
++     * @return
++     */
++    @NotNull
++    public TextColor getColor() {
++        return color;
++    }
++}
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index c175b12786ce1c864faa898d9948f5dce5776299..b852d1f140def272400469c5edae74a966726ea4 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -4463,6 +4463,17 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+             return Bukkit.getUnsafe().getBlockTranslationKey(this);
+         }
+     }
++
++    /**
++     * Returns the item rarity for the item. The Material <b>MUST</b> be an Item not a block.
++     * Use {@link #isItem()} before this.
++     *
++     * @return the item rarity
++     */
++    @NotNull
++    public io.papermc.paper.inventory.ItemRarity getItemRarity() {
++        return Bukkit.getUnsafe().getItemRarity(this);
++    }
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 27d5f37a9b2da92307e5b505e3b31cca8a067018..26b0d5c0a62e516db6eef9dedc81216d7ed5053c 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -150,5 +150,22 @@ public interface UnsafeValues {
+      * Just don't use it.
+      */
+     @org.jetbrains.annotations.NotNull String getMainLevelName();
++
++    /**
++     * Gets the item rarity of a material. The material <b>MUST</b> be an item.
++     * Use {@link Material#isItem()} before this.
++     *
++     * @param material the material to get the rarity of
++     * @return the item rarity
++     */
++    public io.papermc.paper.inventory.ItemRarity getItemRarity(Material material);
++
++    /**
++     * Gets the item rarity of the itemstack. The rarity can change based on enchantements.
++     *
++     * @param itemStack the itemstack to get the rarity of
++     * @return the itemstack rarity
++     */
++    public io.papermc.paper.inventory.ItemRarity getItemStackRarity(ItemStack itemStack);
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index e4ad3a550050c4bf9cc7a2a1082bfdf668050efe..4f867ba2bc9b1a7c277e4a5f0ea8b452315f3272 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -877,5 +877,15 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     public @NotNull String translationKey() {
+         return Bukkit.getUnsafe().getTranslationKey(this);
+     }
++
++    /**
++     * Gets the item rarity of the itemstack. The rarity can change based on enchantements.
++     *
++     * @return the itemstack rarity
++     */
++    @NotNull
++    public io.papermc.paper.inventory.ItemRarity getRarity() {
++        return Bukkit.getUnsafe().getItemStackRarity(this);
++    }
+     // Paper end
+ }
