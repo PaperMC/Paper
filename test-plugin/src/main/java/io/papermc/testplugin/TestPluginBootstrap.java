@@ -8,7 +8,7 @@ import io.papermc.paper.plugin.lifecycle.dummy.NonRegistrarEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
-import io.papermc.paper.plugin.lifecycle.event.LifecycleEvents;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.plugin.lifecycle.event.handler.configuration.MonitorLifecycleEventHandlerConfiguration;
 import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
 import org.bukkit.plugin.Plugin;

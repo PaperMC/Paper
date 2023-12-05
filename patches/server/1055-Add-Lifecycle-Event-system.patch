@@ -54,24 +54,27 @@ index 30b50e6294c6eaade5e17cfaf34600d122e6251c..0bb7694188d5fb75bb756ce75d0060ea
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e331e6ddf2333b48efd1179499ebbb70eeaf7e0a
+index 0000000000000000000000000000000000000000..e061ddcdb2d7df9bae578cc8e9f8a671842c2ea0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,86 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
 +import com.mojang.logging.LogUtils;
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEventImpl;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.StaticRegistrarEventImpl;
 +import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvent;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
++import io.papermc.paper.plugin.lifecycle.event.types.OwnerAwareLifecycleEvent;
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.function.Predicate;
 +import org.bukkit.plugin.Plugin;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.slf4j.Logger;
 +
@@ -96,11 +99,27 @@ index 0000000000000000000000000000000000000000..e331e6ddf2333b48efd1179499ebbb70
 +        final AbstractLifecycleEventType<O, E, ?, ?> lifecycleEventType = (AbstractLifecycleEventType<O, E, ?, ?>) eventType;
 +        lifecycleEventType.forEachHandler(registeredHandler -> {
 +            try {
++                if (event instanceof final OwnerAwareLifecycleEvent<?> ownerAwareEvent) {
++                    ownerAwareGenericHelper(ownerAwareEvent, registeredHandler.owner());
++                }
 +                registeredHandler.lifecycleEventHandler().run(event);
 +            } catch (final Throwable ex) {
 +                LOGGER.error("Could not run '{}' lifecycle event handler from {}", lifecycleEventType.name(), registeredHandler.owner().getPluginMeta().getDisplayName(), ex);
++            } finally {
++                if (event instanceof final OwnerAwareLifecycleEvent<?> ownerAwareEvent) {
++                    ownerAwareEvent.clearOwner();
++                }
 +            }
 +        }, handler -> ownerPredicate.test(handler.owner()));
++    }
++
++    private static <O extends LifecycleEventOwner> void ownerAwareGenericHelper(final OwnerAwareLifecycleEvent<O> event, final LifecycleEventOwner possibleOwner) {
++        final @Nullable O owner = event.castOwner(possibleOwner);
++        if (owner != null) {
++            event.setOwner(owner);
++        } else {
++            throw new IllegalStateException("Found invalid owner " + possibleOwner + " for event " + event);
++        }
 +    }
 +
 +    public void unregisterAllEventHandlersFor(final Plugin plugin) {
@@ -123,45 +142,6 @@ index 0000000000000000000000000000000000000000..e331e6ddf2333b48efd1179499ebbb70
 +    }
 +
 +    private LifecycleEventRunner() {
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..da9e334e67086400a7d690941bfd48a7d7331683
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java
-@@ -0,0 +1,33 @@
-+package io.papermc.paper.plugin.lifecycle.event;
-+
-+import com.google.common.base.Preconditions;
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
-+import io.papermc.paper.plugin.lifecycle.event.types.MonitorLifecycleEventType;
-+import io.papermc.paper.plugin.lifecycle.event.types.PrioritizedLifecycleEventType;
-+import org.bukkit.plugin.Plugin;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
-+
-+@DefaultQualifier(NonNull.class)
-+public final class LifecycleEventTypeProviderImpl implements LifecycleEventTypeProvider {
-+
-+    public static LifecycleEventTypeProviderImpl instance() {
-+        return (LifecycleEventTypeProviderImpl) LifecycleEventTypeProvider.PROVIDER;
-+    }
-+
-+    @Override
-+    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitor<O, E> monitor(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventRunner.INSTANCE.addEventType(new MonitorLifecycleEventType<>(name, ownerType));
-+    }
-+
-+    @Override
-+    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritized<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventRunner.INSTANCE.addEventType(new PrioritizedLifecycleEventType<>(name, ownerType));
-+    }
-+
-+    @Override
-+    public LifecycleEventManager<Plugin> createPluginLifecycleManager(final LifecycleEventOwner.PluginOwner plugin) {
-+        Preconditions.checkArgument(plugin instanceof Plugin, "Can only provide bukkit Plugin instances");
-+        return new PaperLifecycleEventManager<>(((Plugin) plugin), plugin::allowingLifecycleEventRegistration);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/PaperLifecycleEventManager.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/PaperLifecycleEventManager.java
@@ -198,13 +178,13 @@ index 0000000000000000000000000000000000000000..f1be5b9a29435bae0afd2bd951bfe88d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/AbstractLifecycleEventHandlerConfiguration.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/AbstractLifecycleEventHandlerConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..684be3273f927bd05a435915e5ceaf3e3c2d4cfe
+index 0000000000000000000000000000000000000000..8dfa99d83c07ef3256326bb71efdc1e5f75f416f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/AbstractLifecycleEventHandlerConfiguration.java
 @@ -0,0 +1,26 @@
 +package io.papermc.paper.plugin.lifecycle.event.handler.configuration;
 +
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
 +import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
@@ -230,13 +210,13 @@ index 0000000000000000000000000000000000000000..684be3273f927bd05a435915e5ceaf3e
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/MonitorLifecycleEventHandlerConfigurationImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/MonitorLifecycleEventHandlerConfigurationImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c08eda17fb718dc62881fb7e7c168ddb9e984282
+index 0000000000000000000000000000000000000000..3a40066e33e6df2dec9f0c03864f7e8fa22213c6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/MonitorLifecycleEventHandlerConfigurationImpl.java
 @@ -0,0 +1,33 @@
 +package io.papermc.paper.plugin.lifecycle.event.handler.configuration;
 +
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
 +import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
@@ -269,13 +249,13 @@ index 0000000000000000000000000000000000000000..c08eda17fb718dc62881fb7e7c168ddb
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/PrioritizedLifecycleEventHandlerConfigurationImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/PrioritizedLifecycleEventHandlerConfigurationImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7190b3e256f467d586e3610d61f3ae9d2023e147
+index 0000000000000000000000000000000000000000..683b1f18392faed807f99fd2330aaf2f3f2d4935
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/PrioritizedLifecycleEventHandlerConfigurationImpl.java
 @@ -0,0 +1,43 @@
 +package io.papermc.paper.plugin.lifecycle.event.handler.configuration;
 +
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
 +import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
@@ -346,15 +326,13 @@ index 0000000000000000000000000000000000000000..bd52f3e00e44f891d09a34c2f55283ac
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b42ac952bb982a4357668ba57719038f323755e9
+index 0000000000000000000000000000000000000000..ca75cc80def99d59256bf104d8490df906eadbc8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,47 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
-+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventType;
 +import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
 +import io.papermc.paper.plugin.lifecycle.event.handler.configuration.AbstractLifecycleEventHandlerConfiguration;
 +import io.papermc.paper.plugin.lifecycle.event.handler.configuration.LifecycleEventHandlerConfiguration;
@@ -399,17 +377,45 @@ index 0000000000000000000000000000000000000000..b42ac952bb982a4357668ba57719038f
 +    public record RegisteredHandler<O, E extends LifecycleEvent>(O owner, LifecycleEventHandler<? super E> lifecycleEventHandler) {
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..04bc8aa1997052005e3cfd8115e853ca91b6dd76
+index 0000000000000000000000000000000000000000..cf6f7e5fabbceca3b74e9637dfb4f6fc72613c9a
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java
-@@ -0,0 +1,55 @@
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
-+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventType;
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class LifecycleEventTypeProviderImpl implements LifecycleEventTypeProvider {
++
++    public static LifecycleEventTypeProviderImpl instance() {
++        return (LifecycleEventTypeProviderImpl) LifecycleEventTypeProvider.PROVIDER;
++    }
++
++    @Override
++    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitor<O, E> monitor(final String name, final Class<? extends O> ownerType) {
++        return LifecycleEventRunner.INSTANCE.addEventType(new MonitorLifecycleEventType<>(name, ownerType));
++    }
++
++    @Override
++    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritized<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
++        return LifecycleEventRunner.INSTANCE.addEventType(new PrioritizedLifecycleEventType<>(name, ownerType));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6d6a39c5bc3f1470a8978d86ac5c2149a0d8ae4e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java
+@@ -0,0 +1,53 @@
++package io.papermc.paper.plugin.lifecycle.event.types;
++
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
 +import io.papermc.paper.plugin.lifecycle.event.handler.configuration.MonitorLifecycleEventHandlerConfiguration;
 +import io.papermc.paper.plugin.lifecycle.event.handler.configuration.MonitorLifecycleEventHandlerConfigurationImpl;
@@ -460,17 +466,34 @@ index 0000000000000000000000000000000000000000..04bc8aa1997052005e3cfd8115e853ca
 +        this.handlers.removeIf(predicate);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/OwnerAwareLifecycleEvent.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/OwnerAwareLifecycleEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..674aeb02d0b33a7f0ba0e5b8f1e15e5e720725c5
+index 0000000000000000000000000000000000000000..9b201f58848addccb51b85f9035f72870443fbc9
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java
-@@ -0,0 +1,65 @@
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/OwnerAwareLifecycleEvent.java
+@@ -0,0 +1,13 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
-+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventType;
++import org.checkerframework.checker.nullness.qual.Nullable;
++
++public interface OwnerAwareLifecycleEvent<O extends LifecycleEventOwner> extends LifecycleEvent {
++
++    void setOwner(O owner);
++
++    void clearOwner();
++
++    @Nullable O castOwner(LifecycleEventOwner owner);
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ccd7dae4a08303233fc3bcdfc00be967ca22a1de
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java
+@@ -0,0 +1,63 @@
++package io.papermc.paper.plugin.lifecycle.event.types;
++
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
 +import io.papermc.paper.plugin.lifecycle.event.handler.configuration.PrioritizedLifecycleEventHandlerConfiguration;
 +import io.papermc.paper.plugin.lifecycle.event.handler.configuration.PrioritizedLifecycleEventHandlerConfigurationImpl;
@@ -567,7 +590,7 @@ index 2e96308696e131f3f013469a395e5ddda2c5d529..65a66e484c1c39c5f41d97db52f31c67
                  } catch (Throwable e) {
                      LOGGER.error("Failed to run bootstrapper for %s. This plugin will not be loaded.".formatted(provider.getSource()), e);
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
-index d96399e9bf1a58db5a4a22e58abb99e7660e0694..b3a9824eda7edef21f778b4255a31808fc0739f5 100644
+index d96399e9bf1a58db5a4a22e58abb99e7660e0694..66bdac50130f523f9dc4379b103b7a469f9ca36b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
 @@ -143,4 +143,11 @@ public class MinecraftInternalPlugin extends PluginBase {
@@ -577,18 +600,35 @@ index d96399e9bf1a58db5a4a22e58abb99e7660e0694..b3a9824eda7edef21f778b4255a31808
 +
 +    // Paper start - lifecycle events
 +    @Override
-+    public boolean allowingLifecycleEventRegistration() {
-+        return false;
++    public @NotNull io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> getLifecycleManager() {
++        throw new UnsupportedOperationException("Not supported.");
 +    }
 +    // Paper end - lifecycle events
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 548c77592a3520e8053483644eba805079a14f1a..d91d3f6903a9bfbe494787a6c72bdb3fae1e937f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -645,6 +645,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     }
+     // Paper end
+ 
++    // Paper start - lifecycle event API
++    @Override
++    public io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck) {
++        return new io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEventManager<>(plugin, registrationCheck);    }
++    // Paper end - lifecycle event API
++
+     /**
+      * This helper class represents the different NBT Tags.
+      * <p>
 diff --git a/src/main/resources/META-INF/services/io.papermc.paper.plugin.lifecycle.event.LifecycleEventTypeProvider b/src/main/resources/META-INF/services/io.papermc.paper.plugin.lifecycle.event.LifecycleEventTypeProvider
 new file mode 100644
-index 0000000000000000000000000000000000000000..c647fd9cef4f82b6ef17a942c208cc37bf5e99c2
+index 0000000000000000000000000000000000000000..808b1192b60348ad05f0bfbdeda6f94df4876743
 --- /dev/null
 +++ b/src/main/resources/META-INF/services/io.papermc.paper.plugin.lifecycle.event.LifecycleEventTypeProvider
 @@ -0,0 +1 @@
-+io.papermc.paper.plugin.lifecycle.event.LifecycleEventTypeProviderImpl
++io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventTypeProviderImpl
 diff --git a/src/test/java/io/papermc/paper/plugin/PaperTestPlugin.java b/src/test/java/io/papermc/paper/plugin/PaperTestPlugin.java
 index 1d14f530ef888102e47eeeaf0d1a6076e51871c4..dbd4b36b3abacdad1eea729b94d46847c27e3461 100644
 --- a/src/test/java/io/papermc/paper/plugin/PaperTestPlugin.java

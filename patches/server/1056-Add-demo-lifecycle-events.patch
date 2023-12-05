@@ -4,29 +4,77 @@ Date: Wed, 15 Nov 2023 20:56:15 -0800
 Subject: [PATCH] Add demo lifecycle events
 
 
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/NonRegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/NonRegistrarEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ea6009fada11c012d9b818ad9493c1c139d7798d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/NonRegistrarEventImpl.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.plugin.lifecycle.dummy;
++
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
++import io.papermc.paper.plugin.lifecycle.event.types.OwnerAwareLifecycleEvent;
++import org.checkerframework.checker.nullness.qual.Nullable;
++
++public final class NonRegistrarEventImpl implements NonRegistrarEvent, OwnerAwareLifecycleEvent<BootstrapContext> {
++
++    private @Nullable BootstrapContext currentContext;
++
++    @Override
++    public void setOwner(final BootstrapContext owner) {
++        this.currentContext = owner;
++    }
++
++    @Override
++    public void clearOwner() {
++        this.currentContext = null;
++    }
++
++    @Override
++    public BootstrapContext castOwner(final LifecycleEventOwner owner) {
++        return owner instanceof final BootstrapContext context ? context : null;
++    }
++
++    public void someNonRegistrarRelatedThing() {
++        System.out.println("non registrar event");
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/RegisterAnywhereEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/RegisterAnywhereEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dc6e5f22a2f408bfc3a48e5ef55852ff8d863597
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/dummy/RegisterAnywhereEventImpl.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper.plugin.lifecycle.dummy;
++
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvent;
++
++public record RegisterAnywhereEventImpl() implements LifecycleEvent {
++}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index ec268189b19b6fa5c4521f96ce211a531db35ec5..a6a4023a11395f6f40bf4b8abdc25c3b271bae2b 100644
+index ec268189b19b6fa5c4521f96ce211a531db35ec5..0a98ccba6dc339186b7fa838b8c60227ed1e792e 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -138,6 +138,9 @@ public class Main {
              Path path1 = Paths.get("server.properties");
              DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
  
-+            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.LifecycleEvents.DUMMY,new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent.Reloadable.Cause.INITIAL); // Paper
-+            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callEvent(io.papermc.paper.plugin.lifecycle.event.LifecycleEvents.NON_REGISTRAR_RELATED_EVENT, new io.papermc.paper.plugin.lifecycle.dummy.NonRegistrarEvent()); // Paper
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.DUMMY,new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent.Reloadable.Cause.INITIAL); // Paper
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.NON_REGISTRAR_RELATED_EVENT, new io.papermc.paper.plugin.lifecycle.dummy.NonRegistrarEventImpl()); // Paper
 +
              dedicatedserversettings.forceSave();
              Path path2 = Paths.get("eula.txt");
              Eula eula = new Eula(path2);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8f31413c939cc2b0454ad3d9a1b618dbae449d00..35d182355950df308a88bb3bbfd6c4a85f9052b6 100644
+index 8f31413c939cc2b0454ad3d9a1b618dbae449d00..4d6a3f7f97fd3b3af63b41162af536e2e09acf24 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -626,6 +626,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
          this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
-+        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callStaticRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.LifecycleEvents.DUMMY_STATIC, new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar()); // Paper
++        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callStaticRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.DUMMY_STATIC, new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar()); // Paper
          this.connection.acceptConnections();
      }
  
@@ -34,7 +82,7 @@ index 8f31413c939cc2b0454ad3d9a1b618dbae449d00..35d182355950df308a88bb3bbfd6c4a8
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
              org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
-+            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.LifecycleEvents.DUMMY,new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent.Reloadable.Cause.RELOAD); // Paper
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.DUMMY,new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent.Reloadable.Cause.RELOAD); // Paper
              new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - fire after everything has been reloaded
          }, this);
  
