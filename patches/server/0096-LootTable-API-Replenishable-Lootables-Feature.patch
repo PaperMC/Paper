@@ -503,11 +503,72 @@ index 0000000000000000000000000000000000000000..9cfa5d36a6991067a3866e0d437749fa
 +        return tileEntityLootable.getLevel();
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/world/RandomizableContainer.java b/src/main/java/net/minecraft/world/RandomizableContainer.java
+index 22eba5982dd258e2f58a7a70fd25900364cc9448..0c80f97e74ee04e7eab24e35c752ded5586bed07 100644
+--- a/src/main/java/net/minecraft/world/RandomizableContainer.java
++++ b/src/main/java/net/minecraft/world/RandomizableContainer.java
+@@ -49,17 +49,29 @@ public interface RandomizableContainer extends Container {
+ 
+     }
+ 
++    // Paper start
++    private static net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity blockEntity(final RandomizableContainer container) {
++        return (net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity) container;
++    }
+     default boolean tryLoadLootTable(CompoundTag nbt) {
++        final net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity entity = blockEntity(this);
++        entity.lootableData.loadNbt(nbt);
+         if (nbt.contains("LootTable", 8)) {
+             this.setLootTable(new ResourceLocation(nbt.getString("LootTable")));
++            try { org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(entity.lootTable); } catch (IllegalArgumentException ex) { entity.lootTable = null; } // Paper - validate
+             this.setLootTableSeed(nbt.getLong("LootTableSeed"));
+-            return true;
++            return false; // Paper - always load the items, table may still remain
++            // Paper end
+         } else {
+             return false;
+         }
+     }
+ 
+     default boolean trySaveLootTable(CompoundTag nbt) {
++        // Paper start
++        final net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity entity = blockEntity(this);
++        entity.lootableData.saveNbt(nbt);
++        // Paper end
+         ResourceLocation resourceLocation = this.getLootTable();
+         if (resourceLocation == null) {
+             return false;
+@@ -70,21 +82,22 @@ public interface RandomizableContainer extends Container {
+                 nbt.putLong("LootTableSeed", l);
+             }
+ 
+-            return true;
++            return false; // Paper - always save the items, table may still remain
+         }
+     }
+ 
+     default void unpackLootTable(@Nullable Player player) {
++        final net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity entity = blockEntity(this); // Paper
+         Level level = this.getLevel();
+         BlockPos blockPos = this.getBlockPos();
+         ResourceLocation resourceLocation = this.getLootTable();
+-        if (resourceLocation != null && level != null && level.getServer() != null) {
++        if (entity.lootableData.shouldReplenish(player) && level != null) { // Paper
+             LootTable lootTable = level.getServer().getLootData().getLootTable(resourceLocation);
+             if (player instanceof ServerPlayer) {
+                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, resourceLocation);
+             }
+ 
+-            this.setLootTable((ResourceLocation)null);
++            entity.lootableData.processRefill(player); // Paper
+             LootParams.Builder builder = (new LootParams.Builder((ServerLevel)level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos));
+             if (player != null) {
+                 builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 6b577914e6b7603f3cef4c4698d5f81b7ebff19c..c85833a54c79b9a6eb18bc22dae67a92dbbad724 100644
+index cc762d3eb68d2f8bf9529ecf07adfc343953c7a2..1b7b3114cd6ced0587a0e7e4a4c94584c72ed17f 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -235,6 +235,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -236,6 +236,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      }
      // Paper end
  
@@ -516,7 +577,7 @@ index 6b577914e6b7603f3cef4c4698d5f81b7ebff19c..c85833a54c79b9a6eb18bc22dae67a92
  
      public CraftEntity getBukkitEntity() {
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
-index 442736878291fbdc62572b2c83f384413408326f..00187fbbeddfc17e1b6887f8bf0f50da23938470 100644
+index 364cfa220b5c7c5351f1eb909066bef933da2c08..6d23c39e4eadf23616080d6d08672e13b5d3c37d 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
 @@ -32,6 +32,20 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
@@ -556,10 +617,10 @@ index 442736878291fbdc62572b2c83f384413408326f..00187fbbeddfc17e1b6887f8bf0f50da
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
-index 11d9d4861aee68cd97d36ee2ff7597b7a6c81294..d70c1206df96b03c031399049a65e6a765d80347 100644
+index 7bfdffc9b3c637bd6ac8ac3eb10961abdc5b1a7a..bc3fe45d12ffc2069a03d1587b7623d31130565a 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
-@@ -65,12 +65,14 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
+@@ -66,12 +66,14 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
      @Override
      protected void addAdditionalSaveData(CompoundTag nbt) {
          super.addAdditionalSaveData(nbt);
@@ -574,7 +635,7 @@ index 11d9d4861aee68cd97d36ee2ff7597b7a6c81294..d70c1206df96b03c031399049a65e6a7
          this.readChestVehicleSaveData(nbt);
      }
  
-@@ -245,6 +247,20 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
+@@ -246,6 +248,20 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
          this.level().gameEvent(GameEvent.CONTAINER_CLOSE, this.position(), GameEvent.Context.of((Entity) player));
      }
  
@@ -654,10 +715,10 @@ index e0fbacd574e0c83c2e1d164ded8e9ccf4af30480..7529751afa2932fd16bc4591189b0358
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index 111494c30a2b7d8464237a92cf5c98f7f4cca19d..e11618247ad889fa8fadbb2c7addd0de94caf249 100644
+index aa4181e59f88be04a3605352fa5ceb3e04149dd3..a7c9301cfb3e15ebea9b3ca23ce97a936f0e351c 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-@@ -29,6 +29,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
+@@ -17,6 +17,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
      @Nullable
      public ResourceLocation lootTable;
      public long lootTableSeed;
@@ -665,49 +726,6 @@ index 111494c30a2b7d8464237a92cf5c98f7f4cca19d..e11618247ad889fa8fadbb2c7addd0de
  
      protected RandomizableContainerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
          super(type, pos, state);
-@@ -43,16 +44,19 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
-     }
- 
-     protected boolean tryLoadLootTable(CompoundTag nbt) {
-+        this.lootableData.loadNbt(nbt); // Paper
-         if (nbt.contains("LootTable", 8)) {
-             this.lootTable = new ResourceLocation(nbt.getString("LootTable"));
-+            try { org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.lootTable); } catch (IllegalArgumentException ex) { this.lootTable = null; } // Paper - validate
-             this.lootTableSeed = nbt.getLong("LootTableSeed");
--            return true;
-+            return false; // Paper - always load the items, table may still remain
-         } else {
-             return false;
-         }
-     }
- 
-     protected boolean trySaveLootTable(CompoundTag nbt) {
-+        this.lootableData.saveNbt(nbt); // Paper
-         if (this.lootTable == null) {
-             return false;
-         } else {
-@@ -61,18 +65,18 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
-                 nbt.putLong("LootTableSeed", this.lootTableSeed);
-             }
- 
--            return true;
-+            return false; // Paper - always save the items, table may still remain
-         }
-     }
- 
-     public void unpackLootTable(@Nullable Player player) {
--        if (this.lootTable != null && this.level.getServer() != null) {
-+        if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
-             LootTable lootTable = this.level.getServer().getLootData().getLootTable(this.lootTable);
-             if (player instanceof ServerPlayer) {
-                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.lootTable);
-             }
- 
--            this.lootTable = null;
-+            this.lootableData.processRefill(player); // Paper
-             LootParams.Builder builder = (new LootParams.Builder((ServerLevel)this.level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(this.worldPosition));
-             if (player != null) {
-                 builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java
 index 86076a9d2a3b1044c96518cbaeee66d60a8a22c6..c268513bc5719d80e1c3d73de53b85ec7f852fa9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java
