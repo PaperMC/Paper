@@ -2,6 +2,7 @@ package org.bukkit.block.data.type;
 
 import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Powerable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
