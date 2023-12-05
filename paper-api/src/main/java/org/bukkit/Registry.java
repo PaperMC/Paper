@@ -3,7 +3,6 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -24,6 +23,7 @@ import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.loot.LootTables;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -110,28 +110,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     /**
      * Server enchantments.
      *
-     * @see Enchantment#getByKey(org.bukkit.NamespacedKey)
+     * @see Enchantment
      */
-    Registry<Enchantment> ENCHANTMENT = new Registry<Enchantment>() {
-
-        @Nullable
-        @Override
-        public Enchantment get(@NotNull NamespacedKey key) {
-            return Enchantment.getByKey(key);
-        }
-
-        @NotNull
-        @Override
-        public Stream<Enchantment> stream() {
-            return StreamSupport.stream(spliterator(), false);
-        }
-
-        @NotNull
-        @Override
-        public Iterator<Enchantment> iterator() {
-            return Arrays.asList(Enchantment.values()).iterator();
-        }
-    };
+    Registry<Enchantment> ENCHANTMENT = Objects.requireNonNull(Bukkit.getRegistry(Enchantment.class), "No registry present for Enchantment. This is a bug.");
     /**
      * Server entity types.
      *
@@ -156,6 +137,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Material
      */
     Registry<Material> MATERIAL = new SimpleRegistry<>(Material.class, (mat) -> !mat.isLegacy());
+    /**
+     * Server mob effects.
+     *
+     * @see PotionEffectType
+     */
+    Registry<PotionEffectType> EFFECT = Objects.requireNonNull(Bukkit.getRegistry(PotionEffectType.class), "No registry present for PotionEffectType. This is a bug.");
     /**
      * Server particles.
      *
