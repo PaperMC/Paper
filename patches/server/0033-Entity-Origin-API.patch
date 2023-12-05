@@ -5,10 +5,10 @@ Subject: [PATCH] Entity Origin API
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index fb183bff8844b6f9db5611b9b55b641f4ec438ff..79f6cdfe3e744b93007699a0da71613844c3a4c7 100644
+index 51f0705499003ea71274e1d5c8a77306fa868485..0c8042a515daeeb95b14147214e0a3151ef6f5a1 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -2354,6 +2354,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -2390,6 +2390,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
              entity.valid = true; // CraftBukkit
@@ -25,10 +25,10 @@ index fb183bff8844b6f9db5611b9b55b641f4ec438ff..79f6cdfe3e744b93007699a0da716138
  
          public void onTrackingEnd(Entity entity) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 9eda990939b36c08a6f4820353942d6c8d43b42c..679f55d1b09868a28c5ba82746968eab1000aa88 100644
+index fa3d294b36eb0c23b293466fc72bd2970a452b55..9f3598371c854ec74f3b5752c9779d6c0d99ec39 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -312,7 +312,27 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -317,7 +317,27 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      public long activatedTick = Integer.MIN_VALUE;
      public void inactiveTick() { }
      // Spigot end
@@ -56,23 +56,23 @@ index 9eda990939b36c08a6f4820353942d6c8d43b42c..679f55d1b09868a28c5ba82746968eab
      public float getBukkitYaw() {
          return this.yRot;
      }
-@@ -2070,6 +2090,15 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
-                 this.bukkitEntity.storeBukkitValues(nbt);
+@@ -2093,6 +2113,15 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+                 this.bukkitEntity.storeBukkitValues(nbttagcompound);
              }
              // CraftBukkit end
 +            // Paper start - Save the entity's origin location
 +            if (this.origin != null) {
 +                UUID originWorld = this.originWorld != null ? this.originWorld : this.level != null ? this.level.getWorld().getUID() : null;
 +                if (originWorld != null) {
-+                    nbt.putUUID("Paper.OriginWorld", originWorld);
++                    nbttagcompound.putUUID("Paper.OriginWorld", originWorld);
 +                }
-+                nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
++                nbttagcompound.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
 +            }
 +            // Paper end
-             return nbt;
+             return nbttagcompound;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
-@@ -2197,6 +2226,20 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -2220,6 +2249,20 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              }
              // CraftBukkit end
  
@@ -94,7 +94,7 @@ index 9eda990939b36c08a6f4820353942d6c8d43b42c..679f55d1b09868a28c5ba82746968eab
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being loaded");
 diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-index 5e30e7a1447503f424ec3a5aa3983826ee960fd8..0e349bc8dd0c31559437dc67481d5f0f81100e3b 100644
+index 5d09790876c3c50d126678565001645f6aece16f..6c4224e4752b655710c5b992d9acf9563b183483 100644
 --- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 @@ -343,6 +343,14 @@ public class FallingBlockEntity extends Entity {
@@ -113,13 +113,13 @@ index 5e30e7a1447503f424ec3a5aa3983826ee960fd8..0e349bc8dd0c31559437dc67481d5f0f
  
      public void setHurtsEntities(float fallHurtAmount, int fallHurtMax) {
 diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-index 415b8822f0dfb14d49bccb2a10ac04025891ddf7..89fd5d6b373d2705dccc2f22663048f4c2aaa60f 100644
+index f08c021f867c00611139a17db48352944eb2aa99..5c3b86e2301079e775971aa4da6a8f2dc6a40d1f 100644
 --- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-@@ -119,6 +119,14 @@ public class PrimedTnt extends Entity implements TraceableEntity {
-     @Override
-     protected void readAdditionalSaveData(CompoundTag nbt) {
-         this.setFuse(nbt.getShort("Fuse"));
+@@ -132,6 +132,14 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+             this.setBlockState(NbtUtils.readBlockState(this.level().holderLookup(Registries.BLOCK), nbt.getCompound("block_state")));
+         }
+ 
 +        // Paper start - Try and load origin location from the old NBT tags for backwards compatibility
 +        if (nbt.contains("SourceLoc_x")) {
 +            int srcX = nbt.getInt("SourceLoc_x");
@@ -132,10 +132,10 @@ index 415b8822f0dfb14d49bccb2a10ac04025891ddf7..89fd5d6b373d2705dccc2f22663048f4
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 1f63d24ebe0563431c8f1d3f901e2816648c7a8f..402b6e5d6428c5a34d722888670f94c7fbe34fe4 100644
+index 9efb4615d6d196a658940a2211c73af46e1c54b5..beae7b8cf726f61b25c5afb553da8c34dce1dd37 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -1272,5 +1272,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -1316,5 +1316,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
  
          return ret;
      }
