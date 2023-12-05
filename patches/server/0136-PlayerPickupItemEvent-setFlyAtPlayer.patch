@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 7 May 2017 06:26:09 -0500
+Subject: [PATCH] PlayerPickupItemEvent#setFlyAtPlayer
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 6905090f030c86f640e841e94c32ad90acb75d2a..6847d100a6fe2b57d7986b121f5ce0f981cfa415 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -423,6 +423,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+             // CraftBukkit start - fire PlayerPickupItemEvent
+             int canHold = player.getInventory().canHold(itemstack);
+             int remaining = i - canHold;
++            boolean flyAtPlayer = false; // Paper
+ 
+             if (this.pickupDelay <= 0 && canHold > 0) {
+                 itemstack.setCount(canHold);
+@@ -430,8 +431,14 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                 PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
+                 playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
+                 this.level().getCraftServer().getPluginManager().callEvent(playerEvent);
++                flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
+                 if (playerEvent.isCancelled()) {
+                     itemstack.setCount(i); // SPIGOT-5294 - restore count
++                    // Paper Start
++                    if (flyAtPlayer) {
++                        player.take(this, i);
++                    }
++                    // Paper End
+                     return;
+                 }
+ 
+@@ -461,6 +468,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+             // CraftBukkit end
+ 
+             if (this.pickupDelay == 0 && (this.target == null || this.target.equals(player.getUUID())) && player.getInventory().add(itemstack)) {
++                if (flyAtPlayer) // Paper
+                 player.take(this, i);
+                 if (itemstack.isEmpty()) {
+                     this.discard();

@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 16 May 2017 21:29:08 -0500
+Subject: [PATCH] Add option to make parrots stay on shoulders despite movement
+
+Makes parrots not fall off whenever the player changes height, or touches water, or gets hit by a passing leaf.
+Instead, switches the behavior so that players have to sneak to make the birds leave.
+
+I suspect Mojang may switch to this behavior before full release.
+
+To be converted into a Paper-API event at some point in the future?
+
+== AT ==
+public net.minecraft.world.entity.player.Player removeEntitiesOnShoulder()V
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index d5aff46a9f4683fa6e175ecfd1702f7da8af21a8..268ce65aa944295b0107daa2824fc93b55afeb89 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2178,6 +2178,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         switch (packet.getAction()) {
+             case PRESS_SHIFT_KEY:
+                 this.player.setShiftKeyDown(true);
++
++                // Paper start - Hang on!
++                if (this.player.level().paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) {
++                    this.player.removeEntitiesOnShoulder();
++                }
++                // Paper end
++
+                 break;
+             case RELEASE_SHIFT_KEY:
+                 this.player.setShiftKeyDown(false);
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index c2725113b3ec36a79c88bcf9837c0ef2955b613e..09d5561deb40549ce6a7661ebfd9b9db24db0d12 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -589,6 +589,7 @@ public abstract class Player extends LivingEntity {
+         this.playShoulderEntityAmbientSound(this.getShoulderEntityLeft());
+         this.playShoulderEntityAmbientSound(this.getShoulderEntityRight());
+         if (!this.level().isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping() || this.isInPowderSnow) {
++            if (!this.level().paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) // Paper - Hang on!
+             this.removeEntitiesOnShoulder();
+         }
+ 

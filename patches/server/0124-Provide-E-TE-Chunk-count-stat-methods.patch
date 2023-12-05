@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 7 Jan 2017 15:24:46 -0500
+Subject: [PATCH] Provide E/TE/Chunk count stat methods
+
+Provides counts without the ineffeciency of using .getEntities().size()
+which creates copy of the collections.
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index e774f7930090e10889f13e8193d15e44a3b7637f..c6e56303ec8ee466a6de7e6bd76c4f6814e8db30 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -119,7 +119,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public static final int TICKS_PER_DAY = 24000;
+     public static final int MAX_ENTITY_SPAWN_Y = 20000000;
+     public static final int MIN_ENTITY_SPAWN_Y = -20000000;
+-    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList();
++    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList(); public final int getTotalTileEntityTickers() { return this.blockEntityTickers.size(); } // Paper
+     protected final NeighborUpdater neighborUpdater;
+     private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
+     private boolean tickingBlockEntities;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 1f160036b433c5d1fb8ed1f94adefccab7a85bc7..0d9a491487c098b37331a9b94605993118fae403 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -158,6 +158,56 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
+     private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+ 
++    // Paper start - Provide fast information methods
++    @Override
++    public int getEntityCount() {
++        int ret = 0;
++        for (net.minecraft.world.entity.Entity entity : world.getEntities().getAll()) {
++            if (entity.isChunkLoaded()) {
++                ++ret;
++            }
++        }
++        return ret;
++    }
++
++    @Override
++    public int getTileEntityCount() {
++        // We don't use the full world tile entity list, so we must iterate chunks
++        int size = 0;
++        for (ChunkHolder playerchunk : io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.world)) {
++            net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
++            if (chunk == null) {
++                continue;
++            }
++            size += chunk.blockEntities.size();
++        }
++        return size;
++    }
++
++    @Override
++    public int getTickableTileEntityCount() {
++        return world.getTotalTileEntityTickers();
++    }
++
++    @Override
++    public int getChunkCount() {
++        int ret = 0;
++
++        for (ChunkHolder chunkHolder : io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.world)) {
++            if (chunkHolder.getTickingChunk() != null) {
++                ++ret;
++            }
++        }
++
++        return ret;
++    }
++
++    @Override
++    public int getPlayerCount() {
++        return world.players().size();
++    }
++    // Paper end
++
+     private static final Random rand = new Random();
+ 
+     public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {
