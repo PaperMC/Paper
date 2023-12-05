@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Sat, 2 Apr 2016 05:09:16 -0400
+Subject: [PATCH] Add PlayerUseUnknownEntityEvent
+
+Adds the PlayerUseUnknownEntityEvent to be used by plugins dealing with
+virtual entities/entities that are not actually known to the server.
+
+Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java
+index 644a0fdea6576647539b96528717dbaeab498d93..221e64a66ff12a8de5c75992fc26a54a03b317e7 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java
+@@ -169,4 +169,14 @@ public class ServerboundInteractPacket implements Packet<ServerGamePacketListene
+             buf.writeEnum(this.hand);
+         }
+     }
++
++    // Paper start - PlayerUseUnknownEntityEvent
++    public int getEntityId() {
++        return this.entityId;
++    }
++
++    public boolean isAttack() {
++        return this.action.getType() == ActionType.ATTACK;
++    }
++    // Paper end - PlayerUseUnknownEntityEvent
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 870a1d6679fa062d90bcfa1a21a8af0cf67f2950..d03d5629e3605626bba6ea806990443bfb151c61 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2401,8 +2401,38 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 });
+             }
+         }
++        // Paper start - PlayerUseUnknownEntityEvent
++        else {
++            packet.dispatch(new net.minecraft.network.protocol.game.ServerboundInteractPacket.Handler() {
++                @Override
++                public void onInteraction(net.minecraft.world.InteractionHand hand) {
++                    ServerGamePacketListenerImpl.this.callPlayerUseUnknownEntityEvent(packet, hand, null);
++                }
++
++                @Override
++                public void onInteraction(net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.Vec3 pos) {
++                    ServerGamePacketListenerImpl.this.callPlayerUseUnknownEntityEvent(packet, hand, pos);
++                }
++
++                @Override
++                public void onAttack() {
++                    ServerGamePacketListenerImpl.this.callPlayerUseUnknownEntityEvent(packet, net.minecraft.world.InteractionHand.MAIN_HAND, null);
++                }
++            });
++        }
++
++    }
+ 
++    private void callPlayerUseUnknownEntityEvent(ServerboundInteractPacket packet, InteractionHand hand, @Nullable net.minecraft.world.phys.Vec3 vector) {
++        this.cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent(
++            this.getCraftPlayer(),
++            packet.getEntityId(),
++            packet.isAttack(),
++            hand == InteractionHand.MAIN_HAND ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND,
++            vector != null ? new org.bukkit.util.Vector(vector.x, vector.y, vector.z) : null)
++        );
+     }
++    // Paper end - PlayerUseUnknownEntityEvent
+ 
+     @Override
+     public void handleClientCommand(ServerboundClientCommandPacket packet) {

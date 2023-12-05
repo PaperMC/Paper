@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 8 Mar 2016 23:25:45 -0500
+Subject: [PATCH] Disable Scoreboards for non players by default
+
+Entities collision is checking for scoreboards setting.
+This is very heavy to do map lookups for every collision to check
+this setting.
+
+So avoid looking up scoreboards and short circuit to the "not on a team"
+logic which is most likely to be true.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 6fe0883a6746a31acff7ede501e058b68ad6e78d..08e3e87b2aa9d586cd1b441e7314d0775f7537c8 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2860,6 +2860,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+ 
+     @Nullable
+     public PlayerTeam getTeam() {
++        if (!this.level().paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof Player)) { return null; } // Paper
+         return this.level().getScoreboard().getPlayersTeam(this.getScoreboardName());
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 4afd257f30ab063c4805e8a3144f51d643c49db3..a43539db71a7344e9477918dc5c7b07d46903bea 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -832,6 +832,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         if (nbt.contains("Team", 8)) {
+             String s = nbt.getString("Team");
+             PlayerTeam scoreboardteam = this.level().getScoreboard().getPlayerTeam(s);
++            if (!this.level().paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof net.minecraft.world.entity.player.Player)) { scoreboardteam = null; } // Paper
+             boolean flag = scoreboardteam != null && this.level().getScoreboard().addPlayerToTeam(this.getStringUUID(), scoreboardteam);
+ 
+             if (!flag) {

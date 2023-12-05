@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Joseph Hirschfeld <joe@ibj.io>
+Date: Thu, 3 Mar 2016 02:46:17 -0600
+Subject: [PATCH] Add configurable portal search radius
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 450a55fd1b01ac67d911d152a04a3dee3aa0a2e9..6fe0883a6746a31acff7ede501e058b68ad6e78d 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3233,7 +3233,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+                 double d0 = DimensionType.getTeleportationScale(this.level().dimensionType(), destination.dimensionType());
+                 BlockPos blockposition = worldborder.clampToBounds(this.getX() * d0, this.getY(), this.getZ() * d0);
+                 // CraftBukkit start
+-                CraftPortalEvent event = this.callPortalEvent(this, destination, new Vec3(blockposition.getX(), blockposition.getY(), blockposition.getZ()), PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, flag2 ? 16 : 128, 16);
++                // Paper start
++                int portalSearchRadius = destination.paperConfig().environment.portalSearchRadius;
++                if (level.paperConfig().environment.portalSearchVanillaDimensionScaling && flag2) { // == THE_NETHER
++                    portalSearchRadius = (int) (portalSearchRadius / destination.dimensionType().coordinateScale());
++                }
++                // Paper end
++                CraftPortalEvent event = this.callPortalEvent(this, destination, new Vec3(blockposition.getX(), blockposition.getY(), blockposition.getZ()), PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, portalSearchRadius, destination.paperConfig().environment.portalCreateRadius); // Paper start - configurable portal radius
+                 if (event == null) {
+                     return null;
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+index 0762bb248b3bd43a06e89aa1893a6189f0e13866..ed5210c63d964be7c28f59df315766794ec3ea1f 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+@@ -43,7 +43,7 @@ public class PortalForcer {
+ 
+     public Optional<BlockUtil.FoundRectangle> findPortalAround(BlockPos pos, boolean destIsNether, WorldBorder worldBorder) {
+         // CraftBukkit start
+-        return this.findPortalAround(pos, worldBorder, destIsNether ? 16 : 128); // Search Radius
++        return this.findPortalAround(pos, worldBorder, destIsNether ? level.paperConfig().environment.portalCreateRadius : level.paperConfig().environment.portalSearchRadius); // Search Radius // Paper - search Radius
+     }
+ 
+     public Optional<BlockUtil.FoundRectangle> findPortalAround(BlockPos blockposition, WorldBorder worldborder, int i) {
