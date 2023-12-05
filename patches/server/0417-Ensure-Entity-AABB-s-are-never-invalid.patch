@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 May 2020 22:12:46 -0400
+Subject: [PATCH] Ensure Entity AABB's are never invalid
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 1ad820b4954f11d2bab92708eb0c44739317603e..76a1803f806d3bf1a54dae15d8155d6a0920cf07 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -726,8 +726,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     }
+ 
+     public void setPos(double x, double y, double z) {
+-        this.setPosRaw(x, y, z);
+-        this.setBoundingBox(this.makeBoundingBox());
++        this.setPosRaw(x, y, z, true); // Paper - force bounding box update
++        // this.setBoundingBox(this.makeBoundingBox()); // Paper - move into setPositionRaw
+     }
+ 
+     protected AABB makeBoundingBox() {
+@@ -4244,6 +4244,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     }
+ 
+     public final void setPosRaw(double x, double y, double z) {
++        // Paper start
++        this.setPosRaw(x, y, z, false);
++    }
++    public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
++        // Paper end
+         // Paper start - rewrite chunk system
+         if (this.updatingSectionStatus) {
+             LOGGER.error("Refusing to update position for entity " + this + " to position " + new Vec3(x, y, z) + " since it is processing a section status update", new Throwable());
+@@ -4267,6 +4272,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+             this.levelCallback.onMove();
+         }
+ 
++        // Paper start - never allow AABB to become desynced from position
++        // hanging has its own special logic
++        if (!(this instanceof net.minecraft.world.entity.decoration.HangingEntity) && (forceBoundingBoxUpdate || this.position.x != x || this.position.y != y || this.position.z != z)) {
++            this.setBoundingBox(this.makeBoundingBox());
++        }
++        // Paper end
+     }
+ 
+     public void checkDespawn() {}
