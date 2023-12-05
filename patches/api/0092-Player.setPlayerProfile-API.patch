@@ -1,0 +1,145 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 18 Mar 2018 12:28:55 -0400
+Subject: [PATCH] Player.setPlayerProfile API
+
+This can be useful for changing name or skins after a player has logged in.
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 8f1f432c9d6c68ac142401626adaf1dc212181f2..8c430623204d419a93ccc67a0214942952f4a33c 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1306,8 +1306,10 @@ public final class Bukkit {
+      * @return the new PlayerProfile
+      * @throws IllegalArgumentException if both the unique id is
+      * <code>null</code> and the name is <code>null</code> or blank
++     * @deprecated use {@link #createProfile(UUID, String)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public static PlayerProfile createPlayerProfile(@Nullable UUID uniqueId, @Nullable String name) {
+         return server.createPlayerProfile(uniqueId, name);
+     }
+@@ -1318,8 +1320,10 @@ public final class Bukkit {
+      * @param uniqueId the unique id
+      * @return the new PlayerProfile
+      * @throws IllegalArgumentException if the unique id is <code>null</code>
++     * @deprecated use {@link #createProfile(UUID)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public static PlayerProfile createPlayerProfile(@NotNull UUID uniqueId) {
+         return server.createPlayerProfile(uniqueId);
+     }
+@@ -1331,8 +1335,10 @@ public final class Bukkit {
+      * @return the new PlayerProfile
+      * @throws IllegalArgumentException if the name is <code>null</code> or
+      * blank
++     * @deprecated use {@link #createProfile(String)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public static PlayerProfile createPlayerProfile(@NotNull String name) {
+         return server.createPlayerProfile(name);
+     }
+diff --git a/src/main/java/org/bukkit/OfflinePlayer.java b/src/main/java/org/bukkit/OfflinePlayer.java
+index bec480aff819e09220b52175cab0cb6d68ae68c6..12349910297a75c00e64f6ccc7981aeeeb43ecd3 100644
+--- a/src/main/java/org/bukkit/OfflinePlayer.java
++++ b/src/main/java/org/bukkit/OfflinePlayer.java
+@@ -59,7 +59,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @return the player's profile
+      */
+     @NotNull
+-    PlayerProfile getPlayerProfile();
++    com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile(); // Paper
+ 
+     /**
+      * Checks if this player has had their profile banned.
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index aad8b2fbdbb03fbf32f99b3a533716eca9d42219..405b6a388c3593a83985f766e79b92951006563e 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1119,8 +1119,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @return the new PlayerProfile
+      * @throws IllegalArgumentException if both the unique id is
+      * <code>null</code> and the name is <code>null</code> or blank
++     * @deprecated use {@link #createProfile(UUID, String)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     PlayerProfile createPlayerProfile(@Nullable UUID uniqueId, @Nullable String name);
+ 
+     /**
+@@ -1129,8 +1131,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @param uniqueId the unique id
+      * @return the new PlayerProfile
+      * @throws IllegalArgumentException if the unique id is <code>null</code>
++     * @deprecated use {@link #createProfile(UUID)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     PlayerProfile createPlayerProfile(@NotNull UUID uniqueId);
+ 
+     /**
+@@ -1140,8 +1144,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @return the new PlayerProfile
+      * @throws IllegalArgumentException if the name is <code>null</code> or
+      * blank
++     * @deprecated use {@link #createProfile(String)}
+      */
+     @NotNull
++    @Deprecated
+     PlayerProfile createPlayerProfile(@NotNull String name);
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 695bdf0bca8af1360d4deeb4aadedf1fb4140223..7a24cc6617b55bdeea4cf6d70e3abb835b0697bf 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -2787,6 +2787,24 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *         was {@link org.bukkit.event.player.PlayerResourcePackStatusEvent.Status#SUCCESSFULLY_LOADED}
+      */
+     boolean hasResourcePack();
++
++    /**
++     * Gets a copy of this players profile
++     * @return The players profile object
++     */
++    @NotNull
++    com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile();
++
++    /**
++     * Changes the PlayerProfile for this player. This will cause this player
++     * to be reregistered to all clients that can currently see this player.
++     *
++     * After executing this method, the player {@link java.util.UUID} won't
++     * be swapped, only their name and gameprofile properties.
++     *
++     * @param profile The new profile to use
++     */
++    void setPlayerProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile);
+     // Paper end
+ 
+     // Spigot start
+diff --git a/src/main/java/org/bukkit/profile/PlayerProfile.java b/src/main/java/org/bukkit/profile/PlayerProfile.java
+index fc46add38bf59dc1a04ea566fd230dcd8ae2708c..d36b3e3c7e53840132011add365ca2a26d799064 100644
+--- a/src/main/java/org/bukkit/profile/PlayerProfile.java
++++ b/src/main/java/org/bukkit/profile/PlayerProfile.java
+@@ -16,7 +16,9 @@ import org.jetbrains.annotations.Nullable;
+  * <p>
+  * New profiles can be created via
+  * {@link Server#createPlayerProfile(UUID, String)}.
++ * @deprecated see {@link com.destroystokyo.paper.profile.PlayerProfile}
+  */
++@Deprecated // Paper
+ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
+ 
+     /**
+@@ -25,6 +27,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
+      * @return the player's unique id, or <code>null</code> if not available
+      */
+     @Nullable
++    @Deprecated // Paper
+     UUID getUniqueId();
+ 
+     /**

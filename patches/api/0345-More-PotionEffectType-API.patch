@@ -1,0 +1,158 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 27 May 2021 21:58:33 -0700
+Subject: [PATCH] More PotionEffectType API
+
+
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 4a9c196a2caeb7f1b180347b480ed48056ad6a00..f4dd9e2a1d227727d7e2dc68a6dfb97bb4b16811 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -257,6 +257,31 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      */
+     @Deprecated(forRemoval = true)
+     Registry<io.papermc.paper.world.structure.ConfiguredStructure> CONFIGURED_STRUCTURE = Bukkit.getRegistry(io.papermc.paper.world.structure.ConfiguredStructure.class);
++
++    /**
++     * Potion effect types.
++     *
++     * @see org.bukkit.potion.PotionEffectType
++     */
++    Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = new Registry<org.bukkit.potion.PotionEffectType>() {
++
++        @Nullable
++        @Override
++        public org.bukkit.potion.PotionEffectType get(@NotNull NamespacedKey key) {
++            return org.bukkit.potion.PotionEffectType.getByKey(key);
++        }
++
++        @NotNull
++        @Override
++        public Iterator<org.bukkit.potion.PotionEffectType> iterator() {
++            return java.util.Arrays.stream(org.bukkit.potion.PotionEffectType.values()).iterator();
++        }
++
++        @Override
++        public @NotNull Stream<org.bukkit.potion.PotionEffectType> stream() {
++            return StreamSupport.stream(this.spliterator(), false);
++        }
++    };
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/potion/PotionEffectType.java b/src/main/java/org/bukkit/potion/PotionEffectType.java
+index 3070f039a583647e7c9a8f15d63291cd265db9fc..0d81e2d36e01128b9c697ec6f5c98083ee492d84 100644
+--- a/src/main/java/org/bukkit/potion/PotionEffectType.java
++++ b/src/main/java/org/bukkit/potion/PotionEffectType.java
+@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a type of potion and its effect on an entity.
+  */
+-public abstract class PotionEffectType implements Keyed {
++public abstract class PotionEffectType implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - implement Translatable
+     private static final BiMap<Integer, PotionEffectType> ID_MAP = HashBiMap.create();
+ 
+     /**
+@@ -351,4 +351,56 @@ public abstract class PotionEffectType implements Keyed {
+ 
+         return from;
+     }
++    // Paper start
++    /**
++     * Gets the effect attributes in an immutable map.
++     *
++     * @return the attribute map
++     */
++    public abstract @NotNull java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes();
++
++    /**
++     * Gets the true modifier amount based on the effect amplifier.
++     *
++     * @param attribute the attribute
++     * @param effectAmplifier the effect amplifier (0 indexed)
++     * @return the modifier amount
++     * @throws IllegalArgumentException if the supplied attribute is not present in the map from {@link #getEffectAttributes()}
++     */
++    public abstract double getAttributeModifierAmount(@NotNull org.bukkit.attribute.Attribute attribute, int effectAmplifier);
++
++    /**
++     * Gets the category of this effect
++     *
++     * @return the category
++     */
++    public abstract @NotNull PotionEffectType.Category getEffectCategory();
++
++    /**
++     * Category of {@link PotionEffectType}s
++     */
++    public enum Category {
++
++        BENEFICIAL(net.kyori.adventure.text.format.NamedTextColor.BLUE),
++        HARMFUL(net.kyori.adventure.text.format.NamedTextColor.RED),
++        NEUTRAL(net.kyori.adventure.text.format.NamedTextColor.BLUE);
++
++        private final net.kyori.adventure.text.format.TextColor color;
++
++        Category(net.kyori.adventure.text.format.TextColor color) {
++            this.color = color;
++        }
++
++        /**
++         * Gets the text color used when displaying potions
++         * of this category.
++         *
++         * @return the text color
++         */
++        @NotNull
++        public net.kyori.adventure.text.format.TextColor getColor() {
++            return color;
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java b/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java
+index a613debb03f6440583f57dd1adb7bb1bebbd636b..718f216c9153a5f03b91ce1de9ee9574e867e32b 100644
+--- a/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java
++++ b/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java
+@@ -19,4 +19,41 @@ public abstract class PotionEffectTypeWrapper extends PotionEffectType {
+     public PotionEffectType getType() {
+         return this;
+     }
++
++    @Override
++    public boolean isInstant() {
++        return getType().isInstant();
++    }
++
++    @NotNull
++    @Override
++    public org.bukkit.Color getColor() {
++        return getType().getColor();
++    }
++    // Paper start
++    @Override
++    public @NotNull org.bukkit.NamespacedKey getKey() {
++        return this.getType().getKey();
++    }
++
++    @Override
++    public @NotNull java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes() {
++        return this.getType().getEffectAttributes();
++    }
++
++    @Override
++    public double getAttributeModifierAmount(@NotNull org.bukkit.attribute.Attribute attribute, int effectAmplifier) {
++        return this.getType().getAttributeModifierAmount(attribute, effectAmplifier);
++    }
++
++    @Override
++    public @NotNull PotionEffectType.Category getEffectCategory() {
++        return this.getType().getEffectCategory();
++    }
++
++    @Override
++    public @NotNull String translationKey() {
++        return this.getType().translationKey();
++    }
++    // Paper end
+ }

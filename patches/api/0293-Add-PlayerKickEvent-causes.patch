@@ -1,0 +1,141 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 15 May 2021 20:30:34 -0700
+Subject: [PATCH] Add PlayerKickEvent causes
+
+
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 1efce69d16014147ae022ecf33eaed934236a7c1..7ce512072f242632f17db55224488f18c1cddcc4 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -275,6 +275,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param message kick message
+      */
+     void kick(final net.kyori.adventure.text.@Nullable Component message);
++
++    /**
++     * Kicks player with custom kick message and cause.
++     *
++     * @param message kick message
++     * @param cause kick cause
++     */
++    void kick(final net.kyori.adventure.text.@Nullable Component message, org.bukkit.event.player.PlayerKickEvent.@NotNull Cause cause);
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
+index 997b06c19a5277656521e0e298f2958c209f1da1..2eb13c049fa917d41fa9ad17fdec9ec4c33701a8 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
+@@ -12,6 +12,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private net.kyori.adventure.text.Component leaveMessage; // Paper
+     private net.kyori.adventure.text.Component kickReason; // Paper
++    private final Cause cause; // Paper
+     private boolean cancel;
+ 
+     @Deprecated // Paper
+@@ -19,14 +20,25 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+         super(playerKicked);
+         this.kickReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(kickReason); // Paper
+         this.leaveMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(leaveMessage); // Paper
++        this.cause  = Cause.UNKNOWN; // Paper
+         this.cancel = false;
+     }
+     // Paper start
++    @Deprecated
+     public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final net.kyori.adventure.text.Component kickReason, @NotNull final net.kyori.adventure.text.Component leaveMessage) {
+         super(playerKicked);
+         this.kickReason = kickReason;
+         this.leaveMessage = leaveMessage;
+         this.cancel = false;
++        this.cause = Cause.UNKNOWN;
++    }
++
++    public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final net.kyori.adventure.text.Component kickReason, @NotNull final net.kyori.adventure.text.Component leaveMessage, @NotNull final Cause cause) {
++        super(playerKicked);
++        this.kickReason = kickReason;
++        this.leaveMessage = leaveMessage;
++        this.cancel = false;
++        this.cause = cause;
+     }
+ 
+     /**
+@@ -132,4 +144,77 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+     public static HandlerList getHandlerList() {
+         return handlers;
+     }
++    // Paper start
++    /**
++     * Gets the cause of this kick
++     *
++     * @return
++     */
++    @NotNull
++    public org.bukkit.event.player.PlayerKickEvent.Cause getCause() {
++        return cause;
++    }
++
++    public enum Cause {
++
++        PLUGIN,
++
++        WHITELIST,
++
++        BANNED,
++
++        IP_BANNED,
++
++        KICK_COMMAND,
++
++        FLYING_PLAYER,
++
++        FLYING_VEHICLE,
++
++        TIMEOUT,
++
++        IDLING,
++
++        INVALID_VEHICLE_MOVEMENT,
++
++        INVALID_PLAYER_MOVEMENT,
++
++        INVALID_ENTITY_ATTACKED,
++
++        INVALID_PAYLOAD,
++
++        SPAM,
++
++        ILLEGAL_ACTION,
++
++        ILLEGAL_CHARACTERS,
++
++        OUT_OF_ORDER_CHAT,
++
++        UNSIGNED_CHAT,
++
++        CHAT_VALIDATION_FAILED,
++
++        EXPIRED_PROFILE_PUBLIC_KEY,
++
++        INVALID_PUBLIC_KEY_SIGNATURE,
++
++        TOO_MANY_PENDING_CHATS,
++
++        SELF_INTERACTION,
++
++        DUPLICATE_LOGIN,
++
++        RESOURCE_PACK_REJECTION,
++
++        /**
++         * Spigot's restart command
++         */
++        RESTART_COMMAND,
++        /**
++         * Fallback cause
++         */
++        UNKNOWN,
++    }
++    // Paper end
+ }
