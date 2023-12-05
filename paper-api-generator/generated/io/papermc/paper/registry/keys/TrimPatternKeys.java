@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.2")
+@GeneratedFrom("1.20.3")
 @ApiStatus.Experimental
 public final class TrimPatternKeys {
     /**
