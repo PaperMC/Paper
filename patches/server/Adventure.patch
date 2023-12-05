@@ -1650,14 +1650,14 @@ diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-@@ -0,0 +0,0 @@ public class CommandSourceStack implements SharedSuggestionProvider {
+@@ -0,0 +0,0 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
+     private final CommandSigningContext signingContext;
      private final TaskChainer chatMessageChainer;
-     private final IntConsumer returnValueConsumer;
      public volatile CommandNode currentCommand; // CraftBukkit
 +    public boolean bypassSelectorPermissions = false; // Paper
  
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
-         this(output, pos, rot, world, level, name, displayName, server, entity, false, (commandcontext, flag, j) -> {
+         this(output, pos, rot, world, level, name, displayName, server, entity, false, CommandResultCallback.EMPTY, EntityAnchorArgument.Anchor.FEET, CommandSigningContext.ANONYMOUS, TaskChainer.immediate(server));
 diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
@@ -1667,16 +1667,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          MinecraftServer minecraftServer = source.getServer();
          CompletableFuture<FilteredText> completableFuture = filterPlainText(source, message);
 -        Component component = minecraftServer.getChatDecorator().decorate(source.getPlayer(), message.decoratedContent());
-+        CompletableFuture<ChatDecorator.Result> componentFuture = minecraftServer.getChatDecorator().decorate(source.getPlayer(), source, message.decoratedContent()); // Paper
-         source.getChatMessageChainer().append((executor) -> {
--            return completableFuture.thenAcceptAsync((filtered) -> {
--                PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(component).filter(filtered.mask());
-+            return CompletableFuture.allOf(completableFuture, componentFuture).thenAcceptAsync((filtered) -> {
-+                PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(componentFuture.join().component()).filter(completableFuture.join().mask()); // Paper
-                 callback.accept(playerChatMessage2);
-             }, executor);
+-        source.getChatMessageChainer().append(completableFuture, (filtered) -> {
+-            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(component).filter(filtered.mask());
++        // Paper start
++        CompletableFuture<ChatDecorator.Result> componentFuture = minecraftServer.getChatDecorator().decorate(source.getPlayer(), source, message.decoratedContent());
++        source.getChatMessageChainer().append(CompletableFuture.allOf(completableFuture, componentFuture), (filtered) -> {
++            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(componentFuture.join().component()).filter(completableFuture.join().mask()); // Paper
++            // Paper end
+             callback.accept(playerChatMessage2);
          });
-@@ -0,0 +0,0 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
+     }
  
      private static void resolveDisguisedMessage(Consumer<PlayerChatMessage> callback, CommandSourceStack source, PlayerChatMessage message) {
          ChatDecorator chatDecorator = source.getServer().getChatDecorator();
@@ -1719,22 +1719,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
      private static final int PUBLIC_KEY_SIZE = 256;
 @@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
-         }
+         return (Component) this.readWithCodecTrusted(NbtOps.INSTANCE, ComponentSerialization.CODEC);
      }
  
 +    // Paper start
 +    public FriendlyByteBuf writeComponent(final net.kyori.adventure.text.Component component) {
-+        return this.writeUtf(io.papermc.paper.adventure.PaperAdventure.asJsonString(component, this.adventure$locale), 262144);
++        // TODO this.adventure$locale
++        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
 +    }
 +    // Paper end
 +
      public FriendlyByteBuf writeComponent(Component text) {
--        return this.writeUtf(Component.Serializer.toJson(text), 262144);
-+        //return this.a(IChatBaseComponent.ChatSerializer.a(ichatbasecomponent), 262144); // Paper - comment
-+        return this.writeUtf(io.papermc.paper.adventure.PaperAdventure.asJsonString(text, this.adventure$locale), 262144); // Paper
++        // TODO this.adventure$locale
+         return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, text);
      }
  
-     public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
@@ -1837,23 +1836,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.adventure.AdventureComponent; // Paper
  import com.google.gson.Gson;
  import com.google.gson.GsonBuilder;
- import com.google.gson.JsonArray;
-@@ -0,0 +0,0 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
-             GsonBuilder gsonbuilder = new GsonBuilder();
- 
-             gsonbuilder.disableHtmlEscaping();
-+            gsonbuilder.registerTypeAdapter(AdventureComponent.class, new AdventureComponent.Serializer()); // Paper
-             gsonbuilder.registerTypeHierarchyAdapter(Component.class, new Component.Serializer());
-             gsonbuilder.registerTypeHierarchyAdapter(Style.class, new Style.Serializer());
-             gsonbuilder.registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory());
+ import com.google.gson.JsonDeserializationContext;
 @@ -0,0 +0,0 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
          }
  
          public JsonElement serialize(Component ichatbasecomponent, Type type, JsonSerializationContext jsonserializationcontext) {
-+            if (ichatbasecomponent instanceof AdventureComponent) return jsonserializationcontext.serialize(ichatbasecomponent); // Paper
-             JsonObject jsonobject = new JsonObject();
- 
-             if (!ichatbasecomponent.getStyle().isEmpty()) {
++            // Paper start - hack before proper nbt serialization is added
++            if (ichatbasecomponent instanceof io.papermc.paper.adventure.AdventureComponent adventure) {
++                final @Nullable Component converted = adventure.deepConvertedIfPresent();
++                if (converted == null) {
++                    return net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serializeToTree(adventure.adventure$component());
++                }
++            }
++            // Paper end - hack before proper nbt serialization is added
+             return Component.Serializer.serialize(ichatbasecomponent);
+         }
+     }
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
@@ -1937,7 +1935,7 @@ diff --git a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java b/s
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
-@@ -0,0 +0,0 @@ import net.minecraft.util.ExtraCodecs;
+@@ -0,0 +0,0 @@ import net.minecraft.Util;
  import net.minecraft.util.SignatureUpdater;
  import net.minecraft.util.SignatureValidator;
  
@@ -2077,53 +2075,18 @@ diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystem
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.chat.Component;
- import net.minecraft.network.protocol.Packet;
- 
- // Spigot start
--public record ClientboundSystemChatPacket(String content, boolean overlay) implements Packet<ClientGamePacketListener> {
-+public record ClientboundSystemChatPacket(@javax.annotation.Nullable net.kyori.adventure.text.Component adventure$content, @javax.annotation.Nullable String content, boolean overlay) implements Packet<ClientGamePacketListener> { // Paper - Adventure
- 
-+    @io.papermc.paper.annotation.DoNotUse // Paper - No locale context
-     public ClientboundSystemChatPacket(Component content, boolean overlay) {
--        this(Component.Serializer.toJson(content), overlay);
-+        this(null, Component.Serializer.toJson(content), overlay); // Paper - Adventure
-     }
- 
-     public ClientboundSystemChatPacket(net.md_5.bungee.api.chat.BaseComponent[] content, boolean overlay) {
--        this(net.md_5.bungee.chat.ComponentSerializer.toString(content), overlay);
-+        this(null, net.md_5.bungee.chat.ComponentSerializer.toString(content), overlay); // Paper - Adventure
+@@ -0,0 +0,0 @@ public record ClientboundSystemChatPacket(Component content, boolean overlay) im
+         this(Component.Serializer.fromJson(net.md_5.bungee.chat.ComponentSerializer.toString(content)), overlay);
      }
      // Spigot end
 +    // Paper start
-+    public ClientboundSystemChatPacket {
-+        com.google.common.base.Preconditions.checkArgument(!(adventure$content == null && content == null), "Component adventure$content and String (json) content cannot both be null");
-+    }
-+
 +    public ClientboundSystemChatPacket(net.kyori.adventure.text.Component content, boolean overlay) {
-+        this(content, null, overlay);
++        this(io.papermc.paper.adventure.PaperAdventure.asVanilla(content), overlay);
 +    }
 +    // Paper end
  
      public ClientboundSystemChatPacket(FriendlyByteBuf buf) {
--        this(buf.readComponent(), buf.readBoolean());
-+        this(null, io.papermc.paper.adventure.PaperAdventure.asJsonString(buf.readComponent(), buf.adventure$locale), buf.readBoolean()); // Paper - Adventure
-     }
- 
-     @Override
-     public void write(FriendlyByteBuf buf) {
-+        // Paper start
-+        if (this.adventure$content != null) {
-+            buf.writeComponent(this.adventure$content);
-+        } else if (this.content != null) {
-         buf.writeUtf(this.content, 262144); // Spigot
-+        } else {
-+            throw new IllegalArgumentException("Must supply either adventure component or string json content");
-+        }
-+        // Paper end
-         buf.writeBoolean(this.overlay);
-     }
- 
+         this(buf.readComponentTrusted(), buf.readBoolean());
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java
@@ -2173,8 +2136,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private String motd;
 +    private net.kyori.adventure.text.Component motd; // Paper - Adventure
      private int playerIdleTimeout;
-     public final long[] tickTimes;
-     @Nullable
+     private final long[] tickTimesNanos;
+     private long aggregatedTickTimesNanos;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private ServerStatus buildServerStatus() {
          ServerStatus.Players serverping_serverpingplayersample = this.buildPlayerStatus();
@@ -2254,7 +2217,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.scores.Score;
+@@ -0,0 +0,0 @@ import net.minecraft.world.damagesource.CombatTracker;
  import net.minecraft.world.scores.Scoreboard;
  import net.minecraft.world.scores.Team;
  import net.minecraft.world.scores.criteria.ObjectiveCriteria;
@@ -2313,22 +2276,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
                  boolean flag1 = true;
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
- 
-     public void sendSystemMessage(Component message, boolean overlay) {
-         if (this.acceptsSystemMessages(overlay)) {
--            this.connection.send(new ClientboundSystemChatPacket(message, overlay), PacketSendListener.exceptionallySend(() -> {
-+            this.connection.send(new ClientboundSystemChatPacket(PaperAdventure.asAdventure(message), overlay), PacketSendListener.exceptionallySend(() -> { // Paper - Adventure
-                 if (this.acceptsSystemMessages(false)) {
-                     boolean flag1 = true;
-                     String s = message.getString(256);
-                     MutableComponent ichatmutablecomponent = Component.literal(s).withStyle(ChatFormatting.YELLOW);
- 
--                    return new ClientboundSystemChatPacket(Component.translatable("multiplayer.message_not_delivered", ichatmutablecomponent).withStyle(ChatFormatting.RED), false);
-+                    return new ClientboundSystemChatPacket(PaperAdventure.asAdventure(Component.translatable("multiplayer.message_not_delivered", ichatmutablecomponent).withStyle(ChatFormatting.RED)), false); // Paper - Adventure
-                 } else {
-                     return null;
-                 }
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
      }
  
@@ -2468,28 +2415,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                      }
  
-                     CompletableFuture<FilteredText> completablefuture = this.filterTextPacket(playerchatmessage.signedContent());
+                     CompletableFuture<FilteredText> completablefuture = this.filterTextPacket(playerchatmessage.signedContent()).thenApplyAsync(Function.identity(), this.server.chatExecutor); // CraftBukkit - async chat
 -                    Component ichatbasecomponent = this.server.getChatDecorator().decorate(this.player, playerchatmessage.decoratedContent());
 +                    CompletableFuture<ChatDecorator.Result> componentFuture = this.server.getChatDecorator().decorate(this.player, null, playerchatmessage.decoratedContent()); // Paper
  
-                     this.chatMessageChain.append((executor) -> {
--                        return completablefuture.thenAcceptAsync((filteredtext) -> {
--                            PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(ichatbasecomponent).filter(filteredtext.mask());
--
-+                        return CompletableFuture.allOf(completablefuture, componentFuture).thenAcceptAsync((filtered) -> { // Paper
-+                            PlayerChatMessage playerchatmessage1 = playerchatmessage.filter(completablefuture.join().mask()).withResult(componentFuture.join()); // Paper
-                             this.broadcastChatMessage(playerchatmessage1);
-                         }, this.server.chatExecutor); // CraftBukkit - async chat
-                     });
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-             Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(acknowledgment);
+-                    this.chatMessageChain.append(completablefuture, (filteredtext) -> {
+-                        PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(ichatbasecomponent).filter(filteredtext.mask());
++                    this.chatMessageChain.append(CompletableFuture.allOf(completablefuture, componentFuture), (filteredtext) -> {
++                        PlayerChatMessage playerchatmessage1 = playerchatmessage.filter(completablefuture.join().mask()).withResult(componentFuture.join()); // Paper
  
-             if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
--                this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
-+                this.send(new ClientboundSystemChatPacket(PaperAdventure.asAdventure(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED)), false)); // Paper - Adventure
-                 return Optional.empty();
-             } else {
-                 this.player.resetLastActionTime();
+                         this.broadcastChatMessage(playerchatmessage1);
+                     });
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              this.handleCommand(s);
          } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
@@ -2504,15 +2440,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                 }
-             });
-         } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) { // Re-add "Command Only" flag check
--            this.send(new ClientboundSystemChatPacket(Component.translatable("chat.cannotSend").withStyle(ChatFormatting.RED), false));
-+            this.send(new ClientboundSystemChatPacket(PaperAdventure.asAdventure(Component.translatable("chat.cannotSend").withStyle(ChatFormatting.RED)), false)); // Paper - Adventure
-         } else {
-             this.chat(s, message, true);
-         }
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -3517,7 +3444,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
 @@ -0,0 +0,0 @@ public class CraftEnchantment extends Enchantment {
          CraftEnchantment ench = (CraftEnchantment) other;
-         return !this.target.isCompatibleWith(ench.target);
+         return !this.handle.isCompatibleWith(ench.getHandle());
      }
 +    // Paper start
 +    @Override
@@ -3526,8 +3453,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  
-     public net.minecraft.world.item.enchantment.Enchantment getHandle() {
-         return this.target;
+     @Override
+     public boolean equals(Object other) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
@@ -3833,6 +3760,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start
++    // TODO UUID API
 +    @Override
 +    public void setResourcePack(String url, byte[] hashBytes, net.kyori.adventure.text.Component prompt, boolean force) {
 +        Preconditions.checkArgument(url != null, "Resource pack URL cannot be null");
@@ -3843,7 +3771,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
 +            hash = "";
 +        }
-+        this.getHandle().connection.send(new ClientboundResourcePackPacket(url, hash, force, io.papermc.paper.adventure.PaperAdventure.asVanilla(prompt)));
++        this.getHandle().connection.send(new ClientboundResourcePackPushPacket(UUID.randomUUID(), url, hash, force, io.papermc.paper.adventure.PaperAdventure.asVanilla(prompt)));
 +    }
 +    // Paper end
 +
@@ -4805,7 +4733,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Preconditions.checkArgument(renderType != null, "RenderType cannot be null");
 +        Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "The name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
 +        Preconditions.checkArgument(this.board.getObjective(name) == null, "An objective of name '%s' already exists", name);
-+        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, ((CraftCriteria) criteria).criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
++        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, ((CraftCriteria) criteria).criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType), true, null);
 +        return new CraftObjective(this, objective);
 +    }
 +    // Paper end - Adventure
@@ -4823,7 +4751,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "The name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
 -        Preconditions.checkArgument(this.board.getObjective(name) == null, "An objective of name '%s' already exists", name);
 -
--        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, ((CraftCriteria) criteria).criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
+-        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, ((CraftCriteria) criteria).criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType), true, null);
 -        return new CraftObjective(this, objective);
 +        return this.registerNewObjective(name, criteria, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(displayName), renderType); // Paper - Adventure
      }
