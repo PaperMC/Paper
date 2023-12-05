@@ -503,11 +503,72 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return tileEntityLootable.getLevel();
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/world/RandomizableContainer.java b/src/main/java/net/minecraft/world/RandomizableContainer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/RandomizableContainer.java
++++ b/src/main/java/net/minecraft/world/RandomizableContainer.java
+@@ -0,0 +0,0 @@ public interface RandomizableContainer extends Container {
+ 
+     }
+ 
++    // Paper start
++    private static net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity blockEntity(final RandomizableContainer container) {
++        return (net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity) container;
++    }
+     default boolean tryLoadLootTable(CompoundTag nbt) {
++        final net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity entity = blockEntity(this);
++        entity.lootableData.loadNbt(nbt);
+         if (nbt.contains("LootTable", 8)) {
+             this.setLootTable(new ResourceLocation(nbt.getString("LootTable")));
++            try { org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(entity.lootTable); } catch (IllegalArgumentException ex) { entity.lootTable = null; } // Paper - validate
+             this.setLootTableSeed(nbt.getLong("LootTableSeed"));
+-            return true;
++            return false; // Paper - always load the items, table may still remain
++            // Paper end
+         } else {
+             return false;
+         }
+     }
+ 
+     default boolean trySaveLootTable(CompoundTag nbt) {
++        // Paper start
++        final net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity entity = blockEntity(this);
++        entity.lootableData.saveNbt(nbt);
++        // Paper end
+         ResourceLocation resourceLocation = this.getLootTable();
+         if (resourceLocation == null) {
+             return false;
+@@ -0,0 +0,0 @@ public interface RandomizableContainer extends Container {
+                 nbt.putLong("LootTableSeed", l);
+             }
+ 
+-            return true;
++            return false; // Paper - always save the items, table may still remain
+         }
+     }
+ 
+     default void unpackLootTable(@Nullable Player player) {
++        final net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity entity = blockEntity(this); // Paper
+         Level level = this.getLevel();
+         BlockPos blockPos = this.getBlockPos();
+         ResourceLocation resourceLocation = this.getLootTable();
+-        if (resourceLocation != null && level != null && level.getServer() != null) {
++        if (entity.lootableData.shouldReplenish(player) && level != null) { // Paper
+             LootTable lootTable = level.getServer().getLootData().getLootTable(resourceLocation);
+             if (player instanceof ServerPlayer) {
+                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, resourceLocation);
+             }
+ 
+-            this.setLootTable((ResourceLocation)null);
++            entity.lootableData.processRefill(player); // Paper
+             LootParams.Builder builder = (new LootParams.Builder((ServerLevel)level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos));
+             if (player != null) {
+                 builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      }
      // Paper end
  
@@ -665,49 +726,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      protected RandomizableContainerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
          super(type, pos, state);
-@@ -0,0 +0,0 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
-     }
- 
-     protected boolean tryLoadLootTable(CompoundTag nbt) {
-+        this.lootableData.loadNbt(nbt); // Paper
-         if (nbt.contains("LootTable", 8)) {
-             this.lootTable = new ResourceLocation(nbt.getString("LootTable"));
-+            try { org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.lootTable); } catch (IllegalArgumentException ex) { this.lootTable = null; } // Paper - validate
-             this.lootTableSeed = nbt.getLong("LootTableSeed");
--            return true;
-+            return false; // Paper - always load the items, table may still remain
-         } else {
-             return false;
-         }
-     }
- 
-     protected boolean trySaveLootTable(CompoundTag nbt) {
-+        this.lootableData.saveNbt(nbt); // Paper
-         if (this.lootTable == null) {
-             return false;
-         } else {
-@@ -0,0 +0,0 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
-                 nbt.putLong("LootTableSeed", this.lootTableSeed);
-             }
- 
--            return true;
-+            return false; // Paper - always save the items, table may still remain
-         }
-     }
- 
-     public void unpackLootTable(@Nullable Player player) {
--        if (this.lootTable != null && this.level.getServer() != null) {
-+        if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
-             LootTable lootTable = this.level.getServer().getLootData().getLootTable(this.lootTable);
-             if (player instanceof ServerPlayer) {
-                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.lootTable);
-             }
- 
--            this.lootTable = null;
-+            this.lootableData.processRefill(player); // Paper
-             LootParams.Builder builder = (new LootParams.Builder((ServerLevel)this.level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(this.worldPosition));
-             if (player != null) {
-                 builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java
