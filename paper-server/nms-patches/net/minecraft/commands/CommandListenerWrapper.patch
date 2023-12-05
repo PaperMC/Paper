@@ -1,23 +1,23 @@
 --- a/net/minecraft/commands/CommandListenerWrapper.java
 +++ b/net/minecraft/commands/CommandListenerWrapper.java
-@@ -42,6 +42,8 @@
+@@ -44,6 +44,8 @@
  import net.minecraft.world.phys.Vec2F;
  import net.minecraft.world.phys.Vec3D;
  
 +import com.mojang.brigadier.tree.CommandNode; // CraftBukkit
 +
- public class CommandListenerWrapper implements ICompletionProvider {
+ public class CommandListenerWrapper implements ExecutionCommandSource<CommandListenerWrapper>, ICompletionProvider {
  
      public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(IChatBaseComponent.translatable("permissions.requires.player"));
 @@ -63,6 +65,7 @@
+     private final Vec2F rotation;
      private final CommandSigningContext signingContext;
      private final TaskChainer chatMessageChainer;
-     private final IntConsumer returnValueConsumer;
 +    public volatile CommandNode currentCommand; // CraftBukkit
  
      public CommandListenerWrapper(ICommandListener icommandlistener, Vec3D vec3d, Vec2F vec2f, WorldServer worldserver, int i, String s, IChatBaseComponent ichatbasecomponent, MinecraftServer minecraftserver, @Nullable Entity entity) {
-         this(icommandlistener, vec3d, vec2f, worldserver, i, s, ichatbasecomponent, minecraftserver, entity, false, (commandcontext, flag, j) -> {
-@@ -175,9 +178,23 @@
+         this(icommandlistener, vec3d, vec2f, worldserver, i, s, ichatbasecomponent, minecraftserver, entity, false, CommandResultCallback.EMPTY, ArgumentAnchor.Anchor.FEET, CommandSigningContext.ANONYMOUS, TaskChainer.immediate(minecraftserver));
+@@ -169,9 +172,23 @@
  
      @Override
      public boolean hasPermission(int i) {
@@ -41,7 +41,7 @@
      public Vec3D getPosition() {
          return this.worldPosition;
      }
-@@ -314,7 +331,7 @@
+@@ -304,7 +321,7 @@
              while (iterator.hasNext()) {
                  EntityPlayer entityplayer = (EntityPlayer) iterator.next();
  
@@ -50,9 +50,9 @@
                      entityplayer.sendSystemMessage(ichatmutablecomponent);
                  }
              }
-@@ -387,4 +404,10 @@
-     public FeatureFlagSet enabledFeatures() {
-         return this.level.enabledFeatures();
+@@ -397,4 +414,10 @@
+     public boolean isSilent() {
+         return this.silent;
      }
 +
 +    // CraftBukkit start

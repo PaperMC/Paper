@@ -5,6 +5,7 @@ import com.google.common.collect.Iterables;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
+import com.mojang.authlib.yggdrasil.ProfileResult;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -13,15 +14,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.minecraft.SystemUtils;
 import net.minecraft.server.dedicated.DedicatedServer;
-import net.minecraft.world.level.block.entity.TileEntitySkull;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -139,14 +136,9 @@ public final class CraftPlayerProfile implements PlayerProfile {
 
         // Look up properties such as the textures:
         if (!profile.getId().equals(SystemUtils.NIL_UUID)) {
-            GameProfile newProfile;
-            try {
-                newProfile = TileEntitySkull.fillProfileTextures(profile).get().orElse(null); // TODO: replace with CompletableFuture
-            } catch (InterruptedException | ExecutionException ex) {
-                throw new RuntimeException("Exception filling profile textures", ex);
-            }
+            ProfileResult newProfile = server.getSessionService().fetchProfile(profile.getId(), true);
             if (newProfile != null) {
-                profile = newProfile;
+                profile = newProfile.profile();
             }
         }
 

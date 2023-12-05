@@ -4,9 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.EnumChatFormat;
 import net.minecraft.network.chat.IChatBaseComponent;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
+import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
 
-public class ChatTest {
+public class ChatTest extends AbstractTestingBase {
 
     @Test
     public void testColors() {
@@ -25,15 +26,15 @@ public class ChatTest {
     public void testURLJsonConversion() {
         IChatBaseComponent[] components;
         components = CraftChatMessage.fromString("https://spigotmc.org/test Test Message");
-        assertEquals("{\"extra\":[{\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org/test\"},\"text\":\"https://spigotmc.org/test\"},{\"text\":\" Test Message\"}],\"text\":\"\"}",
+        assertEquals("{\"text\":\"\",\"extra\":[{\"text\":\"https://spigotmc.org/test\",\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org/test\"}},\" Test Message\"]}",
                 CraftChatMessage.toJSON(components[0]));
 
         components = CraftChatMessage.fromString("123 " + ChatColor.GOLD + "https://spigotmc.org " + ChatColor.BOLD + "test");
-        assertEquals("{\"extra\":[{\"text\":\"123 \"},{\"bold\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"obfuscated\":false,\"color\":\"gold\",\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org\"},\"text\":\"https://spigotmc.org\"},{\"bold\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"obfuscated\":false,\"color\":\"gold\",\"text\":\" \"},{\"bold\":true,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"obfuscated\":false,\"color\":\"gold\",\"text\":\"test\"}],\"text\":\"\"}",
+        assertEquals("{\"text\":\"\",\"extra\":[\"123 \",{\"text\":\"https://spigotmc.org\",\"obfuscated\":false,\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org\"},\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"color\":\"gold\",\"bold\":false},{\"text\":\" \",\"obfuscated\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"color\":\"gold\",\"bold\":false},{\"text\":\"test\",\"obfuscated\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"color\":\"gold\",\"bold\":true}]}",
                 CraftChatMessage.toJSON(components[0]));
 
         components = CraftChatMessage.fromString("multiCase http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE");
-        assertEquals("{\"extra\":[{\"text\":\"multiCase \"},{\"clickEvent\":{\"action\":\"open_url\",\"value\":\"http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE\"},\"text\":\"http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE\"}],\"text\":\"\"}",
+        assertEquals("{\"text\":\"\",\"extra\":[\"multiCase \",{\"text\":\"http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE\",\"clickEvent\":{\"action\":\"open_url\",\"value\":\"http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE\"}}]}",
                 CraftChatMessage.toJSON(components[0]));
     }
 }

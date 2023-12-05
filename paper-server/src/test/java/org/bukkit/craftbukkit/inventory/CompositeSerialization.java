@@ -27,7 +27,7 @@ public class CompositeSerialization extends AbstractTestingBase {
 
         List<ItemStack> stacks = new ArrayList<ItemStack>();
         stacks.add(new ItemStack(Material.STONE));
-        stacks.add(new ItemStack(Material.GRASS));
+        stacks.add(new ItemStack(Material.SHORT_GRASS));
         stacks.add(new ItemStack(Material.DIRT));
         stacks.add(new ItemStack(Material.COBBLESTONE, 17));
         stacks.add(new ItemStack(Material.OAK_PLANKS, 63));

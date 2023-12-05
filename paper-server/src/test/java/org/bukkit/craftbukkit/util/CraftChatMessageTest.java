@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
 import static org.junit.jupiter.api.Assertions.*;
-import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.IChatMutableComponent;
 import net.minecraft.network.chat.contents.LiteralContents;
@@ -97,7 +96,7 @@ public class CraftChatMessageTest {
 
     private boolean containsNonPlainComponent(IChatBaseComponent component) {
         for (IChatBaseComponent c : component) {
-            if (c.getContents() != ComponentContents.EMPTY && !(c.getContents() instanceof LiteralContents)) {
+            if (c.getContents() != LiteralContents.EMPTY && !(c.getContents() instanceof LiteralContents)) {
                 return true;
             }
         }

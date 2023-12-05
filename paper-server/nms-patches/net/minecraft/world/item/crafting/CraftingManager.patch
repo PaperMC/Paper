@@ -1,10 +1,13 @@
 --- a/net/minecraft/world/item/crafting/CraftingManager.java
 +++ b/net/minecraft/world/item/crafting/CraftingManager.java
-@@ -37,11 +37,13 @@
+@@ -34,11 +34,16 @@
  import net.minecraft.world.level.World;
  import org.slf4j.Logger;
  
-+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap; // CraftBukkit
++// CraftBukkit start
++import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
++import net.minecraft.core.registries.BuiltInRegistries;
++// CraftBukkit end
 +
  public class CraftingManager extends ResourceDataJson {
  
@@ -15,7 +18,7 @@
      private Map<MinecraftKey, RecipeHolder<?>> byName = ImmutableMap.of();
      private boolean hasErrors;
  
-@@ -51,7 +53,12 @@
+@@ -48,7 +53,12 @@
  
      protected void apply(Map<MinecraftKey, JsonElement> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {
          this.hasErrors = false;
@@ -29,7 +32,7 @@
          Builder<MinecraftKey, RecipeHolder<?>> builder = ImmutableMap.builder();
          Iterator iterator = map.entrySet().iterator();
  
-@@ -62,8 +69,10 @@
+@@ -59,8 +69,10 @@
              try {
                  RecipeHolder<?> recipeholder = fromJson(minecraftkey, ChatDeserializer.convertToJsonObject((JsonElement) entry.getValue(), "top element"));
  
@@ -42,7 +45,7 @@
                  })).put(minecraftkey, recipeholder);
                  builder.put(minecraftkey, recipeholder);
              } catch (IllegalArgumentException | JsonParseException jsonparseexception) {
-@@ -72,20 +81,37 @@
+@@ -69,20 +81,37 @@
          }
  
          this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
@@ -83,7 +86,7 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> Optional<Pair<MinecraftKey, RecipeHolder<T>>> getRecipeFor(Recipes<T> recipes, C c0, World world, @Nullable MinecraftKey minecraftkey) {
-@@ -119,7 +145,7 @@
+@@ -116,7 +145,7 @@
      }
  
      private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, RecipeHolder<T>> byType(Recipes<T> recipes) {
@@ -92,7 +95,7 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> NonNullList<ItemStack> getRemainingItemsFor(Recipes<T> recipes, C c0, World world) {
-@@ -166,12 +192,12 @@
+@@ -159,12 +188,12 @@
  
      public void replaceRecipes(Iterable<RecipeHolder<?>> iterable) {
          this.hasErrors = false;
@@ -107,14 +110,14 @@
              });
              MinecraftKey minecraftkey = recipeholder.id();
              RecipeHolder<?> recipeholder1 = (RecipeHolder) map1.put(minecraftkey, recipeholder);
-@@ -182,9 +208,29 @@
+@@ -175,9 +204,29 @@
              }
          });
          this.recipes = ImmutableMap.copyOf(map);
 -        this.byName = builder.build();
 +        this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    public boolean removeRecipe(MinecraftKey mcKey) {
 +        for (Object2ObjectLinkedOpenHashMap<MinecraftKey, RecipeHolder<?>> recipes : recipes.values()) {
@@ -122,8 +125,8 @@
 +        }
 +
 +        return byName.remove(mcKey) != null;
-     }
- 
++    }
++
 +    public void clearRecipes() {
 +        this.recipes = Maps.newHashMap();
 +

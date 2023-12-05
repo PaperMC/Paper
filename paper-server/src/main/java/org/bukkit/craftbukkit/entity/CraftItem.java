@@ -75,7 +75,7 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public void setThrower(UUID uuid) {
-        getHandle().setThrower(uuid);
+        getHandle().thrower = uuid;
     }
 
     @Override

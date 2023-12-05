@@ -7,6 +7,7 @@ package com.mojang.brigadier;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.context.CommandContextBuilder;
+import com.mojang.brigadier.context.ContextChain;
 import com.mojang.brigadier.context.SuggestionContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -23,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
@@ -215,76 +217,16 @@ public class CommandDispatcher<S> {
             }
         }
 
-        int result = 0;
-        int successfulForks = 0;
-        boolean forked = false;
-        boolean foundCommand = false;
         final String command = parse.getReader().getString();
         final CommandContext<S> original = parse.getContext().build(command);
-        List<CommandContext<S>> contexts = Collections.singletonList(original);
-        ArrayList<CommandContext<S>> next = null;
 
-        while (contexts != null) {
-            final int size = contexts.size();
-            for (int i = 0; i < size; i++) {
-                final CommandContext<S> context = contexts.get(i);
-                final CommandContext<S> child = context.getChild();
-                if (child != null) {
-                    forked |= context.isForked();
-                    if (child.hasNodes()) {
-                        final RedirectModifier<S> modifier = context.getRedirectModifier();
-                        if (modifier == null) {
-                            if (next == null) {
-                                next = new ArrayList<>(1);
-                            }
-                            next.add(child.copyFor(context.getSource()));
-                        } else {
-                            try {
-                                final Collection<S> results = modifier.apply(context);
-                                if (!results.isEmpty()) {
-                                    if (next == null) {
-                                        next = new ArrayList<>(results.size());
-                                    }
-                                    for (final S source : results) {
-                                        next.add(child.copyFor(source));
-                                    }
-                                } else {
-                                    foundCommand = true;
-                                }
-                            } catch (final CommandSyntaxException ex) {
-                                consumer.onCommandComplete(context, false, 0);
-                                if (!forked) {
-                                    throw ex;
-                                }
-                            }
-                        }
-                    }
-                } else if (context.getCommand() != null) {
-                    foundCommand = true;
-                    try {
-                        final int value = context.getCommand().run(context);
-                        result += value;
-                        consumer.onCommandComplete(context, true, value);
-                        successfulForks++;
-                    } catch (final CommandSyntaxException ex) {
-                        consumer.onCommandComplete(context, false, 0);
-                        if (!forked) {
-                            throw ex;
-                        }
-                    }
-                }
-            }
-
-            contexts = next;
-            next = null;
-        }
-
-        if (!foundCommand) {
+        final Optional<ContextChain<S>> flatContext = ContextChain.tryFlatten(original);
+        if (!flatContext.isPresent()) {
             consumer.onCommandComplete(original, false, 0);
             throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(parse.getReader());
         }
 
-        return forked ? successfulForks : result;
+        return flatContext.get().executeAll(original.getSource(), consumer);
     }
 
     /**

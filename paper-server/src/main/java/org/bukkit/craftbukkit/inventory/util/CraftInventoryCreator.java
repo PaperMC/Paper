@@ -38,6 +38,7 @@ public final class CraftInventoryCreator {
         converterMap.put(InventoryType.GRINDSTONE, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.STONECUTTER, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.SMITHING_NEW, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.CRAFTER, new CraftTileInventoryConverter.Crafter());
     }
 
     public Inventory createInventory(InventoryHolder holder, InventoryType type) {

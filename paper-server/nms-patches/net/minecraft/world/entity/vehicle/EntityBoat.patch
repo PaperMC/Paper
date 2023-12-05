@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/vehicle/EntityBoat.java
 +++ b/net/minecraft/world/entity/vehicle/EntityBoat.java
-@@ -55,6 +55,16 @@
+@@ -55,6 +55,15 @@
  import net.minecraft.world.phys.shapes.VoxelShapes;
  import org.joml.Vector3f;
  
@@ -8,16 +8,15 @@
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.util.CraftLocation;
 +import org.bukkit.entity.Vehicle;
-+import org.bukkit.event.vehicle.VehicleDamageEvent;
 +import org.bukkit.event.vehicle.VehicleDestroyEvent;
 +import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 +import org.bukkit.event.vehicle.VehicleMoveEvent;
 +// CraftBukkit end
 +
- public class EntityBoat extends Entity implements VariantHolder<EntityBoat.EnumBoatType> {
+ public class EntityBoat extends VehicleEntity implements VariantHolder<EntityBoat.EnumBoatType> {
  
-     private static final DataWatcherObject<Integer> DATA_ID_HURT = DataWatcher.defineId(EntityBoat.class, DataWatcherRegistry.INT);
-@@ -95,6 +105,14 @@
+     private static final DataWatcherObject<Integer> DATA_ID_TYPE = DataWatcher.defineId(EntityBoat.class, DataWatcherRegistry.INT);
+@@ -92,6 +101,14 @@
      private float bubbleAngle;
      private float bubbleAngleO;
  
@@ -32,43 +31,7 @@
      public EntityBoat(EntityTypes<? extends EntityBoat> entitytypes, World world) {
          super(entitytypes, world);
          this.paddlePositions = new float[2];
-@@ -180,6 +198,19 @@
-         if (this.isInvulnerableTo(damagesource)) {
-             return false;
-         } else if (!this.level().isClientSide && !this.isRemoved()) {
-+            // CraftBukkit start
-+            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-+            org.bukkit.entity.Entity attacker = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
-+
-+            VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) f);
-+            this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+            if (event.isCancelled()) {
-+                return false;
-+            }
-+            // f = event.getDamage(); // TODO Why don't we do this?
-+            // CraftBukkit end
-+
-             this.setHurtDir(-this.getHurtDir());
-             this.setHurtTime(10);
-             this.setDamage(this.getDamage() + f * 10.0F);
-@@ -188,6 +219,15 @@
-             boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).getAbilities().instabuild;
- 
-             if (flag || this.getDamage() > 40.0F) {
-+                // CraftBukkit start
-+                VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
-+                this.level().getCraftServer().getPluginManager().callEvent(destroyEvent);
-+
-+                if (destroyEvent.isCancelled()) {
-+                    this.setDamage(40F); // Maximize damage so this doesn't get triggered again right away
-+                    return true;
-+                }
-+                // CraftBukkit end
-                 if (!flag && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
-                     this.destroy(damagesource);
-                 }
-@@ -227,9 +267,29 @@
+@@ -192,9 +209,29 @@
      public void push(Entity entity) {
          if (entity instanceof EntityBoat) {
              if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
@@ -98,7 +61,7 @@
              super.push(entity);
          }
  
-@@ -322,6 +382,7 @@
+@@ -288,6 +325,7 @@
          return this.getDirection().getClockWise();
      }
  
@@ -106,7 +69,7 @@
      @Override
      public void tick() {
          this.oldStatus = this.status;
-@@ -362,6 +423,22 @@
+@@ -328,6 +366,22 @@
              this.setDeltaMovement(Vec3D.ZERO);
          }
  
@@ -129,7 +92,7 @@
          this.tickBubbleColumn();
  
          for (int i = 0; i <= 1; ++i) {
-@@ -845,6 +922,11 @@
+@@ -813,6 +867,11 @@
  
                      this.causeFallDamage(this.fallDistance, 1.0F, this.damageSources().fall());
                      if (!this.level().isClientSide && !this.isRemoved()) {
@@ -141,7 +104,7 @@
                          this.kill();
                          if (this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                              int i;
-@@ -858,6 +940,7 @@
+@@ -826,6 +885,7 @@
                              }
                          }
                      }

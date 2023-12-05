@@ -1,12 +1,13 @@
 --- a/net/minecraft/world/level/Explosion.java
 +++ b/net/minecraft/world/level/Explosion.java
-@@ -41,6 +41,15 @@
+@@ -39,6 +39,16 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
 +import net.minecraft.world.entity.boss.EntityComplexPart;
 +import net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon;
++import net.minecraft.world.level.block.Blocks;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityExplodeEvent;
 +import org.bukkit.Location;
@@ -16,15 +17,18 @@
  public class Explosion {
  
      private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
-@@ -59,6 +68,7 @@
-     private final ExplosionDamageCalculator damageCalculator;
+@@ -60,6 +70,10 @@
+     private final SoundEffect explosionSound;
      private final ObjectArrayList<BlockPosition> toBlow;
      private final Map<EntityHuman, Vec3D> hitPlayers;
-+    public boolean wasCanceled = false; // CraftBukkit - add field
++    // CraftBukkit - add field
++    public boolean wasCanceled = false;
++    public float yield;
++    // CraftBukkit end
  
-     public Explosion(World world, @Nullable Entity entity, double d0, double d1, double d2, float f, List<BlockPosition> list) {
-         this(world, entity, d0, d1, d2, f, false, Explosion.Effect.DESTROY_WITH_DECAY, list);
-@@ -79,7 +89,7 @@
+     public static DamageSource getDefaultDamageSource(World world, @Nullable Entity entity) {
+         return world.damageSources().explosion(entity, getIndirectSourceEntityInternal(entity));
+@@ -85,7 +99,7 @@
          this.hitPlayers = Maps.newHashMap();
          this.level = world;
          this.source = entity;
@@ -33,7 +37,15 @@
          this.x = d0;
          this.y = d1;
          this.z = d2;
-@@ -129,6 +139,11 @@
+@@ -96,6 +110,7 @@
+         this.smallExplosionParticles = particleparam;
+         this.largeExplosionParticles = particleparam1;
+         this.explosionSound = soundeffect;
++        this.yield = this.blockInteraction == Explosion.Effect.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F; // CraftBukkit
+     }
+ 
+     private ExplosionDamageCalculator makeDamageCalculator(@Nullable Entity entity) {
+@@ -146,6 +161,11 @@
      }
  
      public void explode() {
@@ -45,48 +57,46 @@
          this.level.gameEvent(this.source, GameEvent.EXPLODE, new Vec3D(this.x, this.y, this.z));
          Set<BlockPosition> set = Sets.newHashSet();
          boolean flag = true;
-@@ -213,7 +228,39 @@
-                         double d12 = (double) getSeenPercent(vec3d, entity);
-                         double d13 = (1.0D - d7) * d12;
- 
--                        entity.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
-+                        // CraftBukkit start
+@@ -228,7 +248,37 @@
+                         d9 /= d11;
+                         d10 /= d11;
+                         if (this.damageCalculator.shouldDamageEntity(this, entity)) {
+-                            entity.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity));
++                            // CraftBukkit start
 +
-+                        // Special case ender dragon only give knockback if no damage is cancelled
-+                        // Thinks to note:
-+                        // - Setting a velocity to a ComplexEntityPart is ignored (and therefore not needed)
-+                        // - Damaging ComplexEntityPart while forward the damage to EntityEnderDragon
-+                        // - Damaging EntityEnderDragon does nothing
-+                        // - EntityEnderDragon hitbock always covers the other parts and is therefore always present
-+                        if (entity instanceof EntityComplexPart) {
-+                            continue;
-+                        }
-+
-+                        CraftEventFactory.entityDamage = source;
-+                        entity.lastDamageCancelled = false;
-+
-+                        if (entity instanceof EntityEnderDragon) {
-+                            for (EntityComplexPart entityComplexPart : ((EntityEnderDragon) entity).subEntities) {
-+                                // Calculate damage separately for each EntityComplexPart
-+                                double d7part;
-+                                if (list.contains(entityComplexPart) && (d7part = Math.sqrt(entityComplexPart.distanceToSqr(vec3d)) / f2) <= 1.0D) {
-+                                    double d13part = (1.0D - d7part) * getSeenPercent(vec3d, entityComplexPart);
-+                                    entityComplexPart.hurt(this.getDamageSource(), (float) ((int) ((d13part * d13part + d13part) / 2.0D * 7.0D * (double) f2 + 1.0D)));
-+                                }
++                            // Special case ender dragon only give knockback if no damage is cancelled
++                            // Thinks to note:
++                            // - Setting a velocity to a ComplexEntityPart is ignored (and therefore not needed)
++                            // - Damaging ComplexEntityPart while forward the damage to EntityEnderDragon
++                            // - Damaging EntityEnderDragon does nothing
++                            // - EntityEnderDragon hitbock always covers the other parts and is therefore always present
++                            if (entity instanceof EntityComplexPart) {
++                                continue;
 +                            }
-+                        } else {
-+                            entity.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
-+                        }
 +
-+                        CraftEventFactory.entityDamage = null;
-+                        if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled
-+                            continue;
-+                        }
-+                        // CraftBukkit end
-                         double d14;
++                            CraftEventFactory.entityDamage = source;
++                            entity.lastDamageCancelled = false;
++
++                            if (entity instanceof EntityEnderDragon) {
++                                for (EntityComplexPart entityComplexPart : ((EntityEnderDragon) entity).subEntities) {
++                                    // Calculate damage separately for each EntityComplexPart
++                                    if (list.contains(entityComplexPart)) {
++                                        entityComplexPart.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity));
++                                    }
++                                }
++                            } else {
++                                entity.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity));
++                            }
++
++                            CraftEventFactory.entityDamage = null;
++                            if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled
++                                continue;
++                            }
++                            // CraftBukkit end
+                         }
  
-                         if (entity instanceof EntityLiving) {
-@@ -265,11 +312,66 @@
+                         double d12 = (1.0D - d7) * (double) getSeenPercent(vec3d, entity);
+@@ -287,9 +337,63 @@
  
              SystemUtils.shuffle(this.toBlow, this.level.random);
              ObjectListIterator objectlistiterator = this.toBlow.iterator();
@@ -104,22 +114,20 @@
 +                }
 +            }
 +
-+            boolean cancelled;
 +            List<org.bukkit.block.Block> bukkitBlocks;
-+            float yield;
 +
 +            if (explode != null) {
-+                EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, this.blockInteraction == Explosion.Effect.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F);
++                EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, this.yield);
 +                this.level.getCraftServer().getPluginManager().callEvent(event);
-+                cancelled = event.isCancelled();
++                this.wasCanceled = event.isCancelled();
 +                bukkitBlocks = event.blockList();
-+                yield = event.getYield();
++                this.yield = event.getYield();
 +            } else {
-+                BlockExplodeEvent event = new BlockExplodeEvent(location.getBlock(), blockList, this.blockInteraction == Explosion.Effect.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F);
++                BlockExplodeEvent event = new BlockExplodeEvent(location.getBlock(), blockList, this.yield);
 +                this.level.getCraftServer().getPluginManager().callEvent(event);
-+                cancelled = event.isCancelled();
++                this.wasCanceled = event.isCancelled();
 +                bukkitBlocks = event.blockList();
-+                yield = event.getYield();
++                this.yield = event.getYield();
 +            }
 +
 +            this.toBlow.clear();
@@ -129,8 +137,7 @@
 +                toBlow.add(coords);
 +            }
 +
-+            if (cancelled) {
-+                this.wasCanceled = true;
++            if (this.wasCanceled) {
 +                return;
 +            }
 +            // CraftBukkit end
@@ -138,9 +145,9 @@
  
              while (objectlistiterator.hasNext()) {
                  BlockPosition blockposition = (BlockPosition) objectlistiterator.next();
-                 IBlockData iblockdata = this.level.getBlockState(blockposition);
-                 Block block = iblockdata.getBlock();
 +                // CraftBukkit start - TNTPrimeEvent
++                IBlockData iblockdata = this.level.getBlockState(blockposition);
++                Block block = iblockdata.getBlock();
 +                if (block instanceof net.minecraft.world.level.block.BlockTNT) {
 +                    Entity sourceEntity = source == null ? null : source;
 +                    BlockPosition sourceBlock = sourceEntity == null ? BlockPosition.containing(this.x, this.y, this.z) : null;
@@ -151,37 +158,26 @@
 +                }
 +                // CraftBukkit end
  
-                 if (!iblockdata.isAir()) {
-                     BlockPosition blockposition1 = blockposition.immutable();
-@@ -283,8 +385,8 @@
-                             TileEntity tileentity = iblockdata.hasBlockEntity() ? this.level.getBlockEntity(blockposition) : null;
-                             LootParams.a lootparams_a = (new LootParams.a(worldserver)).withParameter(LootContextParameters.ORIGIN, Vec3D.atCenterOf(blockposition)).withParameter(LootContextParameters.TOOL, ItemStack.EMPTY).withOptionalParameter(LootContextParameters.BLOCK_ENTITY, tileentity).withOptionalParameter(LootContextParameters.THIS_ENTITY, this.source);
+                 this.level.getBlockState(blockposition).onExplosionHit(this.level, blockposition, this, (itemstack, blockposition1) -> {
+                     addOrAppendStack(list, itemstack, blockposition1);
+@@ -314,7 +418,11 @@
+                 BlockPosition blockposition1 = (BlockPosition) objectlistiterator1.next();
  
--                            if (this.blockInteraction == Explosion.Effect.DESTROY_WITH_DECAY) {
--                                lootparams_a.withParameter(LootContextParameters.EXPLOSION_RADIUS, this.radius);
-+                            if (yield < 1.0F) { // CraftBukkit - add yield
-+                                lootparams_a.withParameter(LootContextParameters.EXPLOSION_RADIUS, 1.0F / yield); // CraftBukkit - add yield
-                             }
- 
-                             iblockdata.spawnAfterBreak(worldserver, blockposition, ItemStack.EMPTY, flag2);
-@@ -316,7 +418,11 @@
-                 BlockPosition blockposition2 = (BlockPosition) objectlistiterator1.next();
- 
-                 if (this.random.nextInt(3) == 0 && this.level.getBlockState(blockposition2).isAir() && this.level.getBlockState(blockposition2.below()).isSolidRender(this.level, blockposition2.below())) {
--                    this.level.setBlockAndUpdate(blockposition2, BlockFireAbstract.getState(this.level, blockposition2));
+                 if (this.random.nextInt(3) == 0 && this.level.getBlockState(blockposition1).isAir() && this.level.getBlockState(blockposition1.below()).isSolidRender(this.level, blockposition1.below())) {
+-                    this.level.setBlockAndUpdate(blockposition1, BlockFireAbstract.getState(this.level, blockposition1));
 +                    // CraftBukkit start - Ignition by explosion
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level, blockposition2.getX(), blockposition2.getY(), blockposition2.getZ(), this).isCancelled()) {
-+                        this.level.setBlockAndUpdate(blockposition2, BlockFireAbstract.getState(this.level, blockposition2));
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level, blockposition1, this).isCancelled()) {
++                        this.level.setBlockAndUpdate(blockposition1, BlockFireAbstract.getState(this.level, blockposition1));
 +                    }
 +                    // CraftBukkit end
                  }
              }
          }
-@@ -328,6 +434,7 @@
+@@ -322,6 +430,7 @@
      }
  
-     private static void addBlockDrops(ObjectArrayList<Pair<ItemStack, BlockPosition>> objectarraylist, ItemStack itemstack, BlockPosition blockposition) {
+     private static void addOrAppendStack(List<Pair<ItemStack, BlockPosition>> list, ItemStack itemstack, BlockPosition blockposition) {
 +        if (itemstack.isEmpty()) return; // CraftBukkit - SPIGOT-5425
-         int i = objectarraylist.size();
- 
-         for (int j = 0; j < i; ++j) {
+         for (int i = 0; i < list.size(); ++i) {
+             Pair<ItemStack, BlockPosition> pair = (Pair) list.get(i);
+             ItemStack itemstack1 = (ItemStack) pair.getFirst();

@@ -169,6 +169,7 @@ public final class CraftItemFactory implements ItemFactory {
         case BAT_SPAWN_EGG:
         case BEE_SPAWN_EGG:
         case BLAZE_SPAWN_EGG:
+        case BREEZE_SPAWN_EGG:
         case CAT_SPAWN_EGG:
         case CAMEL_SPAWN_EGG:
         case CAVE_SPIDER_SPAWN_EGG:
@@ -344,6 +345,8 @@ public final class CraftItemFactory implements ItemFactory {
         case DECORATED_POT:
         case SUSPICIOUS_SAND:
         case SUSPICIOUS_GRAVEL:
+        case CRAFTER:
+        case TRIAL_SPAWNER:
             return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
             return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);

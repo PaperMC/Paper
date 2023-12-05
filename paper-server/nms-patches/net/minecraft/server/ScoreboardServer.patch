@@ -1,83 +1,83 @@
 --- a/net/minecraft/server/ScoreboardServer.java
 +++ b/net/minecraft/server/ScoreboardServer.java
-@@ -37,7 +37,7 @@
-     public void onScoreChanged(ScoreboardScore scoreboardscore) {
-         super.onScoreChanged(scoreboardscore);
-         if (this.trackedObjectives.contains(scoreboardscore.getObjective())) {
--            this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.CHANGE, scoreboardscore.getObjective().getName(), scoreboardscore.getOwner(), scoreboardscore.getScore()));
-+            this.broadcastAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.CHANGE, scoreboardscore.getObjective().getName(), scoreboardscore.getOwner(), scoreboardscore.getScore()));
+@@ -40,7 +40,7 @@
+     protected void onScoreChanged(ScoreHolder scoreholder, ScoreboardObjective scoreboardobjective, ScoreboardScore scoreboardscore) {
+         super.onScoreChanged(scoreholder, scoreboardobjective, scoreboardscore);
+         if (this.trackedObjectives.contains(scoreboardobjective)) {
+-            this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardScore(scoreholder.getScoreboardName(), scoreboardobjective.getName(), scoreboardscore.value(), scoreboardscore.display(), scoreboardscore.numberFormat()));
++            this.broadcastAll(new PacketPlayOutScoreboardScore(scoreholder.getScoreboardName(), scoreboardobjective.getName(), scoreboardscore.value(), scoreboardscore.display(), scoreboardscore.numberFormat())); // CraftBukkit
          }
  
          this.setDirty();
-@@ -46,7 +46,7 @@
+@@ -55,7 +55,7 @@
      @Override
-     public void onPlayerRemoved(String s) {
-         super.onPlayerRemoved(s);
--        this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, (String) null, s, 0));
-+        this.broadcastAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, (String) null, s, 0));
+     public void onPlayerRemoved(ScoreHolder scoreholder) {
+         super.onPlayerRemoved(scoreholder);
+-        this.server.getPlayerList().broadcastAll(new ClientboundResetScorePacket(scoreholder.getScoreboardName(), (String) null));
++        this.broadcastAll(new ClientboundResetScorePacket(scoreholder.getScoreboardName(), (String) null)); // CraftBukkit
          this.setDirty();
      }
  
-@@ -54,7 +54,7 @@
-     public void onPlayerScoreRemoved(String s, ScoreboardObjective scoreboardobjective) {
-         super.onPlayerScoreRemoved(s, scoreboardobjective);
+@@ -63,7 +63,7 @@
+     public void onPlayerScoreRemoved(ScoreHolder scoreholder, ScoreboardObjective scoreboardobjective) {
+         super.onPlayerScoreRemoved(scoreholder, scoreboardobjective);
          if (this.trackedObjectives.contains(scoreboardobjective)) {
--            this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, scoreboardobjective.getName(), s, 0));
-+            this.broadcastAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, scoreboardobjective.getName(), s, 0));
+-            this.server.getPlayerList().broadcastAll(new ClientboundResetScorePacket(scoreholder.getScoreboardName(), scoreboardobjective.getName()));
++            this.broadcastAll(new ClientboundResetScorePacket(scoreholder.getScoreboardName(), scoreboardobjective.getName())); // CraftBukkit
          }
  
          this.setDirty();
-@@ -67,7 +67,7 @@
+@@ -76,7 +76,7 @@
          super.setDisplayObjective(displayslot, scoreboardobjective);
          if (scoreboardobjective1 != scoreboardobjective && scoreboardobjective1 != null) {
              if (this.getObjectiveDisplaySlotCount(scoreboardobjective1) > 0) {
 -                this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective));
-+                this.broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective));
++                this.broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective)); // CraftBukkit
              } else {
                  this.stopTrackingObjective(scoreboardobjective1);
              }
-@@ -75,7 +75,7 @@
+@@ -84,7 +84,7 @@
  
          if (scoreboardobjective != null) {
              if (this.trackedObjectives.contains(scoreboardobjective)) {
 -                this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective));
-+                this.broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective));
++                this.broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective)); // CraftBukkit
              } else {
                  this.startTrackingObjective(scoreboardobjective);
              }
-@@ -87,7 +87,7 @@
+@@ -96,7 +96,7 @@
      @Override
      public boolean addPlayerToTeam(String s, ScoreboardTeam scoreboardteam) {
          if (super.addPlayerToTeam(s, scoreboardteam)) {
 -            this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.ADD));
-+            this.broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.ADD));
++            this.broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.ADD)); // CraftBukkit
              this.setDirty();
              return true;
          } else {
-@@ -98,7 +98,7 @@
+@@ -107,7 +107,7 @@
      @Override
      public void removePlayerFromTeam(String s, ScoreboardTeam scoreboardteam) {
          super.removePlayerFromTeam(s, scoreboardteam);
 -        this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.REMOVE));
-+        this.broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.REMOVE));
++        this.broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.REMOVE)); // CraftBukkit
          this.setDirty();
      }
  
-@@ -112,7 +112,7 @@
+@@ -121,7 +121,7 @@
      public void onObjectiveChanged(ScoreboardObjective scoreboardobjective) {
          super.onObjectiveChanged(scoreboardobjective);
          if (this.trackedObjectives.contains(scoreboardobjective)) {
 -            this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2));
-+            this.broadcastAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2));
++            this.broadcastAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2)); // CraftBukkit
          }
  
          this.setDirty();
-@@ -131,21 +131,21 @@
+@@ -140,21 +140,21 @@
      @Override
      public void onTeamAdded(ScoreboardTeam scoreboardteam) {
          super.onTeamAdded(scoreboardteam);
 -        this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, true));
-+        this.broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, true));
++        this.broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, true)); // CraftBukkit
          this.setDirty();
      }
  
@@ -85,7 +85,7 @@
      public void onTeamChanged(ScoreboardTeam scoreboardteam) {
          super.onTeamChanged(scoreboardteam);
 -        this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, false));
-+        this.broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, false));
++        this.broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, false)); // CraftBukkit
          this.setDirty();
      }
  
@@ -93,11 +93,11 @@
      public void onTeamRemoved(ScoreboardTeam scoreboardteam) {
          super.onTeamRemoved(scoreboardteam);
 -        this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createRemovePacket(scoreboardteam));
-+        this.broadcastAll(PacketPlayOutScoreboardTeam.createRemovePacket(scoreboardteam));
++        this.broadcastAll(PacketPlayOutScoreboardTeam.createRemovePacket(scoreboardteam)); // CraftBukkit
          this.setDirty();
      }
  
-@@ -196,6 +196,7 @@
+@@ -205,6 +205,7 @@
  
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
@@ -105,7 +105,7 @@
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -232,6 +233,7 @@
+@@ -241,6 +242,7 @@
  
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
@@ -113,7 +113,7 @@
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -276,6 +278,16 @@
+@@ -285,6 +287,16 @@
          return this.createData().load(nbttagcompound);
      }
  

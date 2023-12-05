@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemMinecart.java
 +++ b/net/minecraft/world/item/ItemMinecart.java
-@@ -18,6 +18,12 @@
+@@ -19,6 +19,12 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.Vec3D;
  
@@ -13,17 +13,19 @@
  public class ItemMinecart extends Item {
  
      private static final IDispenseBehavior DISPENSE_ITEM_BEHAVIOR = new DispenseBehaviorItem() {
-@@ -57,14 +63,43 @@
+@@ -58,10 +64,39 @@
                  }
              }
  
--            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).type);
+-            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).type, itemstack, (EntityHuman) null);
 +            // CraftBukkit start
 +            // EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).type);
 +            ItemStack itemstack1 = itemstack.split(1);
 +            org.bukkit.block.Block block2 = CraftBlock.at(worldserver, sourceblock.pos());
 +            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
-+
+ 
+-            worldserver.addFreshEntity(entityminecartabstract);
+-            itemstack.shrink(1);
 +            BlockDispenseEvent event = new BlockDispenseEvent(block2, craftItem.clone(), new org.bukkit.util.Vector(d0, d1 + d3, d2));
 +            if (!BlockDispenser.eventFired) {
 +                worldserver.getCraftServer().getPluginManager().callEvent(event);
@@ -46,31 +48,25 @@
 +            }
 +
 +            itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
-+            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((ItemMinecart) itemstack1.getItem()).type);
- 
-             if (itemstack.hasCustomHoverName()) {
-                 entityminecartabstract.setCustomName(itemstack.getHoverName());
-             }
- 
--            worldserver.addFreshEntity(entityminecartabstract);
--            itemstack.shrink(1);
++            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((ItemMinecart) itemstack1.getItem()).type, itemstack1, (EntityHuman) null);
++
 +            if (!worldserver.addFreshEntity(entityminecartabstract)) itemstack.grow(1);
 +            // itemstack.shrink(1); // CraftBukkit - handled during event processing
 +            // CraftBukkit end
              return itemstack;
          }
  
-@@ -106,7 +141,12 @@
-                     entityminecartabstract.setCustomName(itemstack.getHoverName());
-                 }
+@@ -100,7 +135,12 @@
  
--                world.addFreshEntity(entityminecartabstract);
+                 EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.0625D + d0, (double) blockposition.getZ() + 0.5D, this.type, itemstack, itemactioncontext.getPlayer());
+ 
+-                worldserver.addFreshEntity(entityminecartabstract);
 +                // CraftBukkit start
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(itemactioncontext, entityminecartabstract).isCancelled()) {
 +                    return EnumInteractionResult.FAIL;
 +                }
 +                // CraftBukkit end
-+                if (!world.addFreshEntity(entityminecartabstract)) return EnumInteractionResult.PASS; // CraftBukkit
-                 world.gameEvent(GameEvent.ENTITY_PLACE, blockposition, GameEvent.a.of(itemactioncontext.getPlayer(), world.getBlockState(blockposition.below())));
++                if (!worldserver.addFreshEntity(entityminecartabstract)) return EnumInteractionResult.PASS; // CraftBukkit
+                 worldserver.gameEvent(GameEvent.ENTITY_PLACE, blockposition, GameEvent.a.of(itemactioncontext.getPlayer(), worldserver.getBlockState(blockposition.below())));
              }
  

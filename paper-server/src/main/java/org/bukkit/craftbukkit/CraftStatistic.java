@@ -233,8 +233,8 @@ public enum CraftStatistic {
 
         // Update scoreboards
         if (player != null) {
-            player.level().getCraftServer().getScoreboardManager().getScoreboardScores(nmsStatistic, player.getScoreboardName(), score -> {
-                score.setScore(newValue);
+            player.level().getCraftServer().getScoreboardManager().forAllObjectives(nmsStatistic, player, score -> {
+                score.set(newValue);
             });
         }
     }
@@ -277,8 +277,8 @@ public enum CraftStatistic {
 
         // Update scoreboards
         if (player != null) {
-            player.level().getCraftServer().getScoreboardManager().getScoreboardScores(nmsStatistic, player.getScoreboardName(), score -> {
-                score.setScore(newValue);
+            player.level().getCraftServer().getScoreboardManager().forAllObjectives(nmsStatistic, player, score -> {
+                score.set(newValue);
             });
         }
     }
@@ -321,8 +321,8 @@ public enum CraftStatistic {
 
         // Update scoreboards
         if (player != null) {
-            player.level().getCraftServer().getScoreboardManager().getScoreboardScores(nmsStatistic, player.getScoreboardName(), score -> {
-                score.setScore(newValue);
+            player.level().getCraftServer().getScoreboardManager().forAllObjectives(nmsStatistic, player, score -> {
+                score.set(newValue);
             });
         }
     }

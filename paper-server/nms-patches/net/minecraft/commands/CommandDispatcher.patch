@@ -1,7 +1,7 @@
 --- a/net/minecraft/commands/CommandDispatcher.java
 +++ b/net/minecraft/commands/CommandDispatcher.java
-@@ -122,6 +122,14 @@
- import net.minecraft.util.profiling.jfr.JvmProfiler;
+@@ -134,6 +134,14 @@
+ import net.minecraft.world.level.GameRules;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -14,8 +14,8 @@
 +
  public class CommandDispatcher {
  
-     private static final Logger LOGGER = LogUtils.getLogger();
-@@ -133,6 +141,7 @@
+     private static final ThreadLocal<ExecutionContext<CommandListenerWrapper>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal();
+@@ -146,6 +154,7 @@
      private final com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
      public CommandDispatcher(CommandDispatcher.ServerType commanddispatcher_servertype, CommandBuildContext commandbuildcontext) {
@@ -23,7 +23,7 @@
          CommandAdvancement.register(this.dispatcher);
          CommandAttribute.register(this.dispatcher, commandbuildcontext);
          CommandExecute.register(this.dispatcher, commandbuildcontext);
-@@ -226,6 +235,11 @@
+@@ -246,6 +255,11 @@
              CommandPublish.register(this.dispatcher);
          }
  
@@ -32,15 +32,15 @@
 +
 +    public CommandDispatcher() {
 +        // CraftBukkkit end
-         this.dispatcher.setConsumer((commandcontext, flag, i) -> {
-             ((CommandListenerWrapper) commandcontext.getSource()).onCommandComplete(commandcontext, flag, i);
-         });
-@@ -238,12 +252,59 @@
+         this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
+     }
+ 
+@@ -256,18 +270,65 @@
          return new ParseResults(commandcontextbuilder1, parseresults.getReader(), parseresults.getExceptions());
      }
  
 +    // CraftBukkit start
-+    public int dispatchServerCommand(CommandListenerWrapper sender, String command) {
++    public void dispatchServerCommand(CommandListenerWrapper sender, String command) {
 +        Joiner joiner = Joiner.on(" ");
 +        if (command.startsWith("/")) {
 +            command = command.substring(1);
@@ -49,7 +49,7 @@
 +        ServerCommandEvent event = new ServerCommandEvent(sender.getBukkitSender(), command);
 +        org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +        if (event.isCancelled()) {
-+            return 0;
++            return;
 +        }
 +        command = event.getCommand();
 +
@@ -63,7 +63,7 @@
 +        if (cmd.equalsIgnoreCase("stop") || cmd.equalsIgnoreCase("kick") || cmd.equalsIgnoreCase("op")
 +                || cmd.equalsIgnoreCase("deop") || cmd.equalsIgnoreCase("ban") || cmd.equalsIgnoreCase("ban-ip")
 +                || cmd.equalsIgnoreCase("pardon") || cmd.equalsIgnoreCase("pardon-ip") || cmd.equalsIgnoreCase("reload")) {
-+            return 0;
++            return;
 +        }
 +
 +        // Handle vanilla commands;
@@ -72,40 +72,65 @@
 +        }
 +
 +        String newCommand = joiner.join(args);
-+        return this.performPrefixedCommand(sender, newCommand, newCommand);
++        this.performPrefixedCommand(sender, newCommand, newCommand);
 +    }
 +    // CraftBukkit end
 +
-     public int performPrefixedCommand(CommandListenerWrapper commandlistenerwrapper, String s) {
+     public void performPrefixedCommand(CommandListenerWrapper commandlistenerwrapper, String s) {
 +        // CraftBukkit start
-+        return this.performPrefixedCommand(commandlistenerwrapper, s, s);
++        this.performPrefixedCommand(commandlistenerwrapper, s, s);
 +    }
 +
-+    public int performPrefixedCommand(CommandListenerWrapper commandlistenerwrapper, String s, String label) {
++    public void performPrefixedCommand(CommandListenerWrapper commandlistenerwrapper, String s, String label) {
          s = s.startsWith("/") ? s.substring(1) : s;
--        return this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s);
-+        return this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s, label);
+-        this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s);
++        this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s, label);
 +        // CraftBukkit end
      }
  
-     public int performCommand(ParseResults<CommandListenerWrapper> parseresults, String s) {
-+        return this.performCommand(parseresults, s, s);
+     public void performCommand(ParseResults<CommandListenerWrapper> parseresults, String s) {
++        this.performCommand(parseresults, s, s);
 +    }
 +
-+    public int performCommand(ParseResults<CommandListenerWrapper> parseresults, String s, String label) { // CraftBukkit
++    public void performCommand(ParseResults<CommandListenerWrapper> parseresults, String s, String label) { // CraftBukkit
          CommandListenerWrapper commandlistenerwrapper = (CommandListenerWrapper) parseresults.getContext().getSource();
  
          commandlistenerwrapper.getServer().getProfiler().push(() -> {
-@@ -268,7 +329,7 @@
-                 if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
-                     int j = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
-                     IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.empty().withStyle(EnumChatFormat.GRAY).withStyle((chatmodifier) -> {
--                        return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, "/" + s));
-+                        return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, label)); // CraftBukkit
-                     });
+             return "/" + s;
+         });
+-        ContextChain contextchain = finishParsing(parseresults, s, commandlistenerwrapper);
++        ContextChain contextchain = finishParsing(parseresults, s, commandlistenerwrapper, label); // CraftBukkit
  
-                     if (j > 10) {
-@@ -318,11 +379,36 @@
+         try {
+             if (contextchain != null) {
+@@ -301,7 +362,7 @@
+     }
+ 
+     @Nullable
+-    private static ContextChain<CommandListenerWrapper> finishParsing(ParseResults<CommandListenerWrapper> parseresults, String s, CommandListenerWrapper commandlistenerwrapper) {
++    private static ContextChain<CommandListenerWrapper> finishParsing(ParseResults<CommandListenerWrapper> parseresults, String s, CommandListenerWrapper commandlistenerwrapper, String label) { // CraftBukkit
+         try {
+             validateParseResults(parseresults);
+             return (ContextChain) ContextChain.tryFlatten(parseresults.getContext().build(s)).orElseThrow(() -> {
+@@ -312,7 +373,7 @@
+             if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
+                 int i = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
+                 IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.empty().withStyle(EnumChatFormat.GRAY).withStyle((chatmodifier) -> {
+-                    return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, "/" + s));
++                    return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, label)); // CraftBukkit
+                 });
+ 
+                 if (i > 10) {
+@@ -362,7 +423,7 @@
+ 
+                 executioncontext1.close();
+             } finally {
+-                CommandDispatcher.CURRENT_EXECUTION_CONTEXT.set((Object) null);
++                CommandDispatcher.CURRENT_EXECUTION_CONTEXT.set(null); // CraftBukkit - decompile error
+             }
+         } else {
+             consumer.accept(executioncontext);
+@@ -371,11 +432,36 @@
      }
  
      public void sendCommands(EntityPlayer entityplayer) {
@@ -143,7 +168,7 @@
          entityplayer.connection.send(new PacketPlayOutCommands(rootcommandnode));
      }
  
-@@ -333,7 +419,7 @@
+@@ -386,7 +472,7 @@
              CommandNode<CommandListenerWrapper> commandnode2 = (CommandNode) iterator.next();
  
              if (commandnode2.canUse(commandlistenerwrapper)) {
@@ -152,7 +177,7 @@
  
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
-@@ -356,7 +442,7 @@
+@@ -409,7 +495,7 @@
                      argumentbuilder.redirect((CommandNode) map.get(argumentbuilder.getRedirect()));
                  }
  

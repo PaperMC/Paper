@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -77,6 +77,43 @@
+@@ -81,6 +81,43 @@
  import net.minecraft.world.level.block.state.pattern.ShapeDetectorBlock;
  import org.slf4j.Logger;
  
@@ -44,7 +44,7 @@
  public final class ItemStack {
  
      public static final Codec<ItemStack> CODEC = RecordCodecBuilder.create((instance) -> {
-@@ -152,11 +189,24 @@
+@@ -175,7 +212,18 @@
          this.item = null;
      }
  
@@ -64,14 +64,7 @@
          this.item = (Item) BuiltInRegistries.ITEM.get(new MinecraftKey(nbttagcompound.getString("id")));
          this.count = nbttagcompound.getByte("Count");
          if (nbttagcompound.contains("tag", 10)) {
--            this.tag = nbttagcompound.getCompound("tag");
-+            // CraftBukkit start - make defensive copy as this data may be coming from the save thread
-+            this.tag = nbttagcompound.getCompound("tag").copy();
-+            // CraftBukkit end
-             this.getItem().verifyTagAfterLoad(this.tag);
-         }
- 
-@@ -166,6 +216,11 @@
+@@ -189,6 +237,11 @@
  
      }
  
@@ -83,7 +76,7 @@
      public static ItemStack of(NBTTagCompound nbttagcompound) {
          try {
              return new ItemStack(nbttagcompound);
-@@ -243,11 +298,190 @@
+@@ -266,11 +319,190 @@
              return EnumInteractionResult.PASS;
          } else {
              Item item = this.getItem();
@@ -212,7 +205,7 @@
 +                                record.setCount(1);
 +                            }
 +
-+                            tileentityjukebox.setFirstItem(record);
++                            tileentityjukebox.setTheItem(record);
 +                            world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.a.of(entityhuman, world.getBlockState(blockposition)));
 +                        }
 +
@@ -276,7 +269,7 @@
  
              return enuminteractionresult;
          }
-@@ -328,6 +562,21 @@
+@@ -351,6 +583,21 @@
                  }
  
                  i -= k;
@@ -298,7 +291,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -349,6 +598,11 @@
+@@ -372,6 +619,11 @@
                  if (this.hurt(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -310,7 +303,7 @@
  
                      this.shrink(1);
                      if (t0 instanceof EntityHuman) {
-@@ -497,6 +751,17 @@
+@@ -524,6 +776,17 @@
          return this.tag;
      }
  
@@ -328,7 +321,7 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -921,6 +1186,13 @@
+@@ -948,6 +1211,13 @@
          nbttaglist.add(nbttagcompound);
      }
  

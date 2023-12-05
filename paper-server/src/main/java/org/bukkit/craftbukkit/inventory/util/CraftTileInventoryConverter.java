@@ -5,6 +5,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.IInventory;
 import net.minecraft.world.level.World;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.CrafterBlockEntity;
 import net.minecraft.world.level.block.entity.TileEntityBlastFurnace;
 import net.minecraft.world.level.block.entity.TileEntityBrewingStand;
 import net.minecraft.world.level.block.entity.TileEntityDispenser;
@@ -135,6 +136,14 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
         @Override
         public IInventory getTileEntity() {
             return new TileEntitySmoker(BlockPosition.ZERO, Blocks.SMOKER.defaultBlockState());
+        }
+    }
+
+    public static class Crafter extends CraftTileInventoryConverter {
+
+        @Override
+        public IInventory getTileEntity() {
+            return new CrafterBlockEntity(BlockPosition.ZERO, Blocks.CRAFTER.defaultBlockState());
         }
     }
 }

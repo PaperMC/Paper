@@ -14,7 +14,6 @@ import net.minecraft.network.chat.ChatClickable;
 import net.minecraft.network.chat.ChatClickable.EnumClickAction;
 import net.minecraft.network.chat.ChatHexColor;
 import net.minecraft.network.chat.ChatModifier;
-import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.IChatMutableComponent;
 import net.minecraft.network.chat.contents.LiteralContents;
@@ -89,7 +88,7 @@ public final class CraftChatMessage {
                         hex.append(c);
 
                         if (hex.length() == 7) {
-                            modifier = RESET.withColor(ChatHexColor.parseColor(hex.toString()));
+                            modifier = RESET.withColor(ChatHexColor.parseColor(hex.toString()).result().get());
                             hex = null;
                         }
                     } else if (format.isFormat() && format != EnumChatFormat.RESET) {
@@ -297,7 +296,7 @@ public final class CraftChatMessage {
         for (IChatBaseComponent c : component) {
             ChatModifier modi = c.getStyle();
             ChatHexColor color = modi.getColor();
-            if (c.getContents() != ComponentContents.EMPTY || color != null) {
+            if (c.getContents() != LiteralContents.EMPTY || color != null) {
                 if (color != null) {
                     if (color.format != null) {
                         out.append(color.format);

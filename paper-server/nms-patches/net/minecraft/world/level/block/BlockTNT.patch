@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockTNT.java
 +++ b/net/minecraft/world/level/block/BlockTNT.java
-@@ -25,6 +25,11 @@
+@@ -26,6 +26,11 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  
@@ -11,8 +11,8 @@
 +
  public class BlockTNT extends Block {
  
-     public static final BlockStateBoolean UNSTABLE = BlockProperties.UNSTABLE;
-@@ -37,7 +42,7 @@
+     public static final MapCodec<BlockTNT> CODEC = simpleCodec(BlockTNT::new);
+@@ -44,7 +49,7 @@
      @Override
      public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
          if (!iblockdata1.is(iblockdata.getBlock())) {
@@ -21,7 +21,7 @@
                  explode(world, blockposition);
                  world.removeBlock(blockposition, false);
              }
-@@ -47,7 +52,7 @@
+@@ -54,7 +59,7 @@
  
      @Override
      public void neighborChanged(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
@@ -30,16 +30,16 @@
              explode(world, blockposition);
              world.removeBlock(blockposition, false);
          }
-@@ -56,7 +61,7 @@
+@@ -63,7 +68,7 @@
  
      @Override
-     public void playerWillDestroy(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
+     public IBlockData playerWillDestroy(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
 -        if (!world.isClientSide() && !entityhuman.isCreative() && (Boolean) iblockdata.getValue(BlockTNT.UNSTABLE)) {
 +        if (!world.isClientSide() && !entityhuman.isCreative() && (Boolean) iblockdata.getValue(BlockTNT.UNSTABLE) && CraftEventFactory.callTNTPrimeEvent(world, blockposition, PrimeCause.BLOCK_BREAK, entityhuman, null)) { // CraftBukkit - TNTPrimeEvent
              explode(world, blockposition);
          }
  
-@@ -95,6 +100,11 @@
+@@ -102,6 +107,11 @@
          if (!itemstack.is(Items.FLINT_AND_STEEL) && !itemstack.is(Items.FIRE_CHARGE)) {
              return super.use(iblockdata, world, blockposition, entityhuman, enumhand, movingobjectpositionblock);
          } else {
@@ -51,7 +51,7 @@
              explode(world, blockposition, entityhuman);
              world.setBlock(blockposition, Blocks.AIR.defaultBlockState(), 11);
              Item item = itemstack.getItem();
-@@ -121,6 +131,11 @@
+@@ -128,6 +138,11 @@
              Entity entity = iprojectile.getOwner();
  
              if (iprojectile.isOnFire() && iprojectile.mayInteract(world, blockposition)) {

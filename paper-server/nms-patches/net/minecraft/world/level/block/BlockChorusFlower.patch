@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockChorusFlower.java
 +++ b/net/minecraft/world/level/block/BlockChorusFlower.java
-@@ -20,6 +20,8 @@
+@@ -22,6 +22,8 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.shapes.VoxelShape;
  
@@ -8,23 +8,23 @@
 +
  public class BlockChorusFlower extends Block {
  
-     public static final int DEAD_AGE = 5;
-@@ -90,8 +92,12 @@
+     public static final MapCodec<BlockChorusFlower> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
+@@ -102,8 +104,12 @@
                  }
  
                  if (flag && allNeighborsEmpty(worldserver, blockposition1, (EnumDirection) null) && worldserver.isEmptyBlock(blockposition.above(2))) {
--                    worldserver.setBlock(blockposition, this.plant.getStateForPlacement(worldserver, blockposition), 2);
+-                    worldserver.setBlock(blockposition, BlockChorusFruit.getStateWithConnections(worldserver, blockposition, this.plant.defaultBlockState()), 2);
 -                    this.placeGrownFlower(worldserver, blockposition1, i);
 +                    // CraftBukkit start - add event
 +                    if (CraftEventFactory.handleBlockSpreadEvent(worldserver, blockposition, blockposition1, this.defaultBlockState().setValue(BlockChorusFlower.AGE, Integer.valueOf(i)), 2)) {
-+                        worldserver.setBlock(blockposition, this.plant.getStateForPlacement(worldserver, blockposition), 2);
++                        worldserver.setBlock(blockposition, BlockChorusFruit.getStateWithConnections(worldserver, blockposition, this.plant.defaultBlockState()), 2);
 +                        this.placeGrownFlower(worldserver, blockposition1, i);
 +                    }
 +                    // CraftBukkit end
                  } else if (i < 4) {
                      j = randomsource.nextInt(4);
                      if (flag1) {
-@@ -105,18 +111,30 @@
+@@ -117,18 +123,30 @@
                          BlockPosition blockposition2 = blockposition.relative(enumdirection);
  
                          if (worldserver.isEmptyBlock(blockposition2) && worldserver.isEmptyBlock(blockposition2.below()) && allNeighborsEmpty(worldserver, blockposition2, enumdirection.getOpposite())) {
@@ -40,7 +40,7 @@
                      }
  
                      if (flag2) {
-                         worldserver.setBlock(blockposition, this.plant.getStateForPlacement(worldserver, blockposition), 2);
+                         worldserver.setBlock(blockposition, BlockChorusFruit.getStateWithConnections(worldserver, blockposition, this.plant.defaultBlockState()), 2);
                      } else {
 -                        this.placeDeadFlower(worldserver, blockposition);
 +                        // CraftBukkit start - add event
@@ -59,10 +59,10 @@
                  }
  
              }
-@@ -253,6 +271,11 @@
+@@ -265,6 +283,11 @@
          BlockPosition blockposition = movingobjectpositionblock.getBlockPos();
  
-         if (!world.isClientSide && iprojectile.mayInteract(world, blockposition) && iprojectile.getType().is(TagsEntity.IMPACT_PROJECTILES)) {
+         if (!world.isClientSide && iprojectile.mayInteract(world, blockposition) && iprojectile.mayBreak(world)) {
 +            // CraftBukkit
 +            if (!CraftEventFactory.callEntityChangeBlockEvent(iprojectile, blockposition, Blocks.AIR.defaultBlockState())) {
 +                return;

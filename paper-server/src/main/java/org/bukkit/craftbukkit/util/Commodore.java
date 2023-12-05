@@ -239,6 +239,9 @@ public class Commodore
                                     case "GRASS_PATH":
                                         name = "DIRT_PATH";
                                         break;
+                                    case "GRASS":
+                                        name = "SHORT_GRASS";
+                                        break;
                                 }
                             }
 

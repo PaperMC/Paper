@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -61,6 +61,17 @@
+@@ -60,6 +60,17 @@
  import net.minecraft.world.level.storage.WorldInfo;
  import org.slf4j.Logger;
  
@@ -18,7 +18,7 @@
  public class Main {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -68,8 +79,9 @@
+@@ -67,8 +78,9 @@
      public Main() {}
  
      @DontObfuscate
@@ -29,7 +29,7 @@
          OptionParser optionparser = new OptionParser();
          OptionSpec<Void> optionspec = optionparser.accepts("nogui");
          OptionSpec<Void> optionspec1 = optionparser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -94,15 +106,18 @@
+@@ -93,15 +105,18 @@
                  optionparser.printHelpOn(System.err);
                  return;
              }
@@ -50,7 +50,7 @@
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
-@@ -110,13 +125,26 @@
+@@ -109,13 +124,26 @@
              DispenserRegistry.validate();
              SystemUtils.startTimerHackThread();
              Path path1 = Paths.get("server.properties");
@@ -79,7 +79,7 @@
                  Main.LOGGER.info("Initialized '{}' and '{}'", path1.toAbsolutePath(), path2.toAbsolutePath());
                  return;
              }
-@@ -126,11 +154,12 @@
+@@ -125,11 +153,13 @@
                  return;
              }
  
@@ -92,15 +92,16 @@
              Convertable convertable = Convertable.createDefault(file.toPath());
 -            Convertable.ConversionSession convertable_conversionsession = convertable.validateAndCreateAccess(s);
 +            Convertable.ConversionSession convertable_conversionsession = convertable.validateAndCreateAccess(s, WorldDimension.OVERWORLD);
-             WorldInfo worldinfo = convertable_conversionsession.getSummary();
++            // CraftBukkit end
+             Dynamic dynamic;
  
-             if (worldinfo != null) {
-@@ -145,13 +174,31 @@
-                 }
+             if (convertable_conversionsession.hasWorldData()) {
+@@ -170,13 +200,31 @@
              }
  
+             Dynamic<?> dynamic1 = dynamic;
 -            boolean flag = optionset.has(optionspec6);
-+            boolean flag = optionset.has("safeMode");
++            boolean flag = optionset.has("safeMode"); // CraftBukkit
  
              if (flag) {
                  Main.LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
@@ -128,15 +129,15 @@
  
              WorldStem worldstem;
  
-@@ -160,6 +207,7 @@
+@@ -185,6 +233,7 @@
  
                  worldstem = (WorldStem) SystemUtils.blockUntilDone((executor) -> {
                      return WorldLoader.load(worldloader_c, (worldloader_a) -> {
 +                        worldLoader.set(worldloader_a); // CraftBukkit
                          IRegistry<WorldDimension> iregistry = worldloader_a.datapackDimensions().registryOrThrow(Registries.LEVEL_STEM);
-                         DynamicOps<NBTBase> dynamicops = RegistryOps.create(DynamicOpsNBT.INSTANCE, (HolderLookup.b) worldloader_a.datapackWorldgen());
-                         Pair<SaveData, WorldDimensions.b> pair = convertable_conversionsession.getDataTag(dynamicops, worldloader_a.dataConfiguration(), iregistry, worldloader_a.datapackWorldgen().allRegistriesLifecycle());
-@@ -171,7 +219,7 @@
+ 
+                         if (dynamic1 != null) {
+@@ -197,7 +246,7 @@
                              WorldOptions worldoptions;
                              WorldDimensions worlddimensions;
  
@@ -145,7 +146,7 @@
                                  worldsettings = MinecraftServer.DEMO_SETTINGS;
                                  worldoptions = WorldOptions.DEMO_OPTIONS;
                                  worlddimensions = WorldPresets.createNormalWorldDimensions(worldloader_a.datapackWorldgen());
-@@ -179,7 +227,7 @@
+@@ -205,7 +254,7 @@
                                  DedicatedServerProperties dedicatedserverproperties = dedicatedserversettings.getProperties();
  
                                  worldsettings = new WorldSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), worldloader_a.dataConfiguration());
@@ -154,7 +155,7 @@
                                  worlddimensions = dedicatedserverproperties.createDimensions(worldloader_a.datapackWorldgen());
                              }
  
-@@ -195,6 +243,7 @@
+@@ -221,6 +270,7 @@
                  return;
              }
  
@@ -162,7 +163,7 @@
              IRegistryCustom.Dimension iregistrycustom_dimension = worldstem.registries().compositeAccess();
  
              if (optionset.has(optionspec4)) {
-@@ -206,20 +255,31 @@
+@@ -232,20 +282,31 @@
              SaveData savedata = worldstem.worldData();
  
              convertable_conversionsession.saveDataTag(iregistrycustom_dimension, savedata);
@@ -196,7 +197,7 @@
              Thread thread = new Thread("Server Shutdown Thread") {
                  public void run() {
                      dedicatedserver.halt(true);
-@@ -228,6 +288,7 @@
+@@ -254,6 +315,7 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -204,7 +205,7 @@
          } catch (Exception exception1) {
              Main.LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", exception1);
          }
-@@ -263,7 +324,7 @@
+@@ -290,7 +352,7 @@
      }
  
      public static void forceUpgrade(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, IRegistry<WorldDimension> iregistry) {

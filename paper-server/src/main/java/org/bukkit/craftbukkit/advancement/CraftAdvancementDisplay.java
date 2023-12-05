@@ -60,6 +60,6 @@ public class CraftAdvancementDisplay implements org.bukkit.advancement.Advanceme
 
     @Override
     public AdvancementDisplayType getType() {
-        return AdvancementDisplayType.values()[handle.getFrame().ordinal()];
+        return AdvancementDisplayType.values()[handle.getType().ordinal()];
     }
 }

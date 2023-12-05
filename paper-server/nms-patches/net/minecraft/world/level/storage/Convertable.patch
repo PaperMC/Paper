@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/storage/Convertable.java
 +++ b/net/minecraft/world/level/storage/Convertable.java
-@@ -80,6 +80,10 @@
+@@ -81,6 +81,10 @@
  import net.minecraft.world.level.validation.PathAllowList;
  import org.slf4j.Logger;
  
@@ -11,16 +11,24 @@
  public class Convertable {
  
      static final Logger LOGGER = LogUtils.getLogger();
-@@ -169,7 +173,7 @@
+@@ -151,7 +155,7 @@
      }
  
-     private static WorldDataConfiguration readDataConfig(Dynamic<?> dynamic) {
+     public static WorldDataConfiguration readDataConfig(Dynamic<?> dynamic) {
 -        DataResult dataresult = WorldDataConfiguration.CODEC.parse(dynamic);
 +        DataResult<WorldDataConfiguration> dataresult = WorldDataConfiguration.CODEC.parse(dynamic); // CraftBukkit - decompile error
          Logger logger = Convertable.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -185,7 +189,7 @@
+@@ -174,6 +178,7 @@
+         WorldDimensions.b worlddimensions_b = generatorsettings.dimensions().bake(iregistry);
+         Lifecycle lifecycle = worlddimensions_b.lifecycle().add(iregistrycustom_dimension.allRegistriesLifecycle());
+         WorldDataServer worlddataserver = WorldDataServer.parse(dynamic1, worldsettings, worlddimensions_b.specialWorldProperty(), generatorsettings.options(), lifecycle);
++        worlddataserver.pdc = ((Dynamic<NBTBase>) dynamic1).getElement("BukkitValues", null); // CraftBukkit - Add PDC to world
+ 
+         return new LevelDataAndDimensions(worlddataserver, worlddimensions_b);
+     }
+@@ -193,7 +198,7 @@
              throw new LevelStorageException(IChatBaseComponent.translatable("selectWorld.load_folder_access"));
          } else {
              try {
@@ -29,15 +37,7 @@
  
                  Convertable.a convertable_a;
  
-@@ -343,6 +347,7 @@
-             WorldDimensions.b worlddimensions_b = generatorsettings.dimensions().bake(iregistry);
-             Lifecycle lifecycle1 = worlddimensions_b.lifecycle().add(lifecycle);
-             WorldDataServer worlddataserver = WorldDataServer.parse(dynamic, datafixer, i, nbttagcompound2, worldsettings, levelversion, worlddimensions_b.specialWorldProperty(), generatorsettings.options(), lifecycle1);
-+            worlddataserver.pdc = nbttagcompound1.get("BukkitValues"); // CraftBukkit - Add PDC to world
- 
-             return Pair.of(worlddataserver, worlddimensions_b);
-         };
-@@ -441,27 +446,41 @@
+@@ -423,27 +428,41 @@
          return this.backupDir;
      }
  
@@ -83,7 +83,7 @@
      public static record a(List<Convertable.b> levels) implements Iterable<Convertable.b> {
  
          public boolean isEmpty() {
-@@ -513,8 +532,12 @@
+@@ -502,8 +521,12 @@
          public final Convertable.b levelDirectory;
          private final String levelId;
          private final Map<SavedFile, Path> resources = Maps.newHashMap();
@@ -97,7 +97,7 @@
              this.levelId = s;
              this.levelDirectory = new Convertable.b(path);
              this.lock = SessionLock.create(path);
-@@ -529,7 +552,7 @@
+@@ -531,7 +554,7 @@
          }
  
          public Path getLevelPath(SavedFile savedfile) {
@@ -106,7 +106,7 @@
              Convertable.b convertable_b = this.levelDirectory;
  
              Objects.requireNonNull(this.levelDirectory);
-@@ -537,7 +560,7 @@
+@@ -539,7 +562,7 @@
          }
  
          public Path getDimensionPath(ResourceKey<World> resourcekey) {

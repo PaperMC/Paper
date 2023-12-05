@@ -29,6 +29,7 @@ import net.minecraft.world.entity.decoration.EntityPainting;
 import net.minecraft.world.entity.item.EntityFallingBlock;
 import net.minecraft.world.entity.item.EntityTNTPrimed;
 import net.minecraft.world.entity.monster.EntityZombie;
+import net.minecraft.world.entity.monster.breeze.Breeze;
 import net.minecraft.world.entity.projectile.EntityEgg;
 import net.minecraft.world.entity.projectile.EntityEnderSignal;
 import net.minecraft.world.entity.projectile.EntityEvokerFangs;
@@ -197,6 +198,7 @@ import org.bukkit.entity.Villager;
 import org.bukkit.entity.Vindicator;
 import org.bukkit.entity.WanderingTrader;
 import org.bukkit.entity.Warden;
+import org.bukkit.entity.WindCharge;
 import org.bukkit.entity.Witch;
 import org.bukkit.entity.Wither;
 import org.bukkit.entity.WitherSkeleton;
@@ -676,6 +678,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                     entity = EntityTypes.WITHER_SKULL.create(world);
                 } else if (DragonFireball.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.DRAGON_FIREBALL.create(world);
+                } else if (WindCharge.class.isAssignableFrom(clazz)) {
+                    entity = EntityTypes.WIND_CHARGE.create(world);
                 } else {
                     entity = EntityTypes.FIREBALL.create(world);
                 }
@@ -912,6 +916,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 entity = EntityTypes.WARDEN.create(world);
             } else if (Sniffer.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.SNIFFER.create(world);
+            } else if (Breeze.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.BREEZE.create(world);
             }
 
             if (entity != null) {

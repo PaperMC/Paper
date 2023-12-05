@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockStem.java
 +++ b/net/minecraft/world/level/block/BlockStem.java
-@@ -21,6 +21,8 @@
+@@ -27,6 +27,8 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  
@@ -8,8 +8,8 @@
 +
  public class BlockStem extends BlockPlant implements IBlockFragilePlantElement {
  
-     public static final int MAX_AGE = 7;
-@@ -57,14 +59,18 @@
+     public static final MapCodec<BlockStem> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
+@@ -79,7 +81,7 @@
  
                  if (i < 7) {
                      iblockdata = (IBlockData) iblockdata.setValue(BlockStem.AGE, i + 1);
@@ -18,19 +18,20 @@
                  } else {
                      EnumDirection enumdirection = EnumDirection.EnumDirectionLimit.HORIZONTAL.getRandomDirection(randomsource);
                      BlockPosition blockposition1 = blockposition.relative(enumdirection);
-                     IBlockData iblockdata1 = worldserver.getBlockState(blockposition1.below());
+@@ -91,7 +93,11 @@
+                         Optional<Block> optional1 = iregistry.getOptional(this.attachedStem);
  
-                     if (worldserver.getBlockState(blockposition1).isAir() && (iblockdata1.is(Blocks.FARMLAND) || iblockdata1.is(TagsBlock.DIRT))) {
--                        worldserver.setBlockAndUpdate(blockposition1, this.fruit.defaultBlockState());
-+                        // CraftBukkit start
-+                        if (!CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition1, this.fruit.defaultBlockState())) {
-+                            return;
-+                        }
-+                        // CraftBukkit end
-                         worldserver.setBlockAndUpdate(blockposition, (IBlockData) this.fruit.getAttachedStem().defaultBlockState().setValue(BlockFacingHorizontal.FACING, enumdirection));
+                         if (optional.isPresent() && optional1.isPresent()) {
+-                            worldserver.setBlockAndUpdate(blockposition1, ((Block) optional.get()).defaultBlockState());
++                            // CraftBukkit start
++                            if (!CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition1, ((Block) optional.get()).defaultBlockState())) {
++                                return;
++                            }
++                            // CraftBukkit end
+                             worldserver.setBlockAndUpdate(blockposition, (IBlockData) ((Block) optional1.get()).defaultBlockState().setValue(BlockFacingHorizontal.FACING, enumdirection));
+                         }
                      }
-                 }
-@@ -93,7 +99,7 @@
+@@ -121,7 +127,7 @@
          int i = Math.min(7, (Integer) iblockdata.getValue(BlockStem.AGE) + MathHelper.nextInt(worldserver.random, 2, 5));
          IBlockData iblockdata1 = (IBlockData) iblockdata.setValue(BlockStem.AGE, i);
  
