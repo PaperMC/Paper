@@ -329,13 +329,7 @@ public final class CraftServer implements Server {
 
         CraftRegistry.setMinecraftRegistry(console.registryAccess());
 
-        // Register all the Enchantments and PotionTypes now so we can stop new registration immediately after
-        Enchantments.SHARPNESS.getClass();
-        org.bukkit.enchantments.Enchantment.stopAcceptingRegistrations();
-
         Potion.setPotionBrewer(new CraftPotionBrewer());
-        MobEffects.BLINDNESS.getClass();
-        PotionEffectType.stopAcceptingRegistrations();
         // Ugly hack :(
 
         if (!Main.useConsole) {

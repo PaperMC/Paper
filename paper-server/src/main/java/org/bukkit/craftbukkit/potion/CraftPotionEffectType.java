@@ -2,20 +2,37 @@ package org.bukkit.craftbukkit.potion;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.core.IRegistry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffectList;
 import org.bukkit.Color;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftPotionEffectType extends PotionEffectType {
-    private final MobEffectList handle;
 
-    public CraftPotionEffectType(MobEffectList handle) {
-        super(BuiltInRegistries.MOB_EFFECT.getId(handle) + 1, CraftNamespacedKey.fromMinecraft(BuiltInRegistries.MOB_EFFECT.getKey(handle)));
+    private final NamespacedKey key;
+    private final MobEffectList handle;
+    private final int id;
+
+    public CraftPotionEffectType(NamespacedKey key, MobEffectList handle) {
+        this.key = key;
         this.handle = handle;
+        this.id = CraftRegistry.getMinecraftRegistry(Registries.MOB_EFFECT).getId(handle) + 1;
+    }
+
+    public MobEffectList getHandle() {
+        return handle;
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKey() {
+        return key;
     }
 
     @Override
@@ -23,82 +40,55 @@ public class CraftPotionEffectType extends PotionEffectType {
         return 1.0D;
     }
 
-    public MobEffectList getHandle() {
-        return handle;
+    @Override
+    public int getId() {
+        return id;
     }
 
     @Override
     public String getName() {
-        switch (getId()) {
-        case 1:
-            return "SPEED";
-        case 2:
-            return "SLOW";
-        case 3:
-            return "FAST_DIGGING";
-        case 4:
-            return "SLOW_DIGGING";
-        case 5:
-            return "INCREASE_DAMAGE";
-        case 6:
-            return "HEAL";
-        case 7:
-            return "HARM";
-        case 8:
-            return "JUMP";
-        case 9:
-            return "CONFUSION";
-        case 10:
-            return "REGENERATION";
-        case 11:
-            return "DAMAGE_RESISTANCE";
-        case 12:
-            return "FIRE_RESISTANCE";
-        case 13:
-            return "WATER_BREATHING";
-        case 14:
-            return "INVISIBILITY";
-        case 15:
-            return "BLINDNESS";
-        case 16:
-            return "NIGHT_VISION";
-        case 17:
-            return "HUNGER";
-        case 18:
-            return "WEAKNESS";
-        case 19:
-            return "POISON";
-        case 20:
-            return "WITHER";
-        case 21:
-            return "HEALTH_BOOST";
-        case 22:
-            return "ABSORPTION";
-        case 23:
-            return "SATURATION";
-        case 24:
-            return "GLOWING";
-        case 25:
-            return "LEVITATION";
-        case 26:
-            return "LUCK";
-        case 27:
-            return "UNLUCK";
-        case 28:
-            return "SLOW_FALLING";
-        case 29:
-            return "CONDUIT_POWER";
-        case 30:
-            return "DOLPHINS_GRACE";
-        case 31:
-            return "BAD_OMEN";
-        case 32:
-            return "HERO_OF_THE_VILLAGE";
-        case 33:
-            return "DARKNESS";
-        default:
-            return "UNKNOWN_EFFECT_TYPE_" + getId();
-        }
+        return switch (getId()) {
+            case 1 -> "SPEED";
+            case 2 -> "SLOW";
+            case 3 -> "FAST_DIGGING";
+            case 4 -> "SLOW_DIGGING";
+            case 5 -> "INCREASE_DAMAGE";
+            case 6 -> "HEAL";
+            case 7 -> "HARM";
+            case 8 -> "JUMP";
+            case 9 -> "CONFUSION";
+            case 10 -> "REGENERATION";
+            case 11 -> "DAMAGE_RESISTANCE";
+            case 12 -> "FIRE_RESISTANCE";
+            case 13 -> "WATER_BREATHING";
+            case 14 -> "INVISIBILITY";
+            case 15 -> "BLINDNESS";
+            case 16 -> "NIGHT_VISION";
+            case 17 -> "HUNGER";
+            case 18 -> "WEAKNESS";
+            case 19 -> "POISON";
+            case 20 -> "WITHER";
+            case 21 -> "HEALTH_BOOST";
+            case 22 -> "ABSORPTION";
+            case 23 -> "SATURATION";
+            case 24 -> "GLOWING";
+            case 25 -> "LEVITATION";
+            case 26 -> "LUCK";
+            case 27 -> "UNLUCK";
+            case 28 -> "SLOW_FALLING";
+            case 29 -> "CONDUIT_POWER";
+            case 30 -> "DOLPHINS_GRACE";
+            case 31 -> "BAD_OMEN";
+            case 32 -> "HERO_OF_THE_VILLAGE";
+            case 33 -> "DARKNESS";
+            default -> getKey().toString();
+        };
+    }
+
+    @NotNull
+    @Override
+    public PotionEffect createEffect(int duration, int amplifier) {
+        return new PotionEffect(this, isInstant() ? 1 : (int) (duration * getDurationModifier()), amplifier);
     }
 
     @Override
@@ -111,11 +101,34 @@ public class CraftPotionEffectType extends PotionEffectType {
         return Color.fromRGB(handle.getColor());
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof PotionEffectType)) {
+            return false;
+        }
+
+        return getKey().equals(((PotionEffectType) other).getKey());
+    }
+
+    @Override
+    public int hashCode() {
+        return getKey().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "CraftPotionEffectType[" + getKey() + "]";
+    }
+
     public static PotionEffectType minecraftToBukkit(MobEffectList minecraft) {
         Preconditions.checkArgument(minecraft != null);
 
         IRegistry<MobEffectList> registry = CraftRegistry.getMinecraftRegistry(Registries.MOB_EFFECT);
-        PotionEffectType bukkit = PotionEffectType.getByKey(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
+        PotionEffectType bukkit = Registry.EFFECT.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
 
         Preconditions.checkArgument(bukkit != null);
 
@@ -125,7 +138,6 @@ public class CraftPotionEffectType extends PotionEffectType {
     public static MobEffectList bukkitToMinecraft(PotionEffectType bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        return CraftRegistry.getMinecraftRegistry(Registries.MOB_EFFECT)
-                .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+        return ((CraftPotionEffectType) bukkit).getHandle();
     }
 }

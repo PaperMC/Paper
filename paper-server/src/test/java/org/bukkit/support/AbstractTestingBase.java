@@ -62,7 +62,6 @@ public abstract class AbstractTestingBase {
         BIOMES = REGISTRY_CUSTOM.registryOrThrow(Registries.BIOME);
 
         DummyServer.setup();
-        DummyEnchantments.setup();
 
         CraftRegistry.setMinecraftRegistry(REGISTRY_CUSTOM);
 
