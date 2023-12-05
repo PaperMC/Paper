@@ -39,34 +39,35 @@ index 9b16464c4edf334093c9aa0bd164348197b96455..bd15131b7506e965bcf64be203307312
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 821b2c8860c1328e2ecc009deeb533648ce16540..ce8afee7d1db99de43c9ec47edcbc929e025b159 100644
+index d30373d369049827b5b7611d35c8b7fc8fc08d23..9478b18839932af463181311586c7f590c497356 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -543,7 +543,18 @@ public class ServerChunkCache extends ChunkSource {
-             gameprofilerfiller.push("naturalSpawnCount");
-             this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
-             int l = this.distanceManager.getNaturalSpawnChunkCount();
--            NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
-+            // Paper start - per player mob spawning
-+            NaturalSpawner.SpawnState spawnercreature_d; // moved down
-+            if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
-+                // re-set mob counts
-+                for (ServerPlayer player : this.level.players) {
-+                    Arrays.fill(player.mobCounts, 0);
+@@ -549,7 +549,19 @@ public class ServerChunkCache extends ChunkSource {
+                 gameprofilerfiller.popPush("naturalSpawnCount");
+                 this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
+                 int k = this.distanceManager.getNaturalSpawnChunkCount();
+-                NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(k, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
++                // Paper start - per player mob spawning
++                int naturalSpawnChunkCount = k;
++                NaturalSpawner.SpawnState spawnercreature_d; // moved down
++                if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
++                    // re-set mob counts
++                    for (ServerPlayer player : this.level.players) {
++                        Arrays.fill(player.mobCounts, 0);
++                    }
++                    spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
++                } else {
++                    spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
 +                }
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, null, true);
-+            } else {
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
-+            }
-+            // Paper end
-             this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
++                // Paper end
+                 this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
  
-             this.lastSpawnState = spawnercreature_d;
+                 this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index b0065a0e9494e0ebbd212874997839f04cda5fd7..0952769c94519f9fb300bc14c498f19107364643 100644
+index 05c658b988fd970eeba8117d06c5a5d93b8fd75d..ad167cd343ec38f0263e634124036e741246c6b6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -246,6 +246,10 @@ public class ServerPlayer extends Player {
+@@ -253,6 +253,10 @@ public class ServerPlayer extends Player {
      public boolean queueHealthUpdatePacket = false;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end
