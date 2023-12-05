@@ -16717,7 +16717,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        while (this.levels.values().stream().anyMatch((worldserver1) -> {
 -            return worldserver1.getChunkSource().chunkMap.hasWork();
 -        })) {
--            this.nextTickTime = Util.getMillis() + 1L;
+-            this.nextTickTimeNanos = Util.getNanos() + TimeUtil.NANOSECONDS_PER_MILLISECOND;
 -            iterator = this.getAllLevels().iterator();
 -
 -            while (iterator.hasNext()) {
@@ -16768,7 +16768,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!this.initServer()) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              Arrays.fill( this.recentTps, 20 );
-             long curTime, tickSection = Util.getMillis(), tickCount = 1;
+             long tickSection = Util.getMillis(), tickCount = 1;
              while (this.running) {
 +                // Paper start - rewrite chunk system
 +                // guarantee that nothing can stop the server from halting if it can at least still tick
@@ -16776,9 +16776,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    throw this.chunkSystemCrash;
 +                }
 +                // Paper end - rewrite chunk system
-                 long i = (curTime = Util.getMillis()) - this.nextTickTime;
+                 long i;
  
-                 if (i > 5000L && this.nextTickTime - this.lastOverloadWarning >= 30000L) { // CraftBukkit
+                 if (!this.isPaused() && this.tickRateManager.isSprinting() && this.tickRateManager.checkShouldSprintThisTick()) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
@@ -16790,7 +16790,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
          // CraftBukkit start
          if (isOversleep) return canOversleep();// Paper - because of our changes, this logic is broken
-         return this.forceTicks || this.runningTask() || Util.getMillis() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTime : this.nextTickTime);
+         return this.forceTicks || this.runningTask() || Util.getNanos() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTimeNanos : this.nextTickTimeNanos);
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // CraftBukkit start
      @Override
@@ -19497,7 +19497,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.chunkMap.level.playerChunkLoader.tick(); // Paper - replace player chunk loader - this is mostly required to account for view distance changes
              this.tickChunks();
              this.level.timings.chunks.stopTiming(); // Paper - timings
-         }
+             this.chunkMap.tick();
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
          ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
  
@@ -20646,7 +20646,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      }
      // Paper end
  
@@ -20705,7 +20705,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
          this.passengers = ImmutableList.of();
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
          return InteractionResult.PASS;
      }
  
@@ -20719,8 +20719,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return false;
      }
  
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
-         };
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+         }).count();
      }
  
 +    // Paper start - rewrite chunk system
@@ -20734,9 +20734,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - rewrite chunk system
 +
      public boolean hasExactlyOnePlayerPassenger() {
-         return this.getIndirectPassengersStream().filter((entity) -> {
-             return entity instanceof Player;
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         return this.countPlayerPassengers() == 1;
+     }
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      }
  
      public final void setPosRaw(double x, double y, double z) {
@@ -20749,7 +20749,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.position.x != x || this.position.y != y || this.position.z != z) {
              this.position = new Vec3(x, y, z);
              int i = Mth.floor(x);
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
      @Override
      public final void setRemoved(Entity.RemovalReason reason) {
@@ -20763,7 +20763,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.removalReason == null) {
              this.removalReason = reason;
          }
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              this.stopRiding();
          }
  
@@ -20772,7 +20772,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.levelCallback.onRemove(reason);
      }
  
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
      @Override
      public boolean shouldBeSaved() {

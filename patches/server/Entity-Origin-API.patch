@@ -28,7 +28,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      public long activatedTick = Integer.MIN_VALUE;
      public void inactiveTick() { }
      // Spigot end
@@ -56,23 +56,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public float getBukkitYaw() {
          return this.yRot;
      }
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
-                 this.bukkitEntity.storeBukkitValues(nbt);
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+                 this.bukkitEntity.storeBukkitValues(nbttagcompound);
              }
              // CraftBukkit end
 +            // Paper start - Save the entity's origin location
 +            if (this.origin != null) {
 +                UUID originWorld = this.originWorld != null ? this.originWorld : this.level != null ? this.level.getWorld().getUID() : null;
 +                if (originWorld != null) {
-+                    nbt.putUUID("Paper.OriginWorld", originWorld);
++                    nbttagcompound.putUUID("Paper.OriginWorld", originWorld);
 +                }
-+                nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
++                nbttagcompound.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
 +            }
 +            // Paper end
-             return nbt;
+             return nbttagcompound;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              }
              // CraftBukkit end
  
@@ -117,9 +117,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 @@ -0,0 +0,0 @@ public class PrimedTnt extends Entity implements TraceableEntity {
-     @Override
-     protected void readAdditionalSaveData(CompoundTag nbt) {
-         this.setFuse(nbt.getShort("Fuse"));
+             this.setBlockState(NbtUtils.readBlockState(this.level().holderLookup(Registries.BLOCK), nbt.getCompound("block_state")));
+         }
+ 
 +        // Paper start - Try and load origin location from the old NBT tags for backwards compatibility
 +        if (nbt.contains("SourceLoc_x")) {
 +            int srcX = nbt.getInt("SourceLoc_x");
