@@ -43,25 +43,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-             gameprofilerfiller.push("naturalSpawnCount");
-             this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
-             int l = this.distanceManager.getNaturalSpawnChunkCount();
--            NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
-+            // Paper start - per player mob spawning
-+            NaturalSpawner.SpawnState spawnercreature_d; // moved down
-+            if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
-+                // re-set mob counts
-+                for (ServerPlayer player : this.level.players) {
-+                    Arrays.fill(player.mobCounts, 0);
+                 gameprofilerfiller.popPush("naturalSpawnCount");
+                 this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
+                 int k = this.distanceManager.getNaturalSpawnChunkCount();
+-                NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(k, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
++                // Paper start - per player mob spawning
++                int naturalSpawnChunkCount = k;
++                NaturalSpawner.SpawnState spawnercreature_d; // moved down
++                if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
++                    // re-set mob counts
++                    for (ServerPlayer player : this.level.players) {
++                        Arrays.fill(player.mobCounts, 0);
++                    }
++                    spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
++                } else {
++                    spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
 +                }
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, null, true);
-+            } else {
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
-+            }
-+            // Paper end
-             this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
++                // Paper end
+                 this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
  
-             this.lastSpawnState = spawnercreature_d;
+                 this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
