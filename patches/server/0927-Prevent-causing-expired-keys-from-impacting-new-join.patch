@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 3 Apr 2023 08:55:52 +0100
+Subject: [PATCH] Prevent causing expired keys from impacting new joins
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+index 0e54e8faa48751a651b953bec72543a94edf74bc..aa1c6de4d6cb7bbca33d25895c54707d220ab62a 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+@@ -96,7 +96,13 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+         INITIALIZE_CHAT((serialized, buf) -> {
+             serialized.chatSession = buf.readNullable(RemoteChatSession.Data::read);
+         }, (buf, entry) -> {
+-            buf.writeNullable(entry.chatSession, RemoteChatSession.Data::write);
++            // Paper start
++            RemoteChatSession.Data chatSession = entry.chatSession;
++            if (chatSession != null && chatSession.profilePublicKey().hasExpired()) {
++                chatSession = null;
++            }
++            buf.writeNullable(chatSession, RemoteChatSession.Data::write);
++            // Paper end
+         }),
+         UPDATE_GAME_MODE((serialized, buf) -> {
+             serialized.gameMode = GameType.byId(buf.readVarInt());
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0e60bab1166d50d18940cab2bb68963324901279..28c61453d37132f9bab143202b7d59d368020f6a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -287,6 +287,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     private int knownMovePacketCount;
+     @Nullable
+     private RemoteChatSession chatSession;
++    private boolean hasLoggedExpiry = false; // Paper
+     private SignedMessageChain.Decoder signedMessageDecoder;
+     private final LastSeenMessagesValidator lastSeenMessages = new LastSeenMessagesValidator(20);
+     private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
+@@ -396,6 +397,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             this.disconnect(Component.translatable("multiplayer.disconnect.idling"), org.bukkit.event.player.PlayerKickEvent.Cause.IDLING); // Paper - kick event cause
+         }
+ 
++        // Paper start
++        if (!hasLoggedExpiry && this.chatSession != null && this.chatSession.profilePublicKey().data().hasExpired()) {
++            LOGGER.info("Player profile key for {} has expired!", this.player.getName().getString());
++            hasLoggedExpiry = true;
++        }
++        // Paper end
++
+     }
+ 
+     public void resetPosition() {
+@@ -3422,6 +3430,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     private void resetPlayerChatState(RemoteChatSession session) {
+         this.chatSession = session;
++        this.hasLoggedExpiry = false; // Paper
+         this.signedMessageDecoder = session.createMessageDecoder(this.player.getUUID());
+         this.chatMessageChain.append(() -> {
+             this.player.setChatSession(session);

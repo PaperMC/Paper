@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 8 Jan 2023 17:38:28 -0800
+Subject: [PATCH] Use single player info update packet on join
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 40e69eaf83b7e18718fc347ea10766c27c345d1e..b5165fb442c1d292b20fe3cded2103e90a6147bf 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3424,7 +3424,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         this.signedMessageDecoder = session.createMessageDecoder(this.player.getUUID());
+         this.chatMessageChain.append(() -> {
+             this.player.setChatSession(session);
+-            this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT), List.of(this.player)));
++            this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT), List.of(this.player)), this.player); // Paper
+         });
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 53f9286d37215af55ab17c447327b13464c7a79d..a3f63e83f193acf6164ab1b099d5217afd043ddc 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -358,6 +358,7 @@ public abstract class PlayerList {
+         // CraftBukkit start - sendAll above replaced with this loop
+         ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(player));
+ 
++        final List<ServerPlayer> onlinePlayers = Lists.newArrayListWithExpectedSize(this.players.size() - 1); // Paper - use single player info update packet
+         for (int i = 0; i < this.players.size(); ++i) {
+             ServerPlayer entityplayer1 = (ServerPlayer) this.players.get(i);
+ 
+@@ -365,12 +366,17 @@ public abstract class PlayerList {
+                 entityplayer1.connection.send(packet);
+             }
+ 
+-            if (!bukkitPlayer.canSee(entityplayer1.getBukkitEntity())) {
++            if (entityplayer1 == player || !bukkitPlayer.canSee(entityplayer1.getBukkitEntity())) { // Paper - don't include joining player
+                 continue;
+             }
+ 
+-            player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(entityplayer1)));
++            onlinePlayers.add(entityplayer1); // Paper - use single player info update packet
+         }
++        // Paper start - use single player info update packet
++        if (!onlinePlayers.isEmpty()) {
++            player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(onlinePlayers));
++        }
++        // Paper end
+         player.sentListPacket = true;
+         player.supressTrackerForLogin = false; // Paper
+         ((ServerLevel)player.level()).getChunkSource().chunkMap.addEntity(player); // Paper - track entity now

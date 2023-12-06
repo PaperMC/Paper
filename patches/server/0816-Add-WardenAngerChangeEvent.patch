@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: nopjar <code.nopjar@gmail.com>
+Date: Sun, 12 Jun 2022 02:26:04 +0200
+Subject: [PATCH] Add WardenAngerChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/AngerManagement.java b/src/main/java/net/minecraft/world/entity/monster/warden/AngerManagement.java
+index 02abc5f387d781094bd2f39233444add3a470be1..ece82743df21f0b776382821ad75dee96d0a0748 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/warden/AngerManagement.java
++++ b/src/main/java/net/minecraft/world/entity/monster/warden/AngerManagement.java
+@@ -146,7 +146,7 @@ public class AngerManagement {
+     public int increaseAnger(Entity entity, int amount) {
+         boolean bl = !this.angerBySuspect.containsKey(entity);
+         int i = this.angerBySuspect.computeInt(entity, (suspect, anger) -> {
+-            return Math.min(150, (anger == null ? 0 : anger) + amount);
++            return Math.min(150, (anger == null ? 0 : anger) + amount); // Paper - diff on change
+         });
+         if (bl) {
+             int j = this.angerByUuid.removeInt(entity.getUUID());
+diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+index b5185fcb635fbf5e5ed9d6cc9cc517cb46ada5aa..9f1b7c629644931074293151ed58a523ca6d488c 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
++++ b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+@@ -488,6 +488,15 @@ public class Warden extends Monster implements VibrationSystem {
+     @VisibleForTesting
+     public void increaseAngerAt(@Nullable Entity entity, int amount, boolean listening) {
+         if (!this.isNoAi() && this.canTargetEntity(entity)) {
++            // Paper start
++            int activeAnger = this.angerManagement.getActiveAnger(entity);
++            io.papermc.paper.event.entity.WardenAngerChangeEvent event = new io.papermc.paper.event.entity.WardenAngerChangeEvent((org.bukkit.entity.Warden) this.getBukkitEntity(), entity.getBukkitEntity(), activeAnger, Math.min(150, activeAnger + amount));
++            this.level().getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return;
++            }
++            amount = event.getNewAnger() - activeAnger;
++            // Paper end
+             WardenAi.setDigCooldown(this);
+             boolean flag1 = !(this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null) instanceof Player); // CraftBukkit - decompile error
+             int j = this.angerManagement.increaseAnger(entity, amount);

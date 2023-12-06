@@ -1,0 +1,274 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 9 Aug 2021 20:45:46 -0700
+Subject: [PATCH] Fire EntityChangeBlockEvent in more places
+
+Co-authored-by: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+index 80740ca823915fb2c854f13445d81964e0e971e5..255fb5e922c63130708e4bcab208b4db52a58387 100644
+--- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
++++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+@@ -98,7 +98,7 @@ public class LightningBolt extends Entity {
+                 }
+ 
+                 this.powerLightningRod();
+-                LightningBolt.clearCopperOnLightningStrike(this.level(), this.getStrikePosition());
++                LightningBolt.clearCopperOnLightningStrike(this.level(), this.getStrikePosition(), this); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+                 this.gameEvent(GameEvent.LIGHTNING_STRIKE);
+             }
+         }
+@@ -192,7 +192,7 @@ public class LightningBolt extends Entity {
+         }
+     }
+ 
+-    private static void clearCopperOnLightningStrike(Level world, BlockPos pos) {
++    private static void clearCopperOnLightningStrike(Level world, BlockPos pos, Entity lightning) { // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+         BlockState iblockdata = world.getBlockState(pos);
+         BlockPos blockposition1;
+         BlockState iblockdata1;
+@@ -206,24 +206,29 @@ public class LightningBolt extends Entity {
+         }
+ 
+         if (iblockdata1.getBlock() instanceof WeatheringCopper) {
+-            world.setBlockAndUpdate(blockposition1, WeatheringCopper.getFirst(world.getBlockState(blockposition1)));
++            // Paper start - call EntityChangeBlockEvent
++            BlockState newBlock = WeatheringCopper.getFirst(world.getBlockState(blockposition1));
++            if (CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1, newBlock)) {
++                world.setBlockAndUpdate(blockposition1, newBlock);
++            }
++            // Paper end
+             BlockPos.MutableBlockPos blockposition_mutableblockposition = pos.mutable();
+             int i = world.random.nextInt(3) + 3;
+ 
+             for (int j = 0; j < i; ++j) {
+                 int k = world.random.nextInt(8) + 1;
+ 
+-                LightningBolt.randomWalkCleaningCopper(world, blockposition1, blockposition_mutableblockposition, k);
++                LightningBolt.randomWalkCleaningCopper(world, blockposition1, blockposition_mutableblockposition, k, lightning); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+             }
+ 
+         }
+     }
+ 
+-    private static void randomWalkCleaningCopper(Level world, BlockPos pos, BlockPos.MutableBlockPos mutablePos, int count) {
++    private static void randomWalkCleaningCopper(Level world, BlockPos pos, BlockPos.MutableBlockPos mutablePos, int count, Entity lightning) { // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+         mutablePos.set(pos);
+ 
+         for (int j = 0; j < count; ++j) {
+-            Optional<BlockPos> optional = LightningBolt.randomStepCleaningCopper(world, mutablePos);
++            Optional<BlockPos> optional = LightningBolt.randomStepCleaningCopper(world, mutablePos, lightning); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+ 
+             if (optional.isEmpty()) {
+                 break;
+@@ -234,7 +239,7 @@ public class LightningBolt extends Entity {
+ 
+     }
+ 
+-    private static Optional<BlockPos> randomStepCleaningCopper(Level world, BlockPos pos) {
++    private static Optional<BlockPos> randomStepCleaningCopper(Level world, BlockPos pos, Entity lightning) { // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+         Iterator iterator = BlockPos.randomInCube(world.random, 10, pos, 1).iterator();
+ 
+         BlockPos blockposition1;
+@@ -251,6 +256,7 @@ public class LightningBolt extends Entity {
+ 
+         BlockPos blockposition1Final = blockposition1; // CraftBukkit - decompile error
+         WeatheringCopper.getPrevious(iblockdata).ifPresent((iblockdata1) -> {
++            if (CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1Final, iblockdata1)) // Paper - call EntityChangeBlockEvent
+             world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
+         });
+         world.levelEvent(3002, blockposition1, -1);
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/TryLaySpawnOnWaterNearLand.java b/src/main/java/net/minecraft/world/entity/ai/behavior/TryLaySpawnOnWaterNearLand.java
+index 2c443b421e342ebfbdf941a431ba20560521920b..91b68ee3605afdb845405e455c869e48a7fc9aab 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/TryLaySpawnOnWaterNearLand.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/TryLaySpawnOnWaterNearLand.java
+@@ -27,6 +27,12 @@ public class TryLaySpawnOnWaterNearLand {
+                                 BlockPos blockPos3 = blockPos2.above();
+                                 if (world.getBlockState(blockPos3).isAir()) {
+                                     BlockState blockState = frogSpawn.defaultBlockState();
++                                    // Paper start
++                                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockPos3, blockState)) {
++                                        isPregnant.erase(); // forgot pregnant memory
++                                        return true;
++                                    }
++                                    // Paper end
+                                     world.setBlock(blockPos3, blockState, 3);
+                                     world.gameEvent(GameEvent.BLOCK_PLACE, blockPos3, GameEvent.Context.of(entity, blockState));
+                                     world.playSound((Player)null, entity, SoundEvents.FROG_LAY_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
+diff --git a/src/main/java/net/minecraft/world/item/AxeItem.java b/src/main/java/net/minecraft/world/item/AxeItem.java
+index db507638a97b5a33df712c54daff35b21922c0dd..2e75fd06e9e379eb95ebfe55086ffc327706ab2f 100644
+--- a/src/main/java/net/minecraft/world/item/AxeItem.java
++++ b/src/main/java/net/minecraft/world/item/AxeItem.java
+@@ -38,6 +38,11 @@ public class AxeItem extends DiggerItem {
+             return InteractionResult.PASS;
+         } else {
+             ItemStack itemStack = context.getItemInHand();
++            // Paper start - EntityChangeBlockEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, optional.get())) {
++                return InteractionResult.PASS;
++            }
++            // Paper end
+             if (player instanceof ServerPlayer) {
+                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
+             }
+diff --git a/src/main/java/net/minecraft/world/item/EnderEyeItem.java b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
+index 1fddc9025a9e5079f05dd6c86f6ca43c5d51d9c3..6d45e3ebea6721b9c168fea572e9bd610eb54431 100644
+--- a/src/main/java/net/minecraft/world/item/EnderEyeItem.java
++++ b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
+@@ -43,6 +43,11 @@ public class EnderEyeItem extends Item {
+                 return InteractionResult.SUCCESS;
+             } else {
+                 BlockState iblockdata1 = (BlockState) iblockdata.setValue(EndPortalFrameBlock.HAS_EYE, true);
++                // Paper start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), blockposition, iblockdata1)) {
++                    return InteractionResult.PASS;
++                }
++                // Paper end
+ 
+                 Block.pushEntitiesUp(iblockdata, iblockdata1, world, blockposition);
+                 world.setBlock(blockposition, iblockdata1, 2);
+diff --git a/src/main/java/net/minecraft/world/item/HoneycombItem.java b/src/main/java/net/minecraft/world/item/HoneycombItem.java
+index 78bdf7c0a058e84cafcd831c6d6f5123c0f168b0..e0cae3b6848af74fefc37a1e3183c501155c4710 100644
+--- a/src/main/java/net/minecraft/world/item/HoneycombItem.java
++++ b/src/main/java/net/minecraft/world/item/HoneycombItem.java
+@@ -39,6 +39,14 @@ public class HoneycombItem extends Item implements SignApplicator {
+         return getWaxed(blockState).map((state) -> {
+             Player player = context.getPlayer();
+             ItemStack itemStack = context.getItemInHand();
++            // Paper start - EntityChangeBlockEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, state)) {
++                if (!player.isCreative()) {
++                    player.containerMenu.sendAllDataToRemote();
++                }
++                return InteractionResult.PASS;
++            }
++            // Paper end
+             if (player instanceof ServerPlayer) {
+                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
+             }
+diff --git a/src/main/java/net/minecraft/world/item/PotionItem.java b/src/main/java/net/minecraft/world/item/PotionItem.java
+index d7ef159cc44787558ba41964f57a79f048371e97..0a61a03c4aa9a66548896126b6f72c7a3474ba5a 100644
+--- a/src/main/java/net/minecraft/world/item/PotionItem.java
++++ b/src/main/java/net/minecraft/world/item/PotionItem.java
+@@ -107,6 +107,12 @@ public class PotionItem extends Item {
+         BlockState iblockdata = world.getBlockState(blockposition);
+ 
+         if (context.getClickedFace() != Direction.DOWN && iblockdata.is(BlockTags.CONVERTABLE_TO_MUD) && PotionUtils.getPotion(itemstack) == Potions.WATER) {
++            // Paper start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityhuman, blockposition, Blocks.MUD.defaultBlockState())) {
++                entityhuman.containerMenu.sendAllDataToRemote();
++                return InteractionResult.PASS;
++            }
++            // Paper end
+             world.playSound((Player) null, blockposition, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 1.0F, 1.0F);
+             entityhuman.setItemInHand(context.getHand(), ItemUtils.createFilledResult(itemstack, entityhuman, new ItemStack(Items.GLASS_BOTTLE)));
+             entityhuman.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
+diff --git a/src/main/java/net/minecraft/world/item/ShovelItem.java b/src/main/java/net/minecraft/world/item/ShovelItem.java
+index 32995cb5efdad0bc34ecacacb78cccd21220ba8d..21212462e6b415e96536a27b2c009d1562f18946 100644
+--- a/src/main/java/net/minecraft/world/item/ShovelItem.java
++++ b/src/main/java/net/minecraft/world/item/ShovelItem.java
+@@ -36,20 +36,29 @@ public class ShovelItem extends DiggerItem {
+             Player player = context.getPlayer();
+             BlockState blockState2 = FLATTENABLES.get(blockState.getBlock());
+             BlockState blockState3 = null;
++            Runnable afterAction = null; // Paper
+             if (blockState2 != null && level.getBlockState(blockPos.above()).isAir()) {
+-                level.playSound(player, blockPos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
++                afterAction = () -> level.playSound(player, blockPos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F); // Paper
+                 blockState3 = blockState2;
+             } else if (blockState.getBlock() instanceof CampfireBlock && blockState.getValue(CampfireBlock.LIT)) {
++                afterAction = () -> { // Paper
+                 if (!level.isClientSide()) {
+                     level.levelEvent((Player)null, 1009, blockPos, 0);
+                 }
+ 
+                 CampfireBlock.dowse(context.getPlayer(), level, blockPos, blockState);
++                }; // Paper
+                 blockState3 = blockState.setValue(CampfireBlock.LIT, Boolean.valueOf(false));
+             }
+ 
+             if (blockState3 != null) {
+                 if (!level.isClientSide) {
++                    // Paper start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), blockPos, blockState3)) {
++                        return InteractionResult.PASS;
++                    }
++                    afterAction.run();
++                    // Paper end
+                     level.setBlock(blockPos, blockState3, 11);
+                     level.gameEvent(GameEvent.BLOCK_CHANGE, blockPos, GameEvent.Context.of(player, blockState3));
+                     if (player != null) {
+diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
+index 6cccdd1d19488275ff3fe90838cf1c31e844d517..413b307acaad5823b9e06f49fa2faf561f5f7b9a 100644
+--- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
+@@ -238,6 +238,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+         if (i < 8 && ComposterBlock.COMPOSTABLES.containsKey(itemstack.getItem())) {
+             if (i < 7 && !world.isClientSide) {
+                 BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
++                // Paper start - handle cancelled events
++                if (iblockdata1 == null) {
++                    return InteractionResult.PASS;
++                }
++                // Paper end
+ 
+                 world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
+                 player.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
+@@ -261,11 +266,16 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+         if (i < 7 && ComposterBlock.COMPOSTABLES.containsKey(stack.getItem())) {
+             // CraftBukkit start
+             double rand = world.getRandom().nextDouble();
+-            BlockState iblockdata1 = ComposterBlock.addItem(user, state, DummyGeneratorAccess.INSTANCE, pos, stack, rand);
+-            if (state == iblockdata1 || !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(user, pos, iblockdata1)) {
++            BlockState iblockdata1 = null; // Paper
++            if (false && (state == iblockdata1 || !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(user, pos, iblockdata1))) { // Paper - move event call into addItem
+                 return state;
+             }
+             iblockdata1 = ComposterBlock.addItem(user, state, world, pos, stack, rand);
++            // Paper start - handle cancelled events
++            if (iblockdata1 == null) {
++                return state;
++            }
++            // Paper end
+             // CraftBukkit end
+ 
+             stack.shrink(1);
+@@ -306,11 +316,13 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+         return iblockdata1;
+     }
+ 
++    @Nullable // Paper
+     static BlockState addItem(@Nullable Entity user, BlockState state, LevelAccessor world, BlockPos pos, ItemStack stack) {
+         // CraftBukkit start
+         return ComposterBlock.addItem(user, state, world, pos, stack, world.getRandom().nextDouble());
+     }
+ 
++    @Nullable // Paper - make it nullable
+     static BlockState addItem(@Nullable Entity entity, BlockState iblockdata, LevelAccessor generatoraccess, BlockPos blockposition, ItemStack itemstack, double rand) {
+         // CraftBukkit end
+         int i = (Integer) iblockdata.getValue(ComposterBlock.LEVEL);
+@@ -321,6 +333,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+         } else {
+             int j = i + 1;
+             BlockState iblockdata1 = (BlockState) iblockdata.setValue(ComposterBlock.LEVEL, j);
++            // Paper start - move the EntityChangeBlockEvent here to avoid conflict later for the compost events
++            if (entity != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata1)) {
++                return null;
++            }
++            // Paper end
+ 
+             generatoraccess.setBlock(blockposition, iblockdata1, 3);
+             generatoraccess.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entity, iblockdata1));
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
+index 32594b4ebe8ab4c820e588573f5e01b08c57984f..a5e34c25e00e7f770bcb6e15ed0bbfe8f369a68a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
+@@ -120,7 +120,7 @@ public class DummyGeneratorAccess implements WorldGenLevel {
+ 
+     @Override
+     public void gameEvent(GameEvent event, Vec3 emitterPos, GameEvent.Context emitter) {
+-        // Used by BlockComposter
++        // Used by ComposterBlock
+     }
+ 
+     @Override

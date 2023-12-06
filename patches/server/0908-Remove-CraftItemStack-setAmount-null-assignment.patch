@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josh Roy <joshroy126@gmail.com>
+Date: Mon, 23 Jan 2023 19:19:01 -0500
+Subject: [PATCH] Remove CraftItemStack#setAmount null assignment
+
+This creates a problem with Paper's item serialization
+api where deserialized items, which are internally
+created as a CraftItemStack, will be completely lost if
+#setAmount(0) is invoked (since the underlying handle
+is set to null), while a regular Bukkit ItemStack
+simply sets the amount field to zero, retaining the
+item's data.
+
+Vanilla treats items with zero amounts the same as items
+with less than zero amounts, so this code doesn't create
+a problem with operations on the vanilla ItemStack.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 4dd17b98239edcd7cefd3533a40152e2348e747a..220ccd03d6f326b3747602e0e4e7ffee8173dc03 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -157,7 +157,7 @@ public final class CraftItemStack extends ItemStack {
+         }
+ 
+         this.handle.setCount(amount);
+-        if (amount == 0) {
++        if (false && amount == 0) { // Paper - remove CraftItemStack#setAmount null assignment
+             this.handle = null;
+         }
+     }
