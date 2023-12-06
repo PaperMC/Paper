@@ -20,7 +20,7 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
+            languageVersion = JavaLanguageVersion.of(17)
         }
     }
 }
@@ -30,7 +30,7 @@ val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 subprojects {
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
-        options.release.set(17)
+        options.release = 17
     }
     tasks.withType<Javadoc> {
         options.encoding = Charsets.UTF_8.name()
@@ -75,23 +75,23 @@ dependencies {
 }
 
 paperweight {
-    minecraftVersion.set(providers.gradleProperty("mcVersion"))
-    serverProject.set(project(":paper-server"))
+    minecraftVersion = providers.gradleProperty("mcVersion")
+    serverProject = project(":paper-server")
 
-    paramMappingsRepo.set(paperMavenPublicUrl)
-    remapRepo.set(paperMavenPublicUrl)
-    decompileRepo.set(paperMavenPublicUrl)
+    paramMappingsRepo = paperMavenPublicUrl
+    remapRepo = paperMavenPublicUrl
+    decompileRepo = paperMavenPublicUrl
 
     craftBukkit {
-        fernFlowerJar.set(layout.file(spigotDecompiler.elements.map { it.single().asFile }))
+        fernFlowerJar = layout.file(spigotDecompiler.elements.map { it.single().asFile })
     }
 
     paper {
-        spigotApiPatchDir.set(layout.projectDirectory.dir("patches/api"))
-        spigotServerPatchDir.set(layout.projectDirectory.dir("patches/server"))
+        spigotApiPatchDir = layout.projectDirectory.dir("patches/api")
+        spigotServerPatchDir = layout.projectDirectory.dir("patches/server")
 
-        mappingsPatch.set(layout.projectDirectory.file("build-data/mappings-patch.tiny"))
-        reobfMappingsPatch.set(layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny"))
+        mappingsPatch = layout.projectDirectory.file("build-data/mappings-patch.tiny")
+        reobfMappingsPatch = layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny")
 
         reobfPackagesToFix.addAll(
             "co.aikar.timings",
@@ -108,8 +108,8 @@ paperweight {
 }
 
 tasks.generateDevelopmentBundle {
-    apiCoordinates.set("io.papermc.paper:paper-api")
-    mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
+    apiCoordinates = "io.papermc.paper:paper-api"
+    mojangApiCoordinates = "io.papermc.paper:paper-mojangapi"
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
         paperMavenPublicUrl,
@@ -152,16 +152,20 @@ tasks.register("printPaperVersion") {
 // see gradle.properties
 if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
     tasks.collectAtsFromPatches {
-        extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
+        val dir = layout.projectDirectory.dir("patches/unapplied/server")
+        if (dir.path.isDirectory()) {
+            extraPatchDir = dir
+        }
     }
     tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches>().configureEach {
-        filterPatches.set(false)
+        filterPatches = false
     }
     tasks.register("continueServerUpdate", RebasePatches::class) {
         description = "Moves the next X patches from unapplied to applied, and applies them. X being the number of patches that apply cleanly, plus the terminal failure if any."
         projectDir = project.projectDir
         appliedPatches = file("patches/server")
         unappliedPatches = file("patches/unapplied/server")
+        applyTaskName = "applyServerPatches"
     }
 }
 
@@ -175,6 +179,9 @@ abstract class RebasePatches : BaseTask() {
 
     @get:InputFiles
     abstract val unappliedPatches: DirectoryProperty
+
+    @get:Input
+    abstract val applyTaskName: Property<String>
 
     private fun unapplied(): List<Path> =
         unappliedPatches.path.listDirectoryEntries("*.patch").sortedBy { it.name }
@@ -196,7 +203,7 @@ abstract class RebasePatches : BaseTask() {
         val out = ByteArrayOutputStream()
         val proc = ProcessBuilder()
             .directory(projectDir.path)
-            .command("./gradlew", "applyServerPatches")
+            .command("./gradlew", applyTaskName.get())
             .redirectErrorStream(true)
             .start()
 
@@ -240,7 +247,7 @@ abstract class RebasePatches : BaseTask() {
             // Apply again to reset the am session (so it ends on the failed patch, to allow us to rebuild after fixing it)
             val apply2 = ProcessBuilder()
                 .directory(projectDir.path)
-                .command("./gradlew", "applyServerPatches")
+                .command("./gradlew", applyTaskName.get())
                 .redirectErrorStream(true)
                 .start()
 
