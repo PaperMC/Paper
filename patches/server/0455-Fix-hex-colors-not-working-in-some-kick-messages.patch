@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Thu, 27 Aug 2020 16:57:25 -0400
+Subject: [PATCH] Fix hex colors not working in some kick messages
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+index e8cf9eafe0908bc9b716d9b6ead97828a43413ec..2ee5c884571228a353120f658f1a2d39373ea4ca 100644
+--- a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+@@ -77,12 +77,12 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+                 }
+                 // CraftBukkit end
+                 if (packet.protocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
+-                    MutableComponent ichatmutablecomponent;
++                    Component ichatmutablecomponent; // Paper - Fix hex colors not working in some kick messages
+ 
+                     if (packet.protocolVersion() < 754) {
+-                        ichatmutablecomponent = Component.literal( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) ); // Spigot
++                        ichatmutablecomponent = org.bukkit.craftbukkit.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
+                     } else {
+-                        ichatmutablecomponent = Component.literal( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) ); // Spigot
++                        ichatmutablecomponent = org.bukkit.craftbukkit.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
+                     }
+ 
+                     this.connection.send(new ClientboundLoginDisconnectPacket(ichatmutablecomponent));
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 615fb00e50f3c434809f8e1b201d457b9beae8fd..c58fc7d950ea2aa136c3922fb14e4f183f45f2d3 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -99,7 +99,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     // CraftBukkit start
+     @Deprecated
+     public void disconnect(String s) {
+-        this.disconnect(Component.literal(s));
++        this.disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s, true)[0]); // Paper - Fix hex colors not working in some kick messages
+     }
+     // CraftBukkit end
+ 

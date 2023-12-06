@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Tue, 11 Feb 2020 21:56:48 -0600
+Subject: [PATCH] EntityMoveEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index c063dece36e110691297b38635a9d14d70c4e391..5f440e3d3a750c65d0d13834eca553b8f5a521a6 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1590,6 +1590,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
+             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
++            worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+ 
+             this.profiler.push(() -> {
+                 return worldserver + " " + worldserver.dimension().location();
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index b02cb4229533568ed270737aa8cd792f23a44524..86f6c89459ba0f7b304348f22e2c3ad5b47014c4 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -222,6 +222,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     public final LevelStorageSource.LevelStorageAccess convertable;
+     public final UUID uuid;
+     public boolean hasPhysicsEvent = true; // Paper
++    public boolean hasEntityMoveEvent = false; // Paper
+     public static Throwable getAddToWorldStackTrace(Entity entity) {
+         final Throwable thr = new Throwable(entity + " Added to world at " + new java.util.Date());
+         io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index bf617621c88c68198709d1ed238622c3fcec89bd..e112880d8389c059a5daa572cb7906d767279084 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3361,6 +3361,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+         this.pushEntities();
+         this.level().getProfiler().pop();
++        // Paper start
++        if (((ServerLevel) this.level()).hasEntityMoveEvent && !(this instanceof net.minecraft.world.entity.player.Player)) {
++            if (this.xo != this.getX() || this.yo != this.getY() || this.zo != this.getZ() || this.yRotO != this.getYRot() || this.xRotO != this.getXRot()) {
++                Location from = new Location(this.level().getWorld(), this.xo, this.yo, this.zo, this.yRotO, this.xRotO);
++                Location to = new Location (this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
++                io.papermc.paper.event.entity.EntityMoveEvent event = new io.papermc.paper.event.entity.EntityMoveEvent(this.getBukkitLivingEntity(), from, to.clone());
++                if (!event.callEvent()) {
++                    this.absMoveTo(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch());
++                } else if (!to.equals(event.getTo())) {
++                    this.absMoveTo(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ(), event.getTo().getYaw(), event.getTo().getPitch());
++                }
++            }
++        }
++        // Paper end
+         if (!this.level().isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
+             this.hurt(this.damageSources().drown(), 1.0F);
+         }

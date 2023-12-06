@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sat, 12 Dec 2020 23:45:28 +0000
+Subject: [PATCH] Limit recipe packets
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index bace3a1d8e2e4b2b36f1b4cb80bb5c3bb473ad47..08ff8e489d86030dac403b405b016b77d7f81598 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -258,6 +258,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     // CraftBukkit start - multithreaded fields
+     private final AtomicInteger chatSpamTickCount = new AtomicInteger();
+     private final java.util.concurrent.atomic.AtomicInteger tabSpamLimiter = new java.util.concurrent.atomic.AtomicInteger(); // Paper - configurable tab spam limits
++    private final java.util.concurrent.atomic.AtomicInteger recipeSpamPackets =  new java.util.concurrent.atomic.AtomicInteger(); // Paper - auto recipe limit
+     // CraftBukkit end
+     private int dropSpamTickCount;
+     private double firstGoodX;
+@@ -378,6 +379,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         // CraftBukkit start
+         for (int spam; (spam = this.chatSpamTickCount.get()) > 0 && !this.chatSpamTickCount.compareAndSet(spam, spam - 1); ) ;
+         if (tabSpamLimiter.get() > 0) tabSpamLimiter.getAndDecrement(); // Paper - split to seperate variable
++        if (recipeSpamPackets.get() > 0) recipeSpamPackets.getAndDecrement(); // Paper
+         /* Use thread-safe field access instead
+         if (this.chatSpamTickCount > 0) {
+             --this.chatSpamTickCount;
+@@ -2983,6 +2985,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     @Override
+     public void handlePlaceRecipe(ServerboundPlaceRecipePacket packet) {
++        // Paper start
++        if (!org.bukkit.Bukkit.isPrimaryThread()) {
++            if (this.recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
++                this.server.scheduleOnMain(() -> this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam", new Object[0]))); // Paper
++                return;
++            }
++        }
++        // Paper end
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         this.player.resetLastActionTime();
+         if (!this.player.isSpectator() && this.player.containerMenu.containerId == packet.getContainerId() && this.player.containerMenu instanceof RecipeBookMenu) {
