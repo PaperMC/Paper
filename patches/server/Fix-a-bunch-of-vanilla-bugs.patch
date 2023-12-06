@@ -66,9 +66,6 @@ https://bugs.mojang.com/browse/MC-174630
 https://bugs.mojang.com/browse/MC-153086
   Fix the beacon deactivation sound always playing when broken
 
-https://bugs.mojang.com/browse/MC-259321
-  Fix spawners checking max nearby entities with correct type
-
 https://bugs.mojang.com/browse/MC-200092
   Fix yaw being ignored for a player's first spawn pos
 
@@ -135,7 +132,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
          } else {
-             AABB axisalignedbb = (new AABB(blockposition1, new BlockPos(blockposition1.getX(), this.getMaxBuildHeight(), blockposition1.getZ()))).inflate(3.0D);
+             AABB axisalignedbb = AABB.encapsulatingFullBlocks(blockposition1, new BlockPos(blockposition1.atY(this.getMaxBuildHeight()))).inflate(3.0D);
              List<LivingEntity> list = this.getEntitiesOfClass(LivingEntity.class, axisalignedbb, (entityliving) -> {
 -                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition());
 +                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition()) && !entityliving.isSpectator(); // Paper - Fix lightning being able to hit spectators (MC-262422)
@@ -422,49 +419,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      entity.level().gameEvent(entity, GameEvent.EQUIP, entity.position());
                      stack.shrink(1);
                  }
-diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
-+++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-     public int requiredPlayerRange = 16;
-     public int spawnRange = 4;
-     private int tickDelay = 0; // Paper
-+    // Paper start - ported from 1.20.3 Fix MC-259321
-+    static <B, T extends B> net.minecraft.world.level.entity.EntityTypeTest<B, T> forExactClass(Class<T> clazz) {
-+        return new net.minecraft.world.level.entity.EntityTypeTest<>() {
-+            @Nullable
-+            @Override
-+            public T tryCast(B entity) {
-+                return (T)(clazz.equals(entity.getClass()) ? entity : null);
-+            }
-+
-+            @Override
-+            public Class<? extends B> getBaseClass() {
-+                return clazz;
-+            }
-+        };
-+    }
-+    // Paper end
- 
-     public BaseSpawner() {}
- 
-@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-                             return;
-                         }
- 
--                        int k = world.getEntitiesOfClass(entity.getClass(), (new AABB((double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), (double) (pos.getX() + 1), (double) (pos.getY() + 1), (double) (pos.getZ() + 1))).inflate((double) this.spawnRange)).size();
-+                        int k = world.getEntities(forExactClass(entity.getClass()), (new AABB((double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), (double) (pos.getX() + 1), (double) (pos.getY() + 1), (double) (pos.getZ() + 1))).inflate((double) this.spawnRange), net.minecraft.world.entity.EntitySelector.NO_SPECTATORS).size(); // Paper - Fix MC-259321 (only count exact entity types for nearby checks)
- 
-                         if (k >= this.maxNearbyEntities) {
-                             this.delay(world, pos);
 diff --git a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
 @@ -0,0 +0,0 @@ public class AzaleaBlock extends BushBlock implements BonemealableBlock {
      public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
-         TREE_GROWER.growTree(world, world.getChunkSource().getGenerator(), pos, state, random);
+         TreeGrower.AZALEA.growTree(world, world.getChunkSource().getGenerator(), pos, state, random);
      }
 +
 +    // Paper start - Fix MC-224454

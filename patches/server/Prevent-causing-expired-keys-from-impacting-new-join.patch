@@ -28,13 +28,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-     private final AtomicReference<Instant> lastChatTimeStamp;
+     private int knownMovePacketCount;
      @Nullable
      private RemoteChatSession chatSession;
 +    private boolean hasLoggedExpiry = false; // Paper
      private SignedMessageChain.Decoder signedMessageDecoder;
-     private final LastSeenMessagesValidator lastSeenMessages;
-     private final MessageSignatureCache messageSignatureCache;
+     private final LastSeenMessagesValidator lastSeenMessages = new LastSeenMessagesValidator(20);
+     private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              this.disconnect(Component.translatable("multiplayer.disconnect.idling"), org.bukkit.event.player.PlayerKickEvent.Cause.IDLING); // Paper - kick event cause
          }
@@ -55,5 +55,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.chatSession = session;
 +        this.hasLoggedExpiry = false; // Paper
          this.signedMessageDecoder = session.createMessageDecoder(this.player.getUUID());
-         this.chatMessageChain.append((executor) -> {
+         this.chatMessageChain.append(() -> {
              this.player.setChatSession(session);
