@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 13 Jul 2023 16:10:07 -0700
+Subject: [PATCH] Respect randomizeData on more entities when spawning
+
+* ItemEntity
+* PrimedTNT
+* FireworkRocketEntity
+* ExperienceOrb
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index b7fd9448ea9f26636724b229af5cffc28d927d62..87698a123ce027b4f7b0dcc9eaf034a5b8de6de3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -634,6 +634,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+         } else if (org.bukkit.entity.Item.class.isAssignableFrom(clazz)) {
+             entity = new net.minecraft.world.entity.item.ItemEntity(world, x, y, z, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT));
+             // Paper end
++            // Paper start - respect randomizeData
++            if (!randomizeData) {
++                entity.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
++            }
++            // Paper end - respect randomizeData
+         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
+             BlockPos pos = BlockPos.containing(x, y, z);
+             entity = new FallingBlockEntity(world, x, y, z, this.getHandle().getBlockState(pos)); // Paper
+@@ -691,6 +696,14 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+                 entity.moveTo(x, y, z, yaw, pitch);
+             } else if (Firework.class.isAssignableFrom(clazz)) {
+                 entity = new FireworkRocketEntity(world, x, y, z, net.minecraft.world.item.ItemStack.EMPTY);
++                // Paper start - respect randomizeData
++                if (!randomizeData) {
++                    // logic below was taken from FireworkRocketEntity constructor
++                    entity.setDeltaMovement(0, 0.05, 0);
++                    //noinspection PointlessArithmeticExpression
++                    ((FireworkRocketEntity) entity).lifetime = 10 * 1 + 6;
++                }
++                // Paper end - respect randomizeData
+             }
+         } else if (Minecart.class.isAssignableFrom(clazz)) {
+             if (PoweredMinecart.class.isAssignableFrom(clazz)) {
+@@ -994,8 +1007,19 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+             }
+         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
+             entity = new PrimedTnt(world, x, y, z, null);
++            // Paper start - respect randomizeData
++            if (!randomizeData) {
++                entity.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
++            }
++            // Paper end - respect randomizeData
+         } else if (ExperienceOrb.class.isAssignableFrom(clazz)) {
+             entity = new net.minecraft.world.entity.ExperienceOrb(world, x, y, z, 0, org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM, null, null); // Paper
++            // Paper start - respect randomizeData
++            if (!randomizeData) {
++                entity.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
++                entity.setYRot(0);
++            }
++            // Paper end - respect randomizeData
+         } else if (LightningStrike.class.isAssignableFrom(clazz)) {
+             entity = net.minecraft.world.entity.EntityType.LIGHTNING_BOLT.create(world);
+             entity.moveTo(location.getX(), location.getY(), location.getZ());

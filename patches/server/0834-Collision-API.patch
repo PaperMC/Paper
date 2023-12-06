@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 6 Oct 2021 20:10:44 -0400
+Subject: [PATCH] Collision API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index 9c31a042d2ff82689a4bcc9d90fe08e5f8329985..76d529ad7d1ce543b8f262b3a36f17405cc9da92 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -1055,5 +1055,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+ 
+         return this.getHandle().clip(new net.minecraft.world.level.ClipContext(start, end, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty())).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
+     }
++
++    @Override
++    public boolean hasCollisionsIn(@org.jetbrains.annotations.NotNull org.bukkit.util.BoundingBox boundingBox) {
++        net.minecraft.world.phys.AABB aabb = new AABB(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ(), boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ(), false);
++
++        return !this.getHandle().noCollision(aabb);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index ed30e079c23f564cbd0a45b38586bd12e17c525e..1075c90e51cfea5823a74c07847545e227968ad2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1479,4 +1479,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return getHandle().isInPowderSnow || getHandle().wasInPowderSnow; // depending on the location in the entity "tick" either could be needed.
+     }
+     // Paper end
++    // Paper Start - Collision API
++    @Override
++    public boolean collidesAt(@org.jetbrains.annotations.NotNull Location location) {
++        net.minecraft.world.phys.AABB aabb = this.getHandle().getBoundingBoxAt(location.getX(), location.getY(), location.getZ());
++
++        return !this.getHandle().level().noCollision(this.getHandle(), aabb);
++    }
++
++    @Override
++    public boolean wouldCollideUsing(@org.jetbrains.annotations.NotNull BoundingBox boundingBox) {
++        net.minecraft.world.phys.AABB aabb = new AABB(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ(), boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ(), false);
++
++        return !this.getHandle().level().noCollision(this.getHandle(), aabb);
++    }
++    // Paper End - Collision API
+ }

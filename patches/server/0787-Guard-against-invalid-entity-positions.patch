@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 31 Mar 2022 05:18:28 -0700
+Subject: [PATCH] Guard against invalid entity positions
+
+Anything not finite should be blocked and logged
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 3fc282f8211eb3a7a7d096cc22b1bdb6545d70fa..8c20610c57ba90df364c9a65e867e35c9920a770 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -4543,11 +4543,33 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+         return this.getZ((2.0D * this.random.nextDouble() - 1.0D) * widthScale);
+     }
+ 
++    // Paper start - block invalid positions
++    public static boolean checkPosition(Entity entity, double newX, double newY, double newZ) {
++        if (Double.isFinite(newX) && Double.isFinite(newY) && Double.isFinite(newZ)) {
++            return true;
++        }
++
++        String entityInfo = null;
++        try {
++            entityInfo = entity.toString();
++        } catch (Exception ex) {
++            entityInfo = "[Entity info unavailable] ";
++        }
++        LOGGER.error("New entity position is invalid! Tried to set invalid position (" + newX + "," + newY + "," + newZ + ") for entity " + entity.getClass().getName() + " located at " + entity.position + ", entity info: " + entityInfo, new Throwable());
++        return false;
++    }
++    // Paper end - block invalid positions
++
+     public final void setPosRaw(double x, double y, double z) {
+         // Paper start
+         this.setPosRaw(x, y, z, false);
+     }
+     public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
++        // Paper start - block invalid positions
++        if (!checkPosition(this, x, y, z)) {
++            return;
++        }
++        // Paper end - block invalid positions
+         // Paper end
+         // Paper start - rewrite chunk system
+         if (this.updatingSectionStatus) {

@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sat, 14 Nov 2020 16:48:37 +0100
+Subject: [PATCH] Collision option for requiring a player participant
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index a0c70b204007a906076d3a1f28c84521ad4471c4..3b2c100c678dab10f72483769fba6cbf3371d377 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1932,6 +1932,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     public void push(Entity entity) {
+         if (!this.isPassengerOfSameVehicle(entity)) {
+             if (!entity.noPhysics && !this.noPhysics) {
++                if (this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper
+                 double d0 = entity.getX() - this.getX();
+                 double d1 = entity.getZ() - this.getZ();
+                 double d2 = Mth.absMax(d0, d1);
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+index bf9963eb59269223a9e322773f3543640645ae9f..e3745cc43b48ff59a1659a9f88ad118b34f7f22b 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+@@ -792,6 +792,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
+     public void push(Entity entity) {
+         if (!this.level().isClientSide) {
+             if (!entity.noPhysics && !this.noPhysics) {
++                if (!this.level().paperConfig().collisions.allowVehicleCollisions && this.level().paperConfig().collisions.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
+                 if (!this.hasPassenger(entity)) {
+                     // CraftBukkit start
+                     VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+index 6b0ec9da5a368775924f5b97c74acc5bfd609fa1..8b0efc4d78a04effddae0799b7ee5759ed5c720f 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+@@ -207,6 +207,7 @@ public class Boat extends VehicleEntity implements VariantHolder<Boat.Type> {
+ 
+     @Override
+     public void push(Entity entity) {
++        if (!this.level().paperConfig().collisions.allowVehicleCollisions && this.level().paperConfig().collisions.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
+         if (entity instanceof Boat) {
+             if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
+                 // CraftBukkit start
