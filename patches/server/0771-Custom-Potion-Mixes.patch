@@ -31,6 +31,18 @@ index 0000000000000000000000000000000000000000..7ea357ac2f3a93db4ebdf24b5072be7d
 +        return CraftRecipe.toIngredient(choice, true);
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 752e2b122c41e513aee590699c6d4624bbbfc12a..fe0a9bd0161ec6098a5f295322cc0c8d51e3ab10 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2227,6 +2227,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+             this.worldData.setDataConfiguration(worlddataconfiguration);
+             this.resources.managers.updateRegistryTags(this.registryAccess());
++            net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper
+             // Paper start
+             if (Thread.currentThread() != this.serverThread) {
+                 return;
 diff --git a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
 index ad012400d76c263bf26cfa07e2e24f26dc32276b..82311188348d673d83b70bf4d5357ecee562b6d6 100644
 --- a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
@@ -207,3 +219,29 @@ index 28fac26aa8e4da52f3e5d8e5e0d2e2731bcf74e1..13d25d118eb4d3ef35a4cdfb9bbde9ed
          Ingredient stack;
  
          if (bukkit == null) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java
+index 09ac71b6b41c757832792d9ea8ac9288f8a7404f..2909a2736a0c9d863c7ab01e0ec259f7952080cc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java
++++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java
+@@ -28,4 +28,21 @@ public class CraftPotionBrewer implements PotionBrewer {
+     public PotionEffect createEffect(PotionEffectType potion, int duration, int amplifier) {
+         return new PotionEffect(potion, potion.isInstant() ? 1 : (int) (duration * potion.getDurationModifier()), amplifier);
+     }
++
++    // Paper start
++    @Override
++    public void addPotionMix(io.papermc.paper.potion.PotionMix potionMix) {
++        net.minecraft.world.item.alchemy.PotionBrewing.addPotionMix(potionMix);
++    }
++
++    @Override
++    public void removePotionMix(org.bukkit.NamespacedKey key) {
++        net.minecraft.world.item.alchemy.PotionBrewing.removePotionMix(key);
++    }
++
++    @Override
++    public void resetPotionMixes() {
++        net.minecraft.world.item.alchemy.PotionBrewing.reload();
++    }
++    // Paper end
+ }
