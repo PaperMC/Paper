@@ -65,5 +65,17 @@ public enum Pose {
     /**
      * Entity is digging.
      */
-    DIGGING;
+    DIGGING,
+    /**
+     * Entity is sliding.
+     */
+    SLIDING,
+    /**
+     * Entity is shooting.
+     */
+    SHOOTING,
+    /**
+     * Entity is inhaling.
+     */
+    INHALING;
 }
