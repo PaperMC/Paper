@@ -15,7 +15,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final Timing antiXrayUpdateTimer = Timings.ofSafe("anti-xray - update");
      public static final Timing antiXrayObfuscateTimer = Timings.ofSafe("anti-xray - obfuscate");
 +    public static final Timing scoreboardScoreSearch = Timings.ofSafe("Scoreboard score search"); // Paper - add timings for scoreboard search
-+
  
      private static final Map<Class<?>, String> taskNameCache = new MapMaker().weakKeys().makeMap();
  
@@ -26,7 +25,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public final class CraftScoreboardManager implements ScoreboardManager {
  
      // CraftBukkit method
-     public void getScoreboardScores(ObjectiveCriteria criteria, String name, Consumer<Score> consumer) {
+     public void forAllObjectives(ObjectiveCriteria criteria, ScoreHolder holder, Consumer<ScoreAccess> consumer) {
 +        // Paper start - add timings for scoreboard search
 +        // plugins leaking scoreboards will make this very expensive, let server owners debug it easily
 +        co.aikar.timings.MinecraftTimings.scoreboardScoreSearch.startTimingIfSync();
@@ -34,7 +33,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - add timings for scoreboard search
          for (CraftScoreboard scoreboard : this.scoreboards) {
              Scoreboard board = scoreboard.board;
-             board.forAllObjectives(criteria, name, (score) -> consumer.accept(score));
+             board.forAllObjectives(criteria, holder, (score) -> consumer.accept(score));
          }
 +        } finally { // Paper start - add timings for scoreboard search
 +            co.aikar.timings.MinecraftTimings.scoreboardScoreSearch.stopTimingIfSync();

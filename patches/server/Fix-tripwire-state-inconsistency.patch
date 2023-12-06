@@ -33,10 +33,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int j = 0;
 @@ -0,0 +0,0 @@ public class TripWireBlock extends Block {
  
-                     if (iblockdata1.is((Block) this.hook)) {
+                     if (iblockdata1.is(this.hook)) {
                          if (iblockdata1.getValue(TripWireHookBlock.FACING) == enumdirection.getOpposite()) {
--                            this.hook.calculateState(world, blockposition1, iblockdata1, false, true, k, state);
-+                            this.hook.calculateState(world, blockposition1, iblockdata1, false, true, k, state, beingRemoved); // Paper - fix state inconsistency
+-                            TripWireHookBlock.calculateState(world, blockposition1, iblockdata1, false, true, k, state);
++                            TripWireHookBlock.calculateState(world, blockposition1, iblockdata1, false, true, k, state, beingRemoved); // Paper - fix state inconsistency
                          }
                      } else if (iblockdata1.is((Block) this)) {
                          ++k;
@@ -45,23 +45,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
 @@ -0,0 +0,0 @@ public class TripWireHookBlock extends Block {
+         TripWireHookBlock.calculateState(world, pos, state, false, false, -1, (BlockState) null);
      }
  
-     public void calculateState(Level world, BlockPos pos, BlockState state, boolean beingRemoved, boolean flag1, int i, @Nullable BlockState iblockdata1) {
+-    public static void calculateState(Level world, BlockPos pos, BlockState state, boolean flag, boolean flag1, int i, @Nullable BlockState iblockdata1) {
++    public static void calculateState(Level world, BlockPos pos, BlockState state, boolean beingRemoved, boolean flag1, int i, @Nullable BlockState iblockdata1) {
 +        // Paper start - fix tripwire inconsistency
-+        this.calculateState(world, pos, state, beingRemoved, flag1, i, iblockdata1, false);
++        calculateState(world, pos, state, beingRemoved, flag1, i, iblockdata1, false);
 +    }
 +
-+    public void calculateState(Level world, BlockPos pos, BlockState state, boolean beingRemoved, boolean flag1, int i, @Nullable BlockState iblockdata1, boolean tripWireBeingRemoved) {
++    public static void calculateState(Level world, BlockPos pos, BlockState state, boolean beingRemoved, boolean flag1, int i, @Nullable BlockState iblockdata1, boolean tripWireBeingRemoved) {
 +        // Paper end
-         Direction enumdirection = (Direction) state.getValue(TripWireHookBlock.FACING);
-         boolean flag2 = (Boolean) state.getValue(TripWireHookBlock.ATTACHED);
-         boolean flag3 = (Boolean) state.getValue(TripWireHookBlock.POWERED);
-@@ -0,0 +0,0 @@ public class TripWireHookBlock extends Block {
-                 boolean flag7 = (Boolean) iblockdata2.getValue(TripWireBlock.POWERED);
+         Optional<Direction> optional = state.getOptionalValue(TripWireHookBlock.FACING);
  
-                 flag5 |= flag6 && flag7;
-+                if (k != i || !tripWireBeingRemoved || !flag6) // Paper - don't update the tripwire again if being removed and not disarmed
-                 aiblockdata[k] = iblockdata2;
-                 if (k == i) {
-                     world.scheduleTick(pos, (Block) this, 10);
+         if (optional.isPresent()) {
+@@ -0,0 +0,0 @@ public class TripWireHookBlock extends Block {
+                     boolean flag7 = (Boolean) iblockdata2.getValue(TripWireBlock.POWERED);
+ 
+                     flag5 |= flag6 && flag7;
++                    if (k != i || !tripWireBeingRemoved || !flag6) // Paper - don't update the tripwire again if being removed and not disarmed
+                     aiblockdata[k] = iblockdata2;
+                     if (k == i) {
+                         world.scheduleTick(pos, block, 10);

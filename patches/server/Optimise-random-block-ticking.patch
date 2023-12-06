@@ -120,14 +120,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!this.paperConfig().environment.disableIceAndSnow) { // Paper
          for (int l = 0; l < randomTickSpeed; ++l) {
              if (this.random.nextInt(48) == 0) {
--                this.tickIceAndSnow(flag, this.getBlockRandomPos(j, 0, k, 15));
+-                this.tickPrecipitation(this.getBlockRandomPos(j, 0, k, 15));
++                // Paper start
 +                this.getRandomBlockPosition(j, 0, k, 15, blockposition);
-+                this.tickIceAndSnow(flag, blockposition, chunk);
++                this.tickPrecipitation(blockposition, chunk);
++                // Paper end
              }
          }
          } // Paper
- 
-+        // Paper start - optimise random block ticking
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
          gameprofilerfiller.popPush("tickBlocks");
          timings.chunkTicksBlocks.startTiming(); // Paper
          if (randomTickSpeed > 0) {
@@ -149,6 +150,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        if (iblockdata.isRandomlyTicking()) {
 -                            iblockdata.randomTick(this, blockposition1, this.random);
 -                        }
++            // Paper start - optimize random block ticking
 +            LevelChunkSection[] sections = chunk.getSections();
 +            final int minSection = io.papermc.paper.util.WorldUtil.getMinSection(this);
 +            for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
@@ -179,9 +181,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        gameprofilerfiller.pop();
 -                    }
 +                    iblockdata.randomTick(this, blockposition2, this.randomTickRandom);
-+                    // We drop the fluid tick since LAVA is ALREADY TICKED by the above method (See LiquidBlock).
-+                    // TODO CHECK ON UPDATE (ping the Canadian)
                  }
++                // We drop the fluid tick since LAVA is ALREADY TICKED by the above method (See LiquidBlock).
++                // TODO CHECK ON UPDATE (ping the Canadian)
              }
          }
 +        // Paper end - optimise random block ticking
@@ -190,14 +192,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          gameprofilerfiller.pop();
      }
  
--    private void tickIceAndSnow(boolean raining, BlockPos pos) {
+     @VisibleForTesting
+-    public void tickPrecipitation(BlockPos pos) {
 -        BlockPos blockposition1 = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
 -        BlockPos blockposition2 = blockposition1.below();
-+    private void tickIceAndSnow(boolean raining, BlockPos.MutableBlockPos blockposition1, final LevelChunk chunk) { // Paper - optimise chunk ticking
++    public void tickPrecipitation(BlockPos.MutableBlockPos blockposition1, final LevelChunk chunk) { // Paper - optimise chunk ticking
 +        // Paper start - optimise chunk ticking
 +        int normalY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, blockposition1.getX() & 15, blockposition1.getZ() & 15) + 1;
 +        int downY = normalY - 1;
 +        blockposition1.setY(normalY);
++        // Paper end - optimise chunk ticking
          Biome biomebase = (Biome) this.getBiome(blockposition1).value();
  
 -        if (biomebase.shouldFreeze(this, blockposition2)) {
@@ -206,9 +210,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (biomebase.shouldFreeze(this, blockposition1)) {
 +            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition1, Blocks.ICE.defaultBlockState(), null); // CraftBukkit
          }
-+        // Paper end - optimise chunk ticking
  
-         if (raining) {
+         if (this.isRaining()) {
              int i = this.getGameRules().getInt(GameRules.RULE_SNOW_ACCUMULATION_HEIGHT);
  
 +            blockposition1.setY(normalY); // Paper - optimise chunk ticking
