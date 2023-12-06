@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Wed, 6 Dec 2023 22:00:10 +0100
+Subject: [PATCH] Fix decorated pots crashing the server
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java
+index a65cc426193df558569bec4373a9bd940cbc9b04..15da1af40759e3669d087d7380a0b85ac20bdf9d 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java
+@@ -33,6 +33,46 @@ public class DecoratedPotBlockEntity extends BlockEntity implements Randomizable
+     @Nullable
+     protected ResourceLocation lootTable;
+     protected long lootTableSeed;
++    // Paper start - fix cb dumb
++    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
++    private int maxStack = MAX_STACK;
++
++    @Override
++    public int getMaxStackSize() {
++        return this.maxStack;
++    }
++
++    @Override
++    public java.util.List<ItemStack> getContents() {
++        return java.util.Arrays.asList(this.item);
++    }
++
++    @Override
++    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
++        this.transaction.add(who);
++    }
++
++    @Override
++    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
++        this.transaction.remove(who);
++    }
++
++    @Override
++    public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
++        return this.transaction;
++    }
++
++    @Override
++    public void setMaxStackSize(int size) {
++        this.maxStack = size;
++    }
++
++    @Override
++    public org.bukkit.Location getLocation() {
++        if (this.level == null) return null;
++        return new org.bukkit.Location(this.level.getWorld(), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ());
++    }
++    // Paper end - fix cb dumb
+ 
+     public DecoratedPotBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.DECORATED_POT, pos, state);
