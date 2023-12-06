@@ -1,0 +1,151 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Doc <nachito94@msn.com>
+Date: Sun, 3 Apr 2022 11:31:42 -0400
+Subject: [PATCH] Allow to change the podium for the EnderDragon
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index c00d4b8e39ef90bb06098bee290203502bd4225b..389c45748732781595b773bc033446ace06fcbb0 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -103,6 +103,10 @@ public class EnderDragon extends Mob implements Enemy {
+     private final int[] nodeAdjacency;
+     private final BinaryHeap openSet;
+     private final Explosion explosionSource; // CraftBukkit - reusable source for CraftTNTPrimed.getSource()
++    // Paper start - add var for save custom podium
++    @Nullable
++    private BlockPos podium;
++    // Paper end
+ 
+     public EnderDragon(EntityType<? extends EnderDragon> entitytypes, Level world) {
+         super(EntityType.ENDER_DRAGON, world);
+@@ -143,6 +147,19 @@ public class EnderDragon extends Mob implements Enemy {
+         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 200.0D);
+     }
+ 
++    // Paper start
++    public BlockPos getPodium() {
++        if (this.podium == null) {
++            return EndPodiumFeature.getLocation(this.getFightOrigin());
++        }
++        return this.podium;
++    }
++
++    public void setPodium(@Nullable BlockPos blockPos) {
++        this.podium = blockPos;
++    }
++    // Paper end
++
+     @Override
+     public boolean isFlapping() {
+         float f = Mth.cos(this.flapTime * 6.2831855F);
+@@ -993,7 +1010,7 @@ public class EnderDragon extends Mob implements Enemy {
+                 d0 = segment2[1] - segment1[1];
+             }
+         } else {
+-            BlockPos blockposition = this.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.getLocation(this.fightOrigin));
++            BlockPos blockposition = this.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, this.getPodium()); // Paper - use custom podium
+             double d1 = Math.max(Math.sqrt(blockposition.distToCenterSqr(this.position())) / 4.0D, 1.0D);
+ 
+             d0 = (double) segmentOffset / d1;
+@@ -1020,7 +1037,7 @@ public class EnderDragon extends Mob implements Enemy {
+                 vec3d = this.getViewVector(tickDelta);
+             }
+         } else {
+-            BlockPos blockposition = this.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.getLocation(this.fightOrigin));
++            BlockPos blockposition = this.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, this.getPodium()); // Paper - use custom podium
+ 
+             f1 = Math.max((float) Math.sqrt(blockposition.distToCenterSqr(this.position())) / 4.0F, 1.0F);
+             float f3 = 6.0F / f1;
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonDeathPhase.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonDeathPhase.java
+index f4028b6890fd094360a33403728588380111204d..0fddefff4a6ab46920fbc6f86c17c6c51027dc02 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonDeathPhase.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonDeathPhase.java
+@@ -32,7 +32,7 @@ public class DragonDeathPhase extends AbstractDragonPhaseInstance {
+     public void doServerTick() {
+         ++this.time;
+         if (this.targetLocation == null) {
+-            BlockPos blockPos = this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.dragon.getFightOrigin()));
++            BlockPos blockPos = this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, this.dragon.getPodium()); // Paper - use custom podium
+             this.targetLocation = Vec3.atBottomCenterOf(blockPos);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonHoldingPatternPhase.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonHoldingPatternPhase.java
+index 00228e49c07eeed13b726192d5f9b8f2fc55bb75..b8c928b8fd30ebe923785d7b03b2cab3b44e488f 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonHoldingPatternPhase.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonHoldingPatternPhase.java
+@@ -54,7 +54,7 @@ public class DragonHoldingPatternPhase extends AbstractDragonPhaseInstance {
+ 
+     private void findNewTarget() {
+         if (this.currentPath != null && this.currentPath.isDone()) {
+-            BlockPos blockPos = this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(EndPodiumFeature.getLocation(this.dragon.getFightOrigin())));
++            BlockPos blockPos = this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, this.dragon.getPodium()); // Paper - use custom podium
+             int i = this.dragon.getDragonFight() == null ? 0 : this.dragon.getDragonFight().getCrystalsAlive();
+             if (this.dragon.getRandom().nextInt(i + 3) == 0) {
+                 this.dragon.getPhaseManager().setPhase(EnderDragonPhase.LANDING_APPROACH);
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonLandingApproachPhase.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonLandingApproachPhase.java
+index 80647b1f5192e6f2b660a31413db1fa45fb92f2c..a9f184cbed518561b1534f4fe9bc731a134d9152 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonLandingApproachPhase.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonLandingApproachPhase.java
+@@ -52,7 +52,7 @@ public class DragonLandingApproachPhase extends AbstractDragonPhaseInstance {
+     private void findNewTarget() {
+         if (this.currentPath == null || this.currentPath.isDone()) {
+             int i = this.dragon.findClosestNode();
+-            BlockPos blockPos = this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.getLocation(this.dragon.getFightOrigin()));
++            BlockPos blockPos = this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, this.dragon.getPodium()); // Paper - use custom podium
+             Player player = this.dragon.level().getNearestPlayer(NEAR_EGG_TARGETING, this.dragon, (double)blockPos.getX(), (double)blockPos.getY(), (double)blockPos.getZ());
+             int j;
+             if (player != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonLandingPhase.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonLandingPhase.java
+index 48ebc2ab8ebbdc2292af10b955384bf7d722ade2..c1c71ff254ecb4a0cef3b8d7cc12f6cb34cad6d7 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonLandingPhase.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonLandingPhase.java
+@@ -39,7 +39,7 @@ public class DragonLandingPhase extends AbstractDragonPhaseInstance {
+     @Override
+     public void doServerTick() {
+         if (this.targetLocation == null) {
+-            this.targetLocation = Vec3.atBottomCenterOf(this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.getLocation(this.dragon.getFightOrigin())));
++            this.targetLocation = Vec3.atBottomCenterOf(this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, this.dragon.getPodium())); // Paper - use custom podium
+         }
+ 
+         if (this.targetLocation.distanceToSqr(this.dragon.getX(), this.dragon.getY(), this.dragon.getZ()) < 1.0D) {
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonTakeoffPhase.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonTakeoffPhase.java
+index 1290090f855840bf64bf3a7ba93e3cb036630dcc..98fb6422df0ceadff5aaf4b2965eb1b095a3370b 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonTakeoffPhase.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonTakeoffPhase.java
+@@ -24,7 +24,7 @@ public class DragonTakeoffPhase extends AbstractDragonPhaseInstance {
+     @Override
+     public void doServerTick() {
+         if (!this.firstTick && this.currentPath != null) {
+-            BlockPos blockPos = this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.getLocation(this.dragon.getFightOrigin()));
++            BlockPos blockPos = this.dragon.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, this.dragon.getPodium()); // Paper - use custom podium
+             if (!blockPos.closerToCenterThan(this.dragon.position(), 10.0D)) {
+                 this.dragon.getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragon.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragon.java
+index 25b3d889a1742c347e60725df8d6f6c1cee264c7..6eae6efa35a1ccc224e2f311e25ecf13e8647ec8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragon.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragon.java
+@@ -73,4 +73,22 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
+     public int getDeathAnimationTicks() {
+         return this.getHandle().dragonDeathTime;
+     }
++
++    // Paper start
++    @Override
++    public org.bukkit.Location getPodium() {
++        net.minecraft.core.BlockPos blockPosOrigin = this.getHandle().getPodium();
++        return new org.bukkit.Location(getWorld(), blockPosOrigin.getX(), blockPosOrigin.getY(), blockPosOrigin.getZ());
++    }
++
++    @Override
++    public void setPodium(org.bukkit.Location location) {
++        if (location == null) {
++            this.getHandle().setPodium(null);
++        } else {
++            org.apache.commons.lang.Validate.isTrue(location.getWorld() == null || location.getWorld().equals(getWorld()), "You cannot set a podium in a different world to where the dragon is");
++            this.getHandle().setPodium(io.papermc.paper.util.MCUtil.toBlockPos(location));
++        }
++    }
++    // Paper end
+ }

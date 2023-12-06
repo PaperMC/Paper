@@ -90,7 +90,7 @@ index 0000000000000000000000000000000000000000..7d93652c1abbb6aee6eb7c26cf35d4d0
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 81381a4b401046b2ea76627814c740dca73b9592..8144c2f519876a3e33150e4fbebea3aadaf5ce31 100644
+index 81381a4b401046b2ea76627814c740dca73b9592..5d0ea7d1cd52469f9951b5b4db2daa0f9ab1b7d8 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -856,6 +856,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -128,7 +128,7 @@ index 81381a4b401046b2ea76627814c740dca73b9592..8144c2f519876a3e33150e4fbebea3aa
              }
          }
          } // Paper
-@@ -906,54 +915,60 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -906,36 +915,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
          gameprofilerfiller.popPush("tickBlocks");
          timings.chunkTicksBlocks.startTiming(); // Paper
          if (randomTickSpeed > 0) {
@@ -190,14 +190,16 @@ index 81381a4b401046b2ea76627814c740dca73b9592..8144c2f519876a3e33150e4fbebea3aa
  
          timings.chunkTicksBlocks.stopTiming(); // Paper
          gameprofilerfiller.pop();
-     }
+@@ -943,17 +953,25 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
      @VisibleForTesting
--    public void tickPrecipitation(BlockPos pos) {
+     public void tickPrecipitation(BlockPos pos) {
 -        BlockPos blockposition1 = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
 -        BlockPos blockposition2 = blockposition1.below();
-+    public void tickPrecipitation(BlockPos.MutableBlockPos blockposition1, final LevelChunk chunk) { // Paper - optimise chunk ticking
-+        // Paper start - optimise chunk ticking
++    // Paper start - optimise chunk ticking
++        tickPrecipitation(pos.mutable(), this.getChunkAt(pos));
++    }
++    public void tickPrecipitation(BlockPos.MutableBlockPos blockposition1, final LevelChunk chunk) {
 +        int normalY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, blockposition1.getX() & 15, blockposition1.getZ() & 15) + 1;
 +        int downY = normalY - 1;
 +        blockposition1.setY(normalY);
@@ -218,7 +220,7 @@ index 81381a4b401046b2ea76627814c740dca73b9592..8144c2f519876a3e33150e4fbebea3aa
              if (i > 0 && biomebase.shouldSnow(this, blockposition1)) {
                  BlockState iblockdata = this.getBlockState(blockposition1);
  
-@@ -971,12 +986,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -971,12 +989,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
                  }
              }
  
