@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 8 May 2021 15:01:54 -0700
+Subject: [PATCH] Attributes API for item defaults
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 893bc4334b72db328711221496e57e872dc1f6d8..5045af60302e1929d9f904cb74214c3c15cfe60d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -543,6 +543,19 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return CraftMagicNumbers.getItem(itemToBeRepaired.getType()).isValidRepairItem(CraftItemStack.asNMSCopy(itemToBeRepaired), CraftItemStack.asNMSCopy(repairMaterial));
+     }
+ 
++    @Override
++    public Multimap<Attribute, AttributeModifier> getItemAttributes(Material material, EquipmentSlot equipmentSlot) {
++        Item item = CraftMagicNumbers.getItem(material);
++        if (item == null) {
++            throw new IllegalArgumentException(material + " is not an item and therefore does not have attributes");
++        }
++        ImmutableMultimap.Builder<Attribute, AttributeModifier> attributeMapBuilder = ImmutableMultimap.builder();
++        item.getDefaultAttributeModifiers(CraftEquipmentSlot.getNMS(equipmentSlot)).forEach((attributeBase, attributeModifier) -> {
++            attributeMapBuilder.put(CraftAttribute.stringToBukkit(net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.getKey(attributeBase).toString()), CraftAttributeInstance.convert(attributeModifier, equipmentSlot));
++        });
++        return attributeMapBuilder.build();
++    }
++
+     @Override
+     public int getProtocolVersion() {
+         return net.minecraft.SharedConstants.getCurrentVersion().getProtocolVersion();
