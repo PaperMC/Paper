@@ -4,6 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.io.ByteArrayOutputStream
 import java.nio.file.Path
+import java.util.regex.Pattern
 import kotlin.io.path.*
 
 plugins {
@@ -177,37 +178,82 @@ abstract class RebasePatches : BaseTask() {
     private fun unapplied(): List<Path> =
         unappliedPatches.path.listDirectoryEntries("*.patch").sortedBy { it.name }
 
+    private fun appliedLoc(patch: Path): Path = appliedPatches.path.resolve(unappliedPatches.path.relativize(patch))
+
+    companion object {
+        val regex = Pattern.compile("Patch failed at ([0-9]{4}) (.*)")
+        const val subjectPrefix = "Subject: [PATCH] "
+    }
+
     @TaskAction
     fun run() {
-        for (patch in unapplied()) {
-            val appliedLoc = appliedPatches.path.resolve(unappliedPatches.path.relativize(patch))
-            patch.copyTo(appliedLoc)
+        val unapplied = unapplied()
+        for (patch in unapplied) {
+            patch.copyTo(appliedLoc(patch))
+        }
 
-            val out = ByteArrayOutputStream()
+        val out = ByteArrayOutputStream()
+        val proc = ProcessBuilder()
+            .directory(projectDir.path)
+            .command("./gradlew", "applyServerPatches")
+            .redirectErrorStream(true)
+            .start()
 
-            val proc = ProcessBuilder()
+        redirect(proc.inputStream, out)
+
+        val exit = proc.waitFor()
+
+        if (exit != 0) {
+            val outStr = String(out.toByteArray())
+            val matcher = regex.matcher(outStr)
+            if (!matcher.find()) error("Could not determine failure point")
+            val failedSubjectFragment = matcher.group(2)
+            val failed = unapplied.single { p ->
+                p.useLines { lines ->
+                    val subjectLine = lines.single { it.startsWith(subjectPrefix) }
+                        .substringAfter(subjectPrefix)
+                    subjectLine.startsWith(failedSubjectFragment)
+                }
+            }
+
+            // delete successful & failure point from unapplied patches dir
+            for (path in unapplied) {
+                path.deleteIfExists()
+                if (path == failed) {
+                    break
+                }
+            }
+
+            // delete failed from patches dir
+            var started = false
+            for (path in unapplied) {
+                if (path == failed) {
+                    started = true
+                    continue
+                }
+                if (started) {
+                    appliedLoc(path).deleteIfExists()
+                }
+            }
+
+            // Apply again to reset the am session (so it ends on the failed patch, to allow us to rebuild after fixing it)
+            val apply2 = ProcessBuilder()
                 .directory(projectDir.path)
                 .command("./gradlew", "applyServerPatches")
                 .redirectErrorStream(true)
                 .start()
 
-            redirect(proc.inputStream, out)
+            redirect(apply2.inputStream, System.out)
 
-            val exit = proc.waitFor()
-
-            patch.deleteIfExists()
-
-            if (exit != 0) {
-                logger.lifecycle("Patch failed at $patch; Git output:")
-                logger.lifecycle(String(out.toByteArray()))
-                break
-            }
-
-            val git = Git(projectDir.path)
-            git("add", appliedPatches.path.toString() + "/*").runSilently()
-            git("add", unappliedPatches.path.toString() + "/*").runSilently()
-
-            logger.lifecycle("Applied $patch")
+            logger.lifecycle(outStr)
+            logger.lifecycle("Patch failed at $failed; See Git output above.")
+        } else {
+            unapplied.forEach { it.deleteIfExists() }
+            logger.lifecycle("All patches applied!")
         }
+
+        val git = Git(projectDir.path)
+        git("add", appliedPatches.path.toString() + "/*").runSilently()
+        git("add", unappliedPatches.path.toString() + "/*").runSilently()
     }
 }
