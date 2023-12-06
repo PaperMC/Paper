@@ -207,9 +207,10 @@ abstract class RebasePatches : BaseTask() {
             .redirectErrorStream(true)
             .start()
 
-        redirect(proc.inputStream, out)
+        val f = redirect(proc.inputStream, out)
 
         val exit = proc.waitFor()
+        f.get()
 
         if (exit != 0) {
             val outStr = String(out.toByteArray())
@@ -251,8 +252,9 @@ abstract class RebasePatches : BaseTask() {
                 .redirectErrorStream(true)
                 .start()
 
-            redirect(apply2.inputStream, System.out)
+            val f1 = redirect(apply2.inputStream, System.out)
             apply2.waitFor()
+            f1.get()
 
             logger.lifecycle(outStr)
             logger.lifecycle("Patch failed at $failed; See Git output above.")
