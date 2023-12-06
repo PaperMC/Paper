@@ -158,6 +158,7 @@ if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()
         filterPatches.set(false)
     }
     tasks.register("continueServerUpdate", RebasePatches::class) {
+        description = "Moves the next X patches from unapplied to applied, and applies them. X being the number of patches that apply cleanly, plus the terminal failure if any."
         projectDir = project.projectDir
         appliedPatches = file("patches/server")
         unappliedPatches = file("patches/unapplied/server")
