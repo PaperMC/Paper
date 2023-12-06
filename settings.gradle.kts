@@ -7,6 +7,11 @@ pluginManagement {
     }
 }
 
+// todo 1.20.3
+if (file("adventure-temp").exists()) {
+    includeBuild("adventure-temp")
+}
+
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.7.0"
 }
