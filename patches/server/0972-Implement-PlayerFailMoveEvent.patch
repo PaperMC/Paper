@@ -5,7 +5,7 @@ Subject: [PATCH] Implement PlayerFailMoveEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 09e5d0790b87a4747dd50eb790cdd1ce83de2550..c01d38b673303b06ad0a932641446b1a8f4fda8c 100644
+index fda3ac61206744d6366f0c5530815e3231581c52..cdef19c69ffd663f8ed7dba950bd38a9c9b5ffe6 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1317,8 +1317,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -21,46 +21,42 @@ index 09e5d0790b87a4747dd50eb790cdd1ce83de2550..c01d38b673303b06ad0a932641446b1a
                          this.player.absMoveTo(this.player.getX(), this.player.getY(), this.player.getZ(), f, f1);
 @@ -1385,8 +1385,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                  }
-                             // Paper start - Prevent moving into unloaded chunks
-                             if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (this.player.getX() != toX || this.player.getZ() != toZ) && !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position())))) {
-+                                // Paper start - Add fail move event
-+                                io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_INTO_UNLOADED_CHUNK,
-+                                    toX, toY, toZ, toYaw, toPitch, false);
-+                                if (!event.isAllowed()) {
-                                 this.internalTeleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot(), Collections.emptySet());
-                                 return;
-+                                }
-+                                // Paper end
-                             }
-                             // Paper end
+                                 // Paper start - Prevent moving into unloaded chunks
+                                 if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (this.player.getX() != toX || this.player.getZ() != toZ) && !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position())))) {
+-                                    this.internalTeleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot(), Collections.emptySet());
+-                                    return;
++                                    // Paper start - Add fail move event
++                                    io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_INTO_UNLOADED_CHUNK,
++                                        toX, toY, toZ, toYaw, toPitch, false);
++                                    if (!event.isAllowed()) {
++                                        this.internalTeleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot(), Collections.emptySet());
++                                        return;
++                                    }
++                                    // Paper end
+                                 }
+                                 // Paper end
  
 @@ -1395,9 +1401,16 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
                                      if (d10 - d9 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
                                      // CraftBukkit end
+-                                        ServerGamePacketListenerImpl.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d6, d7, d8});
+-                                        this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
+-                                        return;
 +                                        // Paper start - Add fail move event
 +                                        io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY,
 +                                            toX, toY, toZ, toYaw, toPitch, true);
 +                                        if (!event.isAllowed()) {
 +                                            if (event.getLogWarning())
-                                         ServerGamePacketListenerImpl.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d6, d7, d8});
-                                         this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
-                                         return;
++                                                ServerGamePacketListenerImpl.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d6, d7, d8});
++                                            this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
++                                            return;
 +                                        }
 +                                        // Paper end
                                      }
                                  }
                              }
-@@ -1436,6 +1449,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                                     from = event.getFrom();
-                                     this.internalTeleport(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch(), Collections.emptySet());
-                                     return;
-+                                    }
-+                                    // Paper end
-                                 }
-                                 // Paper end
-                             }
-@@ -1463,8 +1478,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1463,8 +1476,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                              boolean flag2 = false;
  
                              if (!this.player.isChangingDimension() && d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.isSleeping() && !this.player.gameMode.isCreative() && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) { // Spigot
@@ -76,7 +72,7 @@ index 09e5d0790b87a4747dd50eb790cdd1ce83de2550..c01d38b673303b06ad0a932641446b1a
                              }
  
                              // Paper start - optimise out extra getCubes
-@@ -1477,6 +1499,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1477,6 +1497,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                  if (didCollide || !axisalignedbb.equals(newBox)) {
                                      // note: only call after setLocation, or else getBoundingBox is wrong
                                      teleportBack = this.hasNewCollision(worldserver, this.player, axisalignedbb, newBox);
@@ -92,7 +88,7 @@ index 09e5d0790b87a4747dd50eb790cdd1ce83de2550..c01d38b673303b06ad0a932641446b1a
                                  } // else: no collision at all detected, why do we care?
                              }
                              if (!this.player.noPhysics && !this.player.isSleeping() && teleportBack) { // Paper end - optimise out extra getCubes
-@@ -1565,6 +1596,18 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1565,6 +1594,18 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
      }
  
