@@ -36,43 +36,19 @@ index 577d427defdb82f5c6c1d8f766c51653f7b6de52..b76024a8dce1ef79f6cbff7403daffd2
  
              ichatmutablecomponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipbanentry.getReason());
 diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
-index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..09fc086548b9d0f97849f56f41e3a5be87f5091a 100644
+index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..665120a62525f56912263a3e1b6f12f6c3e15dec 100644
 --- a/src/main/java/net/minecraft/server/players/StoredUserList.java
 +++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
-@@ -14,6 +14,8 @@ import java.io.BufferedReader;
- import java.io.BufferedWriter;
- import java.io.File;
- import java.io.IOException;
-+import java.lang.reflect.ParameterizedType; // Paper
-+import java.lang.reflect.Type; // Paper
- import java.nio.charset.StandardCharsets;
- import java.util.Collection;
- import java.util.Iterator;
-@@ -31,7 +33,22 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -31,7 +31,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
      private final File file;
 -    private final Map<String, V> map = Maps.newHashMap();
-+    // Paper - replace HashMap is ConcurrentHashMap
-+    private final Map<String, V> map = Maps.newConcurrentMap();
-+    private boolean e = true;
-+    private static final ParameterizedType f = new ParameterizedType() {
-+        public Type[] getActualTypeArguments() {
-+            return new Type[]{StoredUserEntry.class};
-+        }
-+
-+        public Type getRawType() {
-+            return List.class;
-+        }
-+
-+        public Type getOwnerType() {
-+            return null;
-+        }
-+    };
++    private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - replace HashMap is ConcurrentHashMap
  
      public StoredUserList(File file) {
          this.file = file;
-@@ -54,8 +71,13 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -54,8 +54,13 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
  
      @Nullable
      public V get(K key) {
@@ -88,7 +64,7 @@ index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..09fc086548b9d0f97849f56f41e3a5be
      }
  
      public void remove(K key) {
-@@ -78,7 +100,8 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -78,7 +83,8 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      }
  
      public boolean isEmpty() {
@@ -98,7 +74,7 @@ index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..09fc086548b9d0f97849f56f41e3a5be
      }
  
      protected String getKeyForUser(K profile) {
-@@ -90,14 +113,14 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -90,14 +96,14 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      }
  
      private void removeExpired() {
@@ -116,7 +92,7 @@ index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..09fc086548b9d0f97849f56f41e3a5be
              }
          }
  
-@@ -106,9 +129,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -106,9 +112,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
          while (iterator.hasNext()) {
              K k0 = (K) iterator.next(); // CraftBukkit - decompile error
  
@@ -130,7 +106,7 @@ index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..09fc086548b9d0f97849f56f41e3a5be
      }
  
      protected abstract StoredUserEntry<K> createEntry(JsonObject json);
-@@ -118,6 +143,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -118,6 +126,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      }
  
      public void save() throws IOException {
