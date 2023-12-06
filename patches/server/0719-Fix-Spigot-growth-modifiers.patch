@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Fri, 3 Dec 2021 17:09:24 -0800
+Subject: [PATCH] Fix Spigot growth modifiers
+
+Fixes kelp modifier changing growth for other crops
+Also add growth modifiers for glow berries, mangrove propagules,
+torchflower crops and pitcher plant crops
+Also fix above-mentioned modifiers from having the reverse effect
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
+Co-authored-by: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
+index 95f897b9ef73c880aff1cfe35fe490683badfd44..54916c80720f219bf747250a2ff9a875f180c7a2 100644
+--- a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
+@@ -51,9 +51,17 @@ public class CaveVinesBlock extends GrowingPlantHeadBlock implements Bonemealabl
+         return to.setValue(BERRIES, from.getValue(BERRIES));
+     }
+ 
++    @Override
++    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
++        final boolean value = random.nextFloat() < (level != null ? (0.11F * (level.spigotConfig.glowBerryModifier / 100.0F)) : 0.11F);
++        return (BlockState) super.getGrowIntoState(state, random).setValue(CaveVinesBlock.BERRIES, value);
++    }
++    // Paper end
++
+     @Override
+     protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
+-        return super.getGrowIntoState(state, random).setValue(BERRIES, Boolean.valueOf(random.nextFloat() < 0.11F));
++        // Paper start
++        return this.getGrowIntoState(state, random, null);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/block/CropBlock.java b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+index 76c12b34aac276fc9375135dac1c2018fdd7d756..9550ce8588c6aa3ba4cbbbb86912eae2b452eb01 100644
+--- a/src/main/java/net/minecraft/world/level/block/CropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+@@ -91,6 +91,10 @@ public class CropBlock extends BushBlock implements BonemealableBlock {
+                     modifier = world.spigotConfig.carrotModifier;
+                 } else if (this == Blocks.POTATOES) {
+                     modifier = world.spigotConfig.potatoModifier;
++                // Paper start
++                } else if (this == Blocks.TORCHFLOWER_CROP) {
++                    modifier = world.spigotConfig.torchFlowerModifier;
++                // Paper end
+                 } else {
+                     modifier = world.spigotConfig.wheatModifier;
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
+index b74e61064926a7c7fb03286651ea52c150f86107..4ebdc4918131a15a1c91b45e8ceb1392bca20a81 100644
+--- a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
+@@ -60,12 +60,18 @@ public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements
+             BlockPos blockposition1 = pos.relative(this.growthDirection);
+ 
+             if (this.canGrowInto(world.getBlockState(blockposition1))) {
+-                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.getGrowIntoState(state, world.random)); // CraftBukkit
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.getGrowIntoState(state, world.random, world)); // CraftBukkit // Paper
+             }
+         }
+ 
+     }
+ 
++    // Paper start
++    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
++        return this.getGrowIntoState(state, random);
++    }
++    // Paper end
++
+     protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
+         return (BlockState) state.cycle(GrowingPlantHeadBlock.AGE);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java b/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java
+index 3c0b0732cdea6c98c58c9639be3a6971575df85b..7ee8832820dd3f0c97fc68cab40d23f58ed21c31 100644
+--- a/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java
+@@ -100,7 +100,7 @@ public class MangrovePropaguleBlock extends SaplingBlock implements SimpleWaterl
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if (!isHanging(state)) {
+-            if (random.nextInt(7) == 0) {
++            if (random.nextFloat() < (world.spigotConfig.saplingModifier / (100.0F * 7))) { // Paper
+                 this.advanceTree(world, pos, state, random);
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+index c80a3ee02f3af146926a3611779fd0af298a8ac1..ba94ff948ccaddc16d3452306722759c115bb90a 100644
+--- a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+@@ -119,7 +119,7 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         float f = CropBlock.getGrowthSpeed(this, world, pos);
+-        boolean bl = random.nextInt((int)(25.0F / f) + 1) == 0;
++        boolean bl = random.nextFloat() < (world.spigotConfig.pitcherPlantModifier / (100.0F * (Math.floor(25.0F / f) + 1))); // Paper
+         if (bl) {
+             this.grow(world, state, pos, 1);
+         }
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 11ac344ef113732fa717b67c51f76692b9b247e7..62c1434018be5b5fb70f7019b3c06d4d9200661d 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -96,6 +96,7 @@ public class SpigotWorldConfig
+     public int beetrootModifier;
+     public int carrotModifier;
+     public int potatoModifier;
++    public int torchFlowerModifier; // Paper
+     public int wheatModifier;
+     public int wartModifier;
+     public int vineModifier;
+@@ -106,6 +107,8 @@ public class SpigotWorldConfig
+     public int twistingVinesModifier;
+     public int weepingVinesModifier;
+     public int caveVinesModifier;
++    public int glowBerryModifier; // Paper
++    public int pitcherPlantModifier; // Paper
+     private int getAndValidateGrowth(String crop)
+     {
+         int modifier = this.getInt( "growth." + crop.toLowerCase(java.util.Locale.ENGLISH) + "-modifier", 100 );
+@@ -129,6 +132,7 @@ public class SpigotWorldConfig
+         this.beetrootModifier = this.getAndValidateGrowth( "Beetroot" );
+         this.carrotModifier = this.getAndValidateGrowth( "Carrot" );
+         this.potatoModifier = this.getAndValidateGrowth( "Potato" );
++        this.torchFlowerModifier = this.getAndValidateGrowth("TorchFlower"); // Paper
+         this.wheatModifier = this.getAndValidateGrowth( "Wheat" );
+         this.wartModifier = this.getAndValidateGrowth( "NetherWart" );
+         this.vineModifier = this.getAndValidateGrowth( "Vine" );
+@@ -139,6 +143,8 @@ public class SpigotWorldConfig
+         this.twistingVinesModifier = this.getAndValidateGrowth( "TwistingVines" );
+         this.weepingVinesModifier = this.getAndValidateGrowth( "WeepingVines" );
+         this.caveVinesModifier = this.getAndValidateGrowth( "CaveVines" );
++        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry"); // Paper
++        this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant"); // Paper
+     }
+ 
+     public double itemMerge;

@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 21 Apr 2020 01:53:22 -0700
+Subject: [PATCH] Time scoreboard search
+
+Plugins leaking scoreboards will make this very expensive,
+let server owners debug it easily
+
+diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
+index 4d861f9a58f8ea238471af22f387854d855b1801..e8aad2eecd8263118e3eca9e2be84a00277bc15e 100644
+--- a/src/main/java/co/aikar/timings/MinecraftTimings.java
++++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
+@@ -46,6 +46,7 @@ public final class MinecraftTimings {
+ 
+     public static final Timing antiXrayUpdateTimer = Timings.ofSafe("anti-xray - update");
+     public static final Timing antiXrayObfuscateTimer = Timings.ofSafe("anti-xray - obfuscate");
++    public static final Timing scoreboardScoreSearch = Timings.ofSafe("Scoreboard score search"); // Paper - add timings for scoreboard search
+ 
+     private static final Map<Class<?>, String> taskNameCache = new MapMaker().weakKeys().makeMap();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
+index c7ca6210d6ae37fe95068c9baa5fb654f95307e0..cad42a0f3c016bf65181e50d139ae4e2fb9158a5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
+@@ -113,9 +113,18 @@ public final class CraftScoreboardManager implements ScoreboardManager {
+ 
+     // CraftBukkit method
+     public void forAllObjectives(ObjectiveCriteria criteria, ScoreHolder holder, Consumer<ScoreAccess> consumer) {
++        // Paper start - add timings for scoreboard search
++        // plugins leaking scoreboards will make this very expensive, let server owners debug it easily
++        co.aikar.timings.MinecraftTimings.scoreboardScoreSearch.startTimingIfSync();
++        try {
++        // Paper end - add timings for scoreboard search
+         for (CraftScoreboard scoreboard : this.scoreboards) {
+             Scoreboard board = scoreboard.board;
+             board.forAllObjectives(criteria, holder, (score) -> consumer.accept(score));
+         }
++        } finally { // Paper start - add timings for scoreboard search
++            co.aikar.timings.MinecraftTimings.scoreboardScoreSearch.stopTimingIfSync();
++        }
++        // Paper end - add timings for scoreboard search
+     }
+ }

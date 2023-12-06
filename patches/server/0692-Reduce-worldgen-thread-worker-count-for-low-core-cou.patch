@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 30 Aug 2021 04:26:40 -0700
+Subject: [PATCH] Reduce worldgen thread worker count for low core count CPUs
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index e67a2aa92f9c9bb5a4ba9fc869aa738a43cd8595..7be16ce8c8582d8587c4d1cb4c099fa6fe5f1324 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -155,7 +155,19 @@ public class Util {
+ 
+     private static ExecutorService makeExecutor(String s, int priorityModifier) { // Paper - add priority
+         // Paper start - use simpler thread pool that allows 1 thread
+-        int i = Math.min(8, Math.max(Runtime.getRuntime().availableProcessors() - 2, 1));
++        // Paper start - also try to avoid suffocating the system with the worldgen workers
++        int cpus = Runtime.getRuntime().availableProcessors() / 2;
++        int i;
++        if (cpus <= 4) {
++            i = cpus <= 2 ? 1 : 2;
++        } else if (cpus <= 8) {
++            // [5, 8]
++            i = Math.max(3, cpus - 2);
++        } else {
++            i = cpus * 2 / 3;
++        }
++        i = Math.min(8, i);
++        // Paper end - also try to avoid suffocating the system with the worldgen workers
+         i = Integer.getInteger("Paper.WorkerThreadCount", i);
+         ExecutorService executorService;
+ 
