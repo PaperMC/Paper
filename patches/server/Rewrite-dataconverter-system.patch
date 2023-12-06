@@ -24899,6 +24899,14 @@ diff --git a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
 +++ b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
+@@ -0,0 +0,0 @@ import com.mojang.datafixers.DataFixer;
+ import com.mojang.logging.LogUtils;
+ import com.mojang.serialization.DataResult;
+ import com.mojang.serialization.Dynamic;
++import com.mojang.serialization.DynamicOps;
+ import com.mojang.serialization.Lifecycle;
+ import java.io.BufferedOutputStream;
+ import java.io.BufferedReader;
 @@ -0,0 +0,0 @@ public class LevelStorageSource {
      static Dynamic<?> readLevelDataTagFixed(Path path, DataFixer dataFixer) throws IOException {
          CompoundTag nbttagcompound = LevelStorageSource.readLevelDataTagRaw(path);
@@ -24908,10 +24916,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Dynamic<?> dynamic = DataFixTypes.LEVEL.updateToCurrentVersion(dataFixer, new Dynamic(NbtOps.INSTANCE, nbttagcompound1), i);
          Dynamic<?> dynamic1 = dynamic.get("Player").orElseEmptyMap();
 -        Dynamic<?> dynamic2 = DataFixTypes.PLAYER.updateToCurrentVersion(dataFixer, dynamic1, i);
-+        Dynamic<?> dynamic2 = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.PLAYER, dynamic1, version, SharedConstants.getCurrentVersion().getDataVersion().getVersion()); // Paper
++        Dynamic<?> dynamic2 = LevelStorageSource.dank(dynamic1, version); // Paper
  
          dynamic = dynamic.set("Player", dynamic2);
          Dynamic<?> dynamic3 = dynamic.get("WorldGenSettings").orElseEmptyMap();
+@@ -0,0 +0,0 @@ public class LevelStorageSource {
+         return dynamic;
+     }
+ 
++    // Paper start
++    private static <T> Dynamic<T> dank(final Dynamic<T> input, final int version) {
++        return new Dynamic<>(input.getOps(), (T) ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.PLAYER, (CompoundTag)input.getValue(), version, net.minecraft.SharedConstants.getCurrentVersion().getDataVersion().getVersion()));
++    }
++    // Paper end
++
+     private LevelSummary readLevelSummary(LevelStorageSource.LevelDirectory save, boolean locked) {
+         Path path = save.dataFile();
+ 
 diff --git a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
