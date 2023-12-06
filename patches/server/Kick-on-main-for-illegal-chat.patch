@@ -6,6 +6,8 @@ Subject: [PATCH] Kick on main for illegal chat
 Makes the PlayerKickEvent fire on the main thread for
 illegal characters or chat out-of-order errors.
 
+TODO: Check all the missing schedule on mains? (1.20.3)
+
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
@@ -18,7 +20,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - add cause
 +            }); // Paper - push to main for event firing
          } else {
-             Optional<LastSeenMessages> optional = this.tryHandleChat(packet.message(), packet.timeStamp(), packet.lastSeenMessages());
+             Optional<LastSeenMessages> optional = this.tryHandleChat(packet.lastSeenMessages());
  
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      @Override
@@ -28,15 +30,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper
 +            }); // Paper - push to main for event firing
          } else {
-             Optional<LastSeenMessages> optional = this.tryHandleChat(packet.command(), packet.timeStamp(), packet.lastSeenMessages());
+             Optional<LastSeenMessages> optional = this.tryHandleChat(packet.lastSeenMessages());
  
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-     private Optional<LastSeenMessages> tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
-         if (!this.updateChatOrder(timestamp)) {
-             ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
+     private void handleMessageDecodeFailure(SignedMessageChain.DecodeException exception) {
+         ServerGamePacketListenerImpl.LOGGER.warn("Failed to update secure chat state for {}: '{}'", this.player.getGameProfile().getName(), exception.getComponent().getString());
+         if (exception.shouldDisconnect()) {
 +            this.server.scheduleOnMain(() -> { // Paper - push to main
-             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event causes
+             this.disconnect(exception.getComponent(), exception.kickCause); // Paper - kick event causes
 +            }); // Paper - push to main
-             return Optional.empty();
          } else {
-             Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(acknowledgment);
+             this.player.sendSystemMessage(exception.getComponent().copy().withStyle(ChatFormatting.RED));
+         }
