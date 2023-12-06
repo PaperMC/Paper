@@ -38,7 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
 @@ -0,0 +0,0 @@ public class Explosion {
-         this.damageCalculator = behavior == null ? this.makeDamageCalculator(entity) : behavior;
+         this.yield = this.blockInteraction == Explosion.BlockInteraction.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F; // CraftBukkit
      }
  
 +    // Paper start - optimise collisions
@@ -55,7 +55,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        double zDir = (double)((float)z / 15.0F * 2.0F - 1.0F);
 +
 +                        double mag = Math.sqrt(
-+                                xDir * xDir + yDir * yDir + zDir * zDir
++                            xDir * xDir + yDir * yDir + zDir * zDir
 +                        );
 +
 +                        rayCoords.add((xDir / mag) * (double)0.3F);
@@ -135,9 +135,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            Optional<Float> resistance = !calculateResistance ? Optional.empty() : this.damageCalculator.getBlockExplosionResistance((Explosion)(Object)this, this.level, pos, blockState, fluidState);
 +
 +            ret = new ExplosionBlockCache(
-+                    key, pos, blockState, fluidState,
-+                    (resistance.orElse(ZERO_RESISTANCE).floatValue() + 0.3f) * 0.3f,
-+                    false
++                key, pos, blockState, fluidState,
++                (resistance.orElse(ZERO_RESISTANCE).floatValue() + 0.3f) * 0.3f,
++                false
 +            );
 +        }
 +
@@ -200,7 +200,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            final long key = BlockPos.asLong(currX, currY, currZ);
 +
 +            final int cacheKey =
-+                    (currX & BLOCK_EXPLOSION_CACHE_MASK) |
++                (currX & BLOCK_EXPLOSION_CACHE_MASK) |
 +                    (currY & BLOCK_EXPLOSION_CACHE_MASK) << (BLOCK_EXPLOSION_CACHE_SHIFT) |
 +                    (currZ & BLOCK_EXPLOSION_CACHE_MASK) << (BLOCK_EXPLOSION_CACHE_SHIFT + BLOCK_EXPLOSION_CACHE_SHIFT);
 +            ExplosionBlockCache cachedBlock = blockCache[cacheKey];
@@ -258,8 +258,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private float getSeenFraction(final Vec3 source, final Entity target,
-+                                   final ExplosionBlockCache[] blockCache,
-+                                   final BlockPos.MutableBlockPos blockPos) {
++                                  final ExplosionBlockCache[] blockCache,
++                                  final BlockPos.MutableBlockPos blockPos) {
 +        final AABB boundingBox = target.getBoundingBox();
 +        final double diffX = boundingBox.maxX - boundingBox.minX;
 +        final double diffY = boundingBox.maxY - boundingBox.minY;
@@ -290,9 +290,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    ++totalRays;
 +
 +                    final Vec3 from = new Vec3(
-+                            fromX,
-+                            fromY,
-+                            Math.fma(dz, diffZ, offZ)
++                        fromX,
++                        fromY,
++                        Math.fma(dz, diffZ, offZ)
 +                    );
 +
 +                    if (!this.clipsAnything(from, source, context, blockCache, blockPos)) {
@@ -403,10 +403,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                            if (optional.isPresent()) {
 -                                f -= ((Float) optional.get() + 0.3F) * 0.3F;
 -                            }
-+                            if (!iblockdata.isDestroyable()) continue; // Paper
-+                            // Paper - optimise explosions
- 
+-
 -                            if (f > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, blockposition, iblockdata, f)) {
++                            if (!iblockdata.isDestroyable()) continue; // Paper
 +                            // Paper - optimise explosions
 +
 +                            f -= cachedBlock.resistance; // Paper - optimise explosions
@@ -448,23 +447,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Entity entity = (Entity) iterator.next();
  
 @@ -0,0 +0,0 @@ public class Explosion {
-                         d8 /= d11;
-                         d9 /= d11;
-                         d10 /= d11;
--                        double d12 = this.getBlockDensity(vec3d, entity); // Paper - Optimize explosions
-+                        double d12 = this.getBlockDensity(vec3d, entity, blockCache, blockPos); // Paper - Optimize explosions // Paper - optimise explosions
-                         double d13 = (1.0D - d7) * d12;
- 
-                         // CraftBukkit start
-@@ -0,0 +0,0 @@ public class Explosion {
-                                 // Calculate damage separately for each EntityComplexPart
-                                 double d7part;
-                                 if (list.contains(entityComplexPart) && (d7part = Math.sqrt(entityComplexPart.distanceToSqr(vec3d)) / f2) <= 1.0D) {
--                                    double d13part = (1.0D - d7part) * Explosion.getSeenPercent(vec3d, entityComplexPart);
-+                                    double d13part = (1.0D - d7part) * this.getSeenFraction(vec3d, entityComplexPart, blockCache, blockPos); // Paper - optimise explosions
-                                     entityComplexPart.hurt(this.getDamageSource(), (float) ((int) ((d13part * d13part + d13part) / 2.0D * 7.0D * (double) f2 + 1.0D)));
+                                 for (EnderDragonPart entityComplexPart : ((EnderDragon) entity).subEntities) {
+                                     // Calculate damage separately for each EntityComplexPart
+                                     if (list.contains(entityComplexPart)) {
+-                                        entityComplexPart.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity));
++                                        entityComplexPart.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity, getSeenFraction(vec3d, entityComplexPart, blockCache, blockPos))); // Paper - actually optimise explosions
+                                     }
                                  }
-                             }
+                             } else {
+@@ -0,0 +0,0 @@ public class Explosion {
+                             // CraftBukkit end
+                         }
+ 
+-                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity); // Paper - Optimize explosions
++                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity, blockCache, blockPos); // Paper - Optimize explosions
+                         double d13;
+ 
+                         if (entity instanceof LivingEntity) {
 @@ -0,0 +0,0 @@ public class Explosion {
              }
          }
@@ -472,7 +471,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.blockCache = null; // Paper - optimise explosions
 +        this.chunkPosCache = null; // Paper - optimise explosions
 +        this.chunkCache = null; // Paper - optimise explosions
-+
      }
  
      public void finalizeExplosion(boolean particles) {
@@ -494,3 +492,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.level.explosionDensityCache.put(key, blockDensity);
          }
  
+diff --git a/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java b/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
++++ b/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
+@@ -0,0 +0,0 @@ public class ExplosionDamageCalculator {
+     }
+ 
+     public float getEntityDamageAmount(Explosion explosion, Entity entity) {
++        // Paper start - actually optimise explosions
++        return this.getEntityDamageAmount(explosion, entity, Explosion.getSeenPercent(explosion.center(), entity));
++    }
++    public float getEntityDamageAmount(Explosion explosion, Entity entity, double seenPercent) {
++        // Paper end - actually optimise explosions
+         float f = explosion.radius() * 2.0F;
+         Vec3 vec3 = explosion.center();
+         double d = Math.sqrt(entity.distanceToSqr(vec3)) / (double)f;
+-        double e = (1.0D - d) * (double)Explosion.getSeenPercent(vec3, entity);
++        double e = (1.0D - d) * seenPercent; // Paper - actually optimise explosions
+         return (float)((e * e + e) / 2.0D * 7.0D * (double)f + 1.0D);
+     }
+ }
