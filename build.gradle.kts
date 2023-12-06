@@ -252,6 +252,7 @@ abstract class RebasePatches : BaseTask() {
                 .start()
 
             redirect(apply2.inputStream, System.out)
+            apply2.waitFor()
 
             logger.lifecycle(outStr)
             logger.lifecycle("Patch failed at $failed; See Git output above.")
