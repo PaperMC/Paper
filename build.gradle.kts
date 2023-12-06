@@ -1,5 +1,10 @@
+import io.papermc.paperweight.tasks.BaseTask
+import io.papermc.paperweight.util.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import java.io.ByteArrayOutputStream
+import java.nio.file.Path
+import kotlin.io.path.*
 
 plugins {
     java
@@ -131,14 +136,6 @@ allprojects {
     }
 }
 
-// Uncomment while updating for a new Minecraft version
-tasks.collectAtsFromPatches {
-    extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
-}
-tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches> {
-    filterPatches.set(false)
-}
-
 tasks.register("printMinecraftVersion") {
     doLast {
         println(providers.gradleProperty("mcVersion").get().trim())
@@ -148,5 +145,69 @@ tasks.register("printMinecraftVersion") {
 tasks.register("printPaperVersion") {
     doLast {
         println(project.version)
+    }
+}
+
+// see gradle.properties
+if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
+    tasks.collectAtsFromPatches {
+        extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
+    }
+    tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches>().configureEach {
+        filterPatches.set(false)
+    }
+    tasks.register("continueServerUpdate", RebasePatches::class) {
+        projectDir = project.projectDir
+        appliedPatches = file("patches/server")
+        unappliedPatches = file("patches/unapplied/server")
+    }
+}
+
+@UntrackedTask(because = "Does not make sense to track state")
+abstract class RebasePatches : BaseTask() {
+    @get:Internal
+    abstract val projectDir: DirectoryProperty
+
+    @get:InputFiles
+    abstract val appliedPatches: DirectoryProperty
+
+    @get:InputFiles
+    abstract val unappliedPatches: DirectoryProperty
+
+    private fun unapplied(): List<Path> =
+        unappliedPatches.path.listDirectoryEntries("*.patch").sortedBy { it.name }
+
+    @TaskAction
+    fun run() {
+        for (patch in unapplied()) {
+            val appliedLoc = appliedPatches.path.resolve(unappliedPatches.path.relativize(patch))
+            patch.copyTo(appliedLoc)
+
+            val out = ByteArrayOutputStream()
+
+            val proc = ProcessBuilder()
+                .directory(projectDir.path)
+                .command("./gradlew", "applyServerPatches")
+                .redirectErrorStream(true)
+                .start()
+
+            redirect(proc.inputStream, out)
+
+            val exit = proc.waitFor()
+
+            patch.deleteIfExists()
+
+            if (exit != 0) {
+                logger.lifecycle("Patch failed at $patch; Git output:")
+                logger.lifecycle(String(out.toByteArray()))
+                break
+            }
+
+            val git = Git(projectDir.path)
+            git("add", appliedPatches.path.toString() + "/*").runSilently()
+            git("add", unappliedPatches.path.toString() + "/*").runSilently()
+
+            logger.lifecycle("Applied $patch")
+        }
     }
 }
