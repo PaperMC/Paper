@@ -654,36 +654,10 @@ index e0fbacd574e0c83c2e1d164ded8e9ccf4af30480..7529751afa2932fd16bc4591189b0358
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index aa4181e59f88be04a3605352fa5ceb3e04149dd3..e1baba8135b5599d5f1c70024e313f4d2c9c9daf 100644
+index aa4181e59f88be04a3605352fa5ceb3e04149dd3..7cbd403f9e96e7ce35475c8102cd9f9c04819c27 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-@@ -1,9 +1,13 @@
- package net.minecraft.world.level.block.entity;
- 
- import javax.annotation.Nullable;
-+import net.minecraft.advancements.CriteriaTriggers;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.NonNullList;
-+import net.minecraft.nbt.CompoundTag;
- import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.world.Container;
- import net.minecraft.world.ContainerHelper;
- import net.minecraft.world.RandomizableContainer;
-@@ -11,12 +15,19 @@ import net.minecraft.world.entity.player.Inventory;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.inventory.AbstractContainerMenu;
- import net.minecraft.world.item.ItemStack;
-+import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.state.BlockState;
-+import net.minecraft.world.level.storage.loot.LootParams;
-+import net.minecraft.world.level.storage.loot.LootTable;
-+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-+import net.minecraft.world.phys.Vec3;
- 
- public abstract class RandomizableContainerBlockEntity extends BaseContainerBlockEntity implements RandomizableContainer {
+@@ -17,6 +17,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
      @Nullable
      public ResourceLocation lootTable;
      public long lootTableSeed;
@@ -691,13 +665,13 @@ index aa4181e59f88be04a3605352fa5ceb3e04149dd3..e1baba8135b5599d5f1c70024e313f4d
  
      protected RandomizableContainerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
          super(type, pos, state);
-@@ -43,6 +54,52 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
+@@ -43,6 +44,52 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
          this.lootTableSeed = lootTableSeed;
      }
  
 +    // Paper start
 +    @Override
-+    public boolean tryLoadLootTable(final CompoundTag nbt) {
++    public boolean tryLoadLootTable(final net.minecraft.nbt.CompoundTag nbt) {
 +        // Copied from super with changes, always check the original method
 +        this.lootableData.loadNbt(nbt); // Paper
 +        if (nbt.contains("LootTable", 8)) {
@@ -711,7 +685,7 @@ index aa4181e59f88be04a3605352fa5ceb3e04149dd3..e1baba8135b5599d5f1c70024e313f4d
 +    }
 +
 +    @Override
-+    public boolean trySaveLootTable(final CompoundTag nbt) {
++    public boolean trySaveLootTable(final net.minecraft.nbt.CompoundTag nbt) {
 +        this.lootableData.saveNbt(nbt);
 +        RandomizableContainer.super.trySaveLootTable(nbt);
 +        return false;
@@ -720,22 +694,22 @@ index aa4181e59f88be04a3605352fa5ceb3e04149dd3..e1baba8135b5599d5f1c70024e313f4d
 +    @Override
 +    public void unpackLootTable(@org.jetbrains.annotations.Nullable final Player player) {
 +        // Copied from super with changes, always check the original method
-+        Level level = this.getLevel();
++        net.minecraft.world.level.Level level = this.getLevel();
 +        BlockPos blockPos = this.getBlockPos();
 +        ResourceLocation resourceLocation = this.getLootTable();
 +        if (this.lootableData.shouldReplenish(player) && level != null) { // Paper
-+            LootTable lootTable = level.getServer().getLootData().getLootTable(resourceLocation);
-+            if (player instanceof ServerPlayer) {
-+                CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, resourceLocation);
++            net.minecraft.world.level.storage.loot.LootTable lootTable = level.getServer().getLootData().getLootTable(resourceLocation);
++            if (player instanceof net.minecraft.server.level.ServerPlayer) {
++                net.minecraft.advancements.CriteriaTriggers.GENERATE_LOOT.trigger((net.minecraft.server.level.ServerPlayer)player, resourceLocation);
 +            }
 +
 +            this.lootableData.processRefill(player); // Paper
-+            LootParams.Builder builder = (new LootParams.Builder((ServerLevel)level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos));
++            net.minecraft.world.level.storage.loot.LootParams.Builder builder = (new net.minecraft.world.level.storage.loot.LootParams.Builder((net.minecraft.server.level.ServerLevel)level)).withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, net.minecraft.world.phys.Vec3.atCenterOf(blockPos));
 +            if (player != null) {
-+                builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
++                builder.withLuck(player.getLuck()).withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY, player);
 +            }
 +
-+            lootTable.fill(this, builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
++            lootTable.fill(this, builder.create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.CHEST), this.getLootTableSeed());
 +        }
 +
 +    }
