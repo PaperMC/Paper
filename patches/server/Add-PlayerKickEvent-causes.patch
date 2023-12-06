@@ -9,7 +9,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
 +++ b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
 @@ -0,0 +0,0 @@ public class SignedMessageChain {
+         return (signature, body) -> {
+             SignedMessageLink signedMessageLink = this.advanceLink();
+             if (signedMessageLink == null) {
+-                throw new SignedMessageChain.DecodeException(Component.translatable("chat.disabled.chain_broken"), false);
++                throw new SignedMessageChain.DecodeException(Component.translatable("chat.disabled.chain_broken"), false); // Paper - TODO 1.20.3 - new kick cause?
+             } else if (playerPublicKey.data().hasExpired()) {
+-                throw new SignedMessageChain.DecodeException(Component.translatable("chat.disabled.expiredProfileKey"), false);
++                throw new SignedMessageChain.DecodeException(Component.translatable("chat.disabled.expiredProfileKey", org.bukkit.event.player.PlayerKickEvent.Cause.EXPIRED_PROFILE_PUBLIC_KEY), false); // Paper - kick event causes
+             } else if (body.timeStamp().isBefore(this.lastTimeStamp)) {
+-                throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.out_of_order_chat"), true);
++                throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.out_of_order_chat", org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT), true); // Paper - kick event causes
              } else {
+                 this.lastTimeStamp = body.timeStamp();
                  PlayerChatMessage playerChatMessage = new PlayerChatMessage(signedMessageLink, signature, body, (Component)null, FilterMask.PASS_THROUGH);
                  if (!playerChatMessage.verify(signatureValidator)) {
 -                    throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.unsigned_chat"), true);
@@ -80,13 +92,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/commands/KickCommand.java
 @@ -0,0 +0,0 @@ public class KickCommand {
  
-     private static int kickPlayers(CommandSourceStack source, Collection<ServerPlayer> targets, Component reason) {
-         for(ServerPlayer serverPlayer : targets) {
--            serverPlayer.connection.disconnect(reason);
-+            serverPlayer.connection.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.KICK_COMMAND); // Paper - kick event cause
-             source.sendSuccess(() -> {
-                 return Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason);
-             }, true);
+             for(ServerPlayer serverPlayer : targets) {
+                 if (!source.getServer().isSingleplayerOwner(serverPlayer.getGameProfile())) {
+-                    serverPlayer.connection.disconnect(reason);
++                    serverPlayer.connection.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.KICK_COMMAND); // Paper - kick event cause
+                     source.sendSuccess(() -> {
+                         return Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason);
+                     }, true);
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
@@ -129,13 +141,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          PacketUtils.ensureRunningOnSameThread(packet, this, (BlockableEventLoop) this.server);
-         if (packet.getAction() == ServerboundResourcePackPacket.Action.DECLINED && this.server.isResourcePackRequired()) {
-             ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack rejection", this.playerProfile().getName());
+         if (packet.action() == ServerboundResourcePackPacket.Action.DECLINED && this.server.isResourcePackRequired()) {
+             ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
 -            this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
 +            this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"), org.bukkit.event.player.PlayerKickEvent.Cause.RESOURCE_PACK_REJECTION); // Paper - kick event cause
          }
          // Paper start
-         PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.getAction().ordinal()];
+         PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
 @@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          if (this.keepAlivePending) {
              if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
@@ -323,7 +335,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
 +            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - add cause
          } else {
-             Optional<LastSeenMessages> optional = this.tryHandleChat(packet.message(), packet.timeStamp(), packet.lastSeenMessages());
+             Optional<LastSeenMessages> optional = this.tryHandleChat(packet.lastSeenMessages());
  
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      @Override
@@ -332,26 +344,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
 +            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper
          } else {
-             Optional<LastSeenMessages> optional = this.tryHandleChat(packet.command(), packet.timeStamp(), packet.lastSeenMessages());
+             Optional<LastSeenMessages> optional = this.tryHandleChat(packet.lastSeenMessages());
  
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
- 
      private void handleMessageDecodeFailure(SignedMessageChain.DecodeException exception) {
+         ServerGamePacketListenerImpl.LOGGER.warn("Failed to update secure chat state for {}: '{}'", this.player.getGameProfile().getName(), exception.getComponent().getString());
          if (exception.shouldDisconnect()) {
 -            this.disconnect(exception.getComponent());
 +            this.disconnect(exception.getComponent(), exception.kickCause); // Paper - kick event causes
          } else {
              this.player.sendSystemMessage(exception.getComponent().copy().withStyle(ChatFormatting.RED));
          }
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-     private Optional<LastSeenMessages> tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
-         if (!this.updateChatOrder(timestamp)) {
-             ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
--            this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
-+            this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event causes
-             return Optional.empty();
-         } else {
-             Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(acknowledgment);
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
              if (optional.isEmpty()) {
