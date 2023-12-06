@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aeltumn <daniel@goossens.ch>
+Date: Mon, 28 Aug 2023 13:44:09 +0200
+Subject: [PATCH] Allow proper checking of empty item stacks
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 3660ad55cc7e1f6e571887aac9c0215803f1ce41..f9ae1d0889e7f8ff8753d27619bfeb6e9c23f5fe 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -33,12 +33,19 @@ public final class CraftItemStack extends ItemStack {
+     }
+     // Paper end - MC Utils
+ 
++    // Paper start - override isEmpty to use vanilla's impl
++    @Override
++    public boolean isEmpty() {
++        return handle == null || handle.isEmpty();
++    }
++    // Paper end
++
+     public static net.minecraft.world.item.ItemStack asNMSCopy(ItemStack original) {
+         if (original instanceof CraftItemStack) {
+             CraftItemStack stack = (CraftItemStack) original;
+             return stack.handle == null ? net.minecraft.world.item.ItemStack.EMPTY : stack.handle.copy();
+         }
+-        if (original == null || original.getType() == Material.AIR) {
++        if (original == null || original.isEmpty()) { // Paper - use isEmpty
+             return net.minecraft.world.item.ItemStack.EMPTY;
+         }
+ 

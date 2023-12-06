@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Mon, 7 Aug 2023 12:58:28 +0200
+Subject: [PATCH] Cache map ids on item frames
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 625a598eb5f3c9c5ea60ae9ea50974bb08abbf85..9f1b424f8437f0f859d4f177ecc52233ad8e3357 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -118,7 +118,7 @@ public class ServerEntity {
+                 ItemStack itemstack = entityitemframe.getItem();
+ 
+                 if (this.level.paperConfig().maps.itemFrameCursorUpdateInterval > 0 && this.tickCount % this.level.paperConfig().maps.itemFrameCursorUpdateInterval == 0 && itemstack.getItem() instanceof MapItem) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks // Paper - Make item frame map cursor update interval configurable
+-                    Integer integer = MapItem.getMapId(itemstack);
++                    Integer integer = entityitemframe.cachedMapId; // Paper
+                     MapItemSavedData worldmap = MapItem.getSavedData(integer, this.level);
+ 
+                     if (worldmap != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index 9c11d0af958ec47408d238d34d30750d29ecdd88..69912c5b300b67394dce3876d2d96872033cf156 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -50,6 +50,7 @@ public class ItemFrame extends HangingEntity {
+     public static final int NUM_ROTATIONS = 8;
+     public float dropChance;
+     public boolean fixed;
++    public Integer cachedMapId; // Paper
+ 
+     public ItemFrame(EntityType<? extends ItemFrame> type, Level world) {
+         super(type, world);
+@@ -388,6 +389,7 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     private void onItemChanged(ItemStack stack) {
++        this.cachedMapId = MapItem.getMapId(stack); // Paper
+         if (!stack.isEmpty() && stack.getFrame() != this) {
+             stack.setEntityRepresentation(this);
+         }

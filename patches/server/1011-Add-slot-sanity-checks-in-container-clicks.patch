@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Mon, 11 Sep 2023 12:01:57 +1000
+Subject: [PATCH] Add slot sanity checks in container clicks
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index c8858b9f72f57356f47575c01cbb159d341e0825..555555786d5be31d10a8aee5d8b1972e61806262 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2991,6 +2991,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             break;
+                         case SWAP:
+                             if ((packet.getButtonNum() >= 0 && packet.getButtonNum() < 9) || packet.getButtonNum() == 40) {
++                                // Paper start
++                                if (packet.getSlotNum() < 0) {
++                                    action = InventoryAction.NOTHING;
++                                    break;
++                                }
++                                // Paper end
+                                 click = (packet.getButtonNum() == 40) ? ClickType.SWAP_OFFHAND : ClickType.NUMBER_KEY;
+                                 Slot clickedSlot = this.player.containerMenu.getSlot(packet.getSlotNum());
+                                 if (clickedSlot.mayPickup(this.player)) {
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index 9ee3c2e0dcfaa4280be4973479c6490ded33809c..96a2d06e8da8bf0f0a3b0af813bf79d448940a3a 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -423,6 +423,7 @@ public abstract class AbstractContainerMenu {
+                     this.resetQuickCraft();
+                 }
+             } else if (this.quickcraftStatus == 1) {
++                if (slotIndex < 0) return; // Paper
+                 slot = (Slot) this.slots.get(slotIndex);
+                 itemstack = this.getCarried();
+                 if (AbstractContainerMenu.canItemQuickReplace(slot, itemstack, true) && slot.mayPlace(itemstack) && (this.quickcraftType == 2 || itemstack.getCount() > this.quickcraftSlots.size()) && this.canDragTo(slot)) {

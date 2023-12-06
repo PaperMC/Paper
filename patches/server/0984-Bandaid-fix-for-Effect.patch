@@ -1,0 +1,142 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 28 Jul 2023 15:02:44 -0700
+Subject: [PATCH] Bandaid fix for Effect
+
+Effect or LevelEvent needs to be replaced
+but ideally after the enum PR has been merged
+upstream. Until then, this test and these fixes
+should address all the known issues with them
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftEffect.java b/src/main/java/org/bukkit/craftbukkit/CraftEffect.java
+index 5a5a8945c786e16ff0df62494ddd1ac85c42b53f..63f9735d356dafd579cee4423d3037eb4ed9b2c6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftEffect.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftEffect.java
+@@ -15,12 +15,15 @@ public class CraftEffect {
+     public static <T> int getDataValue(Effect effect, T data) {
+         int datavalue;
+         switch (effect) {
++        case PARTICLES_SCULK_CHARGE: // Paper - add missing effects
+         case VILLAGER_PLANT_GROW:
+             datavalue = (Integer) data;
+             break;
+         case POTION_BREAK:
++            if (data instanceof Potion) { // Paper - use Color for POTION_BREAK
+             datavalue = ((Potion) data).toDamageValue() & 0x3F;
+             break;
++            } // Paper - Color will fall through to cast below
+         case INSTANT_POTION_BREAK:
+             datavalue = ((Color) data).asRGB();
+             break;
+@@ -59,8 +62,15 @@ public class CraftEffect {
+             }
+             break;
+         case STEP_SOUND:
++            if (data instanceof Material) { // Paper - support BlockData
+             Preconditions.checkArgument(((Material) data).isBlock(), "Material %s is not a block!", data);
+             datavalue = Block.getId(CraftMagicNumbers.getBlock((Material) data).defaultBlockState());
++            // Paper start - support BlockData
++                break;
++            }
++        case PARTICLES_AND_SOUND_BRUSH_BLOCK_COMPLETE:
++            datavalue = Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) data).getState());
++            // Paper end
+             break;
+         case COMPOSTER_FILL_ATTEMPT:
+             datavalue = ((Boolean) data) ? 1 : 0;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index c77fec78636805a496ecea3e56f26290dbcbffff..abb14719496971a780650782bdce17c638c7b270 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1382,7 +1382,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     public <T> void playEffect(Location loc, Effect effect, T data, int radius) {
+         if (data != null) {
+             Preconditions.checkArgument(effect.getData() != null, "Effect.%s does not have a valid Data", effect);
+-            Preconditions.checkArgument(effect.getData().isAssignableFrom(data.getClass()), "%s data cannot be used for the %s effect", data.getClass().getName(), effect);
++            Preconditions.checkArgument(effect.isApplicable(data), "%s data cannot be used for the %s effect", data.getClass().getName(), effect); // Paper
+         } else {
+             // Special case: the axis is optional for ELECTRIC_SPARK
+             Preconditions.checkArgument(effect.getData() == null || effect == Effect.ELECTRIC_SPARK, "Wrong kind of data for the %s effect", effect);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d252f0313b1d73758782249060e7c57afb5c5418..082350f866eaef5fc8f98ebc217aa02cdcab5a46 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -875,7 +875,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         Preconditions.checkArgument(effect != null, "Effect cannot be null");
+         if (data != null) {
+             Preconditions.checkArgument(effect.getData() != null, "Effect.%s does not have a valid Data", effect);
+-            Preconditions.checkArgument(effect.getData().isAssignableFrom(data.getClass()), "%s data cannot be used for the %s effect", data.getClass().getName(), effect);
++            Preconditions.checkArgument(effect.isApplicable(data), "%s data cannot be used for the %s effect", data.getClass().getName(), effect); // Paper
+         } else {
+             // Special case: the axis is optional for ELECTRIC_SPARK
+             Preconditions.checkArgument(effect.getData() == null || effect == Effect.ELECTRIC_SPARK, "Wrong kind of data for the %s effect", effect);
+diff --git a/src/test/java/org/bukkit/EffectTest.java b/src/test/java/org/bukkit/EffectTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..875eacc2e5776901ba8593d0183844db2571f71b
+--- /dev/null
++++ b/src/test/java/org/bukkit/EffectTest.java
+@@ -0,0 +1,64 @@
++package org.bukkit;
++
++import java.lang.reflect.Field;
++import java.lang.reflect.Modifier;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import net.minecraft.world.level.block.LevelEvent;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertNull;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++public class EffectTest {
++
++    private static List<Integer> collectNmsLevelEvents() throws ReflectiveOperationException {
++        final List<Integer> events = new ArrayList<>();
++        for (final Field field : LevelEvent.class.getFields()) {
++            if (Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()) && field.getType() == int.class) {
++                events.add((int) field.get(null));
++            }
++        }
++        return events;
++    }
++
++    private static boolean isNotDeprecated(Effect effect) throws ReflectiveOperationException {
++        return !Effect.class.getDeclaredField(effect.name()).isAnnotationPresent(Deprecated.class);
++    }
++
++    @SuppressWarnings("deprecation")
++    @Test
++    public void checkAllApiExists() throws ReflectiveOperationException {
++        Map<Integer, Effect> toId = new HashMap<>();
++        for (final Effect effect : Effect.values()) {
++            if (isNotDeprecated(effect)) {
++                final Effect put = toId.put(effect.getId(), effect);
++                assertNull(put, "duplicate API effect: " + put);
++            }
++        }
++
++        for (final Integer event : collectNmsLevelEvents()) {
++            assertNotNull(toId.get(event), "missing API Effect: " + event);
++        }
++    }
++
++    @SuppressWarnings("deprecation")
++    @Test
++    public void checkNoExtraApi() throws ReflectiveOperationException {
++        Map<Integer, Effect> toId = new HashMap<>();
++        for (final Effect effect : Effect.values()) {
++            if (isNotDeprecated(effect)) {
++                final Effect put = toId.put(effect.getId(), effect);
++                assertNull(put, "duplicate API effect: " + put);
++            }
++        }
++
++        final List<Integer> nmsEvents = collectNmsLevelEvents();
++        for (final Map.Entry<Integer, Effect> entry : toId.entrySet()) {
++            assertTrue(nmsEvents.contains(entry.getKey()), "Extra API Effect: " + entry.getValue());
++        }
++    }
++}
