@@ -8,10 +8,10 @@ Areas affected by lag comepnsation:
  - Eating food items
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 1bac9f7894321b5710f5475f6598ec9f3ccd94d3..8f31413c939cc2b0454ad3d9a1b618dbae449d00 100644
+index e7bcb076788cefa94b70e455bef1f9653cec6415..98153bf0359db8d5a94fa6f75a05373e4e7cc4ae 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -305,6 +305,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -311,6 +311,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public volatile Thread shutdownThread; // Paper
      public volatile boolean abnormalExit = false; // Paper
      public boolean isIteratingOverLevels = false; // Paper
@@ -21,7 +21,7 @@ index 1bac9f7894321b5710f5475f6598ec9f3ccd94d3..8f31413c939cc2b0454ad3d9a1b618db
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1522,6 +1525,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1691,6 +1694,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          Iterator iterator = this.getAllLevels().iterator(); // Paper - move down
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
@@ -30,10 +30,10 @@ index 1bac9f7894321b5710f5475f6598ec9f3ccd94d3..8f31413c939cc2b0454ad3d9a1b618db
              net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
              worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index deebfe66d9c0f799043c3458a0108dc18bfdf15f..4296e0fec900ac0be4f1ebbc539e60f28f96a9cc 100644
+index b0576234320042b0c9c1f326671b76fa3a2a6915..072e7b75ade6db8f48437d096639faf8f924ad03 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -564,6 +564,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -566,6 +566,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
          return player != null && player.level() == this ? player : null;
      }
      // Paper end
@@ -52,7 +52,7 @@ index deebfe66d9c0f799043c3458a0108dc18bfdf15f..4296e0fec900ac0be4f1ebbc539e60f2
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 25f7adf194a165fa28488f80b87382c08111f896..346912d854a176a410920e69d063919f5d34626a 100644
+index 899439e0af639e8d9124522b3cb6a10601b17fe2..b214c934b9a537f52cef142c519c2b9b55a89ae3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -124,7 +124,7 @@ public class ServerPlayerGameMode {
@@ -65,10 +65,10 @@ index 25f7adf194a165fa28488f80b87382c08111f896..346912d854a176a410920e69d063919f
  
          if (this.hasDelayedDestroy) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 6d4d46163ffcffa98f400c2656703eb5c4818f40..675d695989cef5d8fc2e85673efbb57ec1bb38bd 100644
+index bed0a01be1703aad8fbfa549d5799e3f84759f32..e1eab03233149fd0714785955d21dc80dc664d96 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3816,6 +3816,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3818,6 +3818,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
          this.getEntityData().resendPossiblyDesyncedDataValues(java.util.List.of(DATA_LIVING_ENTITY_FLAGS), serverPlayer);
      }
      // Paper end
@@ -79,7 +79,7 @@ index 6d4d46163ffcffa98f400c2656703eb5c4818f40..675d695989cef5d8fc2e85673efbb57e
      private void updatingUsingItem() {
          if (this.isUsingItem()) {
              if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
-@@ -3834,7 +3838,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3836,7 +3840,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.triggerItemUseEffects(stack, 5);
          }
  
@@ -93,7 +93,7 @@ index 6d4d46163ffcffa98f400c2656703eb5c4818f40..675d695989cef5d8fc2e85673efbb57e
              this.completeUsingItem();
          }
  
-@@ -3882,7 +3891,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3884,7 +3893,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
          if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper use override flag
              this.useItem = itemstack;
@@ -105,7 +105,7 @@ index 6d4d46163ffcffa98f400c2656703eb5c4818f40..675d695989cef5d8fc2e85673efbb57e
              if (!this.level().isClientSide) {
                  this.setLivingEntityFlag(1, true);
                  this.setLivingEntityFlag(2, hand == InteractionHand.OFF_HAND);
-@@ -3907,7 +3919,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3909,7 +3921,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  }
              } else if (!this.isUsingItem() && !this.useItem.isEmpty()) {
                  this.useItem = ItemStack.EMPTY;
@@ -117,7 +117,7 @@ index 6d4d46163ffcffa98f400c2656703eb5c4818f40..675d695989cef5d8fc2e85673efbb57e
              }
          }
  
-@@ -4042,7 +4057,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -4044,7 +4059,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
          }
  
          this.useItem = ItemStack.EMPTY;
