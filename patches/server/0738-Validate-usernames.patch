@@ -5,7 +5,7 @@ Subject: [PATCH] Validate usernames
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 0c4fb4a7d4fcdc6d724beb13a16bd729a3c525cd..20ba13c06edf125ba216d1ca8794868abcd8f916 100644
+index 0c4fb4a7d4fcdc6d724beb13a16bd729a3c525cd..fa6c77391ac40f86e1b679ef21f4ee43177857c8 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -63,6 +63,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
@@ -16,42 +16,12 @@ index 0c4fb4a7d4fcdc6d724beb13a16bd729a3c525cd..20ba13c06edf125ba216d1ca8794868a
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -134,10 +135,38 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-         return this.requestedUsername != null ? this.requestedUsername + " (" + s + ")" : s;
-     }
- 
-+    // Paper start - validate usernames
-+    public static boolean validateUsername(String in) {
-+        if (in == null || in.isEmpty() || in.length() > 16) {
-+            return false;
-+        }
-+
-+        for (int i = 0, len = in.length(); i < len; ++i) {
-+            char c = in.charAt(i);
-+
-+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_' || c == '.')) {
-+                continue;
-+            }
-+
-+            return false;
-+        }
-+
-+        return true;
-+    }
-+    // Paper end - validate usernames
-+
+@@ -137,7 +138,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
      @Override
      public void handleHello(ServerboundHelloPacket packet) {
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
-         Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
-+        // Paper start - validate usernames -- TODO: Do we need this?
-+        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation) {
-+            if (!this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation && !validateUsername(packet.name())) {
-+                ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
-+                return;
-+            }
-+        }
-+        // Paper end - validate usernames
+-        Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]); // Paper - config username validation
          this.requestedUsername = packet.name();
          GameProfile gameprofile = this.server.getSingleplayerProfile();
  
@@ -68,3 +38,34 @@ index 30ad9f878d0b76c6bef594448c3122d614a7aa8c..147fed3b3f0b052bc2892eaf001f0fb5
                  list.add(entityplayer);
              }
          }
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index bce494bb7bc1ce20809ac7d355f04aa7aad78308..7a984f531d3ebb6e055f07227b2ef8247fb3a842 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -2340,9 +2340,23 @@ public abstract class Player extends LivingEntity {
+     }
+ 
+     public static boolean isValidUsername(String name) {
+-        return name.length() > 16 ? false : name.chars().filter((i) -> {
+-            return i <= 32 || i >= 127;
+-        }).findAny().isEmpty();
++        // Paper start
++        if (name == null || name.isEmpty() || name.length() > 16) {
++            return false;
++        }
++
++        for (int i = 0, len = name.length(); i < len; ++i) {
++            char c = name.charAt(i);
++
++            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_' || c == '.')) {
++                continue;
++            }
++
++            return false;
++        }
++
++        return true;
++        // Paper end
+     }
+ 
+     public static float getPickRange(boolean creative) {
