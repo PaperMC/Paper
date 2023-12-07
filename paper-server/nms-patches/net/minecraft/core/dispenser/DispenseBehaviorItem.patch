@@ -24,7 +24,7 @@
      public DispenseBehaviorItem() {}
  
      @Override
-@@ -25,11 +40,19 @@
+@@ -25,11 +40,22 @@
          IPosition iposition = BlockDispenser.getDispensePosition(sourceblock);
          ItemStack itemstack1 = itemstack.split(1);
  
@@ -37,21 +37,31 @@
          return itemstack;
      }
  
--    public static void spawnItem(World world, ItemStack itemstack, int i, EnumDirection enumdirection, IPosition iposition) {
-+    // CraftBukkit start - void -> boolean return, IPosition -> ISourceBlock last argument, dropper
-+    public static boolean spawnItem(World world, ItemStack itemstack, int i, EnumDirection enumdirection, SourceBlock sourceblock, boolean dropper) {
-+        if (itemstack.isEmpty()) return true;
-+        IPosition iposition = BlockDispenser.getDispensePosition(sourceblock);
+     public static void spawnItem(World world, ItemStack itemstack, int i, EnumDirection enumdirection, IPosition iposition) {
++        // CraftBukkit start
++        EntityItem entityitem = prepareItem(world, itemstack, i, enumdirection, iposition);
++        world.addFreshEntity(entityitem);
++    }
++
++    private static EntityItem prepareItem(World world, ItemStack itemstack, int i, EnumDirection enumdirection, IPosition iposition) {
 +        // CraftBukkit end
          double d0 = iposition.x();
          double d1 = iposition.y();
          double d2 = iposition.z();
-@@ -44,7 +67,39 @@
+@@ -44,7 +70,47 @@
          double d3 = world.random.nextDouble() * 0.1D + 0.2D;
  
          entityitem.setDeltaMovement(world.random.triangle((double) enumdirection.getStepX() * d3, 0.0172275D * (double) i), world.random.triangle(0.2D, 0.0172275D * (double) i), world.random.triangle((double) enumdirection.getStepZ() * d3, 0.0172275D * (double) i));
-+
 +        // CraftBukkit start
++        return entityitem;
++    }
++
++    // CraftBukkit - void -> boolean return, IPosition -> ISourceBlock last argument, dropper
++    public static boolean spawnItem(World world, ItemStack itemstack, int i, EnumDirection enumdirection, SourceBlock sourceblock, boolean dropper) {
++        if (itemstack.isEmpty()) return true;
++        IPosition iposition = BlockDispenser.getDispensePosition(sourceblock);
++        EntityItem entityitem = prepareItem(world, itemstack, i, enumdirection, iposition);
++
 +        org.bukkit.block.Block block = CraftBlock.at(world, sourceblock.pos());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 +
