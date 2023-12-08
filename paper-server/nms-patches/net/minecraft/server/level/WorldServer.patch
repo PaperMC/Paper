@@ -504,15 +504,31 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().registryOrThrow(Registries.STRUCTURE).getTag(tagkey);
-@@ -1277,6 +1471,7 @@
+@@ -1272,11 +1466,22 @@
+     @Nullable
+     @Override
+     public WorldMap getMapData(String s) {
+-        return (WorldMap) this.getServer().overworld().getDataStorage().get(WorldMap.factory(), s);
++        // CraftBukkit start
++        WorldMap worldmap = (WorldMap) this.getServer().overworld().getDataStorage().get(WorldMap.factory(), s);
++        if (worldmap != null) {
++            worldmap.id = s;
++        }
++        return worldmap;
++        // CraftBukkit end
+     }
  
      @Override
      public void setMapData(String s, WorldMap worldmap) {
-+        worldmap.id = s; // CraftBukkit
++        // CraftBukkit start
++        worldmap.id = s;
++        MapInitializeEvent event = new MapInitializeEvent(worldmap.mapView);
++        Bukkit.getServer().getPluginManager().callEvent(event);
++        // CraftBukkit end
          this.getServer().overworld().getDataStorage().set(s, worldmap);
      }
  
-@@ -1574,6 +1769,11 @@
+@@ -1574,6 +1779,11 @@
      @Override
      public void blockUpdated(BlockPosition blockposition, Block block) {
          if (!this.isDebug()) {
@@ -524,7 +540,7 @@
              this.updateNeighborsAt(blockposition, block);
          }
  
-@@ -1593,12 +1793,12 @@
+@@ -1593,12 +1803,12 @@
      }
  
      public boolean isFlat() {
@@ -539,7 +555,7 @@
      }
  
      @Nullable
-@@ -1621,7 +1821,7 @@
+@@ -1621,7 +1831,7 @@
      private static <T> String getTypeCount(Iterable<T> iterable, Function<T, String> function) {
          try {
              Object2IntOpenHashMap<String> object2intopenhashmap = new Object2IntOpenHashMap();
@@ -548,7 +564,7 @@
  
              while (iterator.hasNext()) {
                  T t0 = iterator.next();
-@@ -1630,7 +1830,7 @@
+@@ -1630,7 +1840,7 @@
                  object2intopenhashmap.addTo(s, 1);
              }
  
@@ -557,7 +573,7 @@
                  String s1 = (String) entry.getKey();
  
                  return s1 + ":" + entry.getIntValue();
-@@ -1641,17 +1841,33 @@
+@@ -1641,17 +1851,33 @@
      }
  
      public static void makeObsidianPlatform(WorldServer worldserver) {
@@ -593,7 +609,7 @@
      }
  
      @Override
-@@ -1785,6 +2001,8 @@
+@@ -1785,6 +2011,8 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -602,7 +618,7 @@
          }
  
          public void onTrackingEnd(Entity entity) {
-@@ -1821,6 +2039,14 @@
+@@ -1821,6 +2049,14 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
