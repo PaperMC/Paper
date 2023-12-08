@@ -3,6 +3,8 @@ package org.bukkit.block.banner;
 import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.EnumBannerPatternType;
+import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +24,8 @@ public class PatternTypeTest extends AbstractTestingBase {
         for (PatternType bukkit : PatternType.values()) {
             EnumBannerPatternType found = null;
             for (EnumBannerPatternType nms : BuiltInRegistries.BANNER_PATTERN) {
-                if (bukkit.getIdentifier().equals(nms.getHashname())) {
+                NamespacedKey nmsKey = CraftNamespacedKey.fromMinecraft(BuiltInRegistries.BANNER_PATTERN.getKey(nms));
+                if (bukkit.getIdentifier().equals(nms.getHashname()) && bukkit.getKey().equals(nmsKey)) {
                     found = nms;
                     break;
                 }
