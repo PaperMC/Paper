@@ -3,16 +3,21 @@ From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
 Date: Sun, 24 Sep 2023 18:35:28 +0200
 Subject: [PATCH] Fix missing map initialize event call
 
+== AT ==
+public net.minecraft.world.level.storage.DimensionDataStorage readSavedData(Ljava/util/function/Function;Lnet/minecraft/util/datafix/DataFixTypes;Ljava/lang/String;)Lnet/minecraft/world/level/saveddata/SavedData;
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 82e5a780c993991c00264f7874ccc7f333f3f590..f4d53d9bfe5b060158f69b5d9e4533a5b9869eed 100644
+index 8f85aafb181cadd2983b0f3735782729858226c6..b78a9628a88f2a495ef6de74446a02a14d41a1f6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -2129,7 +2129,23 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -2129,13 +2129,25 @@ public class ServerLevel extends Level implements WorldGenLevel {
      @Nullable
      @Override
      public MapItemSavedData getMapData(String id) {
--        return (MapItemSavedData) this.getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), id);
+-        // CraftBukkit start
+-        MapItemSavedData worldmap = (MapItemSavedData) this.getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), id);
+-        if (worldmap != null) {
+-            worldmap.id = id;
 +        // Paper start - Call missing map initialize event & set id
 +        final DimensionDataStorage storage = this.getServer().overworld().getDataStorage();
 +
@@ -26,23 +31,14 @@ index 82e5a780c993991c00264f7874ccc7f333f3f590..f4d53d9bfe5b060158f69b5d9e4533a5
 +                new MapInitializeEvent(map.mapView).callEvent();
 +                return map;
 +            }
-+        }
++        } else if (existing instanceof MapItemSavedData mapItemSavedData) {
++            mapItemSavedData.id = id;
+         }
+-        return worldmap;
+-        // CraftBukkit end
 +
 +        return existing instanceof MapItemSavedData data ? data : null;
 +        // Paper end
      }
  
      @Override
-diff --git a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
-index 1aea6a257ffceb511368a6e8dee5051e120894ad..269c81cd60d98a94721c77d700af223bda15a61a 100644
---- a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
-+++ b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
-@@ -58,7 +58,7 @@ public class DimensionDataStorage {
-     }
- 
-     @Nullable
--    private <T extends SavedData> T readSavedData(Function<CompoundTag, T> readFunction, DataFixTypes dataFixTypes, String id) {
-+    public <T extends SavedData> T readSavedData(Function<CompoundTag, T> readFunction, DataFixTypes dataFixTypes, String id) { // Paper
-         try {
-             File file = this.getDataFile(id);
-             if (file.exists()) {

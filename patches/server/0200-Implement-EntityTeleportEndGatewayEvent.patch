@@ -5,28 +5,23 @@ Subject: [PATCH] Implement EntityTeleportEndGatewayEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-index 020314dded2c6305bd5e9013b108bc74be25ccc1..85914124014b4e6f0a561cf560918af68682b6f5 100644
+index 8ae723c6500bb92f937a27730c2a5ec912247c0a..676c2a4c9423e37319b097b99a307dd0186061a0 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-@@ -224,9 +224,20 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+@@ -224,8 +224,14 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
  
                  }
-                 // CraftBukkit end
+ 
+-                org.bukkit.event.entity.EntityTeleportEvent teleEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(entity1, blockposition1.getX() + 0.5, blockposition1.getY() + 0.5, blockposition1.getZ() + 0.5); // Paper - diff on change
+-                if (teleEvent.isCancelled()) {
 +                // Paper start - EntityTeleportEndGatewayEvent
 +                org.bukkit.Location location = new org.bukkit.Location(world.getWorld(), blockposition1.getX() + 0.5D, blockposition1.getY(), blockposition1.getZ() + 0.5D);
 +                location.setPitch(entity1.getXRot());
 +                location.setYaw(entity1.getBukkitYaw());
-+
 +                org.bukkit.entity.Entity bukkitEntity = entity1.getBukkitEntity();
-+                com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent event = new com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent(bukkitEntity, bukkitEntity.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(world.getWorld(), blockEntity));
-+                if (!event.callEvent()) {
-+                    return;
-+                }
-+                // Paper end
++                org.bukkit.event.entity.EntityTeleportEvent teleEvent = new com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent(bukkitEntity, bukkitEntity.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(world.getWorld(), blockEntity));
++                if (!teleEvent.callEvent()) {
++                    // Paper end - EntityTeleportEndGatewayEvent
+                     return;
+                 }
  
-                 entity1.setPortalCooldown();
--                entity1.teleportToWithTicket((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D); // Paper - diff on change
-+                entity1.teleportToWithTicket(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ()); // Paper
-             }
- 
-             TheEndGatewayBlockEntity.triggerCooldown(world, pos, state, blockEntity);
