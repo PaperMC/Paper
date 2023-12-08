@@ -5,7 +5,7 @@ Subject: [PATCH] Complete resource pack API
 
 
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index fdde0f82531fba370327ff71f59c2c4722d42df2..339b3a4ebae8a522ec3932f901729f88a680d14b 100644
+index dd3d0cfae07acbd6d3325d0244581e5cb2c1ee9b..36cb91ee7076f011e0e2558f858a5f9bb1281b44 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -1717,7 +1717,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
@@ -18,11 +18,11 @@ index fdde0f82531fba370327ff71f59c2c4722d42df2..339b3a4ebae8a522ec3932f901729f88
      public void setResourcePack(@NotNull String url);
  
      /**
-@@ -2611,6 +2613,124 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-     default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
-         return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.displayName())));
-     }
-+
+@@ -2091,6 +2093,165 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     void setResourcePack(@NotNull UUID uuid, @NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
+     // Paper end
+ 
++    // Paper start - more resource pack API
 +    /**
 +     * Request that the player's client download and switch resource packs.
 +     * <p>
@@ -39,8 +39,6 @@ index fdde0f82531fba370327ff71f59c2c4722d42df2..339b3a4ebae8a522ec3932f901729f88
 +     * <ul>
 +     * <li>Players can disable server resources on their client, in which
 +     *     case this method will have no affect on them.
-+     * <li>There is no concept of resetting resource packs back to default
-+     *     within Minecraft, so players will have to relog to do so.
 +     * </ul>
 +     *
 +     * @param url The URL from which the client will download the resource
@@ -52,7 +50,9 @@ index fdde0f82531fba370327ff71f59c2c4722d42df2..339b3a4ebae8a522ec3932f901729f88
 +     * @throws IllegalArgumentException Thrown if the URL is too long. The
 +     *     length restriction is an implementation specific arbitrary value.
 +     */
-+    void setResourcePack(@NotNull String url, @NotNull String hash);
++    default void setResourcePack(final @NotNull String url, final @NotNull String hash) {
++        this.setResourcePack(url, hash, false);
++    }
 +
 +    /**
 +     * Request that the player's client download and switch resource packs.
@@ -70,8 +70,6 @@ index fdde0f82531fba370327ff71f59c2c4722d42df2..339b3a4ebae8a522ec3932f901729f88
 +     * <ul>
 +     * <li>Players can disable server resources on their client, in which
 +     *     case this method will have no affect on them.
-+     * <li>There is no concept of resetting resource packs back to default
-+     *     within Minecraft, so players will have to relog to do so.
 +     * </ul>
 +     *
 +     * @param url The URL from which the client will download the resource
@@ -84,7 +82,9 @@ index fdde0f82531fba370327ff71f59c2c4722d42df2..339b3a4ebae8a522ec3932f901729f88
 +     * @throws IllegalArgumentException Thrown if the URL is too long. The
 +     *     length restriction is an implementation specific arbitrary value.
 +     */
-+    void setResourcePack(@NotNull String url, @NotNull String hash, boolean required);
++    default void setResourcePack(final @NotNull String url, final @NotNull String hash, final boolean required) {
++        this.setResourcePack(url, hash, required, null);
++    }
 +
 +    /**
 +     * Request that the player's client download and switch resource packs.
@@ -102,8 +102,6 @@ index fdde0f82531fba370327ff71f59c2c4722d42df2..339b3a4ebae8a522ec3932f901729f88
 +     * <ul>
 +     * <li>Players can disable server resources on their client, in which
 +     *     case this method will have no affect on them.
-+     * <li>There is no concept of resetting resource packs back to default
-+     *     within Minecraft, so players will have to relog to do so.
 +     * </ul>
 +     *
 +     * @param url The URL from which the client will download the resource
@@ -117,65 +115,90 @@ index fdde0f82531fba370327ff71f59c2c4722d42df2..339b3a4ebae8a522ec3932f901729f88
 +     * @throws IllegalArgumentException Thrown if the URL is too long. The
 +     *     length restriction is an implementation specific arbitrary value.
 +     */
-+    void setResourcePack(@NotNull String url, @NotNull String hash, boolean required, @Nullable net.kyori.adventure.text.Component resourcePackPrompt);
-+    /**
-+     * @return the most recent resource pack status received from the player,
-+     *         or null if no status has ever been received from this player.
-+     */
-+    @Nullable
-+    org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus();
-+
-+    /**
-+     * @return the most recent resource pack hash received from the player,
-+     *         or null if no hash has ever been received from this player.
-+     *
-+     * @deprecated This is no longer sent from the client and will always be null
-+     */
-+    @Nullable
-+    @Deprecated
-+    String getResourcePackHash();
-+
-+    /**
-+     * @return true if the last resource pack status received from this player
-+     *         was {@link org.bukkit.event.player.PlayerResourcePackStatusEvent.Status#SUCCESSFULLY_LOADED}
-+     */
-+    boolean hasResourcePack();
-     // Paper end
- 
-     // Spigot start
-diff --git a/src/main/java/org/bukkit/event/player/PlayerResourcePackStatusEvent.java b/src/main/java/org/bukkit/event/player/PlayerResourcePackStatusEvent.java
-index e2c4f9a0456cef345772d57b4d9c6e7d9598dd53..d80191e0848e04bbfb740113b9b1646dae087ec0 100644
---- a/src/main/java/org/bukkit/event/player/PlayerResourcePackStatusEvent.java
-+++ b/src/main/java/org/bukkit/event/player/PlayerResourcePackStatusEvent.java
-@@ -13,14 +13,34 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
- 
-     private static final HandlerList handlers = new HandlerList();
-     private final UUID id;
-+    @Deprecated
-+    private final String hash; // Paper
-     private final Status status;
- 
-     public PlayerResourcePackStatusEvent(@NotNull final Player who, @NotNull UUID id, @NotNull Status resourcePackStatus) {
-         super(who);
-         this.id = id;
-+        this.hash = null; // Paper
-         this.status = resourcePackStatus;
-     }
- 
-+    @Deprecated // Paper
-+    public PlayerResourcePackStatusEvent(@NotNull final Player who, @NotNull UUID id, Status resourcePackStatus, String hash) {
-+        super(who);
-+        this.id = id;
-+        this.hash = hash; // Paper
-+        this.status = resourcePackStatus;
++    default void setResourcePack(final @NotNull String url, final @NotNull String hash, final boolean required, final net.kyori.adventure.text.@Nullable Component resourcePackPrompt) {
++        this.setResourcePack(UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, hash, resourcePackPrompt, required);
 +    }
 +
 +    /**
++     * Request that the player's client download and switch resource packs.
++     * <p>
++     * The player's client will download the new resource pack asynchronously
++     * in the background, and will automatically switch to it once the
++     * download is complete. If the client has downloaded and cached the same
++     * resource pack in the past, it will perform a quick timestamp check
++     * over the network to determine if the resource pack has changed and
++     * needs to be downloaded again. When this request is sent for the very
++     * first time from a given server, the client will first display a
++     * confirmation GUI to the player before proceeding with the download.
++     * <p>
++     * Notes:
++     * <ul>
++     * <li>Players can disable server resources on their client, in which
++     *     case this method will have no affect on them.
++     * </ul>
++     *
++     * @param uuid Unique resource pack ID.
++     * @param url The URL from which the client will download the resource
++     *     pack. The string must contain only US-ASCII characters and should
++     *     be encoded as per RFC 1738.
++     * @param hash A 40 character hexadecimal and lowercase SHA-1 digest of
++     *     the resource pack file.
++     * @param resourcePackPrompt A Prompt to be displayed in the client request
++     * @param required Marks if the resource pack should be required by the client
++     * @throws IllegalArgumentException Thrown if the URL is null.
++     * @throws IllegalArgumentException Thrown if the URL is too long. The
++     *     length restriction is an implementation specific arbitrary value.
++     */
++    void setResourcePack(@NotNull UUID uuid, @NotNull String url, @NotNull String hash, net.kyori.adventure.text.@Nullable Component resourcePackPrompt, boolean required);
++
++    /**
++     * Gets the most recent resource pack status from the player.
++     *
++     * @return the most recent status or null
++     */
++    org.bukkit.event.player.PlayerResourcePackStatusEvent.@Nullable Status getResourcePackStatus();
++
++    /**
++     * Gets the most recent pack hash from the player.
++     *
++     * @return the most recent hash or null
++     * @deprecated This is no longer sent from the client and will always be null
++     */
++    @Deprecated(forRemoval = true)
++    @org.jetbrains.annotations.Contract("-> null")
++    default @Nullable String getResourcePackHash() {
++        return null;
++    }
++
++    /**
++     * Gets if the last resource pack status from the player
++     * was {@link org.bukkit.event.player.PlayerResourcePackStatusEvent.Status#SUCCESSFULLY_LOADED}.
++     *
++     * @return true if last status was successfully loaded
++     */
++    default boolean hasResourcePack() {
++        return this.getResourcePackStatus() == org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED;
++    }
++    // Paper end - more resource pack API
++
+     /**
+      * Gets the Scoreboard displayed to this player
+      *
+diff --git a/src/main/java/org/bukkit/event/player/PlayerResourcePackStatusEvent.java b/src/main/java/org/bukkit/event/player/PlayerResourcePackStatusEvent.java
+index e2c4f9a0456cef345772d57b4d9c6e7d9598dd53..e4c32b21ab013703a6a1b07a1ad564d914ebe83f 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerResourcePackStatusEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerResourcePackStatusEvent.java
+@@ -21,6 +21,16 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
+         this.status = resourcePackStatus;
+     }
+ 
++    // Paper start - add hash (not used anymore)
++    /**
 +     * @deprecated Hash does not seem to ever be set
 +     */
-+    @Deprecated
++    @Deprecated(forRemoval = true)
 +    public String getHash() {
-+        return this.hash;
++        return null;
 +    }
 +    // Paper end
 +

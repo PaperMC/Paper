@@ -3567,7 +3567,7 @@ index 61759e8179d0f6342abf0c0294e5a024928db8d9..92e21126a9347f1ee2279ab09bb6abf2
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 3777442efd8e7d599a4f3191d85cb1be6871ad3b..336045ecb9e6b3803fdf9531b07bb72ceff0ee73 100644
+index 3777442efd8e7d599a4f3191d85cb1be6871ad3b..f8fc314a0c6960125e51e6d6ed11afcdff684332 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -303,14 +303,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -3751,14 +3751,14 @@ index 3777442efd8e7d599a4f3191d85cb1be6871ad3b..336045ecb9e6b3803fdf9531b07bb72c
      }
  
      @Override
-@@ -1731,6 +1797,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1731,6 +1797,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  
-+    // Paper start
-+    // TODO UUID API
++    // Paper start - adventure
 +    @Override
-+    public void setResourcePack(String url, byte[] hashBytes, net.kyori.adventure.text.Component prompt, boolean force) {
++    public void setResourcePack(final UUID uuid, final String url, final byte[] hashBytes, final net.kyori.adventure.text.Component prompt, final boolean force) {
++        Preconditions.checkArgument(uuid != null, "Resource pack UUID cannot be null");
 +        Preconditions.checkArgument(url != null, "Resource pack URL cannot be null");
 +        final String hash;
 +        if (hashBytes != null) {
@@ -3767,14 +3767,15 @@ index 3777442efd8e7d599a4f3191d85cb1be6871ad3b..336045ecb9e6b3803fdf9531b07bb72c
 +        } else {
 +            hash = "";
 +        }
-+        this.getHandle().connection.send(new ClientboundResourcePackPushPacket(UUID.randomUUID(), url, hash, force, io.papermc.paper.adventure.PaperAdventure.asVanilla(prompt)));
++        this.getHandle().connection.send(new net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket(Optional.empty()));
++        this.getHandle().connection.send(new ClientboundResourcePackPushPacket(uuid, url, hash, force, io.papermc.paper.adventure.PaperAdventure.asVanilla(prompt)));
 +    }
-+    // Paper end
++    // Paper end - adventure
 +
      public void addChannel(String channel) {
          Preconditions.checkState(this.channels.size() < 128, "Cannot register channel '%s'. Too many channels registered!", channel);
          channel = StandardMessenger.validateAndCorrectChannel(channel);
-@@ -2126,6 +2208,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2126,6 +2209,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (this.getHandle().requestedViewDistance() == 0) ? Bukkit.getViewDistance() : this.getHandle().requestedViewDistance();
      }
  
@@ -3787,7 +3788,7 @@ index 3777442efd8e7d599a4f3191d85cb1be6871ad3b..336045ecb9e6b3803fdf9531b07bb72c
      @Override
      public int getPing() {
          return this.getHandle().connection.latency();
-@@ -2176,6 +2264,252 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2176,6 +2265,252 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
