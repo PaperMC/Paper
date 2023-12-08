@@ -50,6 +50,13 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
         assertThrows(IllegalArgumentException.class, () -> itemMeta.getPersistentDataContainer().has(VALID_KEY, new PrimitiveTagType<>(boolean.class)));
     }
 
+    @Test
+    public void testHasNoType() {
+        ItemMeta itemMeta = createNewItemMeta();
+        itemMeta.getPersistentDataContainer().set(VALID_KEY, PersistentDataType.INTEGER, 1); // We gotta set this so we at least try to compare it
+        assertTrue(itemMeta.getPersistentDataContainer().has(VALID_KEY));
+    }
+
     /*
         Getting a tag
      */
@@ -86,6 +93,28 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
 
     private NamespacedKey requestKey(String keyName) {
         return new NamespacedKey("test-plugin", keyName.toLowerCase());
+    }
+
+    @Test
+    public void testCopyTo() {
+        PersistentDataContainer container = createComplexItemMeta().getPersistentDataContainer();
+        PersistentDataContainer target = container.getAdapterContext().newPersistentDataContainer();
+        target.set(VALID_KEY, PersistentDataType.INTEGER, 1);
+        container.set(VALID_KEY, PersistentDataType.INTEGER, 2);
+        container.copyTo(target, false);
+
+        assertEquals(1, target.get(VALID_KEY, PersistentDataType.INTEGER)); // Should not be replaced
+    }
+
+    @Test
+    public void testCopyToReplace() {
+        PersistentDataContainer container = createComplexItemMeta().getPersistentDataContainer();
+        PersistentDataContainer target = container.getAdapterContext().newPersistentDataContainer();
+        target.set(VALID_KEY, PersistentDataType.INTEGER, 1);
+        container.set(VALID_KEY, PersistentDataType.INTEGER, 2);
+        container.copyTo(target, true);
+
+        assertEquals(container, target);
     }
 
     /*

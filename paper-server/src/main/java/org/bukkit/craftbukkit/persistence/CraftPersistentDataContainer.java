@@ -55,6 +55,11 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
     }
 
     @Override
+    public boolean has(NamespacedKey key) {
+        return this.customDataTags.get(key.toString()) != null;
+    }
+
+    @Override
     public <T, Z> Z get(NamespacedKey key, PersistentDataType<T, Z> type) {
         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
         Preconditions.checkArgument(type != null, "The provided type cannot be null");
@@ -97,6 +102,18 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
     @Override
     public boolean isEmpty() {
         return this.customDataTags.isEmpty();
+    }
+
+    @Override
+    public void copyTo(PersistentDataContainer other, boolean replace) {
+        Preconditions.checkArgument(other != null, "The target container cannot be null");
+
+        CraftPersistentDataContainer target = (CraftPersistentDataContainer) other;
+        if (replace) {
+            target.customDataTags.putAll(customDataTags);
+        } else {
+            customDataTags.forEach(target.customDataTags::putIfAbsent);
+        }
     }
 
     @Override
