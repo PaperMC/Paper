@@ -15,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()])); // CraftBukkit
 +        // Paper start
 +        PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
-+        player.getBukkitEntity().setResourcePackStatus(packStatus);
++        player.getBukkitEntity().resourcePackStatus = packStatus;
 +        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), packStatus)); // CraftBukkit
 +        // Paper end
  
@@ -25,48 +25,28 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.PlayerChatMessage;
- import net.minecraft.network.protocol.Packet;
- import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
-+import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
- import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
- import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
- import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      private double healthScale = 20;
      private CraftWorldBorder clientWorldBorder = null;
      private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
-+    // Paper start
-+    private org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus;
-+    private String resourcePackHash;
-+    // Paper end
++    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
  
      public CraftPlayer(CraftServer server, ServerPlayer entity) {
          super(server, entity);
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-     public boolean getAffectsSpawning() {
-         return this.getHandle().affectsSpawning;
      }
-+
+     // Paper end - adventure
+ 
++    // Paper start - more resource pack API
 +    @Override
-+    public void setResourcePack(@NotNull String url, @NotNull String hash) {
-+        this.setResourcePack(url, hash, false, null);
-+    }
-+
-+    @Override
-+    public void setResourcePack(@NotNull String url, @NotNull String hash, boolean required) {
-+        this.setResourcePack(url, hash, required, null);
-+    }
-+
-+    @Override
-+    public void setResourcePack(@NotNull String url, @NotNull String hash, boolean required, net.kyori.adventure.text.Component resourcePackPrompt) {
++    public void setResourcePack(@NotNull UUID uuid, @NotNull String url, @NotNull String hash, net.kyori.adventure.text.Component resourcePackPrompt, boolean required) {
++        Preconditions.checkArgument(uuid != null, "Resource pack UUID cannot be null");
 +        Preconditions.checkArgument(url != null, "Resource pack URL cannot be null");
 +        Preconditions.checkArgument(hash != null, "Hash cannot be null");
-+        net.minecraft.network.chat.Component promptComponent = resourcePackPrompt != null ?
-+                            io.papermc.paper.adventure.PaperAdventure.asVanilla(resourcePackPrompt) :
-+                           null;
-+        this.getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
++        final net.minecraft.network.chat.Component promptComponent = resourcePackPrompt != null ?
++            io.papermc.paper.adventure.PaperAdventure.asVanilla(resourcePackPrompt) :
++            null;
++        this.getHandle().connection.send(new net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket(Optional.empty()));
 +        this.getHandle().connection.send(new ClientboundResourcePackPushPacket(UUID.randomUUID(), url, hash, required, promptComponent));
 +    }
 +
@@ -74,20 +54,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
 +        return this.resourcePackStatus;
 +    }
++    // Paper end - more resource pack API
 +
-+    @Override
-+    public String getResourcePackHash() {
-+        return this.resourcePackHash;
-+    }
-+
-+    @Override
-+    public boolean hasResourcePack() {
-+        return this.resourcePackStatus == org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED;
-+    }
-+
-+    public void setResourcePackStatus(org.bukkit.event.player.PlayerResourcePackStatusEvent.Status status) {
-+        this.resourcePackStatus = status;
-+    }
-     // Paper end
- 
-     @Override
+     public void addChannel(String channel) {
+         Preconditions.checkState(this.channels.size() < 128, "Cannot register channel '%s'. Too many channels registered!", channel);
+         channel = StandardMessenger.validateAndCorrectChannel(channel);

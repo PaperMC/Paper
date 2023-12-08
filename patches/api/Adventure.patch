@@ -2469,10 +2469,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      /**
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException Thrown if the URL is null.
+      * @throws IllegalArgumentException Thrown if the URL is too long.
+      * @deprecated Minecraft no longer uses textures packs. Instead you
+-     *     should use {@link #setResourcePack(String)}.
++     *     should use {@link #setResourcePack(UUID, String, byte[], net.kyori.adventure.text.Component, boolean)}.
+      */
+     @Deprecated
+     public void setTexturePack(@NotNull String url);
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *     pack correctly.
       * </ul>
       *
-+     * @deprecated in favour of {@link #setResourcePack(String, byte[], net.kyori.adventure.text.Component)}
++     * @deprecated in favour of {@link #setResourcePack(UUID, String, byte[], net.kyori.adventure.text.Component, boolean)}
       * @param url The URL from which the client will download the resource
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
@@ -2480,7 +2489,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
-+    @Deprecated // Paper
++    @Deprecated // Paper - adventure
      public void setResourcePack(@NotNull String url, @Nullable byte[] hash);
  
      /**
@@ -2488,7 +2497,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       *     pack correctly.
       * </ul>
       *
-+     * @deprecated in favour of {@link #setResourcePack(String, byte[], net.kyori.adventure.text.Component)}
++     * @deprecated in favour of {@link #setResourcePack(UUID, String, byte[], net.kyori.adventure.text.Component, boolean)}
       * @param url The URL from which the client will download the resource
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
@@ -2496,7 +2505,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
-+    @Deprecated // Paper
++    @Deprecated // Paper - adventure
      public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt);
  
 +    // Paper start
@@ -2521,9 +2530,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *     case this method will have no affect on them. Use the
 +     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
 +     *     the player loaded the pack!
-+     * <li>There is no concept of resetting resource packs back to default
-+     *     within Minecraft, so players will have to relog to do so or you
-+     *     have to send an empty pack.
 +     * <li>The request is sent with empty string as the hash when the hash is
 +     *     not provided. This might result in newer versions not loading the
 +     *     pack correctly.
@@ -2542,7 +2548,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
 +     *     long.
 +     */
-+    default void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt) {
++    default void setResourcePack(final @NotNull String url, final byte @Nullable [] hash, final net.kyori.adventure.text.@Nullable Component prompt) {
 +        this.setResourcePack(url, hash, prompt, false);
 +    }
 +    // Paper end
@@ -2587,9 +2593,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *     case this method will have no affect on them. Use the
 +     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
 +     *     the player loaded the pack!
-+     * <li>There is no concept of resetting resource packs back to default
-+     *     within Minecraft, so players will have to relog to do so or you
-+     *     have to send an empty pack.
 +     * <li>The request is sent with empty string as the hash when the hash is
 +     *     not provided. This might result in newer versions not loading the
 +     *     pack correctly.
@@ -2610,12 +2613,72 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
 +     *     long.
 +     */
-+    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
++    default void setResourcePack(final @NotNull String url, final byte @Nullable [] hash, final net.kyori.adventure.text.@Nullable Component prompt, final boolean force) {
++        this.setResourcePack(UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, hash, prompt, force);
++    }
 +    // Paper end
 +
      /**
       * Request that the player's client download and switch resource packs.
       * <p>
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     length restriction is an implementation specific arbitrary value.
+      * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
+      *     long.
++     * @deprecated use {@link #setResourcePack(UUID, String, byte[], net.kyori.adventure.text.Component, boolean)} )}
+      */
++    @Deprecated // Paper - adventure
+     public void setResourcePack(@NotNull UUID id, @NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+ 
++    // Paper start
++    /**
++     * Request that the player's client download and switch resource packs.
++     * <p>
++     * The player's client will download the new resource pack asynchronously
++     * in the background, and will automatically switch to it once the
++     * download is complete. If the client has downloaded and cached a
++     * resource pack with the same hash in the past it will not download but
++     * directly apply the cached pack. If the hash is null and the client has
++     * downloaded and cached the same resource pack in the past, it will
++     * perform a file size check against the response content to determine if
++     * the resource pack has changed and needs to be downloaded again. When
++     * this request is sent for the very first time from a given server, the
++     * client will first display a confirmation GUI to the player before
++     * proceeding with the download.
++     * <p>
++     * Notes:
++     * <ul>
++     * <li>Players can disable server resources on their client, in which
++     *     case this method will have no affect on them. Use the
++     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
++     *     the player loaded the pack!
++     * <li>The request is sent with empty string as the hash when the hash is
++     *     not provided. This might result in newer versions not loading the
++     *     pack correctly.
++     * </ul>
++     *
++     * @param uuid Unique resource pack ID.
++     * @param url The URL from which the client will download the resource
++     *     pack. The string must contain only US-ASCII characters and should
++     *     be encoded as per RFC 1738.
++     * @param hash The sha1 hash sum of the resource pack file which is used
++     *     to apply a cached version of the pack directly without downloading
++     *     if it is available. Hast to be 20 bytes long!
++     * @param prompt The optional custom prompt message to be shown to client.
++     * @param force If true, the client will be disconnected from the server
++     *     when it declines to use the resource pack.
++     * @throws IllegalArgumentException Thrown if the URL is null.
++     * @throws IllegalArgumentException Thrown if the URL is too long. The
++     *     length restriction is an implementation specific arbitrary value.
++     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
++     *     long.
++     */
++    void setResourcePack(@NotNull UUID uuid, @NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
++    // Paper end
++
+     /**
+      * Gets the Scoreboard displayed to this player
+      *
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param title Title text
