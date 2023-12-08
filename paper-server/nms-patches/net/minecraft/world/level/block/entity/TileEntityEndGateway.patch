@@ -24,11 +24,11 @@
                  blockposition1 = findOrCreateValidTeleportPos(worldserver, blockposition);
                  blockposition1 = blockposition1.above(10);
                  TileEntityEndGateway.LOGGER.debug("Creating portal at {}", blockposition1);
-@@ -198,6 +206,27 @@
+@@ -198,8 +206,34 @@
                      entity1 = entity.getRootVehicle();
                  }
  
-+                // CraftBukkit start - Fire PlayerTeleportEvent
++                // CraftBukkit start - Fire PlayerTeleportEvent/EntityTeleportEvent
 +                if (entity1 instanceof EntityPlayer) {
 +                    org.bukkit.craftbukkit.entity.CraftPlayer player = (CraftPlayer) entity1.getBukkitEntity();
 +                    org.bukkit.Location location = CraftLocation.toBukkit(blockposition1, world.getWorld()).add(0.5D, 0.5D, 0.5D);
@@ -47,8 +47,16 @@
 +                    return;
 +
 +                }
-+                // CraftBukkit end
++
++                org.bukkit.event.entity.EntityTeleportEvent teleEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(entity1, blockposition1.getX() + 0.5, blockposition1.getY() + 0.5, blockposition1.getZ() + 0.5);
++                if (teleEvent.isCancelled()) {
++                    return;
++                }
 +
                  entity1.setPortalCooldown();
-                 entity1.teleportToWithTicket((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D);
+-                entity1.teleportToWithTicket((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D);
++                entity1.teleportToWithTicket(teleEvent.getTo().getX(), teleEvent.getTo().getY(), teleEvent.getTo().getZ());
++                // CraftBukkit end
              }
+ 
+             triggerCooldown(world, blockposition, iblockdata, tileentityendgateway);
