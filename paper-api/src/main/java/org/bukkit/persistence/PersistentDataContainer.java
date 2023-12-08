@@ -21,15 +21,15 @@ public interface PersistentDataContainer {
      *
      * @param key the key this value will be stored under
      * @param type the type this tag uses
-     * @param value the value stored in the tag
+     * @param value the value to store in the tag
      * @param <T> the generic java type of the tag value
      * @param <Z> the generic type of the object to store
      *
-     * @throws NullPointerException if the key is null
-     * @throws NullPointerException if the type is null
-     * @throws NullPointerException if the value is null. Removing a tag should
+     * @throws IllegalArgumentException if the key is null
+     * @throws IllegalArgumentException if the type is null
+     * @throws IllegalArgumentException if the value is null. Removing a tag should
      * be done using {@link #remove(NamespacedKey)}
-     * @throws IllegalArgumentException if no suitable adapter will be found for
+     * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
     <T, Z> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value);
@@ -38,7 +38,7 @@ public interface PersistentDataContainer {
      * Returns if the persistent metadata provider has metadata registered
      * matching the provided parameters.
      * <p>
-     * This method will only return if the found value has the same primitive
+     * This method will only return true if the found value has the same primitive
      * data type as the provided key.
      * <p>
      * Storing a value using a custom {@link PersistentDataType} implementation
@@ -49,21 +49,40 @@ public interface PersistentDataContainer {
      * bytes long.
      * <p>
      * This method is only usable for custom object keys. Overwriting existing
-     * tags, like the the display name, will not work as the values are stored
+     * tags, like the display name, will not work as the values are stored
      * using your namespace.
      *
      * @param key the key the value is stored under
-     * @param type the type which primitive storage type has to match the value
+     * @param type the type the primative stored value has to match
      * @param <T> the generic type of the stored primitive
      * @param <Z> the generic type of the eventually created complex object
      *
-     * @return if a value
+     * @return if a value with the provided key and type exists
      *
-     * @throws NullPointerException if the key to look up is null
-     * @throws NullPointerException if the type to cast the found object to is
+     * @throws IllegalArgumentException if the key to look up is null
+     * @throws IllegalArgumentException if the type to cast the found object to is
      * null
      */
     <T, Z> boolean has(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type);
+
+    /**
+     * Returns if the persistent metadata provider has metadata registered matching
+     * the provided parameters.
+     * <p>
+     * This method will return true as long as a value with the given key exists,
+     * regardless of its type.
+     * <p>
+     * This method is only usable for custom object keys. Overwriting existing tags,
+     * like the display name, will not work as the values are stored using your
+     * namespace.
+     *
+     * @param key the key the value is stored under
+     *
+     * @return if a value with the provided key exists
+     *
+     * @throws IllegalArgumentException if the key to look up is null
+     */
+    boolean has(@NotNull NamespacedKey key);
 
     /**
      * Returns the metadata value that is stored on the
@@ -77,12 +96,12 @@ public interface PersistentDataContainer {
      * @return the value or {@code null} if no value was mapped under the given
      * value
      *
-     * @throws NullPointerException if the key to look up is null
-     * @throws NullPointerException if the type to cast the found object to is
+     * @throws IllegalArgumentException if the key to look up is null
+     * @throws IllegalArgumentException if the type to cast the found object to is
      * null
-     * @throws IllegalArgumentException if the value exists under the given key,
-     * but cannot be access using the given type
-     * @throws IllegalArgumentException if no suitable adapter will be found for
+     * @throws IllegalArgumentException if a value exists under the given key,
+     * but cannot be accessed using the given type
+     * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link
      * PersistentDataType#getPrimitiveType()}
      */
@@ -102,21 +121,21 @@ public interface PersistentDataContainer {
      * @param <Z> the generic type of the eventually created complex object
      *
      * @return the value or the default value if no value was mapped under the
-     * given value
+     * given key
      *
-     * @throws NullPointerException if the key to look up is null
-     * @throws NullPointerException if the type to cast the found object to is
+     * @throws IllegalArgumentException if the key to look up is null
+     * @throws IllegalArgumentException if the type to cast the found object to is
      * null
-     * @throws IllegalArgumentException if the value exists under the given key,
-     * but cannot be access using the given type
-     * @throws IllegalArgumentException if no suitable adapter will be found for
+     * @throws IllegalArgumentException if a value exists under the given key,
+     * but cannot be accessed using the given type
+     * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
     @NotNull
     <T, Z> Z getOrDefault(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z defaultValue);
 
     /**
-     * Get a set of keys present on this {@link PersistentDataContainer}
+     * Get the set of keys present on this {@link PersistentDataContainer}
      * instance.
      *
      * Any changes made to the returned set will not be reflected on the
@@ -130,9 +149,9 @@ public interface PersistentDataContainer {
     /**
      * Removes a custom key from the {@link PersistentDataHolder} instance.
      *
-     * @param key the key
+     * @param key the key to remove
      *
-     * @throws NullPointerException if the provided key is null
+     * @throws IllegalArgumentException if the provided key is null
      */
     void remove(@NotNull NamespacedKey key);
 
@@ -143,6 +162,20 @@ public interface PersistentDataContainer {
      * @return the boolean
      */
     boolean isEmpty();
+
+    /**
+     * Copies all values from this {@link PersistentDataContainer} to the provided
+     * container.
+     * <p>
+     * This method only copies custom object keys. Existing tags, like the display
+     * name, will not be copied as the values are stored using your namespace.
+     *
+     * @param other   the container to copy to
+     * @param replace whether to replace any matching values in the target container
+     *
+     * @throws IllegalArgumentException if the other container is null
+     */
+    void copyTo(@NotNull PersistentDataContainer other, boolean replace);
 
     /**
      * Returns the adapter context this tag container uses.
