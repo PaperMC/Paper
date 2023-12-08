@@ -12,8 +12,10 @@ import java.util.stream.StreamSupport;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
+import org.bukkit.block.banner.PatternType;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Cat;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Villager;
@@ -76,6 +78,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     Registry<Attribute> ATTRIBUTE = new SimpleRegistry<>(Attribute.class);
     /**
+     * Server banner patterns.
+     *
+     * @see PatternType
+     */
+    Registry<PatternType> BANNER_PATTERN = new SimpleRegistry<>(PatternType.class);
+    /**
      * Server biomes.
      *
      * @see Biome
@@ -107,6 +115,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return Bukkit.getBossBars();
         }
     };
+    /**
+     * Server cat types.
+     *
+     * @see Cat.Type
+     */
+    Registry<Cat.Type> CAT_VARIANT = new SimpleRegistry<>(Cat.Type.class);
     /**
      * Server enchantments.
      *
