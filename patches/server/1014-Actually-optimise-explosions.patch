@@ -34,7 +34,7 @@ The results indicate that this logic is 5 times faster than Vanilla
 and 2.3 times faster than Lithium.
 
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index dbe679bb81a903668262cdf629469e971b49e088..c790418ff4584af20db006a3e8770f261bab271e 100644
+index dbe679bb81a903668262cdf629469e971b49e088..9442f58dff89ec843c321533965fbee2727d02f8 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
 @@ -111,6 +111,271 @@ public class Explosion {
@@ -446,15 +446,20 @@ index dbe679bb81a903668262cdf629469e971b49e088..c790418ff4584af20db006a3e8770f26
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
-@@ -275,7 +591,7 @@ public class Explosion {
+@@ -275,11 +591,11 @@ public class Explosion {
                                  for (EnderDragonPart entityComplexPart : ((EnderDragon) entity).subEntities) {
                                      // Calculate damage separately for each EntityComplexPart
                                      if (list.contains(entityComplexPart)) {
 -                                        entityComplexPart.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity));
-+                                        entityComplexPart.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity, getSeenFraction(vec3d, entityComplexPart, blockCache, blockPos))); // Paper - actually optimise explosions
++                                        entityComplexPart.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entityComplexPart, getSeenFraction(vec3d, entityComplexPart, blockCache, blockPos))); // Paper - actually optimise explosions and use the right entity to calculate the damage
                                      }
                                  }
                              } else {
+-                                entity.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity));
++                                entity.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity, getSeenFraction(vec3d, entity, blockCache, blockPos))); // Paper - actually optimise explosions
+                             }
+ 
+                             CraftEventFactory.entityDamage = null;
 @@ -289,7 +605,7 @@ public class Explosion {
                              // CraftBukkit end
                          }
@@ -493,12 +498,14 @@ index dbe679bb81a903668262cdf629469e971b49e088..c790418ff4584af20db006a3e8770f26
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java b/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
-index 24dba1eb6f5dc71e5d1ce2d150930eaefc83f811..67625a34084792f6cbab34bf99e5571bb75e59d9 100644
+index 24dba1eb6f5dc71e5d1ce2d150930eaefc83f811..f529f5d0f28533ec89f3ee712e59745991d068ee 100644
 --- a/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
 +++ b/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
-@@ -21,10 +21,15 @@ public class ExplosionDamageCalculator {
+@@ -20,11 +20,17 @@ public class ExplosionDamageCalculator {
+         return true;
      }
  
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
      public float getEntityDamageAmount(Explosion explosion, Entity entity) {
 +        // Paper start - actually optimise explosions
 +        return this.getEntityDamageAmount(explosion, entity, Explosion.getSeenPercent(explosion.center(), entity));
