@@ -29,6 +29,7 @@ public interface FeatureFlag extends Keyed {
     @Deprecated(since = "1.20.2")
     public static final FeatureFlag UPDATE_1_20 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_20"));
 
+    @ApiStatus.Experimental // Paper - add missing annotation
     public static final FeatureFlag TRADE_REBALANCE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("trade_rebalance"));
 
     /**
@@ -47,8 +48,10 @@ public interface FeatureFlag extends Keyed {
     @Deprecated(since = "1.21.4")
     public static final FeatureFlag WINTER_DROP = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("winter_drop"));
 
+    @ApiStatus.Experimental // Paper - add missing annotation
     public static final FeatureFlag REDSTONE_EXPERIMENTS = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("redstone_experiments"));
 
+    @ApiStatus.Experimental // Paper - add missing annotation
     public static final FeatureFlag MINECART_IMPROVEMENTS = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("minecart_improvements"));
 
 }

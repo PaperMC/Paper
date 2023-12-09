@@ -287,6 +287,8 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
      * The maximum speed of minecarts (when the new movement algorithm is
      * enabled).
      */
+    @MinecraftExperimental(MinecraftExperimental.Requires.MINECART_IMPROVEMENTS) // Paper - add missing annotation
+    @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
     public static final GameRule<Integer> MINECART_MAX_SPEED = new GameRule<>("minecartMaxSpeed", Integer.class);
 
     /**

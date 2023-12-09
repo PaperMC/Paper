@@ -148,7 +148,6 @@ public enum InventoryType {
     /**
      * A crafter inventory, with 9 CRAFTING slots.
      */
-    @ApiStatus.Experimental
     CRAFTER(9, "Crafter", MenuType.CRAFTER_3X3),
     /**
      * The new smithing inventory, with 3 CRAFTING slots and 1 RESULT slot.

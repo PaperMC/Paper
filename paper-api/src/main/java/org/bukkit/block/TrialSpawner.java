@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a trial spawner.
  */
-@ApiStatus.Experimental
 public interface TrialSpawner extends TileState {
 
     /**

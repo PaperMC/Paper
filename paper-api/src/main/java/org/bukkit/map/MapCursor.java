@@ -314,12 +314,26 @@ public final class MapCursor {
         Type BANNER_RED = getType("banner_red");
         Type BANNER_BLACK = getType("banner_black");
         Type RED_X = getType("red_x");
+        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
+        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
         Type VILLAGE_DESERT = getType("village_desert");
+        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
+        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
         Type VILLAGE_PLAINS = getType("village_plains");
+        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
+        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
         Type VILLAGE_SAVANNA = getType("village_savanna");
+        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
+        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
         Type VILLAGE_SNOWY = getType("village_snowy");
+        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
+        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
         Type VILLAGE_TAIGA = getType("village_taiga");
+        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
+        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
         Type JUNGLE_TEMPLE = getType("jungle_temple");
+        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
+        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
         Type SWAMP_HUT = getType("swamp_hut");
         Type TRIAL_CHAMBERS = getType("trial_chambers");
 

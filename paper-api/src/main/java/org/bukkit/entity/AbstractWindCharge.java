@@ -5,7 +5,6 @@ import org.jetbrains.annotations.ApiStatus;
 /**
  * Represents a Wind Charge.
  */
-@ApiStatus.Experimental
 public interface AbstractWindCharge extends Fireball {
 
     /**
