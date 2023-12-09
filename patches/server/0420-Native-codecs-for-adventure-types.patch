@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Tue, 5 Dec 2023 16:47:40 -0800
-Subject: [PATCH] initial work on native Adventure codecs
+Subject: [PATCH] Native codecs for adventure types
 
 == AT ==
 public net.minecraft.network.chat.HoverEvent$ItemStackInfo item
@@ -11,29 +11,38 @@ public net.minecraft.network.chat.contents.TranslatableContents filterAllowedArg
 
 diff --git a/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184cf0d6ddba
+index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff182730823
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
-@@ -0,0 +1,273 @@
+@@ -0,0 +1,393 @@
 +package io.papermc.paper.adventure;
 +
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import com.mojang.datafixers.util.Either;
 +import com.mojang.serialization.Codec;
 +import com.mojang.serialization.DataResult;
++import com.mojang.serialization.Encoder;
 +import com.mojang.serialization.MapCodec;
 +import com.mojang.serialization.codecs.RecordCodecBuilder;
 +import java.io.IOException;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.Optional;
++import java.util.UUID;
 +import java.util.function.Consumer;
 +import java.util.function.Function;
 +import java.util.function.Predicate;
 +import net.kyori.adventure.key.Key;
++import net.kyori.adventure.nbt.api.BinaryTagHolder;
++import net.kyori.adventure.text.BlockNBTComponent;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.EntityNBTComponent;
 +import net.kyori.adventure.text.KeybindComponent;
++import net.kyori.adventure.text.NBTComponent;
++import net.kyori.adventure.text.NBTComponentBuilder;
 +import net.kyori.adventure.text.ScoreComponent;
 +import net.kyori.adventure.text.SelectorComponent;
++import net.kyori.adventure.text.StorageNBTComponent;
 +import net.kyori.adventure.text.TextComponent;
 +import net.kyori.adventure.text.TranslatableComponent;
 +import net.kyori.adventure.text.event.ClickEvent;
@@ -42,9 +51,12 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +import net.kyori.adventure.text.format.Style;
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.format.TextDecoration;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 +import net.minecraft.core.UUIDUtil;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.TagParser;
 +import net.minecraft.network.chat.ComponentSerialization;
 +import net.minecraft.network.chat.contents.KeybindContents;
 +import net.minecraft.network.chat.contents.ScoreContents;
@@ -58,6 +70,8 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.intellij.lang.annotations.Subst;
 +
++import static com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec;
++import static java.util.function.Function.identity;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.minecraft.util.ExtraCodecs.recursive;
 +import static net.minecraft.util.ExtraCodecs.strictOptionalField;
@@ -127,17 +141,42 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +        });
 +    }
 +
-+    // TODO legacies
-+    private static final HoverEventType<HoverEvent.ShowEntity> SHOW_ENTITY_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showEntityCodec, HoverEvent.Action.SHOW_ENTITY, "show_entity");
-+    private static final HoverEventType<HoverEvent.ShowItem> SHOW_ITEM_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showItemCodec, HoverEvent.Action.SHOW_ITEM, "show_item");
-+    private static final HoverEventType<Component> SHOW_TEXT_HOVER_EVENT_TYPE = new HoverEventType<>(Function.identity(), HoverEvent.Action.SHOW_TEXT, "show_text");
++    private static final HoverEventType<HoverEvent.ShowEntity> SHOW_ENTITY_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showEntityCodec, HoverEvent.Action.SHOW_ENTITY, "show_entity", AdventureCodecs::legacyDeserializeEntity);
++    private static final HoverEventType<HoverEvent.ShowItem> SHOW_ITEM_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showItemCodec, HoverEvent.Action.SHOW_ITEM, "show_item", AdventureCodecs::legacyDeserializeItem);
++    private static final HoverEventType<Component> SHOW_TEXT_HOVER_EVENT_TYPE = new HoverEventType<>(identity(), HoverEvent.Action.SHOW_TEXT, "show_text", DataResult::success);
 +    private static final Codec<HoverEventType<?>> HOVER_EVENT_TYPE_CODEC = StringRepresentable.fromValues(() -> new HoverEventType<?>[]{ SHOW_ENTITY_HOVER_EVENT_TYPE, SHOW_ITEM_HOVER_EVENT_TYPE, SHOW_TEXT_HOVER_EVENT_TYPE });
 +
-+    private record HoverEventType<V>(Function<Codec<Component>, Codec<HoverEvent<V>>> codec, String id) implements StringRepresentable {
-+        private HoverEventType(final Function<Codec<Component>, Codec<V>> contentCodec, final HoverEvent.Action<V> action, final String id) {
-+            this(cc -> contentCodec.apply(cc).xmap(v -> {
-+                return HoverEvent.hoverEvent(action, v);
-+            }, HoverEvent::value), id);
++    private static DataResult<HoverEvent.ShowEntity> legacyDeserializeEntity(final Component text) {
++        try {
++            final CompoundTag tag = TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(text));
++            final @Nullable Component entityName = GsonComponentSerializer.gson().deserializeOrNull(tag.getString("name"));
++            @Subst("key") final String keyString = tag.getString("type");
++            final UUID entityUUID = UUID.fromString(tag.getString("id"));
++            return DataResult.success(HoverEvent.ShowEntity.showEntity(Key.key(keyString), entityUUID, entityName));
++        } catch (final Exception ex) {
++            return DataResult.error(() -> "Failed to parse tooltip: " + ex.getMessage());
++        }
++    }
++
++    private static DataResult<HoverEvent.ShowItem> legacyDeserializeItem(final Component text) {
++        try {
++            final ItemStack stack = ItemStack.of(TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(text)));
++            @Subst("key") final String keyString = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
++            return DataResult.success(HoverEvent.ShowItem.showItem(Key.key(keyString), stack.getCount(), stack.getTag() != null ? BinaryTagHolder.encode(stack.getTag(), PaperAdventure.NBT_CODEC) : null));
++        } catch (final CommandSyntaxException | IOException ex) {
++            return DataResult.error(() -> "Failed to parse item tag: " + ex.getMessage());
++        }
++    }
++
++    private record HoverEventType<V>(Function<Codec<Component>, Codec<HoverEvent<V>>> codec, String id, Function<Codec<Component>, Codec<HoverEvent<V>>> legacyCodec) implements StringRepresentable {
++        private HoverEventType(final Function<Codec<Component>, Codec<V>> contentCodec, final HoverEvent.Action<V> action, final String id, final Function<Component, DataResult<V>> legacyDeserializer) {
++            this(cc -> contentCodec.apply(cc).xmap(v -> HoverEvent.hoverEvent(action, v), HoverEvent::value),
++                id,
++                codec -> Codec.of(
++                    Encoder.error("Can't encode in legacy format"),
++                    codec.flatMap(legacyDeserializer).map(text -> HoverEvent.hoverEvent(action, text))
++                )
++            );
 +        }
 +        @Override
 +        public String getSerializedName() {
@@ -145,8 +184,8 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +        }
 +    }
 +
-+    private static MapCodec<HoverEvent<?>> hoverEventMapCodec(final Codec<Component> componentCodec) {
-+        return HOVER_EVENT_TYPE_CODEC.dispatchMap("action", he -> {
++    private static Codec<HoverEvent<?>> hoverEventMapCodec(final Codec<Component> componentCodec) {
++        final Function<HoverEvent<?>, HoverEventType<?>> convert = he -> {
 +            if (he.action() == HoverEvent.Action.SHOW_ENTITY) {
 +                return SHOW_ENTITY_HOVER_EVENT_TYPE;
 +            } else if (he.action() == HoverEvent.Action.SHOW_ITEM) {
@@ -156,11 +195,14 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +            } else {
 +                throw new IllegalStateException();
 +            }
-+        }, het -> het.codec.apply(componentCodec));
++        };
++        final MapCodec<HoverEvent<?>> modernCodec = HOVER_EVENT_TYPE_CODEC.dispatchMap("action",convert, het -> het.codec.apply(componentCodec));
++        final MapCodec<HoverEvent<?>> legacyCodec = HOVER_EVENT_TYPE_CODEC.dispatchMap("action", convert, het -> het.legacyCodec.apply(componentCodec));
++        return Codec.either(modernCodec.codec(), legacyCodec.codec()).xmap(either -> either.map(identity(), identity()), Either::left);
 +    }
 +
 +    public static MapCodec<Style> styleCodec(final Codec<Component> componentCodec) {
-+        return RecordCodecBuilder.mapCodec((instance) -> {
++        return mapCodec((instance) -> {
 +            return instance.group(
 +                strictOptionalField(TEXT_COLOR_CODEC, "color").forGetter(nullableGetter(Style::color)),
 +                strictOptionalField(Codec.BOOL, "bold").forGetter(decorationGetter(TextDecoration.BOLD)),
@@ -169,7 +211,7 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +                strictOptionalField(Codec.BOOL, "strikethrough").forGetter(decorationGetter(TextDecoration.STRIKETHROUGH)),
 +                strictOptionalField(Codec.BOOL, "obfuscated").forGetter(decorationGetter(TextDecoration.OBFUSCATED)),
 +                strictOptionalField(CLICK_EVENT_CODEC, "clickEvent").forGetter(nullableGetter(Style::clickEvent)),
-+                strictOptionalField(hoverEventMapCodec(componentCodec).codec(), "hoverEvent").forGetter(nullableGetter(Style::hoverEvent)),
++                strictOptionalField(hoverEventMapCodec(componentCodec), "hoverEvent").forGetter(nullableGetter(Style::hoverEvent)),
 +                strictOptionalField(Codec.STRING, "insertion").forGetter(nullableGetter(Style::insertion)),
 +                strictOptionalField(KEY_CODEC, "font").forGetter(nullableGetter(Style::font))
 +            ).apply(instance, (textColor, bold, italic, underlined, strikethrough, obfuscated, clickEvent, hoverEvent, insertion, font) -> {
@@ -200,14 +242,14 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +        return style -> Optional.ofNullable(getter.apply(style));
 +    }
 +
-+    private static final MapCodec<TextComponent> TEXT_COMPONENT_MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++    private static final MapCodec<TextComponent> TEXT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(Codec.STRING.fieldOf("text").forGetter(TextComponent::content)).apply(instance, Component::text);
 +    });
 +    private static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.validate(ExtraCodecs.JAVA, TranslatableContents::filterAllowedArguments);
 +    private static final Codec<Component> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).xmap((primitiveOrComponent) -> {
-+        return primitiveOrComponent.map(o -> text(String.valueOf(o)), Function.identity()); // just toString all primitives (not 100% correct to vanilla spec)
++        return primitiveOrComponent.map(o -> text(String.valueOf(o)), identity()); // just toString all primitives (not 100% correct to vanilla spec)
 +    }, Either::right);
-+    private static final MapCodec<TranslatableComponent> TRANSLATABLE_COMPONENT_MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++    private static final MapCodec<TranslatableComponent> TRANSLATABLE_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
 +            Codec.STRING.fieldOf("translate").forGetter(TranslatableComponent::key),
 +            Codec.STRING.optionalFieldOf("fallback").forGetter(nullableGetter(TranslatableComponent::fallback)),
@@ -219,11 +261,88 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +
 +    private static final MapCodec<KeybindComponent> KEYBIND_COMPONENT_MAP_CODEC = KeybindContents.CODEC.xmap(k -> Component.keybind(k.getName()), k -> new KeybindContents(k.keybind()));
 +    private static final MapCodec<ScoreComponent> SCORE_COMPONENT_MAP_CODEC = ScoreContents.INNER_CODEC.xmap(s -> Component.score(s.getName(), s.getObjective()), s -> new ScoreContents(s.name(), s.objective()));
-+    private static final MapCodec<SelectorComponent> SELECTOR_COMPONENT_MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++    private static final MapCodec<SelectorComponent> SELECTOR_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
 +            Codec.STRING.fieldOf("selector").forGetter(SelectorComponent::pattern),
 +            strictOptionalField(COMPONENT_CODEC, "separator").forGetter(nullableGetter(SelectorComponent::separator))
 +        ).apply(instance, (selector, component) -> Component.selector(selector, component.orElse(null)));
++    });
++
++    private interface NbtComponentDataSource {
++        NBTComponentBuilder<?, ?> builder();
++
++        DataSourceType<?> type();
++    }
++
++    private record StorageDataSource(Key storage) implements NbtComponentDataSource {
++        @Override
++        public NBTComponentBuilder<?, ?> builder() {
++            return Component.storageNBT().storage(this.storage());
++        }
++
++        @Override
++        public DataSourceType<?> type() {
++            return STORAGE_DATA_SOURCE_TYPE;
++        }
++    }
++
++    private record BlockDataSource(String posPattern) implements NbtComponentDataSource {
++        @Override
++        public NBTComponentBuilder<?, ?> builder() {
++            return Component.blockNBT().pos(BlockNBTComponent.Pos.fromString(this.posPattern));
++        }
++
++        @Override
++        public DataSourceType<?> type() {
++            return BLOCK_DATA_SOURCE_TYPE;
++        }
++    }
++
++    private record EntityDataSource(String selectorPattern) implements NbtComponentDataSource {
++        @Override
++        public NBTComponentBuilder<?, ?> builder() {
++            return Component.entityNBT().selector(this.selectorPattern());
++        }
++
++        @Override
++        public DataSourceType<?> type() {
++            return ENTITY_DATA_SOURCE_TYPE;
++        }
++    }
++
++    private static final DataSourceType<StorageDataSource> STORAGE_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(KEY_CODEC.fieldOf("storage").forGetter(StorageDataSource::storage)).apply(instance, StorageDataSource::new)), "storage");
++    private static final DataSourceType<BlockDataSource> BLOCK_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("block").forGetter(BlockDataSource::posPattern)).apply(instance, BlockDataSource::new)), "block");
++    private static final DataSourceType<EntityDataSource> ENTITY_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("entity").forGetter(EntityDataSource::selectorPattern)).apply(instance, EntityDataSource::new)), "entity");
++
++    private static final MapCodec<NbtComponentDataSource> NBT_COMPONENT_DATA_SOURCE_CODEC = ComponentSerialization.createLegacyComponentMatcher(new DataSourceType<?>[]{ENTITY_DATA_SOURCE_TYPE, BLOCK_DATA_SOURCE_TYPE, STORAGE_DATA_SOURCE_TYPE}, DataSourceType::codec, NbtComponentDataSource::type, "source");
++
++    private record DataSourceType<D extends NbtComponentDataSource>(MapCodec<D> codec, String id) implements StringRepresentable {
++        @Override
++        public String getSerializedName() {
++            return this.id();
++        }
++    }
++
++
++    private static final MapCodec<NBTComponent<?, ?>> NBT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
++        return instance.group(
++            Codec.STRING.fieldOf("nbt").forGetter(NBTComponent::nbtPath),
++            Codec.BOOL.optionalFieldOf("interpret", false).forGetter(NBTComponent::interpret),
++            COMPONENT_CODEC.optionalFieldOf("separator").forGetter(nullableGetter(NBTComponent::separator)),
++            NBT_COMPONENT_DATA_SOURCE_CODEC.forGetter(nbtComponent -> {
++                if (nbtComponent instanceof final EntityNBTComponent entityNBTComponent) {
++                    return new EntityDataSource(entityNBTComponent.selector());
++                } else if (nbtComponent instanceof final BlockNBTComponent blockNBTComponent) {
++                    return new BlockDataSource(blockNBTComponent.pos().asString());
++                } else if (nbtComponent instanceof final StorageNBTComponent storageNBTComponent) {
++                    return new StorageDataSource(storageNBTComponent.storage());
++                } else {
++                    throw new IllegalArgumentException(nbtComponent + " isn't a valid nbt component");
++                }
++            })
++        ).apply(instance, (nbtPath, interpret, separator, dataSource) -> {
++            return dataSource.builder().nbtPath(nbtPath).interpret(interpret).separator(separator.orElse(null)).build();
++        });
 +    });
 +
 +    private record ComponentType<C extends Component>(MapCodec<C> codec, Predicate<Component> test, String id) implements StringRepresentable {
@@ -238,9 +357,10 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +    private static final ComponentType<KeybindComponent> KEYBIND = new ComponentType<>(KEYBIND_COMPONENT_MAP_CODEC, KeybindComponent.class::isInstance, "keybind");
 +    private static final ComponentType<ScoreComponent> SCORE = new ComponentType<>(SCORE_COMPONENT_MAP_CODEC, ScoreComponent.class::isInstance, "score");
 +    private static final ComponentType<SelectorComponent> SELECTOR = new ComponentType<>(SELECTOR_COMPONENT_MAP_CODEC, SelectorComponent.class::isInstance, "selector");
++    private static final ComponentType<NBTComponent<?, ?>> NBT = new ComponentType<>(NBT_COMPONENT_MAP_CODEC, NBTComponent.class::isInstance, "nbt");
 +
 +    private static Codec<Component> createCodec(final Codec<Component> selfCodec) {
-+        final ComponentType<?>[] types = new ComponentType<?>[]{PLAIN, TRANSLATABLE, KEYBIND, SCORE, SELECTOR};
++        final ComponentType<?>[] types = new ComponentType<?>[]{PLAIN, TRANSLATABLE, KEYBIND, SCORE, SELECTOR, NBT};
 +        final MapCodec<Component> legacyCodec = ComponentSerialization.createLegacyComponentMatcher(types, ComponentType::codec, component -> {
 +            for (final ComponentType<?> type : types) {
 +                if (type.test().test(component)) {
@@ -252,7 +372,7 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +
 +        final Codec<Component> directCodec = RecordCodecBuilder.create((instance) -> {
 +            return instance.group(
-+                legacyCodec.forGetter(Function.identity()),
++                legacyCodec.forGetter(identity()),
 +                strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::children),
 +                styleCodec(selfCodec).forGetter(Component::style)
 +            ).apply(instance, (component, children, style) -> {
@@ -261,7 +381,7 @@ index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184c
 +        });
 +
 +        return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), directCodec).xmap((stringOrListOrComponent) -> {
-+            return stringOrListOrComponent.map((stringOrList) -> stringOrList.map(Component::text, AdventureCodecs::createFromList), Function.identity());
++            return stringOrListOrComponent.map((stringOrList) -> stringOrList.map(Component::text, AdventureCodecs::createFromList), identity());
 +        }, (text) -> {
 +            final @Nullable String string = tryCollapseToString(text);
 +            return string != null ? Either.left(Either.left(string)) : Either.right(text);
