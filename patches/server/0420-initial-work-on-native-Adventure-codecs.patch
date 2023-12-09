@@ -11,30 +11,24 @@ public net.minecraft.network.chat.contents.TranslatableContents filterAllowedArg
 
 diff --git a/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a13bf3b79b2d11e4ce6cc46eff65fe81a05a1ad
+index 0000000000000000000000000000000000000000..87ad79ae42595116a0c1976c418a184cf0d6ddba
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
-@@ -0,0 +1,365 @@
+@@ -0,0 +1,273 @@
 +package io.papermc.paper.adventure;
 +
-+import com.google.common.base.Suppliers;
 +import com.mojang.datafixers.util.Either;
 +import com.mojang.serialization.Codec;
 +import com.mojang.serialization.DataResult;
-+import com.mojang.serialization.DynamicOps;
 +import com.mojang.serialization.MapCodec;
-+import com.mojang.serialization.MapLike;
-+import com.mojang.serialization.RecordBuilder;
 +import com.mojang.serialization.codecs.RecordCodecBuilder;
 +import java.io.IOException;
 +import java.util.Collections;
 +import java.util.List;
-+import java.util.Locale;
 +import java.util.Optional;
 +import java.util.function.Consumer;
 +import java.util.function.Function;
-+import java.util.function.Supplier;
-+import java.util.stream.Stream;
++import java.util.function.Predicate;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.KeybindComponent;
@@ -48,7 +42,6 @@ index 0000000000000000000000000000000000000000..1a13bf3b79b2d11e4ce6cc46eff65fe8
 +import net.kyori.adventure.text.format.Style;
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.format.TextDecoration;
-+import net.kyori.adventure.translation.GlobalTranslator;
 +import net.minecraft.core.UUIDUtil;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.CompoundTag;
@@ -66,15 +59,13 @@ index 0000000000000000000000000000000000000000..1a13bf3b79b2d11e4ce6cc46eff65fe8
 +import org.intellij.lang.annotations.Subst;
 +
 +import static net.kyori.adventure.text.Component.text;
++import static net.minecraft.util.ExtraCodecs.recursive;
 +import static net.minecraft.util.ExtraCodecs.strictOptionalField;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class AdventureCodecs {
 +
-+    private static final MapCodec<Component> COMPONENT_MAP_CODEC = new RecursiveMapCodec<>("adventure Component", c -> createCodec(c, false));
-+    public static final Codec<Component> COMPONENT_CODEC = indirectCodec(COMPONENT_MAP_CODEC.codec());
-+    private static final MapCodec<Component> RENDERING_COMPONENT_MAP_CODEC = new RecursiveMapCodec<>("rendering adventure Component", c -> createCodec(c, true));
-+    public static final Codec<Component> RENDERING_COMPONENT_CODEC = indirectCodec(RENDERING_COMPONENT_MAP_CODEC.codec());
++    public static final Codec<Component> COMPONENT_CODEC = recursive("adventure Component",  AdventureCodecs::createCodec);
 +
 +    private static final Codec<TextColor> TEXT_COLOR_CODEC = Codec.STRING.comapFlatMap(s -> {
 +        if (s.startsWith("#")) {
@@ -209,107 +200,57 @@ index 0000000000000000000000000000000000000000..1a13bf3b79b2d11e4ce6cc46eff65fe8
 +        return style -> Optional.ofNullable(getter.apply(style));
 +    }
 +
-+    private static final MapCodec<TextComponent> TEXT_COMPONENT_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++    private static final MapCodec<TextComponent> TEXT_COMPONENT_MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
 +        return instance.group(Codec.STRING.fieldOf("text").forGetter(TextComponent::content)).apply(instance, Component::text);
 +    });
 +    private static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.validate(ExtraCodecs.JAVA, TranslatableContents::filterAllowedArguments);
-+    private static Codec<Component> argCodec(final Codec<Component> componentCodec) {
-+        return Codec.either(PRIMITIVE_ARG_CODEC, componentCodec).xmap((either) -> {
-+            return either.map((object) -> {
-+                if (object instanceof final Integer integer) {
-+                    return text(integer);
-+                } else if (object instanceof final Long l) {
-+                    return text(l);
-+                } else if (object instanceof final String s) {
-+                    return text(s);
-+                } else if (object instanceof final Boolean bool) {
-+                    return text(bool);
-+                } else if (object instanceof final Float f) {
-+                    return text(f);
-+                } else if (object instanceof final Double d) {
-+                    return text(d);
-+                } else if (object instanceof final Short s) {
-+                    return text(s);
-+                } else {
-+                    throw new IllegalStateException();
-+                }
-+            }, (text) -> text);
-+        }, Either::right);
-+    }
-+    private static MapCodec<TranslatableComponent> translatableComponentCodec(final Codec<Component> componentCodec) {
-+        return RecordCodecBuilder.mapCodec((instance) -> {
-+            return instance.group(
-+                Codec.STRING.fieldOf("translate").forGetter(TranslatableComponent::key),
-+                Codec.STRING.optionalFieldOf("fallback").forGetter(nullableGetter(TranslatableComponent::fallback)),
-+                strictOptionalField(argCodec(componentCodec).listOf(), "with").forGetter(c -> c.args().isEmpty() ? Optional.empty() : Optional.of(c.args()))
-+            ).apply(instance, (key, fallback, components) -> {
-+                return Component.translatable(key, components.orElse(Collections.emptyList())).fallback(fallback.orElse(null));
-+            });
++    private static final Codec<Component> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).xmap((primitiveOrComponent) -> {
++        return primitiveOrComponent.map(o -> text(String.valueOf(o)), Function.identity()); // just toString all primitives (not 100% correct to vanilla spec)
++    }, Either::right);
++    private static final MapCodec<TranslatableComponent> TRANSLATABLE_COMPONENT_MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++        return instance.group(
++            Codec.STRING.fieldOf("translate").forGetter(TranslatableComponent::key),
++            Codec.STRING.optionalFieldOf("fallback").forGetter(nullableGetter(TranslatableComponent::fallback)),
++            strictOptionalField(ARG_CODEC.listOf(), "with").forGetter(c -> c.args().isEmpty() ? Optional.empty() : Optional.of(c.args()))
++        ).apply(instance, (key, fallback, components) -> {
++            return Component.translatable(key, components.orElse(Collections.emptyList())).fallback(fallback.orElse(null));
 +        });
-+    }
-+    private static MapCodec<TranslatableComponent> renderingTranslatableComponentCodec(final Codec<Component> componentCodec) {
-+        return new MapCodec<>() {
-+            @Override
-+            public <T> Stream<T> keys(final DynamicOps<T> ops) {
-+                return COMPONENT_MAP_CODEC.keys(ops);
-+            }
++    });
 +
-+            @Override
-+            public <T> DataResult<TranslatableComponent> decode(final DynamicOps<T> ops, final MapLike<T> input) {
-+                return DataResult.error(() -> "Cannot decode using the rendering translatable component codec");
-+            }
++    private static final MapCodec<KeybindComponent> KEYBIND_COMPONENT_MAP_CODEC = KeybindContents.CODEC.xmap(k -> Component.keybind(k.getName()), k -> new KeybindContents(k.keybind()));
++    private static final MapCodec<ScoreComponent> SCORE_COMPONENT_MAP_CODEC = ScoreContents.INNER_CODEC.xmap(s -> Component.score(s.getName(), s.getObjective()), s -> new ScoreContents(s.name(), s.objective()));
++    private static final MapCodec<SelectorComponent> SELECTOR_COMPONENT_MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++        return instance.group(
++            Codec.STRING.fieldOf("selector").forGetter(SelectorComponent::pattern),
++            strictOptionalField(COMPONENT_CODEC, "separator").forGetter(nullableGetter(SelectorComponent::separator))
++        ).apply(instance, (selector, component) -> Component.selector(selector, component.orElse(null)));
++    });
 +
-+            @Override
-+            public <T> RecordBuilder<T> encode(final TranslatableComponent input, final DynamicOps<T> ops, final RecordBuilder<T> prefix) {
-+                final Component rendered = GlobalTranslator.render(input, Locale.US); // TODO get player's locale somehow
-+                return COMPONENT_MAP_CODEC.encode(rendered, ops, prefix); // all render-able translatables should be gone, safe to use the non-rendering codec
-+            }
-+        };
-+    }
-+    private static final MapCodec<KeybindComponent> KEYBIND_COMPONENT_CODEC = KeybindContents.CODEC.xmap(k -> Component.keybind(k.getName()), k -> new KeybindContents(k.keybind()));
-+    private static final MapCodec<ScoreComponent> SCORE_COMPONENT_CODEC = ScoreContents.INNER_CODEC.xmap(s -> Component.score(s.getName(), s.getObjective()), s -> new ScoreContents(s.name(), s.objective()));
-+    private static MapCodec<SelectorComponent> selectorComponentCodec(final Codec<Component> componentCodec) {
-+        return RecordCodecBuilder.mapCodec((instance) -> {
-+            return instance.group(
-+                Codec.STRING.fieldOf("selector").forGetter(SelectorComponent::pattern),
-+                strictOptionalField(componentCodec, "separator").forGetter(nullableGetter(SelectorComponent::separator))
-+            ).apply(instance, (selector, component) -> Component.selector(selector, component.orElse(null)));
-+        });
-+    }
-+
-+    private record ComponentType<C extends Component>(Function<Codec<Component>, MapCodec<C>> codec, String id) implements StringRepresentable {
++    private record ComponentType<C extends Component>(MapCodec<C> codec, Predicate<Component> test, String id) implements StringRepresentable {
 +        @Override
 +        public String getSerializedName() {
 +            return this.id;
 +        }
 +    }
 +
-+    private static final ComponentType<TextComponent> PLAIN = new ComponentType<>($ -> TEXT_COMPONENT_CODEC, "text");
-+    private static final ComponentType<TranslatableComponent> TRANSLATABLE = new ComponentType<>(AdventureCodecs::translatableComponentCodec, "translatable");
-+    private static final ComponentType<TranslatableComponent> RENDERING_TRANSLATABLE = new ComponentType<>(AdventureCodecs::renderingTranslatableComponentCodec, "translatable");
-+    private static final ComponentType<KeybindComponent> KEYBIND = new ComponentType<>($ -> KEYBIND_COMPONENT_CODEC, "keybind");
-+    private static final ComponentType<ScoreComponent> SCORE = new ComponentType<>($ -> SCORE_COMPONENT_CODEC, "score");
-+    private static final ComponentType<SelectorComponent> SELECTOR = new ComponentType<>(AdventureCodecs::selectorComponentCodec, "selector");
++    private static final ComponentType<TextComponent> PLAIN = new ComponentType<>(TEXT_COMPONENT_MAP_CODEC, TextComponent.class::isInstance, "text");
++    private static final ComponentType<TranslatableComponent> TRANSLATABLE = new ComponentType<>(TRANSLATABLE_COMPONENT_MAP_CODEC, TranslatableComponent.class::isInstance, "translatable");
++    private static final ComponentType<KeybindComponent> KEYBIND = new ComponentType<>(KEYBIND_COMPONENT_MAP_CODEC, KeybindComponent.class::isInstance, "keybind");
++    private static final ComponentType<ScoreComponent> SCORE = new ComponentType<>(SCORE_COMPONENT_MAP_CODEC, ScoreComponent.class::isInstance, "score");
++    private static final ComponentType<SelectorComponent> SELECTOR = new ComponentType<>(SELECTOR_COMPONENT_MAP_CODEC, SelectorComponent.class::isInstance, "selector");
 +
-+    private static MapCodec<Component> createCodec(final Codec<Component> selfCodec, final boolean renderTranslatables) {
-+        final ComponentType<?>[] types = new ComponentType<?>[]{PLAIN, TRANSLATABLE, KEYBIND, SCORE};
-+        final MapCodec<Component> legacyCodec = ComponentSerialization.createLegacyComponentMatcher(types, ct -> ct.codec().apply(selfCodec), component -> {
-+            if (component instanceof TextComponent) {
-+                return PLAIN;
-+            } else if (component instanceof TranslatableComponent) {
-+                return renderTranslatables ? RENDERING_TRANSLATABLE : TRANSLATABLE;
-+            } else if (component instanceof KeybindComponent) {
-+                return KEYBIND;
-+            } else if (component instanceof ScoreComponent) {
-+                return SCORE;
-+            } else if (component instanceof SelectorComponent) {
-+                return SELECTOR;
-+            } else {
-+                throw new IllegalStateException();
++    private static Codec<Component> createCodec(final Codec<Component> selfCodec) {
++        final ComponentType<?>[] types = new ComponentType<?>[]{PLAIN, TRANSLATABLE, KEYBIND, SCORE, SELECTOR};
++        final MapCodec<Component> legacyCodec = ComponentSerialization.createLegacyComponentMatcher(types, ComponentType::codec, component -> {
++            for (final ComponentType<?> type : types) {
++                if (type.test().test(component)) {
++                    return type;
++                }
 +            }
++            throw new IllegalStateException("Unexpected component type " + component);
 +        }, "type");
 +
-+        return RecordCodecBuilder.mapCodec((instance) -> {
++        final Codec<Component> directCodec = RecordCodecBuilder.create((instance) -> {
 +            return instance.group(
 +                legacyCodec.forGetter(Function.identity()),
 +                strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::children),
@@ -318,10 +259,8 @@ index 0000000000000000000000000000000000000000..1a13bf3b79b2d11e4ce6cc46eff65fe8
 +                return component.style(style).children(children);
 +            });
 +        });
-+    }
 +
-+    private static Codec<Component> indirectCodec(final Codec<Component> selfCodec) {
-+        return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), selfCodec).xmap((stringOrListOrComponent) -> {
++        return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), directCodec).xmap((stringOrListOrComponent) -> {
 +            return stringOrListOrComponent.map((stringOrList) -> stringOrList.map(Component::text, AdventureCodecs::createFromList), Function.identity());
 +        }, (text) -> {
 +            final @Nullable String string = tryCollapseToString(text);
@@ -344,37 +283,6 @@ index 0000000000000000000000000000000000000000..1a13bf3b79b2d11e4ce6cc46eff65fe8
 +            component = component.append(components.get(i));
 +        }
 +        return component;
-+    }
-+
-+    static class RecursiveMapCodec<T> extends MapCodec<T> {
-+
-+        private final String name;
-+        private final Supplier<MapCodec<T>> wrapped;
-+
-+        RecursiveMapCodec(final String name, final Function<Codec<T>, MapCodec<T>> factory) {
-+            this.name = name;
-+            this.wrapped = Suppliers.memoize(() -> factory.apply(this.codec()));
-+        }
-+
-+        @Override
-+        public <T1> Stream<T1> keys(final DynamicOps<T1> ops) {
-+            return this.wrapped.get().keys(ops);
-+        }
-+
-+        @Override
-+        public <T1> DataResult<T> decode(final DynamicOps<T1> ops, final MapLike<T1> input) {
-+            return this.wrapped.get().decode(ops, input);
-+        }
-+
-+        @Override
-+        public <T1> RecordBuilder<T1> encode(final T input, final DynamicOps<T1> ops, final RecordBuilder<T1> prefix) {
-+            return this.wrapped.get().encode(input, ops, prefix);
-+        }
-+
-+        @Override
-+        public String toString() {
-+            return "RecursiveMapCodec[" + this.name + "]";
-+        }
 +    }
 +
 +    private AdventureCodecs() {
