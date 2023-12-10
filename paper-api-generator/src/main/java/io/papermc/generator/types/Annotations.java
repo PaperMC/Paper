@@ -8,12 +8,14 @@ import org.jetbrains.annotations.NotNull;
 
 public final class Annotations {
 
-    public static final List<AnnotationSpec> EXPERIMENTAL_ANNOTATIONS = List.of(
-        AnnotationSpec.builder(ApiStatus.Experimental.class).build(),
-        AnnotationSpec.builder(MinecraftExperimental.class)
-            .addMember("value", "$S", "update 1.20")
-            .build()
-    );
+    public static List<AnnotationSpec> experimentalAnnotations(final String version) {
+        return List.of(
+            AnnotationSpec.builder(ApiStatus.Experimental.class).build(),
+            AnnotationSpec.builder(MinecraftExperimental.class)
+                .addMember("value", "$S", version)
+                .build()
+        );
+    }
 
     @ApiStatus.Experimental
     public static final AnnotationSpec EXPERIMENTAL_API_ANNOTATION = AnnotationSpec.builder(ApiStatus.Experimental.class).build();
