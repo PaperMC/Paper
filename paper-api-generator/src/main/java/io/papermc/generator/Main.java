@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import net.kyori.adventure.key.Keyed;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.Registry;
@@ -27,6 +26,7 @@ import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import org.apache.commons.io.file.PathUtils;
 import org.bukkit.GameEvent;
 import org.bukkit.block.Biome;
+import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
@@ -53,6 +53,7 @@ public final class Main {
         simpleKey("BiomeKeys", Biome.class, Registries.BIOME, RegistryKey.BIOME, true),
         simpleKey("TrimMaterialKeys", TrimMaterial.class, Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL, true),
         simpleKey("TrimPatternKeys", TrimPattern.class, Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN, true),
+        simpleKey("StructureKeys", Structure.class, Registries.STRUCTURE, RegistryKey.STRUCTURE, true),
         simpleKey("StructureTypeKeys", StructureType.class, Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, false)
     );
 
