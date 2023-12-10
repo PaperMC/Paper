@@ -154,7 +154,7 @@ index ab708b256183fc54fe8e13f341d8a38acf611739..1e86e86b0a100a5d14aee10b60e70c32
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 916b29914f77bed0dbfdcd5eae8a6ef22948b9b0..e0f80414e01852b6f48c173dc2343ec928147e2f 100644
+index 916b29914f77bed0dbfdcd5eae8a6ef22948b9b0..f5a5ae30dfba21d5cf3990c046cfe41547e8a87a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -942,17 +942,21 @@ public class CraftEventFactory {
@@ -183,17 +183,17 @@ index 916b29914f77bed0dbfdcd5eae8a6ef22948b9b0..e0f80414e01852b6f48c173dc2343ec9
          populateFields(victim, event); // Paper - make cancellable
          CraftWorld world = (CraftWorld) entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
-@@ -966,19 +970,22 @@ public class CraftEventFactory {
+@@ -966,19 +970,23 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          lootCheck.run(); // Paper - advancement triggers before destroying items
  
 -        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
--            if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
 +        // Paper start
 +        for (Entity.DefaultDrop drop : drops) {
++            if (drop == null) continue;;
 +            final org.bukkit.inventory.ItemStack stack = drop.stack();
-+            if (drop == null || stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
 +            // Paper end
+             if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
  
 -            world.dropItem(entity.getLocation(), stack); // Paper - note: dropItem already clones due to this being bukkit -> NMS
 +            drop.runConsumer(world, entity.getLocation()); // Paper
@@ -211,17 +211,17 @@ index 916b29914f77bed0dbfdcd5eae8a6ef22948b9b0..e0f80414e01852b6f48c173dc2343ec9
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
          populateFields(victim, event); // Paper - make cancellable
-@@ -997,10 +1004,13 @@ public class CraftEventFactory {
+@@ -997,10 +1005,14 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          victim.newExp = event.getNewExp();
  
 -        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
--            if (stack == null || stack.getType() == Material.AIR) continue;
 +        // Paper start
 +        for (Entity.DefaultDrop drop : drops) {
++            if (drop == null) continue;
 +            final org.bukkit.inventory.ItemStack stack = drop.stack();
-+            if (drop == null || stack == null || stack.getType() == Material.AIR) continue;
 +            // Paper end
+             if (stack == null || stack.getType() == Material.AIR) continue;
  
 -            world.dropItem(entity.getLocation(), stack);
 +            drop.runConsumer(world, entity.getLocation()); // Paper
