@@ -25,19 +25,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
+import net.minecraft.data.registries.UpdateOneTwentyOneRegistries;
 import net.minecraft.resources.ResourceKey;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 
 import static com.squareup.javapoet.TypeSpec.classBuilder;
-import static io.papermc.generator.types.Annotations.EXPERIMENTAL_ANNOTATIONS;
 import static io.papermc.generator.types.Annotations.EXPERIMENTAL_API_ANNOTATION;
 import static io.papermc.generator.types.Annotations.NOT_NULL;
+import static io.papermc.generator.types.Annotations.experimentalAnnotations;
 import static java.util.Objects.requireNonNull;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -47,10 +49,8 @@ import static javax.lang.model.element.Modifier.STATIC;
 @DefaultQualifier(NonNull.class)
 public class GeneratedKeyType<T, A> implements SourceGenerator {
 
-    // don't exist anymore
-    // private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = UpdateOneTwentyRegistries.BUILDER.entries.stream()
-    //         .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
-    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = Collections.emptyMap();
+    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = UpdateOneTwentyOneRegistries.BUILDER.entries.stream()
+            .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
 
     private static final Map<RegistryKey<?>, String> REGISTRY_KEY_FIELD_NAMES;
     static {
@@ -158,15 +158,15 @@ public class GeneratedKeyType<T, A> implements SourceGenerator {
                 .initializer("$N(key($S))", createMethod.build(), keyPath)
                 .addJavadoc(FIELD_JAVADOC, key.location().toString());
             if (experimental.contains(key)) {
-                fieldBuilder.addAnnotations(EXPERIMENTAL_ANNOTATIONS);
+                fieldBuilder.addAnnotations(experimentalAnnotations("update 1.21"));
             } else {
                 allExperimental = false;
             }
             typeBuilder.addField(fieldBuilder.build());
         }
         if (allExperimental) {
-            typeBuilder.addAnnotations(EXPERIMENTAL_ANNOTATIONS);
-            createMethod.addAnnotations(EXPERIMENTAL_ANNOTATIONS);
+            typeBuilder.addAnnotations(experimentalAnnotations("update 1.21"));
+            createMethod.addAnnotations(experimentalAnnotations("update 1.21"));
         }
         return typeBuilder.addMethod(createMethod.build()).build();
     }
