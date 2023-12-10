@@ -54,17 +54,17 @@ index 30b50e6294c6eaade5e17cfaf34600d122e6251c..0bb7694188d5fb75bb756ce75d0060ea
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e061ddcdb2d7df9bae578cc8e9f8a671842c2ea0
+index 0000000000000000000000000000000000000000..0aa8a9308ae67d3823fae7e4b8ac82cef3755bb1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 @@ -0,0 +1,86 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
 +import com.mojang.logging.LogUtils;
++import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
-+import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEventImpl;
-+import io.papermc.paper.plugin.lifecycle.event.registrar.StaticRegistrarEventImpl;
++import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEventImpl;
 +import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
@@ -107,7 +107,7 @@ index 0000000000000000000000000000000000000000..e061ddcdb2d7df9bae578cc8e9f8a671
 +                LOGGER.error("Could not run '{}' lifecycle event handler from {}", lifecycleEventType.name(), registeredHandler.owner().getPluginMeta().getDisplayName(), ex);
 +            } finally {
 +                if (event instanceof final OwnerAwareLifecycleEvent<?> ownerAwareEvent) {
-+                    ownerAwareEvent.clearOwner();
++                    ownerAwareEvent.setOwner(null);
 +                }
 +            }
 +        }, handler -> ownerPredicate.test(handler.owner()));
@@ -133,12 +133,12 @@ index 0000000000000000000000000000000000000000..e061ddcdb2d7df9bae578cc8e9f8a671
 +        lifecycleEventType.removeMatching(registeredHandler -> registeredHandler.owner().getPluginMeta().getName().equals(possibleOwner.getPluginMeta().getName()));
 +    }
 +
-+    public <O extends LifecycleEventOwner, R extends Registrar> void callStaticRegistrarEvent(final LifecycleEventType<O, RegistrarEvent<R>, ?> lifecycleEventType, final R registrar) {
-+        this.callEvent(lifecycleEventType, new StaticRegistrarEventImpl<>(registrar));
++    public <O extends LifecycleEventOwner, R extends PaperRegistrar<? super O>> void callStaticRegistrarEvent(final LifecycleEventType<O, ? extends RegistrarEvent<? super R>, ?> lifecycleEventType, final R registrar, final Class<? extends O> ownerClass) {
++        this.callEvent(lifecycleEventType, new RegistrarEventImpl<>(registrar, ownerClass));
 +    }
 +
-+    public <O extends LifecycleEventOwner, R extends Registrar> void callReloadableRegistrarEvent(final LifecycleEventType<O, RegistrarEvent.Reloadable<R>, ?> lifecycleEventType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
-+        this.callEvent(lifecycleEventType, new ReloadableRegistrarEventImpl<>(registrar, cause));
++    public <O extends LifecycleEventOwner, R extends PaperRegistrar<? super O>> void callReloadableRegistrarEvent(final LifecycleEventType<O, ? extends RegistrarEvent.Reloadable<? super R>, ?> lifecycleEventType, final R registrar, final Class<? extends O> ownerClass, final RegistrarEvent.Reloadable.Cause cause) {
++        this.callEvent(lifecycleEventType, new RegistrarEventImpl.ReloadableImpl<>(registrar, ownerClass, cause));
 +    }
 +
 +    private LifecycleEventRunner() {
@@ -296,33 +296,87 @@ index 0000000000000000000000000000000000000000..683b1f18392faed807f99fd2330aaf2f
 +        return this;
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEventImpl.java
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/PaperRegistrar.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/PaperRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..816fbeb379515e56727092a40027f0c0db1a299f
+index 0000000000000000000000000000000000000000..06a1a2d53b330bc37eb9736d258d7023e6619dc0
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEventImpl.java
-@@ -0,0 +1,8 @@
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/PaperRegistrar.java
+@@ -0,0 +1,9 @@
 +package io.papermc.paper.plugin.lifecycle.event.registrar;
 +
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +
-+@DefaultQualifier(NonNull.class)
-+public record ReloadableRegistrarEventImpl<R extends Registrar>(R registrar, Cause cause) implements RegistrarEvent.Reloadable<R> {
++public interface PaperRegistrar<O extends LifecycleEventOwner> extends Registrar {
++
++    void setCurrentContext(@Nullable O owner);
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/StaticRegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/StaticRegistrarEventImpl.java
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bd52f3e00e44f891d09a34c2f55283ac4cefcdc3
+index 0000000000000000000000000000000000000000..0a52691e822172440f0ce8df96ce3f307f50df30
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/StaticRegistrarEventImpl.java
-@@ -0,0 +1,8 @@
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEventImpl.java
+@@ -0,0 +1,61 @@
 +package io.papermc.paper.plugin.lifecycle.event.registrar;
 +
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
++import io.papermc.paper.plugin.lifecycle.event.types.OwnerAwareLifecycleEvent;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +
-+@DefaultQualifier(NonNull.class)
-+public record StaticRegistrarEventImpl<R extends Registrar>(R registrar) implements RegistrarEvent<R> {
++public class RegistrarEventImpl<R extends PaperRegistrar<? super O>, O extends LifecycleEventOwner> implements OwnerAwareLifecycleEvent<O>, RegistrarEvent<R> {
++
++    private final R registrar;
++    private final Class<? extends O> ownerClass;
++
++    public RegistrarEventImpl(final R registrar, final Class<? extends O> ownerClass) {
++        this.registrar = registrar;
++        this.ownerClass = ownerClass;
++    }
++
++    @Override
++    public R registrar() {
++        return this.registrar;
++    }
++
++    @Override
++    public final void setOwner(final @Nullable O owner) {
++        this.registrar.setCurrentContext(owner);
++    }
++
++    @Override
++    public final @Nullable O castOwner(final LifecycleEventOwner owner) {
++        return this.ownerClass.isInstance(owner) ? this.ownerClass.cast(owner) : null;
++    }
++
++    @Override
++    public String toString() {
++        return "RegistrarEventImpl{" +
++            "registrar=" + this.registrar +
++            ", ownerClass=" + this.ownerClass +
++            '}';
++    }
++
++    public static class ReloadableImpl<R extends PaperRegistrar<? super O>, O extends LifecycleEventOwner> extends RegistrarEventImpl<R, O> implements RegistrarEvent.Reloadable<R> {
++
++        private final Reloadable.Cause cause;
++
++        public ReloadableImpl(final R registrar, final Class<? extends O> ownerClass, final Cause cause) {
++            super(registrar, ownerClass);
++            this.cause = cause;
++        }
++
++        @Override
++        public Cause cause() {
++            return this.cause;
++        }
++
++        @Override
++        public String toString() {
++            return "ReloadableImpl{" +
++                "cause=" + this.cause +
++                "} " + super.toString();
++        }
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
 new file mode 100644
@@ -468,10 +522,10 @@ index 0000000000000000000000000000000000000000..6d6a39c5bc3f1470a8978d86ac5c2149
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/OwnerAwareLifecycleEvent.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/OwnerAwareLifecycleEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9b201f58848addccb51b85f9035f72870443fbc9
+index 0000000000000000000000000000000000000000..19f86ce0a5c8da6c3dcbbe678c721a9f1f26f1da
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/OwnerAwareLifecycleEvent.java
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,11 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
@@ -479,9 +533,7 @@ index 0000000000000000000000000000000000000000..9b201f58848addccb51b85f9035f7287
 +
 +public interface OwnerAwareLifecycleEvent<O extends LifecycleEventOwner> extends LifecycleEvent {
 +
-+    void setOwner(O owner);
-+
-+    void clearOwner();
++    void setOwner(@Nullable O owner);
 +
 +    @Nullable O castOwner(LifecycleEventOwner owner);
 +}
@@ -606,10 +658,10 @@ index d96399e9bf1a58db5a4a22e58abb99e7660e0694..66bdac50130f523f9dc4379b103b7a46
 +    // Paper end - lifecycle events
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 548c77592a3520e8053483644eba805079a14f1a..d91d3f6903a9bfbe494787a6c72bdb3fae1e937f 100644
+index ec2396f0e5d62b10450eaa7239a8c5479638b3c3..adfc50e5e72bedc05a39bb25b73a42a72e84f968 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -645,6 +645,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -642,6 +642,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
      }
      // Paper end
  
