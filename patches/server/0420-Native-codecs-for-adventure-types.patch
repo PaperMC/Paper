@@ -11,10 +11,10 @@ public net.minecraft.network.chat.contents.TranslatableContents filterAllowedArg
 
 diff --git a/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff182730823
+index 0000000000000000000000000000000000000000..936d3d878acb291f17b66cda1c8f5231da614521
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
-@@ -0,0 +1,393 @@
+@@ -0,0 +1,390 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -81,7 +81,7 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +
 +    public static final Codec<Component> COMPONENT_CODEC = recursive("adventure Component",  AdventureCodecs::createCodec);
 +
-+    private static final Codec<TextColor> TEXT_COLOR_CODEC = Codec.STRING.comapFlatMap(s -> {
++    static final Codec<TextColor> TEXT_COLOR_CODEC = Codec.STRING.comapFlatMap(s -> {
 +        if (s.startsWith("#")) {
 +            @Nullable TextColor value = TextColor.fromHexString(s);
 +            return value != null ? DataResult.success(value) : DataResult.error(() -> "Cannot convert " + s + " to adventure TextColor");
@@ -97,22 +97,22 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        }
 +    });
 +
-+    private static final Codec<Key> KEY_CODEC = Codec.STRING.comapFlatMap(s -> {
++    static final Codec<Key> KEY_CODEC = Codec.STRING.comapFlatMap(s -> {
 +        return Key.parseable(s) ? DataResult.success(Key.key(s)) : DataResult.error(() -> "Cannot convert " + s + " to adventure Key");
 +    }, Key::asString);
 +
-+    private static final Codec<ClickEvent.Action> CLICK_EVENT_ACTION_CODEC = Codec.STRING.comapFlatMap(s -> {
++    static final Codec<ClickEvent.Action> CLICK_EVENT_ACTION_CODEC = Codec.STRING.comapFlatMap(s -> {
 +        final ClickEvent.@Nullable Action value = ClickEvent.Action.NAMES.value(s);
 +        return value != null ? DataResult.success(value) : DataResult.error(() -> "Cannot convert " + s + " to adventure ClickEvent$Action");
 +    }, ClickEvent.Action.NAMES::keyOrThrow);
-+    private static final Codec<ClickEvent> CLICK_EVENT_CODEC = RecordCodecBuilder.create((instance) -> {
++    static final Codec<ClickEvent> CLICK_EVENT_CODEC = RecordCodecBuilder.create((instance) -> {
 +        return instance.group(
 +            CLICK_EVENT_ACTION_CODEC.fieldOf("action").forGetter(ClickEvent::action),
 +            Codec.STRING.fieldOf("value").forGetter(ClickEvent::value)
 +        ).apply(instance, ClickEvent::clickEvent);
 +    });
 +
-+    private static Codec<HoverEvent.ShowEntity> showEntityCodec(final Codec<Component> componentCodec) {
++    static Codec<HoverEvent.ShowEntity> showEntityCodec(final Codec<Component> componentCodec) {
 +        return RecordCodecBuilder.create((instance) -> {
 +            return instance.group(
 +                KEY_CODEC.fieldOf("type").forGetter(HoverEvent.ShowEntity::type),
@@ -124,7 +124,7 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        });
 +    }
 +
-+    private static Codec<HoverEvent.ShowItem> showItemCodec(final Codec<Component> componentCodec) {
++    static Codec<HoverEvent.ShowItem> showItemCodec(final Codec<Component> componentCodec) {
 +        return net.minecraft.network.chat.HoverEvent.ItemStackInfo.CODEC.xmap(isi -> {
 +            @Subst("key") final String typeKey = BuiltInRegistries.ITEM.getKey(isi.item).toString();
 +            return HoverEvent.ShowItem.showItem(Key.key(typeKey), isi.count, PaperAdventure.asBinaryTagHolder(isi.tag.orElse(null)));
@@ -134,19 +134,19 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +            try {
 +                final @Nullable CompoundTag tag = si.nbt() != null ? si.nbt().get(PaperAdventure.NBT_CODEC) : null;
 +                stack = new ItemStack(BuiltInRegistries.ITEM.wrapAsHolder(itemType), si.count(), Optional.ofNullable(tag));
-+            } catch (IOException e) {
++            } catch (final IOException e) {
 +                throw new RuntimeException(e);
 +            }
 +            return new net.minecraft.network.chat.HoverEvent.ItemStackInfo(stack);
 +        });
 +    }
 +
-+    private static final HoverEventType<HoverEvent.ShowEntity> SHOW_ENTITY_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showEntityCodec, HoverEvent.Action.SHOW_ENTITY, "show_entity", AdventureCodecs::legacyDeserializeEntity);
-+    private static final HoverEventType<HoverEvent.ShowItem> SHOW_ITEM_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showItemCodec, HoverEvent.Action.SHOW_ITEM, "show_item", AdventureCodecs::legacyDeserializeItem);
-+    private static final HoverEventType<Component> SHOW_TEXT_HOVER_EVENT_TYPE = new HoverEventType<>(identity(), HoverEvent.Action.SHOW_TEXT, "show_text", DataResult::success);
-+    private static final Codec<HoverEventType<?>> HOVER_EVENT_TYPE_CODEC = StringRepresentable.fromValues(() -> new HoverEventType<?>[]{ SHOW_ENTITY_HOVER_EVENT_TYPE, SHOW_ITEM_HOVER_EVENT_TYPE, SHOW_TEXT_HOVER_EVENT_TYPE });
++    static final HoverEventType<HoverEvent.ShowEntity> SHOW_ENTITY_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showEntityCodec, HoverEvent.Action.SHOW_ENTITY, "show_entity", AdventureCodecs::legacyDeserializeEntity);
++    static final HoverEventType<HoverEvent.ShowItem> SHOW_ITEM_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showItemCodec, HoverEvent.Action.SHOW_ITEM, "show_item", AdventureCodecs::legacyDeserializeItem);
++    static final HoverEventType<Component> SHOW_TEXT_HOVER_EVENT_TYPE = new HoverEventType<>(identity(), HoverEvent.Action.SHOW_TEXT, "show_text", DataResult::success);
++    static final Codec<HoverEventType<?>> HOVER_EVENT_TYPE_CODEC = StringRepresentable.fromValues(() -> new HoverEventType<?>[]{ SHOW_ENTITY_HOVER_EVENT_TYPE, SHOW_ITEM_HOVER_EVENT_TYPE, SHOW_TEXT_HOVER_EVENT_TYPE });
 +
-+    private static DataResult<HoverEvent.ShowEntity> legacyDeserializeEntity(final Component text) {
++    static DataResult<HoverEvent.ShowEntity> legacyDeserializeEntity(final Component text) {
 +        try {
 +            final CompoundTag tag = TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(text));
 +            final @Nullable Component entityName = GsonComponentSerializer.gson().deserializeOrNull(tag.getString("name"));
@@ -158,7 +158,7 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        }
 +    }
 +
-+    private static DataResult<HoverEvent.ShowItem> legacyDeserializeItem(final Component text) {
++    static DataResult<HoverEvent.ShowItem> legacyDeserializeItem(final Component text) {
 +        try {
 +            final ItemStack stack = ItemStack.of(TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(text)));
 +            @Subst("key") final String keyString = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
@@ -168,9 +168,9 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        }
 +    }
 +
-+    private record HoverEventType<V>(Function<Codec<Component>, Codec<HoverEvent<V>>> codec, String id, Function<Codec<Component>, Codec<HoverEvent<V>>> legacyCodec) implements StringRepresentable {
-+        private HoverEventType(final Function<Codec<Component>, Codec<V>> contentCodec, final HoverEvent.Action<V> action, final String id, final Function<Component, DataResult<V>> legacyDeserializer) {
-+            this(cc -> contentCodec.apply(cc).xmap(v -> HoverEvent.hoverEvent(action, v), HoverEvent::value),
++    record HoverEventType<V>(Function<Codec<Component>, Codec<HoverEvent<V>>> codec, String id, Function<Codec<Component>, Codec<HoverEvent<V>>> legacyCodec) implements StringRepresentable {
++        HoverEventType(final Function<Codec<Component>, Codec<V>> contentCodec, final HoverEvent.Action<V> action, final String id, final Function<Component, DataResult<V>> legacyDeserializer) {
++            this(cc -> contentCodec.apply(cc).xmap(v -> HoverEvent.hoverEvent(action, v), HoverEvent::value).fieldOf("contents").codec(),
 +                id,
 +                codec -> Codec.of(
 +                    Encoder.error("Can't encode in legacy format"),
@@ -184,72 +184,69 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        }
 +    }
 +
-+    private static Codec<HoverEvent<?>> hoverEventMapCodec(final Codec<Component> componentCodec) {
-+        final Function<HoverEvent<?>, HoverEventType<?>> convert = he -> {
-+            if (he.action() == HoverEvent.Action.SHOW_ENTITY) {
-+                return SHOW_ENTITY_HOVER_EVENT_TYPE;
-+            } else if (he.action() == HoverEvent.Action.SHOW_ITEM) {
-+                return SHOW_ITEM_HOVER_EVENT_TYPE;
-+            } else if (he.action() == HoverEvent.Action.SHOW_TEXT) {
-+                return SHOW_TEXT_HOVER_EVENT_TYPE;
-+            } else {
-+                throw new IllegalStateException();
-+            }
-+        };
-+        final MapCodec<HoverEvent<?>> modernCodec = HOVER_EVENT_TYPE_CODEC.dispatchMap("action",convert, het -> het.codec.apply(componentCodec));
-+        final MapCodec<HoverEvent<?>> legacyCodec = HOVER_EVENT_TYPE_CODEC.dispatchMap("action", convert, het -> het.legacyCodec.apply(componentCodec));
-+        return Codec.either(modernCodec.codec(), legacyCodec.codec()).xmap(either -> either.map(identity(), identity()), Either::left);
-+    }
++    private static final Function<HoverEvent<?>, HoverEventType<?>> GET_HOVER_EVENT_TYPE = he -> {
++        if (he.action() == HoverEvent.Action.SHOW_ENTITY) {
++            return SHOW_ENTITY_HOVER_EVENT_TYPE;
++        } else if (he.action() == HoverEvent.Action.SHOW_ITEM) {
++            return SHOW_ITEM_HOVER_EVENT_TYPE;
++        } else if (he.action() == HoverEvent.Action.SHOW_TEXT) {
++            return SHOW_TEXT_HOVER_EVENT_TYPE;
++        } else {
++            throw new IllegalStateException();
++        }
++    };
++    static final Codec<HoverEvent<?>> HOVER_EVENT_CODEC = Codec.either(
++        HOVER_EVENT_TYPE_CODEC.<HoverEvent<?>>dispatchMap("action", GET_HOVER_EVENT_TYPE, het -> het.codec.apply(COMPONENT_CODEC)).codec(),
++        HOVER_EVENT_TYPE_CODEC.<HoverEvent<?>>dispatchMap("action", GET_HOVER_EVENT_TYPE, het -> het.legacyCodec.apply(COMPONENT_CODEC)).codec()
++    ).xmap(either -> either.map(identity(), identity()), Either::left);
 +
-+    public static MapCodec<Style> styleCodec(final Codec<Component> componentCodec) {
-+        return mapCodec((instance) -> {
-+            return instance.group(
-+                strictOptionalField(TEXT_COLOR_CODEC, "color").forGetter(nullableGetter(Style::color)),
-+                strictOptionalField(Codec.BOOL, "bold").forGetter(decorationGetter(TextDecoration.BOLD)),
-+                strictOptionalField(Codec.BOOL, "italic").forGetter(decorationGetter(TextDecoration.ITALIC)),
-+                strictOptionalField(Codec.BOOL, "underlined").forGetter(decorationGetter(TextDecoration.UNDERLINED)),
-+                strictOptionalField(Codec.BOOL, "strikethrough").forGetter(decorationGetter(TextDecoration.STRIKETHROUGH)),
-+                strictOptionalField(Codec.BOOL, "obfuscated").forGetter(decorationGetter(TextDecoration.OBFUSCATED)),
-+                strictOptionalField(CLICK_EVENT_CODEC, "clickEvent").forGetter(nullableGetter(Style::clickEvent)),
-+                strictOptionalField(hoverEventMapCodec(componentCodec), "hoverEvent").forGetter(nullableGetter(Style::hoverEvent)),
-+                strictOptionalField(Codec.STRING, "insertion").forGetter(nullableGetter(Style::insertion)),
-+                strictOptionalField(KEY_CODEC, "font").forGetter(nullableGetter(Style::font))
-+            ).apply(instance, (textColor, bold, italic, underlined, strikethrough, obfuscated, clickEvent, hoverEvent, insertion, font) -> {
-+                return Style.style(builder -> {
-+                    textColor.ifPresent(builder::color);
-+                    bold.ifPresent(styleBooleanConsumer(builder, TextDecoration.BOLD));
-+                    italic.ifPresent(styleBooleanConsumer(builder, TextDecoration.ITALIC));
-+                    underlined.ifPresent(styleBooleanConsumer(builder, TextDecoration.UNDERLINED));
-+                    strikethrough.ifPresent(styleBooleanConsumer(builder, TextDecoration.STRIKETHROUGH));
-+                    obfuscated.ifPresent(styleBooleanConsumer(builder, TextDecoration.OBFUSCATED));
-+                    clickEvent.ifPresent(builder::clickEvent);
-+                    hoverEvent.ifPresent(builder::hoverEvent);
-+                    insertion.ifPresent(builder::insertion);
-+                    font.ifPresent(builder::font);
-+                });
++    public static final MapCodec<Style> STYLE_MAP_CODEC = mapCodec((instance) -> {
++        return instance.group(
++            strictOptionalField(TEXT_COLOR_CODEC, "color").forGetter(nullableGetter(Style::color)),
++            strictOptionalField(Codec.BOOL, "bold").forGetter(decorationGetter(TextDecoration.BOLD)),
++            strictOptionalField(Codec.BOOL, "italic").forGetter(decorationGetter(TextDecoration.ITALIC)),
++            strictOptionalField(Codec.BOOL, "underlined").forGetter(decorationGetter(TextDecoration.UNDERLINED)),
++            strictOptionalField(Codec.BOOL, "strikethrough").forGetter(decorationGetter(TextDecoration.STRIKETHROUGH)),
++            strictOptionalField(Codec.BOOL, "obfuscated").forGetter(decorationGetter(TextDecoration.OBFUSCATED)),
++            strictOptionalField(CLICK_EVENT_CODEC, "clickEvent").forGetter(nullableGetter(Style::clickEvent)),
++            strictOptionalField(HOVER_EVENT_CODEC, "hoverEvent").forGetter(nullableGetter(Style::hoverEvent)),
++            strictOptionalField(Codec.STRING, "insertion").forGetter(nullableGetter(Style::insertion)),
++            strictOptionalField(KEY_CODEC, "font").forGetter(nullableGetter(Style::font))
++        ).apply(instance, (textColor, bold, italic, underlined, strikethrough, obfuscated, clickEvent, hoverEvent, insertion, font) -> {
++            return Style.style(builder -> {
++                textColor.ifPresent(builder::color);
++                bold.ifPresent(styleBooleanConsumer(builder, TextDecoration.BOLD));
++                italic.ifPresent(styleBooleanConsumer(builder, TextDecoration.ITALIC));
++                underlined.ifPresent(styleBooleanConsumer(builder, TextDecoration.UNDERLINED));
++                strikethrough.ifPresent(styleBooleanConsumer(builder, TextDecoration.STRIKETHROUGH));
++                obfuscated.ifPresent(styleBooleanConsumer(builder, TextDecoration.OBFUSCATED));
++                clickEvent.ifPresent(builder::clickEvent);
++                hoverEvent.ifPresent(builder::hoverEvent);
++                insertion.ifPresent(builder::insertion);
++                font.ifPresent(builder::font);
 +            });
 +        });
-+    }
-+    private static Consumer<Boolean> styleBooleanConsumer(final Style.Builder builder, final TextDecoration decoration) {
++    });
++    static Consumer<Boolean> styleBooleanConsumer(final Style.Builder builder, final TextDecoration decoration) {
 +        return b -> builder.decoration(decoration, b);
 +    }
 +
-+    private static Function<Style, Optional<Boolean>> decorationGetter(final TextDecoration decoration) {
++    static Function<Style, Optional<Boolean>> decorationGetter(final TextDecoration decoration) {
 +        return style -> Optional.ofNullable(style.decoration(decoration) == TextDecoration.State.NOT_SET ? null : style.decoration(decoration) == TextDecoration.State.TRUE);
 +    }
 +
-+    private static <R, T> Function<R, Optional<T>> nullableGetter(final Function<R, @Nullable T> getter) {
++    static <R, T> Function<R, Optional<T>> nullableGetter(final Function<R, @Nullable T> getter) {
 +        return style -> Optional.ofNullable(getter.apply(style));
 +    }
 +
-+    private static final MapCodec<TextComponent> TEXT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
++    static final MapCodec<TextComponent> TEXT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(Codec.STRING.fieldOf("text").forGetter(TextComponent::content)).apply(instance, Component::text);
 +    });
-+    private static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.validate(ExtraCodecs.JAVA, TranslatableContents::filterAllowedArguments);
-+    private static final Codec<Component> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).xmap((primitiveOrComponent) -> {
++    static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.validate(ExtraCodecs.JAVA, TranslatableContents::filterAllowedArguments);
++    static final Codec<Component> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).xmap((primitiveOrComponent) -> {
 +        return primitiveOrComponent.map(o -> text(String.valueOf(o)), identity()); // just toString all primitives (not 100% correct to vanilla spec)
 +    }, Either::right);
-+    private static final MapCodec<TranslatableComponent> TRANSLATABLE_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
++    static final MapCodec<TranslatableComponent> TRANSLATABLE_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
 +            Codec.STRING.fieldOf("translate").forGetter(TranslatableComponent::key),
 +            Codec.STRING.optionalFieldOf("fallback").forGetter(nullableGetter(TranslatableComponent::fallback)),
@@ -259,22 +256,22 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        });
 +    });
 +
-+    private static final MapCodec<KeybindComponent> KEYBIND_COMPONENT_MAP_CODEC = KeybindContents.CODEC.xmap(k -> Component.keybind(k.getName()), k -> new KeybindContents(k.keybind()));
-+    private static final MapCodec<ScoreComponent> SCORE_COMPONENT_MAP_CODEC = ScoreContents.INNER_CODEC.xmap(s -> Component.score(s.getName(), s.getObjective()), s -> new ScoreContents(s.name(), s.objective()));
-+    private static final MapCodec<SelectorComponent> SELECTOR_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
++    static final MapCodec<KeybindComponent> KEYBIND_COMPONENT_MAP_CODEC = KeybindContents.CODEC.xmap(k -> Component.keybind(k.getName()), k -> new KeybindContents(k.keybind()));
++    static final MapCodec<ScoreComponent> SCORE_COMPONENT_MAP_CODEC = ScoreContents.INNER_CODEC.xmap(s -> Component.score(s.getName(), s.getObjective()), s -> new ScoreContents(s.name(), s.objective()));
++    static final MapCodec<SelectorComponent> SELECTOR_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
 +            Codec.STRING.fieldOf("selector").forGetter(SelectorComponent::pattern),
 +            strictOptionalField(COMPONENT_CODEC, "separator").forGetter(nullableGetter(SelectorComponent::separator))
 +        ).apply(instance, (selector, component) -> Component.selector(selector, component.orElse(null)));
 +    });
 +
-+    private interface NbtComponentDataSource {
++    interface NbtComponentDataSource {
 +        NBTComponentBuilder<?, ?> builder();
 +
 +        DataSourceType<?> type();
 +    }
 +
-+    private record StorageDataSource(Key storage) implements NbtComponentDataSource {
++    record StorageDataSource(Key storage) implements NbtComponentDataSource {
 +        @Override
 +        public NBTComponentBuilder<?, ?> builder() {
 +            return Component.storageNBT().storage(this.storage());
@@ -286,7 +283,7 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        }
 +    }
 +
-+    private record BlockDataSource(String posPattern) implements NbtComponentDataSource {
++    record BlockDataSource(String posPattern) implements NbtComponentDataSource {
 +        @Override
 +        public NBTComponentBuilder<?, ?> builder() {
 +            return Component.blockNBT().pos(BlockNBTComponent.Pos.fromString(this.posPattern));
@@ -298,7 +295,7 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        }
 +    }
 +
-+    private record EntityDataSource(String selectorPattern) implements NbtComponentDataSource {
++    record EntityDataSource(String selectorPattern) implements NbtComponentDataSource {
 +        @Override
 +        public NBTComponentBuilder<?, ?> builder() {
 +            return Component.entityNBT().selector(this.selectorPattern());
@@ -310,21 +307,20 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        }
 +    }
 +
-+    private static final DataSourceType<StorageDataSource> STORAGE_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(KEY_CODEC.fieldOf("storage").forGetter(StorageDataSource::storage)).apply(instance, StorageDataSource::new)), "storage");
-+    private static final DataSourceType<BlockDataSource> BLOCK_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("block").forGetter(BlockDataSource::posPattern)).apply(instance, BlockDataSource::new)), "block");
-+    private static final DataSourceType<EntityDataSource> ENTITY_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("entity").forGetter(EntityDataSource::selectorPattern)).apply(instance, EntityDataSource::new)), "entity");
++    static final DataSourceType<StorageDataSource> STORAGE_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(KEY_CODEC.fieldOf("storage").forGetter(StorageDataSource::storage)).apply(instance, StorageDataSource::new)), "storage");
++    static final DataSourceType<BlockDataSource> BLOCK_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("block").forGetter(BlockDataSource::posPattern)).apply(instance, BlockDataSource::new)), "block");
++    static final DataSourceType<EntityDataSource> ENTITY_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("entity").forGetter(EntityDataSource::selectorPattern)).apply(instance, EntityDataSource::new)), "entity");
 +
-+    private static final MapCodec<NbtComponentDataSource> NBT_COMPONENT_DATA_SOURCE_CODEC = ComponentSerialization.createLegacyComponentMatcher(new DataSourceType<?>[]{ENTITY_DATA_SOURCE_TYPE, BLOCK_DATA_SOURCE_TYPE, STORAGE_DATA_SOURCE_TYPE}, DataSourceType::codec, NbtComponentDataSource::type, "source");
++    static final MapCodec<NbtComponentDataSource> NBT_COMPONENT_DATA_SOURCE_CODEC = ComponentSerialization.createLegacyComponentMatcher(new DataSourceType<?>[]{ENTITY_DATA_SOURCE_TYPE, BLOCK_DATA_SOURCE_TYPE, STORAGE_DATA_SOURCE_TYPE}, DataSourceType::codec, NbtComponentDataSource::type, "source");
 +
-+    private record DataSourceType<D extends NbtComponentDataSource>(MapCodec<D> codec, String id) implements StringRepresentable {
++    record DataSourceType<D extends NbtComponentDataSource>(MapCodec<D> codec, String id) implements StringRepresentable {
 +        @Override
 +        public String getSerializedName() {
 +            return this.id();
 +        }
 +    }
 +
-+
-+    private static final MapCodec<NBTComponent<?, ?>> NBT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
++    static final MapCodec<NBTComponent<?, ?>> NBT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
 +            Codec.STRING.fieldOf("nbt").forGetter(NBTComponent::nbtPath),
 +            Codec.BOOL.optionalFieldOf("interpret", false).forGetter(NBTComponent::interpret),
@@ -345,21 +341,22 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        });
 +    });
 +
-+    private record ComponentType<C extends Component>(MapCodec<C> codec, Predicate<Component> test, String id) implements StringRepresentable {
++    @SuppressWarnings("NonExtendableApiUsage")
++    record ComponentType<C extends Component>(MapCodec<C> codec, Predicate<Component> test, String id) implements StringRepresentable {
 +        @Override
 +        public String getSerializedName() {
 +            return this.id;
 +        }
 +    }
 +
-+    private static final ComponentType<TextComponent> PLAIN = new ComponentType<>(TEXT_COMPONENT_MAP_CODEC, TextComponent.class::isInstance, "text");
-+    private static final ComponentType<TranslatableComponent> TRANSLATABLE = new ComponentType<>(TRANSLATABLE_COMPONENT_MAP_CODEC, TranslatableComponent.class::isInstance, "translatable");
-+    private static final ComponentType<KeybindComponent> KEYBIND = new ComponentType<>(KEYBIND_COMPONENT_MAP_CODEC, KeybindComponent.class::isInstance, "keybind");
-+    private static final ComponentType<ScoreComponent> SCORE = new ComponentType<>(SCORE_COMPONENT_MAP_CODEC, ScoreComponent.class::isInstance, "score");
-+    private static final ComponentType<SelectorComponent> SELECTOR = new ComponentType<>(SELECTOR_COMPONENT_MAP_CODEC, SelectorComponent.class::isInstance, "selector");
-+    private static final ComponentType<NBTComponent<?, ?>> NBT = new ComponentType<>(NBT_COMPONENT_MAP_CODEC, NBTComponent.class::isInstance, "nbt");
++    static final ComponentType<TextComponent> PLAIN = new ComponentType<>(TEXT_COMPONENT_MAP_CODEC, TextComponent.class::isInstance, "text");
++    static final ComponentType<TranslatableComponent> TRANSLATABLE = new ComponentType<>(TRANSLATABLE_COMPONENT_MAP_CODEC, TranslatableComponent.class::isInstance, "translatable");
++    static final ComponentType<KeybindComponent> KEYBIND = new ComponentType<>(KEYBIND_COMPONENT_MAP_CODEC, KeybindComponent.class::isInstance, "keybind");
++    static final ComponentType<ScoreComponent> SCORE = new ComponentType<>(SCORE_COMPONENT_MAP_CODEC, ScoreComponent.class::isInstance, "score");
++    static final ComponentType<SelectorComponent> SELECTOR = new ComponentType<>(SELECTOR_COMPONENT_MAP_CODEC, SelectorComponent.class::isInstance, "selector");
++    static final ComponentType<NBTComponent<?, ?>> NBT = new ComponentType<>(NBT_COMPONENT_MAP_CODEC, NBTComponent.class::isInstance, "nbt");
 +
-+    private static Codec<Component> createCodec(final Codec<Component> selfCodec) {
++    static Codec<Component> createCodec(final Codec<Component> selfCodec) {
 +        final ComponentType<?>[] types = new ComponentType<?>[]{PLAIN, TRANSLATABLE, KEYBIND, SCORE, SELECTOR, NBT};
 +        final MapCodec<Component> legacyCodec = ComponentSerialization.createLegacyComponentMatcher(types, ComponentType::codec, component -> {
 +            for (final ComponentType<?> type : types) {
@@ -374,7 +371,7 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +            return instance.group(
 +                legacyCodec.forGetter(identity()),
 +                strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::children),
-+                styleCodec(selfCodec).forGetter(Component::style)
++                STYLE_MAP_CODEC.forGetter(Component::style)
 +            ).apply(instance, (component, children, style) -> {
 +                return component.style(style).children(children);
 +            });
@@ -388,7 +385,7 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        });
 +    }
 +
-+    private static @Nullable String tryCollapseToString(final Component component) {
++    static @Nullable String tryCollapseToString(final Component component) {
 +        if (component instanceof final TextComponent textComponent) {
 +            if (component.children().isEmpty() && component.style().isEmpty()) {
 +                return textComponent.content();
@@ -397,7 +394,7 @@ index 0000000000000000000000000000000000000000..2d58b5e2efcef7a4a01b8c5990485ff1
 +        return null;
 +    }
 +
-+    private static Component createFromList(final List<Component> components) {
++    static Component createFromList(final List<? extends Component> components) {
 +        Component component = components.get(0);
 +        for (int i = 1; i < components.size(); i++) {
 +            component = component.append(components.get(i));
@@ -421,3 +418,140 @@ index db54a9c32578defa02fa58dc694c96684a4885ac..4ded541e9f2f19ef244fed290da3983b
          @Override
          public @NotNull CompoundTag decode(final @NotNull String encoded) throws IOException {
              try {
+diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7d7749a6e4f1c099a0865ede93a86b0a32aff9e2
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecTest.java
+@@ -0,0 +1,131 @@
++package io.papermc.paper.adventure;
++
++import com.mojang.datafixers.util.Pair;
++import com.mojang.serialization.DataResult;
++import java.io.IOException;
++import java.util.UUID;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.nbt.api.BinaryTagHolder;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.event.HoverEvent;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.Style;
++import net.kyori.adventure.text.format.TextColor;
++import net.kyori.adventure.text.format.TextDecoration;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.Tag;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
++import org.apache.commons.lang3.RandomStringUtils;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.EnumSource;
++
++import static io.papermc.paper.adventure.AdventureCodecs.CLICK_EVENT_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.HOVER_EVENT_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.KEY_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.STYLE_MAP_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.TEXT_COLOR_CODEC;
++import static io.papermc.paper.adventure.PaperAdventure.NBT_CODEC;
++import static java.util.Objects.requireNonNull;
++import static net.kyori.adventure.text.Component.text;
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++class AdventureCodecTest extends AbstractTestingBase {
++
++    @Test
++    void testTextColor() {
++        final TextColor color = TextColor.color(0x1d38df);
++        final Tag result = TEXT_COLOR_CODEC.encodeStart(NbtOps.INSTANCE, color).result().orElseThrow();
++        assertEquals(color.asHexString(), result.getAsString());
++        final net.minecraft.network.chat.TextColor nms = net.minecraft.network.chat.TextColor.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(color.value(), nms.getValue());
++    }
++
++    @Test
++    void testNamedTextColor() {
++        final NamedTextColor color = NamedTextColor.BLUE;
++        final Tag result = TEXT_COLOR_CODEC.encodeStart(NbtOps.INSTANCE, color).result().orElseThrow();
++        assertEquals(NamedTextColor.NAMES.keyOrThrow(color), result.getAsString());
++        final net.minecraft.network.chat.TextColor nms = net.minecraft.network.chat.TextColor.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(color.value(), nms.getValue());
++    }
++
++    @Test
++    void testKey() {
++        final Key key = Key.key("hello", "there");
++        final Tag result = KEY_CODEC.encodeStart(NbtOps.INSTANCE, key).result().orElseThrow();
++        assertEquals(key.asString(), result.getAsString());
++        final ResourceLocation location = ResourceLocation.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(key.asString(), location.toString());
++    }
++
++    @ParameterizedTest
++    @EnumSource(value = ClickEvent.Action.class, mode =  EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE"})
++    void testClickEvent(final ClickEvent.Action action) {
++        final ClickEvent event = ClickEvent.clickEvent(action, RandomStringUtils.randomAlphanumeric(20));
++        final Tag result = CLICK_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, event).result().orElseThrow();
++        final net.minecraft.network.chat.ClickEvent nms = net.minecraft.network.chat.ClickEvent.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(event.action().toString(), nms.getAction().getSerializedName());
++        assertEquals(event.value(), nms.getValue());
++    }
++
++    @Test
++    void testShowTextHoverEvent()  {
++        final HoverEvent<Component> hoverEvent = HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, text("hello"));
++        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
++        final net.minecraft.network.chat.HoverEvent nms = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(hoverEvent.action().toString(), nms.getAction().getSerializedName());
++        assertNotNull(nms.getValue(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT));
++    }
++
++    @Test
++    void testShowItemHoverEvent() throws IOException {
++        final ItemStack stack = new ItemStack(Items.PUMPKIN, 3);
++        stack.setHoverName(net.minecraft.network.chat.Component.literal("NAME"));
++        final HoverEvent<HoverEvent.ShowItem> hoverEvent = HoverEvent.showItem(Key.key("minecraft:pumpkin"), 3, BinaryTagHolder.encode(requireNonNull(stack.getTag()), NBT_CODEC));
++        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
++        final DataResult<Pair<net.minecraft.network.chat.HoverEvent, Tag>> dataResult = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result);
++        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
++        final net.minecraft.network.chat.HoverEvent nms = dataResult.result().orElseThrow().getFirst();
++        assertEquals(hoverEvent.action().toString(), nms.getAction().getSerializedName());
++        final net.minecraft.network.chat.HoverEvent.ItemStackInfo value = nms.getValue(net.minecraft.network.chat.HoverEvent.Action.SHOW_ITEM);
++        assertNotNull(value);
++        assertEquals(hoverEvent.value().count(), value.count);
++        assertEquals(hoverEvent.value().item().asString(), BuiltInRegistries.ITEM.getKey(value.item).toString());
++        assertEquals(stack.getTag(), value.tag.orElse(null));
++    }
++
++    @Test
++    void testShowEntityHoverEvent() {
++        UUID uuid = UUID.randomUUID();
++        final HoverEvent<HoverEvent.ShowEntity> hoverEvent = HoverEvent.showEntity(Key.key("minecraft:wolf"), uuid, text("NAME"));
++        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
++        final DataResult<Pair<net.minecraft.network.chat.HoverEvent, Tag>> dataResult = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result);
++        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
++        final net.minecraft.network.chat.HoverEvent nms = dataResult.result().orElseThrow().getFirst();
++        assertEquals(hoverEvent.action().toString(), nms.getAction().getSerializedName());
++        final net.minecraft.network.chat.HoverEvent.EntityTooltipInfo value = nms.getValue(net.minecraft.network.chat.HoverEvent.Action.SHOW_ENTITY);
++        assertNotNull(value);
++        assertEquals(hoverEvent.value().type().asString(), BuiltInRegistries.ENTITY_TYPE.getKey(value.type).toString());
++        assertEquals(hoverEvent.value().id(), value.id);
++        assertEquals("NAME", value.name.orElseThrow().getString());
++    }
++
++    @Test
++    void testSimpleStyle() {
++        final Style style = Style.style().decorate(TextDecoration.BOLD).color(NamedTextColor.RED).build();
++        final Tag result = STYLE_MAP_CODEC.codec().encodeStart(NbtOps.INSTANCE, style).result().orElseThrow();
++        final DataResult<Pair<net.minecraft.network.chat.Style, Tag>> dataResult = net.minecraft.network.chat.Style.Serializer.CODEC.decode(NbtOps.INSTANCE, result);
++        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
++        final net.minecraft.network.chat.Style nms = dataResult.result().get().getFirst();
++        assertTrue(nms.isBold());
++        assertEquals(requireNonNull(style.color()).value(), requireNonNull(nms.getColor()).getValue());
++    }
++}
