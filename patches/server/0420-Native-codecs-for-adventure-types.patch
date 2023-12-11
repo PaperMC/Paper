@@ -421,16 +421,17 @@ index db54a9c32578defa02fa58dc694c96684a4885ac..4ded541e9f2f19ef244fed290da3983b
              try {
 diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c8853c7d8
+index 0000000000000000000000000000000000000000..f9169dffa8743d4345c1f5c557d72cbbcddcebd6
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
-@@ -0,0 +1,336 @@
+@@ -0,0 +1,362 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
 +import com.mojang.serialization.Codec;
 +import com.mojang.serialization.DataResult;
 +import java.io.IOException;
++import java.util.List;
 +import java.util.UUID;
 +import java.util.function.Function;
 +import net.kyori.adventure.key.Key;
@@ -444,6 +445,10 @@ index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.format.TextDecoration;
 +import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.ByteTag;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.IntTag;
++import net.minecraft.nbt.ListTag;
 +import net.minecraft.nbt.NbtOps;
 +import net.minecraft.nbt.Tag;
 +import net.minecraft.network.chat.ComponentSerialization;
@@ -481,6 +486,7 @@ index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c
 +import static net.kyori.adventure.text.format.TextColor.color;
 +import static org.junit.jupiter.api.Assertions.assertEquals;
 +import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertThrows;
 +import static org.junit.jupiter.api.Assertions.assertTrue;
 +
 +class AdventureCodecsTest extends AbstractTestingBase {
@@ -601,6 +607,17 @@ index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c
 +        testMinecraftRoundTrip(COMPONENT_CODEC, ComponentSerialization.CODEC, component);
 +    }
 +
++    @ParameterizedTest
++    @MethodSource({"invalidData"})
++    void invalidThrows(final Tag input) {
++        assertThrows(RuntimeException.class, () -> {
++            require(
++                COMPONENT_CODEC.decode(NbtOps.INSTANCE, input),
++                msg -> "Failed to decode " + input + ": " + msg
++            );
++        });
++    }
++
 +    static <A> void testDirectRoundTrip(final Codec<A> codec, final A adventure) {
 +        final Tag encoded = require(
 +            codec.encodeStart(NbtOps.INSTANCE, adventure),
@@ -639,8 +656,17 @@ index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c
 +        });
 +    }
 +
-+    static Style[] testStyles() {
-+        return new Style[]{
++    static List<Tag> invalidData() {
++        return List.of(
++            IntTag.valueOf(-1),
++            ByteTag.ZERO,
++            new CompoundTag(),
++            new ListTag()
++        );
++    }
++
++    static List<Style> testStyles() {
++        return List.of(
 +            Style.empty(),
 +            style(color(0x0a1ab9)),
 +            style(NamedTextColor.LIGHT_PURPLE),
@@ -660,11 +686,11 @@ index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c
 +                    Component.text("Dolores", TextColor.color(0x0a1ab9))
 +                )))
 +                .build()
-+        };
++        );
 +    }
 +
-+    static Component[] testTexts() {
-+        return new Component[]{
++    static List<Component> testTexts() {
++        return List.of(
 +            text("Hello, world."),
 +            text().content("c")
 +                .color(NamedTextColor.GOLD)
@@ -681,16 +707,16 @@ index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c
 +                .append(text(" "))
 +                .append(text("A what?", NamedTextColor.DARK_AQUA))
 +                .build()
-+        };
++        );
 +    }
 +
-+    static Component[] testTranslatables() {
++    static List<Component> testTranslatables() {
 +        final String key = "multiplayer.player.left";
 +        final UUID id = UUID.fromString("eb121687-8b1a-4944-bd4d-e0a818d9dfe2");
 +        final String name = "kashike";
 +        final String command = String.format("/msg %s ", name);
 +
-+        return new Component[]{
++        return List.of(
 +            translatable(key),
 +            translatable()
 +                .key("thisIsA")
@@ -707,31 +733,31 @@ index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c
 +                    )))
 +                    .build()
 +            ).color(NamedTextColor.YELLOW)
-+        };
++        );
 +    }
 +
-+    static Component[] testKeybinds() {
-+        return new Component[]{keybind("key.jump")};
++    static List<Component> testKeybinds() {
++        return List.of(keybind("key.jump"));
 +    }
 +
-+    static Component[] testScores() {
++    static List<Component> testScores() {
 +        final String name = "abc";
 +        final String objective = "def";
 +
-+        return new Component[]{score(name, objective)};
++        return List.of(score(name, objective));
 +    }
 +
-+    static Component[] testSelectors() {
++    static List<Component> testSelectors() {
 +        final String selector = "@p";
 +
-+        return new Component[]{
++        return List.of(
 +            selector(selector),
 +            selector(selector, text(','))
-+        };
++        );
 +    }
 +
-+    static Component[] testBlockNbts() {
-+        return new Component[]{
++    static List<Component> testBlockNbts() {
++        return List.of(
 +            blockNBT().nbtPath("abc").localPos(1.23d, 2.0d, 3.89d).build(),
 +            blockNBT().nbtPath("xyz").absoluteWorldPos(4, 5, 6).interpret(true).build(),
 +            blockNBT().nbtPath("eeee").relativeWorldPos(7, 83, 900)
@@ -742,22 +768,22 @@ index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c
 +                BlockNBTComponent.WorldPos.Coordinate.relative(3),
 +                BlockNBTComponent.WorldPos.Coordinate.absolute(1200)
 +            ).build()
-+        };
++        );
 +    }
 +
-+    static Component[] testEntityNbts() {
-+        return new Component[]{
++    static List<Component> testEntityNbts() {
++        return List.of(
 +            entityNBT().nbtPath("abc").selector("test").build(),
 +            entityNBT().nbtPath("abc").selector("test").separator(text(',')).build(),
-+            entityNBT().nbtPath("abc").selector("test").interpret(true).build(),
-+        };
++            entityNBT().nbtPath("abc").selector("test").interpret(true).build()
++        );
 +    }
 +
-+    static Component[] testStorageNbts() {
-+        return new Component[]{
++    static List<Component> testStorageNbts() {
++        return List.of(
 +            storageNBT().nbtPath("abc").storage(key("doom:apple")).build(),
 +            storageNBT().nbtPath("abc").storage(key("doom:apple")).separator(text(", ")).build(),
-+            storageNBT().nbtPath("abc").storage(key("doom:apple")).interpret(true).build(),
-+        };
++            storageNBT().nbtPath("abc").storage(key("doom:apple")).interpret(true).build()
++        );
 +    }
 +}
