@@ -55,7 +55,7 @@ index 477d3245facb5ae59c786d4f696f64226cb540a6..e8490a58dd4d9bc39a5bb2f9fc109526
  
      public Server getServer() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 9255edcd67e2cdd2fab31ae881ca88b6a5beb8e3..a343157512ca145b3e5ab1a0fcaeae0ae7aeb2e0 100644
+index 761704f3f15ab395d1c0c0d1734360d22cde05be..de2869e07928d02667b794bbc67d72b283cec746 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -275,11 +275,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -162,7 +162,7 @@ index 9255edcd67e2cdd2fab31ae881ca88b6a5beb8e3..a343157512ca145b3e5ab1a0fcaeae0a
  
      void resetAndShowEntity(org.bukkit.entity.Entity entity) {
          // SPIGOT-7312: Can't show/hide self
-@@ -1802,6 +1848,36 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1802,6 +1848,38 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              this.trackAndShowEntity(entity);
          }
      }
@@ -179,10 +179,12 @@ index 9255edcd67e2cdd2fab31ae881ca88b6a5beb8e3..a343157512ca145b3e5ab1a0fcaeae0a
 +
 +        //Respawn the player then update their position and selected slot
 +        ServerLevel worldserver = handle.serverLevel();
-+        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(new net.minecraft.network.protocol.game.CommonPlayerSpawnInfo(worldserver.dimensionTypeId(), worldserver.dimension(), net.minecraft.world.level.biome.BiomeManager.obfuscateSeed(worldserver.getSeed()), handle.gameMode.getGameModeForPlayer(), handle.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), handle.getLastDeathLocation(), handle.getPortalCooldown()), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
++        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(handle.createCommonSpawnInfo(worldserver), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
 +        handle.onUpdateAbilities();
 +        connection.internalTeleport(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), java.util.Collections.emptySet());
-+        net.minecraft.server.MinecraftServer.getServer().getPlayerList().sendAllPlayerInfo(handle);
++        net.minecraft.server.players.PlayerList playerList = handle.server.getPlayerList();
++        playerList.sendLevelInfo(handle, worldserver);
++        playerList.sendAllPlayerInfo(handle);
 +
 +        // Resend their XP and effects because the respawn packet resets it
 +        connection.send(new net.minecraft.network.protocol.game.ClientboundSetExperiencePacket(handle.experienceProgress, handle.totalExperience, handle.experienceLevel));
