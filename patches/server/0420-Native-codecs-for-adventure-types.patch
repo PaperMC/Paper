@@ -421,10 +421,10 @@ index db54a9c32578defa02fa58dc694c96684a4885ac..4ded541e9f2f19ef244fed290da3983b
              try {
 diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cc24e4942e2ad0c6f663da08dbbe81d9e3072f42
+index 0000000000000000000000000000000000000000..983a8ad88692c4c328be2cc99caad12c8853c7d8
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
-@@ -0,0 +1,316 @@
+@@ -0,0 +1,336 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
@@ -432,6 +432,7 @@ index 0000000000000000000000000000000000000000..cc24e4942e2ad0c6f663da08dbbe81d9
 +import com.mojang.serialization.DataResult;
 +import java.io.IOException;
 +import java.util.UUID;
++import java.util.function.Function;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.nbt.api.BinaryTagHolder;
 +import net.kyori.adventure.text.BlockNBTComponent;
@@ -601,22 +602,41 @@ index 0000000000000000000000000000000000000000..cc24e4942e2ad0c6f663da08dbbe81d9
 +    }
 +
 +    static <A> void testDirectRoundTrip(final Codec<A> codec, final A adventure) {
-+        final Tag encoded = codec.encodeStart(NbtOps.INSTANCE, adventure).result().orElseThrow();
-+        final DataResult<Pair<A, Tag>> roundTripDataResult = codec.decode(NbtOps.INSTANCE, encoded);
-+        assertTrue(roundTripDataResult.result().isPresent(), () -> roundTripDataResult + " result is not present");
-+        assertEquals(adventure, roundTripDataResult.result().orElseThrow().getFirst());
++        final Tag encoded = require(
++            codec.encodeStart(NbtOps.INSTANCE, adventure),
++            msg -> "Failed to encode " + adventure + ": " + msg
++        );
++        final Pair<A, Tag> roundTripResult = require(
++            codec.decode(NbtOps.INSTANCE, encoded),
++            msg -> "Failed to decode " + encoded + ": " + msg
++        );
++        assertEquals(adventure, roundTripResult.getFirst());
 +    }
 +
 +    static <A, M> void testMinecraftRoundTrip(final Codec<A> adventureCodec, final Codec<M> minecraftCodec, final A adventure) {
-+        final Tag encoded = adventureCodec.encodeStart(NbtOps.INSTANCE, adventure).result()
-+            .orElseThrow(() -> new RuntimeException("Failed to encode " + adventure));
-+        final M minecraftResult = minecraftCodec.decode(NbtOps.INSTANCE, encoded).result()
-+            .orElseThrow(() -> new RuntimeException("Failed to decode to Minecraft: " + encoded)).getFirst();
-+        final Tag minecraftReEncoded = minecraftCodec.encodeStart(NbtOps.INSTANCE, minecraftResult).result()
-+            .orElseThrow(() -> new RuntimeException("Failed to re-encode Minecraft: " + minecraftResult));
-+        final DataResult<Pair<A, Tag>> roundTripDataResult = adventureCodec.decode(NbtOps.INSTANCE, minecraftReEncoded);
-+        assertTrue(roundTripDataResult.result().isPresent(), () -> roundTripDataResult + " result is not present");
-+        assertEquals(adventure, roundTripDataResult.result().orElseThrow().getFirst());
++        final Tag encoded = require(
++            adventureCodec.encodeStart(NbtOps.INSTANCE, adventure),
++            msg -> "Failed to encode " + adventure + ": " + msg
++        );
++        final M minecraftResult = require(
++            minecraftCodec.decode(NbtOps.INSTANCE, encoded),
++            msg -> "Failed to decode to Minecraft: " + encoded + "; " + msg
++        ).getFirst();
++        final Tag minecraftReEncoded = require(
++            minecraftCodec.encodeStart(NbtOps.INSTANCE, minecraftResult),
++            msg -> "Failed to re-encode Minecraft: " + minecraftResult + "; " + msg
++        );
++        final Pair<A, Tag> roundTripResult = require(
++            adventureCodec.decode(NbtOps.INSTANCE, minecraftReEncoded),
++            msg -> "Failed to decode " + minecraftReEncoded + ": " + msg
++        );
++        assertEquals(adventure, roundTripResult.getFirst());
++    }
++
++    static <R> R require(final DataResult<R> result, final Function<String, String> errorMessage) {
++        return result.get().map(Function.identity(), r -> {
++            throw new RuntimeException(errorMessage.apply(r.message()));
++        });
 +    }
 +
 +    static Style[] testStyles() {
