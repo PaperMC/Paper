@@ -418,15 +418,16 @@ index db54a9c32578defa02fa58dc694c96684a4885ac..4ded541e9f2f19ef244fed290da3983b
          @Override
          public @NotNull CompoundTag decode(final @NotNull String encoded) throws IOException {
              try {
-diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecTest.java
+diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7d7749a6e4f1c099a0865ede93a86b0a32aff9e2
+index 0000000000000000000000000000000000000000..d5782fc8bb0a181258cec867e74f51a0752832a7
 --- /dev/null
-+++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecTest.java
-@@ -0,0 +1,131 @@
++++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
+@@ -0,0 +1,212 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
++import com.mojang.serialization.Codec;
 +import com.mojang.serialization.DataResult;
 +import java.io.IOException;
 +import java.util.UUID;
@@ -442,6 +443,7 @@ index 0000000000000000000000000000000000000000..7d7749a6e4f1c099a0865ede93a86b0a
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.NbtOps;
 +import net.minecraft.nbt.Tag;
++import net.minecraft.network.chat.ComponentSerialization;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.Items;
@@ -450,6 +452,7 @@ index 0000000000000000000000000000000000000000..7d7749a6e4f1c099a0865ede93a86b0a
 +import org.junit.jupiter.api.Test;
 +import org.junit.jupiter.params.ParameterizedTest;
 +import org.junit.jupiter.params.provider.EnumSource;
++import org.junit.jupiter.params.provider.MethodSource;
 +
 +import static io.papermc.paper.adventure.AdventureCodecs.CLICK_EVENT_CODEC;
 +import static io.papermc.paper.adventure.AdventureCodecs.HOVER_EVENT_CODEC;
@@ -459,11 +462,14 @@ index 0000000000000000000000000000000000000000..7d7749a6e4f1c099a0865ede93a86b0a
 +import static io.papermc.paper.adventure.PaperAdventure.NBT_CODEC;
 +import static java.util.Objects.requireNonNull;
 +import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.Component.translatable;
++import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
++import static net.kyori.adventure.text.event.HoverEvent.showEntity;
 +import static org.junit.jupiter.api.Assertions.assertEquals;
 +import static org.junit.jupiter.api.Assertions.assertNotNull;
 +import static org.junit.jupiter.api.Assertions.assertTrue;
 +
-+class AdventureCodecTest extends AbstractTestingBase {
++class AdventureCodecsTest extends AbstractTestingBase {
 +
 +    @Test
 +    void testTextColor() {
@@ -493,7 +499,7 @@ index 0000000000000000000000000000000000000000..7d7749a6e4f1c099a0865ede93a86b0a
 +    }
 +
 +    @ParameterizedTest
-+    @EnumSource(value = ClickEvent.Action.class, mode =  EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE"})
++    @EnumSource(value = ClickEvent.Action.class, mode = EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE"})
 +    void testClickEvent(final ClickEvent.Action action) {
 +        final ClickEvent event = ClickEvent.clickEvent(action, RandomStringUtils.randomAlphanumeric(20));
 +        final Tag result = CLICK_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, event).result().orElseThrow();
@@ -503,7 +509,7 @@ index 0000000000000000000000000000000000000000..7d7749a6e4f1c099a0865ede93a86b0a
 +    }
 +
 +    @Test
-+    void testShowTextHoverEvent()  {
++    void testShowTextHoverEvent() {
 +        final HoverEvent<Component> hoverEvent = HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, text("hello"));
 +        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
 +        final net.minecraft.network.chat.HoverEvent nms = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
@@ -531,7 +537,7 @@ index 0000000000000000000000000000000000000000..7d7749a6e4f1c099a0865ede93a86b0a
 +    @Test
 +    void testShowEntityHoverEvent() {
 +        UUID uuid = UUID.randomUUID();
-+        final HoverEvent<HoverEvent.ShowEntity> hoverEvent = HoverEvent.showEntity(Key.key("minecraft:wolf"), uuid, text("NAME"));
++        final HoverEvent<HoverEvent.ShowEntity> hoverEvent = showEntity(Key.key("minecraft:wolf"), uuid, text("NAME"));
 +        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
 +        final DataResult<Pair<net.minecraft.network.chat.HoverEvent, Tag>> dataResult = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result);
 +        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
@@ -553,5 +559,80 @@ index 0000000000000000000000000000000000000000..7d7749a6e4f1c099a0865ede93a86b0a
 +        final net.minecraft.network.chat.Style nms = dataResult.result().get().getFirst();
 +        assertTrue(nms.isBold());
 +        assertEquals(requireNonNull(style.color()).value(), requireNonNull(nms.getColor()).getValue());
++    }
++
++    private static Component[] testTexts() {
++        return new Component[]{
++            text("Hello, world."),
++            text().content("c")
++                .color(NamedTextColor.GOLD)
++                .append(text("o", NamedTextColor.DARK_AQUA))
++                .append(text("l", NamedTextColor.LIGHT_PURPLE))
++                .append(text("o", NamedTextColor.DARK_PURPLE))
++                .append(text("u", NamedTextColor.BLUE))
++                .append(text("r", NamedTextColor.DARK_GREEN))
++                .append(text("s", NamedTextColor.RED))
++                .build(),
++            text().content("This is a test.")
++                .color(NamedTextColor.DARK_PURPLE)
++                .hoverEvent(HoverEvent.showText(text("A test.")))
++                .append(text(" "))
++                .append(text("A what?", NamedTextColor.DARK_AQUA))
++                .build()
++        };
++    }
++
++    private static Component[] testTranslatables() {
++        final String key = "multiplayer.player.left";
++        final UUID id = UUID.fromString("eb121687-8b1a-4944-bd4d-e0a818d9dfe2");
++        final String name = "kashike";
++        final String command = String.format("/msg %s ", name);
++
++        return new Component[]{
++            translatable(key),
++            translatable()
++                .key("thisIsA")
++                .fallback("This is a test.")
++                .build(),
++            translatable(
++                key,
++                text().content(name)
++                    .clickEvent(suggestCommand(command))
++                    .hoverEvent(showEntity(HoverEvent.ShowEntity.showEntity(
++                        Key.key("minecraft", "player"),
++                        id,
++                        text(name)
++                    )))
++                    .build()
++            ).color(NamedTextColor.YELLOW)
++        };
++    }
++
++    @ParameterizedTest
++    @MethodSource({"testTexts", "testTranslatables"})
++    void testDirectRoundTrip(final Component component) {
++        testDirectRoundTrip(AdventureCodecs.COMPONENT_CODEC, component);
++    }
++
++    @ParameterizedTest
++    @MethodSource({"testTexts", "testTranslatables"})
++    void testMinecraftRoundTrip(final Component component) {
++        testMinecraftRoundTrip(AdventureCodecs.COMPONENT_CODEC, ComponentSerialization.CODEC, component);
++    }
++
++    static <A> void testDirectRoundTrip(final Codec<A> codec, final A adventure) {
++        final Tag encoded = codec.encodeStart(NbtOps.INSTANCE, adventure).result().orElseThrow();
++        final DataResult<Pair<A, Tag>> roundTripDataResult = codec.decode(NbtOps.INSTANCE, encoded);
++        assertTrue(roundTripDataResult.result().isPresent(), () -> roundTripDataResult + " result is not present");
++        assertEquals(adventure, roundTripDataResult.result().orElseThrow().getFirst());
++    }
++
++    static <A, M> void testMinecraftRoundTrip(final Codec<A> adventureCodec, final Codec<M> minecraftCodec, final A adventure) {
++        final Tag encoded = adventureCodec.encodeStart(NbtOps.INSTANCE, adventure).result().orElseThrow();
++        final DataResult<Pair<M, Tag>> minecraftResult = minecraftCodec.decode(NbtOps.INSTANCE, encoded);
++        final Tag minecraftReEncoded = minecraftCodec.encodeStart(NbtOps.INSTANCE, minecraftResult.result().orElseThrow().getFirst()).result().orElseThrow();
++        final DataResult<Pair<A, Tag>> roundTripDataResult = adventureCodec.decode(NbtOps.INSTANCE, minecraftReEncoded);
++        assertTrue(roundTripDataResult.result().isPresent(), () -> roundTripDataResult + " result is not present");
++        assertEquals(adventure, roundTripDataResult.result().orElseThrow().getFirst());
 +    }
 +}
