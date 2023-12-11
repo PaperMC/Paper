@@ -420,10 +420,10 @@ index db54a9c32578defa02fa58dc694c96684a4885ac..4ded541e9f2f19ef244fed290da3983b
              try {
 diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a670988e675b82
+index 0000000000000000000000000000000000000000..cc24e4942e2ad0c6f663da08dbbe81d9e3072f42
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
-@@ -0,0 +1,238 @@
+@@ -0,0 +1,316 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
@@ -433,6 +433,7 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +import java.util.UUID;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.nbt.api.BinaryTagHolder;
++import net.kyori.adventure.text.BlockNBTComponent;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.event.ClickEvent;
 +import net.kyori.adventure.text.event.HoverEvent;
@@ -455,19 +456,27 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +import org.junit.jupiter.params.provider.MethodSource;
 +
 +import static io.papermc.paper.adventure.AdventureCodecs.CLICK_EVENT_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.COMPONENT_CODEC;
 +import static io.papermc.paper.adventure.AdventureCodecs.HOVER_EVENT_CODEC;
 +import static io.papermc.paper.adventure.AdventureCodecs.KEY_CODEC;
 +import static io.papermc.paper.adventure.AdventureCodecs.STYLE_MAP_CODEC;
 +import static io.papermc.paper.adventure.AdventureCodecs.TEXT_COLOR_CODEC;
 +import static io.papermc.paper.adventure.PaperAdventure.NBT_CODEC;
 +import static java.util.Objects.requireNonNull;
++import static net.kyori.adventure.key.Key.key;
++import static net.kyori.adventure.text.Component.blockNBT;
++import static net.kyori.adventure.text.Component.entityNBT;
 +import static net.kyori.adventure.text.Component.keybind;
 +import static net.kyori.adventure.text.Component.score;
 +import static net.kyori.adventure.text.Component.selector;
++import static net.kyori.adventure.text.Component.storageNBT;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.Component.translatable;
++import static net.kyori.adventure.text.event.ClickEvent.openUrl;
 +import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
 +import static net.kyori.adventure.text.event.HoverEvent.showEntity;
++import static net.kyori.adventure.text.format.Style.style;
++import static net.kyori.adventure.text.format.TextColor.color;
 +import static org.junit.jupiter.api.Assertions.assertEquals;
 +import static org.junit.jupiter.api.Assertions.assertNotNull;
 +import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -476,7 +485,7 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +
 +    @Test
 +    void testTextColor() {
-+        final TextColor color = TextColor.color(0x1d38df);
++        final TextColor color = color(0x1d38df);
 +        final Tag result = TEXT_COLOR_CODEC.encodeStart(NbtOps.INSTANCE, color).result().orElseThrow();
 +        assertEquals(color.asHexString(), result.getAsString());
 +        final net.minecraft.network.chat.TextColor nms = net.minecraft.network.chat.TextColor.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
@@ -494,7 +503,7 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +
 +    @Test
 +    void testKey() {
-+        final Key key = Key.key("hello", "there");
++        final Key key = key("hello", "there");
 +        final Tag result = KEY_CODEC.encodeStart(NbtOps.INSTANCE, key).result().orElseThrow();
 +        assertEquals(key.asString(), result.getAsString());
 +        final ResourceLocation location = ResourceLocation.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
@@ -524,7 +533,7 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +    void testShowItemHoverEvent() throws IOException {
 +        final ItemStack stack = new ItemStack(Items.PUMPKIN, 3);
 +        stack.setHoverName(net.minecraft.network.chat.Component.literal("NAME"));
-+        final HoverEvent<HoverEvent.ShowItem> hoverEvent = HoverEvent.showItem(Key.key("minecraft:pumpkin"), 3, BinaryTagHolder.encode(requireNonNull(stack.getTag()), NBT_CODEC));
++        final HoverEvent<HoverEvent.ShowItem> hoverEvent = HoverEvent.showItem(key("minecraft:pumpkin"), 3, BinaryTagHolder.encode(requireNonNull(stack.getTag()), NBT_CODEC));
 +        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
 +        final DataResult<Pair<net.minecraft.network.chat.HoverEvent, Tag>> dataResult = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result);
 +        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
@@ -540,7 +549,7 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +    @Test
 +    void testShowEntityHoverEvent() {
 +        UUID uuid = UUID.randomUUID();
-+        final HoverEvent<HoverEvent.ShowEntity> hoverEvent = showEntity(Key.key("minecraft:wolf"), uuid, text("NAME"));
++        final HoverEvent<HoverEvent.ShowEntity> hoverEvent = showEntity(key("minecraft:wolf"), uuid, text("NAME"));
 +        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
 +        final DataResult<Pair<net.minecraft.network.chat.HoverEvent, Tag>> dataResult = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result);
 +        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
@@ -555,7 +564,7 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +
 +    @Test
 +    void testSimpleStyle() {
-+        final Style style = Style.style().decorate(TextDecoration.BOLD).color(NamedTextColor.RED).build();
++        final Style style = style().decorate(TextDecoration.BOLD).color(NamedTextColor.RED).build();
 +        final Tag result = STYLE_MAP_CODEC.codec().encodeStart(NbtOps.INSTANCE, style).result().orElseThrow();
 +        final DataResult<Pair<net.minecraft.network.chat.Style, Tag>> dataResult = net.minecraft.network.chat.Style.Serializer.CODEC.decode(NbtOps.INSTANCE, result);
 +        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
@@ -565,15 +574,29 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +    }
 +
 +    @ParameterizedTest
-+    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores", "testSelectors"})
-+    void testDirectRoundTripComponent(final Component component) {
-+        testDirectRoundTrip(AdventureCodecs.COMPONENT_CODEC, component);
++    @MethodSource({"testStyles"})
++    void testDirectRoundTripStyle(final Style style) {
++        testDirectRoundTrip(STYLE_MAP_CODEC.codec(), style);
 +    }
 +
 +    @ParameterizedTest
-+    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores", "testSelectors"})
++    @MethodSource({"testStyles"})
++    void testMinecraftRoundTripStyle(final Style style) {
++        testMinecraftRoundTrip(STYLE_MAP_CODEC.codec(), net.minecraft.network.chat.Style.Serializer.CODEC, style);
++    }
++
++    @ParameterizedTest
++    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores",
++        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts"})
++    void testDirectRoundTripComponent(final Component component) {
++        testDirectRoundTrip(COMPONENT_CODEC, component);
++    }
++
++    @ParameterizedTest
++    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores",
++        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts"})
 +    void testMinecraftRoundTripComponent(final Component component) {
-+        testMinecraftRoundTrip(AdventureCodecs.COMPONENT_CODEC, ComponentSerialization.CODEC, component);
++        testMinecraftRoundTrip(COMPONENT_CODEC, ComponentSerialization.CODEC, component);
 +    }
 +
 +    static <A> void testDirectRoundTrip(final Codec<A> codec, final A adventure) {
@@ -593,6 +616,30 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +        final DataResult<Pair<A, Tag>> roundTripDataResult = adventureCodec.decode(NbtOps.INSTANCE, minecraftReEncoded);
 +        assertTrue(roundTripDataResult.result().isPresent(), () -> roundTripDataResult + " result is not present");
 +        assertEquals(adventure, roundTripDataResult.result().orElseThrow().getFirst());
++    }
++
++    static Style[] testStyles() {
++        return new Style[]{
++            Style.empty(),
++            style(color(0x0a1ab9)),
++            style(NamedTextColor.LIGHT_PURPLE),
++            style(TextDecoration.BOLD),
++            style(TextDecoration.BOLD.withState(false)),
++            style(TextDecoration.BOLD.withState(TextDecoration.State.NOT_SET)),
++            style()
++                .font(key("kyori", "kittens"))
++                .color(NamedTextColor.RED)
++                .decoration(TextDecoration.BOLD, true)
++                .clickEvent(openUrl("https://github.com"))
++                .build(),
++            style()
++                .hoverEvent(HoverEvent.showEntity(HoverEvent.ShowEntity.showEntity(
++                    Key.key(Key.MINECRAFT_NAMESPACE, "pig"),
++                    UUID.randomUUID(),
++                    Component.text("Dolores", TextColor.color(0x0a1ab9))
++                )))
++                .build()
++        };
 +    }
 +
 +    static Component[] testTexts() {
@@ -633,7 +680,7 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +                text().content(name)
 +                    .clickEvent(suggestCommand(command))
 +                    .hoverEvent(showEntity(HoverEvent.ShowEntity.showEntity(
-+                        Key.key("minecraft", "player"),
++                        key("minecraft", "player"),
 +                        id,
 +                        text(name)
 +                    )))
@@ -659,6 +706,37 @@ index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a67098
 +        return new Component[]{
 +            selector(selector),
 +            selector(selector, text(','))
++        };
++    }
++
++    static Component[] testBlockNbts() {
++        return new Component[]{
++            blockNBT().nbtPath("abc").localPos(1.23d, 2.0d, 3.89d).build(),
++            blockNBT().nbtPath("xyz").absoluteWorldPos(4, 5, 6).interpret(true).build(),
++            blockNBT().nbtPath("eeee").relativeWorldPos(7, 83, 900)
++                .separator(text(';'))
++                .build(),
++            blockNBT().nbtPath("qwert").worldPos(
++                BlockNBTComponent.WorldPos.Coordinate.absolute(12),
++                BlockNBTComponent.WorldPos.Coordinate.relative(3),
++                BlockNBTComponent.WorldPos.Coordinate.absolute(1200)
++            ).build()
++        };
++    }
++
++    static Component[] testEntityNbts() {
++        return new Component[]{
++            entityNBT().nbtPath("abc").selector("test").build(),
++            entityNBT().nbtPath("abc").selector("test").separator(text(',')).build(),
++            entityNBT().nbtPath("abc").selector("test").interpret(true).build(),
++        };
++    }
++
++    static Component[] testStorageNbts() {
++        return new Component[]{
++            storageNBT().nbtPath("abc").storage(key("doom:apple")).build(),
++            storageNBT().nbtPath("abc").storage(key("doom:apple")).separator(text(", ")).build(),
++            storageNBT().nbtPath("abc").storage(key("doom:apple")).interpret(true).build(),
 +        };
 +    }
 +}
