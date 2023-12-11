@@ -420,10 +420,10 @@ index db54a9c32578defa02fa58dc694c96684a4885ac..4ded541e9f2f19ef244fed290da3983b
              try {
 diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d5782fc8bb0a181258cec867e74f51a0752832a7
+index 0000000000000000000000000000000000000000..cff7a6d91bba6c7e116b76f8f6a670988e675b82
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
-@@ -0,0 +1,212 @@
+@@ -0,0 +1,238 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
@@ -461,6 +461,9 @@ index 0000000000000000000000000000000000000000..d5782fc8bb0a181258cec867e74f51a0
 +import static io.papermc.paper.adventure.AdventureCodecs.TEXT_COLOR_CODEC;
 +import static io.papermc.paper.adventure.PaperAdventure.NBT_CODEC;
 +import static java.util.Objects.requireNonNull;
++import static net.kyori.adventure.text.Component.keybind;
++import static net.kyori.adventure.text.Component.score;
++import static net.kyori.adventure.text.Component.selector;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.Component.translatable;
 +import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
@@ -561,7 +564,38 @@ index 0000000000000000000000000000000000000000..d5782fc8bb0a181258cec867e74f51a0
 +        assertEquals(requireNonNull(style.color()).value(), requireNonNull(nms.getColor()).getValue());
 +    }
 +
-+    private static Component[] testTexts() {
++    @ParameterizedTest
++    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores", "testSelectors"})
++    void testDirectRoundTripComponent(final Component component) {
++        testDirectRoundTrip(AdventureCodecs.COMPONENT_CODEC, component);
++    }
++
++    @ParameterizedTest
++    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores", "testSelectors"})
++    void testMinecraftRoundTripComponent(final Component component) {
++        testMinecraftRoundTrip(AdventureCodecs.COMPONENT_CODEC, ComponentSerialization.CODEC, component);
++    }
++
++    static <A> void testDirectRoundTrip(final Codec<A> codec, final A adventure) {
++        final Tag encoded = codec.encodeStart(NbtOps.INSTANCE, adventure).result().orElseThrow();
++        final DataResult<Pair<A, Tag>> roundTripDataResult = codec.decode(NbtOps.INSTANCE, encoded);
++        assertTrue(roundTripDataResult.result().isPresent(), () -> roundTripDataResult + " result is not present");
++        assertEquals(adventure, roundTripDataResult.result().orElseThrow().getFirst());
++    }
++
++    static <A, M> void testMinecraftRoundTrip(final Codec<A> adventureCodec, final Codec<M> minecraftCodec, final A adventure) {
++        final Tag encoded = adventureCodec.encodeStart(NbtOps.INSTANCE, adventure).result()
++            .orElseThrow(() -> new RuntimeException("Failed to encode " + adventure));
++        final M minecraftResult = minecraftCodec.decode(NbtOps.INSTANCE, encoded).result()
++            .orElseThrow(() -> new RuntimeException("Failed to decode to Minecraft: " + encoded)).getFirst();
++        final Tag minecraftReEncoded = minecraftCodec.encodeStart(NbtOps.INSTANCE, minecraftResult).result()
++            .orElseThrow(() -> new RuntimeException("Failed to re-encode Minecraft: " + minecraftResult));
++        final DataResult<Pair<A, Tag>> roundTripDataResult = adventureCodec.decode(NbtOps.INSTANCE, minecraftReEncoded);
++        assertTrue(roundTripDataResult.result().isPresent(), () -> roundTripDataResult + " result is not present");
++        assertEquals(adventure, roundTripDataResult.result().orElseThrow().getFirst());
++    }
++
++    static Component[] testTexts() {
 +        return new Component[]{
 +            text("Hello, world."),
 +            text().content("c")
@@ -582,7 +616,7 @@ index 0000000000000000000000000000000000000000..d5782fc8bb0a181258cec867e74f51a0
 +        };
 +    }
 +
-+    private static Component[] testTranslatables() {
++    static Component[] testTranslatables() {
 +        final String key = "multiplayer.player.left";
 +        final UUID id = UUID.fromString("eb121687-8b1a-4944-bd4d-e0a818d9dfe2");
 +        final String name = "kashike";
@@ -608,31 +642,23 @@ index 0000000000000000000000000000000000000000..d5782fc8bb0a181258cec867e74f51a0
 +        };
 +    }
 +
-+    @ParameterizedTest
-+    @MethodSource({"testTexts", "testTranslatables"})
-+    void testDirectRoundTrip(final Component component) {
-+        testDirectRoundTrip(AdventureCodecs.COMPONENT_CODEC, component);
++    static Component[] testKeybinds() {
++        return new Component[]{keybind("key.jump")};
 +    }
 +
-+    @ParameterizedTest
-+    @MethodSource({"testTexts", "testTranslatables"})
-+    void testMinecraftRoundTrip(final Component component) {
-+        testMinecraftRoundTrip(AdventureCodecs.COMPONENT_CODEC, ComponentSerialization.CODEC, component);
++    static Component[] testScores() {
++        final String name = "abc";
++        final String objective = "def";
++
++        return new Component[]{score(name, objective)};
 +    }
 +
-+    static <A> void testDirectRoundTrip(final Codec<A> codec, final A adventure) {
-+        final Tag encoded = codec.encodeStart(NbtOps.INSTANCE, adventure).result().orElseThrow();
-+        final DataResult<Pair<A, Tag>> roundTripDataResult = codec.decode(NbtOps.INSTANCE, encoded);
-+        assertTrue(roundTripDataResult.result().isPresent(), () -> roundTripDataResult + " result is not present");
-+        assertEquals(adventure, roundTripDataResult.result().orElseThrow().getFirst());
-+    }
++    static Component[] testSelectors() {
++        final String selector = "@p";
 +
-+    static <A, M> void testMinecraftRoundTrip(final Codec<A> adventureCodec, final Codec<M> minecraftCodec, final A adventure) {
-+        final Tag encoded = adventureCodec.encodeStart(NbtOps.INSTANCE, adventure).result().orElseThrow();
-+        final DataResult<Pair<M, Tag>> minecraftResult = minecraftCodec.decode(NbtOps.INSTANCE, encoded);
-+        final Tag minecraftReEncoded = minecraftCodec.encodeStart(NbtOps.INSTANCE, minecraftResult.result().orElseThrow().getFirst()).result().orElseThrow();
-+        final DataResult<Pair<A, Tag>> roundTripDataResult = adventureCodec.decode(NbtOps.INSTANCE, minecraftReEncoded);
-+        assertTrue(roundTripDataResult.result().isPresent(), () -> roundTripDataResult + " result is not present");
-+        assertEquals(adventure, roundTripDataResult.result().orElseThrow().getFirst());
++        return new Component[]{
++            selector(selector),
++            selector(selector, text(','))
++        };
 +    }
 +}
