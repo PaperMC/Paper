@@ -1221,10 +1221,10 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1fb9b0ea9f2dbff12d8d2fbc2ad2f4d88ca9f7ad
+index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914260d4c50
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,394 @@
+@@ -0,0 +1,397 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -1419,7 +1419,10 @@ index 0000000000000000000000000000000000000000..1fb9b0ea9f2dbff12d8d2fbc2ad2f4d8
 +
 +    private static final Map<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = new ConcurrentHashMap<>();
 +
-+    public static com.mojang.serialization.Codec<Component> localizedCodec(final Locale l) {
++    public static com.mojang.serialization.Codec<Component> localizedCodec(final @Nullable Locale l) {
++        if (l == null) {
++            return AdventureCodecs.COMPONENT_CODEC;
++        }
 +        return LOCALIZED_CODECS.computeIfAbsent(l, locale -> AdventureCodecs.COMPONENT_CODEC.xmap(
 +            component -> component, // decode
 +            component -> translated(component, locale) // encode
@@ -2120,7 +2123,7 @@ index d120fff432d9c4fc7a35ddffdc4186459e45e950..73c15a0c56a103ba4e62f0a51af8d425
          }
      }
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 9373502ede6c8a881af67db005cf12fd9313f37f..50c7e0a449ea9d71e21e86b4f03dac0298f96130 100644
+index 9373502ede6c8a881af67db005cf12fd9313f37f..d9be3fada2e603684275a2094954e29039fb07c7 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 @@ -87,6 +87,7 @@ public class FriendlyByteBuf extends ByteBuf {
@@ -2131,7 +2134,7 @@ index 9373502ede6c8a881af67db005cf12fd9313f37f..50c7e0a449ea9d71e21e86b4f03dac02
      public static final short MAX_STRING_LENGTH = 32767;
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
      private static final int PUBLIC_KEY_SIZE = 256;
-@@ -526,8 +527,19 @@ public class FriendlyByteBuf extends ByteBuf {
+@@ -526,8 +527,18 @@ public class FriendlyByteBuf extends ByteBuf {
          return (Component) this.readWithCodecTrusted(NbtOps.INSTANCE, ComponentSerialization.CODEC);
      }
  
@@ -2141,12 +2144,12 @@ index 9373502ede6c8a881af67db005cf12fd9313f37f..50c7e0a449ea9d71e21e86b4f03dac02
 +    }
 +
      public FriendlyByteBuf writeComponent(Component text) {
+-        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, text);
 +        if (text instanceof io.papermc.paper.adventure.AdventureComponent adv) {
 +            return this.writeComponent(adv.adventure$component());
 +        }
 +
-+        // TODO this.adventure$locale
-         return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, text);
++        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.localizedCodec(this.adventure$locale), text);
 +        // Paper end - adventure
      }
  
@@ -2270,14 +2273,38 @@ index d3a80d0a23be762c05931ae8001d98e43cab2b4a..e0037b99838519eee5fb6f7e95ffaad2
          }
      }
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-index 49138ccda0f378b13c7f425be765876eb4026b06..ddc91d376fd59da982e594188fcef7202a2a5972 100644
+index 49138ccda0f378b13c7f425be765876eb4026b06..ca662b668177532a73e7e309bb8b0fb3c4e310f1 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-@@ -61,6 +61,33 @@ public class ComponentSerialization {
+@@ -55,12 +55,58 @@ public class ComponentSerialization {
+         return ExtraCodecs.orCompressed(mapCodec3, mapCodec2);
+     }
+ 
++    // Paper start - adventure
++    private static final java.util.Map<java.util.Locale, Codec<Component>> LOCALIZED_CODECS = new java.util.concurrent.ConcurrentHashMap<>();
++
++    public static Codec<Component> localizedCodec(final java.util.@org.checkerframework.checker.nullness.qual.Nullable Locale locale) {
++        if (locale == null) {
++            return CODEC;
++        }
++        return LOCALIZED_CODECS.computeIfAbsent(locale,
++            loc -> ExtraCodecs.recursive("Component", selfCodec -> createCodec(selfCodec, loc)));
++    }
++    // Paper end
++
+     private static Codec<Component> createCodec(Codec<Component> selfCodec) {
++        // Paper start - adventure
++        return createCodec(selfCodec, null);
++    }
++
++    private static Codec<Component> createCodec(Codec<Component> selfCodec, @javax.annotation.Nullable java.util.Locale locale) {
++        // Paper end
+         ComponentContents.Type<?>[] types = new ComponentContents.Type[]{PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE};
+         MapCodec<ComponentContents> mapCodec = createLegacyComponentMatcher(types, ComponentContents.Type::codec, ComponentContents::type, "type");
          Codec<Component> codec = RecordCodecBuilder.create((instance) -> {
              return instance.group(mapCodec.forGetter(Component::getContents), ExtraCodecs.strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::getSiblings), Style.Serializer.MAP_CODEC.forGetter(Component::getStyle)).apply(instance, MutableComponent::new);
          });
-+        // Paper start
++        // Paper start - adventure
 +        final Codec<Component> origCodec = codec;
 +        codec = new Codec<>() {
 +            @Override
@@ -2287,15 +2314,16 @@ index 49138ccda0f378b13c7f425be765876eb4026b06..ddc91d376fd59da982e594188fcef720
 +
 +            @Override
 +            public <T> DataResult<T> encode(final Component input, final DynamicOps<T> ops, final T prefix) {
++                final net.kyori.adventure.text.Component adventureComponent;
 +                if (input instanceof io.papermc.paper.adventure.AdventureComponent adv) {
-+                    if (adv.deepConvertedIfPresent() != null) {
-+                        return origCodec.encode(java.util.Objects.requireNonNull(adv.deepConvertedIfPresent()), ops, prefix);
-+                    } else {
-+                        // return io.papermc.paper.adventure.PaperAdventure.localizedCodec(locale).encode(adv.adventure$component(), ops, prefix); // TODO
-+                        return io.papermc.paper.adventure.AdventureCodecs.COMPONENT_CODEC.encode(adv.adventure$component(), ops, prefix);
-+                    }
++                    adventureComponent = adv.adventure$component();
++                } else if (locale != null && input.getContents() instanceof TranslatableContents) {
++                    adventureComponent = io.papermc.paper.adventure.PaperAdventure.asAdventure(input);
++                } else {
++                    return origCodec.encode(input, ops, prefix);
 +                }
-+                return origCodec.encode(input, ops, prefix);
++                return io.papermc.paper.adventure.PaperAdventure.localizedCodec(locale)
++                    .encode(adventureComponent, ops, prefix);
 +            }
 +
 +            @Override
