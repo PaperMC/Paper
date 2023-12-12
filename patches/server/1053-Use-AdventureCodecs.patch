@@ -1,0 +1,221 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Mon, 11 Dec 2023 18:42:07 -0800
+Subject: [PATCH] Use AdventureCodecs
+
+
+diff --git a/src/main/java/io/papermc/paper/adventure/AdventureComponent.java b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
+index fbf7804f8e02fc76cadae661083dbcc5b1c21881..4b01e1249276a26aa82eb2d70f4b1223a7c8008f 100644
+--- a/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
++++ b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
+@@ -1,13 +1,8 @@
+ package io.papermc.paper.adventure;
+ 
+-import com.google.gson.JsonElement;
+-import com.google.gson.JsonSerializationContext;
+-import com.google.gson.JsonSerializer;
+-import java.lang.reflect.Type;
+ import java.util.List;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.TextComponent;
+-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+ import net.minecraft.network.chat.ComponentContents;
+ import net.minecraft.network.chat.MutableComponent;
+@@ -80,11 +75,4 @@ public final class AdventureComponent implements net.minecraft.network.chat.Comp
+     public Component adventure$component() {
+         return this.adventure;
+     }
+-
+-    public static class Serializer implements JsonSerializer<AdventureComponent> {
+-        @Override
+-        public JsonElement serialize(final AdventureComponent src, final Type type, final JsonSerializationContext context) {
+-            return GsonComponentSerializer.gson().serializer().toJsonTree(src.adventure, Component.class);
+-        }
+-    }
+ }
+diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+index 4ded541e9f2f19ef244fed290da3983b319f2c39..7a34c4c6abf8213f840337691facef782e3abb6f 100644
+--- a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
++++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+@@ -6,7 +6,9 @@ import java.io.IOException;
+ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Locale;
++import java.util.Map;
+ import java.util.Optional;
++import java.util.concurrent.ConcurrentHashMap;
+ import java.util.function.BiConsumer;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+@@ -147,7 +149,7 @@ public final class PaperAdventure {
+     // Component
+ 
+     public static Component asAdventure(final net.minecraft.network.chat.Component component) {
+-        return component == null ? Component.empty() : GsonComponentSerializer.gson().serializer().fromJson(net.minecraft.network.chat.Component.Serializer.toJsonTree(component), Component.class);
++        return component == null ? Component.empty() : WRAPPER_AWARE_SERIALIZER.deserialize(component);
+     }
+ 
+     public static ArrayList<Component> asAdventure(final List<net.minecraft.network.chat.Component> vanillas) {
+@@ -177,7 +179,7 @@ public final class PaperAdventure {
+     public static net.minecraft.network.chat.Component asVanilla(final Component component) {
+         if (component == null) return null;
+         if (true) return new AdventureComponent(component);
+-        return net.minecraft.network.chat.Component.Serializer.fromJson(GsonComponentSerializer.gson().serializer().toJsonTree(component));
++        return WRAPPER_AWARE_SERIALIZER.serialize(component);
+     }
+ 
+     public static List<net.minecraft.network.chat.Component> asVanilla(final List<Component> adventures) {
+@@ -192,11 +194,13 @@ public final class PaperAdventure {
+         return GsonComponentSerializer.gson().serialize(translated(component, locale));
+     }
+ 
+-    public static String asJsonString(final net.minecraft.network.chat.Component component, final Locale locale) {
+-        if (component instanceof AdventureComponent) {
+-            return asJsonString(((AdventureComponent) component).adventure, locale);
+-        }
+-        return net.minecraft.network.chat.Component.Serializer.toJson(component);
++    private static final Map<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = new ConcurrentHashMap<>();
++
++    public static com.mojang.serialization.Codec<Component> localizedCodec(final Locale l) {
++        return LOCALIZED_CODECS.computeIfAbsent(l, locale -> AdventureCodecs.COMPONENT_CODEC.xmap(
++            component -> component, // decode
++            component -> translated(component, locale) // encode
++        ));
+     }
+ 
+     public static String asPlain(final Component component, final Locale locale) {
+diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
+index 2a08e0461db4e699b7e6a1558a4419c848fc7f4f..49809d4fa42d1054119cf38babba5a6161b5ee97 100644
+--- a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
++++ b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
+@@ -1,8 +1,12 @@
+ package io.papermc.paper.adventure;
+ 
++import com.mojang.datafixers.util.Pair;
++import java.util.function.Function;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.serializer.ComponentSerializer;
+-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.Tag;
++import net.minecraft.network.chat.ComponentSerialization;
+ 
+ final class WrapperAwareSerializer implements ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> {
+     @Override
+@@ -10,11 +14,27 @@ final class WrapperAwareSerializer implements ComponentSerializer<Component, Com
+         if (input instanceof AdventureComponent) {
+             return ((AdventureComponent) input).adventure;
+         }
+-        return GsonComponentSerializer.gson().serializer().fromJson(net.minecraft.network.chat.Component.Serializer.toJsonTree(input), Component.class);
++        final Tag tag = ComponentSerialization.CODEC.encodeStart(NbtOps.INSTANCE, input)
++            .get().map(Function.identity(), partial -> {
++                throw new RuntimeException("Failed to encode Minecraft Component: " + input + "; " + partial.message());
++            });
++        final Pair<Component, Tag> converted = AdventureCodecs.COMPONENT_CODEC.decode(NbtOps.INSTANCE, tag)
++            .get().map(Function.identity(), partial -> {
++                throw new RuntimeException("Failed to decode to adventure Component: " + tag + "; " + partial.message());
++            });
++        return converted.getFirst();
+     }
+ 
+     @Override
+     public net.minecraft.network.chat.Component serialize(final Component component) {
+-        return net.minecraft.network.chat.Component.Serializer.fromJson(GsonComponentSerializer.gson().serializer().toJsonTree(component));
++        final Tag tag = AdventureCodecs.COMPONENT_CODEC.encodeStart(NbtOps.INSTANCE, component)
++            .get().map(Function.identity(), partial -> {
++                throw new RuntimeException("Failed to encode adventure Component: " + component + "; " + partial.message());
++            });
++        final Pair<net.minecraft.network.chat.Component, Tag> converted = ComponentSerialization.CODEC.decode(NbtOps.INSTANCE, tag)
++            .get().map(Function.identity(), partial -> {
++                throw new RuntimeException("Failed to decode to Minecraft Component: " + tag + "; " + partial.message());
++            });
++        return converted.getFirst();
+     }
+ }
+diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+index ff794499df6a2b65db2ca5956d2b98317592057f..445546c8c30ffeed2f954135b5375a22c7836874 100644
+--- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
++++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+@@ -529,19 +529,22 @@ public class FriendlyByteBuf extends ByteBuf {
+ 
+     // Paper start
+     public FriendlyByteBuf writeComponent(final net.kyori.adventure.text.Component component) {
+-        // TODO this.adventure$locale
+-        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
++        return this.writeWithCodec(NbtOps.INSTANCE, io.papermc.paper.adventure.PaperAdventure.localizedCodec(this.adventure$locale), component);
+     }
+ 
+     @Deprecated
+     public FriendlyByteBuf writeComponent(final net.md_5.bungee.api.chat.BaseComponent[] component) {
+         return this.writeUtf(net.md_5.bungee.chat.ComponentSerializer.toString(component), 262144);
+     }
+-    // Paper end
+ 
+     public FriendlyByteBuf writeComponent(Component text) {
++        if (text instanceof io.papermc.paper.adventure.AdventureComponent adv) {
++            return this.writeComponent(adv.adventure$component());
++        }
++
+         // TODO this.adventure$locale
+         return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, text);
++        // Paper end
+     }
+ 
+     public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
+diff --git a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
+index 60228c3778e53ca5c513cd265e5e08d151573a4f..ddc91d376fd59da982e594188fcef7202a2a5972 100644
+--- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
++++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
+@@ -61,6 +61,33 @@ public class ComponentSerialization {
+         Codec<Component> codec = RecordCodecBuilder.create((instance) -> {
+             return instance.group(mapCodec.forGetter(Component::getContents), ExtraCodecs.strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::getSiblings), Style.Serializer.MAP_CODEC.forGetter(Component::getStyle)).apply(instance, MutableComponent::new);
+         });
++        // Paper start
++        final Codec<Component> origCodec = codec;
++        codec = new Codec<>() {
++            @Override
++            public <T> DataResult<com.mojang.datafixers.util.Pair<Component, T>> decode(final DynamicOps<T> ops, final T input) {
++                return origCodec.decode(ops, input);
++            }
++
++            @Override
++            public <T> DataResult<T> encode(final Component input, final DynamicOps<T> ops, final T prefix) {
++                if (input instanceof io.papermc.paper.adventure.AdventureComponent adv) {
++                    if (adv.deepConvertedIfPresent() != null) {
++                        return origCodec.encode(java.util.Objects.requireNonNull(adv.deepConvertedIfPresent()), ops, prefix);
++                    } else {
++                        // return io.papermc.paper.adventure.PaperAdventure.localizedCodec(locale).encode(adv.adventure$component(), ops, prefix); // TODO
++                        return io.papermc.paper.adventure.AdventureCodecs.COMPONENT_CODEC.encode(adv.adventure$component(), ops, prefix);
++                    }
++                }
++                return origCodec.encode(input, ops, prefix);
++            }
++
++            @Override
++            public String toString() {
++                return origCodec.toString() + "[AdventureComponentAware]";
++            }
++        };
++        // Paper end
+         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec).xmap((either) -> {
+             return either.map((either2) -> {
+                 return either2.map(Component::literal, ComponentSerialization::createFromList);
+@@ -86,7 +113,7 @@ public class ComponentSerialization {
+             for(MapDecoder<? extends T> mapDecoder : this.codecs) {
+                 DataResult<? extends T> dataResult = mapDecoder.decode(dynamicOps, mapLike);
+                 if (dataResult.result().isPresent()) {
+-                    return dataResult;
++                    return (DataResult<T>) dataResult; // Paper - decomp fix
+                 }
+             }
+ 
+@@ -96,7 +123,7 @@ public class ComponentSerialization {
+         }
+ 
+         public <S> RecordBuilder<S> encode(T object, DynamicOps<S> dynamicOps, RecordBuilder<S> recordBuilder) {
+-            MapEncoder<T> mapEncoder = this.encoderGetter.apply(object);
++            MapEncoder<T> mapEncoder = (MapEncoder<T>) this.encoderGetter.apply(object); // Paper - decomp fix
+             return mapEncoder.encode(object, dynamicOps, recordBuilder);
+         }
+ 
