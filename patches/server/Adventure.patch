@@ -1419,7 +1419,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static final Map<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = new ConcurrentHashMap<>();
 +
-+    public static com.mojang.serialization.Codec<Component> localizedCodec(final Locale l) {
++    public static com.mojang.serialization.Codec<Component> localizedCodec(final @Nullable Locale l) {
++        if (l == null) {
++            return AdventureCodecs.COMPONENT_CODEC;
++        }
 +        return LOCALIZED_CODECS.computeIfAbsent(l, locale -> AdventureCodecs.COMPONENT_CODEC.xmap(
 +            component -> component, // decode
 +            component -> translated(component, locale) // encode
@@ -2141,12 +2144,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
      public FriendlyByteBuf writeComponent(Component text) {
+-        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, text);
 +        if (text instanceof io.papermc.paper.adventure.AdventureComponent adv) {
 +            return this.writeComponent(adv.adventure$component());
 +        }
 +
-+        // TODO this.adventure$locale
-         return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, text);
++        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.localizedCodec(this.adventure$locale), text);
 +        // Paper end - adventure
      }
  
@@ -2274,10 +2277,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 @@ -0,0 +0,0 @@ public class ComponentSerialization {
+         return ExtraCodecs.orCompressed(mapCodec3, mapCodec2);
+     }
+ 
++    // Paper start - adventure
++    private static final java.util.Map<java.util.Locale, Codec<Component>> LOCALIZED_CODECS = new java.util.concurrent.ConcurrentHashMap<>();
++
++    public static Codec<Component> localizedCodec(final java.util.@org.checkerframework.checker.nullness.qual.Nullable Locale locale) {
++        if (locale == null) {
++            return CODEC;
++        }
++        return LOCALIZED_CODECS.computeIfAbsent(locale,
++            loc -> ExtraCodecs.recursive("Component", selfCodec -> createCodec(selfCodec, loc)));
++    }
++    // Paper end
++
+     private static Codec<Component> createCodec(Codec<Component> selfCodec) {
++        // Paper start - adventure
++        return createCodec(selfCodec, null);
++    }
++
++    private static Codec<Component> createCodec(Codec<Component> selfCodec, @javax.annotation.Nullable java.util.Locale locale) {
++        // Paper end
+         ComponentContents.Type<?>[] types = new ComponentContents.Type[]{PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE};
+         MapCodec<ComponentContents> mapCodec = createLegacyComponentMatcher(types, ComponentContents.Type::codec, ComponentContents::type, "type");
          Codec<Component> codec = RecordCodecBuilder.create((instance) -> {
              return instance.group(mapCodec.forGetter(Component::getContents), ExtraCodecs.strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::getSiblings), Style.Serializer.MAP_CODEC.forGetter(Component::getStyle)).apply(instance, MutableComponent::new);
          });
-+        // Paper start
++        // Paper start - adventure
 +        final Codec<Component> origCodec = codec;
 +        codec = new Codec<>() {
 +            @Override
@@ -2287,15 +2314,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            @Override
 +            public <T> DataResult<T> encode(final Component input, final DynamicOps<T> ops, final T prefix) {
++                final net.kyori.adventure.text.Component adventureComponent;
 +                if (input instanceof io.papermc.paper.adventure.AdventureComponent adv) {
-+                    if (adv.deepConvertedIfPresent() != null) {
-+                        return origCodec.encode(java.util.Objects.requireNonNull(adv.deepConvertedIfPresent()), ops, prefix);
-+                    } else {
-+                        // return io.papermc.paper.adventure.PaperAdventure.localizedCodec(locale).encode(adv.adventure$component(), ops, prefix); // TODO
-+                        return io.papermc.paper.adventure.AdventureCodecs.COMPONENT_CODEC.encode(adv.adventure$component(), ops, prefix);
-+                    }
++                    adventureComponent = adv.adventure$component();
++                } else if (locale != null && input.getContents() instanceof TranslatableContents) {
++                    adventureComponent = io.papermc.paper.adventure.PaperAdventure.asAdventure(input);
++                } else {
++                    return origCodec.encode(input, ops, prefix);
 +                }
-+                return origCodec.encode(input, ops, prefix);
++                return io.papermc.paper.adventure.PaperAdventure.localizedCodec(locale)
++                    .encode(adventureComponent, ops, prefix);
 +            }
 +
 +            @Override
