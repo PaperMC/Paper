@@ -9,6 +9,16 @@ public class CraftWindCharge extends CraftFireball implements WindCharge {
     }
 
     @Override
+    public void explode() {
+        this.getHandle().explode();
+    }
+
+    @Override
+    public net.minecraft.world.entity.projectile.WindCharge getHandle() {
+        return (net.minecraft.world.entity.projectile.WindCharge) this.entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftWindCharge";
     }
