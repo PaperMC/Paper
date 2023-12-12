@@ -1221,10 +1221,10 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f5ba56f9c8406aef2fe91d6b4174762cfed11fce
+index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914260d4c50
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,394 @@
+@@ -0,0 +1,397 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -1419,7 +1419,10 @@ index 0000000000000000000000000000000000000000..f5ba56f9c8406aef2fe91d6b4174762c
 +
 +    private static final Map<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = new ConcurrentHashMap<>();
 +
-+    public static com.mojang.serialization.Codec<Component> localizedCodec(final Locale l) {
++    public static com.mojang.serialization.Codec<Component> localizedCodec(final @Nullable Locale l) {
++        if (l == null) {
++            return AdventureCodecs.COMPONENT_CODEC;
++        }
 +        return LOCALIZED_CODECS.computeIfAbsent(l, locale -> AdventureCodecs.COMPONENT_CODEC.xmap(
 +            component -> component, // decode
 +            component -> translated(component, locale) // encode
@@ -1430,7 +1433,7 @@ index 0000000000000000000000000000000000000000..f5ba56f9c8406aef2fe91d6b4174762c
 +        return PlainTextComponentSerializer.plainText().serialize(translated(component, locale));
 +    }
 +
-+    public static Component translated(final Component component, final Locale locale) {
++    private static Component translated(final Component component, final Locale locale) {
 +        return GlobalTranslator.render(
 +            component,
 +            // play it safe
@@ -2270,17 +2273,20 @@ index d3a80d0a23be762c05931ae8001d98e43cab2b4a..e0037b99838519eee5fb6f7e95ffaad2
          }
      }
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-index 49138ccda0f378b13c7f425be765876eb4026b06..d6008d7d800ecfa7c97b9c89a6058a17342d8552 100644
+index 49138ccda0f378b13c7f425be765876eb4026b06..ca662b668177532a73e7e309bb8b0fb3c4e310f1 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-@@ -55,12 +55,61 @@ public class ComponentSerialization {
+@@ -55,12 +55,58 @@ public class ComponentSerialization {
          return ExtraCodecs.orCompressed(mapCodec3, mapCodec2);
      }
  
 +    // Paper start - adventure
 +    private static final java.util.Map<java.util.Locale, Codec<Component>> LOCALIZED_CODECS = new java.util.concurrent.ConcurrentHashMap<>();
 +
-+    public static Codec<Component> localizedCodec(java.util.Locale locale) {
++    public static Codec<Component> localizedCodec(final java.util.@org.checkerframework.checker.nullness.qual.Nullable Locale locale) {
++        if (locale == null) {
++            return CODEC;
++        }
 +        return LOCALIZED_CODECS.computeIfAbsent(locale,
 +            loc -> ExtraCodecs.recursive("Component", selfCodec -> createCodec(selfCodec, loc)));
 +    }
@@ -2308,22 +2314,16 @@ index 49138ccda0f378b13c7f425be765876eb4026b06..d6008d7d800ecfa7c97b9c89a6058a17
 +
 +            @Override
 +            public <T> DataResult<T> encode(final Component input, final DynamicOps<T> ops, final T prefix) {
++                final net.kyori.adventure.text.Component adventureComponent;
 +                if (input instanceof io.papermc.paper.adventure.AdventureComponent adv) {
-+                    return io.papermc.paper.adventure.PaperAdventure.localizedCodec(locale)
-+                        .encode(adv.adventure$component(), ops, prefix);
++                    adventureComponent = adv.adventure$component();
++                } else if (locale != null && input.getContents() instanceof TranslatableContents) {
++                    adventureComponent = io.papermc.paper.adventure.PaperAdventure.asAdventure(input);
++                } else {
++                    return origCodec.encode(input, ops, prefix);
 +                }
-+                if (locale != null && input.getContents() instanceof TranslatableContents) {
-+                    final net.kyori.adventure.text.Component adventureComponent
-+                        = io.papermc.paper.adventure.PaperAdventure.asAdventure(input);
-+                    final net.kyori.adventure.text.Component translatedComponent
-+                        = io.papermc.paper.adventure.PaperAdventure.translated(adventureComponent, locale);
-+                    if (!adventureComponent.equals(translatedComponent)) {
-+                        final Component miencraftComponent
-+                            = io.papermc.paper.adventure.PaperAdventure.asVanilla(translatedComponent);
-+                        return origCodec.encode(miencraftComponent, ops, prefix);
-+                    }
-+                }
-+                return origCodec.encode(input, ops, prefix);
++                return io.papermc.paper.adventure.PaperAdventure.localizedCodec(locale)
++                    .encode(adventureComponent, ops, prefix);
 +            }
 +
 +            @Override
