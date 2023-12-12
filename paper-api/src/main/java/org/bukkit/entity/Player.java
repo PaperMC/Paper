@@ -1412,9 +1412,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     case this method will have no affect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
-     * <li>There is no concept of resetting resource packs back to default
-     *     within Minecraft, so players will have to relog to do so or you
-     *     have to send an empty pack.
+     * <li>To remove a resource pack you can use
+     *     {@link #removeResourcePack(UUID)} or {@link #removeResourcePacks()}.
      * <li>The request is sent with empty string as the hash when the hash is
      *     not provided. This might result in newer versions not loading the
      *     pack correctly.
@@ -1456,9 +1455,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     case this method will have no affect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
-     * <li>There is no concept of resetting resource packs back to default
-     *     within Minecraft, so players will have to relog to do so or you
-     *     have to send an empty pack.
+     * <li>To remove a resource pack you can use
+     *     {@link #removeResourcePack(UUID)} or {@link #removeResourcePacks()}.
      * <li>The request is sent with empty string as the hash when the hash is
      *     not provided. This might result in newer versions not loading the
      *     pack correctly.
@@ -1501,9 +1499,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     case this method will have no affect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
-     * <li>There is no concept of resetting resource packs back to default
-     *     within Minecraft, so players will have to relog to do so or you
-     *     have to send an empty pack.
+     * <li>To remove a resource pack you can use
+     *     {@link #removeResourcePack(UUID)} or {@link #removeResourcePacks()}.
      * <li>The request is sent with empty string as the hash when the hash is
      *     not provided. This might result in newer versions not loading the
      *     pack correctly.
@@ -1547,9 +1544,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     case this method will have no affect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
-     * <li>There is no concept of resetting resource packs back to default
-     *     within Minecraft, so players will have to relog to do so or you
-     *     have to send an empty pack.
+     * <li>To remove a resource pack you can use
+     *     {@link #removeResourcePack(UUID)} or {@link #removeResourcePacks()}.
      * <li>The request is sent with empty string as the hash when the hash is
      *     not provided. This might result in newer versions not loading the
      *     pack correctly.
@@ -1572,6 +1568,21 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     long.
      */
     public void setResourcePack(@NotNull UUID id, @NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+
+    /**
+     * Request that the player's client remove a resource pack sent by the
+     * server.
+     *
+     * @param id the id of the resource pack.
+     * @throws IllegalArgumentException If the ID is null.
+     */
+    public void removeResourcePack(@NotNull UUID id);
+
+    /**
+     * Request that the player's client remove all loaded resource pack sent by
+     * the server.
+     */
+    public void removeResourcePacks();
 
     /**
      * Gets the Scoreboard displayed to this player
