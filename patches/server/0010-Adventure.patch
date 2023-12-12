@@ -3,25 +3,425 @@ From: Riley Park <rileysebastianpark@gmail.com>
 Date: Fri, 29 Jan 2021 17:54:03 +0100
 Subject: [PATCH] Adventure
 
+== AT ==
+public net.minecraft.network.chat.HoverEvent$ItemStackInfo item
+public net.minecraft.network.chat.HoverEvent$ItemStackInfo count
+public net.minecraft.network.chat.HoverEvent$ItemStackInfo tag
+public net.minecraft.network.chat.contents.TranslatableContents filterAllowedArguments(Ljava/lang/Object;)Lcom/mojang/serialization/DataResult;
+
 Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
-diff --git a/src/main/java/io/papermc/paper/adventure/AdventureComponent.java b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
+diff --git a/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fbf7804f8e02fc76cadae661083dbcc5b1c21881
+index 0000000000000000000000000000000000000000..89d24905a91b3844ff95fe1d9252464a896906a7
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
-@@ -0,0 +1,90 @@
++++ b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
+@@ -0,0 +1,393 @@
 +package io.papermc.paper.adventure;
 +
-+import com.google.gson.JsonElement;
-+import com.google.gson.JsonSerializationContext;
-+import com.google.gson.JsonSerializer;
-+import java.lang.reflect.Type;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.datafixers.util.Either;
++import com.mojang.serialization.Codec;
++import com.mojang.serialization.DataResult;
++import com.mojang.serialization.Encoder;
++import com.mojang.serialization.MapCodec;
++import com.mojang.serialization.codecs.RecordCodecBuilder;
++import java.io.IOException;
++import java.util.Collections;
++import java.util.List;
++import java.util.Optional;
++import java.util.UUID;
++import java.util.function.Consumer;
++import java.util.function.Function;
++import java.util.function.Predicate;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.nbt.api.BinaryTagHolder;
++import net.kyori.adventure.text.BlockNBTComponent;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.EntityNBTComponent;
++import net.kyori.adventure.text.KeybindComponent;
++import net.kyori.adventure.text.NBTComponent;
++import net.kyori.adventure.text.NBTComponentBuilder;
++import net.kyori.adventure.text.ScoreComponent;
++import net.kyori.adventure.text.SelectorComponent;
++import net.kyori.adventure.text.StorageNBTComponent;
++import net.kyori.adventure.text.TextComponent;
++import net.kyori.adventure.text.TranslatableComponent;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.event.HoverEvent;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.Style;
++import net.kyori.adventure.text.format.TextColor;
++import net.kyori.adventure.text.format.TextDecoration;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
++import net.minecraft.core.UUIDUtil;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.TagParser;
++import net.minecraft.network.chat.ComponentSerialization;
++import net.minecraft.network.chat.contents.KeybindContents;
++import net.minecraft.network.chat.contents.ScoreContents;
++import net.minecraft.network.chat.contents.TranslatableContents;
++import net.minecraft.util.ExtraCodecs;
++import net.minecraft.util.StringRepresentable;
++import net.minecraft.world.item.Item;
++import net.minecraft.world.item.ItemStack;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.intellij.lang.annotations.Subst;
++
++import static com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec;
++import static java.util.function.Function.identity;
++import static net.kyori.adventure.text.Component.text;
++import static net.minecraft.util.ExtraCodecs.recursive;
++import static net.minecraft.util.ExtraCodecs.strictOptionalField;
++
++@DefaultQualifier(NonNull.class)
++public final class AdventureCodecs {
++
++    public static final Codec<Component> COMPONENT_CODEC = recursive("adventure Component",  AdventureCodecs::createCodec);
++
++    static final Codec<TextColor> TEXT_COLOR_CODEC = Codec.STRING.comapFlatMap(s -> {
++        if (s.startsWith("#")) {
++            @Nullable TextColor value = TextColor.fromHexString(s);
++            return value != null ? DataResult.success(value) : DataResult.error(() -> "Cannot convert " + s + " to adventure TextColor");
++        } else {
++            final @Nullable NamedTextColor value = NamedTextColor.NAMES.value(s);
++            return value != null ? DataResult.success(value) : DataResult.error(() -> "Cannot convert " + s + " to adventure NamedTextColor");
++        }
++    }, textColor -> {
++        if (textColor instanceof NamedTextColor named) {
++            return NamedTextColor.NAMES.keyOrThrow(named);
++        } else {
++            return textColor.asHexString();
++        }
++    });
++
++    static final Codec<Key> KEY_CODEC = Codec.STRING.comapFlatMap(s -> {
++        return Key.parseable(s) ? DataResult.success(Key.key(s)) : DataResult.error(() -> "Cannot convert " + s + " to adventure Key");
++    }, Key::asString);
++
++    static final Codec<ClickEvent.Action> CLICK_EVENT_ACTION_CODEC = Codec.STRING.comapFlatMap(s -> {
++        final ClickEvent.@Nullable Action value = ClickEvent.Action.NAMES.value(s);
++        return value != null ? DataResult.success(value) : DataResult.error(() -> "Cannot convert " + s + " to adventure ClickEvent$Action");
++    }, ClickEvent.Action.NAMES::keyOrThrow);
++    static final Codec<ClickEvent> CLICK_EVENT_CODEC = RecordCodecBuilder.create((instance) -> {
++        return instance.group(
++            CLICK_EVENT_ACTION_CODEC.fieldOf("action").forGetter(ClickEvent::action),
++            Codec.STRING.fieldOf("value").forGetter(ClickEvent::value)
++        ).apply(instance, ClickEvent::clickEvent);
++    });
++
++    static Codec<HoverEvent.ShowEntity> showEntityCodec(final Codec<Component> componentCodec) {
++        return RecordCodecBuilder.create((instance) -> {
++            return instance.group(
++                KEY_CODEC.fieldOf("type").forGetter(HoverEvent.ShowEntity::type),
++                UUIDUtil.LENIENT_CODEC.fieldOf("id").forGetter(HoverEvent.ShowEntity::id),
++                strictOptionalField(componentCodec, "name").forGetter(he -> Optional.ofNullable(he.name()))
++            ).apply(instance, (key, uuid, component) -> {
++                return HoverEvent.ShowEntity.showEntity(key, uuid, component.orElse(null));
++            });
++        });
++    }
++
++    static Codec<HoverEvent.ShowItem> showItemCodec(final Codec<Component> componentCodec) {
++        return net.minecraft.network.chat.HoverEvent.ItemStackInfo.CODEC.xmap(isi -> {
++            @Subst("key") final String typeKey = BuiltInRegistries.ITEM.getKey(isi.item).toString();
++            return HoverEvent.ShowItem.showItem(Key.key(typeKey), isi.count, PaperAdventure.asBinaryTagHolder(isi.tag.orElse(null)));
++        }, si -> {
++            final Item itemType = BuiltInRegistries.ITEM.get(PaperAdventure.asVanilla(si.item()));
++            final ItemStack stack;
++            try {
++                final @Nullable CompoundTag tag = si.nbt() != null ? si.nbt().get(PaperAdventure.NBT_CODEC) : null;
++                stack = new ItemStack(BuiltInRegistries.ITEM.wrapAsHolder(itemType), si.count(), Optional.ofNullable(tag));
++            } catch (final IOException e) {
++                throw new RuntimeException(e);
++            }
++            return new net.minecraft.network.chat.HoverEvent.ItemStackInfo(stack);
++        });
++    }
++
++    static final HoverEventType<HoverEvent.ShowEntity> SHOW_ENTITY_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showEntityCodec, HoverEvent.Action.SHOW_ENTITY, "show_entity", AdventureCodecs::legacyDeserializeEntity);
++    static final HoverEventType<HoverEvent.ShowItem> SHOW_ITEM_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showItemCodec, HoverEvent.Action.SHOW_ITEM, "show_item", AdventureCodecs::legacyDeserializeItem);
++    static final HoverEventType<Component> SHOW_TEXT_HOVER_EVENT_TYPE = new HoverEventType<>(identity(), HoverEvent.Action.SHOW_TEXT, "show_text", DataResult::success);
++    static final Codec<HoverEventType<?>> HOVER_EVENT_TYPE_CODEC = StringRepresentable.fromValues(() -> new HoverEventType<?>[]{ SHOW_ENTITY_HOVER_EVENT_TYPE, SHOW_ITEM_HOVER_EVENT_TYPE, SHOW_TEXT_HOVER_EVENT_TYPE });
++
++    static DataResult<HoverEvent.ShowEntity> legacyDeserializeEntity(final Component text) {
++        try {
++            final CompoundTag tag = TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(text));
++            final @Nullable Component entityName = GsonComponentSerializer.gson().deserializeOrNull(tag.getString("name"));
++            @Subst("key") final String keyString = tag.getString("type");
++            final UUID entityUUID = UUID.fromString(tag.getString("id"));
++            return DataResult.success(HoverEvent.ShowEntity.showEntity(Key.key(keyString), entityUUID, entityName));
++        } catch (final Exception ex) {
++            return DataResult.error(() -> "Failed to parse tooltip: " + ex.getMessage());
++        }
++    }
++
++    static DataResult<HoverEvent.ShowItem> legacyDeserializeItem(final Component text) {
++        try {
++            final ItemStack stack = ItemStack.of(TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(text)));
++            @Subst("key") final String keyString = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
++            return DataResult.success(HoverEvent.ShowItem.showItem(Key.key(keyString), stack.getCount(), stack.getTag() != null ? BinaryTagHolder.encode(stack.getTag(), PaperAdventure.NBT_CODEC) : null));
++        } catch (final CommandSyntaxException | IOException ex) {
++            return DataResult.error(() -> "Failed to parse item tag: " + ex.getMessage());
++        }
++    }
++
++    record HoverEventType<V>(Function<Codec<Component>, Codec<HoverEvent<V>>> codec, String id, Function<Codec<Component>, Codec<HoverEvent<V>>> legacyCodec) implements StringRepresentable {
++        HoverEventType(final Function<Codec<Component>, Codec<V>> contentCodec, final HoverEvent.Action<V> action, final String id, final Function<Component, DataResult<V>> legacyDeserializer) {
++            this(cc -> contentCodec.apply(cc).xmap(v -> HoverEvent.hoverEvent(action, v), HoverEvent::value).fieldOf("contents").codec(),
++                id,
++                codec -> Codec.of(
++                    Encoder.error("Can't encode in legacy format"),
++                    codec.flatMap(legacyDeserializer).map(text -> HoverEvent.hoverEvent(action, text))
++                )
++            );
++        }
++        @Override
++        public String getSerializedName() {
++            return this.id;
++        }
++    }
++
++    private static final Function<HoverEvent<?>, HoverEventType<?>> GET_HOVER_EVENT_TYPE = he -> {
++        if (he.action() == HoverEvent.Action.SHOW_ENTITY) {
++            return SHOW_ENTITY_HOVER_EVENT_TYPE;
++        } else if (he.action() == HoverEvent.Action.SHOW_ITEM) {
++            return SHOW_ITEM_HOVER_EVENT_TYPE;
++        } else if (he.action() == HoverEvent.Action.SHOW_TEXT) {
++            return SHOW_TEXT_HOVER_EVENT_TYPE;
++        } else {
++            throw new IllegalStateException();
++        }
++    };
++    static final Codec<HoverEvent<?>> HOVER_EVENT_CODEC = Codec.either(
++        HOVER_EVENT_TYPE_CODEC.<HoverEvent<?>>dispatchMap("action", GET_HOVER_EVENT_TYPE, het -> het.codec.apply(COMPONENT_CODEC)).codec(),
++        HOVER_EVENT_TYPE_CODEC.<HoverEvent<?>>dispatchMap("action", GET_HOVER_EVENT_TYPE, het -> het.legacyCodec.apply(COMPONENT_CODEC)).codec()
++    ).xmap(either -> either.map(identity(), identity()), Either::left);
++
++    public static final MapCodec<Style> STYLE_MAP_CODEC = mapCodec((instance) -> {
++        return instance.group(
++            strictOptionalField(TEXT_COLOR_CODEC, "color").forGetter(nullableGetter(Style::color)),
++            strictOptionalField(Codec.BOOL, "bold").forGetter(decorationGetter(TextDecoration.BOLD)),
++            strictOptionalField(Codec.BOOL, "italic").forGetter(decorationGetter(TextDecoration.ITALIC)),
++            strictOptionalField(Codec.BOOL, "underlined").forGetter(decorationGetter(TextDecoration.UNDERLINED)),
++            strictOptionalField(Codec.BOOL, "strikethrough").forGetter(decorationGetter(TextDecoration.STRIKETHROUGH)),
++            strictOptionalField(Codec.BOOL, "obfuscated").forGetter(decorationGetter(TextDecoration.OBFUSCATED)),
++            strictOptionalField(CLICK_EVENT_CODEC, "clickEvent").forGetter(nullableGetter(Style::clickEvent)),
++            strictOptionalField(HOVER_EVENT_CODEC, "hoverEvent").forGetter(nullableGetter(Style::hoverEvent)),
++            strictOptionalField(Codec.STRING, "insertion").forGetter(nullableGetter(Style::insertion)),
++            strictOptionalField(KEY_CODEC, "font").forGetter(nullableGetter(Style::font))
++        ).apply(instance, (textColor, bold, italic, underlined, strikethrough, obfuscated, clickEvent, hoverEvent, insertion, font) -> {
++            return Style.style(builder -> {
++                textColor.ifPresent(builder::color);
++                bold.ifPresent(styleBooleanConsumer(builder, TextDecoration.BOLD));
++                italic.ifPresent(styleBooleanConsumer(builder, TextDecoration.ITALIC));
++                underlined.ifPresent(styleBooleanConsumer(builder, TextDecoration.UNDERLINED));
++                strikethrough.ifPresent(styleBooleanConsumer(builder, TextDecoration.STRIKETHROUGH));
++                obfuscated.ifPresent(styleBooleanConsumer(builder, TextDecoration.OBFUSCATED));
++                clickEvent.ifPresent(builder::clickEvent);
++                hoverEvent.ifPresent(builder::hoverEvent);
++                insertion.ifPresent(builder::insertion);
++                font.ifPresent(builder::font);
++            });
++        });
++    });
++    static Consumer<Boolean> styleBooleanConsumer(final Style.Builder builder, final TextDecoration decoration) {
++        return b -> builder.decoration(decoration, b);
++    }
++
++    static Function<Style, Optional<Boolean>> decorationGetter(final TextDecoration decoration) {
++        return style -> Optional.ofNullable(style.decoration(decoration) == TextDecoration.State.NOT_SET ? null : style.decoration(decoration) == TextDecoration.State.TRUE);
++    }
++
++    static <R, T> Function<R, Optional<T>> nullableGetter(final Function<R, @Nullable T> getter) {
++        return style -> Optional.ofNullable(getter.apply(style));
++    }
++
++    static final MapCodec<TextComponent> TEXT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
++        return instance.group(Codec.STRING.fieldOf("text").forGetter(TextComponent::content)).apply(instance, Component::text);
++    });
++    static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.validate(ExtraCodecs.JAVA, TranslatableContents::filterAllowedArguments);
++    static final Codec<Component> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).xmap((primitiveOrComponent) -> {
++        // just toString all primitives (not 100% correct to vanilla spec)
++        // vanilla allows primitive translatable args, but adventure doesn't (in 4.14)
++        return primitiveOrComponent.map(o -> text(String.valueOf(o)), identity());
++    }, Either::right);
++    static final MapCodec<TranslatableComponent> TRANSLATABLE_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
++        return instance.group(
++            Codec.STRING.fieldOf("translate").forGetter(TranslatableComponent::key),
++            Codec.STRING.optionalFieldOf("fallback").forGetter(nullableGetter(TranslatableComponent::fallback)),
++            strictOptionalField(ARG_CODEC.listOf(), "with").forGetter(c -> c.args().isEmpty() ? Optional.empty() : Optional.of(c.args()))
++        ).apply(instance, (key, fallback, components) -> {
++            return Component.translatable(key, components.orElse(Collections.emptyList())).fallback(fallback.orElse(null));
++        });
++    });
++
++    static final MapCodec<KeybindComponent> KEYBIND_COMPONENT_MAP_CODEC = KeybindContents.CODEC.xmap(k -> Component.keybind(k.getName()), k -> new KeybindContents(k.keybind()));
++    static final MapCodec<ScoreComponent> SCORE_COMPONENT_INNER_MAP_CODEC = ScoreContents.INNER_CODEC.xmap(s -> Component.score(s.getName(), s.getObjective()), s -> new ScoreContents(s.name(), s.objective()));
++    static final MapCodec<ScoreComponent> SCORE_COMPONENT_MAP_CODEC = SCORE_COMPONENT_INNER_MAP_CODEC.fieldOf("score");
++    static final MapCodec<SelectorComponent> SELECTOR_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
++        return instance.group(
++            Codec.STRING.fieldOf("selector").forGetter(SelectorComponent::pattern),
++            strictOptionalField(COMPONENT_CODEC, "separator").forGetter(nullableGetter(SelectorComponent::separator))
++        ).apply(instance, (selector, component) -> Component.selector(selector, component.orElse(null)));
++    });
++
++    interface NbtComponentDataSource {
++        NBTComponentBuilder<?, ?> builder();
++
++        DataSourceType<?> type();
++    }
++
++    record StorageDataSource(Key storage) implements NbtComponentDataSource {
++        @Override
++        public NBTComponentBuilder<?, ?> builder() {
++            return Component.storageNBT().storage(this.storage());
++        }
++
++        @Override
++        public DataSourceType<?> type() {
++            return STORAGE_DATA_SOURCE_TYPE;
++        }
++    }
++
++    record BlockDataSource(String posPattern) implements NbtComponentDataSource {
++        @Override
++        public NBTComponentBuilder<?, ?> builder() {
++            return Component.blockNBT().pos(BlockNBTComponent.Pos.fromString(this.posPattern));
++        }
++
++        @Override
++        public DataSourceType<?> type() {
++            return BLOCK_DATA_SOURCE_TYPE;
++        }
++    }
++
++    record EntityDataSource(String selectorPattern) implements NbtComponentDataSource {
++        @Override
++        public NBTComponentBuilder<?, ?> builder() {
++            return Component.entityNBT().selector(this.selectorPattern());
++        }
++
++        @Override
++        public DataSourceType<?> type() {
++            return ENTITY_DATA_SOURCE_TYPE;
++        }
++    }
++
++    static final DataSourceType<StorageDataSource> STORAGE_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(KEY_CODEC.fieldOf("storage").forGetter(StorageDataSource::storage)).apply(instance, StorageDataSource::new)), "storage");
++    static final DataSourceType<BlockDataSource> BLOCK_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("block").forGetter(BlockDataSource::posPattern)).apply(instance, BlockDataSource::new)), "block");
++    static final DataSourceType<EntityDataSource> ENTITY_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("entity").forGetter(EntityDataSource::selectorPattern)).apply(instance, EntityDataSource::new)), "entity");
++
++    static final MapCodec<NbtComponentDataSource> NBT_COMPONENT_DATA_SOURCE_CODEC = ComponentSerialization.createLegacyComponentMatcher(new DataSourceType<?>[]{ENTITY_DATA_SOURCE_TYPE, BLOCK_DATA_SOURCE_TYPE, STORAGE_DATA_SOURCE_TYPE}, DataSourceType::codec, NbtComponentDataSource::type, "source");
++
++    record DataSourceType<D extends NbtComponentDataSource>(MapCodec<D> codec, String id) implements StringRepresentable {
++        @Override
++        public String getSerializedName() {
++            return this.id();
++        }
++    }
++
++    static final MapCodec<NBTComponent<?, ?>> NBT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
++        return instance.group(
++            Codec.STRING.fieldOf("nbt").forGetter(NBTComponent::nbtPath),
++            Codec.BOOL.optionalFieldOf("interpret", false).forGetter(NBTComponent::interpret),
++            COMPONENT_CODEC.optionalFieldOf("separator").forGetter(nullableGetter(NBTComponent::separator)),
++            NBT_COMPONENT_DATA_SOURCE_CODEC.forGetter(nbtComponent -> {
++                if (nbtComponent instanceof final EntityNBTComponent entityNBTComponent) {
++                    return new EntityDataSource(entityNBTComponent.selector());
++                } else if (nbtComponent instanceof final BlockNBTComponent blockNBTComponent) {
++                    return new BlockDataSource(blockNBTComponent.pos().asString());
++                } else if (nbtComponent instanceof final StorageNBTComponent storageNBTComponent) {
++                    return new StorageDataSource(storageNBTComponent.storage());
++                } else {
++                    throw new IllegalArgumentException(nbtComponent + " isn't a valid nbt component");
++                }
++            })
++        ).apply(instance, (nbtPath, interpret, separator, dataSource) -> {
++            return dataSource.builder().nbtPath(nbtPath).interpret(interpret).separator(separator.orElse(null)).build();
++        });
++    });
++
++    @SuppressWarnings("NonExtendableApiUsage")
++    record ComponentType<C extends Component>(MapCodec<C> codec, Predicate<Component> test, String id) implements StringRepresentable {
++        @Override
++        public String getSerializedName() {
++            return this.id;
++        }
++    }
++
++    static final ComponentType<TextComponent> PLAIN = new ComponentType<>(TEXT_COMPONENT_MAP_CODEC, TextComponent.class::isInstance, "text");
++    static final ComponentType<TranslatableComponent> TRANSLATABLE = new ComponentType<>(TRANSLATABLE_COMPONENT_MAP_CODEC, TranslatableComponent.class::isInstance, "translatable");
++    static final ComponentType<KeybindComponent> KEYBIND = new ComponentType<>(KEYBIND_COMPONENT_MAP_CODEC, KeybindComponent.class::isInstance, "keybind");
++    static final ComponentType<ScoreComponent> SCORE = new ComponentType<>(SCORE_COMPONENT_MAP_CODEC, ScoreComponent.class::isInstance, "score");
++    static final ComponentType<SelectorComponent> SELECTOR = new ComponentType<>(SELECTOR_COMPONENT_MAP_CODEC, SelectorComponent.class::isInstance, "selector");
++    static final ComponentType<NBTComponent<?, ?>> NBT = new ComponentType<>(NBT_COMPONENT_MAP_CODEC, NBTComponent.class::isInstance, "nbt");
++
++    static Codec<Component> createCodec(final Codec<Component> selfCodec) {
++        final ComponentType<?>[] types = new ComponentType<?>[]{PLAIN, TRANSLATABLE, KEYBIND, SCORE, SELECTOR, NBT};
++        final MapCodec<Component> legacyCodec = ComponentSerialization.createLegacyComponentMatcher(types, ComponentType::codec, component -> {
++            for (final ComponentType<?> type : types) {
++                if (type.test().test(component)) {
++                    return type;
++                }
++            }
++            throw new IllegalStateException("Unexpected component type " + component);
++        }, "type");
++
++        final Codec<Component> directCodec = RecordCodecBuilder.create((instance) -> {
++            return instance.group(
++                legacyCodec.forGetter(identity()),
++                strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::children),
++                STYLE_MAP_CODEC.forGetter(Component::style)
++            ).apply(instance, (component, children, style) -> {
++                return component.style(style).children(children);
++            });
++        });
++
++        return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), directCodec).xmap((stringOrListOrComponent) -> {
++            return stringOrListOrComponent.map((stringOrList) -> stringOrList.map(Component::text, AdventureCodecs::createFromList), identity());
++        }, (text) -> {
++            final @Nullable String string = tryCollapseToString(text);
++            return string != null ? Either.left(Either.left(string)) : Either.right(text);
++        });
++    }
++
++    static @Nullable String tryCollapseToString(final Component component) {
++        if (component instanceof final TextComponent textComponent) {
++            if (component.children().isEmpty() && component.style().isEmpty()) {
++                return textComponent.content();
++            }
++        }
++        return null;
++    }
++
++    static Component createFromList(final List<? extends Component> components) {
++        Component component = components.get(0);
++        for (int i = 1; i < components.size(); i++) {
++            component = component.append(components.get(i));
++        }
++        return component;
++    }
++
++    private AdventureCodecs() {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/adventure/AdventureComponent.java b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4b01e1249276a26aa82eb2d70f4b1223a7c8008f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
+@@ -0,0 +1,78 @@
++package io.papermc.paper.adventure;
++
 +import java.util.List;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.TextComponent;
-+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 +import net.minecraft.network.chat.ComponentContents;
 +import net.minecraft.network.chat.MutableComponent;
@@ -93,13 +493,6 @@ index 0000000000000000000000000000000000000000..fbf7804f8e02fc76cadae661083dbcc5
 +
 +    public Component adventure$component() {
 +        return this.adventure;
-+    }
-+
-+    public static class Serializer implements JsonSerializer<AdventureComponent> {
-+        @Override
-+        public JsonElement serialize(final AdventureComponent src, final Type type, final JsonSerializationContext context) {
-+            return GsonComponentSerializer.gson().serializer().toJsonTree(src.adventure, Component.class);
-+        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java b/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java
@@ -828,10 +1221,10 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3dc613116c086444ece88bcb0a569eeea953074f
+index 0000000000000000000000000000000000000000..1fb9b0ea9f2dbff12d8d2fbc2ad2f4d88ca9f7ad
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,390 @@
+@@ -0,0 +1,394 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -840,7 +1233,9 @@ index 0000000000000000000000000000000000000000..3dc613116c086444ece88bcb0a569eee
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.Locale;
++import java.util.Map;
 +import java.util.Optional;
++import java.util.concurrent.ConcurrentHashMap;
 +import java.util.function.BiConsumer;
 +import java.util.regex.Matcher;
 +import java.util.regex.Pattern;
@@ -941,7 +1336,7 @@ index 0000000000000000000000000000000000000000..3dc613116c086444ece88bcb0a569eee
 +    public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale"); // init after FLATTENER because classloading triggered here might create a logger
 +    @Deprecated
 +    public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
-+    private static final Codec<CompoundTag, String, IOException, IOException> NBT_CODEC = new Codec<CompoundTag, String, IOException, IOException>() {
++    static final Codec<CompoundTag, String, IOException, IOException> NBT_CODEC = new Codec<CompoundTag, String, IOException, IOException>() {
 +        @Override
 +        public @NotNull CompoundTag decode(final @NotNull String encoded) throws IOException {
 +            try {
@@ -977,7 +1372,7 @@ index 0000000000000000000000000000000000000000..3dc613116c086444ece88bcb0a569eee
 +    // Component
 +
 +    public static Component asAdventure(final net.minecraft.network.chat.Component component) {
-+        return component == null ? Component.empty() : GsonComponentSerializer.gson().serializer().fromJson(net.minecraft.network.chat.Component.Serializer.toJsonTree(component), Component.class);
++        return component == null ? Component.empty() : WRAPPER_AWARE_SERIALIZER.deserialize(component);
 +    }
 +
 +    public static ArrayList<Component> asAdventure(final List<net.minecraft.network.chat.Component> vanillas) {
@@ -1007,7 +1402,7 @@ index 0000000000000000000000000000000000000000..3dc613116c086444ece88bcb0a569eee
 +    public static net.minecraft.network.chat.Component asVanilla(final Component component) {
 +        if (component == null) return null;
 +        if (true) return new AdventureComponent(component);
-+        return net.minecraft.network.chat.Component.Serializer.fromJson(GsonComponentSerializer.gson().serializer().toJsonTree(component));
++        return WRAPPER_AWARE_SERIALIZER.serialize(component);
 +    }
 +
 +    public static List<net.minecraft.network.chat.Component> asVanilla(final List<Component> adventures) {
@@ -1022,11 +1417,13 @@ index 0000000000000000000000000000000000000000..3dc613116c086444ece88bcb0a569eee
 +        return GsonComponentSerializer.gson().serialize(translated(component, locale));
 +    }
 +
-+    public static String asJsonString(final net.minecraft.network.chat.Component component, final Locale locale) {
-+        if (component instanceof AdventureComponent) {
-+            return asJsonString(((AdventureComponent) component).adventure, locale);
-+        }
-+        return net.minecraft.network.chat.Component.Serializer.toJson(component);
++    private static final Map<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = new ConcurrentHashMap<>();
++
++    public static com.mojang.serialization.Codec<Component> localizedCodec(final Locale l) {
++        return LOCALIZED_CODECS.computeIfAbsent(l, locale -> AdventureCodecs.COMPONENT_CODEC.xmap(
++            component -> component, // decode
++            component -> translated(component, locale) // encode
++        ));
 +    }
 +
 +    public static String asPlain(final Component component, final Locale locale) {
@@ -1224,15 +1621,19 @@ index 0000000000000000000000000000000000000000..3dc613116c086444ece88bcb0a569eee
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2a08e0461db4e699b7e6a1558a4419c848fc7f4f
+index 0000000000000000000000000000000000000000..49809d4fa42d1054119cf38babba5a6161b5ee97
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,40 @@
 +package io.papermc.paper.adventure;
 +
++import com.mojang.datafixers.util.Pair;
++import java.util.function.Function;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.serializer.ComponentSerializer;
-+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.Tag;
++import net.minecraft.network.chat.ComponentSerialization;
 +
 +final class WrapperAwareSerializer implements ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> {
 +    @Override
@@ -1240,12 +1641,28 @@ index 0000000000000000000000000000000000000000..2a08e0461db4e699b7e6a1558a4419c8
 +        if (input instanceof AdventureComponent) {
 +            return ((AdventureComponent) input).adventure;
 +        }
-+        return GsonComponentSerializer.gson().serializer().fromJson(net.minecraft.network.chat.Component.Serializer.toJsonTree(input), Component.class);
++        final Tag tag = ComponentSerialization.CODEC.encodeStart(NbtOps.INSTANCE, input)
++            .get().map(Function.identity(), partial -> {
++                throw new RuntimeException("Failed to encode Minecraft Component: " + input + "; " + partial.message());
++            });
++        final Pair<Component, Tag> converted = AdventureCodecs.COMPONENT_CODEC.decode(NbtOps.INSTANCE, tag)
++            .get().map(Function.identity(), partial -> {
++                throw new RuntimeException("Failed to decode to adventure Component: " + tag + "; " + partial.message());
++            });
++        return converted.getFirst();
 +    }
 +
 +    @Override
 +    public net.minecraft.network.chat.Component serialize(final Component component) {
-+        return net.minecraft.network.chat.Component.Serializer.fromJson(GsonComponentSerializer.gson().serializer().toJsonTree(component));
++        final Tag tag = AdventureCodecs.COMPONENT_CODEC.encodeStart(NbtOps.INSTANCE, component)
++            .get().map(Function.identity(), partial -> {
++                throw new RuntimeException("Failed to encode adventure Component: " + component + "; " + partial.message());
++            });
++        final Pair<net.minecraft.network.chat.Component, Tag> converted = ComponentSerialization.CODEC.decode(NbtOps.INSTANCE, tag)
++            .get().map(Function.identity(), partial -> {
++                throw new RuntimeException("Failed to decode to Minecraft Component: " + tag + "; " + partial.message());
++            });
++        return converted.getFirst();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/providers/BossBarImplementationProvider.java b/src/main/java/io/papermc/paper/adventure/providers/BossBarImplementationProvider.java
@@ -1703,7 +2120,7 @@ index d120fff432d9c4fc7a35ddffdc4186459e45e950..73c15a0c56a103ba4e62f0a51af8d425
          }
      }
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 9373502ede6c8a881af67db005cf12fd9313f37f..bc7d0cc8d66f07b45cffd9952829cc9bed9ce260 100644
+index 9373502ede6c8a881af67db005cf12fd9313f37f..50c7e0a449ea9d71e21e86b4f03dac0298f96130 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 @@ -87,6 +87,7 @@ public class FriendlyByteBuf extends ByteBuf {
@@ -1714,22 +2131,26 @@ index 9373502ede6c8a881af67db005cf12fd9313f37f..bc7d0cc8d66f07b45cffd9952829cc9b
      public static final short MAX_STRING_LENGTH = 32767;
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
      private static final int PUBLIC_KEY_SIZE = 256;
-@@ -526,7 +527,15 @@ public class FriendlyByteBuf extends ByteBuf {
+@@ -526,8 +527,19 @@ public class FriendlyByteBuf extends ByteBuf {
          return (Component) this.readWithCodecTrusted(NbtOps.INSTANCE, ComponentSerialization.CODEC);
      }
  
-+    // Paper start
++    // Paper start - adventure
 +    public FriendlyByteBuf writeComponent(final net.kyori.adventure.text.Component component) {
-+        // TODO this.adventure$locale
-+        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
++        return this.writeWithCodec(NbtOps.INSTANCE, io.papermc.paper.adventure.PaperAdventure.localizedCodec(this.adventure$locale), component);
 +    }
-+    // Paper end
 +
      public FriendlyByteBuf writeComponent(Component text) {
++        if (text instanceof io.papermc.paper.adventure.AdventureComponent adv) {
++            return this.writeComponent(adv.adventure$component());
++        }
++
 +        // TODO this.adventure$locale
          return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, text);
++        // Paper end - adventure
      }
  
+     public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
 index 344c5af75c4a66bb27f3f422937c6c427c15ed25..3d359f80f52bff6f19fcb484f491a874f9dcff27 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
@@ -1848,6 +2269,62 @@ index d3a80d0a23be762c05931ae8001d98e43cab2b4a..e0037b99838519eee5fb6f7e95ffaad2
              return Component.Serializer.serialize(ichatbasecomponent);
          }
      }
+diff --git a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
+index 60228c3778e53ca5c513cd265e5e08d151573a4f..ddc91d376fd59da982e594188fcef7202a2a5972 100644
+--- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
++++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
+@@ -61,6 +61,33 @@ public class ComponentSerialization {
+         Codec<Component> codec = RecordCodecBuilder.create((instance) -> {
+             return instance.group(mapCodec.forGetter(Component::getContents), ExtraCodecs.strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::getSiblings), Style.Serializer.MAP_CODEC.forGetter(Component::getStyle)).apply(instance, MutableComponent::new);
+         });
++        // Paper start
++        final Codec<Component> origCodec = codec;
++        codec = new Codec<>() {
++            @Override
++            public <T> DataResult<com.mojang.datafixers.util.Pair<Component, T>> decode(final DynamicOps<T> ops, final T input) {
++                return origCodec.decode(ops, input);
++            }
++
++            @Override
++            public <T> DataResult<T> encode(final Component input, final DynamicOps<T> ops, final T prefix) {
++                if (input instanceof io.papermc.paper.adventure.AdventureComponent adv) {
++                    if (adv.deepConvertedIfPresent() != null) {
++                        return origCodec.encode(java.util.Objects.requireNonNull(adv.deepConvertedIfPresent()), ops, prefix);
++                    } else {
++                        // return io.papermc.paper.adventure.PaperAdventure.localizedCodec(locale).encode(adv.adventure$component(), ops, prefix); // TODO
++                        return io.papermc.paper.adventure.AdventureCodecs.COMPONENT_CODEC.encode(adv.adventure$component(), ops, prefix);
++                    }
++                }
++                return origCodec.encode(input, ops, prefix);
++            }
++
++            @Override
++            public String toString() {
++                return origCodec.toString() + "[AdventureComponentAware]";
++            }
++        };
++        // Paper end
+         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec).xmap((either) -> {
+             return either.map((either2) -> {
+                 return either2.map(Component::literal, ComponentSerialization::createFromList);
+@@ -86,7 +113,7 @@ public class ComponentSerialization {
+             for(MapDecoder<? extends T> mapDecoder : this.codecs) {
+                 DataResult<? extends T> dataResult = mapDecoder.decode(dynamicOps, mapLike);
+                 if (dataResult.result().isPresent()) {
+-                    return dataResult;
++                    return (DataResult<T>) dataResult; // Paper - decomp fix
+                 }
+             }
+ 
+@@ -96,7 +123,7 @@ public class ComponentSerialization {
+         }
+ 
+         public <S> RecordBuilder<S> encode(T object, DynamicOps<S> dynamicOps, RecordBuilder<S> recordBuilder) {
+-            MapEncoder<T> mapEncoder = this.encoderGetter.apply(object);
++            MapEncoder<T> mapEncoder = (MapEncoder<T>) this.encoderGetter.apply(object); // Paper - decomp fix
+             return mapEncoder.encode(object, dynamicOps, recordBuilder);
+         }
+ 
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 index b6506e881ef337bfd2a7a0644296b48b7300a0f6..7daca712816a79cc4a30b084afbd3d07b5d3755f 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
@@ -5004,6 +5481,378 @@ index 0000000000000000000000000000000000000000..3aedd0bbc97edacc1ebf71264b310e55
 +            "content"
 +        ],
 +        "translation_key": "%s"
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..af4b7704ab4690138e3188a45d41b890369f6237
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
+@@ -0,0 +1,366 @@
++package io.papermc.paper.adventure;
++
++import com.mojang.datafixers.util.Pair;
++import com.mojang.serialization.Codec;
++import com.mojang.serialization.DataResult;
++import java.io.IOException;
++import java.util.List;
++import java.util.UUID;
++import java.util.function.Function;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.nbt.api.BinaryTagHolder;
++import net.kyori.adventure.text.BlockNBTComponent;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.event.HoverEvent;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.Style;
++import net.kyori.adventure.text.format.TextColor;
++import net.kyori.adventure.text.format.TextDecoration;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.ByteTag;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.IntTag;
++import net.minecraft.nbt.ListTag;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.Tag;
++import net.minecraft.network.chat.ComponentSerialization;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
++import org.apache.commons.lang3.RandomStringUtils;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.EnumSource;
++import org.junit.jupiter.params.provider.MethodSource;
++
++import static io.papermc.paper.adventure.AdventureCodecs.CLICK_EVENT_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.COMPONENT_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.HOVER_EVENT_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.KEY_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.STYLE_MAP_CODEC;
++import static io.papermc.paper.adventure.AdventureCodecs.TEXT_COLOR_CODEC;
++import static io.papermc.paper.adventure.PaperAdventure.NBT_CODEC;
++import static java.util.Objects.requireNonNull;
++import static net.kyori.adventure.key.Key.key;
++import static net.kyori.adventure.text.Component.blockNBT;
++import static net.kyori.adventure.text.Component.entityNBT;
++import static net.kyori.adventure.text.Component.keybind;
++import static net.kyori.adventure.text.Component.score;
++import static net.kyori.adventure.text.Component.selector;
++import static net.kyori.adventure.text.Component.storageNBT;
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.Component.translatable;
++import static net.kyori.adventure.text.event.ClickEvent.openUrl;
++import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
++import static net.kyori.adventure.text.event.HoverEvent.showEntity;
++import static net.kyori.adventure.text.format.Style.style;
++import static net.kyori.adventure.text.format.TextColor.color;
++import static net.kyori.adventure.text.minimessage.MiniMessage.miniMessage;
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertThrows;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++class AdventureCodecsTest extends AbstractTestingBase {
++
++    @Test
++    void testTextColor() {
++        final TextColor color = color(0x1d38df);
++        final Tag result = TEXT_COLOR_CODEC.encodeStart(NbtOps.INSTANCE, color).result().orElseThrow();
++        assertEquals(color.asHexString(), result.getAsString());
++        final net.minecraft.network.chat.TextColor nms = net.minecraft.network.chat.TextColor.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(color.value(), nms.getValue());
++    }
++
++    @Test
++    void testNamedTextColor() {
++        final NamedTextColor color = NamedTextColor.BLUE;
++        final Tag result = TEXT_COLOR_CODEC.encodeStart(NbtOps.INSTANCE, color).result().orElseThrow();
++        assertEquals(NamedTextColor.NAMES.keyOrThrow(color), result.getAsString());
++        final net.minecraft.network.chat.TextColor nms = net.minecraft.network.chat.TextColor.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(color.value(), nms.getValue());
++    }
++
++    @Test
++    void testKey() {
++        final Key key = key("hello", "there");
++        final Tag result = KEY_CODEC.encodeStart(NbtOps.INSTANCE, key).result().orElseThrow();
++        assertEquals(key.asString(), result.getAsString());
++        final ResourceLocation location = ResourceLocation.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(key.asString(), location.toString());
++    }
++
++    @ParameterizedTest
++    @EnumSource(value = ClickEvent.Action.class, mode = EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE"})
++    void testClickEvent(final ClickEvent.Action action) {
++        final ClickEvent event = ClickEvent.clickEvent(action, RandomStringUtils.randomAlphanumeric(20));
++        final Tag result = CLICK_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, event).result().orElseThrow();
++        final net.minecraft.network.chat.ClickEvent nms = net.minecraft.network.chat.ClickEvent.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(event.action().toString(), nms.getAction().getSerializedName());
++        assertEquals(event.value(), nms.getValue());
++    }
++
++    @Test
++    void testShowTextHoverEvent() {
++        final HoverEvent<Component> hoverEvent = HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, text("hello"));
++        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
++        final net.minecraft.network.chat.HoverEvent nms = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
++        assertEquals(hoverEvent.action().toString(), nms.getAction().getSerializedName());
++        assertNotNull(nms.getValue(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT));
++    }
++
++    @Test
++    void testShowItemHoverEvent() throws IOException {
++        final ItemStack stack = new ItemStack(Items.PUMPKIN, 3);
++        stack.setHoverName(net.minecraft.network.chat.Component.literal("NAME"));
++        final HoverEvent<HoverEvent.ShowItem> hoverEvent = HoverEvent.showItem(key("minecraft:pumpkin"), 3, BinaryTagHolder.encode(requireNonNull(stack.getTag()), NBT_CODEC));
++        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
++        final DataResult<Pair<net.minecraft.network.chat.HoverEvent, Tag>> dataResult = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result);
++        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
++        final net.minecraft.network.chat.HoverEvent nms = dataResult.result().orElseThrow().getFirst();
++        assertEquals(hoverEvent.action().toString(), nms.getAction().getSerializedName());
++        final net.minecraft.network.chat.HoverEvent.ItemStackInfo value = nms.getValue(net.minecraft.network.chat.HoverEvent.Action.SHOW_ITEM);
++        assertNotNull(value);
++        assertEquals(hoverEvent.value().count(), value.count);
++        assertEquals(hoverEvent.value().item().asString(), BuiltInRegistries.ITEM.getKey(value.item).toString());
++        assertEquals(stack.getTag(), value.tag.orElse(null));
++    }
++
++    @Test
++    void testShowEntityHoverEvent() {
++        UUID uuid = UUID.randomUUID();
++        final HoverEvent<HoverEvent.ShowEntity> hoverEvent = showEntity(key("minecraft:wolf"), uuid, text("NAME"));
++        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
++        final DataResult<Pair<net.minecraft.network.chat.HoverEvent, Tag>> dataResult = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result);
++        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
++        final net.minecraft.network.chat.HoverEvent nms = dataResult.result().orElseThrow().getFirst();
++        assertEquals(hoverEvent.action().toString(), nms.getAction().getSerializedName());
++        final net.minecraft.network.chat.HoverEvent.EntityTooltipInfo value = nms.getValue(net.minecraft.network.chat.HoverEvent.Action.SHOW_ENTITY);
++        assertNotNull(value);
++        assertEquals(hoverEvent.value().type().asString(), BuiltInRegistries.ENTITY_TYPE.getKey(value.type).toString());
++        assertEquals(hoverEvent.value().id(), value.id);
++        assertEquals("NAME", value.name.orElseThrow().getString());
++    }
++
++    @Test
++    void testSimpleStyle() {
++        final Style style = style().decorate(TextDecoration.BOLD).color(NamedTextColor.RED).build();
++        final Tag result = STYLE_MAP_CODEC.codec().encodeStart(NbtOps.INSTANCE, style).result().orElseThrow();
++        final DataResult<Pair<net.minecraft.network.chat.Style, Tag>> dataResult = net.minecraft.network.chat.Style.Serializer.CODEC.decode(NbtOps.INSTANCE, result);
++        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
++        final net.minecraft.network.chat.Style nms = dataResult.result().get().getFirst();
++        assertTrue(nms.isBold());
++        assertEquals(requireNonNull(style.color()).value(), requireNonNull(nms.getColor()).getValue());
++    }
++
++    @ParameterizedTest
++    @MethodSource({"testStyles"})
++    void testDirectRoundTripStyle(final Style style) {
++        testDirectRoundTrip(STYLE_MAP_CODEC.codec(), style);
++    }
++
++    @ParameterizedTest
++    @MethodSource({"testStyles"})
++    void testMinecraftRoundTripStyle(final Style style) {
++        testMinecraftRoundTrip(STYLE_MAP_CODEC.codec(), net.minecraft.network.chat.Style.Serializer.CODEC, style);
++    }
++
++    @ParameterizedTest
++    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores",
++        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts"})
++    void testDirectRoundTripComponent(final Component component) {
++        testDirectRoundTrip(COMPONENT_CODEC, component);
++    }
++
++    @ParameterizedTest
++    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores",
++        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts"})
++    void testMinecraftRoundTripComponent(final Component component) {
++        testMinecraftRoundTrip(COMPONENT_CODEC, ComponentSerialization.CODEC, component);
++    }
++
++    @ParameterizedTest
++    @MethodSource({"invalidData"})
++    void invalidThrows(final Tag input) {
++        assertThrows(RuntimeException.class, () -> {
++            require(
++                COMPONENT_CODEC.decode(NbtOps.INSTANCE, input),
++                msg -> "Failed to decode " + input + ": " + msg
++            );
++        });
++    }
++
++    static <A> void testDirectRoundTrip(final Codec<A> codec, final A adventure) {
++        final Tag encoded = require(
++            codec.encodeStart(NbtOps.INSTANCE, adventure),
++            msg -> "Failed to encode " + adventure + ": " + msg
++        );
++        final Pair<A, Tag> roundTripResult = require(
++            codec.decode(NbtOps.INSTANCE, encoded),
++            msg -> "Failed to decode " + encoded + ": " + msg
++        );
++        assertEquals(adventure, roundTripResult.getFirst());
++    }
++
++    static <A, M> void testMinecraftRoundTrip(final Codec<A> adventureCodec, final Codec<M> minecraftCodec, final A adventure) {
++        final Tag encoded = require(
++            adventureCodec.encodeStart(NbtOps.INSTANCE, adventure),
++            msg -> "Failed to encode " + adventure + ": " + msg
++        );
++        final M minecraftResult = require(
++            minecraftCodec.decode(NbtOps.INSTANCE, encoded),
++            msg -> "Failed to decode to Minecraft: " + encoded + "; " + msg
++        ).getFirst();
++        final Tag minecraftReEncoded = require(
++            minecraftCodec.encodeStart(NbtOps.INSTANCE, minecraftResult),
++            msg -> "Failed to re-encode Minecraft: " + minecraftResult + "; " + msg
++        );
++        final Pair<A, Tag> roundTripResult = require(
++            adventureCodec.decode(NbtOps.INSTANCE, minecraftReEncoded),
++            msg -> "Failed to decode " + minecraftReEncoded + ": " + msg
++        );
++        assertEquals(adventure, roundTripResult.getFirst());
++    }
++
++    static <R> R require(final DataResult<R> result, final Function<String, String> errorMessage) {
++        return result.get().map(Function.identity(), r -> {
++            throw new RuntimeException(errorMessage.apply(r.message()));
++        });
++    }
++
++    static List<Tag> invalidData() {
++        return List.of(
++            IntTag.valueOf(-1),
++            ByteTag.ZERO,
++            new CompoundTag(),
++            new ListTag()
++        );
++    }
++
++    static List<Style> testStyles() {
++        return List.of(
++            Style.empty(),
++            style(color(0x0a1ab9)),
++            style(NamedTextColor.LIGHT_PURPLE),
++            style(TextDecoration.BOLD),
++            style(TextDecoration.BOLD.withState(false)),
++            style(TextDecoration.BOLD.withState(TextDecoration.State.NOT_SET)),
++            style()
++                .font(key("kyori", "kittens"))
++                .color(NamedTextColor.RED)
++                .decoration(TextDecoration.BOLD, true)
++                .clickEvent(openUrl("https://github.com"))
++                .build(),
++            style()
++                .hoverEvent(HoverEvent.showEntity(HoverEvent.ShowEntity.showEntity(
++                    Key.key(Key.MINECRAFT_NAMESPACE, "pig"),
++                    UUID.randomUUID(),
++                    Component.text("Dolores", TextColor.color(0x0a1ab9))
++                )))
++                .build()
++        );
++    }
++
++    static List<Component> testTexts() {
++        return List.of(
++            Component.empty(),
++            text("Hello, world."),
++            text().content("c")
++                .color(NamedTextColor.GOLD)
++                .append(text("o", NamedTextColor.DARK_AQUA))
++                .append(text("l", NamedTextColor.LIGHT_PURPLE))
++                .append(text("o", NamedTextColor.DARK_PURPLE))
++                .append(text("u", NamedTextColor.BLUE))
++                .append(text("r", NamedTextColor.DARK_GREEN))
++                .append(text("s", NamedTextColor.RED))
++                .build(),
++            text().content("This is a test.")
++                .color(NamedTextColor.DARK_PURPLE)
++                .hoverEvent(HoverEvent.showText(text("A test.")))
++                .append(text(" "))
++                .append(text("A what?", NamedTextColor.DARK_AQUA))
++                .build(),
++            text().append(text("Hello")).build(),
++            miniMessage().deserialize("<rainbow>|||||||||||||||||||||||<bold>|||||||||||||</bold>|||||||||")
++        );
++    }
++
++    static List<Component> testTranslatables() {
++        final String key = "multiplayer.player.left";
++        final UUID id = UUID.fromString("eb121687-8b1a-4944-bd4d-e0a818d9dfe2");
++        final String name = "kashike";
++        final String command = String.format("/msg %s ", name);
++
++        return List.of(
++            translatable(key),
++            translatable()
++                .key("thisIsA")
++                .fallback("This is a test.")
++                .build(),
++            translatable(
++                key,
++                text().content(name)
++                    .clickEvent(suggestCommand(command))
++                    .hoverEvent(showEntity(HoverEvent.ShowEntity.showEntity(
++                        key("minecraft", "player"),
++                        id,
++                        text(name)
++                    )))
++                    .build()
++            ).color(NamedTextColor.YELLOW)
++        );
++    }
++
++    static List<Component> testKeybinds() {
++        return List.of(keybind("key.jump"));
++    }
++
++    static List<Component> testScores() {
++        final String name = "abc";
++        final String objective = "def";
++
++        return List.of(score(name, objective));
++    }
++
++    static List<Component> testSelectors() {
++        final String selector = "@p";
++
++        return List.of(
++            selector(selector),
++            selector(selector, text(','))
++        );
++    }
++
++    static List<Component> testBlockNbts() {
++        return List.of(
++            blockNBT().nbtPath("abc").localPos(1.23d, 2.0d, 3.89d).build(),
++            blockNBT().nbtPath("xyz").absoluteWorldPos(4, 5, 6).interpret(true).build(),
++            blockNBT().nbtPath("eeee").relativeWorldPos(7, 83, 900)
++                .separator(text(';'))
++                .build(),
++            blockNBT().nbtPath("qwert").worldPos(
++                BlockNBTComponent.WorldPos.Coordinate.absolute(12),
++                BlockNBTComponent.WorldPos.Coordinate.relative(3),
++                BlockNBTComponent.WorldPos.Coordinate.absolute(1200)
++            ).build()
++        );
++    }
++
++    static List<Component> testEntityNbts() {
++        return List.of(
++            entityNBT().nbtPath("abc").selector("test").build(),
++            entityNBT().nbtPath("abc").selector("test").separator(text(',')).build(),
++            entityNBT().nbtPath("abc").selector("test").interpret(true).build()
++        );
++    }
++
++    static List<Component> testStorageNbts() {
++        return List.of(
++            storageNBT().nbtPath("abc").storage(key("doom:apple")).build(),
++            storageNBT().nbtPath("abc").storage(key("doom:apple")).separator(text(", ")).build(),
++            storageNBT().nbtPath("abc").storage(key("doom:apple")).interpret(true).build()
++        );
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/adventure/ComponentServicesTest.java b/src/test/java/io/papermc/paper/adventure/ComponentServicesTest.java
