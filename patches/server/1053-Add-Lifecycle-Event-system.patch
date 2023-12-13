@@ -54,10 +54,10 @@ index 30b50e6294c6eaade5e17cfaf34600d122e6251c..0bb7694188d5fb75bb756ce75d0060ea
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0aa8a9308ae67d3823fae7e4b8ac82cef3755bb1
+index 0000000000000000000000000000000000000000..193ea85a93d4e3e6400e04ecec1a0b1c034afc63
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,88 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
 +import com.mojang.logging.LogUtils;
@@ -133,12 +133,14 @@ index 0000000000000000000000000000000000000000..0aa8a9308ae67d3823fae7e4b8ac82ce
 +        lifecycleEventType.removeMatching(registeredHandler -> registeredHandler.owner().getPluginMeta().getName().equals(possibleOwner.getPluginMeta().getName()));
 +    }
 +
++    @SuppressWarnings("unchecked")
 +    public <O extends LifecycleEventOwner, R extends PaperRegistrar<? super O>> void callStaticRegistrarEvent(final LifecycleEventType<O, ? extends RegistrarEvent<? super R>, ?> lifecycleEventType, final R registrar, final Class<? extends O> ownerClass) {
-+        this.callEvent(lifecycleEventType, new RegistrarEventImpl<>(registrar, ownerClass));
++        this.callEvent((LifecycleEventType<O, RegistrarEvent<? super R>, ?>) lifecycleEventType, new RegistrarEventImpl<>(registrar, ownerClass));
 +    }
 +
++    @SuppressWarnings("unchecked")
 +    public <O extends LifecycleEventOwner, R extends PaperRegistrar<? super O>> void callReloadableRegistrarEvent(final LifecycleEventType<O, ? extends RegistrarEvent.Reloadable<? super R>, ?> lifecycleEventType, final R registrar, final Class<? extends O> ownerClass, final RegistrarEvent.Reloadable.Cause cause) {
-+        this.callEvent(lifecycleEventType, new RegistrarEventImpl.ReloadableImpl<>(registrar, ownerClass, cause));
++        this.callEvent((LifecycleEventType<O, RegistrarEvent.Reloadable<? super R>, ?>) lifecycleEventType, new RegistrarEventImpl.ReloadableImpl<>(registrar, ownerClass, cause));
 +    }
 +
 +    private LifecycleEventRunner() {
@@ -683,7 +685,7 @@ index 0000000000000000000000000000000000000000..808b1192b60348ad05f0bfbdeda6f94d
 @@ -0,0 +1 @@
 +io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventTypeProviderImpl
 diff --git a/src/test/java/io/papermc/paper/plugin/PaperTestPlugin.java b/src/test/java/io/papermc/paper/plugin/PaperTestPlugin.java
-index 1d14f530ef888102e47eeeaf0d1a6076e51871c4..dbd4b36b3abacdad1eea729b94d46847c27e3461 100644
+index 1d14f530ef888102e47eeeaf0d1a6076e51871c4..90cf0c702ca2ff9de64d9718ecba5f2d128953a6 100644
 --- a/src/test/java/io/papermc/paper/plugin/PaperTestPlugin.java
 +++ b/src/test/java/io/papermc/paper/plugin/PaperTestPlugin.java
 @@ -143,4 +143,11 @@ public class PaperTestPlugin extends PluginBase {
@@ -693,8 +695,8 @@ index 1d14f530ef888102e47eeeaf0d1a6076e51871c4..dbd4b36b3abacdad1eea729b94d46847
 +
 +    // Paper start - lifecycle events
 +    @Override
-+    public boolean allowingLifecycleEventRegistration() {
-+        return false;
++    public io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> getLifecycleManager() {
++        throw new UnsupportedOperationException("Not supported.");
 +    }
 +    // Paper end - lifecycle events
  }
