@@ -13,10 +13,27 @@ the material type of the block at that location.
 public net.minecraft.world.level.block.entity.BlockEntityType validBlocks
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index d156f7cc71050f13b2feca00c52ca6b64572b60e..e3557f4c8cee7c88b3e352cd246078da7762effc 100644
+index d156f7cc71050f13b2feca00c52ca6b64572b60e..e639a2507a73bed1662631c45e0aa55e6042d7de 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -247,7 +247,7 @@ public abstract class BlockEntity {
+@@ -137,7 +137,15 @@ public abstract class BlockEntity {
+             BlockEntity.LOGGER.error("Block entity has invalid type: {}", s);
+             return null;
+         } else {
+-            return (BlockEntity) BuiltInRegistries.BLOCK_ENTITY_TYPE.getOptional(minecraftkey).map((tileentitytypes) -> {
++            // Paper start
++            return loadStatic(pos, state, nbt, s, BuiltInRegistries.BLOCK_ENTITY_TYPE.getOptional(minecraftkey));
++        }
++    }
++    @Nullable
++    public static BlockEntity loadStatic(BlockPos pos, BlockState state, CompoundTag nbt, final String s, java.util.Optional<BlockEntityType<?>> type) {
++        {
++            return type.map((tileentitytypes) -> {
++            // Paper end
+                 try {
+                     return tileentitytypes.create(pos, state);
+                 } catch (Throwable throwable) {
+@@ -247,7 +255,7 @@ public abstract class BlockEntity {
          // Paper end
          if (this.level == null) return null;
          org.bukkit.block.Block block = this.level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ());
@@ -50,7 +67,7 @@ index f7f211b4f08a7f21a183078affd6f875aa30dd50..a8290624d8c5b19506f628d049984d2e
      // Paper start
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
-index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee14454c53 100644
+index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..750dbd826e3c8995cdc263ab485a50e9d5341857 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
 @@ -19,6 +19,7 @@ import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
@@ -61,7 +78,23 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
  import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
  import net.minecraft.world.level.block.entity.BrushableBlockEntity;
  import net.minecraft.world.level.block.entity.CalibratedSculkSensorBlockEntity;
-@@ -115,227 +116,64 @@ public final class CraftBlockStates {
+@@ -85,11 +86,13 @@ public final class CraftBlockStates {
+ 
+         private final BiFunction<World, T, B> blockStateConstructor;
+         private final BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor;
++        private final BlockEntityType<? extends T> blockEntityType; // Paper
+ 
+-        protected BlockEntityStateFactory(Class<B> blockStateType, BiFunction<World, T, B> blockStateConstructor, BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor) {
++        protected BlockEntityStateFactory(Class<B> blockStateType, BiFunction<World, T, B> blockStateConstructor, BlockEntityType<? extends T> blockEntityType) { // Paper
+             super(blockStateType);
+             this.blockStateConstructor = blockStateConstructor;
+-            this.tileEntityConstructor = tileEntityConstructor;
++            this.tileEntityConstructor = blockEntityType::create; // Paper
++            this.blockEntityType = blockEntityType; // Paper
+         }
+ 
+         @Override
+@@ -115,227 +118,64 @@ public final class CraftBlockStates {
      private static final BlockStateFactory<?> DEFAULT_FACTORY = new BlockStateFactory<CraftBlockState>(CraftBlockState.class) {
          @Override
          public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
@@ -341,31 +374,31 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
      }
  
      private static void register(Material blockType, BlockStateFactory<?> factory) {
-@@ -343,30 +181,33 @@ public final class CraftBlockStates {
+@@ -343,30 +183,38 @@ public final class CraftBlockStates {
      }
  
      private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
 -            Material blockType,
--            Class<B> blockStateType,
--            BiFunction<World, T, B> blockStateConstructor,
--            BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor
--    ) {
--        CraftBlockStates.register(Collections.singletonList(blockType), blockStateType, blockStateConstructor, tileEntityConstructor);
--    }
--
--    private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
--            List<Material> blockTypes,
-+            net.minecraft.world.level.block.entity.BlockEntityType<? extends T> blockEntityType, // Paper
++            BlockEntityType<? extends T> blockEntityType, // Paper
              Class<B> blockStateType,
 -            BiFunction<World, T, B> blockStateConstructor,
 -            BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor
 +            BiFunction<World, T, B> blockStateConstructor // Paper
      ) {
+-        CraftBlockStates.register(Collections.singletonList(blockType), blockStateType, blockStateConstructor, tileEntityConstructor);
+-    }
+-
+-    private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
+-            List<Material> blockTypes,
+-            Class<B> blockStateType,
+-            BiFunction<World, T, B> blockStateConstructor,
+-            BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor
+-    ) {
 -        BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, tileEntityConstructor);
 -        for (Material blockType : blockTypes) {
 -            CraftBlockStates.register(blockType, factory);
 +        // Paper start
-+        BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, blockEntityType::create);
++        BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, blockEntityType);
 +        for (net.minecraft.world.level.block.Block block : blockEntityType.validBlocks) {
 +            CraftBlockStates.register(CraftMagicNumbers.getMaterial(block), factory);
          }
@@ -385,12 +418,17 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
 +            return getFactory(material);
 +        }
 +    }
++    @Nullable
++    public static BlockEntityType<?> getBlockEntityType(final Material material) {
++        final BlockStateFactory<?> factory = org.bukkit.craftbukkit.block.CraftBlockStates.FACTORIES.get(material);
++        return factory instanceof final BlockEntityStateFactory<?,?> blockEntityStateFactory ? blockEntityStateFactory.blockEntityType : null;
++    }
 +    // Paper end
 +
      public static Class<? extends CraftBlockState> getBlockStateType(Material material) {
          Preconditions.checkNotNull(material, "material is null");
          return CraftBlockStates.getFactory(material).blockStateType;
-@@ -382,6 +223,13 @@ public final class CraftBlockStates {
+@@ -382,6 +230,13 @@ public final class CraftBlockStates {
          return null;
      }
  
@@ -404,7 +442,49 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
      public static BlockState getBlockState(Block block) {
          // Paper start
          return CraftBlockStates.getBlockState(block, true);
-@@ -439,7 +287,7 @@ public final class CraftBlockStates {
+@@ -410,13 +265,23 @@ public final class CraftBlockStates {
+     }
+ 
+     public static BlockState getBlockState(Material material, @Nullable CompoundTag blockEntityTag) {
+-        return CraftBlockStates.getBlockState(BlockPos.ZERO, material, blockEntityTag);
++        // Paper start
++        return CraftBlockStates.getBlockState(material, blockEntityTag, null);
++    }
++    public static BlockState getBlockState(Material material, @Nullable CompoundTag blockEntityTag, @Nullable BlockEntityType<?> blockEntityType) {
++        return CraftBlockStates.getBlockState(BlockPos.ZERO, material, blockEntityTag, blockEntityType);
++        // Paper end
+     }
+ 
+     public static BlockState getBlockState(BlockPos blockPosition, Material material, @Nullable CompoundTag blockEntityTag) {
++        // Paper start
++        return CraftBlockStates.getBlockState(blockPosition, material, blockEntityTag, null);
++    }
++    public static BlockState getBlockState(BlockPos blockPosition, Material material, @Nullable CompoundTag blockEntityTag, @Nullable BlockEntityType<?> blockEntityType) {
++        // Paper end
+         Preconditions.checkNotNull(material, "material is null");
+         net.minecraft.world.level.block.state.BlockState blockData = CraftMagicNumbers.getBlock(material).defaultBlockState();
+-        return CraftBlockStates.getBlockState(blockPosition, blockData, blockEntityTag);
++        return CraftBlockStates.getBlockState(blockPosition, blockData, blockEntityTag, blockEntityType); // Paper
+     }
+ 
+     public static BlockState getBlockState(net.minecraft.world.level.block.state.BlockState blockData, @Nullable CompoundTag blockEntityTag) {
+@@ -424,9 +289,14 @@ public final class CraftBlockStates {
+     }
+ 
+     public static BlockState getBlockState(BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, @Nullable CompoundTag blockEntityTag) {
++        // Paper start
++        return CraftBlockStates.getBlockState(blockPosition, blockData, blockEntityTag, null);
++    }
++    public static BlockState getBlockState(BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, @Nullable CompoundTag blockEntityTag, @Nullable BlockEntityType<?> blockEntityType) {
++        // Paper end
+         Preconditions.checkNotNull(blockPosition, "blockPosition is null");
+         Preconditions.checkNotNull(blockData, "blockData is null");
+-        BlockEntity tileEntity = (blockEntityTag == null) ? null : BlockEntity.loadStatic(blockPosition, blockData, blockEntityTag);
++        BlockEntity tileEntity = (blockEntityTag == null) ? null : blockEntityType == null ? BlockEntity.loadStatic(blockPosition, blockData, blockEntityTag) : BlockEntity.loadStatic(blockPosition, blockData, blockEntityTag, blockEntityTag.getString("id"), java.util.Optional.of(blockEntityType)); // Paper
+         return CraftBlockStates.getBlockState(null, blockPosition, blockData, tileEntity);
+     }
+ 
+@@ -439,7 +309,7 @@ public final class CraftBlockStates {
          if (world != null && tileEntity == null && CraftBlockStates.isTileEntityOptional(material)) {
              factory = CraftBlockStates.DEFAULT_FACTORY;
          } else {

@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 12 Dec 2023 20:57:54 -0800
+Subject: [PATCH] fix block state meta when no id nbt key is present
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index 0cbca0c37b3e6a34157906d44357286126cfe112..bdb88e34f96f02373220dcca3c051baedeb5ef7c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -260,18 +260,17 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+     @Override
+     public BlockState getBlockState() {
+         Material stateMaterial = (this.material != Material.SHIELD) ? this.material : CraftMetaBlockState.shieldToBannerHack(this.blockEntityTag); // Only actually used for jigsaws
++        net.minecraft.world.level.block.entity.BlockEntityType<?> blockEntityType = null;
+         if (this.blockEntityTag != null) {
+-            if (this.material == Material.SHIELD) {
+-                this.blockEntityTag.putString("id", "minecraft:banner");
+-            } else if (this.material == Material.BEE_NEST || this.material == Material.BEEHIVE) {
+-                this.blockEntityTag.putString("id", "minecraft:beehive");
+-            } else if (CraftMetaBlockState.SHULKER_BOX_MATERIALS.contains(this.material)) {
+-                this.blockEntityTag.putString("id", "minecraft:shulker_box");
++            // Paper start - ensure block entity type is in compound tag (required for BlockEntity#loadStatic)
++            if (!this.blockEntityTag.contains("id")) {
++                blockEntityType = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockEntityType(stateMaterial);
+             }
++            // Paper end
+         }
+ 
+         // This is expected to always return a CraftBlockEntityState for the passed material:
+-        return CraftBlockStates.getBlockState(stateMaterial, this.blockEntityTag);
++        return CraftBlockStates.getBlockState(stateMaterial, this.blockEntityTag, blockEntityType); // Paper
+     }
+ 
+     @Override
