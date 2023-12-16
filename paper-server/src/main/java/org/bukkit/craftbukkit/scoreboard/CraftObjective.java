@@ -153,6 +153,34 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     }
     // Paper end
 
+    // Paper start - add number format
+    @Override
+    public io.papermc.paper.scoreboard.numbers.NumberFormat numberFormat() {
+        this.checkState();
+
+        net.minecraft.network.chat.numbers.NumberFormat vanilla = this.objective.numberFormat();
+        
+        if (vanilla == null) {
+            return null;
+        }
+
+        return io.papermc.paper.util.PaperScoreboardFormat.asPaper(vanilla);
+    }
+
+
+    @Override
+    public void numberFormat(io.papermc.paper.scoreboard.numbers.NumberFormat format) {
+        this.checkState();
+
+        if (format == null) {
+            this.objective.setNumberFormat(null);
+            return;
+        }
+
+        this.objective.setNumberFormat(io.papermc.paper.util.PaperScoreboardFormat.asVanilla(format));
+    }
+    // Paper end - add number format
+
     @Override
     public void unregister() {
         CraftScoreboard scoreboard = this.checkState();

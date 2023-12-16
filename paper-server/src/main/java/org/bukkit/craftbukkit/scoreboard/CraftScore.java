@@ -55,6 +55,41 @@ final class CraftScore implements Score {
         this.objective.checkState().board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).set(score);
     }
 
+
+    // Paper start - add number format
+    @Override
+    public io.papermc.paper.scoreboard.numbers.NumberFormat numberFormat() {
+        ReadOnlyScoreInfo scoreInfo = this.objective.checkState().board
+            .getPlayerScoreInfo(this.entry, this.objective.getHandle());
+
+        if (scoreInfo == null) {
+            return null;
+        }
+
+        net.minecraft.network.chat.numbers.NumberFormat vanilla = scoreInfo.numberFormat();
+
+        if (vanilla == null) {
+            return null;
+        }
+
+        return io.papermc.paper.util.PaperScoreboardFormat.asPaper(vanilla);
+    }
+
+
+    @Override
+    public void numberFormat(io.papermc.paper.scoreboard.numbers.NumberFormat format) {
+        final net.minecraft.world.scores.ScoreAccess access = this.objective.checkState()
+            .board.getOrCreatePlayerScore(this.entry, this.objective.getHandle());
+
+        if (format == null) {
+            access.numberFormatOverride(null);
+            return;
+        }
+
+        access.numberFormatOverride(io.papermc.paper.util.PaperScoreboardFormat.asVanilla(format));
+    }
+    // Paper end - add number format
+
     @Override
     public boolean isScoreSet() {
         Scoreboard board = this.objective.checkState().board;
