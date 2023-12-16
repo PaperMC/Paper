@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateBoolean;
 import net.minecraft.world.level.block.state.properties.BlockStateEnum;
 import net.minecraft.world.level.block.state.properties.BlockStateInteger;
 import net.minecraft.world.level.block.state.properties.IBlockState;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.SoundGroup;
@@ -636,6 +637,11 @@ public class CraftBlockData implements BlockData {
         Preconditions.checkArgument(support != null, "support must not be null");
 
         return state.isFaceSturdy(BlockAccessAir.INSTANCE, BlockPosition.ZERO, CraftBlock.blockFaceToNotch(face), CraftBlockSupport.toNMS(support));
+    }
+
+    @Override
+    public Color getMapColor() {
+        return Color.fromRGB(state.getMapColor(null, null).col);
     }
 
     @Override
