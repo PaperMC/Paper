@@ -1,5 +1,6 @@
 package org.bukkit.block.data;
 
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Server;
@@ -203,6 +204,14 @@ public interface BlockData extends Cloneable {
      * @return true if the face is sturdy and can support a block, false otherwise
      */
     boolean isFaceSturdy(@NotNull BlockFace face, @NotNull BlockSupport support);
+
+    /**
+     * Gets the color this block should appear as when rendered on a map.
+     *
+     * @return the color associated with this BlockData
+     */
+    @NotNull
+    Color getMapColor();
 
     /**
      * Gets the material that a player would use to place this block.
