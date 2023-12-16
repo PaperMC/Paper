@@ -1,0 +1,53 @@
+--- a/net/minecraft/server/ServerTickRateManager.java
++++ b/net/minecraft/server/ServerTickRateManager.java
+@@ -59,8 +59,14 @@
+     }
+ 
+     public boolean stopSprinting() {
++        // CraftBukkit start, add sendLog parameter
++        return stopSprinting(true);
++    }
++
++    public boolean stopSprinting(boolean sendLog) {
++        // CraftBukkit end
+         if (this.remainingSprintTicks > 0L) {
+-            this.finishTickSprint();
++            this.finishTickSprint(sendLog); // CraftBukkit - add sendLog parameter
+             return true;
+         } else {
+             return false;
+@@ -78,7 +84,7 @@
+         return flag;
+     }
+ 
+-    private void finishTickSprint() {
++    private void finishTickSprint(boolean sendLog) { // CraftBukkit - add sendLog parameter
+         long i = this.scheduledCurrentSprintTicks - this.remainingSprintTicks;
+         double d0 = Math.max(1.0D, (double) this.sprintTimeSpend) / (double) TimeRange.NANOSECONDS_PER_MILLISECOND;
+         int j = (int) ((double) (TimeRange.MILLISECONDS_PER_SECOND * i) / d0);
+@@ -86,9 +92,13 @@
+ 
+         this.scheduledCurrentSprintTicks = 0L;
+         this.sprintTimeSpend = 0L;
+-        this.server.createCommandSourceStack().sendSuccess(() -> {
+-            return IChatBaseComponent.translatable("commands.tick.sprint.report", j, s);
+-        }, true);
++        // CraftBukkit start - add sendLog parameter
++        if (sendLog) {
++            this.server.createCommandSourceStack().sendSuccess(() -> {
++                return IChatBaseComponent.translatable("commands.tick.sprint.report", j, s);
++            }, true);
++        }
++        // CraftBukkit end
+         this.remainingSprintTicks = 0L;
+         this.setFrozen(this.previousIsFrozen);
+         this.server.onTickRateChanged();
+@@ -102,7 +112,7 @@
+             --this.remainingSprintTicks;
+             return true;
+         } else {
+-            this.finishTickSprint();
++            this.finishTickSprint(true); // CraftBukkit - add sendLog parameter
+             return false;
+         }
+     }
