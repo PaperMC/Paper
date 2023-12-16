@@ -195,4 +195,22 @@ public interface Objective {
      */
     void setAutoUpdateDisplay(boolean autoUpdateDisplay);
     // Paper end - add more score API
+
+    // Paper start - number format api
+    /**
+     * Gets the number format for this objective's scores or null if the client default is used.
+     *
+     * @return this objective's number format, or null if the client default is used
+     * @throws IllegalStateException if this objective has been unregistered
+     */
+    @Nullable io.papermc.paper.scoreboard.numbers.NumberFormat numberFormat();
+
+    /**
+     * Sets the number format for this objective's scores.
+     *
+     * @param format the number format to set, pass null to reset format to default
+     * @throws IllegalStateException if this objective has been unregistered
+     */
+    void numberFormat(@Nullable io.papermc.paper.scoreboard.numbers.NumberFormat format);
+    // Paper end - number format api
 }
