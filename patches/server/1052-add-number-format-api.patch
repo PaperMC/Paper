@@ -3,10 +3,13 @@ From: David Mayr <davidliebtkekse@gmail.com>
 Date: Sat, 16 Dec 2023 10:40:29 +0100
 Subject: [PATCH] add number format api
 
+== AT ==
+public net.minecraft.network.chat.numbers.FixedFormat value
+public net.minecraft.network.chat.numbers.StyledFormat style
 
 diff --git a/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java b/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a9e2d3fe4420bad2bbd2d37d04411fa1c2ad74d9
+index 0000000000000000000000000000000000000000..ebf98cdda6ecaa3808ed05948dc003aac6df7781
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java
 @@ -0,0 +1,55 @@
@@ -47,7 +50,7 @@ index 0000000000000000000000000000000000000000..a9e2d3fe4420bad2bbd2d37d04411fa1
 +            com.google.gson.JsonElement json = net.minecraft.Util
 +                .getOrThrow(
 +                    net.minecraft.network.chat.Style.Serializer.CODEC
-+                        .encodeStart(com.mojang.serialization.JsonOps.INSTANCE, styled.getStyle()),
++                        .encodeStart(com.mojang.serialization.JsonOps.INSTANCE, styled.style),
 +                    com.google.gson.JsonParseException::new
 +                );
 +
@@ -57,7 +60,7 @@ index 0000000000000000000000000000000000000000..a9e2d3fe4420bad2bbd2d37d04411fa1
 +
 +            return new io.papermc.paper.scoreboard.numbers.StyledFormat(adventureStyle);
 +        } else if (vanilla instanceof net.minecraft.network.chat.numbers.FixedFormat fixed) {
-+            return new io.papermc.paper.scoreboard.numbers.FixedFormat(io.papermc.paper.adventure.PaperAdventure.asAdventure(fixed.getValue()));
++            return new io.papermc.paper.scoreboard.numbers.FixedFormat(io.papermc.paper.adventure.PaperAdventure.asAdventure(fixed.value));
 +        } else if(vanilla instanceof net.minecraft.network.chat.numbers.BlankFormat) {
 +            return io.papermc.paper.scoreboard.numbers.BlankFormat.blank();
 +        }
@@ -65,39 +68,6 @@ index 0000000000000000000000000000000000000000..a9e2d3fe4420bad2bbd2d37d04411fa1
 +        throw new IllegalArgumentException("Unknown format type " + vanilla.getClass());
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/network/chat/numbers/FixedFormat.java b/src/main/java/net/minecraft/network/chat/numbers/FixedFormat.java
-index 2b9f393062444a663dcd25c78f9471beda65ccf0..eb0c12016a5ef1221a3d312b71c160f03124acaf 100644
---- a/src/main/java/net/minecraft/network/chat/numbers/FixedFormat.java
-+++ b/src/main/java/net/minecraft/network/chat/numbers/FixedFormat.java
-@@ -5,6 +5,7 @@ import net.minecraft.network.FriendlyByteBuf;
- import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.ComponentSerialization;
- import net.minecraft.network.chat.MutableComponent;
-+import net.minecraft.network.chat.Style;
- 
- public class FixedFormat implements NumberFormat {
-     public static final NumberFormatType<FixedFormat> TYPE = new NumberFormatType<FixedFormat>() {
-@@ -38,6 +39,7 @@ public class FixedFormat implements NumberFormat {
-     public MutableComponent format(int number) {
-         return this.value.copy();
-     }
-+    public Component getValue() { return this.value; } //Paper - make number formats accessible
- 
-     @Override
-     public NumberFormatType<FixedFormat> type() {
-diff --git a/src/main/java/net/minecraft/network/chat/numbers/StyledFormat.java b/src/main/java/net/minecraft/network/chat/numbers/StyledFormat.java
-index 6a0700e2e88ebdd91a731084a3cf83b50f768730..6c1b586477ca6f86a05a53b2fc3ef6f345d8ab0d 100644
---- a/src/main/java/net/minecraft/network/chat/numbers/StyledFormat.java
-+++ b/src/main/java/net/minecraft/network/chat/numbers/StyledFormat.java
-@@ -43,7 +43,7 @@ public class StyledFormat implements NumberFormat {
-     public MutableComponent format(int number) {
-         return Component.literal(Integer.toString(number)).withStyle(this.style);
-     }
--
-+    public Style getStyle() { return this.style; } //Paper - make number formats accessible
-     @Override
-     public NumberFormatType<StyledFormat> type() {
-         return TYPE;
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
 index 3157f3d2f9ce7af4a763203672817a7f5c7bd4fb..bdd2ed0aa62eea87d356d2229bb7fe41ba293e1d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
