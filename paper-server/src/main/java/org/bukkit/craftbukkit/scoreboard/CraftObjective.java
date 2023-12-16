@@ -185,6 +185,19 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         final CraftObjective other = (CraftObjective) obj;
         return !(this.objective != other.objective && (this.objective == null || !this.objective.equals(other.objective)));
     }
+    // Paper start - add more score API
+    @Override
+    public boolean willAutoUpdateDisplay() {
+        this.checkState();
+        return this.objective.displayAutoUpdate();
+    }
+
+    @Override
+    public void setAutoUpdateDisplay(final boolean autoUpdateDisplay) {
+        this.checkState();
+        this.objective.setDisplayAutoUpdate(autoUpdateDisplay);
+    }
+    // Paper end - add more score API
 
 
 }

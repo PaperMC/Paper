@@ -74,4 +74,44 @@ final class CraftScore implements Score {
         board.resetSinglePlayerScore(entry, this.objective.getHandle());
     }
     // Paper end
+
+    // Paper start - add more score API
+    @Override
+    public boolean isTriggerable() {
+        if (this.objective.getTrackedCriteria() != org.bukkit.scoreboard.Criteria.TRIGGER) {
+            return false;
+        }
+        final Scoreboard board = this.objective.checkState().board;
+        final ReadOnlyScoreInfo scoreInfo = board.getPlayerScoreInfo(this.entry, this.objective.getHandle());
+        return scoreInfo != null && !scoreInfo.isLocked();
+    }
+
+    @Override
+    public void setTriggerable(final boolean triggerable) {
+        com.google.common.base.Preconditions.checkArgument(this.objective.getTrackedCriteria() == org.bukkit.scoreboard.Criteria.TRIGGER, "the criteria isn't 'trigger'");
+        final Scoreboard board = this.objective.checkState().board;
+        if (triggerable) {
+            board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).unlock();
+        } else {
+            board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).lock();
+        }
+    }
+
+    @Override
+    public net.kyori.adventure.text.Component customName() {
+        final Scoreboard board = this.objective.checkState().board;
+        final ReadOnlyScoreInfo scoreInfo = board.getPlayerScoreInfo(this.entry, this.objective.getHandle());
+        if (scoreInfo == null) {
+            return null; // If score doesn't exist, don't create one
+        }
+        final net.minecraft.network.chat.Component display = board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).display();
+        return display == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(display);
+    }
+
+    @Override
+    public void customName(final net.kyori.adventure.text.Component customName) {
+        final Scoreboard board = this.objective.checkState().board;
+        board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).display(io.papermc.paper.adventure.PaperAdventure.asVanilla(customName));
+    }
+    // Paper end - add more score API
 }
