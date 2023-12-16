@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: David Mayr <davidliebtkekse@gmail.com>
 Date: Sat, 16 Dec 2023 10:40:29 +0100
-Subject: [PATCH] add number format api
+Subject: [PATCH] add number format
 
 == AT ==
 public net.minecraft.network.chat.numbers.FixedFormat value
@@ -9,7 +9,7 @@ public net.minecraft.network.chat.numbers.StyledFormat style
 
 diff --git a/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java b/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0aff8db3eec522bc1ad9c77a559b3dc0be3b89c7
+index 0000000000000000000000000000000000000000..7421ae80ded18106fd6d50dfee3abe2805d13b20
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java
 @@ -0,0 +1,52 @@
@@ -30,7 +30,7 @@ index 0000000000000000000000000000000000000000..0aff8db3eec522bc1ad9c77a559b3dc0
 +    public static net.minecraft.network.chat.numbers.NumberFormat asVanilla(NumberFormat format) {
 +        net.minecraft.network.chat.numbers.NumberFormat vanilla;
 +        if (format instanceof io.papermc.paper.scoreboard.numbers.StyledFormat styled) {
-+            Tag encoded = Util.getOrThrow(AdventureCodecs.STYLE_MAP_CODEC.codec().encodeStart(NbtOps.INSTANCE, styled.style()), IllegalStateException::new);
++            Tag encoded = Util.getOrThrow(AdventureCodecs.STYLE_MAP_CODEC.codec().encodeStart(NbtOps.INSTANCE, styled.getStyle()), IllegalStateException::new);
 +
 +            net.minecraft.network.chat.Style vanillaStyle = Util.getOrThrow(net.minecraft.network.chat.Style.Serializer.CODEC
 +                .parse(NbtOps.INSTANCE, encoded), IllegalStateException::new);
@@ -38,8 +38,8 @@ index 0000000000000000000000000000000000000000..0aff8db3eec522bc1ad9c77a559b3dc0
 +            vanilla = new net.minecraft.network.chat.numbers.StyledFormat(vanillaStyle);
 +        } else if (format instanceof io.papermc.paper.scoreboard.numbers.FixedFormat fixed) {
 +            vanilla = new net.minecraft.network.chat.numbers.FixedFormat(io.papermc.paper.adventure.PaperAdventure
-+                .asVanilla(fixed.component()));
-+        } else if(format instanceof io.papermc.paper.scoreboard.numbers.BlankFormat) {
++                .asVanilla(fixed.getComponent()));
++        } else if(format.equals(NumberFormat.blank())) {
 +            vanilla = net.minecraft.network.chat.numbers.BlankFormat.INSTANCE;
 +        } else {
 +            throw new IllegalArgumentException("Unknown format type " + format.getClass());
@@ -55,11 +55,11 @@ index 0000000000000000000000000000000000000000..0aff8db3eec522bc1ad9c77a559b3dc0
 +            net.kyori.adventure.text.format.Style adventureStyle = Util.getOrThrow(AdventureCodecs.STYLE_MAP_CODEC.codec()
 +                .parse(NbtOps.INSTANCE, encoded), IllegalStateException::new);
 +
-+            return new io.papermc.paper.scoreboard.numbers.StyledFormat(adventureStyle);
++            return NumberFormat.styled(adventureStyle);
 +        } else if (vanilla instanceof net.minecraft.network.chat.numbers.FixedFormat fixed) {
-+            return new io.papermc.paper.scoreboard.numbers.FixedFormat(io.papermc.paper.adventure.PaperAdventure.asAdventure(fixed.value));
++            return NumberFormat.fixed(io.papermc.paper.adventure.PaperAdventure.asAdventure(fixed.value));
 +        } else if(vanilla instanceof net.minecraft.network.chat.numbers.BlankFormat) {
-+            return io.papermc.paper.scoreboard.numbers.BlankFormat.blank();
++            return NumberFormat.blank();
 +        }
 +
 +        throw new IllegalArgumentException("Unknown format type " + vanilla.getClass());
@@ -142,14 +142,13 @@ index be020d6b686c1ad5bd8b7cee0b6050304d434022..e07d8278722123341c9a60e99dccacab
          Scoreboard board = this.objective.checkState().board;
 diff --git a/src/test/java/io/papermc/paper/scoreboard/NumberFormatTest.java b/src/test/java/io/papermc/paper/scoreboard/NumberFormatTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7651c8d5af82b250888867702512e0727c54e93c
+index 0000000000000000000000000000000000000000..c5aca318cdf75db093e65c0befca0d978a811194
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/scoreboard/NumberFormatTest.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,23 @@
 +package io.papermc.paper.scoreboard;
 +
 +import io.papermc.paper.util.PaperScoreboardFormat;
-+import net.minecraft.network.chat.numbers.NumberFormat;
 +import net.minecraft.network.chat.numbers.StyledFormat;
 +import org.bukkit.support.AbstractTestingBase;
 +import org.junit.jupiter.api.Test;
