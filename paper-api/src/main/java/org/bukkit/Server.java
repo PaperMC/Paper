@@ -240,6 +240,14 @@ public interface Server extends PluginMessageRecipient {
     public DataPackManager getDataPackManager();
 
     /**
+     * Get the ServerTick Manager.
+     *
+     * @return the manager
+     */
+    @NotNull
+    public ServerTickManager getServerTickManager();
+
+    /**
      * Gets the server resource pack uri, or empty string if not specified.
      *
      * @return the server resource pack uri, otherwise empty string

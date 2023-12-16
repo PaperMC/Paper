@@ -281,6 +281,16 @@ public final class Bukkit {
     }
 
     /**
+     * Get the ServerTick Manager.
+     *
+     * @return the manager
+     */
+    @NotNull
+    public static ServerTickManager getServerTickManager() {
+        return server.getServerTickManager();
+    }
+
+    /**
      * Gets the server resource pack uri, or empty string if not specified.
      *
      * @return the server resource pack uri, otherwise empty string
