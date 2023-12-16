@@ -9,14 +9,18 @@ public net.minecraft.network.chat.numbers.StyledFormat style
 
 diff --git a/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java b/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ebf98cdda6ecaa3808ed05948dc003aac6df7781
+index 0000000000000000000000000000000000000000..0aff8db3eec522bc1ad9c77a559b3dc0be3b89c7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,52 @@
 +package io.papermc.paper.util;
 +
 +
++import io.papermc.paper.adventure.AdventureCodecs;
 +import io.papermc.paper.scoreboard.numbers.NumberFormat;
++import net.minecraft.Util;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.Tag;
 +
 +public class PaperScoreboardFormat {
 +
@@ -26,11 +30,10 @@ index 0000000000000000000000000000000000000000..ebf98cdda6ecaa3808ed05948dc003aa
 +    public static net.minecraft.network.chat.numbers.NumberFormat asVanilla(NumberFormat format) {
 +        net.minecraft.network.chat.numbers.NumberFormat vanilla;
 +        if (format instanceof io.papermc.paper.scoreboard.numbers.StyledFormat styled) {
-+            com.google.gson.JsonElement json = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serializer()
-+                .toJsonTree(styled.style());
-+            net.minecraft.network.chat.Style vanillaStyle = net.minecraft.Util
-+                .getOrThrow(net.minecraft.network.chat.Style.Serializer.CODEC
-+                    .parse(com.mojang.serialization.JsonOps.INSTANCE, json), com.google.gson.JsonParseException::new);
++            Tag encoded = Util.getOrThrow(AdventureCodecs.STYLE_MAP_CODEC.codec().encodeStart(NbtOps.INSTANCE, styled.style()), IllegalStateException::new);
++
++            net.minecraft.network.chat.Style vanillaStyle = Util.getOrThrow(net.minecraft.network.chat.Style.Serializer.CODEC
++                .parse(NbtOps.INSTANCE, encoded), IllegalStateException::new);
 +
 +            vanilla = new net.minecraft.network.chat.numbers.StyledFormat(vanillaStyle);
 +        } else if (format instanceof io.papermc.paper.scoreboard.numbers.FixedFormat fixed) {
@@ -47,16 +50,10 @@ index 0000000000000000000000000000000000000000..ebf98cdda6ecaa3808ed05948dc003aa
 +
 +    public static NumberFormat asPaper(net.minecraft.network.chat.numbers.NumberFormat vanilla) {
 +        if (vanilla instanceof net.minecraft.network.chat.numbers.StyledFormat styled) {
-+            com.google.gson.JsonElement json = net.minecraft.Util
-+                .getOrThrow(
-+                    net.minecraft.network.chat.Style.Serializer.CODEC
-+                        .encodeStart(com.mojang.serialization.JsonOps.INSTANCE, styled.style),
-+                    com.google.gson.JsonParseException::new
-+                );
++            Tag encoded = Util.getOrThrow(net.minecraft.network.chat.Style.Serializer.CODEC.encodeStart(NbtOps.INSTANCE, styled.style), IllegalStateException::new);
 +
-+            net.kyori.adventure.text.format.Style adventureStyle =
-+                net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson()
-+                    .serializer().fromJson(json, net.kyori.adventure.text.format.Style.class);
++            net.kyori.adventure.text.format.Style adventureStyle = Util.getOrThrow(AdventureCodecs.STYLE_MAP_CODEC.codec()
++                .parse(NbtOps.INSTANCE, encoded), IllegalStateException::new);
 +
 +            return new io.papermc.paper.scoreboard.numbers.StyledFormat(adventureStyle);
 +        } else if (vanilla instanceof net.minecraft.network.chat.numbers.FixedFormat fixed) {
