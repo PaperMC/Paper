@@ -1,9 +1,7 @@
 package org.bukkit.craftbukkit.inventory.util;
 
 import net.minecraft.core.BlockPosition;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.IInventory;
-import net.minecraft.world.level.World;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.CrafterBlockEntity;
 import net.minecraft.world.level.block.entity.TileEntityBlastFurnace;

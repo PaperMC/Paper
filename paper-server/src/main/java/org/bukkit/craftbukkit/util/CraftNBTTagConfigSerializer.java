@@ -2,14 +2,11 @@ package org.bukkit.craftbukkit.util;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import net.minecraft.nbt.MojangsonParser;
 import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTList;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagDouble;
 import net.minecraft.nbt.NBTTagInt;
