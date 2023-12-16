@@ -83,4 +83,50 @@ public interface Score {
      */
     void resetScore() throws IllegalStateException;
     // Paper end
+
+    // Paper start - add more score API
+    /**
+     * Gets if this score is triggerable and cannot
+     * be used by the {@code /trigger} command executed
+     * by the owner of this score.
+     *
+     * @return true if triggerable, false if not triggerable, score isn't set, or the objective isn't {@link Criteria#TRIGGER}
+     * @throws IllegalStateException if the associated objective has been unregistered
+     */
+    boolean isTriggerable();
+
+    /**
+     * Sets if this score is triggerable and can
+     * be used by the {@code /trigger} command
+     * executed by the owner of this score. Can
+     * only be set on {@link Criteria#TRIGGER} objectives.
+     * <p>
+     * If the score doesn't exist (aka {@link #isScoreSet()} returns false),
+     * this will create the score with a 0 value.
+     *
+     * @param triggerable true to enable trigger, false to disable
+     * @throws IllegalArgumentException if this objective isn't {@link Criteria#TRIGGER}
+     * @throws IllegalStateException if the associated objective has been unregistered
+     */
+    void setTriggerable(boolean triggerable);
+
+    /**
+     * Get the custom name for this entry.
+     *
+     * @return the custom name or null if not set (or score isn't set)
+     * @throws IllegalStateException if the associated objective has been unregistered
+     */
+    @Nullable net.kyori.adventure.text.Component customName();
+
+    /**
+     * Sets the custom name for this entry.
+     * <p>
+     * If the score doesn't exist (aka {@link #isScoreSet()} returns false),
+     * this will create the score with a 0 value.
+     *
+     * @param customName the custom name or null to reset
+     * @throws IllegalStateException if the associated objective has been unregistered
+     */
+    void customName(net.kyori.adventure.text.@Nullable Component customName);
+    // Paper end - add more score API
 }

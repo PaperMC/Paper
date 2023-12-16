@@ -175,4 +175,24 @@ public interface Objective {
      */
     @NotNull Score getScoreFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException, IllegalStateException;
     // Paper end - improve scoreboard entries
+
+    // Paper start - add more score API
+    /**
+     * Gets if this objective will auto update score
+     * displays on changes.
+     *
+     * @return true if auto updating
+     * @throws IllegalStateException if this objective has been unregistered
+     */
+    boolean willAutoUpdateDisplay();
+
+    /**
+     * Sets if this objective will auto update
+     * score displays on changes.
+     *
+     * @param autoUpdateDisplay true to auto update
+     * @throws IllegalStateException if this objective has been unregistered
+     */
+    void setAutoUpdateDisplay(boolean autoUpdateDisplay);
+    // Paper end - add more score API
 }
