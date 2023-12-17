@@ -10,19 +10,6 @@ Restores the API behavior from previous versions of the server
 == AT ==
 public net.minecraft.world.entity.item.FallingBlockEntity <init>(Lnet/minecraft/world/level/Level;DDDLnet/minecraft/world/level/block/state/BlockState;)V
 
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-@@ -0,0 +0,0 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
-             // Paper end
-         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
-             BlockPos pos = BlockPos.containing(x, y, z);
--            entity = FallingBlockEntity.fall(world, pos, this.getHandle().getBlockState(pos));
-+            entity = new FallingBlockEntity(world, x, y, z, this.getHandle().getBlockState(pos)); // Paper
-         } else if (Projectile.class.isAssignableFrom(clazz)) {
-             if (Snowball.class.isAssignableFrom(clazz)) {
-                 entity = new net.minecraft.world.entity.projectile.Snowball(world, x, y, z);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
@@ -55,3 +42,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return (FallingBlock) entity.getBukkitEntity();
      }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+@@ -0,0 +0,0 @@ public final class CraftEntityTypes {
+         register(new EntityTypeData<>(EntityType.PRIMED_TNT, TNTPrimed.class, CraftTNTPrimed::new, spawnData -> new PrimedTnt(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), null)));
+         register(new EntityTypeData<>(EntityType.FALLING_BLOCK, FallingBlock.class, CraftFallingBlock::new, spawnData -> {
+             BlockPos pos = BlockPos.containing(spawnData.x(), spawnData.y(), spawnData.z());
+-            return FallingBlockEntity.fall(spawnData.minecraftWorld(), pos, spawnData.world().getBlockState(pos));
++            return new FallingBlockEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), spawnData.world().getBlockState(pos)); // Paper - create falling block entities correctly
+         }));
+         register(new EntityTypeData<>(EntityType.FIREWORK, Firework.class, CraftFirework::new, spawnData -> new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), net.minecraft.world.item.ItemStack.EMPTY)));
+         register(new EntityTypeData<>(EntityType.EVOKER_FANGS, EvokerFangs.class, CraftEvokerFangs::new, spawnData -> new net.minecraft.world.entity.projectile.EvokerFangs(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), (float) Math.toRadians(spawnData.yaw()), 0, null)));

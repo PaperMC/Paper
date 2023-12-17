@@ -4,25 +4,31 @@ Date: Sat, 24 Jun 2023 09:42:53 -0700
 Subject: [PATCH] Fix possible NPE on painting creation
 
 
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-@@ -0,0 +0,0 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
-                         AABB bb = (ItemFrame.class.isAssignableFrom(clazz))
-                                 ? net.minecraft.world.entity.decoration.ItemFrame.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).getOpposite(), width, height)
-                                 : HangingEntity.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).getOpposite(), width, height);
-+                        if (!this.getHandle().noCollision(bb)) continue; // Paper - add collision check
-                         List<net.minecraft.world.entity.Entity> list = (List<net.minecraft.world.entity.Entity>) this.getHandle().getEntities(null, bb);
-                         for (Iterator<net.minecraft.world.entity.Entity> it = list.iterator(); !taken && it.hasNext(); ) {
-                             net.minecraft.world.entity.Entity e = it.next();
-@@ -0,0 +0,0 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
-                 if (Painting.class.isAssignableFrom(clazz)) {
-                     if (this.isNormalWorld() && randomizeData) {
-                         entity = net.minecraft.world.entity.decoration.Painting.create(world, pos, dir).orElse(null);
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+@@ -0,0 +0,0 @@ public final class CraftEntityTypes {
+         // Hanging
+         register(new EntityTypeData<>(EntityType.PAINTING, Painting.class, CraftPainting::new, createHanging(Painting.class, (spawnData, hangingData) -> {
+                     if (spawnData.normalWorld && hangingData.randomize()) {
+-                        return net.minecraft.world.entity.decoration.Painting.create(spawnData.minecraftWorld(), hangingData.position(), hangingData.direction()).orElse(null);
 -                    } else {
-+                    } // Paper
-+                    if (entity == null) { // Paper - if randomizeData fails, force it
-                         entity = new net.minecraft.world.entity.decoration.Painting(net.minecraft.world.entity.EntityType.PAINTING, this.getHandle().getMinecraftWorld());
-                         entity.absMoveTo(x, y, z, yaw, pitch);
-                         ((net.minecraft.world.entity.decoration.Painting) entity).setDirection(dir);
++                        // Paper start - if randomizeData fails, force it
++                        final net.minecraft.world.entity.decoration.Painting entity = net.minecraft.world.entity.decoration.Painting.create(spawnData.minecraftWorld(), hangingData.position(), hangingData.direction()).orElse(null);
++                        if (entity != null) {
++                            return entity;
++                        }
++                    } /*else*/ {
++                        // Paper end - if randomizeData fails, force it
+                         net.minecraft.world.entity.decoration.Painting entity = new net.minecraft.world.entity.decoration.Painting(net.minecraft.world.entity.EntityType.PAINTING, spawnData.minecraftWorld());
+                         entity.absMoveTo(spawnData.x(), spawnData.y(), spawnData.z(), spawnData.yaw(), spawnData.pitch());
+                         entity.setDirection(hangingData.direction());
+@@ -0,0 +0,0 @@ public final class CraftEntityTypes {
+                     AABB bb = (ItemFrame.class.isAssignableFrom(clazz))
+                             ? net.minecraft.world.entity.decoration.ItemFrame.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).getOpposite(), width, height)
+                             : HangingEntity.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).getOpposite(), width, height);
++                    if (!spawnData.world.noCollision(bb)) continue; // Paper - add collision check
+                     List<net.minecraft.world.entity.Entity> list = spawnData.world().getEntities(null, bb);
+                     for (Iterator<net.minecraft.world.entity.Entity> it = list.iterator(); !taken && it.hasNext(); ) {
+                         net.minecraft.world.entity.Entity e = it.next();
