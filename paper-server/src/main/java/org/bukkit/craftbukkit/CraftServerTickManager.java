@@ -41,7 +41,7 @@ final class CraftServerTickManager implements ServerTickManager {
 
     @Override
     public void setTickRate(final float tickRate) {
-        Preconditions.checkArgument(tickRate > 1 && tickRate < 10_000, "The given tick rate must not be less than one");
+        Preconditions.checkArgument(tickRate >= 1.0F && tickRate <= 10_000.0F, "The given tick rate must not be less than 1.0 or greater than 10,000.0");
         manager.setTickRate(tickRate);
     }
 
