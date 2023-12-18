@@ -92,10 +92,10 @@ index 3157f3d2f9ce7af4a763203672817a7f5c7bd4fb..6fde24cb6427f6edacaf372ffb72514d
      public void unregister() {
          CraftScoreboard scoreboard = this.checkState();
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java
-index be020d6b686c1ad5bd8b7cee0b6050304d434022..e07d8278722123341c9a60e99dccacab37a6c21e 100644
+index be020d6b686c1ad5bd8b7cee0b6050304d434022..3a13da3182d0c0247a9ecfc36a41650f4f5b18ef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java
-@@ -57,6 +57,35 @@ final class CraftScore implements Score {
+@@ -57,6 +57,44 @@ final class CraftScore implements Score {
          this.objective.checkState().board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).set(score);
      }
  
@@ -103,14 +103,23 @@ index be020d6b686c1ad5bd8b7cee0b6050304d434022..e07d8278722123341c9a60e99dccacab
 +    //Paper start - add number format
 +    @Override
 +    public io.papermc.paper.scoreboard.numbers.NumberFormat getNumberFormat() {
-+        net.minecraft.network.chat.numbers.NumberFormat vanilla = this.objective.checkState().board
-+            .getPlayerScoreInfo(this.entry, this.objective.getHandle()).numberFormat();
++        Scoreboard board = this.objective.checkState().board;
++        if (board.getTrackedPlayers().contains(this.entry)) { // Lazy
++            ReadOnlyScoreInfo scoreInfo = this.objective.checkState().board
++                .getPlayerScoreInfo(this.entry, this.objective.getHandle());
 +
-+        if(vanilla == null) {
-+            return null;
++            if (scoreInfo != null) {
++                net.minecraft.network.chat.numbers.NumberFormat vanilla = scoreInfo.numberFormat();
++
++                if (vanilla == null) {
++                    return null;
++                }
++
++                return io.papermc.paper.util.PaperScoreboardFormat.asPaper(vanilla);
++            }
 +        }
 +
-+        return io.papermc.paper.util.PaperScoreboardFormat.asPaper(vanilla);
++        return null;
 +    }
 +
 +
@@ -119,7 +128,7 @@ index be020d6b686c1ad5bd8b7cee0b6050304d434022..e07d8278722123341c9a60e99dccacab
 +        final net.minecraft.world.scores.ScoreAccess access = this.objective.checkState()
 +            .board.getOrCreatePlayerScore(this.entry, this.objective.getHandle());
 +
-+        if(format == null) {
++        if (format == null) {
 +            access.numberFormatOverride(null);
 +            return;
 +        }
