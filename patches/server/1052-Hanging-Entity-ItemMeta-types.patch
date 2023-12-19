@@ -443,13 +443,14 @@ index 0000000000000000000000000000000000000000..5b93128ad8a7cd85ffbd255a9cbae4c3
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPainting.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPainting.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..635909ee08397818725294e6f406e4ff004d408f
+index 0000000000000000000000000000000000000000..da2fed2b932b6e8a82ce7ecc6630bb8b21b9b1a7
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPainting.java
-@@ -0,0 +1,215 @@
+@@ -0,0 +1,230 @@
 +package org.bukkit.craftbukkit.inventory;
 +
 +import com.google.common.collect.ImmutableMap;
++import io.papermc.paper.inventory.meta.PaintingMeta;
 +import io.papermc.paper.math.BlockPosition;
 +import io.papermc.paper.math.Position;
 +import java.util.Map;
@@ -460,7 +461,6 @@ index 0000000000000000000000000000000000000000..635909ee08397818725294e6f406e4ff
 +import org.bukkit.Material;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.block.BlockFace;
-+import io.papermc.paper.inventory.meta.PaintingMeta;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
@@ -518,8 +518,7 @@ index 0000000000000000000000000000000000000000..635909ee08397818725294e6f406e4ff
 +
 +            if (entityTag.contains(SPAWN_LOCATION_X.NBT) && entityTag.contains(SPAWN_LOCATION_Y.NBT)
 +                && entityTag.contains(SPAWN_LOCATION_Z.NBT)) {
-+                spawnLocation = Position.block(entityTag.getInt(SPAWN_LOCATION_X.NBT),
-+                    entityTag.getInt(SPAWN_LOCATION_Y.NBT), entityTag.getInt(SPAWN_LOCATION_Z.NBT));
++                spawnLocation = Position.block(entityTag.getInt(SPAWN_LOCATION_X.NBT), entityTag.getInt(SPAWN_LOCATION_Y.NBT), entityTag.getInt(SPAWN_LOCATION_Z.NBT));
 +            }
 +
 +        }
@@ -538,12 +537,9 @@ index 0000000000000000000000000000000000000000..635909ee08397818725294e6f406e4ff
 +            this.art = variant;
 +        }
 +
-+        Integer mapSpawnLocationX = SerializableMeta.getObject(Integer.class, map,
-+            SPAWN_LOCATION_X.BUKKIT, true);
-+        Integer mapSpawnLocationY = SerializableMeta.getObject(Integer.class, map,
-+            SPAWN_LOCATION_Y.BUKKIT, true);
-+        Integer mapSpawnLocationZ = SerializableMeta.getObject(Integer.class, map,
-+            SPAWN_LOCATION_Z.BUKKIT, true);
++        Integer mapSpawnLocationX = SerializableMeta.getObject(Integer.class, map, SPAWN_LOCATION_X.BUKKIT, true);
++        Integer mapSpawnLocationY = SerializableMeta.getObject(Integer.class, map, SPAWN_LOCATION_Y.BUKKIT, true);
++        Integer mapSpawnLocationZ = SerializableMeta.getObject(Integer.class, map, SPAWN_LOCATION_Z.BUKKIT, true);
 +        if (mapSpawnLocationX != null && mapSpawnLocationY != null && mapSpawnLocationZ != null) {
 +            this.spawnLocation = Position.block(mapSpawnLocationX, mapSpawnLocationY,
 +                mapSpawnLocationZ);
@@ -590,6 +586,20 @@ index 0000000000000000000000000000000000000000..635909ee08397818725294e6f406e4ff
 +    }
 +
 +    //todo
++
++    /**
++     * This method is a bit weird...
++     * Return true if you are a common class OR your uncommon parts are empty.
++     * Empty uncommon parts implies the NBT data would be equivalent if both were applied to an item
++     *
++     * @param meta
++     */
++    @Override
++    boolean notUncommon(final CraftMetaItem meta) {
++        return super.notUncommon(meta);
++    }
++
++    // todo
 +    /**
 +     * This method is almost as weird as notUncommon. Only return false if your common internals are
 +     * unequal. Checking your own internals is redundant if you are not common, as notUncommon is
@@ -609,7 +619,7 @@ index 0000000000000000000000000000000000000000..635909ee08397818725294e6f406e4ff
 +    }
 +
 +    @Override
-+    public CraftMetaItem clone() {
++    public CraftMetaPainting clone() {
 +        CraftMetaPainting clone = (CraftMetaPainting) super.clone();
 +
 +        if (this.entityTag != null) {
@@ -661,4 +671,24 @@ index 0000000000000000000000000000000000000000..635909ee08397818725294e6f406e4ff
 +    public @NotNull BlockFace getFacing() {
 +        return facing;
 +    }
++
++    @Override
++    boolean isEmpty() {
++        return super.isEmpty() && this.isPaintingEmpty();
++    }
 +}
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+index ceca8b6a4a11753bef7ad341c34ccda60114c6b5..13b300a1a45b61b0fea46b018c425923e9b9764c 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+@@ -240,7 +240,9 @@ public class ItemMetaTest extends AbstractTestingBase {
+     private static final java.util.Set<Class<?>> ENTITY_TAG_METAS = java.util.Set.of(
+         CraftMetaEntityTag.class,
+         CraftMetaTropicalFishBucket.class,
+-        CraftMetaAxolotlBucket.class
++        CraftMetaAxolotlBucket.class,
++        CraftMetaItemFrame.class,
++        CraftMetaPainting.class
+     );
+     @Test
+     public void testEntityTagMeta() {
