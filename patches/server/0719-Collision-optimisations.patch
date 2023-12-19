@@ -105,10 +105,10 @@ index be668387f65a633c6ac497fca632a4767a1bf3a2..e08f4e39db4ee3fed62e37364d17dcc5
  }
 diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5d4c5cc8eb06f2e6c31df6cbb98ea642b2264d49
+index 0000000000000000000000000000000000000000..acd8470b108432ac82e1d2f6efcaabd5540214c2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
-@@ -0,0 +1,1878 @@
+@@ -0,0 +1,1850 @@
 +package io.papermc.paper.util;
 +
 +import io.papermc.paper.util.collisions.CachedShapeData;
@@ -1649,41 +1649,12 @@ index 0000000000000000000000000000000000000000..5d4c5cc8eb06f2e6c31df6cbb98ea642
 +        return new Vec3(x, y, z);
 +    }
 +
-+    public static boolean isAlmostCollidingOnBorder(final WorldBorder worldborder, final AABB boundingBox) {
-+        return isAlmostCollidingOnBorder(worldborder, boundingBox.minX, boundingBox.maxX, boundingBox.minZ, boundingBox.maxZ);
++    public static boolean isCollidingWithBorder(final WorldBorder worldborder, final AABB boundingBox) {
++        return isCollidingWithBorder(worldborder, boundingBox.minX, boundingBox.maxX, boundingBox.minZ, boundingBox.maxZ);
 +    }
 +
-+    public static boolean isAlmostCollidingOnBorder(final WorldBorder worldborder, final double boxMinX, final double boxMaxX,
-+                                                    final double boxMinZ, final double boxMaxZ) {
-+        final double borderMinX = worldborder.getMinX(); // -X
-+        final double borderMaxX = worldborder.getMaxX(); // +X
-+
-+        final double borderMinZ = worldborder.getMinZ(); // -Z
-+        final double borderMaxZ = worldborder.getMaxZ(); // +Z
-+
-+        return
-+            // Not intersecting if we're smaller
-+            !voxelShapeIntersect(
-+                boxMinX + COLLISION_EPSILON, Double.NEGATIVE_INFINITY, boxMinZ + COLLISION_EPSILON,
-+                boxMaxX - COLLISION_EPSILON, Double.POSITIVE_INFINITY, boxMaxZ - COLLISION_EPSILON,
-+                borderMinX, Double.NEGATIVE_INFINITY, borderMinZ, borderMaxX, Double.POSITIVE_INFINITY, borderMaxZ
-+            )
-+            &&
-+
-+            // Are intersecting if we're larger
-+            voxelShapeIntersect(
-+                boxMinX - COLLISION_EPSILON, Double.NEGATIVE_INFINITY, boxMinZ - COLLISION_EPSILON,
-+                boxMaxX + COLLISION_EPSILON, Double.POSITIVE_INFINITY, boxMaxZ + COLLISION_EPSILON,
-+                borderMinX, Double.NEGATIVE_INFINITY, borderMinZ, borderMaxX, Double.POSITIVE_INFINITY, borderMaxZ
-+            );
-+    }
-+
-+    public static boolean isCollidingWithBorderEdge(final WorldBorder worldborder, final AABB boundingBox) {
-+        return isCollidingWithBorderEdge(worldborder, boundingBox.minX, boundingBox.maxX, boundingBox.minZ, boundingBox.maxZ);
-+    }
-+
-+    public static boolean isCollidingWithBorderEdge(final WorldBorder worldborder, final double boxMinX, final double boxMaxX,
-+                                                    final double boxMinZ, final double boxMaxZ) {
++    public static boolean isCollidingWithBorder(final WorldBorder worldborder, final double boxMinX, final double boxMaxX,
++                                                final double boxMinZ, final double boxMaxZ) {
 +        final double borderMinX = worldborder.getMinX(); // -X
 +        final double borderMaxX = worldborder.getMaxX(); // +X
 +
@@ -1716,11 +1687,12 @@ index 0000000000000000000000000000000000000000..5d4c5cc8eb06f2e6c31df6cbb98ea642
 +        boolean ret = false;
 +
 +        if ((collisionFlags & COLLISION_FLAG_CHECK_BORDER) != 0) {
-+            if (CollisionUtil.isCollidingWithBorderEdge(world.getWorldBorder(), aabb)) {
++            final WorldBorder worldBorder = world.getWorldBorder();
++            if (CollisionUtil.isCollidingWithBorder(worldBorder, aabb) && entity != null && worldBorder.isInsideCloseToBorder(entity, aabb)) {
 +                if (checkOnly) {
 +                    return true;
 +                } else {
-+                    final VoxelShape borderShape = world.getWorldBorder().getCollisionShape();
++                    final VoxelShape borderShape = worldBorder.getCollisionShape();
 +                    intoVoxel.add(borderShape);
 +                    ret = true;
 +                }
@@ -2241,7 +2213,7 @@ index 53dbfb828f4d6f47b87e7ff6829a8dbc3de2f0fd..30ad9f878d0b76c6bef594448c3122d6
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 09a49aa1f33796ab5947010538f504c49d2af226..b8c5c8ecf1a1a2bddcf8df15042e617908ab122c 100644
+index 09a49aa1f33796ab5947010538f504c49d2af226..5a6536bf3503ba27df8bdd810b76266aee42e037 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1215,9 +1215,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
@@ -2292,7 +2264,7 @@ index 09a49aa1f33796ab5947010538f504c49d2af226..b8c5c8ecf1a1a2bddcf8df15042e6179
                      if (this.remainingFireTicks <= 0) {
                          this.setRemainingFireTicks(-this.getFireImmuneTicks());
                      }
-@@ -1397,32 +1432,86 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -1397,32 +1432,82 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      }
  
      private Vec3 collide(Vec3 movement) {
@@ -2346,31 +2318,27 @@ index 09a49aa1f33796ab5947010538f504c49d2af226..b8c5c8ecf1a1a2bddcf8df15042e6179
 +
 +        io.papermc.paper.util.CollisionUtil.getCollisions(
 +                world, this, collisionBox, potentialCollisionsVoxel, potentialCollisionsBB,
-+                (0),
++                io.papermc.paper.util.CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
 +                null, null
 +        );
 +
-+        if (io.papermc.paper.util.CollisionUtil.isCollidingWithBorderEdge(world.getWorldBorder(), collisionBox)) {
-+            potentialCollisionsVoxel.add(world.getWorldBorder().getCollisionShape());
++        if (potentialCollisionsVoxel.isEmpty() && potentialCollisionsBB.isEmpty()) {
++            return movement;
 +        }
  
 -        if (this.maxUpStep() > 0.0F && flag3 && (flag || flag2)) {
 -            Vec3 vec3d2 = Entity.collideBoundingBox(this, new Vec3(movement.x, (double) this.maxUpStep(), movement.z), axisalignedbb, this.level(), list);
 -            Vec3 vec3d3 = Entity.collideBoundingBox(this, new Vec3(0.0D, (double) this.maxUpStep(), 0.0D), axisalignedbb.expandTowards(movement.x, 0.0D, movement.z), this.level(), list);
-+        if (potentialCollisionsVoxel.isEmpty() && potentialCollisionsBB.isEmpty()) {
-+            return movement;
-+        }
-+
 +        final Vec3 limitedMoveVector = io.papermc.paper.util.CollisionUtil.performCollisions(movement, currBoundingBox, potentialCollisionsVoxel, potentialCollisionsBB);
-+
+ 
+-            if (vec3d3.y < (double) this.maxUpStep()) {
+-                Vec3 vec3d4 = Entity.collideBoundingBox(this, new Vec3(movement.x, 0.0D, movement.z), axisalignedbb.move(vec3d3), this.level(), list).add(vec3d3);
 +        if (stepHeight > 0.0
 +                && (onGround || (limitedMoveVector.y != movement.y && movement.y < 0.0))
 +                && (limitedMoveVector.x != movement.x || limitedMoveVector.z != movement.z)) {
 +            Vec3 vec3d2 = io.papermc.paper.util.CollisionUtil.performCollisions(new Vec3(movement.x, stepHeight, movement.z), currBoundingBox, potentialCollisionsVoxel, potentialCollisionsBB);
 +            final Vec3 vec3d3 = io.papermc.paper.util.CollisionUtil.performCollisions(new Vec3(0.0, stepHeight, 0.0), currBoundingBox.expandTowards(movement.x, 0.0, movement.z), potentialCollisionsVoxel, potentialCollisionsBB);
- 
--            if (vec3d3.y < (double) this.maxUpStep()) {
--                Vec3 vec3d4 = Entity.collideBoundingBox(this, new Vec3(movement.x, 0.0D, movement.z), axisalignedbb.move(vec3d3), this.level(), list).add(vec3d3);
++
 +            if (vec3d3.y < stepHeight) {
 +                final Vec3 vec3d4 = io.papermc.paper.util.CollisionUtil.performCollisions(new Vec3(movement.x, 0.0D, movement.z), currBoundingBox.move(vec3d3), potentialCollisionsVoxel, potentialCollisionsBB).add(vec3d3);
  
@@ -2395,7 +2363,7 @@ index 09a49aa1f33796ab5947010538f504c49d2af226..b8c5c8ecf1a1a2bddcf8df15042e6179
      }
  
      public static Vec3 collideBoundingBox(@Nullable Entity entity, Vec3 movement, AABB entityBoundingBox, Level world, List<VoxelShape> collisions) {
-@@ -2627,11 +2716,70 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -2627,11 +2712,70 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              float f = this.dimensions.width * 0.8F;
              AABB axisalignedbb = AABB.ofSize(this.getEyePosition(), (double) f, 1.0E-6D, (double) f);
  

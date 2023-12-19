@@ -4,29 +4,8 @@ Date: Thu, 27 Oct 2022 15:35:47 +0200
 Subject: [PATCH] Add config option for spider worldborder climbing
 
 
-diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index bfbb99e82c00eef9772c605e172645252af6e8ad..620ff3a4741742f27d0998d22bb5b998af7aaa83 100644
---- a/src/main/java/net/minecraft/world/entity/Entity.java
-+++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -408,6 +408,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
-     @javax.annotation.Nullable
-     private UUID originWorld;
-     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
-+    public boolean collidingWithWorldBorder; // Paper
- 
-     public void setOrigin(@javax.annotation.Nonnull Location location) {
-         this.origin = location.toVector();
-@@ -1481,7 +1482,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
-                 null, null
-         );
- 
--        if (io.papermc.paper.util.CollisionUtil.isCollidingWithBorderEdge(world.getWorldBorder(), collisionBox)) {
-+        if (collidingWithWorldBorder = io.papermc.paper.util.CollisionUtil.isCollidingWithBorderEdge(world.getWorldBorder(), collisionBox)) { // Paper - this line *is* correct, ignore the IDE warning about assignments being used as a condition
-             potentialCollisionsVoxel.add(world.getWorldBorder().getCollisionShape());
-         }
- 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Spider.java b/src/main/java/net/minecraft/world/entity/monster/Spider.java
-index 9e5d68fe86d17118df3d6a1c36b296f32b4d7fc1..71b5a9c97a13f703073c0122742ff9e8a0e49df2 100644
+index 9e5d68fe86d17118df3d6a1c36b296f32b4d7fc1..5a9f4a022c8e7a0804543335bfe91e1328d040e6 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Spider.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Spider.java
 @@ -86,7 +86,7 @@ public class Spider extends Monster {
@@ -34,7 +13,7 @@ index 9e5d68fe86d17118df3d6a1c36b296f32b4d7fc1..71b5a9c97a13f703073c0122742ff9e8
          super.tick();
          if (!this.level().isClientSide) {
 -            this.setClimbing(this.horizontalCollision);
-+            this.setClimbing(this.horizontalCollision && (this.level().paperConfig().entities.behavior.allowSpiderWorldBorderClimbing || !collidingWithWorldBorder)); // Paper
++            this.setClimbing(this.horizontalCollision && (this.level().paperConfig().entities.behavior.allowSpiderWorldBorderClimbing || !io.papermc.paper.util.CollisionUtil.isCollidingWithBorder(this.level().getWorldBorder(), this.getBoundingBox().inflate(io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON)))); // Paper - inflate by +EPSILON as collision will place us outside the border, but just barely
          }
  
      }
