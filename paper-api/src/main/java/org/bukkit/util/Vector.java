@@ -12,8 +12,11 @@ import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
 import org.joml.RoundingMode;
 import org.joml.Vector3d;
+import org.joml.Vector3dc;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.joml.Vector3i;
+import org.joml.Vector3ic;
 
 /**
  * Represents a mutable vector. Because the components of Vectors are mutable,
@@ -945,6 +948,39 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public static Vector fromJOML(@NotNull Vector3i vector) {
+        return new Vector(vector.x(), vector.y(), vector.z());
+    }
+
+    /**
+     * Gets a vector with components that match the provided JOML {@link Vector3fc}.
+     *
+     * @param vector the vector to match
+     * @return the new vector
+     */
+    @NotNull
+    public static Vector fromJOML(@NotNull Vector3fc vector) {
+        return new Vector(vector.x(), vector.y(), vector.z());
+    }
+
+    /**
+     * Gets a vector with components that match the provided JOML {@link Vector3dc}.
+     *
+     * @param vector the vector to match
+     * @return the new vector
+     */
+    @NotNull
+    public static Vector fromJOML(@NotNull Vector3dc vector) {
+        return new Vector(vector.x(), vector.y(), vector.z());
+    }
+
+    /**
+     * Gets a vector with components that match the provided JOML {@link Vector3ic}.
+     *
+     * @param vector the vector to match
+     * @return the new vector
+     */
+    @NotNull
+    public static Vector fromJOML(@NotNull Vector3ic vector) {
         return new Vector(vector.x(), vector.y(), vector.z());
     }
 
