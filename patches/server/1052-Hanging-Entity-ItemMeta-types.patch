@@ -1,0 +1,664 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Isaac - The456 <the456@the456gamer.dev>
+Date: Tue, 19 Dec 2023 00:20:24 +0000
+Subject: [PATCH] Hanging Entity ItemMeta types
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+index c77634ec9c4e7a9eaacc81de7f95e9452b393a52..e89030ac3f5c8eab8db02ce50df7641958d629c6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+@@ -359,10 +359,12 @@ public final class CraftItemFactory implements ItemFactory {
+         case PUFFERFISH_BUCKET:
+         case SALMON_BUCKET:
+         case TADPOLE_BUCKET: // Paper
++            return meta instanceof CraftMetaEntityTag ? meta : new CraftMetaEntityTag(meta); // Paper start - Add more specific hanging entity metas
+         case ITEM_FRAME:
+         case GLOW_ITEM_FRAME:
++            return meta instanceof CraftMetaItemFrame ? meta : new CraftMetaItemFrame(meta);
+         case PAINTING:
+-            return meta instanceof CraftMetaEntityTag ? meta : new CraftMetaEntityTag(meta);
++            return meta instanceof CraftMetaPainting ? meta : new CraftMetaPainting(meta); // Paper start - Add more specific hanging entity metas
+         case COMPASS:
+             return meta instanceof CraftMetaCompass ? meta : new CraftMetaCompass(meta);
+         case BUNDLE:
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 32da455eb46d09a846bae5270b32a6d6d6b962fd..977579091f74e412f36d1e7de5192f01a6769bea 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -600,10 +600,12 @@ public final class CraftItemStack extends ItemStack {
+             case PUFFERFISH_BUCKET:
+             case SALMON_BUCKET:
+             case TADPOLE_BUCKET: // Paper
++                return new CraftMetaEntityTag(item.getTag()); // Paper start - Add more specific entity metas
+             case ITEM_FRAME:
+             case GLOW_ITEM_FRAME:
++                return new CraftMetaItemFrame(item.getTag());
+             case PAINTING:
+-                return new CraftMetaEntityTag(item.getTag());
++                return new CraftMetaPainting(item.getTag()); // Paper end - Add more specific entity metas
+             case COMPASS:
+                 return new CraftMetaCompass(item.getTag());
+             case BUNDLE:
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+index 630e16403cb1fc0f4ba798993bb0c3139196a97c..a9c7ccec83fbfbf8f13661ba2b25216a94d1d967 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+@@ -16,10 +16,10 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+             Material.COD_BUCKET,
+             Material.PUFFERFISH_BUCKET,
+             Material.SALMON_BUCKET,
+-            Material.TADPOLE_BUCKET, // Paper
+-            Material.ITEM_FRAME,
+-            Material.GLOW_ITEM_FRAME,
+-            Material.PAINTING
++            Material.TADPOLE_BUCKET // Paper // Paper start - Add more specific entity metas
++            // Material.ITEM_FRAME,
++            // Material.GLOW_ITEM_FRAME,
++            // Material.PAINTING // Paper end - Add more specific entity metas
+     );
+ 
+     static final ItemMetaKey ENTITY_TAG = new ItemMetaKey("EntityTag", "entity-tag");
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 2ded472dbf0ed5ad3205e1dc8cbb20e1482a6ff6..bc66f2109ff5d615fe8aadae75e4f20d3e622929 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -170,6 +170,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                     .put(CraftMetaAxolotlBucket.class, "AXOLOTL_BUCKET")
+                     .put(CraftMetaCrossbow.class, "CROSSBOW")
+                     .put(CraftMetaSuspiciousStew.class, "SUSPICIOUS_STEW")
++                    .put(CraftMetaItemFrame.class, "ITEM_FRAME")
++                    .put(CraftMetaPainting.class, "PAINTING")
+                     .put(CraftMetaEntityTag.class, "ENTITY_TAG")
+                     .put(CraftMetaCompass.class, "COMPASS")
+                     .put(CraftMetaBundle.class, "BUNDLE")
+@@ -1671,6 +1673,19 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                         CraftMetaCompass.LODESTONE_POS.NBT,
+                         CraftMetaCompass.LODESTONE_TRACKED.NBT,
+                         CraftMetaBundle.ITEMS.NBT,
++                        // Paper start
++                        CraftMetaItemFrame.ENTITY_TAG.NBT,
++                        CraftMetaItemFrame.INVISIBLE.NBT,
++                        CraftMetaItemFrame.FIXED.NBT,
++                        CraftMetaItemFrame.FACING.NBT,
++                        CraftMetaItemFrame.ITEM.NBT,
++                        CraftMetaItemFrame.ITEM_ROTATION.NBT,
++                        CraftMetaItemFrame.ITEM_DROP_CHANCE.NBT,
++                        CraftMetaItemFrame.SPAWN_LOCATION_X.NBT, // TODO what about duplicates?
++                        CraftMetaItemFrame.SPAWN_LOCATION_Y.NBT,
++                        CraftMetaItemFrame.SPAWN_LOCATION_Z.NBT,
++                        // TODO - painting
++                        // Paper end
+                         CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.NBT
+                 ));
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItemFrame.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItemFrame.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5b93128ad8a7cd85ffbd255a9cbae4c33997a239
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItemFrame.java
+@@ -0,0 +1,343 @@
++package org.bukkit.craftbukkit.inventory;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableMap;
++import com.google.common.collect.Sets;
++import io.papermc.paper.inventory.meta.ItemFrameMeta;
++import io.papermc.paper.math.BlockPosition;
++import io.papermc.paper.math.Position;
++import java.util.Map;
++import java.util.Set;
++import net.minecraft.core.Direction;
++import net.minecraft.nbt.CompoundTag;
++import org.bukkit.Material;
++import org.bukkit.Rotation;
++import org.bukkit.block.BlockFace;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class CraftMetaItemFrame extends CraftMetaItem implements ItemFrameMeta {
++
++    private static final Set<Material> ITEM_FRAME_MATERIALS = Sets.newHashSet(Material.ITEM_FRAME,
++        Material.GLOW_ITEM_FRAME);
++
++    static final ItemMetaKey ENTITY_TAG = new ItemMetaKey("EntityTag", "entity-tag");
++    static final ItemMetaKey INVISIBLE = new ItemMetaKey("Invisible", "invisible");
++    static final ItemMetaKey FIXED = new ItemMetaKey("Fixed", "fixed");
++    static final ItemMetaKey FACING = new ItemMetaKey("Facing", "facing");
++    static final ItemMetaKey ITEM = new ItemMetaKey("Item", "item");
++    static final ItemMetaKey ITEM_ROTATION = new ItemMetaKey("ItemRotation", "item-rotation");
++    static final ItemMetaKey ITEM_DROP_CHANCE = new ItemMetaKey("ItemDropChance",
++        "item-drop-chance");
++
++    static final ItemMetaKey SPAWN_LOCATION_X = new ItemMetaKey("TileX", "spawn-x");
++    static final ItemMetaKey SPAWN_LOCATION_Y = new ItemMetaKey("TileY", "spawn-y");
++    static final ItemMetaKey SPAWN_LOCATION_Z = new ItemMetaKey("TileZ", "spawn-z");
++
++
++    CompoundTag entityTag;
++    private Boolean invisible = null;
++    private Boolean fixed = null;
++    private BlockFace facing;
++    private ItemStack heldItem;
++    private Rotation itemRotation;
++    private Float itemDropChance = null;
++
++    private BlockPosition spawnLocation;
++
++
++    CraftMetaItemFrame(CraftMetaItem meta) {
++        super(meta);
++
++        if (!(meta instanceof CraftMetaItemFrame)) {
++            return;
++        }
++        CraftMetaItemFrame frame = (CraftMetaItemFrame) meta;
++
++        this.entityTag = frame.entityTag;
++        this.invisible = frame.invisible;
++        this.fixed = frame.fixed;
++        this.facing = frame.facing;
++        this.heldItem = frame.heldItem;
++        this.itemRotation = frame.itemRotation;
++        this.itemDropChance = frame.itemDropChance;
++        this.spawnLocation = frame.spawnLocation;
++
++    }
++
++    CraftMetaItemFrame(final CompoundTag tag) {
++        super(tag);
++
++        if (tag.contains(CraftMetaItemFrame.ENTITY_TAG.NBT)) {
++            this.entityTag = tag.getCompound(CraftMetaItemFrame.ENTITY_TAG.NBT);
++
++            if (entityTag.contains(INVISIBLE.NBT)) {
++                invisible = entityTag.getBoolean(INVISIBLE.NBT);
++            }
++            if (entityTag.contains(FIXED.NBT)) {
++                fixed = entityTag.getBoolean(FIXED.NBT);
++            }
++            if (entityTag.contains(FACING.NBT)) {
++                Direction dir = Direction.from3DDataValue(tag.getByte(FACING.NBT));
++                facing = BlockFace.valueOf(dir.toString()); // TODO is this the best way?
++            }
++            if (entityTag.contains(ITEM.NBT)) {
++                heldItem = CraftItemStack.asCraftMirror(
++                    net.minecraft.world.item.ItemStack.of(entityTag.getCompound(ITEM.NBT)));
++            }
++            if (entityTag.contains(ITEM_ROTATION.NBT)) {
++                itemRotation = Rotation.fromIndex(entityTag.getByte(ITEM_ROTATION.NBT) % 8);
++            }
++            if (entityTag.contains(ITEM_DROP_CHANCE.NBT)) {
++                itemDropChance = entityTag.getFloat(ITEM_DROP_CHANCE.NBT);
++            }
++
++            if (entityTag.contains(SPAWN_LOCATION_X.NBT) && entityTag.contains(SPAWN_LOCATION_Y.NBT)
++                && entityTag.contains(SPAWN_LOCATION_Z.NBT)) {
++                spawnLocation = Position.block(entityTag.getInt(SPAWN_LOCATION_X.NBT),
++                    entityTag.getInt(SPAWN_LOCATION_Y.NBT), entityTag.getInt(SPAWN_LOCATION_Z.NBT));
++            }
++
++
++        }
++    }
++
++    CraftMetaItemFrame(final Map<String, Object> map) {
++        super(map);
++
++        // uses getObject directly so it can be nullchecked, and not set.
++        Boolean mapInvisible = SerializableMeta.getObject(Boolean.class, map, INVISIBLE.BUKKIT,
++            true);
++        if (mapInvisible != null) {
++            this.invisible = mapInvisible;
++        }
++
++        Boolean mapFixed = SerializableMeta.getObject(Boolean.class, map, FIXED.BUKKIT, true);
++        if (mapFixed != null) {
++            this.fixed = mapFixed;
++        }
++
++        BlockFace mapFacing = SerializableMeta.getObject(BlockFace.class, map, FACING.BUKKIT, true);
++        if (mapFacing != null && mapFacing.isCartesian()) {
++            this.facing = mapFacing;
++        }
++
++        ItemStack mapHeldItem = SerializableMeta.getObject(ItemStack.class, map, ITEM.BUKKIT, true);
++        if (mapHeldItem != null) {
++            this.heldItem = mapHeldItem;
++        }
++
++        Rotation mapItemRotation = SerializableMeta.getObject(Rotation.class, map,
++            ITEM_ROTATION.BUKKIT, true);
++        if (mapItemRotation != null) {
++            this.itemRotation = mapItemRotation;
++        }
++
++        Float mapItemDropChance = SerializableMeta.getObject(Float.class, map,
++            ITEM_DROP_CHANCE.BUKKIT, true);
++        if (mapItemDropChance != null) {
++            this.itemDropChance = mapItemDropChance;
++        }
++
++        Integer mapSpawnLocationX = SerializableMeta.getObject(Integer.class, map,
++            SPAWN_LOCATION_X.BUKKIT, true);
++        Integer mapSpawnLocationY = SerializableMeta.getObject(Integer.class, map,
++            SPAWN_LOCATION_Y.BUKKIT, true);
++        Integer mapSpawnLocationZ = SerializableMeta.getObject(Integer.class, map,
++            SPAWN_LOCATION_Z.BUKKIT, true);
++        if (mapSpawnLocationX != null && mapSpawnLocationY != null && mapSpawnLocationZ != null) {
++            this.spawnLocation = Position.block(mapSpawnLocationX, mapSpawnLocationY,
++                mapSpawnLocationZ);
++        }
++
++
++    }
++
++    @Override
++    public void setSpawnLocation(final BlockPosition location) {
++        // Todo: can this be extracted into a common parent: CraftMetaHangingEntity?
++        // todo: if so, can others have common entitydata extracted, like spawnegg, tropical fish bucket, axolotlbucket, armourstand?
++
++        this.spawnLocation = location;
++    }
++
++    @Override
++    public BlockPosition getSpawnLocation() {
++        return this.spawnLocation;
++    }
++
++    @Override
++    public @NotNull ItemStack getItem() {
++        return this.heldItem == null ? ItemStack.empty() : this.heldItem.clone();
++    }
++
++    @Override
++    public void setItem(final @NotNull ItemStack item) {
++        if (!item.isEmpty()) {
++            this.heldItem = item.asOne();
++        } else {
++            this.heldItem = null;
++        }
++    }
++
++    @Override
++    public @NotNull Rotation getItemRotation() {
++        return this.itemRotation == null ? Rotation.NONE : this.itemRotation;
++    }
++
++    @Override
++    public void setItemRotation(final @NotNull Rotation rotation) {
++        this.itemRotation = rotation;
++
++    }
++
++    @Override
++    public float getItemDropChance() {
++        return this.itemDropChance == null ? 1.0f : this.itemDropChance;
++    }
++
++    @Override
++    public void setItemDropChance(final float chance) {
++        Preconditions.checkArgument(0.0 <= chance && chance <= 1.0,
++            "Chance (%s) outside range [0, 1]", chance);
++        this.itemDropChance = chance;
++    }
++
++    @Override
++    void applyToItem(final CompoundTag itemTag) {
++        super.applyToItem(itemTag);
++
++        if (!isItemFrameEmpty() && this.entityTag == null) {
++            this.entityTag = new CompoundTag();
++        }
++
++        if (this.invisible != null) {
++            this.entityTag.putBoolean(INVISIBLE.NBT, this.invisible);
++        }
++
++        if (this.fixed != null) {
++            this.entityTag.putBoolean(FIXED.NBT, this.fixed);
++        }
++
++        if (this.facing != null) {
++            Direction dir = Direction.valueOf(this.facing.toString());
++            this.entityTag.putByte(FACING.NBT, (byte) dir.get3DDataValue());
++        }
++
++        if (this.heldItem != null && !this.heldItem.isEmpty()) {
++            this.entityTag.put(ITEM.NBT,
++                CraftItemStack.asNMSCopy(this.heldItem).save(new CompoundTag()));
++
++            this.entityTag.putByte(ITEM_ROTATION.NBT,
++                (byte) (this.itemRotation == null ? 0 : this.itemRotation.ordinal()));
++
++            if (this.itemDropChance != null && this.itemDropChance != 1.0f) {
++                this.entityTag.putFloat(ITEM_DROP_CHANCE.NBT, this.itemDropChance);
++            }
++
++        }
++
++        if (this.spawnLocation != null) {
++            this.entityTag.putInt(SPAWN_LOCATION_X.NBT, spawnLocation.blockX());
++            this.entityTag.putInt(SPAWN_LOCATION_Y.NBT, spawnLocation.blockY());
++            this.entityTag.putInt(SPAWN_LOCATION_Z.NBT, spawnLocation.blockZ());
++        }
++
++        if (this.entityTag != null && !this.entityTag.isEmpty()) {
++            itemTag.put(ENTITY_TAG.NBT, this.entityTag);
++        }
++
++
++    }
++
++    // TODO
++    boolean isItemFrameEmpty() {
++        return false;
++    }
++
++    @Override
++    boolean applicableTo(final Material type) {
++        return ITEM_FRAME_MATERIALS.contains(type);
++    }
++
++    // TODO
++    @Override
++    boolean isEmpty() {
++        return super.isEmpty();
++    }
++
++    // TODO
++    @Override
++    boolean equalsCommon(final CraftMetaItem that) {
++        return super.equalsCommon(that);
++    }
++
++    // TODO
++    @Override
++    boolean notUncommon(final CraftMetaItem meta) {
++        return super.notUncommon(meta);
++    }
++
++    // TODO
++    @Override
++    int applyHash() {
++        return super.applyHash();
++    }
++
++    @Override
++    public CraftMetaItemFrame clone() {
++        CraftMetaItemFrame clone = (CraftMetaItemFrame) super.clone();
++
++        if (this.entityTag != null) {
++            clone.entityTag = this.entityTag.copy();
++        }
++        if (this.heldItem != null) {
++            clone.heldItem = this.heldItem.clone();
++        }
++        return clone;
++    }
++
++    // TODO
++    @Override
++    ImmutableMap.Builder<String, Object> serialize(
++        final ImmutableMap.Builder<String, Object> builder) {
++        return super.serialize(builder);
++    }
++
++    @Override
++    public boolean isFixed() {
++        return this.fixed == null || this.fixed;
++    }
++
++    @Override
++    public void setFixed(final boolean fixed) {
++        this.fixed = fixed;
++    }
++
++    @Override
++    public boolean isVisible() {
++        return this.invisible == null || !this.invisible;
++    }
++
++    @Override
++    public void setVisible(final boolean visible) {
++        this.invisible = !visible;
++    }
++
++    @Override
++    public @NotNull BlockFace getAttachedFace() {
++        return getFacing().getOppositeFace();
++    }
++
++    @Override
++    public void setFacingDirection(@NotNull final BlockFace face) {
++        this.facing = face;
++    }
++
++    @Override
++    public @NotNull BlockFace getFacing() {
++        return facing;
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPainting.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPainting.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..635909ee08397818725294e6f406e4ff004d408f
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPainting.java
+@@ -0,0 +1,215 @@
++package org.bukkit.craftbukkit.inventory;
++
++import com.google.common.collect.ImmutableMap;
++import io.papermc.paper.math.BlockPosition;
++import io.papermc.paper.math.Position;
++import java.util.Map;
++import java.util.Optional;
++import net.minecraft.core.Direction;
++import net.minecraft.nbt.CompoundTag;
++import org.bukkit.Art;
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.block.BlockFace;
++import io.papermc.paper.inventory.meta.PaintingMeta;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class CraftMetaPainting extends CraftMetaItem implements PaintingMeta {
++
++    //TODO is art the right api name i want to use?
++    // consider "variant"
++
++    static final ItemMetaKey ENTITY_TAG = new ItemMetaKey("EntityTag", "entity-tag");
++    static final ItemMetaKey FACING = new ItemMetaKey("facing", "facing");
++    static final ItemMetaKey ART = new ItemMetaKey("variant", "art");
++    static final ItemMetaKey SPAWN_LOCATION_X = new ItemMetaKey("TileX", "spawn-x");
++    static final ItemMetaKey SPAWN_LOCATION_Y = new ItemMetaKey("TileY", "spawn-y");
++    static final ItemMetaKey SPAWN_LOCATION_Z = new ItemMetaKey("TileZ", "spawn-z");
++
++    CompoundTag entityTag;
++
++    private Art art;
++    private BlockFace facing;
++
++    private BlockPosition spawnLocation;
++
++    CraftMetaPainting(final CraftMetaItem meta) {
++        super(meta);
++
++        if (!(meta instanceof CraftMetaPainting)) {
++            return;
++        }
++
++        CraftMetaPainting painting = (CraftMetaPainting) meta;
++
++        this.entityTag = painting.entityTag;
++        this.art = painting.art;
++        this.facing = painting.facing;
++        this.spawnLocation = painting.spawnLocation;
++
++    }
++
++    CraftMetaPainting(final CompoundTag tag) {
++        super(tag);
++
++        if (tag.contains(CraftMetaPainting.ENTITY_TAG.NBT)) {
++            this.entityTag = tag.getCompound(CraftMetaPainting.ENTITY_TAG.NBT);
++
++            if (entityTag.contains(FACING.NBT)) {
++                Direction dir = Direction.from2DDataValue(tag.getByte(FACING.NBT));
++                facing = BlockFace.valueOf(dir.toString()); // TODO is this the best way?
++            }
++
++            if (entityTag.contains(ART.NBT)) {
++                Optional.ofNullable(NamespacedKey.fromString(entityTag.getString(ART.NBT))).map(NamespacedKey::value).map(Art::getByName).ifPresent(art -> this.art = art);
++            }
++
++            if (entityTag.contains(SPAWN_LOCATION_X.NBT) && entityTag.contains(SPAWN_LOCATION_Y.NBT)
++                && entityTag.contains(SPAWN_LOCATION_Z.NBT)) {
++                spawnLocation = Position.block(entityTag.getInt(SPAWN_LOCATION_X.NBT),
++                    entityTag.getInt(SPAWN_LOCATION_Y.NBT), entityTag.getInt(SPAWN_LOCATION_Z.NBT));
++            }
++
++        }
++    }
++
++    CraftMetaPainting(final Map<String, Object> map) {
++        super(map);
++
++        BlockFace mapFacing = SerializableMeta.getObject(BlockFace.class, map, FACING.BUKKIT, true);
++        if (mapFacing != null && mapFacing.isCartesian() && mapFacing != BlockFace.UP && mapFacing != BlockFace.DOWN) {
++            this.facing = mapFacing;
++        }
++
++        Art variant = SerializableMeta.getObject(Art.class, map, ART.BUKKIT, true);
++        if (variant != null) {
++            this.art = variant;
++        }
++
++        Integer mapSpawnLocationX = SerializableMeta.getObject(Integer.class, map,
++            SPAWN_LOCATION_X.BUKKIT, true);
++        Integer mapSpawnLocationY = SerializableMeta.getObject(Integer.class, map,
++            SPAWN_LOCATION_Y.BUKKIT, true);
++        Integer mapSpawnLocationZ = SerializableMeta.getObject(Integer.class, map,
++            SPAWN_LOCATION_Z.BUKKIT, true);
++        if (mapSpawnLocationX != null && mapSpawnLocationY != null && mapSpawnLocationZ != null) {
++            this.spawnLocation = Position.block(mapSpawnLocationX, mapSpawnLocationY,
++                mapSpawnLocationZ);
++        }
++    }
++
++    @Override
++    void applyToItem(final CompoundTag itemTag) {
++        super.applyToItem(itemTag);
++
++        if (!isPaintingEmpty() && this.entityTag == null) {
++            this.entityTag = new CompoundTag();
++        }
++
++        if (this.facing != null) {
++            Direction dir = Direction.valueOf(this.facing.toString());
++            this.entityTag.putByte(FACING.NBT, (byte) dir.get2DDataValue());
++        }
++
++        if (this.art != null) {
++            this.entityTag.putString(ART.NBT, this.art.getKey().asString());
++        }
++
++        if (this.spawnLocation != null) {
++            this.entityTag.putInt(SPAWN_LOCATION_X.NBT, spawnLocation.blockX());
++            this.entityTag.putInt(SPAWN_LOCATION_Y.NBT, spawnLocation.blockY());
++            this.entityTag.putInt(SPAWN_LOCATION_Z.NBT, spawnLocation.blockZ());
++        }
++
++        if (this.entityTag != null && !this.entityTag.isEmpty()) {
++            itemTag.put(ENTITY_TAG.NBT, this.entityTag);
++        }
++
++    }
++
++    // TODO
++    private boolean isPaintingEmpty() {
++        return false;
++    }
++
++    @Override
++    boolean applicableTo(final Material type) {
++        return type == Material.PAINTING;
++    }
++
++    //todo
++    /**
++     * This method is almost as weird as notUncommon. Only return false if your common internals are
++     * unequal. Checking your own internals is redundant if you are not common, as notUncommon is
++     * meant for checking those 'not common' variables.
++     *
++     * @param that
++     */
++    @Override
++    boolean equalsCommon(final CraftMetaItem that) {
++        return super.equalsCommon(that);
++    }
++
++    //todo
++    @Override
++    int applyHash() {
++        return super.applyHash();
++    }
++
++    @Override
++    public CraftMetaItem clone() {
++        CraftMetaPainting clone = (CraftMetaPainting) super.clone();
++
++        if (this.entityTag != null) {
++            clone.entityTag = this.entityTag.copy();
++        }
++
++        return clone;
++    }
++
++    //todo
++    @Override
++    ImmutableMap.Builder<String, Object> serialize(
++        final ImmutableMap.Builder<String, Object> builder) {
++        return super.serialize(builder);
++    }
++
++    @Override
++    public void setSpawnLocation(final BlockPosition location) {
++        spawnLocation = location;
++
++    }
++
++    @Override
++    public BlockPosition getSpawnLocation() {
++        return spawnLocation;
++    }
++
++    @Override
++    public Art getVariant() {
++        return art;
++    }
++
++    @Override
++    public void setVariant(final @Nullable Art art) {
++        this.art = art;
++    }
++
++    @Override
++    public @NotNull BlockFace getAttachedFace() {
++        return getFacing().getOppositeFace();
++    }
++
++    @Override
++    public void setFacingDirection(@NotNull final BlockFace face) {
++        this.facing = face;
++    }
++
++    @Override
++    public @NotNull BlockFace getFacing() {
++        return facing;
++    }
++}
