@@ -9,7 +9,7 @@ on dropping the item instead of generalizing it for all dropped
 items like CB does.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 5fe743567f2e9cf0f9442ddd87453c51af8060e6..8efbbd379244e3ed54d4aba199037cc20ccd096a 100644
+index 5fe743567f2e9cf0f9442ddd87453c51af8060e6..d1f20a8a3ccea1f074624163eb96da023142a459 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -944,22 +944,20 @@ public class ServerPlayer extends Player {
@@ -24,7 +24,7 @@ index 5fe743567f2e9cf0f9442ddd87453c51af8060e6..8efbbd379244e3ed54d4aba199037cc2
              for (ItemStack item : this.getInventory().getContents()) {
                  if (!item.isEmpty() && !EnchantmentHelper.hasVanishingCurse(item)) {
 -                    loot.add(CraftItemStack.asCraftMirror(item));
-+                    loot.add(new DefaultDrop(item, stack -> this.drop(stack, true, false))); // Paper - drop function taken from Inventory#dropAll
++                    loot.add(new DefaultDrop(item, stack -> this.drop(stack, true, false, false))); // Paper - drop function taken from Inventory#dropAll (don't fire drop event)
                  }
              }
          }
@@ -38,6 +38,17 @@ index 5fe743567f2e9cf0f9442ddd87453c51af8060e6..8efbbd379244e3ed54d4aba199037cc2
          this.drops.clear(); // SPIGOT-5188: make sure to clear
          } // Paper
  
+@@ -2441,8 +2439,8 @@ public class ServerPlayer extends Player {
+     }
+ 
+     @Override
+-    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
+-        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership);
++    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership, boolean callDropEvent) { // Paper - override method with most params
++        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership, callDropEvent); // Paper - override method with most params
+ 
+         if (entityitem == null) {
+             return null;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 1f2e74969f9d459cf3bc123c96309fc0a6165ea0..0c46a4aeafd03fbbfd590b0362d41bf2b1d5ca74 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
