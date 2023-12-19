@@ -187,61 +187,31 @@ index 68550d4497a5f10bf653482f79be77373df53f27..55f96545d6db95e3e657502a7910d96f
  
      public String getDebugStatus() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 5152979bf81345fc365e7b16028c7d970d2f5856..6e212f672579a3e08dc362c287be59ca5170d717 100644
+index 5152979bf81345fc365e7b16028c7d970d2f5856..44ada45d9bf2d9b48e5de1c3cb1a855902f3884b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -516,18 +516,43 @@ public class ServerChunkCache extends ChunkSource {
+@@ -516,18 +516,10 @@ public class ServerChunkCache extends ChunkSource {
  
              gameprofilerfiller.push("pollingChunks");
              gameprofilerfiller.push("filteringLoadedChunks");
 -            List<ServerChunkCache.ChunkAndHolder> list = Lists.newArrayListWithCapacity(this.chunkMap.size());
 -            Iterator iterator = this.chunkMap.getChunks().iterator();
++            // Paper - optimise chunk tick iteration
              if (this.level.getServer().tickRateManager().runsNormally()) this.level.timings.chunkTicks.startTiming(); // Paper
  
 -            while (iterator.hasNext()) {
 -                ChunkHolder playerchunk = (ChunkHolder) iterator.next();
 -                LevelChunk chunk = playerchunk.getTickingChunk();
-+            // Paper start - optimise chunk tick iteration
-+            ChunkMap playerChunkMap = this.chunkMap;
-+            for (ServerPlayer player : this.level.players) {
-+                if (!player.affectsSpawning || player.isSpectator()) {
-+                    playerChunkMap.playerMobSpawnMap.remove(player);
-+                    player.playerNaturallySpawnedEvent = null;
-+                    player.lastEntitySpawnRadiusSquared = -1.0;
-+                    continue;
-+                }
-+
-+                int viewDistance = io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player);
- 
+-
 -                if (chunk != null) {
 -                    list.add(new ServerChunkCache.ChunkAndHolder(chunk, playerchunk));
-+                // copied and modified from isOutisdeRange
-+                int chunkRange = (int)level.spigotConfig.mobSpawnRange;
-+                chunkRange = (chunkRange > viewDistance) ? viewDistance : chunkRange;
-+                chunkRange = (chunkRange > DistanceManager.MOB_SPAWN_RANGE) ? DistanceManager.MOB_SPAWN_RANGE : chunkRange;
-+
-+                com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte)chunkRange);
-+                event.callEvent();
-+                if (event.isCancelled() || event.getSpawnRadius() < 0) {
-+                    playerChunkMap.playerMobSpawnMap.remove(player);
-+                    player.playerNaturallySpawnedEvent = null;
-+                    player.lastEntitySpawnRadiusSquared = -1.0;
-+                    continue;
-                 }
-+
-+                int range = Math.min(event.getSpawnRadius(), DistanceManager.MOB_SPAWN_RANGE); // limit to max spawn range
-+                int chunkX = io.papermc.paper.util.CoordinateUtils.getChunkCoordinate(player.getX());
-+                int chunkZ = io.papermc.paper.util.CoordinateUtils.getChunkCoordinate(player.getZ());
-+
-+                playerChunkMap.playerMobSpawnMap.addOrUpdate(player, chunkX, chunkZ, range);
-+                player.lastEntitySpawnRadiusSquared = (double)((range << 4) * (range << 4)); // used in anyPlayerCloseEnoughForSpawning
-+                player.playerNaturallySpawnedEvent = event;
-             }
-+            // Paper end - optimise chunk tick iteration
+-                }
+-            }
++            // Paper - optimise chunk tick iteration
  
              if (this.level.getServer().tickRateManager().runsNormally()) {
                  gameprofilerfiller.popPush("naturalSpawnCount");
-@@ -562,38 +587,107 @@ public class ServerChunkCache extends ChunkSource {
+@@ -562,38 +554,109 @@ public class ServerChunkCache extends ChunkSource {
                  gameprofilerfiller.popPush("spawnAndTick");
                  boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
  
@@ -254,6 +224,7 @@ index 5152979bf81345fc365e7b16028c7d970d2f5856..6e212f672579a3e08dc362c287be59ca
 -                    entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
 -                    entityPlayer.playerNaturallySpawnedEvent.callEvent();
 +                // Paper start - optimise chunk tick iteration
++                ChunkMap playerChunkMap = this.chunkMap;
 +                for (ServerPlayer player : this.level.players) {
 +                    if (!player.affectsSpawning || player.isSpectator()) {
 +                        playerChunkMap.playerMobSpawnMap.remove(player);
@@ -291,6 +262,7 @@ index 5152979bf81345fc365e7b16028c7d970d2f5856..6e212f672579a3e08dc362c287be59ca
                  int l = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
                  boolean flag1 = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && this.level.getLevelData().getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
 -                Iterator iterator1 = list.iterator();
++                // Paper - optimise chunk tick iteration
  
                  int chunksTicked = 0; // Paper
 -                while (iterator1.hasNext()) {
@@ -313,7 +285,8 @@ index 5152979bf81345fc365e7b16028c7d970d2f5856..6e212f672579a3e08dc362c287be59ca
 +                try {
 +                // Paper end - optimise chunk tick iteration
 +                while (chunkIterator.hasNext()) {
-+                    LevelChunk chunk1 = chunkIterator.next(); // Paper - optimise chunk tick iteration
++                    LevelChunk chunk1 = chunkIterator.next();
++                    // Paper end - optimise chunk tick iteration
                      ChunkPos chunkcoordintpair = chunk1.getPos();
  
 -                    if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkcoordintpair)) {
@@ -323,7 +296,6 @@ index 5152979bf81345fc365e7b16028c7d970d2f5856..6e212f672579a3e08dc362c287be59ca
 +                    if (playersNearby == null) {
 +                        continue;
 +                    }
-+
 +                    Object[] rawData = playersNearby.getRawData();
 +                    boolean spawn = false;
 +                    boolean tick = false;
@@ -365,7 +337,7 @@ index 5152979bf81345fc365e7b16028c7d970d2f5856..6e212f672579a3e08dc362c287be59ca
                  this.level.timings.chunkTicks.stopTiming(); // Paper
  
                  gameprofilerfiller.popPush("customSpawners");
-@@ -605,11 +699,23 @@ public class ServerChunkCache extends ChunkSource {
+@@ -605,11 +668,23 @@ public class ServerChunkCache extends ChunkSource {
              }
  
              gameprofilerfiller.popPush("broadcast");
