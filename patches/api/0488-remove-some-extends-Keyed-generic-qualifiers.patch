@@ -1,0 +1,125 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 27 Aug 2024 22:07:38 -0700
+Subject: [PATCH] remove some extends Keyed generic qualifiers
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryAccess.java b/src/main/java/io/papermc/paper/registry/RegistryAccess.java
+index 86ab67ff5023bf6adea80b02648b6f67476e30e5..5cf423b1f54557ed497b2af2d6cd27b8cd1a7753 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryAccess.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryAccess.java
+@@ -45,5 +45,5 @@ public interface RegistryAccess {
+      */
+     // Future note: We should have no trouble removing this generic qualifier when
+     // registry types no longer have to be "keyed" as it shouldn't break ABI or API.
+-    <T extends Keyed> @NotNull Registry<T> getRegistry(@NotNull RegistryKey<T> registryKey);
++    <T> @NotNull Registry<T> getRegistry(@NotNull RegistryKey<T> registryKey);
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
+index a5d7385eae9dfb88b52aed0e42c09a10ef807385..2f8741237a98e3d04ff47ddd312d22611a70522f 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
+@@ -43,5 +43,5 @@ public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends
+      * @return the tag
+      * @param <V> the tag value type
+      */
+-    @NonNull <V extends Keyed> Tag<V> getOrCreateTag(@NonNull TagKey<V> tagKey);
++    @NonNull <V> Tag<V> getOrCreateTag(@NonNull TagKey<V> tagKey);
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
+index 12ec7e794a5047a30354a485acd40fa0f3438eea..5e67833850b160363566929a7a8bc6da7107e16e 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
+@@ -35,5 +35,5 @@ public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends Re
+      * @return the tag
+      * @param <V> the tag value type
+      */
+-    @NonNull <V extends Keyed> Tag<V> getOrCreateTag(@NonNull TagKey<V> tagKey);
++    @NonNull <V> Tag<V> getOrCreateTag(@NonNull TagKey<V> tagKey);
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/set/RegistryKeySet.java b/src/main/java/io/papermc/paper/registry/set/RegistryKeySet.java
+index b891101b43148f63c96b7dd611914c85d7b29dbf..3683fd7222711a3c26022a291ce74fd733c1bbb1 100644
+--- a/src/main/java/io/papermc/paper/registry/set/RegistryKeySet.java
++++ b/src/main/java/io/papermc/paper/registry/set/RegistryKeySet.java
+@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Unmodifiable;
+ 
+ @ApiStatus.Experimental
+ @ApiStatus.NonExtendable
+-public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<TypedKey<T>>, RegistrySet<T> { // TODO remove Keyed
++public non-sealed interface RegistryKeySet<T> extends Iterable<TypedKey<T>>, RegistrySet<T> {
+ 
+     @Override
+     default int size() {
+diff --git a/src/main/java/io/papermc/paper/registry/set/RegistryKeySetImpl.java b/src/main/java/io/papermc/paper/registry/set/RegistryKeySetImpl.java
+index c712181ad4c6a9d00bc04f8a48515a388c692f48..def9afa67af6c22ee8c71a30d73247e49505e485 100644
+--- a/src/main/java/io/papermc/paper/registry/set/RegistryKeySetImpl.java
++++ b/src/main/java/io/papermc/paper/registry/set/RegistryKeySetImpl.java
+@@ -18,9 +18,9 @@ import org.jetbrains.annotations.Nullable;
+ 
+ @ApiStatus.Internal
+ @DefaultQualifier(NonNull.class)
+-record RegistryKeySetImpl<T extends Keyed>(RegistryKey<T> registryKey, List<TypedKey<T>> values) implements RegistryKeySet<T> { // TODO remove Keyed
++record RegistryKeySetImpl<T>(RegistryKey<T> registryKey, List<TypedKey<T>> values) implements RegistryKeySet<T> {
+ 
+-    static <T extends Keyed> RegistryKeySet<T> create(final RegistryKey<T> registryKey, final Iterable<? extends T> values) { // TODO remove Keyed
++    static <T> RegistryKeySet<T> create(final RegistryKey<T> registryKey, final Iterable<? extends T> values) {
+         final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
+         final ArrayList<TypedKey<T>> keys = new ArrayList<>();
+         for (final T value : values) {
+diff --git a/src/main/java/io/papermc/paper/registry/set/RegistrySet.java b/src/main/java/io/papermc/paper/registry/set/RegistrySet.java
+index 108df480e16131781a52c7bbba2ca6581e4c1ca1..f9ff65b9f556f157da562990890d3b0039b5a4d5 100644
+--- a/src/main/java/io/papermc/paper/registry/set/RegistrySet.java
++++ b/src/main/java/io/papermc/paper/registry/set/RegistrySet.java
+@@ -56,7 +56,7 @@ public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet
+      * @throws IllegalArgumentException if the registry isn't available yet or if any value doesn't have a key in that registry
+      */
+     @Contract(value = "_, _ -> new", pure = true)
+-    static <T extends Keyed> @NonNull RegistryKeySet<T> keySetFromValues(final @NonNull RegistryKey<T> registryKey, final @NonNull Iterable<? extends T> values) { // TODO remove Keyed
++    static <T> @NonNull RegistryKeySet<T> keySetFromValues(final @NonNull RegistryKey<T> registryKey, final @NonNull Iterable<? extends T> values) {
+         return RegistryKeySetImpl.create(registryKey, values);
+     }
+ 
+@@ -69,7 +69,7 @@ public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet
+      * @param <T> the type of the values
+      */
+     @SafeVarargs
+-    static <T extends Keyed> RegistryKeySet<T> keySet(final @NonNull RegistryKey<T> registryKey, final @NonNull TypedKey<T> @NonNull... keys) { // TODO remove Keyed
++    static <T> RegistryKeySet<T> keySet(final @NonNull RegistryKey<T> registryKey, final @NonNull TypedKey<T> @NonNull... keys) {
+         return keySet(registryKey, Lists.newArrayList(keys));
+     }
+ 
+@@ -83,7 +83,7 @@ public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet
+      */
+     @SuppressWarnings("BoundedWildcard")
+     @Contract(value = "_, _ -> new", pure = true)
+-    static <T extends Keyed> @NonNull RegistryKeySet<T> keySet(final @NonNull RegistryKey<T> registryKey, final @NonNull Iterable<TypedKey<T>> keys) { // TODO remove Keyed
++    static <T> @NonNull RegistryKeySet<T> keySet(final @NonNull RegistryKey<T> registryKey, final @NonNull Iterable<TypedKey<T>> keys) {
+         return new RegistryKeySetImpl<>(registryKey, Lists.newArrayList(keys));
+     }
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/tag/Tag.java b/src/main/java/io/papermc/paper/registry/tag/Tag.java
+index ae374f68ef9baa16ed90c371f1622de0c0159873..3a1f864bd9421ab38a021d272ff41e491f7cf76f 100644
+--- a/src/main/java/io/papermc/paper/registry/tag/Tag.java
++++ b/src/main/java/io/papermc/paper/registry/tag/Tag.java
+@@ -14,7 +14,7 @@ import org.jetbrains.annotations.ApiStatus;
+  * @see org.bukkit.Registry#getTag(TagKey)
+  */
+ @ApiStatus.Experimental
+-public interface Tag<T extends Keyed> extends RegistryKeySet<T> { // TODO remove Keyed
++public interface Tag<T> extends RegistryKeySet<T> {
+ 
+     /**
+      * Get the identifier for this named set.
+diff --git a/src/test/java/io/papermc/paper/registry/TestRegistryAccess.java b/src/test/java/io/papermc/paper/registry/TestRegistryAccess.java
+index f5ece852f97017f71bc129e194cb212979b2537b..b1ac725ef5ea408b2c7f884787446fd371fd7ea7 100644
+--- a/src/test/java/io/papermc/paper/registry/TestRegistryAccess.java
++++ b/src/test/java/io/papermc/paper/registry/TestRegistryAccess.java
+@@ -14,7 +14,7 @@ public class TestRegistryAccess implements RegistryAccess {
+     }
+ 
+     @Override
+-    public @NotNull <T extends Keyed> Registry<T> getRegistry(final @NotNull RegistryKey<T> registryKey) {
++    public <T> @NotNull Registry<T> getRegistry(final @NotNull RegistryKey<T> registryKey) {
+         throw new UnsupportedOperationException("Not supported");
+     }
+ }
