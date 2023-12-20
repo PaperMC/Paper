@@ -54,6 +54,7 @@ public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft
     @Override
     @NotNull
     public NamespacedKey getKey() {
+        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.TRIM_MATERIAL.getKey(this), () -> this + " doesn't have a key"); // Paper
         return this.key;
     }
 

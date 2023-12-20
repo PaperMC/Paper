@@ -42,6 +42,7 @@ public class CraftStructure extends Structure implements Handleable<net.minecraf
 
     @Override
     public NamespacedKey getKey() {
+        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.STRUCTURE.getKey(this), () -> this + " doesn't have a key"); // Paper
         return this.key;
     }
 }

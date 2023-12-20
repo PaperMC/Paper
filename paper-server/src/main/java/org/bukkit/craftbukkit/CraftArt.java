@@ -83,6 +83,7 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
     @NotNull
     @Override
     public NamespacedKey getKey() {
+        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.ART.getKey(this), () -> this + " doesn't have a key"); // Paper
         return this.key;
     }
 

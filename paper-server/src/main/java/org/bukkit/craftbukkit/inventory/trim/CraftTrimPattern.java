@@ -54,6 +54,7 @@ public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.w
     @Override
     @NotNull
     public NamespacedKey getKey() {
+        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.TRIM_PATTERN.getKey(this), () -> this + " doesn't have a key"); // Paper
         return this.key;
     }
 

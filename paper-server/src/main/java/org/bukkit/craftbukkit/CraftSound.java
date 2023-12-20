@@ -64,6 +64,7 @@ public class CraftSound implements Sound, Handleable<SoundEvent> {
     @NotNull
     @Override
     public NamespacedKey getKey() {
+        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.SOUNDS.getKey(this), () -> this + " doesn't have a key"); // Paper
         return this.key;
     }
 

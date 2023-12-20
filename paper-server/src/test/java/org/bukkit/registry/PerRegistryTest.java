@@ -49,19 +49,22 @@ public class PerRegistryTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testGet(Registry<?> registry) {
+    public <T extends Keyed> void testGet(Registry<T> registry) { // Paper - improve Registry
         registry.forEach(element -> {
+            NamespacedKey key = registry.getKey(element); // Paper - improve Registry
+            assertNotNull(key); // Paper - improve Registry
             // Values in the registry should be referentially equal to what is returned with #get()
             // This ensures that new instances are not created each time #get() is invoked
-            assertSame(element, registry.get(element.getKey()));
+            assertSame(element, registry.get(key)); // Paper - improve Registry
         });
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testMatch(Registry<?> registry) {
+    public <T extends Keyed> void testMatch(Registry<T> registry) { // Paper - improve Registry
         registry.forEach(element -> {
-            NamespacedKey key = element.getKey();
+            NamespacedKey key = registry.getKey(element); // Paper - improve Registry
+            assertNotNull(key); // Paper - improve Registry
 
             this.assertSameMatchWithKeyMessage(registry, element, key.toString()); // namespace:key
             this.assertSameMatchWithKeyMessage(registry, element, key.getKey()); // key
@@ -72,7 +75,7 @@ public class PerRegistryTest {
         });
     }
 
-    private void assertSameMatchWithKeyMessage(Registry<?> registry, Keyed element, String key) {
+    private <T extends Keyed> void assertSameMatchWithKeyMessage(Registry<T> registry, T element, String key) { // Paper - improve Registry
         assertSame(element, registry.match(key), key);
     }
 
