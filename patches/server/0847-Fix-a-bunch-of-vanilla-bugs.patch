@@ -66,6 +66,12 @@ https://bugs.mojang.com/browse/MC-153086
 https://bugs.mojang.com/browse/MC-200092
   Fix yaw being ignored for a player's first spawn pos
 
+https://bugs.mojang.com/browse/MC-259583
+  Fix brewing stand recipe input leftovers on final item
+
+https://bugs.mojang.com/browse/MC-261374
+  Fix breaking hopper minecarts causing piglin anger
+
 == AT ==
 public net/minecraft/world/entity/Mob leashInfoTag
 
@@ -352,6 +358,19 @@ index 4a0f4c83228187a2082ad029680056b1801f77bd..31831811ce16265e9828fa34d9e67d8a
                      if (!raid.hasFirstWaveSpawned()) {
                          player.awardStat(Stats.RAID_TRIGGER);
                          CriteriaTriggers.BAD_OMEN.trigger(player);
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+index 7529751afa2932fd16bc4591189b0358268a7b14..6738d8b2718daf7ce740a1bd128b5c46c7f8a952 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+@@ -77,7 +77,7 @@ public interface ContainerEntity extends Container, MenuProvider {
+     default void chestVehicleDestroyed(DamageSource source, Level world, Entity vehicle) {
+         if (world.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+             Containers.dropContents(world, vehicle, this);
+-            if (!world.isClientSide) {
++            if (!world.isClientSide && !(this instanceof MinecartHopper)) { // Paper - fix MC-261374 - hopper-related stuff isn't supposed to anger piglins
+                 Entity entity = source.getDirectEntity();
+                 if (entity != null && entity.getType() == EntityType.PLAYER) {
+                     PiglinAi.angerNearbyPiglins((Player)entity, true);
 diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
 index 685c35419de7e3c4e854a28118a243e65250ef59..0b1a0be964d799f1706c273092dc653fa04e8014 100644
 --- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
@@ -470,3 +489,20 @@ index ca91b82a21a46b1a62564b5157882a845eae8737..db38c178543e221251ae8c6ad618ad93
          super.setRemoved();
      }
  
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+index c57efcb9a79337ec791e4e8f6671612f0a82b441..f3cbb4ddc33182cd2833fb508dc218ee2c494bce 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+@@ -279,9 +279,10 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+             // CraftBukkit end
+         }
+ 
++        final Item remainingItem = itemstack.getItem().getCraftingRemainingItem(); // Paper - fix MC-259583 - get remaining item before shrinking stack
+         itemstack.shrink(1);
+-        if (itemstack.getItem().hasCraftingRemainingItem()) {
+-            ItemStack itemstack1 = new ItemStack(itemstack.getItem().getCraftingRemainingItem());
++        if (remainingItem != null) { // Paper
++            ItemStack itemstack1 = new ItemStack(remainingItem); // Paper
+ 
+             if (itemstack.isEmpty()) {
+                 itemstack = itemstack1;
