@@ -56,6 +56,23 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     PatternType FLOW = getType("flow");
     PatternType GUSTER = getType("guster");
 
+    // Paper start - deprecate getKey
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}. PatternTypes can exist without a key.
+     */
+    @Deprecated(since = "1.20.5", forRemoval = true)
+    @Override
+    default net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {
+        return org.bukkit.Keyed.super.key();
+    }
+
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}. PatternTypes can exist without a key.
+     */
+    @Deprecated(since = "1.20.5", forRemoval = true)
+    // Paper end - deprecate getKey
     @Override
     @NotNull
     public NamespacedKey getKey();

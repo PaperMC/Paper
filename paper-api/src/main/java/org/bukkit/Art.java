@@ -97,6 +97,26 @@ public interface Art extends OldEnum<Art>, Keyed {
     @Deprecated(since = "1.6.2")
     int getId();
 
+    // Paper start - deprecate getKey
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#PAINTING_VARIANT}. Painting variants can exist without a key.
+     */
+    @Deprecated(since = "1.21", forRemoval = true)
+    @Override
+    @NotNull NamespacedKey getKey();
+
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#PAINTING_VARIANT}. Painting variants can exist without a key.
+     */
+    @Deprecated(since = "1.21", forRemoval = true)
+    @Override
+    default net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {
+        return Keyed.super.key();
+    }
+    // Paper end - deprecate getKey
+
     /**
      * Get a painting by its numeric ID
      *

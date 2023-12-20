@@ -385,6 +385,79 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     @Nullable
     T get(@NotNull NamespacedKey key);
 
+    // Paper start - improve Registry
+    /**
+     * Gets the object by its key or throws if it doesn't exist.
+     *
+     * @param key the key to get the object of in this registry
+     * @return the object for the key
+     * @throws java.util.NoSuchElementException if the key doesn't point to an object in the registry
+     */
+    default @NotNull T getOrThrow(final net.kyori.adventure.key.@NotNull Key key) {
+        final T value = this.get(key);
+        if (value == null) {
+            throw new java.util.NoSuchElementException("No value for " + key + " in " + this);
+        }
+        return value;
+    }
+
+    /**
+     * Gets the object by its key or throws if it doesn't exist.
+     *
+     * @param key the key to get the object of in this registry
+     * @return the object for the key
+     * @throws java.util.NoSuchElementException if the key doesn't point to an object in the registry
+     */
+    default @NotNull T getOrThrow(final io.papermc.paper.registry.@NotNull TypedKey<T> key) {
+        final T value = this.get(key);
+        if (value == null) {
+            throw new java.util.NoSuchElementException("No value for " + key + " in " + this);
+        }
+        return value;
+    }
+
+    /**
+     * Gets the key for this object or throws if it doesn't exist.
+     * <p>
+     * Some types can exist without being in a registry
+     * and such will have no key associated with them. This
+     * method throw an exception if it isn't in this registry.
+     *
+     * @param value the value to get the key of in this registry
+     * @return the key for the value
+     * @throws java.util.NoSuchElementException if the value doesn't exist in this registry
+     * @see #getKey(Keyed)
+     */
+    default @NotNull NamespacedKey getKeyOrThrow(final @NotNull T value) {
+        Preconditions.checkArgument(value != null, "value cannot be null");
+        final NamespacedKey key = this.getKey(value);
+        if (key == null) {
+            throw new java.util.NoSuchElementException(value + " has no key in " + this);
+        }
+        return key;
+    }
+
+    /**
+     * Get the key for this object.
+     * <p>
+     * Some types can exist without being in a registry
+     * and such will have no key associated with them. This
+     * method will return null.
+     *
+     * @param value the value to get the key of in this registry
+     * @return the key for the value or null if not in the registry
+     * @see #getKeyOrThrow(Keyed)
+     */
+    default @Nullable NamespacedKey getKey(final @NotNull T value) {
+        Preconditions.checkArgument(value != null, "value cannot be null");
+        //noinspection ConstantValue (it might not be in the future...)
+        if (value instanceof Keyed) {
+            return value.getKey();
+        }
+        return null;
+    }
+    // Paper end - improve Registry
+
     /**
      * Get the object by its key.
      *
@@ -481,5 +554,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         public Class<T> getType() {
             return this.type;
         }
+
+        // Paper start - improve Registry
+        @Override
+        public @NotNull NamespacedKey getKey(final @NotNull T value) {
+            return value.getKey();
+        }
+        // Paper end - improve Registry
     }
 }

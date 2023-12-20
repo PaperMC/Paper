@@ -47,6 +47,27 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
         return Registry.INSTRUMENT.getOrThrow(NamespacedKey.minecraft(key));
     }
 
+    // Paper start - deprecate getKey
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#INSTRUMENT}. MusicInstruments can exist without a key.
+     */
+    @Deprecated(forRemoval = true, since = "1.20.5")
+    @Override
+    public abstract @NotNull NamespacedKey getKey();
+
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#INSTRUMENT}. MusicInstruments can exist without a key.
+     */
+    @Deprecated(forRemoval = true, since = "1.20.5")
+    @Override
+    public net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {
+        return Keyed.super.key();
+    }
+
+    // Paper end - deprecate getKey
+
     // Paper start - mark translation key as deprecated
     /**
      * @deprecated this method assumes that the instrument description

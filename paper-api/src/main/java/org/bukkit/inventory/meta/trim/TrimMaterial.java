@@ -78,4 +78,25 @@ public interface TrimMaterial extends Keyed, Translatable {
     @Deprecated(forRemoval = true)
     @org.jetbrains.annotations.NotNull String getTranslationKey();
     // Paper end - adventure
+
+    // Paper start - Registry#getKey
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#TRIM_MATERIAL}. TrimMaterials can exist without a key.
+     */
+    @Deprecated(forRemoval = true, since = "1.20.4")
+    @Override
+    org.bukkit.@org.jetbrains.annotations.NotNull NamespacedKey getKey();
+
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#TRIM_MATERIAL}. TrimMaterials can exist without a key.
+     */
+    @Deprecated(forRemoval = true, since = "1.20.4")
+    @Override
+    default net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {
+        return org.bukkit.Keyed.super.key();
+    }
+
+    // Paper end - Registry#getKey
 }
