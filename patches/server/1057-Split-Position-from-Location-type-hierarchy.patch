@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 19 Dec 2023 23:40:01 -0800
+Subject: [PATCH] Split Position from Location type hierarchy
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java
+index d7a789af72e5a1ef5e42c7e855897b65fdeda805..f0383c6df4d8ce15f2e04bf589e0c9524e07befb 100644
+--- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java
+@@ -3,6 +3,7 @@ package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
+ import com.google.common.collect.Iterators;
+ import io.papermc.paper.plugin.configuration.PluginMeta;
+ import io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier;
++import io.papermc.paper.plugin.entrypoint.classloader.bytecode.versions.API_1_21_1;
+ import java.util.Iterator;
+ import java.util.LinkedHashMap;
+ import java.util.List;
+@@ -15,6 +16,7 @@ import org.objectweb.asm.Opcodes;
+ public class PaperClassloaderBytecodeModifier implements ClassloaderBytecodeModifier {
+ 
+     private static final Map<ApiVersion, List<ModifierFactory>> MODIFIERS = Util.make(new LinkedHashMap<>(), map -> {
++        map.put(API_1_21_1.API_VERSION, List.of(API_1_21_1::new));
+     });
+ 
+     private final Map<ApiVersion, List<VersionedClassloaderBytecodeModifier>> constructedModifiers = MODIFIERS.entrySet().stream()
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/versions/API_1_21_1.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/versions/API_1_21_1.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fc8e26c1b024f5bde160a91b23a6adc233fc947f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/versions/API_1_21_1.java
+@@ -0,0 +1,84 @@
++package io.papermc.paper.plugin.entrypoint.classloader.bytecode.versions;
++
++import io.papermc.asm.rules.RewriteRule;
++import io.papermc.asm.rules.builder.ConfiguredRuleFactory;
++import io.papermc.asm.rules.builder.matcher.method.targeted.TargetedMethodMatcher;
++import io.papermc.paper.event.world.StructuresLocateEvent;
++import io.papermc.paper.math.Position;
++import io.papermc.paper.plugin.entrypoint.classloader.bytecode.VersionedClassloaderBytecodeModifier;
++import java.lang.constant.ClassDesc;
++import java.lang.reflect.Method;
++import java.util.List;
++import java.util.Set;
++import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.RegionAccessor;
++import org.bukkit.Server;
++import org.bukkit.World;
++import org.bukkit.block.SculkCatalyst;
++import org.bukkit.block.Sign;
++import org.bukkit.boss.DragonBattle;
++import org.bukkit.craftbukkit.util.ApiVersion;
++import org.bukkit.entity.Player;
++import org.bukkit.generator.LimitedRegion;
++
++import static io.papermc.asm.rules.RewriteRule.chain;
++import static io.papermc.asm.util.DescriptorUtils.desc;
++
++public class API_1_21_1 extends VersionedClassloaderBytecodeModifier {
++
++    public static final ApiVersion API_VERSION = ApiVersion.getOrCreateVersion("1.21.1");
++
++    private static final ClassDesc POSITION = desc(Position.class);
++
++    private static final Method POSITION_FUZZY_HANDLER;
++
++    static {
++        try {
++            POSITION_FUZZY_HANDLER = API_1_21_1.class.getDeclaredMethod("toPos", Object.class);
++        } catch (final NoSuchMethodException throwable) {
++            throw new RuntimeException(throwable);
++        }
++    }
++
++    // for removing FinePosition from superclasses of Location
++    private static ConfiguredRuleFactory.Factory locationSplit(final String... methods) {
++        return rf -> rf.changeParamFuzzy(
++            Position.class,
++            POSITION_FUZZY_HANDLER,
++            TargetedMethodMatcher.builder()
++                .match(List.of(methods))
++                .targetParam(POSITION)
++                .build()
++        );
++    }
++
++    public API_1_21_1(final int api) {
++        super(api);
++    }
++
++    @Override
++    protected RewriteRule createRule() {
++        return chain(
++            this.createSplitRule()
++        );
++    }
++
++    private RewriteRule createSplitRule() {
++        // For all methods with Position parameters prior to the removal of Position from Location type hierarchy
++        return chain(
++            this.forOwnerClasses(Set.of(Bukkit.class, Server.class), locationSplit("isOwnedByCurrentRegion")),
++            this.forOwnerClasses(Set.of(RegionAccessor.class, World.class, LimitedRegion.class), locationSplit("getFluidData")),
++            this.forOwnerClass(World.class, locationSplit("hasStructureAt", "isPositionLoaded", "rayTraceEntities", "rayTraceBlocks", "rayTrace")),
++            this.forOwnerClass(SculkCatalyst.class, locationSplit("bloom")),
++            this.forOwnerClass(Sign.class, locationSplit("getInteractableSideFor")),
++            this.forOwnerClass(DragonBattle.class, locationSplit("spawnNewGateway")),
++            this.forOwnerClass(Player.class, locationSplit("lookAt")),
++            this.forOwnerClass(StructuresLocateEvent.Result.class, locationSplit("<init>"))
++        );
++    }
++
++    public static Position toPos(final Object object) { // for split rule
++        return object instanceof final Location loc ? loc.asPosition() : (Position) object;
++    }
++}
