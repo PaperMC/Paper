@@ -93,7 +93,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         CraftEntityTypes.EntityTypeData<?, T> entityTypeData = CraftEntityTypes.getEntityTypeData(CraftEntityType.minecraftToBukkit(entity.getType()));
 
         if (entityTypeData != null) {
-            return entityTypeData.convertFunction().apply(server, entity);
+            return (CraftEntity) entityTypeData.convertFunction().apply(server, entity);
         }
 
         throw new AssertionError("Unknown entity " + (entity == null ? null : entity.getClass()));
