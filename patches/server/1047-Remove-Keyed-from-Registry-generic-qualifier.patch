@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 20 Dec 2023 02:03:05 -0800
+Subject: [PATCH] Remove Keyed from Registry generic qualifier
+
+Keyed is no longer viable for future/current registry types.
+
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java
+index 9bd330f3a3afcb8f693920517a5ad29c3c18098b..bde91e90f0b55a9de5d3557f72e4ba55276d4aeb 100644
+--- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java
+@@ -3,6 +3,7 @@ package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
+ import com.google.common.collect.Iterators;
+ import io.papermc.paper.plugin.configuration.PluginMeta;
+ import io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier;
++import io.papermc.paper.plugin.entrypoint.classloader.bytecode.versions.API_1_20_4;
+ import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
+ import java.util.Iterator;
+ import java.util.LinkedHashMap;
+@@ -15,6 +16,7 @@ import org.objectweb.asm.Opcodes;
+ public class PaperClassloaderBytecodeModifier implements ClassloaderBytecodeModifier {
+ 
+     private static final Map<String, List<ModifierFactory>> MODIFIERS = Util.make(new LinkedHashMap<>(), map -> {
++        map.put("1.20.4", List.of(API_1_20_4::new));
+     });
+ 
+     private final Map<String, List<VersionedClassloaderBytecodeModifier>> constructedModifiers = MODIFIERS.entrySet().stream()
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/versions/API_1_20_4.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/versions/API_1_20_4.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..80be9c739a75da48ccd2e99e2e10ac2b370ddc45
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/versions/API_1_20_4.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.plugin.entrypoint.classloader.bytecode.versions;
++
++import io.papermc.asm.rules.RewriteRule;
++import io.papermc.paper.plugin.entrypoint.classloader.bytecode.VersionedClassloaderBytecodeModifier;
++import java.lang.constant.ClassDesc;
++import java.lang.reflect.Method;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.checkerframework.checker.nullness.qual.Nullable;
++
++import static io.papermc.asm.rules.RewriteRule.chain;
++import static io.papermc.asm.util.DescriptorUtils.desc;
++
++public class API_1_20_4 extends VersionedClassloaderBytecodeModifier {
++
++    private static final Method REGISTRY_KEYED_HANDLER;
++    static {
++        try {
++            REGISTRY_KEYED_HANDLER = API_1_20_4.class.getDeclaredMethod("tryCastKeyed", Object.class);
++        } catch (final ReflectiveOperationException exception) {
++            throw new RuntimeException(exception);
++        }
++    }
++
++    private static final ClassDesc KEYED = desc(Keyed.class);
++    private static final ClassDesc NAMESPACED_KEY = desc(NamespacedKey.class);
++
++    public API_1_20_4(final int api) {
++        super(api);
++    }
++
++    @Override
++    protected RewriteRule createRule() {
++        return chain(
++            this.forOwner(Registry.class, f -> {
++                f.changeReturnTypeFuzzy(Object.class, REGISTRY_KEYED_HANDLER, b -> b.names("get").hasReturn(KEYED).desc(d -> d.parameterType(0).equals(NAMESPACED_KEY)));
++            })
++        );
++    }
++
++    public static @Nullable Keyed tryCastKeyed(final @Nullable Object maybeKeyed) {
++        if (maybeKeyed == null) return null;
++        if (maybeKeyed instanceof final Keyed keyed) {
++            return keyed;
++        }
++        throw new IllegalStateException(maybeKeyed + " is not Keyed");
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+index 4fc02698a9312496e7f9bce1c64f317374d2a42f..807c89099370b1f72cf4776cf5292e2ebe1d0c57 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+@@ -33,7 +33,7 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
+ import org.bukkit.potion.PotionEffectType;
+ import org.jetbrains.annotations.NotNull;
+ 
+-public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
++public class CraftRegistry<B, M> implements Registry<B> { // Paper - improve Registry
+ 
+     private static RegistryAccess registry;
+ 
+diff --git a/src/test/java/org/bukkit/registry/PerRegistryTest.java b/src/test/java/org/bukkit/registry/PerRegistryTest.java
+index 010de6fbb75eb5d51639695d260f916072fdb22d..2667f1c32e36bce9f5a31af4749697c4ce6ed748 100644
+--- a/src/test/java/org/bukkit/registry/PerRegistryTest.java
++++ b/src/test/java/org/bukkit/registry/PerRegistryTest.java
+@@ -49,7 +49,7 @@ public class PerRegistryTest extends AbstractTestingBase {
+ 
+     @ParameterizedTest
+     @MethodSource("data")
+-    public <T extends Keyed> void testGet(Registry<T> registry) { // Paper - improve Registry
++    public <T> void testGet(Registry<T> registry) { // Paper - improve Registry
+         registry.forEach(element -> {
+             NamespacedKey key = registry.getKey(element); // Paper - improve Registry
+             assertNotNull(key); // Paper - improve Registry
+@@ -61,7 +61,7 @@ public class PerRegistryTest extends AbstractTestingBase {
+ 
+     @ParameterizedTest
+     @MethodSource("data")
+-    public <T extends Keyed> void testMatch(Registry<T> registry) { // Paper - improve Registry
++    public <T> void testMatch(Registry<T> registry) { // Paper - improve Registry
+         registry.forEach(element -> {
+             NamespacedKey key = registry.getKey(element); // Paper - improve Registry
+             assertNotNull(key); // Paper - improve Registry
+@@ -75,7 +75,7 @@ public class PerRegistryTest extends AbstractTestingBase {
+         });
+     }
+ 
+-    private <T extends Keyed> void assertSameMatchWithKeyMessage(Registry<T> registry, T element, String key) { // Paper - improve Registry
++    private <T> void assertSameMatchWithKeyMessage(Registry<T> registry, T element, String key) { // Paper - improve Registry
+         assertSame(element, registry.match(key), key);
+     }
+ 

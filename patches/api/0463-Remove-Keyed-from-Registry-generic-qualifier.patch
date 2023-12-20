@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 20 Dec 2023 02:03:10 -0800
+Subject: [PATCH] Remove Keyed from Registry generic qualifier
+
+Keyed is no longer viable for future/current registry types.
+
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index e1fb4d8cca6a9c59047b1396f5c40bea957d777a..869210dd2d5d5cd4a5416d356cf5c42d1f0081b2 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
+  *
+  * @param <T> type of item in the registry
+  */
+-public interface Registry<T extends Keyed> extends Iterable<T> {
++public interface Registry<T> extends Iterable<T> { // Paper - improve Registry
+ 
+     /**
+      * Server advancements.
+@@ -324,7 +324,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      * @param value the value to get the key of in this registry
+      * @return the key for the value
+      * @throws java.util.NoSuchElementException if the value doesn't exist in this registry
+-     * @see #getKey(Keyed)
++     * @see #getKey(Object)
+      */
+     default @NotNull NamespacedKey getKeyOrThrow(final @NotNull T value) {
+         Preconditions.checkArgument(value != null, "value cannot be null");
+@@ -344,13 +344,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      *
+      * @param value the value to get the key of in this registry
+      * @return the key for the value or null if not in the registry
+-     * @see #getKeyOrThrow(Keyed)
++     * @see #getKeyOrThrow(Object)
+      */
+     default @Nullable NamespacedKey getKey(final @NotNull T value) {
+         Preconditions.checkArgument(value != null, "value cannot be null");
+-        //noinspection ConstantValue (it might not be in the future...)
+-        if (value instanceof Keyed) {
+-            return value.getKey();
++        if (value instanceof final Keyed keyed) {
++            return keyed.getKey();
+         }
+         return null;
+     }
+diff --git a/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java b/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java
+index 178d83cb3ccff2d12477d3c13ca4f108fa17e619..8a84ff9ea87f68ffd58162035cdc37f212733080 100644
+--- a/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java
++++ b/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java
+@@ -52,7 +52,7 @@ public interface TrimMaterial extends Keyed {
+     public static final TrimMaterial AMETHYST = Registry.TRIM_MATERIAL.get(NamespacedKey.minecraft("amethyst"));
+     // Paper start
+     /**
+-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#TRIM_MATERIAL}. TrimMaterials
++     * @deprecated use {@link Registry#getKey(Object)} and {@link Registry#TRIM_MATERIAL}. TrimMaterials
+      * can exist without a key.
+      */
+     @Deprecated(forRemoval = true, since = "1.20.4")
+diff --git a/src/main/java/org/bukkit/inventory/meta/trim/TrimPattern.java b/src/main/java/org/bukkit/inventory/meta/trim/TrimPattern.java
+index e29fc42ae2b9c555db63d10d20552748e28ba60e..fe9a0d188eacec968d7371bc9d62f51809ade191 100644
+--- a/src/main/java/org/bukkit/inventory/meta/trim/TrimPattern.java
++++ b/src/main/java/org/bukkit/inventory/meta/trim/TrimPattern.java
+@@ -76,7 +76,7 @@ public interface TrimPattern extends Keyed {
+     public static final TrimPattern HOST = Registry.TRIM_PATTERN.get(NamespacedKey.minecraft("host"));
+     // Paper start
+     /**
+-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#TRIM_PATTERN}. TrimPatterns
++     * @deprecated use {@link Registry#getKey(Object)} and {@link Registry#TRIM_PATTERN}. TrimPatterns
+      * can exist without a key.
+      */
+     @Deprecated(forRemoval = true, since = "1.20.4")
