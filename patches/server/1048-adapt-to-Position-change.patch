@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 21 Dec 2023 19:11:06 -0800
+Subject: [PATCH] adapt to Position change
+
+will be squashed into original patches
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index bfb178c69026e9759e9afaebb9da141b62d1f144..82bab25ae81078574bad2b259cdee7a4f3423727 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1202,7 +1202,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks) {
+         // Paper start - Add predicate for blocks when raytracing
+-        return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, null);
++        return this.rayTraceBlocks(start.asPosition(), direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, null);
+     }
+ 
+     @Override
+@@ -1233,7 +1233,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter) {
+         // Paper start - Add predicate for blocks when raytracing
+-        return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, null);
++        return this.rayTrace(start.asPosition(), direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, null);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragon.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragon.java
+index 7b7b89e67d53ed70efae714192c5fa32977f3d9c..594fdeb10d384b0fbe967693b93e83c5c3847e09 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragon.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragon.java
+@@ -87,7 +87,7 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
+             this.getHandle().setPodium(null);
+         } else {
+             org.apache.commons.lang.Validate.isTrue(location.getWorld() == null || location.getWorld().equals(getWorld()), "You cannot set a podium in a different world to where the dragon is");
+-            this.getHandle().setPodium(io.papermc.paper.util.MCUtil.toBlockPos(location));
++            this.getHandle().setPodium(io.papermc.paper.util.MCUtil.toBlockPos(location.asPosition()));
+         }
+     }
+     // Paper end - Allow changing the EnderDragon podium
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 206520f6f20b2e48b1eefdd4edb26510b88e4c92..22f462597f5d742d7305f7c548284a6ac8db60d8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1251,7 +1251,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         org.bukkit.util.Vector direction = targetLocation.getDirection();
+         direction.multiply(9999999); // We need to move the target block.. FAR out
+         targetLocation.add(direction);
+-        this.lookAt(targetLocation, io.papermc.paper.entity.LookAnchor.EYES);
++        this.lookAt(targetLocation.asPosition(), io.papermc.paper.entity.LookAnchor.EYES);
+         // Paper end
+     }
+ 
