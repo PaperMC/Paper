@@ -1,0 +1,102 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 20 Dec 2023 02:03:05 -0800
+Subject: [PATCH] Improve Registry
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+index 253b4cf66e94faf0bc8861318ae7549f52cd29d1..9131fc3a56819ae3e2d754fbe5d8815c71ab9ab3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+@@ -84,6 +84,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+ 
+     private final Class<? super B> bukkitClass;
+     private final Map<NamespacedKey, B> cache = new HashMap<>();
++    private final Map<B, NamespacedKey> byValue = new java.util.IdentityHashMap<>(); // Paper - improve Registry
+     private final net.minecraft.core.Registry<M> minecraftRegistry;
+     private final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
+     private boolean init;
+@@ -128,6 +129,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+         }
+ 
+         this.cache.put(namespacedKey, bukkit);
++        this.byValue.put(bukkit, namespacedKey); // Paper - improve Registry
+ 
+         return bukkit;
+     }
+@@ -150,4 +152,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+ 
+         return this.minecraftToBukkit.apply(namespacedKey, minecraft);
+     }
++
++    // Paper start - improve Registry
++    @Override
++    public NamespacedKey getKey(final B value) {
++        return this.byValue.get(value);
++    }
++    // Paper end - improve Registry
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java b/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java
+index ff365d4f3745adcfe87a4aa0f8a940decccc0f16..c4a63bdd3eda590945ba0c8e7e6e8b9ba4a60ce3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java
+@@ -17,6 +17,7 @@ public class CraftTrimMaterial implements TrimMaterial {
+     @Override
+     @NotNull
+     public NamespacedKey getKey() {
++        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.TRIM_MATERIAL.getKey(this), () -> this + " doesn't have a key"); // Paper
+         return this.key;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimPattern.java b/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimPattern.java
+index 89449c09a4fbf475805f76cd31a0f9e5c1109210..c062c349bf5129cf9b5f637f09dac13b8f8c1796 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimPattern.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimPattern.java
+@@ -17,6 +17,7 @@ public class CraftTrimPattern implements TrimPattern {
+     @Override
+     @NotNull
+     public NamespacedKey getKey() {
++        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.TRIM_PATTERN.getKey(this), () -> this + " doesn't have a key"); // Paper
+         return this.key;
+     }
+ 
+diff --git a/src/test/java/org/bukkit/PerRegistryTest.java b/src/test/java/org/bukkit/PerRegistryTest.java
+index 9e553a8858750c494456f04abd7bffd1d257308c..6e3062da8840fc7118b59ddb0d6871c9a3178584 100644
+--- a/src/test/java/org/bukkit/PerRegistryTest.java
++++ b/src/test/java/org/bukkit/PerRegistryTest.java
+@@ -46,19 +46,22 @@ public class PerRegistryTest extends AbstractTestingBase {
+ 
+     @ParameterizedTest
+     @MethodSource("data")
+-    public void testGet(Registry<?> registry) {
++    public <T extends Keyed> void testGet(Registry<T> registry) { // Paper - improve Registry
+         registry.forEach(element -> {
++            NamespacedKey key = registry.getKey(element); // Paper - improve Registry
++            assertNotNull(key); // Paper - improve Registry
+             // Values in the registry should be referentially equal to what is returned with #get()
+             // This ensures that new instances are not created each time #get() is invoked
+-            assertSame(element, registry.get(element.getKey()));
++            assertSame(element, registry.get(key)); // Paper - improve Registry
+         });
+     }
+ 
+     @ParameterizedTest
+     @MethodSource("data")
+-    public void testMatch(Registry<?> registry) {
++    public <T extends Keyed> void testMatch(Registry<T> registry) { // Paper - improve Registry
+         registry.forEach(element -> {
+-            NamespacedKey key = element.getKey();
++            NamespacedKey key = registry.getKey(element); // Paper - improve Registry
++            assertNotNull(key); // Paper - improve Registry
+ 
+             this.assertSameMatchWithKeyMessage(registry, element, key.toString()); // namespace:key
+             this.assertSameMatchWithKeyMessage(registry, element, key.getKey()); // key
+@@ -69,7 +72,7 @@ public class PerRegistryTest extends AbstractTestingBase {
+         });
+     }
+ 
+-    private void assertSameMatchWithKeyMessage(Registry<?> registry, Keyed element, String key) {
++    private <T extends Keyed> void assertSameMatchWithKeyMessage(Registry<T> registry, T element, String key) { // Paper - improve Registry
+         assertSame(element, registry.match(key), key);
+     }
+ 
