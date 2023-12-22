@@ -12,9 +12,14 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 
 public abstract class ServerCommandSender implements CommandSender {
-    private final PermissibleBase perm = new PermissibleBase(this);
+    private final PermissibleBase perm;
 
-    public ServerCommandSender() {
+    protected ServerCommandSender() {
+        this.perm = new PermissibleBase(this);
+    }
+
+    protected ServerCommandSender(PermissibleBase perm) {
+        this.perm = perm;
     }
 
     @Override
