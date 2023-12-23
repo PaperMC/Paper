@@ -54,7 +54,7 @@ index 30b50e6294c6eaade5e17cfaf34600d122e6251c..0bb7694188d5fb75bb756ce75d0060ea
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8914fd7e85f35f2c8f90c38b74e1c77d011f3a73
+index 0000000000000000000000000000000000000000..622a454cf7fb69a668fcb87567f0a93da527025d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 @@ -0,0 +1,88 @@
@@ -62,9 +62,9 @@ index 0000000000000000000000000000000000000000..8914fd7e85f35f2c8f90c38b74e1c77d
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
-+import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEventImpl;
++import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
 +import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
@@ -139,8 +139,8 @@ index 0000000000000000000000000000000000000000..8914fd7e85f35f2c8f90c38b74e1c77d
 +    }
 +
 +    @SuppressWarnings("unchecked")
-+    public <O extends LifecycleEventOwner, R extends PaperRegistrar<? super O>> void callReloadableRegistrarEvent(final LifecycleEventType<O, ? extends RegistrarEvent.Reloadable<? super R>, ?> lifecycleEventType, final R registrar, final Class<? extends O> ownerClass, final RegistrarEvent.Reloadable.Cause cause) {
-+        this.callEvent((LifecycleEventType<O, RegistrarEvent.Reloadable<? super R>, ?>) lifecycleEventType, new RegistrarEventImpl.ReloadableImpl<>(registrar, ownerClass, cause), ownerClass::isInstance);
++    public <O extends LifecycleEventOwner, R extends PaperRegistrar<? super O>> void callReloadableRegistrarEvent(final LifecycleEventType<O, ? extends ReloadableRegistrarEvent<? super R>, ?> lifecycleEventType, final R registrar, final Class<? extends O> ownerClass, final ReloadableRegistrarEvent.Cause cause) {
++        this.callEvent((LifecycleEventType<O, ReloadableRegistrarEvent<? super R>, ?>) lifecycleEventType, new RegistrarEventImpl.ReloadableImpl<>(registrar, ownerClass, cause), ownerClass::isInstance);
 +    }
 +
 +    private LifecycleEventRunner() {
@@ -315,7 +315,7 @@ index 0000000000000000000000000000000000000000..06a1a2d53b330bc37eb9736d258d7023
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0a52691e822172440f0ce8df96ce3f307f50df30
+index 0000000000000000000000000000000000000000..714d32cf75b3b4a6d0d7c8d00ada74cc6dabba96
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEventImpl.java
 @@ -0,0 +1,61 @@
@@ -358,9 +358,9 @@ index 0000000000000000000000000000000000000000..0a52691e822172440f0ce8df96ce3f30
 +            '}';
 +    }
 +
-+    public static class ReloadableImpl<R extends PaperRegistrar<? super O>, O extends LifecycleEventOwner> extends RegistrarEventImpl<R, O> implements RegistrarEvent.Reloadable<R> {
++    public static class ReloadableImpl<R extends PaperRegistrar<? super O>, O extends LifecycleEventOwner> extends RegistrarEventImpl<R, O> implements ReloadableRegistrarEvent<R> {
 +
-+        private final Reloadable.Cause cause;
++        private final ReloadableRegistrarEvent.Cause cause;
 +
 +        public ReloadableImpl(final R registrar, final Class<? extends O> ownerClass, final Cause cause) {
 +            super(registrar, ownerClass);
@@ -609,10 +609,10 @@ index 0000000000000000000000000000000000000000..ccd7dae4a08303233fc3bcdfc00be967
 +    private record PrioritizedHandler<O extends LifecycleEventOwner, E extends LifecycleEvent>(RegisteredHandler<O, E> handler, OptionalInt priority) {}
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-index 08b1aab5d37a56dc42542ce15ba1f7ccd1b08400..65f1d37863696839675c56c572bc65df59c3f860 100644
+index 846bdcccf1031e41c4da29da885aa4d438507631..05f0eafae970b84821c2aeb14a9fca6931a4fe6d 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -262,6 +262,15 @@ class PaperPluginInstanceManager {
+@@ -265,6 +265,15 @@ class PaperPluginInstanceManager {
                  + pluginName + " (Is it up to date?)", ex, plugin); // Paper
          }
  

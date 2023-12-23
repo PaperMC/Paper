@@ -8,6 +8,7 @@ import io.papermc.paper.plugin.lifecycle.dummy.NonRegistrarEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
+import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.plugin.lifecycle.event.handler.configuration.MonitorLifecycleEventHandlerConfiguration;
 import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
@@ -24,7 +25,7 @@ public class TestPluginBootstrap implements PluginBootstrap {
         final LifecycleEventManager<BootstrapContext> lifecycles = context.getLifecycleManager();
         lifecycles.registerEventHandler(LifecycleEvents.DUMMY.newHandler(event -> {
             final DummyResourceRegistrar registrar = event.registrar();
-            final RegistrarEvent.Reloadable.Cause cause = event.cause();
+            final ReloadableRegistrarEvent.Cause cause = event.cause();
             System.out.println("dummy hook: " + cause);
         }));
 

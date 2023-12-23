@@ -38,10 +38,10 @@ index 08f2050356acaf74e3210416760e3873c2dafd2c..37dfdcfcbd14947e0550e7528aca68f4
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventManager.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b60edb9d36d78e327811413b55b47d62a4e8d4c7
+index 0000000000000000000000000000000000000000..05c7ee2395aaa3613df15141ce5ce1c31662050e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventManager.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,53 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
 +import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
@@ -61,15 +61,43 @@ index 0000000000000000000000000000000000000000..b60edb9d36d78e327811413b55b47d62
 +@ApiStatus.NonExtendable
 +public interface LifecycleEventManager<O extends LifecycleEventOwner> {
 +
++    /**
++     * Registers an event handler for a specific event type.
++     * <p>
++     * This is shorthand for creating a new {@link LifecycleEventHandlerConfiguration} and
++     * just passing in the {@link LifecycleEventHandler}.
++     * <pre>{@code
++     * LifecycleEventHandler<RegistrarEvent<Commands>> handler = new Handler();
++     * manager.registerEventHandler(LifecycleEvents.COMMANDS, handler);
++     * }</pre>
++     * is equivalent to
++     * <pre>{@code
++     * LifecycleEventHandler<RegistrarEvent<Commands>> handler = new Handler();
++     * manager.registerEventHandler(LifecycleEvents.COMMANDS.newHandler(handler));
++     * }</pre>
++     *
++     * @param eventType the event type to listen to
++     * @param eventHandler the handler for that event
++     * @param <E> the type of the event object
++     */
 +    default <E extends LifecycleEvent> void registerEventHandler(final @NotNull LifecycleEventType<? super O, ? extends E, ?> eventType, final @NotNull LifecycleEventHandler<? super E> eventHandler) {
 +        this.registerEventHandler(eventType.newHandler(eventHandler));
 +    }
 +
++    /**
++     * Registers an event handler configuration.
++     * <p>
++     * Configurations are created via {@link LifecycleEventType#newHandler(LifecycleEventHandler)}.
++     * Event types may have different configurations options available on the builder-like object
++     * returned by {@link LifecycleEventType#newHandler(LifecycleEventHandler)}.
++     *
++     * @param handlerConfiguration the handler configuration to register
++     */
 +    void registerEventHandler(@NotNull LifecycleEventHandlerConfiguration<? super O> handlerConfiguration);
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventOwner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventOwner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3a28d620275e65accdab919b2b3861fe6650af76
+index 0000000000000000000000000000000000000000..1160474f94476b580426cec29756c4699e163bf7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventOwner.java
 @@ -0,0 +1,24 @@
@@ -80,9 +108,9 @@ index 0000000000000000000000000000000000000000..3a28d620275e65accdab919b2b3861fe
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * Implemented by types which are considered owners
++ * Implemented by types that are considered owners
 + * of registered handlers for lifecycle events. Generally
-+ * the types which implement this interface also provide
++ * the types that implement this interface also provide
 + * a {@link LifecycleEventManager} where you can register
 + * event handlers.
 + */
@@ -139,7 +167,7 @@ index 0000000000000000000000000000000000000000..5b0960c153e673555d39b4efe47083d4
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/MonitorLifecycleEventHandlerConfiguration.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/MonitorLifecycleEventHandlerConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e75d0776becca3f97beead36720534a7ef01f30d
+index 0000000000000000000000000000000000000000..d307ede51a66279f2eeef4e5b41c71779503f0d4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/handler/configuration/MonitorLifecycleEventHandlerConfiguration.java
 @@ -0,0 +1,25 @@
@@ -150,7 +178,7 @@ index 0000000000000000000000000000000000000000..e75d0776becca3f97beead36720534a7
 +import org.jetbrains.annotations.Contract;
 +
 +/**
-+ * Handler configuration for event types which allow "monitor" handlers.
++ * Handler configuration for event types that allow "monitor" handlers.
 + *
 + * @param <O> the required owner type
 + */
@@ -161,7 +189,7 @@ index 0000000000000000000000000000000000000000..e75d0776becca3f97beead36720534a7
 +    /**
 +     * Sets this handler configuration to be considered a "monitor".
 +     * These handlers will run last and should only be used by plugins
-+     * to observe any changes from previously ran handlers.
++     * to observe changes from previously run handlers.
 +     *
 +     * @return this configuration for chaining
 +     */
@@ -233,10 +261,10 @@ index 0000000000000000000000000000000000000000..fd9c3605a8f5e6bdd31e42f18a45154d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..04a3ea76a82c13abc21066cfe515b44627fc33af
+index 0000000000000000000000000000000000000000..b5787cfb346610134e69ef07cbee15f800c3af82
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEvent.java
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.plugin.lifecycle.event.registrar;
 +
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvent;
@@ -250,7 +278,7 @@ index 0000000000000000000000000000000000000000..04a3ea76a82c13abc21066cfe515b446
 + * {@link Registrar} for an idea of what uses this event.
 + *
 + * @param <R> registrar type
-+ * @see Reloadable
++ * @see ReloadableRegistrarEvent
 + */
 +@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
@@ -263,46 +291,58 @@ index 0000000000000000000000000000000000000000..04a3ea76a82c13abc21066cfe515b446
 +     */
 +    @Contract(pure = true)
 +    @NotNull R registrar();
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1ec64c62c184bb06ec91c7f8e13b17d921435dbb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEvent.java
+@@ -0,0 +1,39 @@
++package io.papermc.paper.plugin.lifecycle.event.registrar;
++
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A lifecycle event that exposes a {@link Registrar} that is
++ * reloadable.
++ *
++ * @param <R>
++ * @see RegistrarEvent
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public
++interface ReloadableRegistrarEvent<R extends io.papermc.paper.plugin.lifecycle.event.registrar.Registrar> extends io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent<R> {
 +
 +    /**
-+     * A lifecycle event that exposes a {@link Registrar} that is
-+     * reloadable.
++     * Get the cause of this reload.
 +     *
-+     * @param <R>
-+     * @see RegistrarEvent
++     * @return the cause
 +     */
++    @Contract(pure = true)
++    @NotNull Cause cause();
++
 +    @ApiStatus.Experimental
-+    @ApiStatus.NonExtendable
-+    interface Reloadable<R extends Registrar> extends RegistrarEvent<R> {
-+
++    enum Cause {
 +        /**
-+         * Get the cause of this reload.
-+         *
-+         * @return the cause
++         * The initial load of the server.
 +         */
-+        @Contract(pure = true)
-+        @NotNull Cause cause();
-+
-+        @ApiStatus.Experimental
-+        enum Cause {
-+            /**
-+             * The initial load of the server.
-+             */
-+            INITIAL,
-+            /**
-+             * A reload, triggered via one of the various mechanisms like
-+             * the bukkit or minecraft reload commands.
-+             */
-+            RELOAD
-+        }
++        INITIAL,
++        /**
++         * A reload, triggered via one of the various mechanisms like
++         * the bukkit or minecraft reload commands.
++         */
++        RELOAD
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvent.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..78978aa8a841ceb2fac99cecde9cae375a09a103
+index 0000000000000000000000000000000000000000..9ed5d1a92836ba8de869b2d00fbe3e0c743544b7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvent.java
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,16 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
 +import org.jetbrains.annotations.ApiStatus;
@@ -310,9 +350,10 @@ index 0000000000000000000000000000000000000000..78978aa8a841ceb2fac99cecde9cae37
 +/**
 + * Base type for all Lifecycle Events.
 + * <p>
-+ * A Lifecycle Event generally is an event which
-+ * fires during times when the older event system is not
-+ * available, like during early server initialization.
++ * Lifecycle events are generally fired when the older
++ * event system is not available, like during early
++ * server initialization.
++ * @see LifecycleEvents
 + */
 +@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
@@ -320,7 +361,7 @@ index 0000000000000000000000000000000000000000..78978aa8a841ceb2fac99cecde9cae37
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b56a90705e6029034c576c1effcc5a85c740ee2b
+index 0000000000000000000000000000000000000000..e2dd4ac02e0fa0930d576ebfe493273bb3e2ca82
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventType.java
 @@ -0,0 +1,72 @@
@@ -338,7 +379,7 @@ index 0000000000000000000000000000000000000000..b56a90705e6029034c576c1effcc5a85
 +
 +/**
 + * Base type for all types of lifecycle events. Differs from
-+ * {@link LifecycleEvent} which is the actual event object whereas
++ * {@link LifecycleEvent} which is the actual event object, whereas
 + * this is an object representing the type of the event. Used
 + * to construct subtypes of {@link LifecycleEventHandlerConfiguration} for
 + * use in {@link LifecycleEventManager}
@@ -372,7 +413,7 @@ index 0000000000000000000000000000000000000000..b56a90705e6029034c576c1effcc5a85
 +
 +    /**
 +     * Lifecycle event type that supports separate registration
-+     * of handlers as "monitors" which are run last. Useful
++     * of handlers as "monitors" that are run last. Useful
 +     * if a plugin wants to only observe the changes other handlers
 +     * made.
 +     *
