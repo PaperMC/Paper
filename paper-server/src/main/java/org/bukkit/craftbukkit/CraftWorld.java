@@ -1032,6 +1032,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return Difficulty.getByValue(this.getHandle().getDifficulty().ordinal());
     }
 
+    @Override
+    public int getViewDistance() {
+        return world.getChunkSource().chunkMap.serverViewDistance;
+    }
+
+    @Override
+    public int getSimulationDistance() {
+        return world.getChunkSource().chunkMap.getDistanceManager().simulationDistance;
+    }
+
     public BlockMetadataStore getBlockMetadata() {
         return blockMetadata;
     }
