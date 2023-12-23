@@ -1544,6 +1544,13 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     int getViewDistance();
 
     /**
+     * Returns the simulation distance used for this world.
+     *
+     * @return the simulation distance used for this world
+     */
+    int getSimulationDistance();
+
+    /**
      * Gets the folder of this world on disk.
      *
      * @return The folder of this world.
