@@ -1537,6 +1537,13 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public Difficulty getDifficulty();
 
     /**
+     * Returns the view distance used for this world.
+     *
+     * @return the view distance used for this world
+     */
+    int getViewDistance();
+
+    /**
      * Gets the folder of this world on disk.
      *
      * @return The folder of this world.
