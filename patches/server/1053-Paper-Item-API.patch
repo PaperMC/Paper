@@ -1243,10 +1243,10 @@ index 0000000000000000000000000000000000000000..f7c6ed02cb0b96064dab81aef845735c
 +}
 diff --git a/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d23fc5046ec4111d0bcde1b198663daa7b22560b
+index 0000000000000000000000000000000000000000..719cd769cb5727ec4b53c2e0cbe7c5ca0037bdb2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,101 @@
 +package io.papermc.paper.item.property;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
@@ -1260,7 +1260,9 @@ index 0000000000000000000000000000000000000000..d23fc5046ec4111d0bcde1b198663daa
 +import net.minecraft.world.item.armortrim.ArmorTrim;
 +import org.bukkit.DyeColor;
 +import org.bukkit.MusicInstrument;
++import org.bukkit.Registry;
 +import org.bukkit.inventory.meta.BookMeta;
++import org.bukkit.potion.PotionType;
 +
 +public class ItemPropertyRegistration {
 +
@@ -1299,7 +1301,7 @@ index 0000000000000000000000000000000000000000..d23fc5046ec4111d0bcde1b198663daa
 +
 +        ITEM_CONTEXT.register(ItemProperties.CUSTOM_POTION_COLOR, new ColorNbt());
 +        ITEM_CONTEXT.register(ItemProperties.CUSTOM_POTION_EFFECTS, new WrappedListNbt<>(new CustomEffectNbt()));
-+        ITEM_CONTEXT.register(ItemProperties.DEFAULT_POTION_TYPE, new PotionDataNbt());
++        ITEM_CONTEXT.register(ItemProperties.DEFAULT_POTION_TYPE, new KeyedRegistryElementNbt<>(Registry.POTION::get, PotionType::getKey));
 +
 +        ITEM_CONTEXT.register(ItemProperties.MAP_ID, IntegerPrimitive.INSTANCE);
 +        ITEM_CONTEXT.register(ItemProperties.MAP_SCALE_DIRECTION, BytePrimitive.INSTANCE);
@@ -2027,10 +2029,10 @@ index 0000000000000000000000000000000000000000..aff198bfefadc38a6c82aa87c18ee6bd
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java b/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3fa142580dacfb86f7f930cef1a023244f01f12c
+index 0000000000000000000000000000000000000000..572d0717c6f8434b7ba924bac249648c10583a02
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java
-@@ -0,0 +1,207 @@
+@@ -0,0 +1,213 @@
 +package io.papermc.paper.property.nbt.pdc;
 +
 +import io.papermc.paper.property.nbt.access.CompoundAccess;
@@ -2043,6 +2045,7 @@ index 0000000000000000000000000000000000000000..3fa142580dacfb86f7f930cef1a02324
 +import org.bukkit.persistence.PersistentDataAdapterContext;
 +import org.bukkit.persistence.PersistentDataContainer;
 +import org.bukkit.persistence.PersistentDataType;
++import org.jetbrains.annotations.NotNull;
 +
 +import java.util.HashSet;
 +import java.util.Objects;
@@ -2154,6 +2157,11 @@ index 0000000000000000000000000000000000000000..3fa142580dacfb86f7f930cef1a02324
 +    @Override
 +    public boolean isEmpty() {
 +        return this.getOrReturnIfNull(CompoundTag::isEmpty, true);
++    }
++
++    @Override
++    public void copyTo(@NotNull final PersistentDataContainer other, final boolean replace) {
++        throw new UnsupportedOperationException(); // TODO
 +    }
 +
 +    @Override
@@ -3103,7 +3111,7 @@ index 0000000000000000000000000000000000000000..4c9163e54f6c37718ac465bda3a19433
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/EnchantmentList.java b/src/main/java/io/papermc/paper/property/nbt/types/EnchantmentList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fa3dcc3af5471ac3f63a39b9160503bbbb632954
+index 0000000000000000000000000000000000000000..e314d882268a5eb8e560d6848be8f42729c18120
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/EnchantmentList.java
 @@ -0,0 +1,28 @@
@@ -3131,7 +3139,7 @@ index 0000000000000000000000000000000000000000..fa3dcc3af5471ac3f63a39b9160503bb
 +
 +    @Override
 +    public Tag serialize(EnchantmentPair pair) {
-+        return EnchantmentHelper.storeEnchantment(EnchantmentHelper.getEnchantmentId(CraftEnchantment.getRaw(pair.enchantment())), pair.level());
++        return EnchantmentHelper.storeEnchantment(EnchantmentHelper.getEnchantmentId(CraftEnchantment.bukkitToMinecraft(pair.enchantment())), pair.level());
 +    }
 +
 +}
@@ -3549,35 +3557,6 @@ index 0000000000000000000000000000000000000000..d84facd8723445686d8b77631c50d588
 +    @Override
 +    public String toPrimitive(NamespacedKey type) {
 +        return type.toString();
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/property/nbt/types/PotionDataNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/PotionDataNbt.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..fc009ba9f87550da8a34735951bef2a345c89858
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/nbt/types/PotionDataNbt.java
-@@ -0,0 +1,23 @@
-+package io.papermc.paper.property.nbt.types;
-+
-+import io.papermc.paper.property.nbt.primitives.NbtPrimitiveWrapper;
-+import io.papermc.paper.property.nbt.primitives.StringPrimitive;
-+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
-+import org.bukkit.potion.PotionData;
-+
-+public class PotionDataNbt extends NbtPrimitiveWrapper<PotionData, String> {
-+
-+    public PotionDataNbt() {
-+        super(StringPrimitive.INSTANCE);
-+    }
-+
-+    @Override
-+    public PotionData fromPrimitive(String primitive) {
-+        return CraftPotionUtil.toBukkit(primitive);
-+    }
-+
-+    @Override
-+    public String toPrimitive(PotionData type) {
-+        return CraftPotionUtil.fromBukkit(type);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/StewEffectNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectNbt.java
