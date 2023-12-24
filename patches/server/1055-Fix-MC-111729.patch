@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: vicisacat <victor.branchu@gmail.com>
+Date: Sun, 24 Dec 2023 23:16:06 +0100
+Subject: [PATCH] Fix MC-111729
+
+
+diff --git a/src/main/java/net/minecraft/server/ServerScoreboard.java b/src/main/java/net/minecraft/server/ServerScoreboard.java
+index 5cc8173e845bf8d3414ac3347d25e1f6d0c65ce9..0d4660e4d64000fac3b5e4f2eeb03022de477c6b 100644
+--- a/src/main/java/net/minecraft/server/ServerScoreboard.java
++++ b/src/main/java/net/minecraft/server/ServerScoreboard.java
+@@ -144,6 +144,25 @@ public class ServerScoreboard extends Scoreboard {
+     @Override
+     public void onObjectiveAdded(Objective objective) {
+         super.onObjectiveAdded(objective);
++        // Paper start - fix MC-111729
++        if (objective.getCriteria().isReadOnly()) {
++            java.util.function.Function<ServerPlayer, Integer> function = null;
++            switch (objective.getCriteria().getName()) {
++                case "health" -> function = serverPlayer -> (int) serverPlayer.getHealth();
++                case "food" -> function = serverPlayer -> serverPlayer.getFoodData().foodLevel;
++                case "air" -> function = net.minecraft.world.entity.Entity::getAirSupply;
++                case "armor" -> function = net.minecraft.world.entity.LivingEntity::getArmorValue;
++                case "xp" -> function = serverPlayer -> serverPlayer.getScore();
++                case "level" -> function = serverPlayer -> serverPlayer.experienceLevel;
++            }
++
++            if (function != null) {
++                for (final ServerPlayer player : server.getPlayerList().players) {
++                    getOrCreatePlayerScore(player, objective, true).set(function.apply(player));
++                }
++            }
++        }
++        // Paper end - fix MC-111729
+         this.setDirty();
+     }
+ 
