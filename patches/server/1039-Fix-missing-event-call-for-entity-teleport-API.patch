@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: booky10 <boooky10@gmail.com>
+Date: Sun, 12 Nov 2023 05:09:47 +0100
+Subject: [PATCH] Fix missing event call for entity teleport API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index ed49b04d3918e46cd0769838b81cd0fae0d4e43a..17113544383fb4e6373d8f6151c536fecb00e0be 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -255,6 +255,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+             return false;
+         }
+ 
++        // Paper start - fix teleport event not being called
++        org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(
++            this, this.getLocation(), location);
++        // cancelling the event is handled differently for players and entities,
++        // entities just stop teleporting, players will still teleport to the "from" location of the event
++        if (!event.callEvent()) {
++            return false;
++        }
++        location = event.getTo();
++        // Paper end
++
+         // If this entity is riding another entity, we must dismount before teleporting.
+         if (dismount) this.entity.stopRiding(); // Paper - Teleport passenger API
+ 

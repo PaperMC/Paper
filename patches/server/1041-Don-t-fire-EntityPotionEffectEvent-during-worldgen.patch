@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 23 Nov 2023 10:33:25 -0800
+Subject: [PATCH] Don't fire EntityPotionEffectEvent during worldgen
+
+Asynchronous chunk generation provides an opportunity for mobs
+being added with generation to have effects added to them. The event
+does not support asynchronous firing.
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 7471e5ba8fc0e2d17cdd3d8b580fe7375d58cc73..bc45bd5816b1b62cdd6011f2372702451b83f22b 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1133,6 +1133,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause) {
++        // Paper start - add boolean param to optionally fire the event
++        return this.addEffect(mobeffect, entity, cause, true);
++    }
++    public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause, boolean fireEvent) {
++        // Paper end
+         // org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot // Paper - move to API
+         if (this.isTickingEffects) {
+             this.effectsToProcess.add(new ProcessableEffect(mobeffect, cause));
+@@ -1152,10 +1157,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 override = new MobEffectInstance(mobeffect1).update(mobeffect);
+             }
+ 
++            if (fireEvent) { // Paper
+             EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobeffect1, mobeffect, cause, override);
++            override = event.isOverride(); // Paper
+             if (event.isCancelled()) {
+                 return false;
+             }
++            } // Paper
+             // CraftBukkit end
+ 
+             if (mobeffect1 == null) {
+@@ -1163,7 +1171,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 this.onEffectAdded(mobeffect, entity);
+                 flag = true;
+                 // CraftBukkit start
+-            } else if (event.isOverride()) {
++            } else if (override) { // Paper
+                 mobeffect1.update(mobeffect);
+                 this.onEffectUpdated(mobeffect1, true, entity);
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Spider.java b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+index 5a9f4a022c8e7a0804543335bfe91e1328d040e6..9063f66b0497a3eb3893e307e685be692cc5c128 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Spider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+@@ -182,7 +182,7 @@ public class Spider extends Monster {
+             MobEffect mobeffectlist = entityspider_groupdataspider.effect;
+ 
+             if (mobeffectlist != null) {
+-                this.addEffect(new MobEffectInstance(mobeffectlist, -1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN); // CraftBukkit
++                this.addEffect(new MobEffectInstance(mobeffectlist, -1), null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN, world instanceof net.minecraft.server.level.ServerLevel); // CraftBukkit // Paper - only fire the effect event if this is happening in a ServerLevel
+             }
+         }
+ 

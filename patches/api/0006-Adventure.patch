@@ -1512,7 +1512,7 @@ index efb97712cc9dc7c1e12a59f5b94e4f2ad7c6b7d8..3024468af4c073324e536c1cb26beffb
                  return warning == null || warning.value();
              }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index cd000a064732ebaa8802f3d7b7ba9bd7ba101f14..30dc2f85b60877930cab68230d3259ce92c08618 100644
+index 6e7d5545e0f79d81832ccd5c8405a70d8daa256f..d59acc729ad5af515b8ef4c98a3edeb440854820 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -45,7 +45,7 @@ import org.jetbrains.annotations.Nullable;
@@ -3601,27 +3601,27 @@ index 36b436e145a7215682b692a87ab894df25752c1d..c5e8bffef736365881953161ff812c98
          return locale;
      }
 diff --git a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
-index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..62fb782baad5c80a3daaa557c0faa674c58a98cf 100644
+index 2bc81b0aa73f7f5b0352121f6bf18fa63acf7a83..eaa0548cf430bf5b58ff84e0a4403c451699db28 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
-@@ -17,7 +17,7 @@ public class PlayerLoginEvent extends PlayerEvent {
-     private final InetAddress address;
+@@ -18,7 +18,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+     private final InetAddress realAddress;
      private final String hostname;
      private Result result = Result.ALLOWED;
 -    private String message = "";
 +    private net.kyori.adventure.text.Component message = net.kyori.adventure.text.Component.empty();
-     private final InetAddress realAddress; // Spigot
  
      /**
-@@ -53,12 +53,52 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * This constructor defaults message to an empty string, and result to
+@@ -60,13 +60,53 @@ public class PlayerLoginEvent extends PlayerEvent {
       * @param result The result status for this event
       * @param message The message to be displayed if result denies login
       * @param realAddress the actual, unspoofed connecting address
 +     * @deprecated in favour of {@link #PlayerLoginEvent(Player, String, InetAddress, Result, net.kyori.adventure.text.Component, InetAddress)}
       */
 +    @Deprecated // Paper
-     public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final InetAddress realAddress) { // Spigot
-         this(player, hostname, address, realAddress); // Spigot
+     public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final InetAddress realAddress) {
+         this(player, hostname, address, realAddress);
          this.result = result;
 +        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
 +    }
@@ -3638,12 +3638,12 @@ index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..62fb782baad5c80a3daaa557c0faa674
 +     * @param message The message to be displayed if result denies login
 +     * @param realAddress the actual, unspoofed connecting address
 +     */
-+    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final InetAddress realAddress) { // Spigot
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final InetAddress realAddress) {
 +        this(player, hostname, address, realAddress); // Spigot
 +        this.result = result;
-+        this.message = message;
-+    }
-+
+         this.message = message;
+     }
+ 
 +    /**
 +     * Gets the current kick message that will be used if getResult() !=
 +     * Result.ALLOWED
@@ -3660,13 +3660,14 @@ index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..62fb782baad5c80a3daaa557c0faa674
 +     * @param message New kick message
 +     */
 +    public void kickMessage(net.kyori.adventure.text.@NotNull Component message) {
-         this.message = message;
-     }
++        this.message = message;
++    }
 +    // Paper end
- 
-     // Spigot start
++
      /**
-@@ -96,19 +136,23 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * Gets the current result of the login, as an enum
+      *
+@@ -91,19 +131,23 @@ public class PlayerLoginEvent extends PlayerEvent {
       * Result.ALLOWED
       *
       * @return Current kick message
@@ -3692,7 +3693,7 @@ index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..62fb782baad5c80a3daaa557c0faa674
      }
  
      /**
-@@ -127,7 +171,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+@@ -122,7 +166,7 @@ public class PlayerLoginEvent extends PlayerEvent {
       */
      public void allow() {
          result = Result.ALLOWED;
@@ -3701,7 +3702,7 @@ index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..62fb782baad5c80a3daaa557c0faa674
      }
  
      /**
-@@ -135,8 +179,21 @@ public class PlayerLoginEvent extends PlayerEvent {
+@@ -130,8 +174,21 @@ public class PlayerLoginEvent extends PlayerEvent {
       *
       * @param result New result for disallowing the player
       * @param message Kick message to display to the user

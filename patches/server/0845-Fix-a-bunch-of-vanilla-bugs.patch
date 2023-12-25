@@ -1,0 +1,472 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 11 Jul 2022 11:56:41 -0700
+Subject: [PATCH] Fix a bunch of vanilla bugs
+
+https://bugs.mojang.com/browse/MC-253884
+  show raid entity event to all tracking players
+
+https://bugs.mojang.com/browse/MC-253721
+  wrong msg for opping multiple players
+
+https://bugs.mojang.com/browse/MC-248588
+  respect mob griefing gamerule for draining water cauldrons
+
+https://bugs.mojang.com/browse/MC-244739
+  play goat eating sound for last item in stack
+
+https://bugs.mojang.com/browse/MC-243057
+  ignore furnace fuel slot in recipe book click
+
+https://bugs.mojang.com/browse/MC-147659
+  Some witch huts spawn the incorrect cat
+  Note: Marked as Won't Fix, makes 0 sense
+
+https://bugs.mojang.com/browse/MC-179072
+  Creepers do not defuse when switching from Survival to Creative/Spectator
+
+https://bugs.mojang.com/browse/MC-191591
+  Fix items equipped on AbstractHorse losing NBT
+
+https://bugs.mojang.com/browse/MC-259571
+  Fix changeGameModeForPlayer to use gameModeForPlayer
+
+https://bugs.mojang.com/browse/MC-262422
+  Fix lightning being able to hit spectators
+
+https://bugs.mojang.com/browse/MC-224454
+  Fix mobs attempting to pathfind through azalea blocks
+
+https://bugs.mojang.com/browse/MC-263999
+  Fix mobs breaking doors not spawning block break particles
+
+https://bugs.mojang.com/browse/MC-210802
+  by: BillyGalbreath <Blake.Galbreath@Gmail.com>
+  Fixes sheep eating blocks outside of ticking range
+
+https://bugs.mojang.com/browse/MC-123848
+  by: BillyGalbreath <blake.galbreath@gmail.com>
+  Fixes item frames dropping items above when pointing down
+
+https://bugs.mojang.com/browse/MC-84789
+  Fix wild wolves not considering bones interesting
+
+https://bugs.mojang.com/browse/MC-225381
+  Fix overfilled bundles duplicating items / being filled with air
+
+https://bugs.mojang.com/browse/MC-173303
+  Fix leashed pets teleporting to owner when loaded
+
+https://bugs.mojang.com/browse/MC-174630
+  Fix secondary beacon effect remaining after switching effect
+
+https://bugs.mojang.com/browse/MC-153086
+  Fix the beacon deactivation sound always playing when broken
+
+https://bugs.mojang.com/browse/MC-200092
+  Fix yaw being ignored for a player's first spawn pos
+
+== AT ==
+public net/minecraft/world/entity/Mob leashInfoTag
+
+Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index 9f220c99d7374ab3d9db222346694342d3e926c1..d9077127757886e5d5e8d63a46fe27f2bfba1420 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -351,7 +351,7 @@ public interface DispenseItemBehavior {
+                         }
+                     }
+                     // CraftBukkit end
+-                    ((Saddleable) list.get(0)).equipSaddle(SoundSource.BLOCKS);
++                    ((Saddleable) list.get(0)).equipSaddle(SoundSource.BLOCKS, CraftItemStack.asNMSCopy(event.getItem())); // Paper - Fix saddles losing nbt data - MC-191591
+                     // itemstack.shrink(1); // CraftBukkit - handled above
+                     this.setSuccess(true);
+                     return stack;
+diff --git a/src/main/java/net/minecraft/server/commands/DeOpCommands.java b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
+index 40490d10649e92cf622849f1bb87538102b130c7..797efca662dcc0fe7f4cf0b4b7baa235ea044f1f 100644
+--- a/src/main/java/net/minecraft/server/commands/DeOpCommands.java
++++ b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
+@@ -34,7 +34,7 @@ public class DeOpCommands {
+                 playerList.deop(gameProfile);
+                 ++i;
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.deop.success", targets.iterator().next().getName());
++                    return Component.translatable("commands.deop.success", gameProfile.getName()); // Paper - fixes MC-253721
+                 }, true);
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/commands/OpCommand.java b/src/main/java/net/minecraft/server/commands/OpCommand.java
+index 6cd6d69a20e95e344fc18ab67dc300824537a59b..2e2a7c2cf3081187da817479a9da3eb10f662a6d 100644
+--- a/src/main/java/net/minecraft/server/commands/OpCommand.java
++++ b/src/main/java/net/minecraft/server/commands/OpCommand.java
+@@ -39,7 +39,7 @@ public class OpCommand {
+                 playerList.op(gameProfile);
+                 ++i;
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.op.success", targets.iterator().next().getName());
++                    return Component.translatable("commands.op.success", gameProfile.getName()); // Paper - fixes MC-253721
+                 }, true);
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index a0603e567deeede8b4cd2ba57ded44f29239d78d..982750fd4f3f474514194df9b76388311c052b29 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -898,7 +898,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+     // Paper end
+ 
+-    boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) {
++    public boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) { // Paper - public
+         // Spigot start
+         return this.anyPlayerCloseEnoughForSpawning(pos, false);
+     }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 62b2efd9cf00ec79fb937099dd9cbfe9fc58d198..66eecf5155f8f526480511d2b3af1b6f87280474 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1028,7 +1028,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         } else {
+             AABB axisalignedbb = AABB.encapsulatingFullBlocks(blockposition1, new BlockPos(blockposition1.atY(this.getMaxBuildHeight()))).inflate(3.0D);
+             List<LivingEntity> list = this.getEntitiesOfClass(LivingEntity.class, axisalignedbb, (entityliving) -> {
+-                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition());
++                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition()) && !entityliving.isSpectator(); // Paper - Fix lightning being able to hit spectators (MC-262422)
+             });
+ 
+             if (!list.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index cd0fc31064ae5ec9a9422a7596372d94a6904186..9327f230d80046ec6a33475c2f9fb3823f887c58 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -468,14 +468,14 @@ public class ServerPlayer extends Player {
+                 BlockPos blockposition1 = PlayerRespawnLogic.getOverworldRespawnPos(world, blockposition.getX() + j2 - i, blockposition.getZ() + k2 - i);
+ 
+                 if (blockposition1 != null) {
+-                    this.moveTo(blockposition1, 0.0F, 0.0F);
++                    this.moveTo(blockposition1, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+                     if (world.noCollision(this, this.getBoundingBox(), true)) { // Paper - make sure this loads chunks, we default to NOT loading now
+                         break;
+                     }
+                 }
+             }
+         } else {
+-            this.moveTo(blockposition, 0.0F, 0.0F);
++            this.moveTo(blockposition, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+ 
+             while (!world.noCollision(this, this.getBoundingBox(), true) && this.getY() < (double) (world.getMaxBuildHeight() - 1)) { // Paper - make sure this loads chunks, we default to NOT loading now
+                 this.setPos(this.getX(), this.getY() + 1.0D, this.getZ());
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 4e1ed252bf400ec991f95b02984f01a9689f2989..805c9b9b0e89002b97e1e11e1e6e2435315b8f2c 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -92,7 +92,7 @@ public class ServerPlayerGameMode {
+                 return event; // Paper
+             }
+             // CraftBukkit end
+-            this.setGameModeForPlayer(gameMode, this.previousGameModeForPlayer);
++            this.setGameModeForPlayer(gameMode, this.gameModeForPlayer); // Paper - Fix MC-259571
+             this.player.onUpdateAbilities();
+             this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
+             this.level.updateSleepingPlayerList();
+diff --git a/src/main/java/net/minecraft/world/entity/Saddleable.java b/src/main/java/net/minecraft/world/entity/Saddleable.java
+index effe4c4fb37fe13aece70cdef4966047d4719af9..7152674d3f3fb98198585cb5ece2bb88877345f9 100644
+--- a/src/main/java/net/minecraft/world/entity/Saddleable.java
++++ b/src/main/java/net/minecraft/world/entity/Saddleable.java
+@@ -9,6 +9,11 @@ public interface Saddleable {
+     boolean isSaddleable();
+ 
+     void equipSaddle(@Nullable SoundSource sound);
++    // Paper start - Fix saddles losing nbt data - MC-191591
++    default void equipSaddle(final @Nullable SoundSource sound, final @Nullable net.minecraft.world.item.ItemStack stack) {
++        this.equipSaddle(sound);
++    }
++    // Paper end
+ 
+     default SoundEvent getSaddleSoundEvent() {
+         return SoundEvents.HORSE_SADDLE;
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/BegGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/BegGoal.java
+index 9a46007245399481fb6e749d95e9e4791e799250..2afca5652541c9166278f8f2590ddb81003ae579 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/BegGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/BegGoal.java
+@@ -65,7 +65,7 @@ public class BegGoal extends Goal {
+     private boolean playerHoldingInteresting(Player player) {
+         for(InteractionHand interactionHand : InteractionHand.values()) {
+             ItemStack itemStack = player.getItemInHand(interactionHand);
+-            if (this.wolf.isTame() && itemStack.is(Items.BONE)) {
++            if (!this.wolf.isTame() && itemStack.is(Items.BONE)) { // Paper - Fix MC-84789
+                 return true;
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+index 784a894688f98f9d0368a36d456c5c94e1ee3695..a85885ee51df585fa11ae9f8fcd67ff2a71c5a18 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+@@ -77,9 +77,10 @@ public class BreakDoorGoal extends DoorInteractGoal {
+                 return;
+             }
+             // CraftBukkit end
++            final net.minecraft.world.level.block.state.BlockState oldState = this.mob.level().getBlockState(this.doorPos); // Paper - fix MC-263999
+             this.mob.level().removeBlock(this.doorPos, false);
+             this.mob.level().levelEvent(1021, this.doorPos, 0);
+-            this.mob.level().levelEvent(2001, this.doorPos, Block.getId(this.mob.level().getBlockState(this.doorPos)));
++            this.mob.level().levelEvent(2001, this.doorPos, Block.getId(oldState)); // Paper - fix MC-263999
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+index d802985f1431be4332c07f0dab88feebedea4ce2..4e2c23ccdf4e4a4d65b291dbe20952bae1838bff 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+@@ -31,6 +31,11 @@ public class EatBlockGoal extends Goal {
+ 
+     @Override
+     public boolean canUse() {
++        // Paper start - Fix MC-210802
++        if (!((net.minecraft.server.level.ServerLevel) this.level).chunkSource.chunkMap.anyPlayerCloseEnoughForSpawning(this.mob.chunkPosition())) {
++            return false;
++        }
++        // Paper end
+         if (this.mob.getRandom().nextInt(this.mob.isBaby() ? 50 : 1000) != 0) {
+             return false;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
+index 11cc26954b4e97114b59df35a4f9b75a09132e20..0a3f7dcc0e205a85dbaa6dee1fc9ae2c7fa9e02d 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
+@@ -74,7 +74,7 @@ public class FollowOwnerGoal extends Goal {
+     }
+ 
+     private boolean unableToMove() {
+-        return this.tamable.isOrderedToSit() || this.tamable.isPassenger() || this.tamable.isLeashed();
++        return this.tamable.isOrderedToSit() || this.tamable.isPassenger() || this.tamable.isLeashed() || this.tamable.leashInfoTag != null; // Paper - Fix MC-173303
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
+index 19540fd4a7f992888fadb6501d0c8a5a7e71fcf6..e241ae250f4f04a17ef2c583d00b065a4ca56a4c 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
+@@ -21,6 +21,13 @@ public class SwellGoal extends Goal {
+         return this.creeper.getSwellDir() > 0 || livingEntity != null && this.creeper.distanceToSqr(livingEntity) < 9.0D;
+     }
+ 
++    // Paper start - Fix MC-179072
++    @Override
++    public boolean canContinueToUse() {
++        return !net.minecraft.world.entity.EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(this.creeper.getTarget()) && canUse();
++    }
++    // Paper end
++
+     @Override
+     public void start() {
+         this.creeper.getNavigation().stop();
+diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+index 363892e0c26bab89d2abaa44d8736e2fd84d292f..111a244087e24f25ba8524a46a228da10cd9498a 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -239,9 +239,10 @@ public class Goat extends Animal {
+             player.setItemInHand(hand, itemstack1);
+             return InteractionResult.sidedSuccess(this.level().isClientSide);
+         } else {
++            boolean isFood = this.isFood(itemstack); // Paper - track before stack is possibly decreased to 0 (Fixes MC-244739)
+             InteractionResult enuminteractionresult = super.mobInteract(player, hand);
+ 
+-            if (enuminteractionresult.consumesAction() && this.isFood(itemstack)) {
++            if (enuminteractionresult.consumesAction() && isFood) { // Paper
+                 this.level().playSound((Player) null, (Entity) this, this.getEatingSound(itemstack), SoundSource.NEUTRAL, 1.0F, Mth.randomBetween(this.level().random, 0.8F, 1.2F));
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index bd0165d9ca52665a52fbd9678ed895bf4bed2fe7..8fe5a4ccf474c094b8081828c93e8973cdabb6ed 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -252,7 +252,13 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+ 
+     @Override
+     public void equipSaddle(@Nullable SoundSource sound) {
+-        this.inventory.setItem(0, new ItemStack(Items.SADDLE));
++        // Paper start - Fix saddles losing nbt data - MC-191591
++        this.equipSaddle(sound, null);
++    }
++    @Override
++    public void equipSaddle(@Nullable SoundSource sound, @Nullable ItemStack stack) {
++        this.inventory.setItem(0, stack != null ? stack : new ItemStack(Items.SADDLE));
++        // Paper end
+     }
+ 
+     public void equipArmor(Player player, ItemStack stack) {
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index 63ef00eb6f93a471de1e9c2355099d9dd3a71dd9..6849429c3577f36eb699083375824ae5633f8d06 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -282,6 +282,14 @@ public class ItemFrame extends HangingEntity {
+         }
+     }
+ 
++    // Paper start - Fix MC-123848 (spawn item frame drops above block)
++    @Nullable
++    @Override
++    public net.minecraft.world.entity.item.ItemEntity spawnAtLocation(ItemStack stack) {
++        return this.spawnAtLocation(stack, getDirection().equals(Direction.DOWN) ? -0.6F : 0.0F);
++    }
++    // Paper end
++
+     private void removeFramedMap(ItemStack itemstack) {
+         this.getFramedMapId().ifPresent((i) -> {
+             MapItemSavedData worldmap = MapItem.getSavedData(i, this.level());
+diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
+index f174094febfdfdc309f1b50877be60bae8a98156..5f407535298a31a34cfe114dd863fd6a9b977707 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
++++ b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
+@@ -87,8 +87,8 @@ public class CatSpawner implements CustomSpawner {
+         if (cat == null) {
+             return 0;
+         } else {
++            cat.moveTo(pos, 0.0F, 0.0F); // Paper - move up - Fix MC-147659
+             cat.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, (SpawnGroupData)null, (CompoundTag)null);
+-            cat.moveTo(pos, 0.0F, 0.0F);
+             world.addFreshEntityWithPassengers(cat);
+             return 1;
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raids.java b/src/main/java/net/minecraft/world/entity/raid/Raids.java
+index 4a0f4c83228187a2082ad029680056b1801f77bd..31831811ce16265e9828fa34d9e67d8ac195d723 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raids.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raids.java
+@@ -134,7 +134,7 @@ public class Raids extends SavedData {
+                     // CraftBukkit end
+                 } else {
+                     player.removeEffect(MobEffects.BAD_OMEN);
+-                    player.connection.send(new ClientboundEntityEventPacket(player, (byte) 43));
++                    this.level.broadcastEntityEvent(player, net.minecraft.world.entity.EntityEvent.BAD_OMEN_TRIGGERED /* (byte) 43 */); // Paper - Fix MC-253884
+                 }
+ 
+                 if (flag) {
+@@ -149,7 +149,7 @@ public class Raids extends SavedData {
+                     }
+                     // CraftBukkit end
+                     raid.absorbBadOmen(player);
+-                    player.connection.send(new ClientboundEntityEventPacket(player, (byte) 43));
++                    this.level.broadcastEntityEvent(player, net.minecraft.world.entity.EntityEvent.BAD_OMEN_TRIGGERED /* (byte) 43 */); // Paper - Fix MC-253884
+                     if (!raid.hasFirstWaveSpawned()) {
+                         player.awardStat(Stats.RAID_TRIGGER);
+                         CriteriaTriggers.BAD_OMEN.trigger(player);
+diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+index 685c35419de7e3c4e854a28118a243e65250ef59..0b1a0be964d799f1706c273092dc653fa04e8014 100644
+--- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+@@ -178,6 +178,11 @@ public class BeaconMenu extends AbstractContainerMenu {
+     // Paper end
+ 
+     public void updateEffects(Optional<MobEffect> primary, Optional<MobEffect> secondary) {
++        // Paper start - fix MC-174630 - validate secondary power
++        if (secondary.isPresent() && secondary.get() != net.minecraft.world.effect.MobEffects.REGENERATION && (primary.isPresent() && secondary.get() != primary.get())) {
++            secondary = Optional.empty();
++        }
++        // Paper end
+         if (this.paymentSlot.hasItem()) {
+             // Paper start
+             io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
+diff --git a/src/main/java/net/minecraft/world/item/BundleItem.java b/src/main/java/net/minecraft/world/item/BundleItem.java
+index 10b0720ce7eed58fa3cd8c8051efa6225f7d73e1..ac0bc87f60c4e1562d1301522183e449558d42f8 100644
+--- a/src/main/java/net/minecraft/world/item/BundleItem.java
++++ b/src/main/java/net/minecraft/world/item/BundleItem.java
+@@ -52,7 +52,7 @@ public class BundleItem extends Item {
+                 });
+             } else if (itemStack.getItem().canFitInsideContainerItems()) {
+                 int i = (64 - getContentWeight(stack)) / getWeight(itemStack);
+-                int j = add(stack, slot.safeTake(itemStack.getCount(), i, player));
++                int j = add(stack, slot.safeTake(itemStack.getCount(), Math.max(0, i), player)); // Paper - prevent item addition on overfilled bundles - safeTake will yield EMPTY for amount == 0.
+                 if (j > 0) {
+                     this.playInsertSound(player);
+                 }
+@@ -121,7 +121,7 @@ public class BundleItem extends Item {
+             int i = getContentWeight(bundle);
+             int j = getWeight(stack);
+             int k = Math.min(stack.getCount(), (64 - i) / j);
+-            if (k == 0) {
++            if (k <= 0) { // Paper - prevent item addition on overfilled bundles
+                 return 0;
+             } else {
+                 ListTag listTag = compoundTag.getList("Items", 10);
+diff --git a/src/main/java/net/minecraft/world/item/SaddleItem.java b/src/main/java/net/minecraft/world/item/SaddleItem.java
+index ca6a2b9840c9ade87ec8effab01d4f184fe876b7..43129ecefcc8beccbcf2978f262b1ce8cf49ca43 100644
+--- a/src/main/java/net/minecraft/world/item/SaddleItem.java
++++ b/src/main/java/net/minecraft/world/item/SaddleItem.java
+@@ -18,7 +18,7 @@ public class SaddleItem extends Item {
+         if (entity instanceof Saddleable saddleable) {
+             if (entity.isAlive() && !saddleable.isSaddled() && saddleable.isSaddleable()) {
+                 if (!user.level().isClientSide) {
+-                    saddleable.equipSaddle(SoundSource.NEUTRAL);
++                    saddleable.equipSaddle(SoundSource.NEUTRAL, stack.copyWithCount(1)); // Paper - Fix saddles losing nbt data - MC-191591
+                     entity.level().gameEvent(entity, GameEvent.EQUIP, entity.position());
+                     stack.shrink(1);
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
+index 6e45582f8ea7dd2a46f58369c5581764538bff0d..3ecc92439fc85d224ff52f41c5e34079e042a5e6 100644
+--- a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
+@@ -51,4 +51,11 @@ public class AzaleaBlock extends BushBlock implements BonemealableBlock {
+     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
+         TreeGrower.AZALEA.growTree(world, world.getChunkSource().getGenerator(), pos, state, random);
+     }
++
++    // Paper start - Fix MC-224454
++    @Override
++    public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, net.minecraft.world.level.pathfinder.PathComputationType type) {
++        return false;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+index 93f5e583635a2addeabf2adff9374dcec0b66ee4..843926beb1edd897724b512ad915894fa4a2da6c 100644
+--- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+@@ -68,7 +68,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
+         if (!world.isClientSide && entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
+             // CraftBukkit start
+-            if (entity.mayInteract(world, pos)) {
++            if ((entity instanceof net.minecraft.world.entity.player.Player || world.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) && entity.mayInteract(world, pos)) { // Paper - Fixes MC-248588
+                 if (!this.handleEntityOnFireInsideWithEvent(state, world, pos, entity)) { // Paper - fix powdered snow cauldron extinguishing entities
+                     return;
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+index 3530040df9e4999ea4ccc96b5df5767fdb330fe5..1a949a682a8f18ec0e5e5a60e83315441b935416 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+@@ -674,13 +674,10 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+ 
+     @Override
+     public void fillStackedContents(StackedContents finder) {
+-        Iterator iterator = this.items.iterator();
+-
+-        while (iterator.hasNext()) {
+-            ItemStack itemstack = (ItemStack) iterator.next();
+-
+-            finder.accountStack(itemstack);
+-        }
++        // Paper start - don't account fuel stack (fixes MC-243057)
++        finder.accountStack(this.items.get(SLOT_INPUT));
++        finder.accountStack(this.items.get(SLOT_RESULT));
++        // Paper end
+ 
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index ca91b82a21a46b1a62564b5157882a845eae8737..db38c178543e221251ae8c6ad618ad9372af7f40 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -291,7 +291,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, worldPosition);
+         new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
+         // Paper end
++        // Paper start - fix MC-153086
++        if (this.levels > 0 && !this.beamSections.isEmpty()) {
+         BeaconBlockEntity.playSound(this.level, this.worldPosition, SoundEvents.BEACON_DEACTIVATE);
++        }
++        // Paper end
+         super.setRemoved();
+     }
+ 
