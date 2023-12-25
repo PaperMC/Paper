@@ -7,14 +7,14 @@ Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index cc8f297a71eb75b3388ff1cb21a297e268894aac..cbe75dc937409af36528e4eef6f257f323cd4d12 100644
+index cc8f297a71eb75b3388ff1cb21a297e268894aac..4f5ac0c5fe6494d5fe5caa8ed5077a83cf43fa87 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -11,12 +11,28 @@ java {
  
  val annotationsVersion = "24.0.1"
  val bungeeCordChatVersion = "1.20-R0.1"
-+val adventureVersion = "4.14.0"
++val adventureVersion = "4.15.0"
 +val apiAndDocs: Configuration by configurations.creating {
 +    attributes {
 +        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
@@ -2138,7 +2138,7 @@ index 8532b8484d5a493c1c37ad7508597f624f1831c8..978431fd88cfb7d42fcdea8c904633df
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac5ba5e564 100644
+index a5046b416fa26d51974de0866d3af190ee197c3a..01fe25d7925d7c014524ae9c26b62fade5670e64 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -52,7 +52,41 @@ import org.jetbrains.annotations.Nullable;
@@ -2481,15 +2481,25 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
       */
      @Deprecated
      public void setTexturePack(@NotNull String url);
-@@ -1377,6 +1588,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1345,7 +1556,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException Thrown if the URL is null.
+      * @throws IllegalArgumentException Thrown if the URL is too long. The
+      *     length restriction is an implementation specific arbitrary value.
++     * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
+      */
++    @Deprecated // Paper - adventure
+     public void setResourcePack(@NotNull String url);
+ 
+     /**
+@@ -1377,6 +1590,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *     pack correctly.
       * </ul>
       *
-+     * @deprecated in favour of {@link #setResourcePack(UUID, String, byte[], net.kyori.adventure.text.Component, boolean)}
++     * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
       * @param url The URL from which the client will download the resource
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
-@@ -1389,6 +1601,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1389,6 +1603,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
@@ -2497,15 +2507,22 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
      public void setResourcePack(@NotNull String url, @Nullable byte[] hash);
  
      /**
-@@ -1419,6 +1632,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1413,12 +1628,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
+      *     the player loaded the pack!
+      * <li>To remove a resource pack you can use
+-     *     {@link #removeResourcePack(UUID)} or {@link #removeResourcePacks()}.
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
+      * <li>The request is sent with empty string as the hash when the hash is
+      *     not provided. This might result in newer versions not loading the
       *     pack correctly.
       * </ul>
       *
-+     * @deprecated in favour of {@link #setResourcePack(UUID, String, byte[], net.kyori.adventure.text.Component, boolean)}
++     * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
       * @param url The URL from which the client will download the resource
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
-@@ -1432,8 +1646,54 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1432,8 +1648,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
@@ -2534,6 +2551,8 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
 +     *     case this method will have no affect on them. Use the
 +     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
 +     *     the player loaded the pack!
++     * <li>To remove a resource pack you can use
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
 +     * <li>The request is sent with empty string as the hash when the hash is
 +     *     not provided. This might result in newer versions not loading the
 +     *     pack correctly.
@@ -2551,6 +2570,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
 +     *     length restriction is an implementation specific arbitrary value.
 +     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
 +     *     long.
++     * @see #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)
 +     */
 +    default void setResourcePack(final @NotNull String url, final byte @Nullable [] hash, final net.kyori.adventure.text.@Nullable Component prompt) {
 +        this.setResourcePack(url, hash, prompt, false);
@@ -2560,17 +2580,39 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
      /**
       * Request that the player's client download and switch resource packs.
       * <p>
-@@ -1462,6 +1722,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1456,7 +1721,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
+      *     the player loaded the pack!
+      * <li>To remove a resource pack you can use
+-     *     {@link #removeResourcePack(UUID)} or {@link #removeResourcePacks()}.
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
+      * <li>The request is sent with empty string as the hash when the hash is
+      *     not provided. This might result in newer versions not loading the
       *     pack correctly.
-      * </ul>
-      *
-+     * @deprecated in favour of {@link #setResourcePack(String, byte[], net.kyori.adventure.text.Component, boolean)}
-      * @param url The URL from which the client will download the resource
-      *     pack. The string must contain only US-ASCII characters and should
-      *     be encoded as per RFC 1738.
-@@ -1521,8 +1782,56 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1475,7 +1740,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     length restriction is an implementation specific arbitrary value.
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
++     * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
+      */
++    @Deprecated // Paper - adventure
+     public void setResourcePack(@NotNull String url, @Nullable byte[] hash, boolean force);
+ 
+     /**
+@@ -1500,7 +1767,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
+      *     the player loaded the pack!
+      * <li>To remove a resource pack you can use
+-     *     {@link #removeResourcePack(UUID)} or {@link #removeResourcePacks()}.
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
+      * <li>The request is sent with empty string as the hash when the hash is
+      *     not provided. This might result in newer versions not loading the
+      *     pack correctly.
+@@ -1520,9 +1787,61 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     length restriction is an implementation specific arbitrary value.
+      * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
+      *     long.
++     * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
       */
 +    @Deprecated // Paper
      public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
@@ -2588,8 +2630,8 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
 +     * perform a file size check against the response content to determine if
 +     * the resource pack has changed and needs to be downloaded again. When
 +     * this request is sent for the very first time from a given server, the
-+     * client will first display a confirmation GUI to the player before
-+     * proceeding with the download.
++     * client will first display a confirmation GUI with a custom prompt
++     * to the player before proceeding with the download.
 +     * <p>
 +     * Notes:
 +     * <ul>
@@ -2597,6 +2639,8 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
 +     *     case this method will have no affect on them. Use the
 +     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
 +     *     the player loaded the pack!
++     * <li>To remove a resource pack you can use
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
 +     * <li>The request is sent with empty string as the hash when the hash is
 +     *     not provided. This might result in newer versions not loading the
 +     *     pack correctly.
@@ -2616,6 +2660,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
 +     *     length restriction is an implementation specific arbitrary value.
 +     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
 +     *     long.
++     * @see #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)
 +     */
 +    default void setResourcePack(final @NotNull String url, final byte @Nullable [] hash, final net.kyori.adventure.text.@Nullable Component prompt, final boolean force) {
 +        this.setResourcePack(UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, hash, prompt, force);
@@ -2625,11 +2670,20 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
      /**
       * Request that the player's client download and switch resource packs.
       * <p>
-@@ -1566,9 +1875,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1545,7 +1864,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
+      *     the player loaded the pack!
+      * <li>To remove a resource pack you can use
+-     *     {@link #removeResourcePack(UUID)} or {@link #removeResourcePacks()}.
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
+      * <li>The request is sent with empty string as the hash when the hash is
+      *     not provided. This might result in newer versions not loading the
+      *     pack correctly.
+@@ -1566,21 +1885,74 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *     length restriction is an implementation specific arbitrary value.
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
-+     * @deprecated use {@link #setResourcePack(UUID, String, byte[], net.kyori.adventure.text.Component, boolean)} )}
++     * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
       */
 +    @Deprecated // Paper - adventure
      public void setResourcePack(@NotNull UUID id, @NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
@@ -2656,6 +2710,8 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
 +     *     case this method will have no affect on them. Use the
 +     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
 +     *     the player loaded the pack!
++     * <li>To remove a resource pack you can use
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
 +     * <li>The request is sent with empty string as the hash when the hash is
 +     *     not provided. This might result in newer versions not loading the
 +     *     pack correctly.
@@ -2676,6 +2732,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
 +     *     length restriction is an implementation specific arbitrary value.
 +     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
 +     *     long.
++     * @see #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)
 +     */
 +    void setResourcePack(@NotNull UUID uuid, @NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
 +    // Paper end
@@ -2683,7 +2740,21 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
      /**
       * Request that the player's client remove a resource pack sent by the
       * server.
-@@ -1718,7 +2075,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param id the id of the resource pack.
+      * @throws IllegalArgumentException If the ID is null.
++     * @see #removeResourcePacks(UUID, UUID...)
+      */
+     public void removeResourcePack(@NotNull UUID id);
+ 
+     /**
+      * Request that the player's client remove all loaded resource pack sent by
+      * the server.
++     * @see #clearResourcePacks()
+      */
+     public void removeResourcePacks();
+ 
+@@ -1718,7 +2090,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param title Title text
       * @param subtitle Subtitle text
@@ -2692,7 +2763,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
       */
      @Deprecated
      public void sendTitle(@Nullable String title, @Nullable String subtitle);
-@@ -1737,7 +2094,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1737,7 +2109,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param fadeIn time in ticks for titles to fade in. Defaults to 10.
       * @param stay time in ticks for titles to stay. Defaults to 70.
       * @param fadeOut time in ticks for titles to fade out. Defaults to 20.
@@ -2702,7 +2773,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
      public void sendTitle(@Nullable String title, @Nullable String subtitle, int fadeIn, int stay, int fadeOut);
  
      /**
-@@ -1964,6 +2323,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1964,6 +2338,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public int getClientViewDistance();
  
@@ -2717,7 +2788,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
      /**
       * Gets the player's estimated ping in milliseconds.
       *
-@@ -1989,8 +2356,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1989,8 +2371,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * they wish.
       *
       * @return the player's locale
@@ -2728,7 +2799,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
      public String getLocale();
  
      /**
-@@ -2042,6 +2411,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2042,6 +2426,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public boolean isAllowingServerListings();
  
@@ -2743,7 +2814,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
      // Spigot start
      public class Spigot extends Entity.Spigot {
  
-@@ -2073,11 +2450,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2073,11 +2465,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -2757,7 +2828,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
          @Override
          public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
-@@ -2088,7 +2467,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2088,7 +2482,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param component the components to send
@@ -2767,7 +2838,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -2098,7 +2479,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2098,7 +2494,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param components the components to send
@@ -2777,7 +2848,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -2109,7 +2492,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2109,7 +2507,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param component the components to send
@@ -2787,7 +2858,7 @@ index a5046b416fa26d51974de0866d3af190ee197c3a..6b93a62ca4e25a4b3dfcf95e29a8cfac
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable java.util.UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -2120,7 +2505,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2120,7 +2520,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param components the components to send

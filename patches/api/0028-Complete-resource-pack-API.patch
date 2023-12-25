@@ -5,20 +5,10 @@ Subject: [PATCH] Complete resource pack API
 
 
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index fd557f0ee33748362ee97e24822509a6020a2c33..2995dd0ec8f6e49f850865bbc9fc7e0f0e66f121 100644
+index f9a39faf656af1cd5e16513bab21afa6ab972556..1ec40d90b697af5759c5cd0bc8c2c3e76f8491eb 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1717,7 +1717,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      * @throws IllegalArgumentException Thrown if the URL is null.
-      * @throws IllegalArgumentException Thrown if the URL is too long. The
-      *     length restriction is an implementation specific arbitrary value.
-+     * @deprecated use {@link #setResourcePack(String, String)}
-      */
-+    @Deprecated // Paper
-     public void setResourcePack(@NotNull String url);
- 
-     /**
-@@ -2087,6 +2089,165 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2100,6 +2100,180 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      void setResourcePack(@NotNull UUID uuid, @NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
      // Paper end
  
@@ -39,6 +29,8 @@ index fd557f0ee33748362ee97e24822509a6020a2c33..2995dd0ec8f6e49f850865bbc9fc7e0f
 +     * <ul>
 +     * <li>Players can disable server resources on their client, in which
 +     *     case this method will have no affect on them.
++     * <li>To remove a resource pack you can use
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
 +     * </ul>
 +     *
 +     * @param url The URL from which the client will download the resource
@@ -70,6 +62,8 @@ index fd557f0ee33748362ee97e24822509a6020a2c33..2995dd0ec8f6e49f850865bbc9fc7e0f
 +     * <ul>
 +     * <li>Players can disable server resources on their client, in which
 +     *     case this method will have no affect on them.
++     * <li>To remove a resource pack you can use
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
 +     * </ul>
 +     *
 +     * @param url The URL from which the client will download the resource
@@ -102,6 +96,8 @@ index fd557f0ee33748362ee97e24822509a6020a2c33..2995dd0ec8f6e49f850865bbc9fc7e0f
 +     * <ul>
 +     * <li>Players can disable server resources on their client, in which
 +     *     case this method will have no affect on them.
++     * <li>To remove a resource pack you can use
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
 +     * </ul>
 +     *
 +     * @param url The URL from which the client will download the resource
@@ -135,6 +131,8 @@ index fd557f0ee33748362ee97e24822509a6020a2c33..2995dd0ec8f6e49f850865bbc9fc7e0f
 +     * <ul>
 +     * <li>Players can disable server resources on their client, in which
 +     *     case this method will have no affect on them.
++     * <li>To remove a resource pack you can use
++     *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
 +     * </ul>
 +     *
 +     * @param uuid Unique resource pack ID.
@@ -149,7 +147,14 @@ index fd557f0ee33748362ee97e24822509a6020a2c33..2995dd0ec8f6e49f850865bbc9fc7e0f
 +     * @throws IllegalArgumentException Thrown if the URL is too long. The
 +     *     length restriction is an implementation specific arbitrary value.
 +     */
-+    void setResourcePack(@NotNull UUID uuid, @NotNull String url, @NotNull String hash, net.kyori.adventure.text.@Nullable Component resourcePackPrompt, boolean required);
++    default void setResourcePack(final @NotNull UUID uuid, final @NotNull String url, final @NotNull String hash, final net.kyori.adventure.text.@Nullable Component resourcePackPrompt, final boolean required) {
++        this.sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest.resourcePackRequest()
++            .required(required)
++            .replace(true)
++            .prompt(resourcePackPrompt)
++            .packs(net.kyori.adventure.resource.ResourcePackInfo.resourcePackInfo(uuid, java.net.URI.create(url), hash))
++        );
++    }
 +
 +    /**
 +     * Gets the most recent resource pack status from the player.

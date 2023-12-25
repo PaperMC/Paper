@@ -14,10 +14,10 @@ Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..89d24905a91b3844ff95fe1d9252464a896906a7
+index 0000000000000000000000000000000000000000..215ccf169d4e8522da5495768d33cf3e5cd92690
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
-@@ -0,0 +1,393 @@
+@@ -0,0 +1,418 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -39,6 +39,7 @@ index 0000000000000000000000000000000000000000..89d24905a91b3844ff95fe1d9252464a
 +import net.kyori.adventure.nbt.api.BinaryTagHolder;
 +import net.kyori.adventure.text.BlockNBTComponent;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.ComponentLike;
 +import net.kyori.adventure.text.EntityNBTComponent;
 +import net.kyori.adventure.text.KeybindComponent;
 +import net.kyori.adventure.text.NBTComponent;
@@ -48,6 +49,7 @@ index 0000000000000000000000000000000000000000..89d24905a91b3844ff95fe1d9252464a
 +import net.kyori.adventure.text.StorageNBTComponent;
 +import net.kyori.adventure.text.TextComponent;
 +import net.kyori.adventure.text.TranslatableComponent;
++import net.kyori.adventure.text.TranslationArgument;
 +import net.kyori.adventure.text.event.ClickEvent;
 +import net.kyori.adventure.text.event.HoverEvent;
 +import net.kyori.adventure.text.format.NamedTextColor;
@@ -76,6 +78,9 @@ index 0000000000000000000000000000000000000000..89d24905a91b3844ff95fe1d9252464a
 +import static com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec;
 +import static java.util.function.Function.identity;
 +import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.TranslationArgument.bool;
++import static net.kyori.adventure.text.TranslationArgument.component;
++import static net.kyori.adventure.text.TranslationArgument.numeric;
 +import static net.minecraft.util.ExtraCodecs.recursive;
 +import static net.minecraft.util.ExtraCodecs.strictOptionalField;
 +
@@ -246,16 +251,36 @@ index 0000000000000000000000000000000000000000..89d24905a91b3844ff95fe1d9252464a
 +        return instance.group(Codec.STRING.fieldOf("text").forGetter(TextComponent::content)).apply(instance, Component::text);
 +    });
 +    static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.validate(ExtraCodecs.JAVA, TranslatableContents::filterAllowedArguments);
-+    static final Codec<Component> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).xmap((primitiveOrComponent) -> {
-+        // just toString all primitives (not 100% correct to vanilla spec)
-+        // vanilla allows primitive translatable args, but adventure doesn't (in 4.14)
-+        return primitiveOrComponent.map(o -> text(String.valueOf(o)), identity());
-+    }, Either::right);
++    static final Codec<TranslationArgument> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).flatXmap((primitiveOrComponent) -> {
++        return primitiveOrComponent.map(o -> {
++            final TranslationArgument arg;
++            if (o instanceof String s) {
++                arg = component(text(s));
++            } else if (o instanceof Boolean bool) {
++                arg = bool(bool);
++            } else if (o instanceof Number num) {
++                arg = numeric(num);
++            } else {
++                return DataResult.error(() -> o + " is not a valid translation argument primitive");
++            }
++            return DataResult.success(arg);
++        }, component -> DataResult.success(component(component)));
++    }, translationArgument -> {
++        if (translationArgument.value() instanceof Number || translationArgument.value() instanceof Boolean) {
++            return DataResult.success(Either.left(translationArgument.value()));
++        }
++        final Component component = translationArgument.asComponent();
++        final @Nullable String collapsed = tryCollapseToString(component);
++        if (collapsed != null) {
++            return DataResult.success(Either.left(collapsed)); // attempt to collapse all text components to strings
++        }
++        return DataResult.success(Either.right(component));
++    });
 +    static final MapCodec<TranslatableComponent> TRANSLATABLE_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
 +            Codec.STRING.fieldOf("translate").forGetter(TranslatableComponent::key),
 +            Codec.STRING.optionalFieldOf("fallback").forGetter(nullableGetter(TranslatableComponent::fallback)),
-+            strictOptionalField(ARG_CODEC.listOf(), "with").forGetter(c -> c.args().isEmpty() ? Optional.empty() : Optional.of(c.args()))
++            strictOptionalField(ARG_CODEC.listOf(), "with").forGetter(c -> c.arguments().isEmpty() ? Optional.empty() : Optional.of(c.arguments()))
 +        ).apply(instance, (key, fallback, components) -> {
 +            return Component.translatable(key, components.orElse(Collections.emptyList())).fallback(fallback.orElse(null));
 +        });
@@ -497,10 +522,10 @@ index 0000000000000000000000000000000000000000..4b01e1249276a26aa82eb2d70f4b1223
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java b/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..465d634dae2e94a488c03376c3ec59a242c8e59b
+index 0000000000000000000000000000000000000000..23bd6d2d8fed5a3491e856f8b875456dd29f8aaf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.adventure;
 +
 +import com.google.common.collect.Collections2;
@@ -518,6 +543,7 @@ index 0000000000000000000000000000000000000000..465d634dae2e94a488c03376c3ec59a2
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.NotNull;
 +
++@SuppressWarnings("UnstableApiUsage")
 +public final class BossBarImplementationImpl implements BossBar.Listener, BossBarImplementation {
 +    private final BossBar bar;
 +    private ServerBossEvent vanilla;
@@ -1221,10 +1247,10 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914260d4c50
+index 0000000000000000000000000000000000000000..2e757cd9b01ac7eba1e4723a6e21dcea9d062483
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,397 @@
+@@ -0,0 +1,401 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -1239,6 +1265,7 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +import java.util.function.BiConsumer;
 +import java.util.regex.Matcher;
 +import java.util.regex.Pattern;
++import java.util.stream.StreamSupport;
 +import net.kyori.adventure.bossbar.BossBar;
 +import net.kyori.adventure.inventory.Book;
 +import net.kyori.adventure.key.Key;
@@ -1246,6 +1273,7 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +import net.kyori.adventure.sound.Sound;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.TranslatableComponent;
++import net.kyori.adventure.text.TranslationArgument;
 +import net.kyori.adventure.text.flattener.ComponentFlattener;
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.serializer.ComponentSerializer;
@@ -1298,7 +1326,7 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +            final @NotNull String translated = Language.getInstance().getOrDefault(translatable.key(), fallback != null ? fallback : translatable.key());
 +
 +            final Matcher matcher = LOCALIZATION_PATTERN.matcher(translated);
-+            final List<Component> args = translatable.args();
++            final List<TranslationArgument> args = translatable.arguments();
 +            int argPosition = 0;
 +            int lastIdx = 0;
 +            while (matcher.find()) {
@@ -1314,7 +1342,7 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +                    try {
 +                        final int idx = Integer.parseInt(argIdx) - 1;
 +                        if (idx < args.size()) {
-+                            consumer.accept(args.get(idx));
++                            consumer.accept(args.get(idx).asComponent());
 +                        }
 +                    } catch (final NumberFormatException ex) {
 +                        // ignore, drop the format placeholder
@@ -1322,7 +1350,7 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +                } else {
 +                    final int idx = argPosition++;
 +                    if (idx < args.size()) {
-+                        consumer.accept(args.get(idx));
++                        consumer.accept(args.get(idx).asComponent());
 +                    }
 +                }
 +            }
@@ -1375,7 +1403,7 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +        return component == null ? Component.empty() : WRAPPER_AWARE_SERIALIZER.deserialize(component);
 +    }
 +
-+    public static ArrayList<Component> asAdventure(final List<net.minecraft.network.chat.Component> vanillas) {
++    public static ArrayList<Component> asAdventure(final List<? extends net.minecraft.network.chat.Component> vanillas) {
 +        final ArrayList<Component> adventures = new ArrayList<>(vanillas.size());
 +        for (final net.minecraft.network.chat.Component vanilla : vanillas) {
 +            adventures.add(asAdventure(vanilla));
@@ -1405,7 +1433,7 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +        return WRAPPER_AWARE_SERIALIZER.serialize(component);
 +    }
 +
-+    public static List<net.minecraft.network.chat.Component> asVanilla(final List<Component> adventures) {
++    public static List<net.minecraft.network.chat.Component> asVanilla(final List<? extends Component> adventures) {
 +        final List<net.minecraft.network.chat.Component> vanillas = new ArrayList<>(adventures.size());
 +        for (final Component adventure : adventures) {
 +            vanillas.add(asVanilla(adventure));
@@ -1415,6 +1443,11 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +
 +    public static String asJsonString(final Component component, final Locale locale) {
 +        return GsonComponentSerializer.gson().serialize(translated(component, locale));
++    }
++
++    public static boolean hasAnyTranslations() {
++        return StreamSupport.stream(GlobalTranslator.translator().sources().spliterator(), false)
++            .anyMatch(t -> t.hasAnyTranslations().toBooleanOrElse(true));
 +    }
 +
 +    private static final Map<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = new ConcurrentHashMap<>();
@@ -1434,6 +1467,7 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +    }
 +
 +    private static Component translated(final Component component, final Locale locale) {
++        //noinspection ConstantValue
 +        return GlobalTranslator.render(
 +            component,
 +            // play it safe
@@ -1452,7 +1486,7 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +        }
 +        try {
 +            return asAdventure(ComponentUtils.updateForEntity(css, asVanilla(component), scoreboardSubject == null ? null : ((CraftEntity) scoreboardSubject).getHandle(), 0));
-+        } catch (CommandSyntaxException e) {
++        } catch (final CommandSyntaxException e) {
 +            throw new IOException(e);
 +        } finally {
 +            if (css != null && previous != null) {
@@ -1534,10 +1568,6 @@ index 0000000000000000000000000000000000000000..c10c0ffa29332d73328f088935a0b914
 +    }
 +
 +    private static String validateField(final String content, final int length, final String name) {
-+        if (content == null) {
-+            return content;
-+        }
-+
 +        final int actual = content.length();
 +        if (actual > length) {
 +            throw new IllegalArgumentException("Field '" + name + "' has a maximum length of " + length + " but was passed '" + content + "', which was " + actual + " characters long.");
@@ -1792,10 +1822,10 @@ index 0000000000000000000000000000000000000000..23432eea862c6df716d7726a32da3a06
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c3631efda9c7fa531a8a9f18fbee7b5f8655382b
+index 0000000000000000000000000000000000000000..8323f135d6bf2e1f12525e05094ffa3f2420e7e1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,20 @@
 +package io.papermc.paper.adventure.providers;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
@@ -1805,6 +1835,7 @@ index 0000000000000000000000000000000000000000..c3631efda9c7fa531a8a9f18fbee7b5f
 +import org.jetbrains.annotations.NotNull;
 +import org.slf4j.LoggerFactory;
 +
++@SuppressWarnings("UnstableApiUsage")
 +public class ComponentLoggerProviderImpl implements ComponentLoggerProvider {
 +    @Override
 +    public @NotNull ComponentLogger logger(@NotNull LoggerHelper helper, @NotNull String name) {
@@ -1921,26 +1952,26 @@ index 0000000000000000000000000000000000000000..25fd6992c869c841b1b1b3240f4d5249
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/providers/NBTLegacyHoverEventSerializer.java b/src/main/java/io/papermc/paper/adventure/providers/NBTLegacyHoverEventSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b3514a3e415f3444a235f1a45f0c53741264e516
+index 0000000000000000000000000000000000000000..202b964e7e67717904cd3f00b6af6ad7f2a5c90e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/providers/NBTLegacyHoverEventSerializer.java
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,91 @@
 +package io.papermc.paper.adventure.providers;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import java.io.IOException;
++import java.util.UUID;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.nbt.api.BinaryTagHolder;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.event.HoverEvent;
-+import net.kyori.adventure.text.serializer.gson.LegacyHoverEventSerializer;
++import net.kyori.adventure.text.serializer.json.LegacyHoverEventSerializer;
 +import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.Tag;
 +import net.minecraft.nbt.TagParser;
-+
-+import java.io.IOException;
-+import java.util.UUID;
++import org.intellij.lang.annotations.Subst;
 +
 +final class NBTLegacyHoverEventSerializer implements LegacyHoverEventSerializer {
 +    public static final NBTLegacyHoverEventSerializer INSTANCE = new NBTLegacyHoverEventSerializer();
@@ -1963,8 +1994,9 @@ index 0000000000000000000000000000000000000000..b3514a3e415f3444a235f1a45f0c5374
 +        try {
 +            final CompoundTag contents = SNBT_CODEC.decode(raw);
 +            final CompoundTag tag = contents.getCompound(ITEM_TAG);
-+            return HoverEvent.ShowItem.of(
-+                Key.key(contents.getString(ITEM_TYPE)),
++            @Subst("key") final String keyString = contents.getString(ITEM_TYPE);
++            return HoverEvent.ShowItem.showItem(
++                Key.key(keyString),
 +                contents.contains(ITEM_COUNT) ? contents.getByte(ITEM_COUNT) : 1,
 +                tag.isEmpty() ? null : BinaryTagHolder.encode(tag, SNBT_CODEC)
 +            );
@@ -1978,8 +2010,9 @@ index 0000000000000000000000000000000000000000..b3514a3e415f3444a235f1a45f0c5374
 +        final String raw = PlainTextComponentSerializer.plainText().serialize(input);
 +        try {
 +            final CompoundTag contents = SNBT_CODEC.decode(raw);
-+            return HoverEvent.ShowEntity.of(
-+                Key.key(contents.getString(ENTITY_TYPE)),
++            @Subst("key") final String keyString = contents.getString(ENTITY_TYPE);
++            return HoverEvent.ShowEntity.showEntity(
++                Key.key(keyString),
 +                UUID.fromString(contents.getString(ENTITY_ID)),
 +                componentCodec.decode(contents.getString(ENTITY_NAME))
 +            );
@@ -2004,7 +2037,7 @@ index 0000000000000000000000000000000000000000..b3514a3e415f3444a235f1a45f0c5374
 +    }
 +
 +    @Override
-+    public Component serializeShowEntity(final HoverEvent.ShowEntity input, final Codec.Encoder<Component, String, ? extends RuntimeException> componentCodec) throws IOException {
++    public Component serializeShowEntity(final HoverEvent.ShowEntity input, final Codec.Encoder<Component, String, ? extends RuntimeException> componentCodec) {
 +        final CompoundTag tag = new CompoundTag();
 +        tag.putString(ENTITY_ID, input.id().toString());
 +        tag.putString(ENTITY_TYPE, input.type().asString());
@@ -2246,7 +2279,7 @@ index 887b9fd625aa23c4ec828a175d63695f915232d3..8152420b9c3eb1bf13c012dd43505d99
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-index 49138ccda0f378b13c7f425be765876eb4026b06..ca662b668177532a73e7e309bb8b0fb3c4e310f1 100644
+index 49138ccda0f378b13c7f425be765876eb4026b06..dc572d5be6ee3af74be2ffb4c02351c8be235159 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 @@ -55,12 +55,58 @@ public class ComponentSerialization {
@@ -2290,7 +2323,7 @@ index 49138ccda0f378b13c7f425be765876eb4026b06..ca662b668177532a73e7e309bb8b0fb3
 +                final net.kyori.adventure.text.Component adventureComponent;
 +                if (input instanceof io.papermc.paper.adventure.AdventureComponent adv) {
 +                    adventureComponent = adv.adventure$component();
-+                } else if (locale != null && input.getContents() instanceof TranslatableContents) {
++                } else if (locale != null && input.getContents() instanceof TranslatableContents && io.papermc.paper.adventure.PaperAdventure.hasAnyTranslations()) {
 +                    adventureComponent = io.papermc.paper.adventure.PaperAdventure.asAdventure(input);
 +                } else {
 +                    return origCodec.encode(input, ops, prefix);
@@ -2756,10 +2789,10 @@ index c8e016135ad80a892b48a6a338c24cfd757a5f10..b403b7d585f474e2b6029404d19e756a
          this.chatVisibility = clientOptions.chatVisibility();
          this.canChatColor = clientOptions.chatColors();
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 132a79251d5eb46ded6e1a96cc1c8e9c48f3f5fd..56f6f65ceb1271e9273b1ee6658773eb3445beed 100644
+index 132a79251d5eb46ded6e1a96cc1c8e9c48f3f5fd..c8041492b7b2a1ff67b95d9944cfccd476b3ee1d 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -47,7 +47,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -47,12 +47,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      public static final int LATENCY_CHECK_INTERVAL = 15000;
      private static final Component TIMEOUT_DISCONNECTION_MESSAGE = Component.translatable("disconnect.timeout");
      protected final MinecraftServer server;
@@ -2768,7 +2801,32 @@ index 132a79251d5eb46ded6e1a96cc1c8e9c48f3f5fd..56f6f65ceb1271e9273b1ee6658773eb
      private long keepAliveTime;
      private boolean keepAlivePending;
      private long keepAliveChallenge;
-@@ -217,12 +217,18 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     private int latency;
+     private volatile boolean suspendFlushingOnServerThread = false;
++    public final java.util.Map<java.util.UUID, net.kyori.adventure.resource.ResourcePackCallback> packCallbacks = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - adventure resource pack callbacks
+ 
+     public ServerCommonPacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, CommonListenerCookie commonlistenercookie, ServerPlayer player) { // CraftBukkit
+         this.server = minecraftserver;
+@@ -156,6 +157,18 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
+             this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
+         }
++        // Paper start - adventure pack callbacks
++        // call the callbacks before the previously-existing event so the event has final say
++        final net.kyori.adventure.resource.ResourcePackCallback callback;
++        if (packet.action().isTerminal()) {
++            callback = this.packCallbacks.remove(packet.id());
++        } else {
++            callback = this.packCallbacks.get(packet.id());
++        }
++        if (callback != null) {
++            callback.packEventReceived(packet.id(), net.kyori.adventure.resource.ResourcePackStatus.valueOf(packet.action().name()), this.getCraftPlayer());
++        }
++        // Paper end
+         this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()])); // CraftBukkit
+ 
+     }
+@@ -217,12 +230,18 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      // CraftBukkit start
      @Deprecated
@@ -2790,7 +2848,7 @@ index 132a79251d5eb46ded6e1a96cc1c8e9c48f3f5fd..56f6f65ceb1271e9273b1ee6658773eb
          // CraftBukkit start - fire PlayerKickEvent
          if (this.processedDisconnect) {
              return;
-@@ -231,7 +237,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -231,7 +250,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
              Waitable waitable = new Waitable() {
                  @Override
                  protected Object evaluate() {
@@ -2799,7 +2857,7 @@ index 132a79251d5eb46ded6e1a96cc1c8e9c48f3f5fd..56f6f65ceb1271e9273b1ee6658773eb
                      return null;
                  }
              };
-@@ -248,9 +254,9 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -248,9 +267,9 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
              return;
          }
  
@@ -2811,7 +2869,7 @@ index 132a79251d5eb46ded6e1a96cc1c8e9c48f3f5fd..56f6f65ceb1271e9273b1ee6658773eb
  
          if (this.cserver.getServer().isRunning()) {
              this.cserver.getPluginManager().callEvent(event);
-@@ -262,7 +268,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -262,7 +281,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          }
          this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
          // Send the possibly modified leave message
@@ -3198,7 +3256,7 @@ index 4c62df5a3781ec9df4a5c5f1b528649e6e8a62d1..affd1b8c7589ba59330dc0b6fc803cce
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-index fe31cd2698077c7d75fbd411a59947268100823c..4642113daf986c16d1390c53fbbb50e1e3067738 100644
+index 9026e380736d7298dd68d6aeb817c59f5daf552e..6003731da7be596baf1954df2e13ae54e111cd91 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 @@ -209,22 +209,22 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
@@ -4027,7 +4085,7 @@ index 61759e8179d0f6342abf0c0294e5a024928db8d9..92e21126a9347f1ee2279ab09bb6abf2
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 429bbe15f8b04a57108f311a9cc198ed5c5a45c5..098e85980670723cffd751f6d5b67bb66e209e9a 100644
+index 429bbe15f8b04a57108f311a9cc198ed5c5a45c5..c683afd09f03188638983bbdbe271a7e407a3efe 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -300,14 +300,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -4211,7 +4269,7 @@ index 429bbe15f8b04a57108f311a9cc198ed5c5a45c5..098e85980670723cffd751f6d5b67bb6
      }
  
      @Override
-@@ -1728,6 +1794,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1728,6 +1794,59 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  
@@ -4230,12 +4288,48 @@ index 429bbe15f8b04a57108f311a9cc198ed5c5a45c5..098e85980670723cffd751f6d5b67bb6
 +        this.getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
 +        this.getHandle().connection.send(new ClientboundResourcePackPushPacket(uuid, url, hash, force, io.papermc.paper.adventure.PaperAdventure.asVanilla(prompt)));
 +    }
++
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    void sendBundle(final List<? extends net.minecraft.network.protocol.Packet<? extends net.minecraft.network.protocol.common.ClientCommonPacketListener>> packet) {
++        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket((List) packet));
++    }
++
++    @Override
++    public void sendResourcePacks(final net.kyori.adventure.resource.ResourcePackRequest request) {
++        if (this.getHandle().connection == null) return;
++        final List<ClientboundResourcePackPushPacket> packs = new java.util.ArrayList<>(request.packs().size());
++        if (request.replace()) {
++            this.clearResourcePacks();
++        }
++        final Component prompt = io.papermc.paper.adventure.PaperAdventure.asVanilla(request.prompt());
++        for (final java.util.Iterator<net.kyori.adventure.resource.ResourcePackInfo> iter = request.packs().iterator(); iter.hasNext();) {
++            final net.kyori.adventure.resource.ResourcePackInfo pack = iter.next();
++            packs.add(new ClientboundResourcePackPushPacket(pack.id(), pack.uri().toASCIIString(), pack.hash(), request.required(), iter.hasNext() ? null : prompt));
++            if (request.callback() != net.kyori.adventure.resource.ResourcePackCallback.noOp()) {
++                this.getHandle().connection.packCallbacks.put(pack.id(), request.callback()); // just override if there is a previously existing callback
++            }
++        }
++        this.sendBundle(packs);
++        super.sendResourcePacks(request);
++    }
++
++    @Override
++    public void removeResourcePacks(final UUID id, final UUID ... others) {
++        if (this.getHandle().connection == null) return;
++        this.sendBundle(net.kyori.adventure.util.MonkeyBars.nonEmptyArrayToList(pack -> new ClientboundResourcePackPopPacket(Optional.of(pack)), id, others));
++    }
++
++    @Override
++    public void clearResourcePacks() {
++        if (this.getHandle().connection == null) return;
++        this.getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
++    }
 +    // Paper end - adventure
 +
      @Override
      public void removeResourcePack(UUID id) {
          Preconditions.checkArgument(id != null, "Resource pack id cannot be null");
-@@ -2136,6 +2219,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2136,6 +2255,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (this.getHandle().requestedViewDistance() == 0) ? Bukkit.getViewDistance() : this.getHandle().requestedViewDistance();
      }
  
@@ -4248,7 +4342,7 @@ index 429bbe15f8b04a57108f311a9cc198ed5c5a45c5..098e85980670723cffd751f6d5b67bb6
      @Override
      public int getPing() {
          return this.getHandle().connection.latency();
-@@ -2186,6 +2275,252 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2186,6 +2311,252 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
@@ -5468,10 +5562,10 @@ index 0000000000000000000000000000000000000000..3aedd0bbc97edacc1ebf71264b310e55
 +}
 diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..af4b7704ab4690138e3188a45d41b890369f6237
+index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f4062116c743
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
-@@ -0,0 +1,366 @@
+@@ -0,0 +1,369 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
@@ -5526,6 +5620,8 @@ index 0000000000000000000000000000000000000000..af4b7704ab4690138e3188a45d41b890
 +import static net.kyori.adventure.text.Component.storageNBT;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.Component.translatable;
++import static net.kyori.adventure.text.TranslationArgument.bool;
++import static net.kyori.adventure.text.TranslationArgument.numeric;
 +import static net.kyori.adventure.text.event.ClickEvent.openUrl;
 +import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
 +import static net.kyori.adventure.text.event.HoverEvent.showEntity;
@@ -5773,6 +5869,7 @@ index 0000000000000000000000000000000000000000..af4b7704ab4690138e3188a45d41b890
 +                .key("thisIsA")
 +                .fallback("This is a test.")
 +                .build(),
++            translatable(key, numeric(5), text("HEY")), // boolean doesn't work in vanilla, can't test here
 +            translatable(
 +                key,
 +                text().content(name)

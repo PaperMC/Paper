@@ -5,24 +5,24 @@ Subject: [PATCH] Complete resource pack API
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 56f6f65ceb1271e9273b1ee6658773eb3445beed..771db61f81d7a3cd763efb5febf6008fd2ba1232 100644
+index c8041492b7b2a1ff67b95d9944cfccd476b3ee1d..66497960995dc30abe60d26200979a78513ff2c6 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -156,7 +156,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
-             ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
-             this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
+@@ -169,7 +169,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             callback.packEventReceived(packet.id(), net.kyori.adventure.resource.ResourcePackStatus.valueOf(packet.action().name()), this.getCraftPlayer());
          }
+         // Paper end
 -        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()])); // CraftBukkit
-+        // Paper start
++        // Paper start - store last pack status
 +        PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
 +        player.getBukkitEntity().resourcePackStatus = packStatus;
 +        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), packStatus)); // CraftBukkit
-+        // Paper end
++        // Paper end - store last pack status
  
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 73b6740cf50d878b98438f58c2291c0d13f412b7..5107128b0868d46b1672df8c8f98018de87c9eff 100644
+index 533aad9a2ed3e9f49307696146b34e0a1bf61cf4..5fef370f164e78a336cfe598aee15e277dd6b946 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -189,6 +189,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -33,23 +33,11 @@ index 73b6740cf50d878b98438f58c2291c0d13f412b7..5107128b0868d46b1672df8c8f98018d
  
      public CraftPlayer(CraftServer server, ServerPlayer entity) {
          super(server, entity);
-@@ -1961,6 +1962,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1997,6 +1998,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
      // Paper end - adventure
  
 +    // Paper start - more resource pack API
-+    @Override
-+    public void setResourcePack(@NotNull UUID uuid, @NotNull String url, @NotNull String hash, net.kyori.adventure.text.Component resourcePackPrompt, boolean required) {
-+        Preconditions.checkArgument(uuid != null, "Resource pack UUID cannot be null");
-+        Preconditions.checkArgument(url != null, "Resource pack URL cannot be null");
-+        Preconditions.checkArgument(hash != null, "Hash cannot be null");
-+        final net.minecraft.network.chat.Component promptComponent = resourcePackPrompt != null ?
-+            io.papermc.paper.adventure.PaperAdventure.asVanilla(resourcePackPrompt) :
-+            null;
-+        this.getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
-+        this.getHandle().connection.send(new ClientboundResourcePackPushPacket(uuid, url, hash, required, promptComponent));
-+    }
-+
 +    @Override
 +    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
 +        return this.resourcePackStatus;
