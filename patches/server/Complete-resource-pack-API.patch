@@ -9,15 +9,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
-             ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
-             this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
+             callback.packEventReceived(packet.id(), net.kyori.adventure.resource.ResourcePackStatus.valueOf(packet.action().name()), this.getCraftPlayer());
          }
+         // Paper end
 -        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()])); // CraftBukkit
-+        // Paper start
++        // Paper start - store last pack status
 +        PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
 +        player.getBukkitEntity().resourcePackStatus = packStatus;
 +        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), packStatus)); // CraftBukkit
-+        // Paper end
++        // Paper end - store last pack status
  
      }
  
@@ -38,18 +38,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper end - adventure
  
 +    // Paper start - more resource pack API
-+    @Override
-+    public void setResourcePack(@NotNull UUID uuid, @NotNull String url, @NotNull String hash, net.kyori.adventure.text.Component resourcePackPrompt, boolean required) {
-+        Preconditions.checkArgument(uuid != null, "Resource pack UUID cannot be null");
-+        Preconditions.checkArgument(url != null, "Resource pack URL cannot be null");
-+        Preconditions.checkArgument(hash != null, "Hash cannot be null");
-+        final net.minecraft.network.chat.Component promptComponent = resourcePackPrompt != null ?
-+            io.papermc.paper.adventure.PaperAdventure.asVanilla(resourcePackPrompt) :
-+            null;
-+        this.getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
-+        this.getHandle().connection.send(new ClientboundResourcePackPushPacket(uuid, url, hash, required, promptComponent));
-+    }
-+
 +    @Override
 +    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
 +        return this.resourcePackStatus;
