@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.generator.structure;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.core.IRegistry;
-import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -13,7 +12,7 @@ import org.bukkit.generator.structure.StructureType;
 
 public class CraftStructure extends Structure {
 
-    public static Structure minecraftToBukkit(net.minecraft.world.level.levelgen.structure.Structure minecraft, IRegistryCustom registryHolder) {
+    public static Structure minecraftToBukkit(net.minecraft.world.level.levelgen.structure.Structure minecraft) {
         Preconditions.checkArgument(minecraft != null);
 
         IRegistry<net.minecraft.world.level.levelgen.structure.Structure> registry = CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE);
