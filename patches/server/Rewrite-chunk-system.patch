@@ -17555,7 +17555,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final Queue<Runnable> unloadQueue;
-     private int serverViewDistance;
+     public int serverViewDistance;
  
 -    // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
 -    public final CallbackExecutor callbackExecutor = new CallbackExecutor();
@@ -17577,10 +17577,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }
 -    };
 -    // CraftBukkit end
-+    // Paper - rewrite chunk system
- 
+-
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
+ 
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
@@ -18672,7 +18672,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    final LongSet ticketsToRelease = new LongOpenHashSet();
 -    final Executor mainThreadExecutor;
 -    private long ticketTickCounter;
--    private int simulationDistance = 10;
+-    public int simulationDistance = 10;
 +    // Paper - rewrite chunk system
      private final ChunkMap chunkMap; // Paper
  
@@ -18719,8 +18719,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 +        this.getChunkHolderManager().tick(); // Paper - rewrite chunk system
      }
- 
+-
      private static int getTicketLevelAt(SortedArraySet<Ticket<?>> tickets) {
+         return !tickets.isEmpty() ? ((Ticket) tickets.first()).getTicketLevel() : ChunkLevel.MAX_LEVEL + 1;
+     }
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
      protected abstract ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k);
  
@@ -18999,8 +19001,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                } catch (Throwable throwable1) {
 -                    throwable.addSuppressed(throwable1);
 -                }
-+    // Paper - rewrite chunk system
- 
+-
 -                throw throwable;
 -            }
 -
@@ -19010,7 +19011,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }
 -
 -    }
--
++    // Paper - rewrite chunk system
+ 
 -    @VisibleForTesting
 -    TickingTracker tickingTracker() {
 -        return this.tickingTicketsTracker;
@@ -22755,19 +22757,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              SortedArraySet<Ticket<?>> tickets = chunkTickets.getValue();
  
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-     // Spigot start
+ 
      @Override
      public int getViewDistance() {
--        return this.world.spigotConfig.viewDistance;
+-        return this.world.getChunkSource().chunkMap.serverViewDistance;
 +        return this.getHandle().playerChunkLoader.getAPIViewDistance(); // Paper - replace player chunk loader
      }
  
      @Override
      public int getSimulationDistance() {
--        return this.world.spigotConfig.simulationDistance;
+-        return this.world.getChunkSource().chunkMap.getDistanceManager().simulationDistance;
 +        return this.getHandle().playerChunkLoader.getAPITickDistance(); // Paper - replace player chunk loader
-     }
-     // Spigot end
++    }
 +    // Paper start - view distance api
 +    @Override
 +    public void setViewDistance(int viewDistance) {
@@ -22805,11 +22806,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void setSendViewDistance(int viewDistance) {
 +        this.getHandle().chunkSource.chunkMap.setSendViewDistance(viewDistance); // Paper - replace player chunk loader
-+    }
+     }
 +    // Paper end - view distance api
  
-     // Spigot start
-     private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot()
+     public BlockMetadataStore getBlockMetadata() {
+         return this.blockMetadata;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
