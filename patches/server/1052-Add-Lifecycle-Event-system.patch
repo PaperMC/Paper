@@ -300,31 +300,37 @@ index 0000000000000000000000000000000000000000..683b1f18392faed807f99fd2330aaf2f
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/PaperRegistrar.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/PaperRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..06a1a2d53b330bc37eb9736d258d7023e6619dc0
+index 0000000000000000000000000000000000000000..9086dc938f6cf54fe7dc055f2bcbeea22a9a99f6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/PaperRegistrar.java
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,12 @@
 +package io.papermc.paper.plugin.lifecycle.event.registrar;
 +
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
++import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
++@DefaultQualifier(NonNull.class)
 +public interface PaperRegistrar<O extends LifecycleEventOwner> extends Registrar {
 +
 +    void setCurrentContext(@Nullable O owner);
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..714d32cf75b3b4a6d0d7c8d00ada74cc6dabba96
+index 0000000000000000000000000000000000000000..09eff7502f2599626daf22f8eaefffc28705fcdc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEventImpl.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,64 @@
 +package io.papermc.paper.plugin.lifecycle.event.registrar;
 +
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.types.OwnerAwareLifecycleEvent;
++import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
++@DefaultQualifier(NonNull.class)
 +public class RegistrarEventImpl<R extends PaperRegistrar<? super O>, O extends LifecycleEventOwner> implements OwnerAwareLifecycleEvent<O>, RegistrarEvent<R> {
 +
 +    private final R registrar;
@@ -435,7 +441,7 @@ index 0000000000000000000000000000000000000000..ca75cc80def99d59256bf104d8490df9
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cf6f7e5fabbceca3b74e9637dfb4f6fc72613c9a
+index 0000000000000000000000000000000000000000..15834c64020e8310d63e1873c18ba79f9d5a06ad
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
 @@ -0,0 +1,24 @@
@@ -454,20 +460,20 @@ index 0000000000000000000000000000000000000000..cf6f7e5fabbceca3b74e9637dfb4f6fc
 +    }
 +
 +    @Override
-+    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitor<O, E> monitor(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventRunner.INSTANCE.addEventType(new MonitorLifecycleEventType<>(name, ownerType));
++    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitorable<O, E> monitor(final String name, final Class<? extends O> ownerType) {
++        return LifecycleEventRunner.INSTANCE.addEventType(new MonitorableLifecycleEventType<>(name, ownerType));
 +    }
 +
 +    @Override
-+    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritized<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventRunner.INSTANCE.addEventType(new PrioritizedLifecycleEventType<>(name, ownerType));
++    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
++        return LifecycleEventRunner.INSTANCE.addEventType(new PrioritizableLifecycleEventType<>(name, ownerType));
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6d6a39c5bc3f1470a8978d86ac5c2149a0d8ae4e
+index 0000000000000000000000000000000000000000..87212daaaefc716b85a5d221b7617c903ba1b440
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorLifecycleEventType.java
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java
 @@ -0,0 +1,53 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
@@ -483,12 +489,12 @@ index 0000000000000000000000000000000000000000..6d6a39c5bc3f1470a8978d86ac5c2149
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +@DefaultQualifier(NonNull.class)
-+public class MonitorLifecycleEventType<O extends LifecycleEventOwner, E extends LifecycleEvent> extends AbstractLifecycleEventType<O, E, MonitorLifecycleEventHandlerConfiguration<O>, MonitorLifecycleEventHandlerConfigurationImpl<O, E>> implements LifecycleEventType.Monitor<O, E> {
++public class MonitorableLifecycleEventType<O extends LifecycleEventOwner, E extends LifecycleEvent> extends AbstractLifecycleEventType<O, E, MonitorLifecycleEventHandlerConfiguration<O>, MonitorLifecycleEventHandlerConfigurationImpl<O, E>> implements LifecycleEventType.Monitorable<O, E> {
 +
 +    final List<RegisteredHandler<O, E>> handlers = new ArrayList<>();
 +    int nonMonitorIdx = 0;
 +
-+    public MonitorLifecycleEventType(final String name, final Class<? extends O> ownerType) {
++    public MonitorableLifecycleEventType(final String name, final Class<? extends O> ownerType) {
 +        super(name, ownerType);
 +    }
 +
@@ -524,26 +530,29 @@ index 0000000000000000000000000000000000000000..6d6a39c5bc3f1470a8978d86ac5c2149
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/OwnerAwareLifecycleEvent.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/OwnerAwareLifecycleEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..19f86ce0a5c8da6c3dcbbe678c721a9f1f26f1da
+index 0000000000000000000000000000000000000000..eff63a6ceba572282c08063549b48e5dc210bcac
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/OwnerAwareLifecycleEvent.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,14 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
++import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
++@DefaultQualifier(NonNull.class)
 +public interface OwnerAwareLifecycleEvent<O extends LifecycleEventOwner> extends LifecycleEvent {
 +
 +    void setOwner(@Nullable O owner);
 +
 +    @Nullable O castOwner(LifecycleEventOwner owner);
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ccd7dae4a08303233fc3bcdfc00be967ca22a1de
+index 0000000000000000000000000000000000000000..5c05276f1ef2b557424729c98bd47359f84df11d
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizedLifecycleEventType.java
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java
 @@ -0,0 +1,63 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
@@ -561,7 +570,7 @@ index 0000000000000000000000000000000000000000..ccd7dae4a08303233fc3bcdfc00be967
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +@DefaultQualifier(NonNull.class)
-+public class PrioritizedLifecycleEventType<O extends LifecycleEventOwner, E extends LifecycleEvent> extends AbstractLifecycleEventType<O, E, PrioritizedLifecycleEventHandlerConfiguration<O>, PrioritizedLifecycleEventHandlerConfigurationImpl<O, E>> implements LifecycleEventType.Prioritized<O, E> {
++public class PrioritizableLifecycleEventType<O extends LifecycleEventOwner, E extends LifecycleEvent> extends AbstractLifecycleEventType<O, E, PrioritizedLifecycleEventHandlerConfiguration<O>, PrioritizedLifecycleEventHandlerConfigurationImpl<O, E>> implements LifecycleEventType.Prioritizable<O, E> {
 +
 +    private static final Comparator<PrioritizedHandler<?, ?>> COMPARATOR = Comparator.comparing(PrioritizedHandler::priority, (o1, o2) -> {
 +        if (o1.equals(o2)) {
@@ -577,7 +586,7 @@ index 0000000000000000000000000000000000000000..ccd7dae4a08303233fc3bcdfc00be967
 +
 +    private final List<PrioritizedHandler<O, E>> handlers = new ArrayList<>();
 +
-+    public PrioritizedLifecycleEventType(final String name, final Class<? extends O> ownerType) {
++    public PrioritizableLifecycleEventType(final String name, final Class<? extends O> ownerType) {
 +        super(name, ownerType);
 +    }
 +

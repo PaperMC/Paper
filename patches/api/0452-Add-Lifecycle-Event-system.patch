@@ -368,7 +368,7 @@ index 0000000000000000000000000000000000000000..9ed5d1a92836ba8de869b2d00fbe3e0c
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e2dd4ac02e0fa0930d576ebfe493273bb3e2ca82
+index 0000000000000000000000000000000000000000..caa2c998b2398d6bb4190ae1a598d224cd992f2a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventType.java
 @@ -0,0 +1,72 @@
@@ -429,11 +429,11 @@ index 0000000000000000000000000000000000000000..e2dd4ac02e0fa0930d576ebfe493273b
 +     */
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
-+    interface Monitor<O extends LifecycleEventOwner, E extends LifecycleEvent> extends LifecycleEventType<O, E, MonitorLifecycleEventHandlerConfiguration<O>> {
++    interface Monitorable<O extends LifecycleEventOwner, E extends LifecycleEvent> extends LifecycleEventType<O, E, MonitorLifecycleEventHandlerConfiguration<O>> {
 +    }
 +
 +    /**
-+     * Lifecycle event type that supports both {@link Monitor "monitors"} and
++     * Lifecycle event type that supports both {@link Monitorable "monitors"} and
 +     * specific numeric-based priorities.
 +     *
 +     * @param <O> the required owner type
@@ -441,12 +441,12 @@ index 0000000000000000000000000000000000000000..e2dd4ac02e0fa0930d576ebfe493273b
 +     */
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
-+    interface Prioritized<O extends LifecycleEventOwner, E extends LifecycleEvent> extends LifecycleEventType<O, E, PrioritizedLifecycleEventHandlerConfiguration<O>> {
++    interface Prioritizable<O extends LifecycleEventOwner, E extends LifecycleEvent> extends LifecycleEventType<O, E, PrioritizedLifecycleEventHandlerConfiguration<O>> {
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7883f96f76f83910dd749328561a13b082ee8af9
+index 0000000000000000000000000000000000000000..bdd017ee27a3be9dbf708ce454a396becb596b96
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java
 @@ -0,0 +1,17 @@
@@ -463,13 +463,13 @@ index 0000000000000000000000000000000000000000..7883f96f76f83910dd749328561a13b0
 +        .findFirst()
 +        .orElseThrow();
 +
-+    <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitor<O, E> monitor(String name, Class<? extends O> ownerType);
++    <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitorable<O, E> monitor(String name, Class<? extends O> ownerType);
 +
-+    <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritized<O, E> prioritized(String name, Class<? extends O> ownerType);
++    <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(String name, Class<? extends O> ownerType);
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1435173a5416494b1efcd5f286a962f423c12536
+index 0000000000000000000000000000000000000000..28126a334250fe23cd4a6cc05aa656d8645eb740
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
 @@ -0,0 +1,51 @@
@@ -491,32 +491,32 @@ index 0000000000000000000000000000000000000000..1435173a5416494b1efcd5f286a962f4
 +
 +    //<editor-fold desc="helper methods" defaultstate="collapsed">
 +    @ApiStatus.Internal
-+    private static <E extends LifecycleEvent> LifecycleEventType.Monitor<Plugin, E> plugin(final String name) {
++    private static <E extends LifecycleEvent> LifecycleEventType.Monitorable<Plugin, E> plugin(final String name) {
 +        return monitor(name, Plugin.class);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <E extends LifecycleEvent> LifecycleEventType.Prioritized<Plugin, E> pluginPrioritized(final String name) {
++    private static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<Plugin, E> pluginPrioritized(final String name) {
 +        return prioritized(name, Plugin.class);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <E extends LifecycleEvent> LifecycleEventType.Monitor<BootstrapContext, E> bootstrap(final String name) {
++    private static <E extends LifecycleEvent> LifecycleEventType.Monitorable<BootstrapContext, E> bootstrap(final String name) {
 +        return monitor(name, BootstrapContext.class);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <E extends LifecycleEvent> LifecycleEventType.Prioritized<BootstrapContext, E> bootstrapPrioritized(final String name) {
++    private static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<BootstrapContext, E> bootstrapPrioritized(final String name) {
 +        return prioritized(name, BootstrapContext.class);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <O extends LifecycleEventOwner, E extends LifecycleEvent, O2 extends O> LifecycleEventType.Monitor<O, E> monitor(final String name, final Class<O2> ownerType) {
++    private static <O extends LifecycleEventOwner, E extends LifecycleEvent, O2 extends O> LifecycleEventType.Monitorable<O, E> monitor(final String name, final Class<O2> ownerType) {
 +        return LifecycleEventTypeProvider.PROVIDER.monitor(name, ownerType);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritized<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
++    private static <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
 +        return LifecycleEventTypeProvider.PROVIDER.prioritized(name, ownerType);
 +    }
 +    //</editor-fold>
