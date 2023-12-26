@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 9 Dec 2023 19:15:59 -0800
+Subject: [PATCH] Fix NPE on null loc for EntityTeleportEvent
+
+EntityTeleportEvent#setTo is marked as nullable and so is the
+getTo method. This fixes the handling of a null "to" location
+by treating it the same as the event being cancelled. This is
+already existing behavior for the EntityPortalEvent (which
+extends EntityTeleportEvent).
+
+diff --git a/src/main/java/net/minecraft/server/commands/TeleportCommand.java b/src/main/java/net/minecraft/server/commands/TeleportCommand.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/commands/TeleportCommand.java
++++ b/src/main/java/net/minecraft/server/commands/TeleportCommand.java
+@@ -0,0 +0,0 @@ public class TeleportCommand {
+                 Location to = new Location(world.getWorld(), x, y, z, f2, f3);
+                 EntityTeleportEvent event = new EntityTeleportEvent(target.getBukkitEntity(), target.getBukkitEntity().getLocation(), to);
+                 world.getCraftServer().getPluginManager().callEvent(event);
+-                if (event.isCancelled()) {
++                if (event.isCancelled() || event.getTo() == null) { // Paper
+                     return;
+                 }
++                to = event.getTo(); // Paper - actually track new location
+ 
+                 x = to.getX();
+                 y = to.getY();
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                     if (!(this instanceof ServerPlayer)) {
+                         EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.level().getWorld(), d3, d4, d5), new Location(this.level().getWorld(), d0, d6, d2));
+                         this.level().getCraftServer().getPluginManager().callEvent(teleport);
+-                        if (!teleport.isCancelled()) {
++                        if (!teleport.isCancelled() && teleport.getTo() != null) { // Paper
+                             Location to = teleport.getTo();
+                             this.teleportTo(to.getX(), to.getY(), to.getZ());
+                         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
+@@ -0,0 +0,0 @@ public class FollowOwnerGoal extends Goal {
+         } else {
+             // CraftBukkit start
+             EntityTeleportEvent event = CraftEventFactory.callEntityTeleportEvent(this.tamable, (double) x + 0.5D, (double) y, (double) z + 0.5D);
+-            if (event.isCancelled()) {
++            if (event.isCancelled() || event.getTo() == null) { // Paper
+                 return false;
+             }
+             Location to = event.getTo();
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Shulker.java b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Shulker.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+@@ -0,0 +0,0 @@ public class Shulker extends AbstractGolem implements VariantHolder<Optional<Dye
+                     if (enumdirection != null) {
+                         // CraftBukkit start
+                         EntityTeleportEvent teleportEvent = CraftEventFactory.callEntityTeleportEvent(this, blockposition1.getX(), blockposition1.getY(), blockposition1.getZ());
+-                        if (teleportEvent.isCancelled()) {
++                        if (teleportEvent.isCancelled() || teleportEvent.getTo() == null) { // Paper
+                             return false;
+                         } else {
+                             blockposition1 = CraftLocation.toBlockPosition(teleportEvent.getTo());
