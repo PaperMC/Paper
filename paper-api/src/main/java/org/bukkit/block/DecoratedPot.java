@@ -4,13 +4,15 @@ import java.util.List;
 import java.util.Map;
 import org.bukkit.Material;
 import org.bukkit.Tag;
+import org.bukkit.inventory.BlockInventoryHolder;
+import org.bukkit.inventory.DecoratedPotInventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a decorated pot.
  */
-public interface DecoratedPot extends TileState {
+public interface DecoratedPot extends TileState, BlockInventoryHolder {
 
     /**
      * Set the sherd on the provided side.
@@ -52,6 +54,21 @@ public interface DecoratedPot extends TileState {
     @Deprecated
     @NotNull
     public List<Material> getShards();
+
+    /**
+     * @return inventory
+     * @see Container#getInventory()
+     */
+    @NotNull
+    @Override
+    public DecoratedPotInventory getInventory();
+
+    /**
+     * @return snapshot inventory
+     * @see Container#getSnapshotInventory()
+     */
+    @NotNull
+    public DecoratedPotInventory getSnapshotInventory();
 
     /**
      * A side on a decorated pot. Sides are relative to the facing state of a
