@@ -876,8 +876,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         return (this.hideFlag & bitModifier) == bitModifier;
     }
 
-    private byte getBitModifier(ItemFlag hideFlag) {
-        return (byte) (1 << hideFlag.ordinal());
+    private int getBitModifier(ItemFlag hideFlag) {
+        return 1 << hideFlag.ordinal();
     }
 
     @Override
