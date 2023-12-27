@@ -39,6 +39,28 @@ index 827774b02136ec1862bc9ffabc76ba3a4eb87716..96ae1fd95956f5e5a1542dcce3fbd9d4
                          gameprofile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
                          playerName = gameprofile.getName();
                          uniqueId = gameprofile.getId();
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 6e0a21935f9d5f35cbce72b32e0a89bb636804e2..782cc6d910efe5bc5498d0083afab42fad6c4fa2 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -862,10 +862,16 @@ public abstract class PlayerList {
+     }
+ 
+     public void sendPlayerPermissionLevel(ServerPlayer player) {
++    // Paper start - avoid recalculating permissions if possible
++        this.sendPlayerPermissionLevel(player, true);
++    }
++
++    public void sendPlayerPermissionLevel(ServerPlayer player, boolean recalculatePermissions) {
++    // Paper end - avoid recalculating permissions if possible
+         GameProfile gameprofile = player.getGameProfile();
+         int i = this.server.getProfilePermissions(gameprofile);
+ 
+-        this.sendPlayerPermissionLevel(player, i);
++        this.sendPlayerPermissionLevel(player, i, recalculatePermissions); // Paper - avoid recalculating permissions if possible
+     }
+ 
+     public void tick() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
 index 477d3245facb5ae59c786d4f696f64226cb540a6..e8490a58dd4d9bc39a5bb2f9fc109526e031b971 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
@@ -55,7 +77,7 @@ index 477d3245facb5ae59c786d4f696f64226cb540a6..e8490a58dd4d9bc39a5bb2f9fc109526
  
      public Server getServer() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 7021921980b20a8c61016a021b281af58ed72b51..44b98fc01ce1879f08987c6544b77b442e7bfad6 100644
+index 8dd7e875d0e2ac3c10cce9b7045b5dbc742e9fb7..d296e1687fd596d6674e18b316603d08cd9057df 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -272,11 +272,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -162,7 +184,7 @@ index 7021921980b20a8c61016a021b281af58ed72b51..44b98fc01ce1879f08987c6544b77b44
  
      void resetAndShowEntity(org.bukkit.entity.Entity entity) {
          // SPIGOT-7312: Can't show/hide self
-@@ -1799,6 +1845,36 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1799,6 +1845,34 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              this.trackAndShowEntity(entity);
          }
      }
@@ -179,20 +201,18 @@ index 7021921980b20a8c61016a021b281af58ed72b51..44b98fc01ce1879f08987c6544b77b44
 +
 +        //Respawn the player then update their position and selected slot
 +        ServerLevel worldserver = handle.serverLevel();
-+        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(new net.minecraft.network.protocol.game.CommonPlayerSpawnInfo(worldserver.dimensionTypeId(), worldserver.dimension(), net.minecraft.world.level.biome.BiomeManager.obfuscateSeed(worldserver.getSeed()), handle.gameMode.getGameModeForPlayer(), handle.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), handle.getLastDeathLocation(), handle.getPortalCooldown()), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
++        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(handle.createCommonSpawnInfo(worldserver), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
 +        handle.onUpdateAbilities();
 +        connection.internalTeleport(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), java.util.Collections.emptySet());
-+        net.minecraft.server.MinecraftServer.getServer().getPlayerList().sendAllPlayerInfo(handle);
++        net.minecraft.server.players.PlayerList playerList = handle.server.getPlayerList();
++        playerList.sendPlayerPermissionLevel(handle, false);
++        playerList.sendLevelInfo(handle, worldserver);
++        playerList.sendAllPlayerInfo(handle);
 +
 +        // Resend their XP and effects because the respawn packet resets it
 +        connection.send(new net.minecraft.network.protocol.game.ClientboundSetExperiencePacket(handle.experienceProgress, handle.totalExperience, handle.experienceLevel));
 +        for (net.minecraft.world.effect.MobEffectInstance mobEffect : handle.getActiveEffects()) {
 +            connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket(handle.getId(), mobEffect));
-+        }
-+
-+        if (this.isOp()) {
-+            this.setOp(false);
-+            this.setOp(true);
 +        }
 +    }
 +    // Paper end
