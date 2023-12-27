@@ -12,7 +12,9 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.DecoratedPot;
+import org.bukkit.craftbukkit.inventory.CraftInventoryDecoratedPot;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.inventory.DecoratedPotInventory;
 
 public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEntity> implements DecoratedPot {
 
@@ -22,6 +24,20 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
 
     protected CraftDecoratedPot(CraftDecoratedPot state) {
         super(state);
+    }
+
+    @Override
+    public DecoratedPotInventory getSnapshotInventory() {
+        return new CraftInventoryDecoratedPot(this.getSnapshot());
+    }
+
+    @Override
+    public DecoratedPotInventory getInventory() {
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
+        }
+
+        return new CraftInventoryDecoratedPot(this.getTileEntity());
     }
 
     @Override
