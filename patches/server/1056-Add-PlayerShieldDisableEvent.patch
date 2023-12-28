@@ -3,10 +3,20 @@ From: Cryptite <cryptite@gmail.com>
 Date: Mon, 1 May 2023 16:22:43 -0500
 Subject: [PATCH] Add PlayerShieldDisableEvent
 
-Called whenever a player's shield is disable. The cooldown (default 100 ticks) is also provided to optionally be changed
+Called whenever a players shield is disabled. This is mainly caused by
+attacking players or monsters that carry axes.
+
+The event, while similar to the PlayerItemCooldownEvent, offers other
+behaviour and can hence not be implemented as a childtype of said event.
+Specifically, cancelling the event prevents the game events from being
+sent to the player.
+
+Plugins listening to just the PlayerItemCooldownEvent may not want said
+sideeffects, meaning the disable event cannot share a handlerlist with
+the cooldown event
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 5af48151159135b869ec4753bbcf79dd257c1570..85b955be70d7dbca434fc9cb7ba7b2e1c92c8a47 100644
+index 5af48151159135b869ec4753bbcf79dd257c1570..e0cf7771488ab0065708d68b4e8550b865af0ed4 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -1703,7 +1703,11 @@ public abstract class Mob extends LivingEntity implements Targeting {
@@ -17,13 +27,13 @@ index 5af48151159135b869ec4753bbcf79dd257c1570..85b955be70d7dbca434fc9cb7ba7b2e1
 +                // Paper start
 +                final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) player.getBukkitEntity(), getBukkitEntity(), 100);
 +                if (!shieldDisableEvent.callEvent()) return;
-+                player.getCooldowns().addCooldownAndCallEvent(Items.SHIELD, shieldDisableEvent.getCooldown(), false);
++                player.getCooldowns().addCooldown(Items.SHIELD, shieldDisableEvent.getCooldown());
 +                // Paper end
                  this.level().broadcastEntityEvent(player, (byte) 30);
              }
          }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 7f3466340891b4409d1399ebeb2ca865d77841cd..cf22e0d5d85d758ac81d0d10dc235b326ced9bb1 100644
+index 3e597833b57377b855505b8a0f2744801c791f90..ccc1caafb0ada52c7b99b7358253826f5390843e 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -979,7 +979,7 @@ public abstract class Player extends LivingEntity {
@@ -60,49 +70,11 @@ index 7f3466340891b4409d1399ebeb2ca865d77841cd..cf22e0d5d85d758ac81d0d10dc235b32
 +            if (finalAttacker != null) {
 +                final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) getBukkitEntity(), finalAttacker, 100);
 +                if (!shieldDisableEvent.callEvent()) return;
-+                this.getCooldowns().addCooldownAndCallEvent(Items.SHIELD, shieldDisableEvent.getCooldown(), false);
++                this.getCooldowns().addCooldown(Items.SHIELD, shieldDisableEvent.getCooldown());
 +            } else {
-+                this.getCooldowns().addCooldownAndCallEvent(Items.SHIELD, 100, true);
++                this.getCooldowns().addCooldown(Items.SHIELD, 100);
 +            }
 +            // Paper end - add player shield disable event
              this.stopUsingItem();
              this.level().broadcastEntityEvent(this, (byte) 30);
          }
-diff --git a/src/main/java/net/minecraft/world/item/ItemCooldowns.java b/src/main/java/net/minecraft/world/item/ItemCooldowns.java
-index cf3d8312ab749485f83448181a3300bf007b7381..ecf8f027665c35b20d5f41becb0c94ad9abc27d7 100644
---- a/src/main/java/net/minecraft/world/item/ItemCooldowns.java
-+++ b/src/main/java/net/minecraft/world/item/ItemCooldowns.java
-@@ -41,6 +41,12 @@ public class ItemCooldowns {
-     }
- 
-     public void addCooldown(Item item, int duration) {
-+    // Paper start - add player shield disable event
-+        addCooldownAndCallEvent(item, duration, true);
-+    }
-+
-+    public void addCooldownAndCallEvent(Item item, int duration, boolean callEvent) {
-+    // Paper end - add player shield disable event
-         this.cooldowns.put(item, new ItemCooldowns.CooldownInstance(this.tickCount, this.tickCount + duration));
-         this.onCooldownStarted(item, duration);
-     }
-diff --git a/src/main/java/net/minecraft/world/item/ServerItemCooldowns.java b/src/main/java/net/minecraft/world/item/ServerItemCooldowns.java
-index ce026600b3b5c846d991a0dfe599708caf2a2962..199944b9f63fbccd3ec5a350957fb68aef7a3d94 100644
---- a/src/main/java/net/minecraft/world/item/ServerItemCooldowns.java
-+++ b/src/main/java/net/minecraft/world/item/ServerItemCooldowns.java
-@@ -12,10 +12,14 @@ public class ServerItemCooldowns extends ItemCooldowns {
- 
-     // Paper start
-     @Override
--    public void addCooldown(Item item, int duration) {
-+    public void addCooldownAndCallEvent(Item item, int duration, boolean callEvent) {
-+        if (!callEvent) {
-+            super.addCooldownAndCallEvent(item, duration, callEvent);
-+            return;
-+        }
-         io.papermc.paper.event.player.PlayerItemCooldownEvent event = new io.papermc.paper.event.player.PlayerItemCooldownEvent(this.player.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), duration);
-         if (event.callEvent()) {
--            super.addCooldown(item, event.getCooldown());
-+            super.addCooldownAndCallEvent(item, event.getCooldown(), callEvent);
-         }
-     }
-     // Paper end
