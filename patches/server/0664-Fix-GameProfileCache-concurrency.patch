@@ -7,10 +7,10 @@ Separate lookup and state access locks prevent lookups
 from stalling simple state access/write calls
 
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 4dc08b0abf0a1edb51cc586d1a89444ba790ca7f..13e05a9e42ba89d37c423d819da33f2f67fa9eac 100644
+index 731a7c0363c8c91d25b35f7cbbb480879381bc8d..452fbb0aa44157225d8a9064e3eae2db7771b27d 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-@@ -61,6 +61,11 @@ public class GameProfileCache {
+@@ -60,6 +60,11 @@ public class GameProfileCache {
      @Nullable
      private Executor executor;
  
@@ -22,7 +22,7 @@ index 4dc08b0abf0a1edb51cc586d1a89444ba790ca7f..13e05a9e42ba89d37c423d819da33f2f
      public GameProfileCache(GameProfileRepository profileRepository, File cacheFile) {
          this.profileRepository = profileRepository;
          this.file = cacheFile;
-@@ -68,11 +73,13 @@ public class GameProfileCache {
+@@ -67,11 +72,13 @@ public class GameProfileCache {
      }
  
      private void safeAdd(GameProfileCache.GameProfileInfo entry) {
@@ -36,7 +36,7 @@ index 4dc08b0abf0a1edb51cc586d1a89444ba790ca7f..13e05a9e42ba89d37c423d819da33f2f
      }
  
      private static Optional<GameProfile> lookupGameProfile(GameProfileRepository repository, String name) {
-@@ -129,17 +136,20 @@ public class GameProfileCache {
+@@ -128,17 +135,20 @@ public class GameProfileCache {
  
      // Paper start
      public @Nullable GameProfile getProfileIfCached(String name) {
@@ -57,7 +57,7 @@ index 4dc08b0abf0a1edb51cc586d1a89444ba790ca7f..13e05a9e42ba89d37c423d819da33f2f
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
          boolean flag = false;
  
-@@ -155,8 +165,12 @@ public class GameProfileCache {
+@@ -154,8 +164,12 @@ public class GameProfileCache {
          if (usercache_usercacheentry != null) {
              usercache_usercacheentry.setLastAccess(this.getNextOperation());
              optional = Optional.of(usercache_usercacheentry.getProfile());
@@ -65,12 +65,12 @@ index 4dc08b0abf0a1edb51cc586d1a89444ba790ca7f..13e05a9e42ba89d37c423d819da33f2f
          } else {
 +            stateLocked = false; this.stateLock.unlock(); // Paper - allow better concurrency
 +            try { this.lookupLock.lock(); // Paper - allow better concurrency
-             optional = GameProfileCache.lookupGameProfile(this.profileRepository, name); // Spigot - use correct case for offline players
+             optional = GameProfileCache.lookupGameProfile(this.profileRepository, name); // CraftBukkit - use correct case for offline players
 +            } finally { this.lookupLock.unlock(); } // Paper - allow better concurrency
              if (optional.isPresent()) {
                  this.add((GameProfile) optional.get());
                  flag = false;
-@@ -168,6 +182,7 @@ public class GameProfileCache {
+@@ -167,6 +181,7 @@ public class GameProfileCache {
          }
  
          return optional;
@@ -78,7 +78,7 @@ index 4dc08b0abf0a1edb51cc586d1a89444ba790ca7f..13e05a9e42ba89d37c423d819da33f2f
      }
  
      public CompletableFuture<Optional<GameProfile>> getAsync(String username) {
-@@ -192,6 +207,7 @@ public class GameProfileCache {
+@@ -191,6 +206,7 @@ public class GameProfileCache {
      }
  
      public Optional<GameProfile> get(UUID uuid) {
@@ -86,7 +86,7 @@ index 4dc08b0abf0a1edb51cc586d1a89444ba790ca7f..13e05a9e42ba89d37c423d819da33f2f
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByUUID.get(uuid);
  
          if (usercache_usercacheentry == null) {
-@@ -200,6 +216,7 @@ public class GameProfileCache {
+@@ -199,6 +215,7 @@ public class GameProfileCache {
              usercache_usercacheentry.setLastAccess(this.getNextOperation());
              return Optional.of(usercache_usercacheentry.getProfile());
          }
@@ -94,7 +94,7 @@ index 4dc08b0abf0a1edb51cc586d1a89444ba790ca7f..13e05a9e42ba89d37c423d819da33f2f
      }
  
      public void setExecutor(Executor executor) {
-@@ -280,7 +297,7 @@ public class GameProfileCache {
+@@ -279,7 +296,7 @@ public class GameProfileCache {
          JsonArray jsonarray = new JsonArray();
          DateFormat dateformat = GameProfileCache.createDateFormat();
  
@@ -103,7 +103,7 @@ index 4dc08b0abf0a1edb51cc586d1a89444ba790ca7f..13e05a9e42ba89d37c423d819da33f2f
              jsonarray.add(GameProfileCache.writeGameProfile(usercache_usercacheentry, dateformat));
          });
          String s = this.gson.toJson(jsonarray);
-@@ -321,8 +338,19 @@ public class GameProfileCache {
+@@ -320,8 +337,19 @@ public class GameProfileCache {
      }
  
      private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int limit) {
