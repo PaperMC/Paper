@@ -145,6 +145,12 @@ public enum InventoryType {
      * Pseudo jukebox inventory with 1 slot of undefined type.
      */
     JUKEBOX(1, "Jukebox", null, false),
+    // Paper start - add missing type
+    /**
+     * Pseudo decorated pot with 1 slot of undefined type.
+     */
+    DECORATED_POT(1, "Decorated Pot", null, false),
+    // Paper end - add missing type
     /**
      * A crafter inventory, with 9 CRAFTING slots.
      */
