@@ -1,0 +1,639 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Color_yr <402067010@qq.com>
+Date: Thu, 28 Dec 2023 20:21:48 +0800
+Subject: [PATCH] full support for UnixDomainSocketAddress
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerConnectionCloseEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerConnectionCloseEvent.java
+index 12c1c6fe9dc8dc5f5faf6dcf99f6857219ef22b8..0d39ac03077986fe11583775bea43c2277f0dda6 100644
+--- a/src/main/java/com/destroystokyo/paper/event/player/PlayerConnectionCloseEvent.java
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerConnectionCloseEvent.java
+@@ -4,6 +4,9 @@ import org.bukkit.event.Event;
+ import org.bukkit.event.HandlerList;
+ 
+ import java.net.InetAddress;
++import java.net.InetSocketAddress;
++import java.net.SocketAddress;
++import java.net.UnixDomainSocketAddress;
+ import java.util.UUID;
+ import org.jetbrains.annotations.NotNull;
+ 
+@@ -49,13 +52,13 @@ public class PlayerConnectionCloseEvent extends Event {
+ 
+     @NotNull private final UUID playerUniqueId;
+     @NotNull private final String playerName;
+-    @NotNull private final InetAddress ipAddress;
++    @NotNull private final SocketAddress address;
+ 
+-    public PlayerConnectionCloseEvent(@NotNull final UUID playerUniqueId, @NotNull final String playerName, @NotNull final InetAddress ipAddress, final boolean async) {
++    public PlayerConnectionCloseEvent(@NotNull final UUID playerUniqueId, @NotNull final String playerName, @NotNull final SocketAddress address, final boolean async) {
+         super(async);
+         this.playerUniqueId = playerUniqueId;
+         this.playerName = playerName;
+-        this.ipAddress = ipAddress;
++        this.address = address;
+     }
+ 
+     /**
+@@ -78,8 +81,21 @@ public class PlayerConnectionCloseEvent extends Event {
+      * Returns the player's IP address.
+      */
+     @NotNull
++    @Deprecated
+     public InetAddress getIpAddress() {
+-        return this.ipAddress;
++        if (address instanceof InetSocketAddress inet) {
++            return inet.getAddress();
++        } else {
++            throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++        }
++    }
++
++    /**
++     * Returns the player's address.
++     */
++    @NotNull
++    public SocketAddress getSocketAddress() {
++        return address;
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
+index e886ac04c0c14ae5dfb87212e262b96ec5b3b9dc..82e6c2aa9d522516285359c444e9b7cd3e862c55 100644
+--- a/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
++++ b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
+@@ -44,7 +44,7 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
+     @Deprecated
+     public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull String motd, int numPlayers, int maxPlayers,
+             @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
+-        super("", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
++        super("", client.getSocketAddress(), motd, numPlayers, maxPlayers);
+         this.client = client;
+         this.numPlayers = numPlayers;
+         this.version = version;
+@@ -54,7 +54,7 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
+ 
+     public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull net.kyori.adventure.text.Component motd, int numPlayers, int maxPlayers,
+                                     @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
+-        super("", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
++        super("", client.getSocketAddress(), motd, numPlayers, maxPlayers);
+         this.client = client;
+         this.numPlayers = numPlayers;
+         this.version = version;
+diff --git a/src/main/java/com/destroystokyo/paper/network/NetworkClient.java b/src/main/java/com/destroystokyo/paper/network/NetworkClient.java
+index 7b2af1bd72dfbcf4e962a982940fc49b851aa04f..9d0e77c1d3a0be1832dd3a4d77cfd37bee136650 100644
+--- a/src/main/java/com/destroystokyo/paper/network/NetworkClient.java
++++ b/src/main/java/com/destroystokyo/paper/network/NetworkClient.java
+@@ -1,6 +1,7 @@
+ package com.destroystokyo.paper.network;
+ 
+ import java.net.InetSocketAddress;
++import java.net.SocketAddress;
+ 
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+@@ -16,8 +17,17 @@ public interface NetworkClient {
+      * @return The client's socket address
+      */
+     @NotNull
++    @Deprecated
+     InetSocketAddress getAddress();
+ 
++    /**
++     * Returns the socket address of the client.
++     *
++     * @return The client's socket address
++     */
++    @NotNull
++    SocketAddress getSocketAddress();
++
+     /**
+      * Returns the protocol version of the client.
+      *
+@@ -36,6 +46,17 @@ public interface NetworkClient {
+      * @return The client's virtual host, or {@code null} if unknown
+      */
+     @Nullable
++    @Deprecated
+     InetSocketAddress getVirtualHost();
+ 
++    /**
++     * Returns the virtual host the client is connected to.
++     *
++     * <p>The virtual host refers to the hostname/port the client used to
++     * connect to the server.</p>
++     *
++     * @return The client's virtual host, or {@code null} if unknown
++     */
++    @Nullable
++    SocketAddress getSocketVirtualHost();
+ }
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index ae61a39b25267b84fe0b8766e4b12d9b24b44ded..5341c4daf396c96ed680d91d49de15a5cab4050e 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -2,6 +2,7 @@ package org.bukkit.entity;
+ 
+ import java.net.InetAddress;
+ import java.net.InetSocketAddress;
++import java.net.SocketAddress;
+ import java.time.Duration;
+ import java.time.Instant;
+ import java.util.Collection;
+@@ -3324,6 +3325,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     // Spigot start
+     public class Spigot extends Entity.Spigot {
+ 
++        // Paper start for UnixDomainSocketAddress
+         /**
+          * Gets the connection address of this player, regardless of whether it
+          * has been spoofed or not.
+@@ -3331,10 +3333,24 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+          * @return the player's connection address
+          */
+         @NotNull
++        @Deprecated
+         public InetSocketAddress getRawAddress() {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+ 
++        /**
++         * Gets the connection address of this player, regardless of whether it
++         * has been spoofed or not.
++         *
++         * @return the player's connection address
++         */
++        @NotNull
++        public SocketAddress getSocketRawAddress() {
++            throw new UnsupportedOperationException("Not supported yet.");
++        }
++
++        // Paper end
++
+         /**
+          * Respawns the player if dead.
+          */
+diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+index fc2d9e85b65347b90bde3b0b13ccae759e33d466..c8b435810cace4026e8ff5689e13c9cb33d0d5f9 100644
+--- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+@@ -1,6 +1,8 @@
+ package org.bukkit.event.player;
+ 
+ import java.net.InetAddress;
++import java.net.InetSocketAddress;
++import java.net.SocketAddress;
+ import java.util.UUID;
+ 
+ import com.destroystokyo.paper.profile.PlayerProfile;
+@@ -19,20 +21,22 @@ public class AsyncPlayerPreLoginEvent extends Event {
+     private Result result;
+     private net.kyori.adventure.text.Component message; // Paper
+     //private String name; // Paper - Not used anymore
+-    private final InetAddress ipAddress;
+-    private final InetAddress rawAddress; // Paper
++    private final SocketAddress ipAddress;  // Paper for UnixDomainSocketAddress
++    private final SocketAddress rawAddress; // Paper
+     //private UUID uniqueId; // Paper - Not used anymore
+     private final String hostname; // Paper
+ 
++    // Paper start for UnixDomainSocketAddress
+     @Deprecated
+-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final SocketAddress ipAddress) {
+         this(name, ipAddress, null);
+     }
+ 
+-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
+-        // Paper start
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final SocketAddress ipAddress, @NotNull final UUID uniqueId) {
+         this(name, ipAddress, uniqueId, Bukkit.createProfile(uniqueId, name));
+     }
++
++    // Paper end
+     private PlayerProfile profile;
+ 
+     /**
+@@ -52,29 +56,44 @@ public class AsyncPlayerPreLoginEvent extends Event {
+         this.profile = profile;
+     }
+ 
+-    // Paper Start
++    // Paper start for UnixDomainSocketAddress
+     /**
+      * Gets the raw address of the player logging in
+      * @return The address
+      */
+     @NotNull
++    @Deprecated
+     public InetAddress getRawAddress() {
++        if (rawAddress instanceof InetSocketAddress inet) {
++            return inet.getAddress();
++        } else {
++            throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++        }
++    }
++
++    /**
++     * Gets the raw address of the player logging in
++     * @return The address
++     */
++    @NotNull
++    public SocketAddress getSocketRawAddress(){
+         return rawAddress;
+     }
++
+     // Paper end
+ 
+     @Deprecated
+-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final SocketAddress ipAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
+         this(name, ipAddress, ipAddress, uniqueId, profile);
+     }
+ 
+     @Deprecated // Paper - Add hostname
+-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final SocketAddress ipAddress, @NotNull final SocketAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
+         // Paper start - Add hostname
+         this(name, ipAddress, rawAddress, uniqueId, profile, "");
+     }
+ 
+-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile, @NotNull String hostname) {
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final SocketAddress ipAddress, @NotNull final SocketAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile, @NotNull String hostname) {
+         // Paper end - Add hostname
+         super(true);
+         this.profile = profile;
+@@ -251,16 +270,35 @@ public class AsyncPlayerPreLoginEvent extends Event {
+         return profile.getName(); // Paper
+     }
+ 
++    // Paper start for UnixDomainSocketAddress
++
+     /**
+      * Gets the player IP address.
+      *
+      * @return The IP address
+      */
+     @NotNull
++    @Deprecated
+     public InetAddress getAddress() {
++        if (ipAddress instanceof InetSocketAddress inet) {
++            return inet.getAddress();
++        } else {
++            throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++        }
++    }
++
++    /**
++     * Gets the player IP address.
++     *
++     * @return The IP address
++     */
++    @NotNull
++    public SocketAddress getSocketAddress(){
+         return ipAddress;
+     }
+ 
++    // Paper end
++
+     /**
+      * Gets the player's unique ID.
+      *
+diff --git a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+index eaa0548cf430bf5b58ff84e0a4403c451699db28..2746388e54e9aa3fe054d8ff702d0741a089f339 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+@@ -1,6 +1,8 @@
+ package org.bukkit.event.player;
+ 
+ import java.net.InetAddress;
++import java.net.InetSocketAddress;
++import java.net.SocketAddress;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.HandlerList;
+ import org.jetbrains.annotations.NotNull;
+@@ -14,12 +16,14 @@ import org.jetbrains.annotations.NotNull;
+  */
+ public class PlayerLoginEvent extends PlayerEvent {
+     private static final HandlerList handlers = new HandlerList();
+-    private final InetAddress address;
+-    private final InetAddress realAddress;
++    private final SocketAddress address; // Paper start for UnixDomainSocketAddress
++    private final SocketAddress realAddress; // Paper start for UnixDomainSocketAddress
+     private final String hostname;
+     private Result result = Result.ALLOWED;
+     private net.kyori.adventure.text.Component message = net.kyori.adventure.text.Component.empty();
+ 
++    // Paper start for UnixDomainSocketAddress
++
+     /**
+      * This constructor defaults message to an empty string, and result to
+      * ALLOWED
+@@ -30,7 +34,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+      *     timing issues
+      * @param realAddress the actual, unspoofed connecting address
+      */
+-    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull InetAddress realAddress) {
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final SocketAddress address, final @NotNull SocketAddress realAddress) {
+         super(player);
+         this.hostname = hostname;
+         this.address = address;
+@@ -46,7 +50,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * @param address The address the player used to connect, provided for
+      *     timing issues
+      */
+-    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address) {
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final SocketAddress address) {
+         this(player, hostname, address, address);
+     }
+ 
+@@ -60,16 +64,15 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * @param result The result status for this event
+      * @param message The message to be displayed if result denies login
+      * @param realAddress the actual, unspoofed connecting address
+-     * @deprecated in favour of {@link #PlayerLoginEvent(Player, String, InetAddress, Result, net.kyori.adventure.text.Component, InetAddress)}
++     * @deprecated in favour of {@link #PlayerLoginEvent(Player, String, SocketAddress, Result, net.kyori.adventure.text.Component, SocketAddress)}
+      */
+     @Deprecated // Paper
+-    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final InetAddress realAddress) {
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final SocketAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final SocketAddress realAddress) {
+         this(player, hostname, address, realAddress);
+         this.result = result;
+         this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
+     }
+ 
+-    // Paper start
+     /**
+      * This constructor pre-configures the event with a result and message
+      *
+@@ -81,7 +84,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * @param message The message to be displayed if result denies login
+      * @param realAddress the actual, unspoofed connecting address
+      */
+-    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final InetAddress realAddress) {
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final SocketAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final SocketAddress realAddress) {
+         this(player, hostname, address, realAddress); // Spigot
+         this.result = result;
+         this.message = message;
+@@ -193,6 +196,8 @@ public class PlayerLoginEvent extends PlayerEvent {
+         this.message = message;
+     }
+ 
++    // Paper start for UnixDomainSocketAddress
++
+     /**
+      * Gets the {@link InetAddress} for the Player associated with this event.
+      * This method is provided as a workaround for player.getAddress()
+@@ -202,7 +207,25 @@ public class PlayerLoginEvent extends PlayerEvent {
+      *     be null.
+      */
+     @NotNull
++    @Deprecated
+     public InetAddress getAddress() {
++        if (address instanceof InetSocketAddress inet) {
++            return inet.getAddress();
++        } else {
++            throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++        }
++    }
++
++    /**
++     * Gets the {@link SocketAddress} for the Player associated with this event.
++     * This method is provided as a workaround for player.getSocketAddress()
++     * returning null during PlayerLoginEvent.
++     *
++     * @return The address for this player. For legacy compatibility, this may
++     *     be null.
++     */
++    @NotNull
++    public SocketAddress getSocketAddress(){
+         return address;
+     }
+ 
+@@ -214,10 +237,29 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * @see #getAddress()
+      */
+     @NotNull
++    @Deprecated
+     public InetAddress getRealAddress() {
++        if (realAddress instanceof InetSocketAddress inet) {
++            return inet.getAddress();
++        } else {
++            throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++        }
++    }
++
++    /**
++     * Gets the connection address of this player, regardless of whether it has
++     * been spoofed or not.
++     *
++     * @return the player's connection address
++     * @see #getSocketAddress()
++     */
++    @NotNull
++    public SocketAddress getSocketRealAddress(){
+         return realAddress;
+     }
+ 
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
+diff --git a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
+index 6800132c6288b4588fd02b08d26f016c38f27129..68fbe0520c1a3bece6940fa7994e31ef25604e82 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
+@@ -1,6 +1,8 @@
+ package org.bukkit.event.player;
+ 
+ import java.net.InetAddress;
++import java.net.InetSocketAddress;
++import java.net.SocketAddress;
+ import java.util.UUID;
+ import org.bukkit.Warning;
+ import org.bukkit.event.Event;
+@@ -21,15 +23,17 @@ public class PlayerPreLoginEvent extends Event {
+     private Result result;
+     private net.kyori.adventure.text.Component message; // Paper
+     private final String name;
+-    private final InetAddress ipAddress;
++    private final SocketAddress ipAddress; // Paper for UnixDomainSocketAddress
+     private final UUID uniqueId;
+ 
++    // Paper start for UnixDomainSocketAddress
++
+     @Deprecated
+-    public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
++    public PlayerPreLoginEvent(@NotNull final String name, @NotNull final SocketAddress ipAddress) {
+         this(name, ipAddress, null);
+     }
+ 
+-    public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
++    public PlayerPreLoginEvent(@NotNull final String name, @NotNull final SocketAddress ipAddress, @NotNull final UUID uniqueId) {
+         this.result = Result.ALLOWED;
+         this.message = net.kyori.adventure.text.Component.empty(); // Paper
+         this.name = name;
+@@ -37,6 +41,8 @@ public class PlayerPreLoginEvent extends Event {
+         this.uniqueId = uniqueId;
+     }
+ 
++    // Paper end
++
+     /**
+      * Gets the current result of the login, as an enum
+      *
+@@ -143,16 +149,34 @@ public class PlayerPreLoginEvent extends Event {
+         return name;
+     }
+ 
++    // Paper start for UnixDomainSocketAddress
++
+     /**
+      * Gets the player IP address.
+      *
+      * @return The IP address
+      */
+     @NotNull
++    @Deprecated
+     public InetAddress getAddress() {
++        if (ipAddress instanceof InetSocketAddress inet) {
++            return inet.getAddress();
++        } else {
++            throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++        }
++    }
++
++    /**
++     * Gets the player address.
++     *
++     * @return The address
++     */
++    public SocketAddress getSocketAddress() {
+         return ipAddress;
+     }
+ 
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
+diff --git a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+index 72ebc29db42d08d1d0361dba462fc8a573fbf918..2bd96c31b07b7e479b581f0ea81291279b656827 100644
+--- a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
++++ b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+@@ -2,6 +2,8 @@ package org.bukkit.event.server;
+ 
+ import com.google.common.base.Preconditions;
+ import java.net.InetAddress;
++import java.net.InetSocketAddress;
++import java.net.SocketAddress;
+ import java.util.Iterator;
+ import org.bukkit.Bukkit;
+ import org.bukkit.UndefinedNullability;
+@@ -21,12 +23,13 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+     private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
+     private static final HandlerList handlers = new HandlerList();
+     private final String hostname;
+-    private final InetAddress address;
++    private final SocketAddress address; // Paper for UnixDomainSocketAddress
+     private net.kyori.adventure.text.Component motd; // Paper
+     private final int numPlayers;
+     private int maxPlayers;
+ 
+-    public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
++    // Paper for UnixDomainSocketAddress
++    public ServerListPingEvent(@NotNull final String hostname, @NotNull final SocketAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
+         super(true);
+         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
+         this.hostname = hostname;
+@@ -45,10 +48,10 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+      * @param address the address of the pinger
+      * @param motd the message of the day
+      * @param maxPlayers the max number of players
+-     * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.InetAddress, net.kyori.adventure.text.Component, int)}
++     * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.SocketAddress, net.kyori.adventure.text.Component, int)}
+      */
+-    @Deprecated // Paper
+-    protected ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
++    @Deprecated // Paper for UnixDomainSocketAddress
++    protected ServerListPingEvent(@NotNull final String hostname, @NotNull final SocketAddress address, @NotNull final String motd, final int maxPlayers) {
+         super(true);
+         this.numPlayers = MAGIC_PLAYER_COUNT;
+         this.hostname = hostname;
+@@ -57,11 +60,12 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+         this.maxPlayers = maxPlayers;
+     }
+     // Paper start
+-    @Deprecated
+-    public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
++    @Deprecated // Paper for UnixDomainSocketAddress
++    public ServerListPingEvent(@NotNull final SocketAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
+         this("", address, motd, numPlayers, maxPlayers);
+     }
+-    public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
++    // Paper for UnixDomainSocketAddress
++    public ServerListPingEvent(@NotNull final String hostname, @NotNull final SocketAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
+         super(true);
+         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online (%s)", numPlayers);
+         this.hostname = hostname;
+@@ -78,10 +82,10 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+      * @param address the address of the pinger
+      * @param motd the message of the day
+      * @param maxPlayers the max number of players
+-     * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.InetAddress, net.kyori.adventure.text.Component, int)}
++     * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.SocketAddress, net.kyori.adventure.text.Component, int)}
+      */
+-    @Deprecated
+-    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int maxPlayers) {
++    @Deprecated // Paper for UnixDomainSocketAddress
++    protected ServerListPingEvent(@NotNull final SocketAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int maxPlayers) {
+         this("", address, motd, maxPlayers);
+     }
+ 
+@@ -95,7 +99,8 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+      * @param motd the message of the day
+      * @param maxPlayers the max number of players
+      */
+-    protected ServerListPingEvent(final @NotNull String hostname, final @NotNull InetAddress address, final net.kyori.adventure.text.@NotNull Component motd, final int maxPlayers) {
++    // Paper for UnixDomainSocketAddress
++    protected ServerListPingEvent(final @NotNull String hostname, final @NotNull SocketAddress address, final net.kyori.adventure.text.@NotNull Component motd, final int maxPlayers) {
+         this.numPlayers = MAGIC_PLAYER_COUNT;
+         this.hostname = hostname;
+         this.address = address;
+@@ -131,16 +136,35 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+         return hostname;
+     }
+ 
++    // Paper start for UnixDomainSocketAddress
++
+     /**
+      * Get the address the ping is coming from.
+      *
+      * @return the address
+      */
+     @NotNull
++    @Deprecated
+     public InetAddress getAddress() {
++        if (address instanceof InetSocketAddress inet) {
++            return inet.getAddress();
++        } else {
++            throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++        }
++    }
++
++    /**
++     * Get the address the ping is coming from.
++     *
++     * @return the address
++     */
++    @NotNull
++    public SocketAddress getSocketAddress(){
+         return address;
+     }
+ 
++    // Paper end
++
+     /**
+      * Get the message of the day message.
+      *
