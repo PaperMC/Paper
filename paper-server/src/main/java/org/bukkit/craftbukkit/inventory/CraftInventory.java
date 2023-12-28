@@ -529,6 +529,10 @@ public class CraftInventory implements Inventory {
             return InventoryType.COMPOSTER;
         } else if (this.inventory instanceof JukeboxBlockEntity) {
             return InventoryType.JUKEBOX;
+            // Paper start
+        } else if (this.inventory instanceof net.minecraft.world.level.block.entity.DecoratedPotBlockEntity) {
+            return org.bukkit.event.inventory.InventoryType.DECORATED_POT;
+            // Paper end
         } else {
             return InventoryType.CHEST;
         }
