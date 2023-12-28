@@ -16,6 +16,33 @@ by the regionaliser, as it is not guaranteed that anything
 outside of the buffer zone is owned. Then, the plugins may use
 the schedulers depending on the result of the ownership check.
 
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+index 846bdcccf1031e41c4da29da885aa4d438507631..04efba1517e2bde8ecced31ab2eb669b2e84a28c 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+@@ -251,6 +251,22 @@ class PaperPluginInstanceManager {
+                 + pluginName + " (Is it up to date?)", ex, plugin); // Paper
+         }
+ 
++        // Paper start - Folia schedulers
++        try {
++            this.server.getGlobalRegionScheduler().cancelTasks(plugin);
++        } catch (Throwable ex) {
++            this.handlePluginException("Error occurred (in the plugin loader) while cancelling global tasks for "
++                + pluginName + " (Is it up to date?)", ex, plugin); // Paper
++        }
++
++        try {
++            this.server.getAsyncScheduler().cancelTasks(plugin);
++        } catch (Throwable ex) {
++            this.handlePluginException("Error occurred (in the plugin loader) while cancelling async tasks for "
++                + pluginName + " (Is it up to date?)", ex, plugin); // Paper
++        }
++        // Paper end - Folia schedulers
++
+         try {
+             this.server.getServicesManager().unregisterAll(plugin);
+         } catch (Throwable ex) {
 diff --git a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5d5fd906d
@@ -1146,7 +1173,7 @@ index 50316da08ae259dcc0d02c28081a352f09d1a19a..a8f9f4e23575cb58045f9d8efe011a60
          this.profiler.push("commandFunctions");
          MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot // Paper
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 3927558c62cf24af915d37eb8e983339bc0f2aa3..895c4accbcf43baaa8a4d560e8b5c0d4dfae3ccc 100644
+index a9cc3d7213f51a2a2cdc915fd9ab3cf97767b698..69e75aec30e8c25f621c8e7d024abe672395a0ef 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -649,6 +649,7 @@ public abstract class PlayerList {
@@ -1224,7 +1251,7 @@ index 903fa8c1489541e141bef59239ecd645955ffca4..a561da947df33d85a6bb6f61e88a2b5f
      public void setLevelCallback(EntityInLevelCallback changeListener) {
          this.levelCallback = changeListener;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 940f79b4456e94fd15b3e6eec38e8fa59ab01d14..79e342b5d28f445671191e3bf4d3b7f592cf2e9e 100644
+index 036d1d133dbe39194ba8bc5201bdae1a3bdae56c..81afb0d5349102025a96610098676e21647f85da 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -306,6 +306,76 @@ public final class CraftServer implements Server {
