@@ -11,8 +11,9 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.packs.DataPack;
 import org.bukkit.packs.DataPackManager;
@@ -81,9 +82,9 @@ public class CraftDataPackManager implements DataPackManager {
 
         CraftWorld craftWorld = ((CraftWorld) world);
         if (material.isItem()) {
-            return CraftMagicNumbers.getItem(material).isEnabled(craftWorld.getHandle().enabledFeatures());
+            return CraftItemType.bukkitToMinecraft(material).isEnabled(craftWorld.getHandle().enabledFeatures());
         } else if (material.isBlock()) {
-            return CraftMagicNumbers.getBlock(material).isEnabled(craftWorld.getHandle().enabledFeatures());
+            return CraftBlockType.bukkitToMinecraft(material).isEnabled(craftWorld.getHandle().enabledFeatures());
         }
         return false;
     }

@@ -61,7 +61,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
 public final class CraftBlockStates {
 
@@ -121,7 +120,7 @@ public final class CraftBlockStates {
                 // block with unhandled TileEntity:
                 return new CraftBlockEntityState<>(world, tileEntity);
             }
-            Preconditions.checkState(tileEntity == null, "Unexpected BlockState for %s", CraftMagicNumbers.getMaterial(blockData.getBlock()));
+            Preconditions.checkState(tileEntity == null, "Unexpected BlockState for %s", CraftBlockType.minecraftToBukkit(blockData.getBlock()));
             return new CraftBlockState(world, blockPosition, blockData);
         }
     };
@@ -377,7 +376,7 @@ public final class CraftBlockStates {
         BlockStateFactory<?> factory = getFactory(material);
 
         if (factory instanceof BlockEntityStateFactory) {
-            return ((BlockEntityStateFactory<?, ?>) factory).createTileEntity(BlockPosition.ZERO, CraftMagicNumbers.getBlock(material).defaultBlockState());
+            return ((BlockEntityStateFactory<?, ?>) factory).createTileEntity(BlockPosition.ZERO, CraftBlockType.bukkitToMinecraft(material).defaultBlockState());
         }
 
         return null;
@@ -401,7 +400,7 @@ public final class CraftBlockStates {
 
     public static BlockState getBlockState(BlockPosition blockPosition, Material material, @Nullable NBTTagCompound blockEntityTag) {
         Preconditions.checkNotNull(material, "material is null");
-        IBlockData blockData = CraftMagicNumbers.getBlock(material).defaultBlockState();
+        IBlockData blockData = CraftBlockType.bukkitToMinecraft(material).defaultBlockState();
         return getBlockState(blockPosition, blockData, blockEntityTag);
     }
 
@@ -418,7 +417,7 @@ public final class CraftBlockStates {
 
     // See BlockStateFactory#createBlockState(World, BlockPosition, IBlockData, TileEntity)
     private static CraftBlockState getBlockState(World world, BlockPosition blockPosition, IBlockData blockData, TileEntity tileEntity) {
-        Material material = CraftMagicNumbers.getMaterial(blockData.getBlock());
+        Material material = CraftBlockType.minecraftToBukkit(blockData.getBlock());
         BlockStateFactory<?> factory;
         // For some types of TileEntity blocks (eg. moving pistons), Minecraft may in some situations (eg. when using Block#setType or the
         // setBlock command) not create a corresponding TileEntity in the world. We return a normal BlockState in this case.

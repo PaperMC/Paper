@@ -5,7 +5,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.EnchantmentSlotType;
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +30,7 @@ public class EnchantmentTargetTest extends AbstractTestingBase {
             assertNotNull(bukkitTarget, "No bukkit target for slot " + nmsSlot);
 
             for (Item item : BuiltInRegistries.ITEM) {
-                Material material = CraftMagicNumbers.getMaterial(item);
+                Material material = CraftItemType.minecraftToBukkit(item);
 
                 boolean nms = nmsSlot.canEnchant(item);
                 boolean bukkit = bukkitTarget.includes(material);

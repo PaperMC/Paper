@@ -41,9 +41,10 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.block.CraftBlockSupport;
+import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -62,7 +63,7 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public Material getMaterial() {
-        return CraftMagicNumbers.getMaterial(state.getBlock());
+        return CraftBlockType.minecraftToBukkit(state.getBlock());
     }
 
     public IBlockData getState() {
@@ -542,7 +543,7 @@ public class CraftBlockData implements BlockData {
         Preconditions.checkArgument(material == null || material.isBlock(), "Cannot get data for not block %s", material);
 
         IBlockData blockData;
-        Block block = CraftMagicNumbers.getBlock(material);
+        Block block = CraftBlockType.bukkitToMinecraft(material);
         Map<IBlockState<?>, Comparable<?>> parsed = null;
 
         // Data provided, use it
@@ -646,7 +647,7 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public Material getPlacementMaterial() {
-        return CraftMagicNumbers.getMaterial(state.getBlock().asItem());
+        return CraftItemType.minecraftToBukkit(state.getBlock().asItem());
     }
 
     @Override

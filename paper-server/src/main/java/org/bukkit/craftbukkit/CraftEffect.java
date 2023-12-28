@@ -8,7 +8,8 @@ import org.bukkit.Color;
 import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.block.CraftBlockType;
+import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.potion.Potion;
 
 public class CraftEffect {
@@ -26,7 +27,7 @@ public class CraftEffect {
             break;
         case RECORD_PLAY:
             Preconditions.checkArgument(data == Material.AIR || ((Material) data).isRecord(), "Invalid record type for Material %s!", data);
-            datavalue = Item.getId(CraftMagicNumbers.getItem((Material) data));
+            datavalue = Item.getId(CraftItemType.bukkitToMinecraft((Material) data));
             break;
         case SMOKE:
             switch ((BlockFace) data) {
@@ -60,7 +61,7 @@ public class CraftEffect {
             break;
         case STEP_SOUND:
             Preconditions.checkArgument(((Material) data).isBlock(), "Material %s is not a block!", data);
-            datavalue = Block.getId(CraftMagicNumbers.getBlock((Material) data).defaultBlockState());
+            datavalue = Block.getId(CraftBlockType.bukkitToMinecraft((Material) data).defaultBlockState());
             break;
         case COMPOSTER_FILL_ATTEMPT:
             datavalue = ((Boolean) data) ? 1 : 0;

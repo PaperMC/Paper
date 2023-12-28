@@ -19,7 +19,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.util.CraftLegacy;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemFactory;
@@ -465,7 +464,7 @@ public final class CraftItemFactory implements ItemFactory {
             return null;
         }
 
-        return CraftMagicNumbers.getMaterial(nmsItem);
+        return CraftItemType.minecraftToBukkit(nmsItem);
     }
 
     @Override

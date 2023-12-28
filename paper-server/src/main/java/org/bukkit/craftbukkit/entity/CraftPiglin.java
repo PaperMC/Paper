@@ -9,7 +9,7 @@ import net.minecraft.world.item.Item;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.entity.Piglin;
 import org.bukkit.inventory.Inventory;
 
@@ -33,7 +33,7 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin {
     public boolean addBarterMaterial(Material material) {
         Preconditions.checkArgument(material != null, "material cannot be null");
 
-        Item item = CraftMagicNumbers.getItem(material);
+        Item item = CraftItemType.bukkitToMinecraft(material);
         return getHandle().allowedBarterItems.add(item);
     }
 
@@ -41,7 +41,7 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin {
     public boolean removeBarterMaterial(Material material) {
         Preconditions.checkArgument(material != null, "material cannot be null");
 
-        Item item = CraftMagicNumbers.getItem(material);
+        Item item = CraftItemType.bukkitToMinecraft(material);
         return getHandle().allowedBarterItems.remove(item);
     }
 
@@ -49,7 +49,7 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin {
     public boolean addMaterialOfInterest(Material material) {
         Preconditions.checkArgument(material != null, "material cannot be null");
 
-        Item item = CraftMagicNumbers.getItem(material);
+        Item item = CraftItemType.bukkitToMinecraft(material);
         return getHandle().interestItems.add(item);
     }
 
@@ -57,18 +57,18 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin {
     public boolean removeMaterialOfInterest(Material material) {
         Preconditions.checkArgument(material != null, "material cannot be null");
 
-        Item item = CraftMagicNumbers.getItem(material);
+        Item item = CraftItemType.bukkitToMinecraft(material);
         return getHandle().interestItems.remove(item);
     }
 
     @Override
     public Set<Material> getInterestList() {
-        return Collections.unmodifiableSet(getHandle().interestItems.stream().map(CraftMagicNumbers::getMaterial).collect(Collectors.toSet()));
+        return Collections.unmodifiableSet(getHandle().interestItems.stream().map(CraftItemType::minecraftToBukkit).collect(Collectors.toSet()));
     }
 
     @Override
     public Set<Material> getBarterList() {
-        return Collections.unmodifiableSet(getHandle().allowedBarterItems.stream().map(CraftMagicNumbers::getMaterial).collect(Collectors.toSet()));
+        return Collections.unmodifiableSet(getHandle().allowedBarterItems.stream().map(CraftItemType::minecraftToBukkit).collect(Collectors.toSet()));
     }
 
     @Override

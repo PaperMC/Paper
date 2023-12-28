@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ITileEntity;
 import net.minecraft.world.level.block.entity.TileEntity;
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +15,7 @@ public class BlockStateTest extends AbstractTestingBase {
     @Test
     public void testTileEntityBlockStates() {
         for (Block block : BuiltInRegistries.BLOCK) {
-            Material material = CraftMagicNumbers.getMaterial(block);
+            Material material = CraftBlockType.minecraftToBukkit(block);
             Class<?> blockStateType = CraftBlockStates.getBlockStateType(material);
             boolean isCraftBlockEntityState = CraftBlockEntityState.class.isAssignableFrom(blockStateType);
 

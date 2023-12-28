@@ -31,7 +31,6 @@ import org.bukkit.craftbukkit.inventory.ItemStackTest.BukkitWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.CraftWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.StackWrapper;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.TropicalFish;
@@ -197,7 +196,7 @@ public class ItemMetaTest extends AbstractTestingBase {
     public void testSpawnEggsHasMeta() {
         for (Item item : BuiltInRegistries.ITEM) {
             if (item instanceof net.minecraft.world.item.ItemMonsterEgg) {
-                Material material = CraftMagicNumbers.getMaterial(item);
+                Material material = CraftItemType.minecraftToBukkit(item);
                 CraftMetaItem baseMeta = (CraftMetaItem) Bukkit.getItemFactory().getItemMeta(material);
                 ItemMeta baseMetaItem = CraftItemStack.getItemMeta(item.getDefaultInstance());
 

@@ -58,7 +58,7 @@ public final class CraftItemStack extends ItemStack {
         if (original.isEmpty()) {
             return new ItemStack(Material.AIR);
         }
-        ItemStack stack = new ItemStack(CraftMagicNumbers.getMaterial(original.getItem()), original.getCount());
+        ItemStack stack = new ItemStack(CraftItemType.minecraftToBukkit(original.getItem()), original.getCount());
         if (hasItemMeta(original)) {
             stack.setItemMeta(getItemMeta(original));
         }
@@ -82,7 +82,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     public static CraftItemStack asNewCraftStack(Item item, int amount) {
-        return new CraftItemStack(CraftMagicNumbers.getMaterial(item), amount, (short) 0, null);
+        return new CraftItemStack(CraftItemType.minecraftToBukkit(item), amount, (short) 0, null);
     }
 
     net.minecraft.world.item.ItemStack handle;
@@ -112,7 +112,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public Material getType() {
-        return handle != null ? CraftMagicNumbers.getMaterial(handle.getItem()) : Material.AIR;
+        return handle != null ? CraftItemType.minecraftToBukkit(handle.getItem()) : Material.AIR;
     }
 
     @Override
@@ -121,12 +121,12 @@ public final class CraftItemStack extends ItemStack {
             return;
         } else if (type == Material.AIR) {
             handle = null;
-        } else if (CraftMagicNumbers.getItem(type) == null) { // :(
+        } else if (CraftItemType.bukkitToMinecraft(type) == null) { // :(
             handle = null;
         } else if (handle == null) {
-            handle = new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(type), 1);
+            handle = new net.minecraft.world.item.ItemStack(CraftItemType.bukkitToMinecraft(type), 1);
         } else {
-            handle.setItem(CraftMagicNumbers.getItem(type));
+            handle.setItem(CraftItemType.bukkitToMinecraft(type));
             if (hasItemMeta()) {
                 // This will create the appropriate item meta, which will contain all the data we intend to keep
                 setItemMeta(handle, getItemMeta(handle));
@@ -600,7 +600,7 @@ public final class CraftItemStack extends ItemStack {
             case SUSPICIOUS_GRAVEL:
             case CRAFTER:
             case TRIAL_SPAWNER:
-                return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
+                return new CraftMetaBlockState(item.getTag(), CraftItemType.minecraftToBukkit(item.getItem()));
             case TROPICAL_FISH_BUCKET:
                 return new CraftMetaTropicalFishBucket(item.getTag());
             case AXOLOTL_BUCKET:
@@ -628,7 +628,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     static Material getType(net.minecraft.world.item.ItemStack item) {
-        return item == null ? Material.AIR : CraftMagicNumbers.getMaterial(item.getItem());
+        return item == null ? Material.AIR : CraftItemType.minecraftToBukkit(item.getItem());
     }
 
     @Override
@@ -652,7 +652,7 @@ public final class CraftItemStack extends ItemStack {
         if (itemMeta == null) return true;
 
         Item oldItem = item.getItem();
-        Item newItem = CraftMagicNumbers.getItem(CraftItemFactory.instance().updateMaterial(itemMeta, CraftMagicNumbers.getMaterial(oldItem)));
+        Item newItem = CraftItemType.bukkitToMinecraft(CraftItemFactory.instance().updateMaterial(itemMeta, CraftItemType.minecraftToBukkit(oldItem)));
         if (oldItem != newItem) {
             item.setItem(newItem);
         }

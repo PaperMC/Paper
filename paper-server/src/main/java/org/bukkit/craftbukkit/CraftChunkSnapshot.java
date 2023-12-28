@@ -16,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBiome;
+import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
@@ -99,7 +100,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     public Material getBlockType(int x, int y, int z) {
         validateChunkCoordinates(x, y, z);
 
-        return CraftMagicNumbers.getMaterial(blockids[getSectionIndex(y)].get(x, y & 0xF, z).getBlock());
+        return CraftBlockType.minecraftToBukkit(blockids[getSectionIndex(y)].get(x, y & 0xF, z).getBlock());
     }
 
     @Override

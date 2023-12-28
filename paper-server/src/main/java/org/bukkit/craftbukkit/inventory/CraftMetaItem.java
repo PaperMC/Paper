@@ -59,6 +59,7 @@ import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.Overridden;
 import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
+import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
 import org.bukkit.craftbukkit.inventory.tags.DeprecatedCustomTagContainer;
@@ -922,7 +923,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public BlockData getBlockData(Material material) {
-        IBlockData defaultData = CraftMagicNumbers.getBlock(material).defaultBlockState();
+        IBlockData defaultData = CraftBlockType.bukkitToMinecraft(material).defaultBlockState();
         return CraftBlockData.fromData((hasBlockData()) ? ItemBlock.getBlockState(defaultData, blockData) : defaultData);
     }
 

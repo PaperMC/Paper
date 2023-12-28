@@ -221,7 +221,7 @@ public class CraftBlock implements Block {
 
     @Override
     public Material getType() {
-        return CraftMagicNumbers.getMaterial(world.getBlockState(position).getBlock());
+        return CraftBlockType.minecraftToBukkit(world.getBlockState(position).getBlock());
     }
 
     @Override
