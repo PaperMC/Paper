@@ -494,7 +494,7 @@ index 0000000000000000000000000000000000000000..667bfa6afc35f8a8f475431171ee474a
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4eada40b8abb1833ce623ccee0789555e370d024
+index 0000000000000000000000000000000000000000..4d2eddba7dc88ba23b241ac7849114a30af968d3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 @@ -0,0 +1,47 @@
@@ -3061,37 +3061,40 @@ index f4ac033ff8794a61c82a49dc6c3f863f3291455d..d944d67f544494355f03c5bc9afd8ea7
  
      /**
 diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
-index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a803bfea5400b3578bb4cf3261874e873b6467d9 100644
+index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..03b4e0300d228e3f3a9f4f75c96e0cf9ed1a7d2d 100644
 --- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
-@@ -12,25 +12,48 @@ import org.jetbrains.annotations.Nullable;
+@@ -11,26 +11,49 @@ import org.jetbrains.annotations.Nullable;
+  */
  public class PlayerDeathEvent extends EntityDeathEvent {
      private int newExp = 0;
-     private String deathMessage = "";
-+    private net.kyori.adventure.text.Component adventure$deathMessage; // Paper
+-    private String deathMessage = "";
++    private net.kyori.adventure.text.Component deathMessage; // Paper - adventure
      private int newLevel = 0;
      private int newTotalExp = 0;
      private boolean keepLevel = false;
      private boolean keepInventory = false;
-+    // Paper start
-+    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, @Nullable final net.kyori.adventure.text.Component adventure$deathMessage) {
-+        this(player, drops, droppedExp, 0, adventure$deathMessage, null);
++    // Paper start - adventure
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final @Nullable net.kyori.adventure.text.Component deathMessage) {
++        this(player, drops, droppedExp, 0, deathMessage);
 +    }
 +
-+    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, @Nullable final net.kyori.adventure.text.Component adventure$deathMessage, @Nullable String deathMessage) {
-+        this(player, drops, droppedExp, newExp, 0, 0, adventure$deathMessage, deathMessage);
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final @Nullable net.kyori.adventure.text.Component deathMessage) {
++        this(player, drops, droppedExp, newExp, 0, 0, deathMessage);
 +    }
- 
-+    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final net.kyori.adventure.text.Component adventure$deathMessage, @Nullable String deathMessage) {
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage) {
 +        super(player, drops, droppedExp);
 +        this.newExp = newExp;
 +        this.newTotalExp = newTotalExp;
 +        this.newLevel = newLevel;
 +        this.deathMessage = deathMessage;
-+        this.adventure$deathMessage = adventure$deathMessage;
 +    }
-+    // Paper end
-+
++    // Paper end - adventure
+ 
 +    @Deprecated // Paper
      public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, @Nullable final String deathMessage) {
          this(player, drops, droppedExp, 0, deathMessage);
@@ -3108,35 +3111,34 @@ index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a803bfea5400b3578bb4cf3261874e87
          this.newExp = newExp;
          this.newTotalExp = newTotalExp;
          this.newLevel = newLevel;
-         this.deathMessage = deathMessage;
-+        this.adventure$deathMessage = deathMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(deathMessage) : null; // Paper
+-        this.deathMessage = deathMessage;
++        this.deathMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage); // Paper
      }
  
      @NotNull
-@@ -39,25 +62,55 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+@@ -39,25 +62,49 @@ public class PlayerDeathEvent extends EntityDeathEvent {
          return (Player) entity;
      }
  
-+    // Paper start
++    // Paper start - adventure
 +    /**
 +     * Set the death message that will appear to everyone on the server.
 +     *
-+     * @param deathMessage Message to appear to other players on the server.
++     * @param deathMessage Component message to appear to other players on the server.
 +     */
-+    public void deathMessage(net.kyori.adventure.text.@Nullable Component deathMessage) {
-+        this.deathMessage = null;
-+        this.adventure$deathMessage = deathMessage;
++    public void deathMessage(final net.kyori.adventure.text.@Nullable Component deathMessage) {
++        this.deathMessage = deathMessage;
 +    }
 +
 +    /**
 +     * Get the death message that will appear to everyone on the server.
 +     *
-+     * @return Message to appear to other players on the server.
++     * @return Component message to appear to other players on the server.
 +     */
 +    public net.kyori.adventure.text.@Nullable Component deathMessage() {
-+        return this.adventure$deathMessage;
++        return this.deathMessage;
 +    }
-+    // Paper end
++    // Paper end - adventure
 +
      /**
       * Set the death message that will appear to everyone on the server.
@@ -3146,8 +3148,8 @@ index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a803bfea5400b3578bb4cf3261874e87
       */
 +    @Deprecated // Paper
      public void setDeathMessage(@Nullable String deathMessage) {
-         this.deathMessage = deathMessage;
-+        this.adventure$deathMessage = deathMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(deathMessage) : null; // Paper
+-        this.deathMessage = deathMessage;
++        this.deathMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage); // Paper
      }
  
      /**
@@ -3160,13 +3162,9 @@ index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a803bfea5400b3578bb4cf3261874e87
 +    @Deprecated // Paper
      public String getDeathMessage() {
 -        return deathMessage;
-+        return this.deathMessage != null ? this.deathMessage : (this.adventure$deathMessage != null ? getDeathMessageString(this.adventure$deathMessage) : null); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serializeOrNull(this.deathMessage); // Paper
      }
 -
-+    // Paper start //TODO: add translation API to drop String deathMessage in favor of just Adventure
-+    private static String getDeathMessageString(net.kyori.adventure.text.Component component) {
-+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(component);
-+    }
 +    // Paper end
      /**
       * Gets how much EXP the Player should have at respawn.

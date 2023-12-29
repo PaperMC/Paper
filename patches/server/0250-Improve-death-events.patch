@@ -45,7 +45,7 @@ index 0100aafc999cadcfa7a904a812355502379c418d..b2864db793e8d764cf06229d7868fcf8
 @@ -882,6 +886,16 @@ public class ServerPlayer extends Player {
          String deathmessage = defaultMessage.getString();
          this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
-         org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), defaultMessage.getString(), keepInventory); // Paper - Adventure
+         org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
 +        // Paper start - cancellable death event
 +        if (event.isCancelled()) {
 +            // make compatible with plugins that might have already set the health in an event listener
@@ -422,7 +422,7 @@ index bd6ac69d97ec1c12bf73e9ef07d39a484a39aad1..ce73a8c652cf95bae62808fc27db2ab8
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index c5736eb070209d0ecad1007e4c4c633c4615be83..18074dab4529f92b164671543dd11d2628ea0982 100644
+index 5c81eb10e92142d8d4907751edc8c01659d2c62e..10c701eb269b02c763d32c6a0be8fe7b843805c5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -890,9 +890,16 @@ public class CraftEventFactory {
@@ -443,7 +443,7 @@ index c5736eb070209d0ecad1007e4c4c633c4615be83..18074dab4529f92b164671543dd11d26
  
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
 @@ -909,8 +916,15 @@ public class CraftEventFactory {
-         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage, stringDeathMessage); // Paper - Adventure
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
 +        populateFields(victim, event); // Paper - make cancellable
