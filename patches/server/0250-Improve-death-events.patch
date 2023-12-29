@@ -19,7 +19,7 @@ public net.minecraft.world.entity.LivingEntity getDeathSound()Lnet/minecraft/sou
 public net.minecraft.world.entity.LivingEntity getSoundVolume()F
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 0100aafc999cadcfa7a904a812355502379c418d..6abd0b8c51138b9a46c0df3a34cfee98016964d3 100644
+index 0100aafc999cadcfa7a904a812355502379c418d..b2864db793e8d764cf06229d7868fcf80247f938 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -248,6 +248,10 @@ public class ServerPlayer extends Player {
@@ -33,7 +33,16 @@ index 0100aafc999cadcfa7a904a812355502379c418d..6abd0b8c51138b9a46c0df3a34cfee98
  
      // CraftBukkit start
      public String displayName;
-@@ -882,6 +886,15 @@ public class ServerPlayer extends Player {
+@@ -854,7 +858,7 @@ public class ServerPlayer extends Player {
+ 
+     @Override
+     public void die(DamageSource damageSource) {
+-        this.gameEvent(GameEvent.ENTITY_DIE);
++        // this.gameEvent(GameEvent.ENTITY_DIE); // Paper - move below event cancellation check
+         boolean flag = this.level().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES);
+         // CraftBukkit start - fire PlayerDeathEvent
+         if (this.isRemoved()) {
+@@ -882,6 +886,16 @@ public class ServerPlayer extends Player {
          String deathmessage = defaultMessage.getString();
          this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
          org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), defaultMessage.getString(), keepInventory); // Paper - Adventure
@@ -45,11 +54,12 @@ index 0100aafc999cadcfa7a904a812355502379c418d..6abd0b8c51138b9a46c0df3a34cfee98
 +            }
 +            return;
 +        }
++        this.gameEvent(GameEvent.ENTITY_DIE); // moved from the top of this method
 +        // Paper end
  
          // SPIGOT-943 - only call if they have an inventory open
          if (this.containerMenu != this.inventoryMenu) {
-@@ -1030,8 +1043,17 @@ public class ServerPlayer extends Player {
+@@ -1030,8 +1044,17 @@ public class ServerPlayer extends Player {
                          }
                      }
                  }
@@ -392,7 +402,7 @@ index 948ba97e318506dad96e59121297b5bf8340d2e6..810bead2f19de70786027b190137f743
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index b6e4fbfdaa46a36e155870190252233eca99d456..baba4105ccd1fe769cbbbd222e9315277394f5c6 100644
+index bd6ac69d97ec1c12bf73e9ef07d39a484a39aad1..ce73a8c652cf95bae62808fc27db2ab852691fd8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -2408,7 +2408,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
