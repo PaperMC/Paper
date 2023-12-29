@@ -18,9 +18,9 @@ public final class TestPlugin extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         System.out.println(context);
-        // context.getLifecycleManager().registerEventHandler(LifecycleEvents.DUMMY.handler(event -> {
-        //
-        // }));
+        context.getLifecycleManager().registerEventHandler(LifecycleEvents.DUMMY.newHandler(event -> {
+
+        }));
         this.getServer().getPluginManager().registerEvents(this, this);
 
         final LifecycleEventManager<Plugin> lifecycles = this.getLifecycleManager();
@@ -37,7 +37,7 @@ public final class TestPlugin extends JavaPlugin implements Listener {
             System.out.println("dummy_static hook THIRD");
         }).priority(100));
 
-        // lifecycles.registerEventHandler(LifecycleEvents.DUMMY.handler(event -> { // shouldn't compile
+        // lifecycles.registerEventHandler(LifecycleEvents.DUMMY.newHandler(event -> { // shouldn't compile
         // }));
 
         lifecycles.registerEventHandler(LifecycleEvents.REGISTER_ANYWHERE_EVENT.newHandler(event -> {

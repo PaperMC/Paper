@@ -37,7 +37,7 @@ public class TestPluginBootstrap implements PluginBootstrap {
         final MonitorLifecycleEventHandlerConfiguration<LifecycleEventOwner> handler = LifecycleEvents.REGISTER_ANYWHERE_EVENT.newHandler(event -> {
 
         });
-        // lifecycles.registerEventHandler(LifecycleEvents.DUMMY_STATIC.handler(event -> { // shouldn't compile
+        // lifecycles.registerEventHandler(LifecycleEvents.DUMMY_STATIC.newHandler(event -> { // shouldn't compile
         // }));
         lifecycles.registerEventHandler(handler);
         lifecycles.registerEventHandler(LifecycleEvents.NON_REGISTRAR_RELATED_EVENT.newHandler(NonRegistrarEvent::someNonRegistrarRelatedThing));
