@@ -36,7 +36,36 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -139,10 +154,12 @@
+@@ -126,7 +141,27 @@
+                 this.state = LoginListener.EnumProtocolState.KEY;
+                 this.connection.send(new PacketLoginOutEncryptionBegin("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge));
+             } else {
+-                this.startClientVerification(UUIDUtil.createOfflineProfile(this.requestedUsername));
++                // CraftBukkit start
++                Thread thread = new Thread("User Authenticator #" + LoginListener.UNIQUE_THREAD_ID.incrementAndGet()) {
++
++                    @Override
++                    public void run() {
++                        try {
++                            GameProfile gameprofile = UUIDUtil.createOfflineProfile(LoginListener.this.requestedUsername);
++
++                            LoginListener.this.callPlayerPreLoginEvents(gameprofile);
++                            LoginListener.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
++                            LoginListener.this.startClientVerification(gameprofile);
++                        } catch (Exception ex) {
++                            disconnect("Failed to verify username!");
++                            server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + LoginListener.this.requestedUsername, ex);
++                        }
++                    }
++                };
++
++                thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LoginListener.LOGGER));
++                thread.start();
++                // CraftBukkit end
+             }
+ 
+         }
+@@ -139,10 +174,12 @@
  
      private void verifyLoginAndFinishConnectionSetup(GameProfile gameprofile) {
          PlayerList playerlist = this.server.getPlayerList();
@@ -52,7 +81,7 @@
          } else {
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
                  this.connection.send(new PacketLoginOutSetCompression(this.server.getCompressionThreshold()), PacketSendListener.thenRun(() -> {
-@@ -150,7 +167,7 @@
+@@ -150,7 +187,7 @@
                  }));
              }
  
@@ -61,7 +90,7 @@
  
              if (flag) {
                  this.state = LoginListener.EnumProtocolState.WAITING_FOR_DUPE_DISCONNECT;
-@@ -200,6 +217,43 @@
+@@ -200,6 +237,12 @@
                      if (profileresult != null) {
                          GameProfile gameprofile = profileresult.profile();
  
@@ -69,43 +98,12 @@
 +                        if (!connection.isConnected()) {
 +                            return;
 +                        }
-+
-+                        String playerName = gameprofile.getName();
-+                        java.net.InetAddress address = ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress();
-+                        java.util.UUID uniqueId = gameprofile.getId();
-+                        final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
-+
-+                        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
-+                        server.getPluginManager().callEvent(asyncEvent);
-+
-+                        if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
-+                            final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
-+                            if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
-+                                event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
-+                            }
-+                            Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<PlayerPreLoginEvent.Result>() {
-+                                @Override
-+                                protected PlayerPreLoginEvent.Result evaluate() {
-+                                    server.getPluginManager().callEvent(event);
-+                                    return event.getResult();
-+                                }};
-+
-+                            LoginListener.this.server.processQueue.add(waitable);
-+                            if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
-+                                disconnect(event.getKickMessage());
-+                                return;
-+                            }
-+                        } else {
-+                            if (asyncEvent.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
-+                                disconnect(asyncEvent.getKickMessage());
-+                                return;
-+                            }
-+                        }
++                        LoginListener.this.callPlayerPreLoginEvents(gameprofile);
 +                        // CraftBukkit end
                          LoginListener.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
                          LoginListener.this.startClientVerification(gameprofile);
                      } else if (LoginListener.this.server.isSingleplayer()) {
-@@ -217,6 +271,11 @@
+@@ -217,6 +260,11 @@
                          LoginListener.this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.authservers_down"));
                          LoginListener.LOGGER.error("Couldn't verify username because servers are unavailable");
                      }
@@ -117,7 +115,51 @@
                  }
  
              }
-@@ -242,7 +301,7 @@
+@@ -233,6 +281,43 @@
+         thread.start();
+     }
+ 
++    // CraftBukkit start
++    private void callPlayerPreLoginEvents(GameProfile gameprofile) throws Exception {
++        String playerName = gameprofile.getName();
++        java.net.InetAddress address = ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress();
++        java.util.UUID uniqueId = gameprofile.getId();
++        final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
++
++        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
++        server.getPluginManager().callEvent(asyncEvent);
++
++        if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
++            final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
++            if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
++                event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
++            }
++            Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<PlayerPreLoginEvent.Result>() {
++                @Override
++                protected PlayerPreLoginEvent.Result evaluate() {
++                    server.getPluginManager().callEvent(event);
++                    return event.getResult();
++                }
++            };
++
++            LoginListener.this.server.processQueue.add(waitable);
++            if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
++                disconnect(event.getKickMessage());
++                return;
++            }
++        } else {
++            if (asyncEvent.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
++                disconnect(asyncEvent.getKickMessage());
++                return;
++            }
++        }
++    }
++    // CraftBukkit end
++
+     @Override
+     public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket serverboundcustomqueryanswerpacket) {
+         this.disconnect(LoginListener.DISCONNECT_UNEXPECTED_QUERY);
+@@ -242,7 +327,7 @@
      public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket serverboundloginacknowledgedpacket) {
          Validate.validState(this.state == LoginListener.EnumProtocolState.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet", new Object[0]);
          CommonListenerCookie commonlistenercookie = CommonListenerCookie.createInitial((GameProfile) Objects.requireNonNull(this.authenticatedProfile));
