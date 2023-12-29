@@ -2168,6 +2168,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
      private static final int PUBLIC_KEY_SIZE = 256;
 @@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
+     }
+ 
+     public <T> void writeJsonWithCodec(Codec<T> codec, T value) {
++        // Paper start - Adventure
++        this.writeJsonWithCodec(codec, value, MAX_STRING_LENGTH);
++    }
++    public <T> void writeJsonWithCodec(Codec<T> codec, T value, int maxLength) {
++        // Paper end - Adventure
+         DataResult<JsonElement> dataresult = codec.encodeStart(JsonOps.INSTANCE, value);
+ 
+         this.writeUtf(FriendlyByteBuf.GSON.toJson((JsonElement) Util.getOrThrow(dataresult, (s) -> {
+             return new EncoderException("Failed to encode: " + s + " " + value);
+-        })));
++        })), maxLength); // Paper - Adventure
+     }
+ 
+     public <T> void writeId(IdMap<T> registry, T value) {
+@@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
          return (Component) this.readWithCodecTrusted(NbtOps.INSTANCE, ComponentSerialization.CODEC);
      }
  
@@ -2605,6 +2623,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          buf.writeComponent(this.header);
          buf.writeComponent(this.footer);
      }
+diff --git a/src/main/java/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java b/src/main/java/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
+@@ -0,0 +0,0 @@ public class ClientboundLoginDisconnectPacket implements Packet<ClientLoginPacke
+     }
+ 
+     public ClientboundLoginDisconnectPacket(FriendlyByteBuf buf) {
+-        this.reason = Component.Serializer.fromJsonLenient(buf.readUtf(262144));
++        this.reason = Component.Serializer.fromJsonLenient(buf.readUtf(FriendlyByteBuf.MAX_COMPONENT_STRING_LENGTH)); // Paper - diff on change
+     }
+ 
+     @Override
+     public void write(FriendlyByteBuf buf) {
+-        buf.writeUtf(Component.Serializer.toJson(this.reason));
++        // Paper start - Adventure
++        //buf.writeUtf(Component.Serializer.toJson(this.reason));
++
++        // In the login phase, buf.adventure$locale field is always null
++        buf.writeJsonWithCodec(net.minecraft.network.chat.ComponentSerialization.localizedCodec(java.util.Locale.US), this.reason, FriendlyByteBuf.MAX_COMPONENT_STRING_LENGTH);
++        // Paper end - Adventure
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
