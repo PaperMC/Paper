@@ -3227,10 +3227,21 @@ index 9c68c3f2d61500479f48b80264f625aaae2f3204..399afcd19fcb6acd24857ed6ab48cf0d
      private static final HandlerList handlers = new HandlerList();
      private boolean cancel = false;
 diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
-index 9866c07c999f46cb585709804aaad710c3031d5a..c7c45e2de8cca1bf8b8e12752e08db62403efa6a 100644
+index 9866c07c999f46cb585709804aaad710c3031d5a..3432872303aa0df97b5d9090fe98b269ef3cb9f4 100644
 --- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 +++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
-@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
+@@ -10,11 +10,18 @@ import org.jetbrains.annotations.NotNull;
+  * Stores details for players attempting to log in.
+  * <p>
+  * This event is asynchronous, and not run using main thread.
++ * <p>
++ * When this event is fired, the player's locale is not
++ * available. Therefore, any translatable component will be
++ * rendered with the default locale, {@link java.util.Locale#US}.
++ * <p>
++ * Consider rendering any translatable yourself with {@link net.kyori.adventure.translation.GlobalTranslator#render}
++ * if the client's language is known.
+  */
  public class AsyncPlayerPreLoginEvent extends Event {
      private static final HandlerList handlers = new HandlerList();
      private Result result;
@@ -3239,7 +3250,7 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..c7c45e2de8cca1bf8b8e12752e08db62
      private final String name;
      private final InetAddress ipAddress;
      private final UUID uniqueId;
-@@ -27,7 +27,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -27,7 +34,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
          super(true);
          this.result = Result.ALLOWED;
@@ -3248,7 +3259,7 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..c7c45e2de8cca1bf8b8e12752e08db62
          this.name = name;
          this.ipAddress = ipAddress;
          this.uniqueId = uniqueId;
-@@ -79,6 +79,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -79,6 +86,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
          this.result = result == null ? null : Result.valueOf(result.name());
      }
  
@@ -3256,7 +3267,7 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..c7c45e2de8cca1bf8b8e12752e08db62
      /**
       * Gets the current kick message that will be used if getResult() !=
       * Result.ALLOWED
-@@ -86,7 +87,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -86,7 +94,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
       * @return Current kick message
       */
      @NotNull
@@ -3265,7 +3276,7 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..c7c45e2de8cca1bf8b8e12752e08db62
          return message;
      }
  
-@@ -95,16 +96,66 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -95,16 +103,66 @@ public class AsyncPlayerPreLoginEvent extends Event {
       *
       * @param message New kick message
       */
@@ -3334,7 +3345,7 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..c7c45e2de8cca1bf8b8e12752e08db62
      }
  
      /**
-@@ -112,10 +163,12 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -112,10 +170,12 @@ public class AsyncPlayerPreLoginEvent extends Event {
       *
       * @param result New result for disallowing the player
       * @param message Kick message to display to the user
@@ -3348,7 +3359,7 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..c7c45e2de8cca1bf8b8e12752e08db62
      }
  
      /**
-@@ -130,7 +183,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -130,7 +190,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      @Deprecated
      public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final String message) {
          this.result = result == null ? null : Result.valueOf(result.name());
@@ -3735,10 +3746,24 @@ index 2bc81b0aa73f7f5b0352121f6bf18fa63acf7a83..eaa0548cf430bf5b58ff84e0a4403c45
          this.message = message;
      }
 diff --git a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
-index fb066251f793ec3b41bfc075b9478901b15ee549..6800132c6288b4588fd02b08d26f016c38f27129 100644
+index fb066251f793ec3b41bfc075b9478901b15ee549..175ed12dd1698f4d153c9acdac8340c15a427ea5 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
-@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
+@@ -9,6 +9,13 @@ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Stores details for players attempting to log in
++ * <p>
++ * When this event is fired, the player's locale is not
++ * available. Therefore, any translatable component will be
++ * rendered with the default locale, {@link java.util.Locale#US}.
++ * <p>
++ * Consider rendering any translatable yourself with {@link net.kyori.adventure.translation.GlobalTranslator#render}
++ * if the client's language is known.
+  *
+  * @deprecated This event causes synchronization from the login thread; {@link
+  *     AsyncPlayerPreLoginEvent} is preferred to keep the secondary threads
+@@ -19,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
  public class PlayerPreLoginEvent extends Event {
      private static final HandlerList handlers = new HandlerList();
      private Result result;
@@ -3747,7 +3772,7 @@ index fb066251f793ec3b41bfc075b9478901b15ee549..6800132c6288b4588fd02b08d26f016c
      private final String name;
      private final InetAddress ipAddress;
      private final UUID uniqueId;
-@@ -31,7 +31,7 @@ public class PlayerPreLoginEvent extends Event {
+@@ -31,7 +38,7 @@ public class PlayerPreLoginEvent extends Event {
  
      public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
          this.result = Result.ALLOWED;
@@ -3756,7 +3781,7 @@ index fb066251f793ec3b41bfc075b9478901b15ee549..6800132c6288b4588fd02b08d26f016c
          this.name = name;
          this.ipAddress = ipAddress;
          this.uniqueId = uniqueId;
-@@ -56,6 +56,7 @@ public class PlayerPreLoginEvent extends Event {
+@@ -56,6 +63,7 @@ public class PlayerPreLoginEvent extends Event {
          this.result = result;
      }
  
@@ -3764,7 +3789,7 @@ index fb066251f793ec3b41bfc075b9478901b15ee549..6800132c6288b4588fd02b08d26f016c
      /**
       * Gets the current kick message that will be used if getResult() !=
       * Result.ALLOWED
-@@ -63,7 +64,7 @@ public class PlayerPreLoginEvent extends Event {
+@@ -63,7 +71,7 @@ public class PlayerPreLoginEvent extends Event {
       * @return Current kick message
       */
      @NotNull
@@ -3773,7 +3798,7 @@ index fb066251f793ec3b41bfc075b9478901b15ee549..6800132c6288b4588fd02b08d26f016c
          return message;
      }
  
-@@ -72,16 +73,51 @@ public class PlayerPreLoginEvent extends Event {
+@@ -72,16 +80,51 @@ public class PlayerPreLoginEvent extends Event {
       *
       * @param message New kick message
       */
@@ -3827,7 +3852,7 @@ index fb066251f793ec3b41bfc075b9478901b15ee549..6800132c6288b4588fd02b08d26f016c
      }
  
      /**
-@@ -89,10 +125,12 @@ public class PlayerPreLoginEvent extends Event {
+@@ -89,10 +132,12 @@ public class PlayerPreLoginEvent extends Event {
       *
       * @param result New result for disallowing the player
       * @param message Kick message to display to the user
