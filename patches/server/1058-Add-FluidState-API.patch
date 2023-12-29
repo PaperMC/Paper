@@ -6,19 +6,19 @@ Subject: [PATCH] Add FluidState API
 
 diff --git a/src/main/java/io/papermc/paper/block/fluid/PaperFluidData.java b/src/main/java/io/papermc/paper/block/fluid/PaperFluidData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..daab396d0cbb12d23a1db126551027301a319a22
+index 0000000000000000000000000000000000000000..17fdff8ce72baf2ea1b7dd6b6849c89e6c7267ee
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/block/fluid/PaperFluidData.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,111 @@
 +package io.papermc.paper.block.fluid;
 +
 +import com.google.common.base.Preconditions;
-+import io.papermc.paper.block.fluid.type.PaperFlowing;
-+import io.papermc.paper.block.fluid.type.PaperFallingFluid;
++import io.papermc.paper.block.fluid.type.PaperFallingFluidData;
++import io.papermc.paper.block.fluid.type.PaperFlowingFluidDataData;
++import io.papermc.paper.util.MCUtil;
 +import java.util.HashMap;
 +import java.util.Map;
 +import java.util.function.Function;
-+import io.papermc.paper.util.MCUtil;
 +import net.minecraft.world.level.block.state.properties.Property;
 +import net.minecraft.world.level.material.FluidState;
 +import net.minecraft.world.level.material.LavaFluid;
@@ -29,10 +29,9 @@ index 0000000000000000000000000000000000000000..daab396d0cbb12d23a1db12655102730
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.util.CraftVector;
 +import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
 +
 +public class PaperFluidData implements FluidData {
-+
-+    private static final Map<Class<? extends net.minecraft.world.level.material.Fluid>, Function<FluidState, PaperFluidData>> MAP = new HashMap<>();
 +
 +    private final FluidState state;
 +
@@ -40,66 +39,46 @@ index 0000000000000000000000000000000000000000..daab396d0cbb12d23a1db12655102730
 +        this.state = state;
 +    }
 +
-+    /* Registry */
-+
-+    static {
-+        //<editor-fold desc="PaperFluidData Registration" defaultstate="collapsed">
-+        register(LavaFluid.Source.class, PaperFallingFluid::new);
-+        register(WaterFluid.Source.class, PaperFallingFluid::new);
-+        register(LavaFluid.Flowing.class, PaperFlowing::new);
-+        register(WaterFluid.Flowing.class, PaperFlowing::new);
-+        //</editor-fold>
-+    }
-+
-+    static void register(final Class<? extends net.minecraft.world.level.material.Fluid> fluid, final Function<FluidState, PaperFluidData> creator) {
-+        Preconditions.checkState(MAP.put(fluid, creator) == null, "Duplicate mapping %s->%s", fluid, creator);
-+        MAP.put(fluid, creator);
-+    }
-+
-+    public static PaperFluidData createData(final FluidState state) {
-+        return MAP.getOrDefault(state.getType().getClass(), PaperFluidData::new).apply(state);
-+    }
-+
-+    /* Impl */
-+
++    /**
++     * Provides the internal server representation of this fluid data.
++     * @return the fluid state.
++     */
 +    public FluidState getState() {
 +        return this.state;
 +    }
 +
-+    protected <T extends Comparable<T>> T get(final Property<T> property) {
-+        return this.state.getValue(property);
-+    }
-+    /* API */
-+
 +    @Override
-+    public final Fluid getFluidType() {
++    public final @NotNull Fluid getFluidType() {
 +        return CraftFluid.minecraftToBukkit(this.state.getType());
 +    }
 +
 +    @Override
-+    public PaperFluidData clone() {
++    public @NotNull PaperFluidData clone() {
 +        try {
 +            return (PaperFluidData) super.clone();
-+        } catch (CloneNotSupportedException ex) {
++        } catch (final CloneNotSupportedException ex) {
 +            throw new AssertionError("Clone not supported", ex);
 +        }
 +    }
 +
 +    @Override
-+    public Vector getFlowDirection(Location location) {
-+        Preconditions.checkArgument(location.getWorld() != null, "The location must contain a World!");
++    public @NotNull Vector computeFlowDirection(final Location location) {
++        Preconditions.checkArgument(location.getWorld() != null, "Cannot compute flow direction on world-less location");
 +        return CraftVector.toBukkit(this.state.getFlow(
-+            ((CraftWorld) location.getWorld()).getHandle(), MCUtil.toBlockPosition(location)));
++            ((CraftWorld) location.getWorld()).getHandle(),
++            MCUtil.toBlockPosition(location)
++        ));
 +    }
 +
 +    @Override
-+    public int getAmount() {
++    public int getLevel() {
 +        return this.state.getAmount();
 +    }
 +
 +    @Override
-+    public float getHeight() {
-+        return this.state.getOwnHeight();
++    public float computeHeight(@NotNull final Location location) {
++        Preconditions.checkArgument(location.getWorld() != null, "Cannot compute height on world-less location");
++        return this.state.getHeight(((CraftWorld) location.getWorld()).getHandle(), MCUtil.toBlockPos(location));
 +    }
 +
 +    @Override
@@ -113,13 +92,33 @@ index 0000000000000000000000000000000000000000..daab396d0cbb12d23a1db12655102730
 +    }
 +
 +    @Override
-+    public boolean equals(Object obj) {
-+        return obj instanceof PaperFluidData paperFluidData && this.state.equals(paperFluidData.state);
++    public boolean equals(final Object obj) {
++        return obj instanceof final PaperFluidData paperFluidData && this.state.equals(paperFluidData.state);
 +    }
 +
 +    @Override
 +    public String toString() {
 +        return "PaperFluidData{" + this.state + "}";
++    }
++
++    /* Registry */
++    private static final Map<Class<? extends net.minecraft.world.level.material.Fluid>, Function<FluidState, PaperFluidData>> MAP = new HashMap<>();
++    static {
++        //<editor-fold desc="PaperFluidData Registration" defaultstate="collapsed">
++        register(LavaFluid.Source.class, PaperFallingFluidData::new);
++        register(WaterFluid.Source.class, PaperFallingFluidData::new);
++        register(LavaFluid.Flowing.class, PaperFlowingFluidDataData::new);
++        register(WaterFluid.Flowing.class, PaperFlowingFluidDataData::new);
++        //</editor-fold>
++    }
++
++    static void register(final Class<? extends net.minecraft.world.level.material.Fluid> fluid, final Function<FluidState, PaperFluidData> creator) {
++        Preconditions.checkState(MAP.put(fluid, creator) == null, "Duplicate mapping %s->%s", fluid, creator);
++        MAP.put(fluid, creator);
++    }
++
++    public static PaperFluidData createData(final FluidState state) {
++        return MAP.getOrDefault(state.getType().getClass(), PaperFluidData::new).apply(state);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/block/fluid/package-info.java b/src/main/java/io/papermc/paper/block/fluid/package-info.java
@@ -133,11 +132,11 @@ index 0000000000000000000000000000000000000000..cfabb814ebd281aab299c6c655266ff3
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-diff --git a/src/main/java/io/papermc/paper/block/fluid/type/PaperFallingFluid.java b/src/main/java/io/papermc/paper/block/fluid/type/PaperFallingFluid.java
+diff --git a/src/main/java/io/papermc/paper/block/fluid/type/PaperFallingFluidData.java b/src/main/java/io/papermc/paper/block/fluid/type/PaperFallingFluidData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bf4b5e1b1c1cd13ed65c3b3fe1af13b8101e8d97
+index 0000000000000000000000000000000000000000..655dbd83ff4e632f1168b75e9b402b05aa9d8edf
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/block/fluid/type/PaperFallingFluid.java
++++ b/src/main/java/io/papermc/paper/block/fluid/type/PaperFallingFluidData.java
 @@ -0,0 +1,18 @@
 +
 +package io.papermc.paper.block.fluid.type;
@@ -146,31 +145,31 @@ index 0000000000000000000000000000000000000000..bf4b5e1b1c1cd13ed65c3b3fe1af13b8
 +import net.minecraft.world.level.material.FlowingFluid;
 +import net.minecraft.world.level.material.FluidState;
 +
-+public class PaperFallingFluid extends PaperFluidData implements FallingFluid {
++public class PaperFallingFluidData extends PaperFluidData implements FallingFluidData {
 +
-+    public PaperFallingFluid(final FluidState state) {
++    public PaperFallingFluidData(final FluidState state) {
 +        super(state);
 +    }
 +
 +    @Override
 +    public boolean isFalling() {
-+        return this.get(FlowingFluid.FALLING);
++        return this.getState().getValue(FlowingFluid.FALLING);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/block/fluid/type/PaperFlowing.java b/src/main/java/io/papermc/paper/block/fluid/type/PaperFlowing.java
+diff --git a/src/main/java/io/papermc/paper/block/fluid/type/PaperFlowingFluidDataData.java b/src/main/java/io/papermc/paper/block/fluid/type/PaperFlowingFluidDataData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d4ffc3bd801fdcd889fd85f3448dd25a732c209e
+index 0000000000000000000000000000000000000000..7315ba8fde5054a60e1a297aaa4db9b7b2814be7
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/block/fluid/type/PaperFlowing.java
++++ b/src/main/java/io/papermc/paper/block/fluid/type/PaperFlowingFluidDataData.java
 @@ -0,0 +1,21 @@
 +package io.papermc.paper.block.fluid.type;
 +
 +import net.minecraft.world.level.material.FlowingFluid;
 +import net.minecraft.world.level.material.FluidState;
 +
-+public class PaperFlowing extends PaperFallingFluid implements Flowing {
++public class PaperFlowingFluidDataData extends PaperFallingFluidData implements FlowingFluidDataData {
 +
-+    public PaperFlowing(final FluidState state) {
++    public PaperFlowingFluidDataData(final FluidState state) {
 +        super(state);
 +    }
 +
@@ -185,10 +184,10 @@ index 0000000000000000000000000000000000000000..d4ffc3bd801fdcd889fd85f3448dd25a
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-index 87698a123ce027b4f7b0dcc9eaf034a5b8de6de3..3091aec84959cd859266c88b7e623f62c1ae2759 100644
+index 45fd28f26aa2e53785919abbfe42bb237131e453..dbfa9b181055d1aac445d82e8950674451098439 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
-@@ -255,6 +255,13 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+@@ -107,6 +107,13 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
          return CraftBlock.at(this.getHandle(), new BlockPos(x, y, z)).getState();
      }
  

@@ -6,10 +6,10 @@ Subject: [PATCH] Add FluidState API
 
 diff --git a/src/main/java/io/papermc/paper/block/fluid/FluidData.java b/src/main/java/io/papermc/paper/block/fluid/FluidData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..337626ad58dd2be2ed9770e7b1f3fb37161e5140
+index 0000000000000000000000000000000000000000..913acd58547d97cafc1466f6e2b3b4d22cf0b02d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/block/fluid/FluidData.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,68 @@
 +package io.papermc.paper.block.fluid;
 +
 +import org.bukkit.Fluid;
@@ -18,6 +18,10 @@ index 0000000000000000000000000000000000000000..337626ad58dd2be2ed9770e7b1f3fb37
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Range;
 +
++/**
++ * A representation of a fluid in a specific state of data.
++ * This type is not linked to a specific location and hence mostly resembles a {@link org.bukkit.block.data.BlockData}.
++ */
 +public interface FluidData extends Cloneable {
 +
 +    /**
@@ -35,27 +39,37 @@ index 0000000000000000000000000000000000000000..337626ad58dd2be2ed9770e7b1f3fb37
 +    @NotNull FluidData clone();
 +
 +    /**
-+     * Returns the direction of the flow of the liquid at the given location as a vector.
++     * Computes the direction of the flow of the liquid at the given location as a vector.
++     * <p>
++     * This method requires the passed location's chunk to be loaded.
++     * If said chunk is not loaded when this method is called, the chunk will first be loaded prior to the computation
++     * which leads to a potentially slow sync chunk load.
 +     *
 +     * @param location - the location to check the liquid flow
 +     * @return the flow direction vector at the given location
 +     */
-+    @NotNull Vector getFlowDirection(@NotNull Location location);
++    @NotNull Vector computeFlowDirection(@NotNull Location location);
 +
 +    /**
-+     * Returns the amount of liquid is in the fluid, as in the number of layers.
++     * Returns the level of liquid this fluid data holds.
 +     *
 +     * @return the amount as an integer, between 0 and 8
 +     */
 +    @Range(from = 0, to = 8)
-+    int getAmount();
++    int getLevel();
 +
 +    /**
-+     * Returns the height of the fluid
++     * Computes the height of the fluid in the world.
++     * <p>
++     * This method requires the passed location's chunk to be loaded.
++     * If said chunk is not loaded when this method is called, the chunk will first be loaded prior to the computation
++     * which leads to a potentially slow sync chunk load.
 +     *
++     * @param location the location at which to check the high of this fluid data.
 +     * @return the height as a float value
 +     */
-+    float getHeight();
++    @Range(from = 0, to = 1)
++    float computeHeight(@NotNull Location location);
 +
 +    /**
 +     * Returns whether this fluid is a source block
@@ -64,17 +78,20 @@ index 0000000000000000000000000000000000000000..337626ad58dd2be2ed9770e7b1f3fb37
 +     */
 +    boolean isSource();
 +}
-diff --git a/src/main/java/io/papermc/paper/block/fluid/type/FallingFluid.java b/src/main/java/io/papermc/paper/block/fluid/type/FallingFluid.java
+diff --git a/src/main/java/io/papermc/paper/block/fluid/type/FallingFluidData.java b/src/main/java/io/papermc/paper/block/fluid/type/FallingFluidData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..360a27fca76b0e63aa458aa3425a987224a4ac79
+index 0000000000000000000000000000000000000000..7bd9f28ba646f09080b5c29b9d3be5af676c912e
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/block/fluid/type/FallingFluid.java
-@@ -0,0 +1,13 @@
++++ b/src/main/java/io/papermc/paper/block/fluid/type/FallingFluidData.java
+@@ -0,0 +1,16 @@
 +package io.papermc.paper.block.fluid.type;
 +
 +import io.papermc.paper.block.fluid.FluidData;
 +
-+public interface FallingFluid extends FluidData {
++/**
++ * A specific subtype of {@link FluidData} that is returned by the API for fluid data of potentially falling fluids.
++ */
++public interface FallingFluidData extends FluidData {
 +
 +    /**
 +     * Get if this liquid is falling.
@@ -83,33 +100,24 @@ index 0000000000000000000000000000000000000000..360a27fca76b0e63aa458aa3425a9872
 +     */
 +    boolean isFalling();
 +}
-diff --git a/src/main/java/io/papermc/paper/block/fluid/type/Flowing.java b/src/main/java/io/papermc/paper/block/fluid/type/Flowing.java
+diff --git a/src/main/java/io/papermc/paper/block/fluid/type/FlowingFluidDataData.java b/src/main/java/io/papermc/paper/block/fluid/type/FlowingFluidDataData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7a4126d316839581a652ac9cba12a01c279d053e
+index 0000000000000000000000000000000000000000..f3a0bc7d4b5539e1dd0785831f04ad539826769b
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/block/fluid/type/Flowing.java
-@@ -0,0 +1,19 @@
++++ b/src/main/java/io/papermc/paper/block/fluid/type/FlowingFluidDataData.java
+@@ -0,0 +1,10 @@
 +package io.papermc.paper.block.fluid.type;
 +
-+public interface Flowing extends FallingFluid {
++import io.papermc.paper.block.fluid.FluidData;
 +
-+    /**
-+     * Get the minimum possible level for the liquid.
-+     *
-+     * @return the minimum level
-+     */
-+    int getMinimumLevel();
-+
-+    /**
-+     * Get the maximum possible level for the liquid.
-+     *
-+     * @return the maximum level
-+     */
-+    int getMaximumLevel();
++/**
++ * A specific subtype of {@link FluidData} that is returned by the API for fluid data of potentially falling fluids.
++ */
++public interface FlowingFluidDataData extends FallingFluidData {
 +
 +}
 diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
-index 43dd6c59cceba12f27e6b265acc3ad97eea37abd..7ffbda2c53121ba111e3e6ca7034438292f87b94 100644
+index 43dd6c59cceba12f27e6b265acc3ad97eea37abd..d705c2b0015875de3bf2e8122a3008061c40ad02 100644
 --- a/src/main/java/org/bukkit/RegionAccessor.java
 +++ b/src/main/java/org/bukkit/RegionAccessor.java
 @@ -102,6 +102,30 @@ public interface RegionAccessor extends Keyed { // Paper
