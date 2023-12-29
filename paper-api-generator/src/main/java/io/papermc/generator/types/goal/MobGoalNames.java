@@ -130,6 +130,7 @@ public class MobGoalNames {
 
 
     static {
+        //<editor-fold defaultstate="collapsed" desc="bukkitMap Entities">
         bukkitMap.put(net.minecraft.world.entity.Mob.class, Mob.class);
         bukkitMap.put(net.minecraft.world.entity.AgeableMob.class, Ageable.class);
         bukkitMap.put(AmbientCreature.class, Ambient.class);
@@ -231,6 +232,7 @@ public class MobGoalNames {
         bukkitMap.put(net.minecraft.world.entity.monster.warden.Warden.class, org.bukkit.entity.Warden.class);
         bukkitMap.put(net.minecraft.world.entity.animal.allay.Allay.class, org.bukkit.entity.Allay.class);
         bukkitMap.put(net.minecraft.world.entity.animal.sniffer.Sniffer.class, org.bukkit.entity.Sniffer.class);
+        //</editor-fold>
     }
 
     private static final BiMap<String, String> deobfuscationMap = HashBiMap.create();

@@ -8,6 +8,7 @@ import net.minecraft.SharedConstants;
 import org.bukkit.MinecraftExperimental;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class Annotations {
 
@@ -18,6 +19,24 @@ public final class Annotations {
                 .addMember("value", "$S", version)
                 .build()
         );
+    }
+
+    public static AnnotationSpec deprecatedVersioned(final @Nullable String version, boolean forRemoval) {
+        AnnotationSpec.Builder annotationSpec = AnnotationSpec.builder(Deprecated.class);
+        if (forRemoval) {
+            annotationSpec.addMember("forRemoval", "$L", forRemoval);
+        }
+        if (version != null) {
+            annotationSpec.addMember("since", "$S", version);
+        }
+
+        return annotationSpec.build();
+    }
+
+    public static AnnotationSpec scheduledRemoval(final @Nullable String version) {
+        return AnnotationSpec.builder(ApiStatus.ScheduledForRemoval.class)
+            .addMember("inVersion", "$S", version)
+            .build();
     }
 
     @ApiStatus.Experimental

@@ -1,6 +1,6 @@
 package io.papermc.generator.utils;
 
-public class Javadocs {
+public final class Javadocs {
 
     public static String getVersionDependentClassHeader(String headerIdentifier) {
         return """
@@ -20,5 +20,8 @@ public class Javadocs {
         
         @apiNote This field is version-dependant and may be removed in future Minecraft versions
         """.formatted(headerIdentifier);
+    }
+
+    private Javadocs() {
     }
 }
