@@ -1,0 +1,323 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Color_yr <402067010@qq.com>
+Date: Fri, 29 Dec 2023 09:38:17 +0800
+Subject: [PATCH] full support for UnixDomainSocketAddress
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/network/PaperLegacyStatusClient.java b/src/main/java/com/destroystokyo/paper/network/PaperLegacyStatusClient.java
+index cc54b1c207981235b5160e8773b27cf9a5dcd4d5..934a4273e4300370165d9c6efbfe06b2863d5c73 100644
+--- a/src/main/java/com/destroystokyo/paper/network/PaperLegacyStatusClient.java
++++ b/src/main/java/com/destroystokyo/paper/network/PaperLegacyStatusClient.java
+@@ -7,16 +7,17 @@ import net.minecraft.server.MinecraftServer;
+ import org.apache.commons.lang3.StringUtils;
+ 
+ import java.net.InetSocketAddress;
++import java.net.SocketAddress;
+ 
+ import javax.annotation.Nullable;
+ 
+ public final class PaperLegacyStatusClient implements StatusClient {
+ 
+-    private final InetSocketAddress address;
++    private final SocketAddress address;
+     private final int protocolVersion;
+-    @Nullable private final InetSocketAddress virtualHost;
++    @Nullable private final SocketAddress virtualHost;
+ 
+-    private PaperLegacyStatusClient(InetSocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
++    private PaperLegacyStatusClient(SocketAddress address, int protocolVersion, @Nullable SocketAddress virtualHost) {
+         this.address = address;
+         this.protocolVersion = protocolVersion;
+         this.virtualHost = virtualHost;
+@@ -24,6 +25,16 @@ public final class PaperLegacyStatusClient implements StatusClient {
+ 
+     @Override
+     public InetSocketAddress getAddress() {
++        if (this.address instanceof InetSocketAddress inet) {
++            return inet;
++        } else {
++            throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++        }
++    }
++
++    // for UnixDomainSocketAddress
++    @Override
++    public SocketAddress getSocketAddress() {
+         return this.address;
+     }
+ 
+@@ -35,6 +46,15 @@ public final class PaperLegacyStatusClient implements StatusClient {
+     @Nullable
+     @Override
+     public InetSocketAddress getVirtualHost() {
++        if (this.virtualHost instanceof InetSocketAddress inet) {
++            return inet;
++        }
++        return null;
++    }
++
++    // for UnixDomainSocketAddress
++    @Override
++    public SocketAddress getSocketVirtualHost() {
+         return this.virtualHost;
+     }
+ 
+@@ -44,7 +64,7 @@ public final class PaperLegacyStatusClient implements StatusClient {
+     }
+ 
+     public static PaperServerListPingEvent processRequest(MinecraftServer server,
+-            InetSocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
++                                                          SocketAddress address, int protocolVersion, @Nullable SocketAddress virtualHost) {
+ 
+         PaperServerListPingEvent event =  new PaperServerListPingEventImpl(server,
+                 new PaperLegacyStatusClient(address, protocolVersion, virtualHost), Byte.MAX_VALUE, null);
+diff --git a/src/main/java/com/destroystokyo/paper/network/PaperNetworkClient.java b/src/main/java/com/destroystokyo/paper/network/PaperNetworkClient.java
+index a5a7624f1f372a26b982836cd31cff15e2589e9b..9a5028b9dccbd12c688535a1129b34394d905b46 100644
+--- a/src/main/java/com/destroystokyo/paper/network/PaperNetworkClient.java
++++ b/src/main/java/com/destroystokyo/paper/network/PaperNetworkClient.java
+@@ -1,6 +1,7 @@
+ package com.destroystokyo.paper.network;
+ 
+ import java.net.InetSocketAddress;
++import java.net.SocketAddress;
+ 
+ import javax.annotation.Nullable;
+ import net.minecraft.network.Connection;
+@@ -15,7 +16,18 @@ public class PaperNetworkClient implements NetworkClient {
+ 
+     @Override
+     public InetSocketAddress getAddress() {
+-        return (InetSocketAddress) this.networkManager.getRemoteAddress();
++        SocketAddress socket = this.networkManager.getRemoteAddress();
++        if (socket instanceof InetSocketAddress inet) {
++            return inet;
++        } else {
++            throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++        }
++    }
++
++    // for UnixDomainSocketAddress
++    @Override
++    public SocketAddress getSocketAddress() {
++        return this.networkManager.getRemoteAddress();
+     }
+ 
+     @Override
+@@ -29,6 +41,13 @@ public class PaperNetworkClient implements NetworkClient {
+         return this.networkManager.virtualHost;
+     }
+ 
++    // for UnixDomainSocketAddress(Reserved interface)
++    @Nullable
++    @Override
++    public SocketAddress getSocketVirtualHost() {
++        return this.networkManager.virtualHost;
++    }
++
+     public static InetSocketAddress prepareVirtualHost(String host, int port) {
+         int len = host.length();
+ 
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 2ae08b21c63490bbf8cd870f9585d82ed131f815..58dab83eb37ee1367c3efc191e640a9b50f306df 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -843,7 +843,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+                     /* Player was logged in, either game listener or configuration listener */
+                     final com.mojang.authlib.GameProfile profile = commonPacketListener.getOwner();
+                     new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(),
+-                        profile.getName(), ((java.net.InetSocketAddress)address).getAddress(), false).callEvent();
++                        profile.getName(), address, false).callEvent();
+                 } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener) {
+                     /* Player is login stage */
+                     switch (loginListener.state) {
+@@ -853,7 +853,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+                         case ACCEPTED:
+                             final com.mojang.authlib.GameProfile profile = loginListener.authenticatedProfile; /* Should be non-null at this stage */
+                             new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(), profile.getName(),
+-                                ((java.net.InetSocketAddress)address).getAddress(), false).callEvent();
++                                address, false).callEvent();
+                     }
+                 }
+                 // Paper end
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 0eb3384df396508c3d26d1e155cd0e6d64251346..d5b5275308f7b0862136e8ae6e1cdb2d76818a0c 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -17,6 +17,7 @@ import java.util.OptionalInt;
+ import java.util.Set;
+ import java.util.stream.Collectors;
+ import javax.annotation.Nullable;
++import io.netty.channel.unix.DomainSocketAddress;
+ import net.minecraft.BlockUtil;
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.CrashReport;
+@@ -2116,9 +2117,14 @@ public class ServerPlayer extends Player {
+             InetSocketAddress inetsocketaddress = (InetSocketAddress) socketaddress;
+ 
+             return InetAddresses.toAddrString(inetsocketaddress.getAddress());
++        }
++        // Paper start - for UnixDomainSocketAddress
++        else if(socketaddress instanceof DomainSocketAddress address) {
++            return address.toString();
+         } else {
+             return "<unknown>";
+         }
++        // Paper end
+     }
+ 
+     // Paper start - Client option API
+diff --git a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
+index 8f4a964a0863b1be834c1ea1e3d49092516f9258..a2adfd71be75ed6679c3d4f9d36f17eaabcda076 100644
+--- a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
++++ b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
+@@ -53,7 +53,7 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+                     LegacyQueryHandler.LOGGER.debug("Ping: (<1.3.x) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? socketaddress: "<ip address withheld>"); // Paper
+ 
+                     // Paper start - Call PaperServerListPingEvent and use results
+-                    event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketaddress, 39, null);
++                    event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), socketaddress, 39, null);
+                     if (event == null) {
+                         channelhandlercontext.close();
+                         bytebuf.release();
+diff --git a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+index 839cb613f9064e3c24c64e3675a661bed59ee4b2..2abcb7f3a9ac6bece08829186ca96d900cd9004a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server.network;
+ 
++import io.netty.channel.unix.DomainSocketAddress;
+ import net.minecraft.SharedConstants;
+ import net.minecraft.network.Connection;
+ import net.minecraft.network.chat.Component;
+@@ -120,7 +121,13 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+                                 packet.intention()
+                             );
+                         }
+-                        if (event.getSocketAddressHostname() != null) this.connection.address = new java.net.InetSocketAddress(event.getSocketAddressHostname(), socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
++                        if (event.getSocketAddressHostname() != null) {
++                            if (event.getSocketAddressHostname().startsWith("unix:")) {
++                                    this.connection.address = new DomainSocketAddress(event.getSocketAddressHostname().substring("unix:".length()));
++                            } else {
++                                this.connection.address = new java.net.InetSocketAddress(event.getSocketAddressHostname(), socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
++                            }
++                        }
+                         this.connection.spoofedUUID = event.getUniqueId();
+                         this.connection.spoofedProfile = gson.fromJson(event.getPropertiesJson(), com.mojang.authlib.properties.Property[].class);
+                         handledByEvent = true; // Hooray, we did it!
+@@ -134,7 +141,13 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+                     // if (org.spigotmc.SpigotConfig.bungee) { // Paper - comment out, we check above!
+                         if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.BYPASS_HOSTCHECK || ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) { // Paper
+                             this.connection.hostname = split[0];
+-                            this.connection.address = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getPort());
++                            // Paper start - for UnixDomainSocketAddress
++                            java.net.SocketAddress socketAddress = this.connection.getRemoteAddress();
++                            if (socketAddress instanceof DomainSocketAddress) {
++                                this.connection.address = new DomainSocketAddress(split[1]);
++                            } else {
++                                this.connection.address = new java.net.InetSocketAddress(split[1], socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
++                            }
+                             this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient( split[2] );
+                         } else
+                         {
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 4426a75634f910784d6bdd475a8f78068d2a6143..6040323e99cf42885bc62a7d26fd680b13fda7f1 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -304,7 +304,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+                         }
+                         // Paper end
+                         String playerName = gameprofile.getName();
+-                        java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
++                        java.net.SocketAddress address = ServerLoginPacketListenerImpl.this.connection.getRemoteAddress(); // Paper - for UnixDomainSocketAddress
+                         java.net.SocketAddress rawAddress = ServerLoginPacketListenerImpl.this.connection.channel.remoteAddress(); // Paper - for UnixDomainSocketAddress
+                         java.util.UUID uniqueId = gameprofile.getId();
+                         final org.bukkit.craftbukkit.CraftServer server = ServerLoginPacketListenerImpl.this.server.server;
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index e98a455b6bca9d094d0da323bddd7b3f2c07bb23..edc7d66d58fcc8eb5c95cabb7bfb0f4d9e9f55b9 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -724,7 +724,7 @@ public abstract class PlayerList {
+ 
+         ServerPlayer entity = new ServerPlayer(this.server, this.server.getLevel(Level.OVERWORLD), gameprofile, ClientInformation.createDefault());
+         Player player = entity.getBukkitEntity();
+-        PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.connection.channel.remoteAddress()).getAddress());
++        PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, socketaddress, loginlistener.connection.channel.remoteAddress()); // Paper - for UnixDomainSocketAddress
+ 
+         // Paper start - Fix MC-158900
+         UserBanListEntry gameprofilebanentry;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 2ec8b8f65661001716d1cb34dcc21cda7286e5d7..554116eb7ea9e988c86a73e5f561b0a170c5db97 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -298,6 +298,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+     }
+ 
++    // Paper start - for UnixDomainSocketAddress
++    @Override
++    public SocketAddress getSocketAddress() {
++        if (this.getHandle().connection == null) return null;
++
++        return this.getHandle().connection.getRemoteAddress();
++    }
++    // Paper end
++
+     // Paper start - Implement NetworkClient
+     @Override
+     public int getProtocolVersion() {
+@@ -310,6 +319,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         if (getHandle().connection == null) return null;
+         return getHandle().connection.connection.virtualHost;
+     }
++
++    // Paper start - for UnixDomainSocketAddress
++    @Override
++    public SocketAddress getSocketVirtualHost() {
++        if (getHandle().connection == null) return null;
++        return getHandle().connection.connection.virtualHost;
++    }
+     // Paper end
+ 
+     @Override
+@@ -3220,11 +3236,26 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private final Player.Spigot spigot = new Player.Spigot()
+     {
+ 
++        // Paper start - for UnixDomainSocketAddress
+         @Override
+         public InetSocketAddress getRawAddress()
+         {
+-            return (InetSocketAddress) CraftPlayer.this.getHandle().connection.getRawAddress();
++            if (CraftPlayer.this.getHandle().connection.getRawAddress() instanceof InetSocketAddress address)
++            {
++                return address;
++            }
++            else
++            {
++                throw new UnsupportedOperationException("Address is UnixDomainSocketAddress");
++            }
++        }
++
++        @Override
++        public SocketAddress getSocketRawAddress()
++        {
++            return CraftPlayer.this.getHandle().connection.getRawAddress();
+         }
++        // Paper end
+ 
+         @Override
+         public void respawn()
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index a36ffbbab5bbfec5a4a224dc5ee8812b98dd4d7c..88887e2b4a01b4bc559de72acd05f0d9dbd369ad 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1044,7 +1044,7 @@ public class CraftEventFactory {
+      * Server methods
+      */
+     public static ServerListPingEvent callServerListPingEvent(SocketAddress address, String motd, int numPlayers, int maxPlayers) {
+-        ServerListPingEvent event = new ServerListPingEvent("", ((InetSocketAddress) address).getAddress(), Bukkit.getServer().motd(), numPlayers, maxPlayers);
++        ServerListPingEvent event = new ServerListPingEvent("", address, Bukkit.getServer().motd(), numPlayers, maxPlayers); // Paper - for UnixDomainSocketAddress
+         Bukkit.getServer().getPluginManager().callEvent(event);
+         return event;
+     }

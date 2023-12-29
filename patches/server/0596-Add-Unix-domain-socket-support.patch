@@ -92,24 +92,8 @@ index 6641fd04821240b1bbeff1bd8d996a8f2fff8385..5f625acf04ddb56e3596d086252f9bfc
          }
      }
  
-diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 089f4670aec8612b1e0e9cc69d785dcd135dc44a..294074cb4cac5089b57f3629f46d71175911a906 100644
---- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2476,6 +2476,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-     // Spigot Start
-     public SocketAddress getRawAddress()
-     {
-+        // Paper start - this can be nullable in the case of a Unix domain socket, so if it is, fake something
-+        if (connection.channel.remoteAddress() == null) {
-+            return new java.net.InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0);
-+        }
-+        // Paper end
-         return this.connection.channel.remoteAddress();
-     }
-     // Spigot End
 diff --git a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
-index 3068e25f2df958689627fb31783a2d356547f1be..d2edc000f34d7f07a840bb8012c6f884f37e387b 100644
+index 3068e25f2df958689627fb31783a2d356547f1be..839cb613f9064e3c24c64e3675a661bed59ee4b2 100644
 --- a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 @@ -45,6 +45,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
@@ -128,16 +112,3 @@ index 3068e25f2df958689627fb31783a2d356547f1be..d2edc000f34d7f07a840bb8012c6f884
                  } catch (Throwable t) {
                      org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
                  }
-@@ -131,8 +133,11 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
-                         // Paper end
-                     // if (org.spigotmc.SpigotConfig.bungee) { // Paper - comment out, we check above!
-                         if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.BYPASS_HOSTCHECK || ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) { // Paper
-+                            // Paper start - Unix domain socket support
-+                            java.net.SocketAddress socketAddress = this.connection.getRemoteAddress();
-                             this.connection.hostname = split[0];
--                            this.connection.address = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getPort());
-+                            this.connection.address = new java.net.InetSocketAddress(split[1], socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
-+                            // Paper end
-                             this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient( split[2] );
-                         } else
-                         {
