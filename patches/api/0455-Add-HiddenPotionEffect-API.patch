@@ -4,8 +4,32 @@ Date: Sun, 5 Nov 2023 09:50:48 +0100
 Subject: [PATCH] Add HiddenPotionEffect API
 
 
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index e68c71047b2bc1b456c380db25b3ff376852b4a9..47b0154928b3d36e2602da202df07defbcf82108 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -525,6 +525,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+ 
+     /**
+      * Adds the given {@link PotionEffect} to the living entity.
++     * <p>
++     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
++     * adding the effect to the entity.
+      *
+      * @param effect PotionEffect to be added
+      * @return whether the effect could be added
+@@ -549,6 +552,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+     /**
+      * Attempts to add all of the given {@link PotionEffect} to the living
+      * entity.
++     * <p>
++     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
++     * adding the effect to the entity.
+      *
+      * @param effects the effects to add
+      * @return whether all of the effects could be added
 diff --git a/src/main/java/org/bukkit/potion/PotionEffect.java b/src/main/java/org/bukkit/potion/PotionEffect.java
-index 037af5fd6d71a526c0e6620f2db0cd6df9625261..64eb2e022bdb7598009fca15b0cd5cf689b6c1cf 100644
+index 037af5fd6d71a526c0e6620f2db0cd6df9625261..9df9ee6c5462747a931c2b0eea02ebe6138886c7 100644
 --- a/src/main/java/org/bukkit/potion/PotionEffect.java
 +++ b/src/main/java/org/bukkit/potion/PotionEffect.java
 @@ -26,6 +26,7 @@ public class PotionEffect implements ConfigurationSerializable {
@@ -24,24 +48,24 @@ index 037af5fd6d71a526c0e6620f2db0cd6df9625261..64eb2e022bdb7598009fca15b0cd5cf6
  
      /**
       * Creates a potion effect.
-@@ -48,8 +50,10 @@ public class PotionEffect implements ConfigurationSerializable {
+@@ -48,8 +50,11 @@ public class PotionEffect implements ConfigurationSerializable {
       * @param ambient the ambient status, see {@link PotionEffect#isAmbient()}
       * @param particles the particle status, see {@link PotionEffect#hasParticles()}
       * @param icon the icon status, see {@link PotionEffect#hasIcon()}
-+     * @param hiddenEffect the hidden PotionEffect, see {@link PotionEffect#getHiddenPotionEffect()}, whose type must match parent type
-+     * @throws IllegalArgumentException If the passed hiddenEffect's type doesn't match the passed parent potion type.
++     * @param hiddenEffect the hidden PotionEffect
++     * @hidden Internal-- hidden effects are only shown internally
       */
 -    public PotionEffect(@NotNull PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, boolean icon) {
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper
 +    public PotionEffect(@NotNull PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, boolean icon, @Nullable PotionEffect hiddenEffect) { // Paper
          Preconditions.checkArgument(type != null, "effect type cannot be null");
          this.type = type;
          this.duration = duration;
-@@ -57,6 +61,24 @@ public class PotionEffect implements ConfigurationSerializable {
+@@ -57,6 +62,23 @@ public class PotionEffect implements ConfigurationSerializable {
          this.ambient = ambient;
          this.particles = particles;
          this.icon = icon;
 +        // Paper start
-+        Preconditions.checkArgument(hiddenEffect == null || hiddenEffect.getType() == type, "hidden effect type must equal parent effect type");
 +        this.hiddenEffect = hiddenEffect;
 +    }
 +
@@ -61,7 +85,7 @@ index 037af5fd6d71a526c0e6620f2db0cd6df9625261..64eb2e022bdb7598009fca15b0cd5cf6
      }
  
      /**
-@@ -104,33 +126,54 @@ public class PotionEffect implements ConfigurationSerializable {
+@@ -104,7 +126,7 @@ public class PotionEffect implements ConfigurationSerializable {
       * @param map the map to deserialize from
       */
      public PotionEffect(@NotNull Map<String, Object> map) {
@@ -70,60 +94,27 @@ index 037af5fd6d71a526c0e6620f2db0cd6df9625261..64eb2e022bdb7598009fca15b0cd5cf6
      }
  
      // Paper start
-     @NotNull
-     public PotionEffect withType(@NotNull PotionEffectType type) {
--        return new PotionEffect(type, duration, amplifier, ambient, particles, icon);
-+        return new PotionEffect(type, duration, amplifier, ambient, particles, icon, hiddenEffect);
-     }
-     @NotNull
-     public PotionEffect withDuration(int duration) {
--        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
-+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
-     }
-     @NotNull
-     public PotionEffect withAmplifier(int amplifier) {
--        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
-+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
-     }
-     @NotNull
-     public PotionEffect withAmbient(boolean ambient) {
--        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
-+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
-     }
-     @NotNull
-     public PotionEffect withParticles(boolean particles) {
--        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
-+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
-     }
-     @NotNull
+@@ -132,6 +154,19 @@ public class PotionEffect implements ConfigurationSerializable {
      public PotionEffect withIcon(boolean icon) {
--        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
-+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
-+    }
-+
-+    /**
-+     * Creates a potion effect.
-+     * @throws IllegalArgumentException If the passed hiddenEffect's type doesn't match the passed parent potion type.
-+     * @param hiddenEffect the hidden PotionEffect, see {@link PotionEffect#getHiddenPotionEffect()}, whose type must match parent type
-+     */
-+    @NotNull
-+    public PotionEffect withHiddenEffect(@Nullable PotionEffect hiddenEffect) {
-+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon, hiddenEffect);
-+    }
+         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
+     }
 +
 +    /**
 +     * Returns the PotionEffect that will become active
 +     * after the current PotionEffect has run out.
++     * <p>
++     * Note: This value is only applicable to type applied to living entities.
 +     *
 +     * @return The hidden PotionEffect.
 +     */
 +    @Nullable
 +    public PotionEffect getHiddenPotionEffect() {
 +        return hiddenEffect;
-     }
++    }
      // Paper end
  
-@@ -169,14 +212,19 @@ public class PotionEffect implements ConfigurationSerializable {
+     @NotNull
+@@ -169,19 +204,27 @@ public class PotionEffect implements ConfigurationSerializable {
      @Override
      @NotNull
      public Map<String, Object> serialize() {
@@ -146,7 +137,15 @@ index 037af5fd6d71a526c0e6620f2db0cd6df9625261..64eb2e022bdb7598009fca15b0cd5cf6
      }
  
      /**
-@@ -200,7 +248,7 @@ public class PotionEffect implements ConfigurationSerializable {
+      * Attempts to add the effect represented by this object to the given
+      * {@link LivingEntity}.
++     * <p>
++     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
++     * adding the effect to the entity.
+      *
+      * @param entity The entity to add this effect to
+      * @return Whether the effect could be added
+@@ -200,7 +243,7 @@ public class PotionEffect implements ConfigurationSerializable {
              return false;
          }
          PotionEffect that = (PotionEffect) obj;
@@ -155,7 +154,7 @@ index 037af5fd6d71a526c0e6620f2db0cd6df9625261..64eb2e022bdb7598009fca15b0cd5cf6
      }
  
      /**
-@@ -305,11 +353,12 @@ public class PotionEffect implements ConfigurationSerializable {
+@@ -305,11 +348,12 @@ public class PotionEffect implements ConfigurationSerializable {
          hash ^= 0x22222222 >> (ambient ? 1 : -1);
          hash ^= 0x22222222 >> (particles ? 1 : -1);
          hash ^= 0x22222222 >> (icon ? 1 : -1);
