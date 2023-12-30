@@ -6,8 +6,21 @@ Subject: [PATCH] Properly handle experience dropping on block break
 This causes spawnAfterBreak to spawn xp by default, removing the need to manually add xp wherever this method is used.
 For classes that use custom xp amounts, they can drop the resources with disabling
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index bb7cac25c20268ee158d3150a2c1fbe6a67d1243..3d10b2a8e7dc3a1ddbdb6220febe177393657638 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -438,7 +438,7 @@ public class ServerPlayerGameMode {
+ 
+                     itemstack.mineBlock(this.level, iblockdata1, pos, this.player);
+                     if (flag && flag1 && event.isDropItems()/* && event.isDropItems() */) { // CraftBukkit - Check if block should drop items // Paper - fix drops not preventing stats/food exhaustion
+-                        block.playerDestroy(this.level, this.player, pos, iblockdata1, tileentity, itemstack1, event.isDropItems(), true); // Paper
++                        block.playerDestroy(this.level, this.player, pos, iblockdata1, tileentity, itemstack1, event.isDropItems(), false); // Paper - don't drop
+                     }
+ 
+                     // return true; // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index cdd03a1602cef13d2e62e6a6655ec2929e0d590f..dac998e1a0b128976c15f40ca37eadf77e04b5aa 100644
+index 380b6bc69429ec8bd92f0adf90b02028fec23d52..c7021d31fe392536efdfbf08b7e7df834d3d8a98 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -1103,7 +1103,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -21,7 +34,7 @@ index cdd03a1602cef13d2e62e6a6655ec2929e0d590f..dac998e1a0b128976c15f40ca37eadf7
  
              boolean flag1 = this.setBlock(pos, fluid.createLegacyBlock(), 3, maxUpdateDepth);
 diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
-index 041e0619bf7db64d76b91f28fcf8e6472880a79e..7da0496cb8f5ac536afc1625a42e90455a4bfa4e 100644
+index 0011bbb22fcfba267818c55b03042db5e67be562..3a8a9dcaa058649dba5c92dbf15c1216a16be071 100644
 --- a/src/main/java/net/minecraft/world/level/block/Block.java
 +++ b/src/main/java/net/minecraft/world/level/block/Block.java
 @@ -333,23 +333,31 @@ public class Block extends BlockBehaviour implements ItemLike {
@@ -58,16 +71,11 @@ index 041e0619bf7db64d76b91f28fcf8e6472880a79e..7da0496cb8f5ac536afc1625a42e9045
          }
  
      }
-@@ -429,11 +437,16 @@ public class Block extends BlockBehaviour implements ItemLike {
-         this.playerDestroy(world, player, pos, state, blockEntity, tool, true);
+@@ -429,11 +437,10 @@ public class Block extends BlockBehaviour implements ItemLike {
+         this.playerDestroy(world, player, pos, state, blockEntity, tool, true, true);
      }
-     public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops) {
-+        // Paper end
-+        // Paper start
-+        this.playerDestroy(world, player, pos, state, blockEntity, tool, true, true);
-+    }
-+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) {
-         // Paper end
+     public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) {
+-        // Paper end
          player.awardStat(Stats.BLOCK_MINED.get(this));
          player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
          if (includeDrops) { // Paper
