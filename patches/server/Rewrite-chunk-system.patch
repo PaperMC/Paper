@@ -6545,7 +6545,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static final long NO_TIMEOUT_MARKER = Long.MIN_VALUE;
 +    private static final long PROBE_MARKER = Long.MIN_VALUE + 1;
-+    public final ReentrantAreaLock ticketLockArea = new ReentrantAreaLock(ChunkTaskScheduler.getChunkSystemLockShift());
++    public final ReentrantAreaLock ticketLockArea;
 +
 +    private final ConcurrentHashMap<RegionFileIOThread.ChunkCoordinate, SortedArraySet<Ticket<?>>> tickets = new java.util.concurrent.ConcurrentHashMap<>();
 +    private final ConcurrentHashMap<RegionFileIOThread.ChunkCoordinate, Long2IntOpenHashMap> sectionToChunkToExpireCount = new java.util.concurrent.ConcurrentHashMap<>();
@@ -6557,7 +6557,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final List<ChunkProgressionTask> scheduledTasks = new ArrayList<>();
 +        final List<NewChunkHolder> changedFullStatus = new ArrayList<>();
 +        final boolean ret;
-+        final ca.spottedleaf.concurrentutil.lock.ReentrantAreaLock.Node ticketLock = this.ticketLockArea.lock(
++        final ReentrantAreaLock.Node ticketLock = this.ticketLockArea.lock(
 +            ((posX >> ticketShift) - 1) << ticketShift,
 +            ((posZ >> ticketShift) - 1) << ticketShift,
 +            (((posX >> ticketShift) + 1) << ticketShift) | ticketMask,
@@ -6618,7 +6618,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public ChunkHolderManager(final ServerLevel world, final ChunkTaskScheduler taskScheduler) {
 +        this.world = world;
 +        this.taskScheduler = taskScheduler;
-+        this.unloadQueue = new ChunkQueue(TickRegions.getRegionChunkShift());
++        this.ticketLockArea = new ReentrantAreaLock(taskScheduler.getChunkSystemLockShift());
++        this.unloadQueue = new ChunkQueue(world.getRegionChunkShift());
 +    }
 +
 +    private final AtomicLong statusUpgradeId = new AtomicLong();
@@ -6871,7 +6872,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> getTicketsCopy() {
 +        final Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> ret = new Long2ObjectOpenHashMap<>();
 +        final Long2ObjectOpenHashMap<List<RegionFileIOThread.ChunkCoordinate>> sections = new Long2ObjectOpenHashMap();
-+        final int sectionShift = ChunkTaskScheduler.getChunkSystemLockShift();
++        final int sectionShift = this.taskScheduler.getChunkSystemLockShift();
 +        for (final RegionFileIOThread.ChunkCoordinate coord : this.tickets.keySet()) {
 +            sections.computeIfAbsent(
 +                CoordinateUtils.getChunkKey(
@@ -6960,7 +6961,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private void addExpireCount(final int chunkX, final int chunkZ) {
 +        final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 +
-+        final int sectionShift = TickRegions.getRegionChunkShift();
++        final int sectionShift = this.world.getRegionChunkShift();
 +        final RegionFileIOThread.ChunkCoordinate sectionKey = new RegionFileIOThread.ChunkCoordinate(CoordinateUtils.getChunkKey(
 +            chunkX >> sectionShift,
 +            chunkZ >> sectionShift
@@ -6974,7 +6975,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private void removeExpireCount(final int chunkX, final int chunkZ) {
 +        final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 +
-+        final int sectionShift = TickRegions.getRegionChunkShift();
++        final int sectionShift = this.world.getRegionChunkShift();
 +        final RegionFileIOThread.ChunkCoordinate sectionKey = new RegionFileIOThread.ChunkCoordinate(CoordinateUtils.getChunkKey(
 +            chunkX >> sectionShift,
 +            chunkZ >> sectionShift
@@ -7153,7 +7154,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        final Long2ObjectOpenHashMap<List<RegionFileIOThread.ChunkCoordinate>> sections = new Long2ObjectOpenHashMap();
-+        final int sectionShift = ChunkTaskScheduler.getChunkSystemLockShift();
++        final int sectionShift = this.taskScheduler.getChunkSystemLockShift();
 +        for (final RegionFileIOThread.ChunkCoordinate coord : this.tickets.keySet()) {
 +            sections.computeIfAbsent(
 +                CoordinateUtils.getChunkKey(
@@ -7187,7 +7188,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public void tick() {
-+        final int sectionShift = TickRegions.getRegionChunkShift();
++        final int sectionShift = this.world.getRegionChunkShift();
 +
 +        final Predicate<Ticket<?>> expireNow = (final Ticket<?> ticket) -> {
 +            if (ticket.removeDelay == NO_TIMEOUT_MARKER) {
@@ -7881,9 +7882,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        final JsonArray unloadQueue = new JsonArray();
 +        ret.add("unload_queue", unloadQueue);
-+        ret.addProperty("lock_shift", Integer.valueOf(ChunkTaskScheduler.getChunkSystemLockShift()));
++        ret.addProperty("lock_shift", Integer.valueOf(this.taskScheduler.getChunkSystemLockShift()));
 +        ret.addProperty("ticket_shift", Integer.valueOf(ThreadedTicketLevelPropagator.SECTION_SHIFT));
-+        ret.addProperty("region_shift", Integer.valueOf(TickRegions.getRegionChunkShift()));
++        ret.addProperty("region_shift", Integer.valueOf(this.world.getRegionChunkShift()));
 +        for (final ChunkQueue.SectionToUnload section : this.unloadQueue.retrieveForAllRegions()) {
 +            final JsonObject sectionJson = new JsonObject();
 +            unloadQueue.add(sectionJson);
@@ -8946,6 +8947,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.concurrentutil.lock.ReentrantAreaLock;
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
 +import com.mojang.logging.LogUtils;
++import io.papermc.paper.chunk.system.io.RegionFileIOThread;
 +import io.papermc.paper.chunk.system.scheduling.queue.RadiusAwarePrioritisedExecutor;
 +import io.papermc.paper.configuration.GlobalConfiguration;
 +import io.papermc.paper.util.CoordinateUtils;
@@ -9035,7 +9037,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ChunkTaskScheduler.newChunkSystemGenParallelism = useParallelGen ? newChunkSystemWorkerThreads : 1;
 +        ChunkTaskScheduler.newChunkSystemLoadParallelism = newChunkSystemWorkerThreads;
 +
-+        io.papermc.paper.chunk.system.io.RegionFileIOThread.init(newChunkSystemIOThreads);
++        RegionFileIOThread.init(newChunkSystemIOThreads);
 +        workerThreads = new ca.spottedleaf.concurrentutil.executor.standard.PrioritisedThreadPool(
 +            "Paper Chunk System Worker Pool", newChunkSystemWorkerThreads,
 +            (final Thread thread, final Integer id) -> {
@@ -9126,16 +9128,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    // must be >= region shift (in paper, doesn't exist) and must be >= ticket propagator section shift
-+    // it must be >= region shift since the regioniser assumes ticket updates do not occur in parallel for the region sections
-+    // it must be >= ticket propagator section shift so that the ticket propagator can assume that owning a position implies owning
-+    // the entire section
-+    // we just take the max, as we want the smallest shift that satifies these properties
-+    private static final int LOCK_SHIFT = ThreadedTicketLevelPropagator.SECTION_SHIFT;
-+    public static int getChunkSystemLockShift() {
-+        return LOCK_SHIFT;
-+    }
-+
 +    private static final int[] ACCESS_RADIUS_TABLE = new int[ChunkStatus.getStatusList().size()];
 +    private static final int[] MAX_ACCESS_RADIUS_TABLE = new int[ACCESS_RADIUS_TABLE.length];
 +    static {
@@ -9189,12 +9181,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return (status.ordinal() - 1) + getAccessRadius(ChunkStatus.FULL);
 +    }
 +
-+    final ReentrantAreaLock schedulingLockArea = new ReentrantAreaLock(getChunkSystemLockShift());
++    final ReentrantAreaLock schedulingLockArea;
++    private final int lockShift;
++
++    public final int getChunkSystemLockShift() {
++        return this.lockShift;
++    }
 +    // Folia end - use area based lock to reduce contention
 +
 +    public ChunkTaskScheduler(final ServerLevel world, final PrioritisedThreadPool workers) {
 +        this.world = world;
 +        this.workers = workers;
++        // must be >= region shift (in paper, doesn't exist) and must be >= ticket propagator section shift
++        // it must be >= region shift since the regioniser assumes ticket updates do not occur in parallel for the region sections
++        // it must be >= ticket propagator section shift so that the ticket propagator can assume that owning a position implies owning
++        // the entire section
++        // we just take the max, as we want the smallest shift that satisfies these properties
++        this.lockShift = Math.max(world.getRegionChunkShift(), ThreadedTicketLevelPropagator.SECTION_SHIFT);
++        this.schedulingLockArea = new ReentrantAreaLock(this.getChunkSystemLockShift());
 +
 +        final String worldName = world.getWorld().getName();
 +        this.parallelGenExecutor = workers.createExecutor("Chunk parallel generation executor for world '" + worldName + "'", Math.max(1, newChunkSystemGenParallelism));
@@ -19741,9 +19745,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  );
              }
 +            super.write(pos, nbt);
-         }
-     }
--    // Paper end
++        }
++    }
 +
 +    private void writeEntityChunk(int chunkX, int chunkZ, net.minecraft.nbt.CompoundTag compound) throws IOException {
 +        if (!io.papermc.paper.chunk.system.io.RegionFileIOThread.isRegionFileThread()) {
@@ -19786,7 +19789,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public ChunkAccess syncLoadNonFull(int chunkX, int chunkZ, net.minecraft.world.level.chunk.ChunkStatus status) {
 +        if (status == null || status.isOrAfter(net.minecraft.world.level.chunk.ChunkStatus.FULL)) {
-+            throw new IllegalArgumentException("Status: " + status.toString());
++            throw new IllegalArgumentException("Status: " + status);
 +        }
 +        ChunkAccess loaded = this.getIfAboveStatus(chunkX, chunkZ, status);
 +        if (loaded != null) {
@@ -19819,6 +19822,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        return loaded;
 +    }
++
++    public final int getRegionChunkShift() {
++        // placeholder for folia
++        return io.papermc.paper.threadedregions.TickRegions.getRegionChunkShift();
++    }
 +    // Paper end - rewrite chunk system
 +
 +    public final io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader playerChunkLoader = new io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader(this);
@@ -19833,8 +19841,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (this.viewDistances.compareAndSet(curr, update.apply(curr))) {
 +                return;
 +            }
-+        }
-+    }
+         }
+     }
+-    // Paper end
 +
 +    public void setTickViewDistance(final int distance) {
 +        if ((distance < io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.MIN_VIEW_DISTANCE || distance > io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.MAX_VIEW_DISTANCE)) {
