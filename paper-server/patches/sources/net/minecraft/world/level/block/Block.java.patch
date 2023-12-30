@@ -1,8 +1,11 @@
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -295,6 +295,24 @@
- 
-     }
+@@ -292,15 +292,41 @@
+             });
+             state.spawnAfterBreak((ServerLevel) world, pos, ItemStack.EMPTY, true);
+         }
++
++    }
  
 +    // Paper start - Add BlockBreakBlockEvent
 +    public static boolean dropResources(BlockState state, LevelAccessor levelAccessor, BlockPos pos, @Nullable BlockEntity blockEntity, BlockPos source) {
@@ -11,21 +14,36 @@
 +            for (ItemStack drop : Block.getDrops(state, serverLevel, pos, blockEntity)) {
 +                items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(drop));
 +            }
++            Block block = state.getBlock(); // Paper - Properly handle xp dropping
 +            io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, pos), org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, source), items);
++            event.setExpToDrop(block.getExpDrop(state, serverLevel, pos, net.minecraft.world.item.ItemStack.EMPTY, true)); // Paper - Properly handle xp dropping
 +            event.callEvent();
 +            for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
 +                popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
 +            }
-+            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++            block.popExperience(serverLevel, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
 +        }
 +        return true;
-+    }
+     }
 +    // Paper end - Add BlockBreakBlockEvent
-+
+ 
      public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool) {
++    // Paper start - Properly handle xp dropping
++        dropResources(state, world, pos, blockEntity, entity, tool, true);
++    }
++    public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool, boolean dropExperience) {
++    // Paper end - Properly handle xp dropping
          if (world instanceof ServerLevel) {
              Block.getDrops(state, (ServerLevel) world, pos, blockEntity, entity, tool).forEach((itemstack1) -> {
-@@ -340,7 +358,13 @@
+                 Block.popResource(world, pos, itemstack1);
+             });
+-            state.spawnAfterBreak((ServerLevel) world, pos, tool, true);
++            state.spawnAfterBreak((ServerLevel) world, pos, tool, dropExperience); // Paper - Properly handle xp dropping
+         }
+ 
+     }
+@@ -340,7 +366,13 @@
                  ItemEntity entityitem = (ItemEntity) itemEntitySupplier.get();
  
                  entityitem.setDefaultPickUpDelay();
@@ -40,7 +58,7 @@
                  return;
              }
          }
-@@ -348,8 +372,13 @@
+@@ -348,8 +380,13 @@
      }
  
      public void popExperience(ServerLevel world, BlockPos pos, int size) {
@@ -55,7 +73,7 @@
          }
  
      }
-@@ -367,10 +396,18 @@
+@@ -367,10 +404,18 @@
          return this.defaultBlockState();
      }
  
@@ -68,14 +86,15 @@
 +        // Paper end - fix drops not preventing stats/food exhaustion
          player.awardStat(Stats.BLOCK_MINED.get(this));
 -        player.causeFoodExhaustion(0.005F);
+-        Block.dropResources(state, world, pos, blockEntity, player, tool);
 +        player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
 +        if (includeDrops) { // Paper - fix drops not preventing stats/food exhaustion
-         Block.dropResources(state, world, pos, blockEntity, player, tool);
++        Block.dropResources(state, world, pos, blockEntity, player, tool, dropExp); // Paper - Properly handle xp dropping
 +        } // Paper - fix drops not preventing stats/food exhaustion
      }
  
      public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {}
-@@ -490,15 +527,35 @@
+@@ -490,15 +535,35 @@
          return this.builtInRegistryHolder;
      }
  

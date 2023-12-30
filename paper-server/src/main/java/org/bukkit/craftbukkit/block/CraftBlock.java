@@ -509,7 +509,7 @@ public class CraftBlock implements Block {
 
         // Modelled off EntityHuman#hasBlock
         if (block != Blocks.AIR && (item == null || !iblockdata.requiresCorrectToolForDrops() || nmsItem.isCorrectToolForDrops(iblockdata))) {
-            net.minecraft.world.level.block.Block.dropResources(iblockdata, this.world.getMinecraftWorld(), this.position, this.world.getBlockEntity(this.position), null, nmsItem);
+            net.minecraft.world.level.block.Block.dropResources(iblockdata, this.world.getMinecraftWorld(), this.position, this.world.getBlockEntity(this.position), null, nmsItem, false); // Paper - Properly handle xp dropping
             // Paper start - improve Block#breanNaturally
             if (triggerEffect) {
                 if (iblockdata.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock) {
