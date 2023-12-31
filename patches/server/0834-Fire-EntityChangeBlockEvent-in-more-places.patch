@@ -112,7 +112,7 @@ index db507638a97b5a33df712c54daff35b21922c0dd..2e75fd06e9e379eb95ebfe55086ffc32
                  CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
              }
 diff --git a/src/main/java/net/minecraft/world/item/EnderEyeItem.java b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
-index 1fddc9025a9e5079f05dd6c86f6ca43c5d51d9c3..6d45e3ebea6721b9c168fea572e9bd610eb54431 100644
+index 1977e702f6af39ebf100c1f2f2edc2d1c4d003b0..cfcd1778b5ae66395400221879dde3575591b23d 100644
 --- a/src/main/java/net/minecraft/world/item/EnderEyeItem.java
 +++ b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
 @@ -43,6 +43,11 @@ public class EnderEyeItem extends Item {
@@ -198,6 +198,47 @@ index 32995cb5efdad0bc34ecacacb78cccd21220ba8d..21212462e6b415e96536a27b2c009d15
                      level.setBlock(blockPos, blockState3, 11);
                      level.gameEvent(GameEvent.BLOCK_CHANGE, blockPos, GameEvent.Context.of(player, blockState3));
                      if (player != null) {
+diff --git a/src/main/java/net/minecraft/world/level/block/CakeBlock.java b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
+index 49fe91a8eaeb2580c8ad0166e72540168af605f6..ca1ccedb5a551328ebfad907f39594b220efaefe 100644
+--- a/src/main/java/net/minecraft/world/level/block/CakeBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
+@@ -62,6 +62,12 @@ public class CakeBlock extends Block {
+             Block block = Block.byItem(item);
+ 
+             if (block instanceof CandleBlock) {
++                // Paper start - call change block event
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, CandleCakeBlock.byCandle(block))) {
++                    player.containerMenu.sendAllDataToRemote(); // update inv because candle could decrease
++                    return InteractionResult.PASS;
++                }
++                // Paper end - call change block event
+                 if (!player.isCreative()) {
+                     itemstack.shrink(1);
+                 }
+@@ -91,6 +97,14 @@ public class CakeBlock extends Block {
+         if (!player.canEat(false)) {
+             return InteractionResult.PASS;
+         } else {
++            // Paper start - call change block event
++            int i = state.getValue(CakeBlock.BITES);
++            final BlockState newState = i < MAX_BITES ? state.setValue(CakeBlock.BITES, i + 1) : world.getFluidState(pos).createLegacyBlock();
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, newState)) {
++                ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().sendHealthUpdate();
++                return InteractionResult.PASS; // return a non-consume result to cake blocks don't drop their candles
++            }
++            // Paper end - call change block event
+             player.awardStat(Stats.EAT_CAKE_SLICE);
+             // CraftBukkit start
+             // entityhuman.getFoodData().eat(2, 0.1F);
+@@ -104,7 +118,7 @@ public class CakeBlock extends Block {
+ 
+             ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().sendHealthUpdate();
+             // CraftBukkit end
+-            int i = (Integer) state.getValue(CakeBlock.BITES);
++            // Paper - move up
+ 
+             world.gameEvent((Entity) player, GameEvent.EAT, pos);
+             if (i < 6) {
 diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 index 6cccdd1d19488275ff3fe90838cf1c31e844d517..413b307acaad5823b9e06f49fa2faf561f5f7b9a 100644
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
