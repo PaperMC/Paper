@@ -198,7 +198,7 @@
                  this.setSuccess(true);
                  return stack;
              }
-@@ -202,6 +325,38 @@
+@@ -202,6 +325,44 @@
                  BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
                  ServerLevel worldserver = pointer.level();
  
@@ -207,7 +207,13 @@
 +                int y = blockposition.getY();
 +                int z = blockposition.getZ();
 +                BlockState iblockdata = worldserver.getBlockState(blockposition);
-+                if (iblockdata.isAir() || iblockdata.canBeReplaced() || (dispensiblecontaineritem instanceof BucketItem && iblockdata.getBlock() instanceof LiquidBlockContainer && ((LiquidBlockContainer) iblockdata.getBlock()).canPlaceLiquid((Player) null, worldserver, blockposition, iblockdata, ((BucketItem) dispensiblecontaineritem).content))) {
++                // Paper start - correctly check if the bucket place will succeed
++                /* Taken from SolidBucketItem#emptyContents */
++                boolean willEmptyContentsSolidBucketItem = dispensiblecontaineritem instanceof net.minecraft.world.item.SolidBucketItem && worldserver.isInWorldBounds(blockposition) && iblockdata.isAir();
++                /* Taken from BucketItem#emptyContents */
++                boolean willEmptyBucketItem = dispensiblecontaineritem instanceof final BucketItem bucketItem && bucketItem.content instanceof net.minecraft.world.level.material.FlowingFluid && (iblockdata.isAir() || iblockdata.canBeReplaced(bucketItem.content) || (iblockdata.getBlock() instanceof LiquidBlockContainer liquidBlockContainer && liquidBlockContainer.canPlaceLiquid(null, worldserver, blockposition, iblockdata, bucketItem.content)));
++                if (willEmptyContentsSolidBucketItem || willEmptyBucketItem) {
++                // Paper end - correctly check if the bucket place will succeed
 +                    org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
 +                    CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
 +
@@ -237,7 +243,7 @@
                  if (dispensiblecontaineritem.emptyContents((Player) null, worldserver, blockposition, (BlockHitResult) null)) {
                      dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, stack, blockposition);
                      return this.consumeWithRemainder(pointer, stack, new ItemStack(Items.BUCKET));
-@@ -229,7 +384,7 @@
+@@ -229,7 +390,7 @@
                  Block block = iblockdata.getBlock();
  
                  if (block instanceof BucketPickup ifluidsource) {
@@ -246,7 +252,7 @@
  
                      if (itemstack1.isEmpty()) {
                          return super.execute(pointer, stack);
-@@ -237,6 +392,32 @@
+@@ -237,6 +398,32 @@
                          worldserver.gameEvent((Entity) null, (Holder) GameEvent.FLUID_PICKUP, blockposition);
                          Item item = itemstack1.getItem();
  
@@ -279,7 +285,7 @@
                          return this.consumeWithRemainder(pointer, stack, new ItemStack(item));
                      }
                  } else {
-@@ -249,16 +430,44 @@
+@@ -249,16 +436,44 @@
              protected ItemStack execute(BlockSource pointer, ItemStack stack) {
                  ServerLevel worldserver = pointer.level();
  
@@ -327,7 +333,7 @@
                          TntBlock.explode(worldserver, blockposition);
                          worldserver.removeBlock(blockposition, false);
                      } else {
-@@ -283,13 +492,63 @@
+@@ -283,13 +498,63 @@
                  this.setSuccess(true);
                  ServerLevel worldserver = pointer.level();
                  BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
@@ -391,14 +397,14 @@
                  return stack;
              }
          });
-@@ -298,12 +557,41 @@
+@@ -298,12 +563,41 @@
              protected ItemStack execute(BlockSource pointer, ItemStack stack) {
                  ServerLevel worldserver = pointer.level();
                  BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
 -                PrimedTnt entitytntprimed = new PrimedTnt(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, (LivingEntity) null);
 +                // CraftBukkit start
 +                // EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, (EntityLiving) null);
- 
++
 +                ItemStack itemstack1 = stack.split(1);
 +                org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
 +                CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
@@ -423,7 +429,7 @@
 +                        return stack;
 +                    }
 +                }
-+
+ 
 +                PrimedTnt entitytntprimed = new PrimedTnt(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), (LivingEntity) null);
 +                // CraftBukkit end
 +
@@ -435,7 +441,7 @@
                  return stack;
              }
          });
-@@ -314,6 +602,30 @@
+@@ -314,6 +608,30 @@
                  Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
                  BlockPos blockposition = pointer.pos().relative(enumdirection);
  
@@ -466,7 +472,7 @@
                  if (worldserver.isEmptyBlock(blockposition) && WitherSkullBlock.canSpawnMob(worldserver, blockposition, stack)) {
                      worldserver.setBlock(blockposition, (BlockState) Blocks.WITHER_SKELETON_SKULL.defaultBlockState().setValue(SkullBlock.ROTATION, RotationSegment.convertToSegment(enumdirection)), 3);
                      worldserver.gameEvent((Entity) null, (Holder) GameEvent.BLOCK_PLACE, blockposition);
-@@ -339,6 +651,30 @@
+@@ -339,6 +657,30 @@
                  BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
                  CarvedPumpkinBlock blockpumpkincarved = (CarvedPumpkinBlock) Blocks.CARVED_PUMPKIN;
  
@@ -497,7 +503,7 @@
                  if (worldserver.isEmptyBlock(blockposition) && blockpumpkincarved.canSpawnGolem(worldserver, blockposition)) {
                      if (!worldserver.isClientSide) {
                          worldserver.setBlock(blockposition, blockpumpkincarved.defaultBlockState(), 3);
-@@ -377,6 +713,30 @@
+@@ -377,6 +719,30 @@
                  BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
                  BlockState iblockdata = worldserver.getBlockState(blockposition);
  
@@ -528,7 +534,7 @@
                  if (iblockdata.is(BlockTags.BEEHIVES, (blockbase_blockdata) -> {
                      return blockbase_blockdata.hasProperty(BeehiveBlock.HONEY_LEVEL) && blockbase_blockdata.getBlock() instanceof BeehiveBlock;
                  }) && (Integer) iblockdata.getValue(BeehiveBlock.HONEY_LEVEL) >= 5) {
-@@ -426,6 +786,31 @@
+@@ -426,6 +792,31 @@
                      this.setSuccess(false);
                      return stack;
                  } else {
