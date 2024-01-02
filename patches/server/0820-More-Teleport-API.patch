@@ -5,7 +5,7 @@ Subject: [PATCH] More Teleport API
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 009a14ad5de4bf98ec50cc4ba348445266c1c967..5af57f06717cb1fd891acfacfdd795e6f6426e7d 100644
+index b384af27839b7bb6e028baf817fe844c225963f5..95966fdddc81dcc4e65b075a4df6d5dd9af4e65a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1637,11 +1637,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -24,7 +24,7 @@ index 009a14ad5de4bf98ec50cc4ba348445266c1c967..5af57f06717cb1fd891acfacfdd795e6
  
          if (event.isCancelled() || !to.equals(event.getTo())) {
 -            set.clear(); // Can't relative teleport
-+            //set.clear(); // Can't relative teleport // Paper - Teleport API: Now you can!
++            // set.clear(); // Can't relative teleport // Paper - Teleport API: Now you can!
              to = event.isCancelled() ? event.getFrom() : event.getTo();
              d0 = to.getX();
              d1 = to.getY();
@@ -72,7 +72,7 @@ index 1879ec9e275194cb83f30ec47930a3814fbe1da3..027fa02e855e14b1554ddd141d0a937a
          // Let the server handle cross world teleports
          if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 9d12fab078c0625844b5f07b884b5f5978bf590c..c92ef0b4ab551e3538b11cec9256af25dddf8aa4 100644
+index 9d12fab078c0625844b5f07b884b5f5978bf590c..800b216c2bbc01828005286e604e4cd6610df73c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1207,13 +1207,101 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -144,17 +144,17 @@ index 9d12fab078c0625844b5f07b884b5f5978bf590c..c92ef0b4ab551e3538b11cec9256af25
 +
 +    @Override
 +    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
-+        java.util.Set<net.minecraft.world.entity.RelativeMovement> relativeArguments;
-+        java.util.Set<io.papermc.paper.entity.TeleportFlag> allFlags;
++        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeArguments;
++        Set<io.papermc.paper.entity.TeleportFlag> allFlags;
 +        if (flags.length == 0) {
 +            relativeArguments = Set.of();
 +            allFlags = Set.of();
 +        } else {
-+            relativeArguments = java.util.EnumSet.noneOf(net.minecraft.world.entity.RelativeMovement.class);
++            relativeArguments = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
 +            allFlags = new HashSet<>();
 +            for (io.papermc.paper.entity.TeleportFlag flag : flags) {
-+                if (flag instanceof io.papermc.paper.entity.TeleportFlag.Relative relativeTeleportFlag) {
-+                    relativeArguments.add(toNmsRelativeFlag(relativeTeleportFlag));
++                if (flag instanceof final io.papermc.paper.entity.TeleportFlag.Relative relativeTeleportFlag) {
++                    relativeArguments.add(relativeTeleportFlag);
 +                }
 +                allFlags.add(flag);
 +            }
@@ -187,6 +187,15 @@ index 9d12fab078c0625844b5f07b884b5f5978bf590c..c92ef0b4ab551e3538b11cec9256af25
              return false;
          }
  
+@@ -1235,7 +1323,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // To = Players new Location if Teleport is Successful
+         Location to = location;
+         // Create & Call the Teleport Event.
+-        PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause);
++        PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause, Set.copyOf(relativeArguments)); // Paper - Teleport API
+         this.server.getPluginManager().callEvent(event);
+ 
+         // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
 @@ -1244,7 +1332,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
@@ -196,7 +205,7 @@ index 9d12fab078c0625844b5f07b884b5f5978bf590c..c92ef0b4ab551e3538b11cec9256af25
  
          // SPIGOT-5509: Wakeup, similar to riding
          if (this.isSleeping()) {
-@@ -1260,13 +1348,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1260,13 +1348,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          ServerLevel toWorld = ((CraftWorld) to.getWorld()).getHandle();
  
          // Close any foreign inventory
@@ -208,7 +217,13 @@ index 9d12fab078c0625844b5f07b884b5f5978bf590c..c92ef0b4ab551e3538b11cec9256af25
          // Check if the fromWorld and toWorld are the same.
          if (fromWorld == toWorld) {
 -            entity.connection.teleport(to);
-+            entity.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), relativeArguments); // Paper - Teleport API
++            // Paper start - Teleport API
++            final Set<net.minecraft.world.entity.RelativeMovement> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.RelativeMovement.class);
++            for (final io.papermc.paper.entity.TeleportFlag.Relative bukkit : relativeArguments) {
++                nms.add(toNmsRelativeFlag(bukkit));
++            }
++            entity.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), nms);
++            // Paper end - Teleport API
          } else {
              // The respawn reason should never be used if the passed location is non null.
              this.server.getHandle().respawn(entity, toWorld, true, to, !toWorld.paperConfig().environment.disableTeleportationSuffocationCheck, null); // Paper
