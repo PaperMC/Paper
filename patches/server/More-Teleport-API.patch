@@ -24,7 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (event.isCancelled() || !to.equals(event.getTo())) {
 -            set.clear(); // Can't relative teleport
-+            //set.clear(); // Can't relative teleport // Paper - Teleport API: Now you can!
++            // set.clear(); // Can't relative teleport // Paper - Teleport API: Now you can!
              to = event.isCancelled() ? event.getFrom() : event.getTo();
              d0 = to.getX();
              d1 = to.getY();
@@ -144,17 +144,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
-+        java.util.Set<net.minecraft.world.entity.RelativeMovement> relativeArguments;
-+        java.util.Set<io.papermc.paper.entity.TeleportFlag> allFlags;
++        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeArguments;
++        Set<io.papermc.paper.entity.TeleportFlag> allFlags;
 +        if (flags.length == 0) {
 +            relativeArguments = Set.of();
 +            allFlags = Set.of();
 +        } else {
-+            relativeArguments = java.util.EnumSet.noneOf(net.minecraft.world.entity.RelativeMovement.class);
++            relativeArguments = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
 +            allFlags = new HashSet<>();
 +            for (io.papermc.paper.entity.TeleportFlag flag : flags) {
-+                if (flag instanceof io.papermc.paper.entity.TeleportFlag.Relative relativeTeleportFlag) {
-+                    relativeArguments.add(toNmsRelativeFlag(relativeTeleportFlag));
++                if (flag instanceof final io.papermc.paper.entity.TeleportFlag.Relative relativeTeleportFlag) {
++                    relativeArguments.add(relativeTeleportFlag);
 +                }
 +                allFlags.add(flag);
 +            }
@@ -188,6 +188,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // To = Players new Location if Teleport is Successful
+         Location to = location;
+         // Create & Call the Teleport Event.
+-        PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause);
++        PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause, Set.copyOf(relativeArguments)); // Paper - Teleport API
+         this.server.getPluginManager().callEvent(event);
+ 
+         // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
+@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          // If this player is riding another entity, we must dismount before teleporting.
@@ -208,7 +217,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Check if the fromWorld and toWorld are the same.
          if (fromWorld == toWorld) {
 -            entity.connection.teleport(to);
-+            entity.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), relativeArguments); // Paper - Teleport API
++            // Paper start - Teleport API
++            final Set<net.minecraft.world.entity.RelativeMovement> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.RelativeMovement.class);
++            for (final io.papermc.paper.entity.TeleportFlag.Relative bukkit : relativeArguments) {
++                nms.add(toNmsRelativeFlag(bukkit));
++            }
++            entity.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), nms);
++            // Paper end - Teleport API
          } else {
              // The respawn reason should never be used if the passed location is non null.
              this.server.getHandle().respawn(entity, toWorld, true, to, !toWorld.paperConfig().environment.disableTeleportationSuffocationCheck, null); // Paper
