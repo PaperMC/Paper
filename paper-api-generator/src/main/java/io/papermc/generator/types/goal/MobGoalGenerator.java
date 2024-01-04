@@ -195,7 +195,6 @@ public class MobGoalGenerator extends SimpleGenerator {
         }
 
         List<VanillaGoalKey> vanillaNames = classes.stream()
-            .filter(MobGoalGenerator::hasNoEnclosingClass)
             .filter(clazz -> !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers()))
             .filter(clazz -> !net.minecraft.world.entity.ai.goal.WrappedGoal.class.equals(clazz)) // TODO - properly fix
             .map(goalClass -> new VanillaGoalKey(goalClass, MobGoalNames.getKey(goalClass.getName(), (Class<? extends Goal>) goalClass)))
@@ -244,10 +243,6 @@ public class MobGoalGenerator extends SimpleGenerator {
     protected JavaFile.Builder file(JavaFile.Builder builder) {
         return builder
             .skipJavaLangImports(true);
-    }
-
-    private static boolean hasNoEnclosingClass(Class<?> clazz) {
-        return clazz.getEnclosingClass() == null || hasNoEnclosingClass(clazz.getSuperclass());
     }
 
     record VanillaGoalKey(Class<?> clazz, GoalKey<?> key) {
