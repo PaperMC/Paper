@@ -19,11 +19,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        // Paper end
                      }
                  } else if (this.seenBy.remove(player.connection)) {
-+                    // Paper start - entity tracking events
-+                    if (io.papermc.paper.event.player.PlayerUntrackEntityEvent.getHandlerList().getRegisteredListeners().length > 0) {
-+                        new io.papermc.paper.event.player.PlayerUntrackEntityEvent(player.getBukkitEntity(), this.entity.getBukkitEntity()).callEvent();
-+                    }
-+                    // Paper end
                      this.serverEntity.removePairing(player);
-                 }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
+     public void startSeenByPlayer(ServerPlayer player) {}
+ 
+-    public void stopSeenByPlayer(ServerPlayer player) {}
++    // Paper start - entity tracking events
++    public void stopSeenByPlayer(ServerPlayer player) {
++        // Since this event cannot be cancelled, we should call it here to catch all "un-tracks"
++        if (io.papermc.paper.event.player.PlayerUntrackEntityEvent.getHandlerList().getRegisteredListeners().length > 0) {
++            new io.papermc.paper.event.player.PlayerUntrackEntityEvent(player.getBukkitEntity(), this.getBukkitEntity()).callEvent();
++        }
++    }
++    // Paper end
+ 
+     public float rotate(Rotation rotation) {
+         float f = Mth.wrapDegrees(this.getYRot());
