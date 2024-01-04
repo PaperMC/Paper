@@ -11,7 +11,7 @@ floating in the air.
 This can replace many uses of BlockPhysicsEvent
 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 178509c545f2872174af501bdcec3314f703739c..d315a31f6b489ee88f81eb3d1b358c92e1e1619c 100644
+index b4f7e73fa673006ad0f8ea5a8de5a825aa75e41c..3ee67624e163a8c42cc8dab70aa05021baa2574b 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -31,6 +31,7 @@ import net.minecraft.nbt.CompoundTag;
@@ -22,7 +22,7 @@ index 178509c545f2872174af501bdcec3314f703739c..d315a31f6b489ee88f81eb3d1b358c92
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.FullChunkStatus;
  import net.minecraft.server.level.ServerLevel;
-@@ -669,8 +670,21 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -669,9 +670,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              return false;
          } else {
              FluidState fluid = this.getFluidState(pos);
@@ -30,18 +30,24 @@ index 178509c545f2872174af501bdcec3314f703739c..d315a31f6b489ee88f81eb3d1b358c92
 +            // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
 +            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
 +            boolean playEffect = true;
++            BlockState effectType = iblockdata;
++            int xp = iblockdata.getBlock().getExpDrop(iblockdata, (ServerLevel) this, pos, ItemStack.EMPTY, true);
 +            if (com.destroystokyo.paper.event.block.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
 +                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(MCUtil.toBukkitBlock(this, pos), fluid.createLegacyBlock().createCraftBlockData(), drop);
 +                if (!event.callEvent()) {
 +                    return false;
 +                }
++                effectType = ((CraftBlockData) event.getEffectBlock()).getState();
 +                playEffect = event.playEffect();
 +                drop = event.willDrop();
++                xp = event.getExpToDrop();
 +            }
 +            // Paper end
  
 -            if (!(iblockdata.getBlock() instanceof BaseFireBlock)) {
-+            if (playEffect && !(iblockdata.getBlock() instanceof BaseFireBlock)) { // Paper
-                 this.levelEvent(2001, pos, Block.getId(iblockdata));
+-                this.levelEvent(2001, pos, Block.getId(iblockdata));
++            if (playEffect && !(effectType.getBlock() instanceof BaseFireBlock)) { // Paper
++                this.levelEvent(2001, pos, Block.getId(effectType)); // Paper
              }
  
+             if (drop) {

@@ -9,7 +9,7 @@ food consumption, turtle egg count decreases, ice to water
 conversions and beehive releases
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 82f26186156a487f29ad3abff3f68852e5b8a1f9..511221a686c1d2cad3b4abf79ee32b26058dad27 100644
+index 82f26186156a487f29ad3abff3f68852e5b8a1f9..e2764751aaa862e3e0c21cf9a8ab66ed921c65e5 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -433,8 +433,8 @@ public class ServerPlayerGameMode {
@@ -19,12 +19,12 @@ index 82f26186156a487f29ad3abff3f68852e5b8a1f9..511221a686c1d2cad3b4abf79ee32b26
 -                    if (flag && flag1 && event.isDropItems()) { // CraftBukkit - Check if block should drop items
 -                        block.playerDestroy(this.level, this.player, pos, iblockdata1, tileentity, itemstack1);
 +                    if (flag && flag1 && event.isDropItems()/* && event.isDropItems() */) { // CraftBukkit - Check if block should drop items // Paper - fix drops not preventing stats/food exhaustion
-+                        block.playerDestroy(this.level, this.player, pos, iblockdata1, tileentity, itemstack1, event.isDropItems()); // Paper
++                        block.playerDestroy(this.level, this.player, pos, iblockdata1, tileentity, itemstack1, event.isDropItems(), false); // Paper
                      }
  
                      // return true; // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java b/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
-index 6e7a9f68aa3a5084c8eea9fd8721272260734289..7d1f3c367efcf8def56b961993136e02e05ba59c 100644
+index 6e7a9f68aa3a5084c8eea9fd8721272260734289..2594c8e233114b21e5b00acb5ad7012b004a0ef2 100644
 --- a/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
 @@ -84,8 +84,8 @@ public class BeehiveBlock extends BaseEntityBlock {
@@ -33,13 +33,13 @@ index 6e7a9f68aa3a5084c8eea9fd8721272260734289..7d1f3c367efcf8def56b961993136e02
      @Override
 -    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
 -        super.playerDestroy(world, player, pos, state, blockEntity, tool);
-+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops) { // Paper
-+        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops); // Paper
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) { // Paper
++        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops, dropExp); // Paper
          if (!world.isClientSide && blockEntity instanceof BeehiveBlockEntity) {
              BeehiveBlockEntity tileentitybeehive = (BeehiveBlockEntity) blockEntity;
  
 diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
-index 7ac98b4e8b6dcc23777732d377ee73ae5671ebef..4d50dd92a7f3187ee1d8edb926e7c273c8156549 100644
+index 5343a0c20cf87067ba307f001a28b0b18fae2c34..0011bbb22fcfba267818c55b03042db5e67be562 100644
 --- a/src/main/java/net/minecraft/world/level/block/Block.java
 +++ b/src/main/java/net/minecraft/world/level/block/Block.java
 @@ -423,10 +423,18 @@ public class Block extends BlockBehaviour implements ItemLike {
@@ -49,9 +49,9 @@ index 7ac98b4e8b6dcc23777732d377ee73ae5671ebef..4d50dd92a7f3187ee1d8edb926e7c273
 +    @io.papermc.paper.annotation.DoNotUse // Paper - method below allows better control of item drops
      public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
 +        // Paper start
-+        this.playerDestroy(world, player, pos, state, blockEntity, tool, true);
++        this.playerDestroy(world, player, pos, state, blockEntity, tool, true, true);
 +    }
-+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops) {
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) {
 +        // Paper end
          player.awardStat(Stats.BLOCK_MINED.get(this));
          player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
@@ -62,7 +62,7 @@ index 7ac98b4e8b6dcc23777732d377ee73ae5671ebef..4d50dd92a7f3187ee1d8edb926e7c273
  
      public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {}
 diff --git a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
-index 0f0750f8c790d0db72a0e6b277449a1461674890..81d2140351775ad55546af52eb635ccdc8509d89 100644
+index 0f0750f8c790d0db72a0e6b277449a1461674890..a6a257027d60bfda8cb975eca7f255fb1bd1e8d5 100644
 --- a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
 @@ -96,8 +96,8 @@ public class DoublePlantBlock extends BushBlock {
@@ -71,13 +71,13 @@ index 0f0750f8c790d0db72a0e6b277449a1461674890..81d2140351775ad55546af52eb635ccd
      @Override
 -    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
 -        super.playerDestroy(world, player, pos, Blocks.AIR.defaultBlockState(), blockEntity, tool);
-+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops) { // Paper
-+        super.playerDestroy(world, player, pos, Blocks.AIR.defaultBlockState(), blockEntity, tool, includeDrops); // Paper
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) { // Paper
++        super.playerDestroy(world, player, pos, Blocks.AIR.defaultBlockState(), blockEntity, tool, includeDrops, dropExp); // Paper
      }
  
      protected static void preventDropFromBottomPart(Level world, BlockPos pos, BlockState state, Player player) {
 diff --git a/src/main/java/net/minecraft/world/level/block/IceBlock.java b/src/main/java/net/minecraft/world/level/block/IceBlock.java
-index f05998e0af1e844f19bf86b74f652a9901088c37..4ab6997dad5b112f5105f786a6cee78c6c5667e8 100644
+index f05998e0af1e844f19bf86b74f652a9901088c37..9ebe74e235d425fde985a6180857dc4039ecfedf 100644
 --- a/src/main/java/net/minecraft/world/level/block/IceBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/IceBlock.java
 @@ -33,8 +33,8 @@ public class IceBlock extends HalfTransparentBlock {
@@ -86,13 +86,13 @@ index f05998e0af1e844f19bf86b74f652a9901088c37..4ab6997dad5b112f5105f786a6cee78c
      @Override
 -    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
 -        super.playerDestroy(world, player, pos, state, blockEntity, tool);
-+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops) { // Paper
-+        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops); // Paper
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) { // Paper
++        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops, dropExp); // Paper
          // Paper start
          this.afterDestroy(world, pos, tool);
      }
 diff --git a/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java b/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java
-index c79f3a8885a5ffc9ebac51992e63df14929d9f24..b0199e071cba4c7ad51799132d00b22b616953fc 100644
+index c79f3a8885a5ffc9ebac51992e63df14929d9f24..5c0127ecbbafd406f450f8707c4563bfea7a0214 100644
 --- a/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java
 @@ -173,8 +173,8 @@ public class TurtleEggBlock extends Block {
@@ -101,8 +101,8 @@ index c79f3a8885a5ffc9ebac51992e63df14929d9f24..b0199e071cba4c7ad51799132d00b22b
      @Override
 -    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
 -        super.playerDestroy(world, player, pos, state, blockEntity, tool);
-+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops) { // Paper
-+        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops); // Paper
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) { // Paper
++        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops, dropExp); // Paper
          this.decreaseEggs(world, pos, state);
      }
  

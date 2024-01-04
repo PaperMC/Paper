@@ -12,10 +12,10 @@ This can replace many uses of BlockPhysicsEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/block/BlockDestroyEvent.java b/src/main/java/com/destroystokyo/paper/event/block/BlockDestroyEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..051b2ef76a914228338fa28553ad739bd2a0278c
+index 0000000000000000000000000000000000000000..5465f0dc890ad8825b910c2a77fd9c0868115ebe
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/block/BlockDestroyEvent.java
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,121 @@
 +package com.destroystokyo.paper.event.block;
 +
 +import org.bukkit.block.Block;
@@ -23,6 +23,7 @@ index 0000000000000000000000000000000000000000..051b2ef76a914228338fa28553ad739b
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.block.BlockEvent;
++import org.bukkit.event.block.BlockExpEvent;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -36,20 +37,41 @@ index 0000000000000000000000000000000000000000..051b2ef76a914228338fa28553ad739b
 + * Events such as leaves decaying, pistons retracting (where the block is moving), does NOT fire this event.
 + *
 + */
-+public class BlockDestroyEvent extends BlockEvent implements Cancellable {
++public class BlockDestroyEvent extends BlockExpEvent implements Cancellable {
 +
 +    private static final HandlerList handlers = new HandlerList();
 +
 +    @NotNull private final BlockData newState;
 +    private boolean willDrop;
 +    private boolean playEffect = true;
++    private BlockData effectBlock;
 +
 +    private boolean cancelled = false;
 +
 +    public BlockDestroyEvent(@NotNull Block block, @NotNull BlockData newState, boolean willDrop) {
-+        super(block);
++        super(block, 0);
 +        this.newState = newState;
 +        this.willDrop = willDrop;
++    }
++
++    /**
++     * Get the effect that will be played when the block is broken.
++     * @return block break effect
++     */
++    @NotNull
++    public BlockData getEffectBlock() {
++        return this.effectBlock;
++    }
++
++    /**
++     * Sets the effect that will be played when the block is broken.
++     * Note: {@link BlockDestroyEvent#playEffect()} must be true in order for this effect to be
++     * played.
++     *
++     * @param effectBlock block effect
++     */
++    public void setEffectBlock(@NotNull BlockData effectBlock) {
++        this.effectBlock = effectBlock;
 +    }
 +
 +    /**
