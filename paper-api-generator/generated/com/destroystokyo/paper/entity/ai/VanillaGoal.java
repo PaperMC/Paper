@@ -73,27 +73,6 @@ import org.jetbrains.annotations.NotNull;
 @GeneratedFrom("1.20.4")
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
     /**
-     * net.minecraft.world.entity.ai.goal.RangedAttackGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<RangedEntity> RANGED_ATTACK = create("ranged_attack", RangedEntity.class);
-
-    /**
-     * net.minecraft.world.entity.monster.Drowned$DrownedTridentAttackGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<RangedEntity> DROWNED_TRIDENT_ATTACK = create("drowned_trident_attack", RangedEntity.class);
-
-    /**
-     * net.minecraft.world.entity.ai.goal.FollowFlockLeaderGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<SchoolableFish> FOLLOW_FLOCK_LEADER = create("follow_flock_leader", SchoolableFish.class);
-
-    /**
      * net.minecraft.world.entity.ai.goal.RandomStandGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1086,6 +1065,27 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Raider> RAIDER_MOVE_THROUGH_VILLAGE = create("raider_move_through_village", Raider.class);
+
+    /**
+     * net.minecraft.world.entity.ai.goal.RangedAttackGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<RangedEntity> RANGED_ATTACK = create("ranged_attack", RangedEntity.class);
+
+    /**
+     * net.minecraft.world.entity.monster.Drowned$DrownedTridentAttackGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<RangedEntity> DROWNED_TRIDENT_ATTACK = create("drowned_trident_attack", RangedEntity.class);
+
+    /**
+     * net.minecraft.world.entity.ai.goal.FollowFlockLeaderGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<SchoolableFish> FOLLOW_FLOCK_LEADER = create("follow_flock_leader", SchoolableFish.class);
 
     /**
      * net.minecraft.world.entity.monster.Shulker$ShulkerAttackGoal

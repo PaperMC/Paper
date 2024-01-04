@@ -199,7 +199,7 @@ public class MobGoalGenerator extends SimpleGenerator {
             .filter(clazz -> !net.minecraft.world.entity.ai.goal.WrappedGoal.class.equals(clazz)) // TODO - properly fix
             .map(goalClass -> new VanillaGoalKey(goalClass, MobGoalNames.getKey(goalClass.getName(), (Class<? extends Goal>) goalClass)))
             .filter((key) -> !MobGoalNames.isIgnored(key.key().getNamespacedKey().getKey()))
-            .sorted(Comparator.comparing(o -> o.key().getEntityClass().getName()))
+            .sorted(Comparator.comparing(o -> o.key().getEntityClass().getSimpleName()))
             .toList();
 
 
