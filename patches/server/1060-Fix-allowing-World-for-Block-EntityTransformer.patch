@@ -1,0 +1,142 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 3 Jan 2024 20:31:16 -0800
+Subject: [PATCH] Fix allowing World for Block/EntityTransformer
+
+Block/EntityTransformer for AsyncStructureGenerateEvent need to
+accept World and LimitedRegion instances because structure generation
+can happen to both ServerLevel and WorldGenRegion instances.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index 0708aaa7d25c674ab2ce431a262fed2459fd633d..508556d59e3145a6c992f049acaa1a1df2dcb8aa 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -469,11 +469,11 @@ public abstract class ChunkGenerator {
+     }
+ 
+    // CraftBukkit start
+-    public void applyBiomeDecoration(WorldGenLevel world, ChunkAccess chunk, StructureManager structureAccessor) {
++    public void applyBiomeDecoration(net.minecraft.server.level.WorldGenRegion world, ChunkAccess chunk, StructureManager structureAccessor) { // Paper - do not allow ServerLevel
+         this.applyBiomeDecoration(world, chunk, structureAccessor, true);
+     }
+ 
+-    public void applyBiomeDecoration(WorldGenLevel generatoraccessseed, ChunkAccess ichunkaccess, StructureManager structuremanager, boolean vanilla) {
++    public void applyBiomeDecoration(net.minecraft.server.level.WorldGenRegion generatoraccessseed, ChunkAccess ichunkaccess, StructureManager structuremanager, boolean vanilla) { // Paper - do not allow ServerLevel
+         if (vanilla) {
+             this.addVanillaDecorations(generatoraccessseed, ichunkaccess, structuremanager);
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
+index ca9bb98ccfc3863c2ba538953470ab9e2b8a2f29..c7e809cb4e7d216153e42f7c0fe160d8771583e3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
+@@ -32,7 +32,7 @@ import org.bukkit.util.BoundingBox;
+ 
+ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRegion {
+ 
+-    private final WeakReference<WorldGenLevel> weakAccess;
++    private final WeakReference<net.minecraft.server.level.WorldGenRegion> weakAccess; // Paper - do not allow ServerLevel
+     private final int centerChunkX;
+     private final int centerChunkZ;
+     // Buffer is one chunk (16 blocks), can be seen in ChunkStatus#q
+@@ -48,7 +48,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
+     // Prevents crash for chunks which are converting from 1.17 to 1.18
+     private final List<net.minecraft.world.entity.Entity> outsideEntities = new ArrayList<>();
+ 
+-    public CraftLimitedRegion(WorldGenLevel access, ChunkPos center) {
++    public CraftLimitedRegion(net.minecraft.server.level.WorldGenRegion access, ChunkPos center) { // Paper - do not allow ServerLevel
+         this.weakAccess = new WeakReference<>(access);
+         this.centerChunkX = center.x;
+         this.centerChunkZ = center.z;
+@@ -64,10 +64,10 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
+         this.region = new BoundingBox(xMin, world.getMinHeight(), zMin, xMax, world.getMaxHeight(), zMax);
+     }
+ 
+-    public WorldGenLevel getHandle() {
+-        WorldGenLevel handle = this.weakAccess.get();
++    public net.minecraft.server.level.WorldGenRegion getHandle() { // Paper - do not allow ServerLevel
++        net.minecraft.server.level.WorldGenRegion handle = this.weakAccess.get(); // Paper - do not allow ServerLevel
+ 
+-        Preconditions.checkState(handle != null, "GeneratorAccessSeed no longer present, are you using it in a different tick?");
++        Preconditions.checkState(handle != null, "WorldGenRegion no longer present, are you using it in a different tick?"); // Paper - do not allow ServerLevel
+ 
+         return handle;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+index c6e5d3b7ef3886d0ffa9302d1270c048eaaeb671..4bf7c0129c94ec7eeeb0a1f5adde9acbc4cea98d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+@@ -291,7 +291,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
+     }
+ 
+     @Override
+-    public void applyBiomeDecoration(WorldGenLevel world, ChunkAccess chunk, StructureManager structureAccessor) {
++    public void applyBiomeDecoration(net.minecraft.server.level.WorldGenRegion world, ChunkAccess chunk, StructureManager structureAccessor) { // Paper - do not allow ServerLevel
+         WorldgenRandom random = CustomChunkGenerator.getSeededRandom();
+         int x = chunk.getPos().x;
+         int z = chunk.getPos().z;
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftStructureTransformer.java b/src/main/java/org/bukkit/craftbukkit/util/CraftStructureTransformer.java
+index 151cf21372e04fd329f62386b50bc1fbe7f0f230..9d30804a3c4d8683a6fc69a75e6e91b956ac1077 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftStructureTransformer.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftStructureTransformer.java
+@@ -58,7 +58,7 @@ public class CraftStructureTransformer {
+ 
+     }
+ 
+-    private CraftLimitedRegion limitedRegion;
++    private org.bukkit.craftbukkit.CraftRegionAccessor regionAccessor; // Paper - allow ServerLevel/CraftWorld
+     private BlockTransformer[] blockTransformers;
+     private EntityTransformer[] entityTransformers;
+ 
+@@ -67,7 +67,7 @@ public class CraftStructureTransformer {
+         Bukkit.getPluginManager().callEvent(event);
+         this.blockTransformers = event.getBlockTransformers().values().toArray(BlockTransformer[]::new);
+         this.entityTransformers = event.getEntityTransformers().values().toArray(EntityTransformer[]::new);
+-        this.limitedRegion = new CraftLimitedRegion(generatoraccessseed, chunkcoordintpair);
++        this.regionAccessor = generatoraccessseed instanceof final net.minecraft.server.level.WorldGenRegion worldGenRegion ? new CraftLimitedRegion(worldGenRegion, chunkcoordintpair) : generatoraccessseed.getLevel().getWorld(); // Paper - allow ServerLevel/CraftWorld
+     }
+ 
+     public boolean transformEntity(Entity entity) {
+@@ -75,7 +75,7 @@ public class CraftStructureTransformer {
+         if (transformers == null || transformers.length == 0) {
+             return true;
+         }
+-        CraftLimitedRegion region = this.limitedRegion;
++        final org.bukkit.craftbukkit.CraftRegionAccessor region = this.regionAccessor; // Paper - allow ServerLevel/CraftWorld
+         if (region == null) {
+             return true;
+         }
+@@ -92,7 +92,7 @@ public class CraftStructureTransformer {
+     }
+ 
+     public boolean canTransformBlocks() {
+-        return this.blockTransformers != null && this.blockTransformers.length != 0 && this.limitedRegion != null;
++        return this.blockTransformers != null && this.blockTransformers.length != 0 && this.regionAccessor != null; // Paper - allow ServerLevel/CraftWorld
+     }
+ 
+     public CraftBlockState transformCraftState(CraftBlockState originalState) {
+@@ -100,7 +100,7 @@ public class CraftStructureTransformer {
+         if (transformers == null || transformers.length == 0) {
+             return originalState;
+         }
+-        CraftLimitedRegion region = this.limitedRegion;
++        final org.bukkit.craftbukkit.CraftRegionAccessor region = this.regionAccessor; // Paper - allow ServerLevel/CraftWorld
+         if (region == null) {
+             return originalState;
+         }
+@@ -116,9 +116,13 @@ public class CraftStructureTransformer {
+     }
+ 
+     public void discard() {
+-        this.limitedRegion.saveEntities();
+-        this.limitedRegion.breakLink();
+-        this.limitedRegion = null;
++        // Paper start - allow ServerLevel/CraftWorld
++        if (this.regionAccessor instanceof final CraftLimitedRegion craftLimitedRegion) {
++            craftLimitedRegion.saveEntities();
++            craftLimitedRegion.breakLink();
++        }
++        this.regionAccessor = null;
++        // Paper end - allow ServerLevel/CraftWorld
+         this.blockTransformers = null;
+         this.entityTransformers = null;
+     }
