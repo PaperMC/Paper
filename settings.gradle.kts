@@ -8,7 +8,7 @@ pluginManagement {
 }
 
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.4.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.7.0"
 }
 
 if (!file(".git").exists()) {
@@ -34,14 +34,26 @@ if (!file(".git").exists()) {
 rootProject.name = "paper"
 
 for (name in listOf("Paper-API", "Paper-Server", "Paper-MojangAPI")) {
-    val projName = name.toLowerCase(Locale.ENGLISH)
+    val projName = name.lowercase(Locale.ENGLISH)
     include(projName)
     findProject(":$projName")!!.projectDir = file(name)
 }
 
-val testPlugin = file("test-plugin.settings.gradle.kts")
-if (testPlugin.exists()) {
-    apply(from = testPlugin)
-} else {
-    testPlugin.writeText("// Uncomment to enable the test plugin module\n//include(\":test-plugin\")\n")
+optionalInclude("test-plugin")
+optionalInclude("paper-api-generator")
+
+fun optionalInclude(name: String, op: (ProjectDescriptor.() -> Unit)? = null) {
+    val settingsFile = file("$name.settings.gradle.kts")
+    if (settingsFile.exists()) {
+        apply(from = settingsFile)
+        findProject(":$name")?.let { op?.invoke(it) }
+    } else {
+        settingsFile.writeText(
+            """
+            // Uncomment to enable the '$name' project
+            // include(":$name")
+
+            """.trimIndent()
+        )
+    }
 }

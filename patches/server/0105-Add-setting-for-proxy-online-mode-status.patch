@@ -6,20 +6,20 @@ Subject: [PATCH] Add setting for proxy online mode status
 TODO: Add isProxyOnlineMode check to Metrics
 
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 5288aec173549a982e42aeeccf7f5f394080955d..58e923f4ef1980bc7fff1e3b3fcdaad8c4eded53 100644
+index 0a2875f63523cc5eeec603e18eb62520587a8475..09de1ca3802e97442bc090db0cc87fd833ad3a9f 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-@@ -98,7 +98,8 @@ public class GameProfileCache {
-             }
-         };
+@@ -89,7 +89,8 @@ public class GameProfileCache {
+                 }
+             };
  
 -        if (!org.apache.commons.lang3.StringUtils.isBlank(name)) // Paper - Don't lookup a profile with a blank name)
 +        if (!org.apache.commons.lang3.StringUtils.isBlank(name) // Paper - Don't lookup a profile with a blank name
 +                && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) // Paper - only run in online mode - 100 COL
-         repository.findProfilesByNames(new String[]{name}, Agent.MINECRAFT, profilelookupcallback);
-         GameProfile gameprofile = (GameProfile) atomicreference.get();
+             repository.findProfilesByNames(new String[]{name}, profilelookupcallback);
+             GameProfile gameprofile = (GameProfile) atomicreference.get();
  
-@@ -116,7 +117,7 @@ public class GameProfileCache {
+@@ -106,7 +107,7 @@ public class GameProfileCache {
      }
  
      private static boolean usesAuthentication() {
@@ -29,7 +29,7 @@ index 5288aec173549a982e42aeeccf7f5f394080955d..58e923f4ef1980bc7fff1e3b3fcdaad8
  
      public void add(GameProfile profile) {
 diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
-index da98f074ccd5a40c635824112c97fd174c393cb1..6599f874d9f97e9ef4862039ecad7277bbc5fd91 100644
+index 78b11d6fd74fb0714a8013fdc78d096643c4f83c..6a64c58fff9bbed542bf29a029531996f2a50d00 100644
 --- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
 +++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
 @@ -66,7 +66,8 @@ public class OldUsersConverter {
@@ -37,16 +37,16 @@ index da98f074ccd5a40c635824112c97fd174c393cb1..6599f874d9f97e9ef4862039ecad7277
          });
  
 -        if (server.usesAuthentication() || org.spigotmc.SpigotConfig.bungee) { // Spigot: bungee = online mode, for now.
-+        if (server.usesAuthentication()
-+                || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode())) { // Spigot: bungee = online mode, for now.  // Paper - Handle via setting
-             server.getProfileRepository().findProfilesByNames(astring, Agent.MINECRAFT, callback);
++        if (server.usesAuthentication() ||
++            (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode())) { // Spigot: bungee = online mode, for now.  // Paper - Handle via setting
+             server.getProfileRepository().findProfilesByNames(astring, callback);
          } else {
              String[] astring1 = astring;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 83119de3ae3e38ba4bb77abf005043cfa82c4670..a392be8dee7eccc5f6a55edf02ec207bcb65b0a5 100644
+index b1cf58579bdb48d97b27f4295212cfb63a9eb98f..ee4d991c027b1390f3c995a82ebecc72e5622c9f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1740,7 +1740,7 @@ public final class CraftServer implements Server {
+@@ -1822,7 +1822,7 @@ public final class CraftServer implements Server {
              // Spigot Start
              GameProfile profile = null;
              // Only fetch an online UUID in online mode

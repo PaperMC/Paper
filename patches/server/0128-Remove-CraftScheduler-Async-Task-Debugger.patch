@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 5 Feb 2017 00:04:04 -0500
+Subject: [PATCH] Remove CraftScheduler Async Task Debugger
+
+I have not once ever seen this system help debug a crash.
+One report of a suspected memory leak with the system.
+
+This adds additional overhead to asynchronous task dispatching
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index f39c836970572fe2e29e794a6af35332af8f7424..b1e61ce608eeacdbb70849c1e3e39daf37b3f2a2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -442,7 +442,7 @@ public class CraftScheduler implements BukkitScheduler {
+                 }
+                 this.parsePending();
+             } else {
+-                this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass()));
++                // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+                 this.executor.execute(new com.destroystokyo.paper.ServerSchedulerReportingWrapper(task)); // Paper
+                 // We don't need to parse pending
+                 // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
+@@ -459,7 +459,7 @@ public class CraftScheduler implements BukkitScheduler {
+         this.pending.addAll(temp);
+         temp.clear();
+         MinecraftTimings.bukkitSchedulerFinishTimer.stopTiming(); // Paper
+-        this.debugHead = this.debugHead.getNextHead(currentTick);
++        //this.debugHead = this.debugHead.getNextHead(currentTick); // Paper
+     }
+ 
+     private void addTask(final CraftTask task) {
+@@ -523,10 +523,15 @@ public class CraftScheduler implements BukkitScheduler {
+ 
+     @Override
+     public String toString() {
++        // Paper start
++        return "";
++        /*
+         int debugTick = this.currentTick;
+         StringBuilder string = new StringBuilder("Recent tasks from ").append(debugTick - CraftScheduler.RECENT_TICKS).append('-').append(debugTick).append('{');
+         this.debugHead.debugTo(string);
+         return string.append('}').toString();
++        */
++        // Paper end
+     }
+ 
+     @Deprecated

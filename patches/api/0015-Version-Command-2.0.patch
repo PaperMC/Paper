@@ -1,0 +1,200 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach@zachbr.io>
+Date: Mon, 27 May 2019 01:10:06 -0500
+Subject: [PATCH] Version Command 2.0
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a736d7bcdc5861a01b66ba36158db1c716339346
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
+@@ -0,0 +1,45 @@
++package com.destroystokyo.paper.util;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import org.bukkit.Bukkit;
++import org.jetbrains.annotations.NotNull;
++
++public interface VersionFetcher {
++    /**
++     * Amount of time to cache results for in milliseconds
++     * <p>
++     * Negative values will never cache.
++     *
++     * @return cache time
++     */
++    long getCacheTime();
++
++    /**
++     * Gets the version message to cache and show to command senders.
++     *
++     * <p>NOTE: This is run in a new thread separate from that of the command processing thread</p>
++     *
++     * @param serverVersion the current version of the server (will match {@link Bukkit#getVersion()})
++     * @return the message to show when requesting a version
++     */
++    @NotNull
++    Component getVersionMessage(@NotNull String serverVersion);
++
++    class DummyVersionFetcher implements VersionFetcher {
++
++        @Override
++        public long getCacheTime() {
++            return -1;
++        }
++
++        @NotNull
++        @Override
++        public Component getVersionMessage(@NotNull String serverVersion) {
++            Bukkit.getLogger().warning("Version provider has not been set, cannot check for updates!");
++            Bukkit.getLogger().info("Override the default implementation of org.bukkit.UnsafeValues#getVersionFetcher()");
++            new Throwable().printStackTrace();
++            return Component.text("Unable to check for updates. No version provider set.", NamedTextColor.RED);
++        }
++    }
++}
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 659405d84b5a61618576e930805da5cd3a054b4c..4604392831d19a789e4906cf1a5f0197105fd6f2 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -127,5 +127,12 @@ public interface UnsafeValues {
+      * @return name
+      */
+     String getTimingsServerName();
++
++    /**
++     * Called once by the version command on first use, then cached.
++     */
++    default com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
++        return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b437cf212a63aa96a9492db8d01d5d37061aee23 100644
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -24,8 +24,25 @@ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.PluginDescriptionFile;
+ import org.bukkit.util.StringUtil;
+ import org.jetbrains.annotations.NotNull;
++// Paper start - version command 2.0
++import com.destroystokyo.paper.util.VersionFetcher;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.format.TextDecoration;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
++// Paper end - version command 2.0
+ 
+ public class VersionCommand extends BukkitCommand {
++    private VersionFetcher versionFetcher; // Paper - version command 2.0
++    private VersionFetcher getVersionFetcher() { // lazy load because unsafe isn't available at command registration
++        if (versionFetcher == null) {
++            versionFetcher = Bukkit.getUnsafe().getVersionFetcher();
++        }
++
++        return versionFetcher;
++    }
++
+     public VersionCommand(@NotNull String name) {
+         super(name);
+ 
+@@ -40,7 +57,7 @@ public class VersionCommand extends BukkitCommand {
+         if (!testPermission(sender)) return true;
+ 
+         if (args.length == 0) {
+-            sender.sendMessage("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")");
++            //sender.sendMessage("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")"); // Paper - moved to setVersionMessage
+             sendVersion(sender);
+         } else {
+             StringBuilder name = new StringBuilder();
+@@ -79,8 +96,17 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private void describeToSender(@NotNull Plugin plugin, @NotNull CommandSender sender) {
+         PluginDescriptionFile desc = plugin.getDescription();
+-        sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
+-
++        // Paper start - version command 2.0
++        sender.sendMessage(
++            Component.text()
++                .append(Component.text(desc.getName(), NamedTextColor.GREEN))
++                .append(Component.text(" version "))
++                .append(Component.text(desc.getVersion(), NamedTextColor.GREEN)
++                    .hoverEvent(Component.text("Click to copy to clipboard", NamedTextColor.WHITE))
++                    .clickEvent(ClickEvent.copyToClipboard(desc.getVersion()))
++                )
++        );
++        // Paper end - version command 2.0
+         if (desc.getDescription() != null) {
+             sender.sendMessage(desc.getDescription());
+         }
+@@ -146,14 +172,14 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private final ReentrantLock versionLock = new ReentrantLock();
+     private boolean hasVersion = false;
+-    private String versionMessage = null;
++    private Component versionMessage = null; // Paper
+     private final Set<CommandSender> versionWaiters = new HashSet<CommandSender>();
+     private boolean versionTaskStarted = false;
+     private long lastCheck = 0;
+ 
+     private void sendVersion(@NotNull CommandSender sender) {
+         if (hasVersion) {
+-            if (System.currentTimeMillis() - lastCheck > 21600000) {
++            if (System.currentTimeMillis() - lastCheck > getVersionFetcher().getCacheTime()) { // Paper - use version supplier
+                 lastCheck = System.currentTimeMillis();
+                 hasVersion = false;
+             } else {
+@@ -168,7 +194,7 @@ public class VersionCommand extends BukkitCommand {
+                 return;
+             }
+             versionWaiters.add(sender);
+-            sender.sendMessage("Checking version, please wait...");
++            sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC)); // Paper
+             if (!versionTaskStarted) {
+                 versionTaskStarted = true;
+                 new Thread(new Runnable() {
+@@ -186,6 +212,13 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private void obtainVersion() {
+         String version = Bukkit.getVersion();
++        // Paper start
++        if (version.startsWith("null")) { // running from ide?
++            setVersionMessage(Component.text("Unknown version, custom build?", NamedTextColor.YELLOW));
++            return;
++        }
++        setVersionMessage(getVersionFetcher().getVersionMessage(version));
++        /*
+         if (version == null) version = "Custom";
+         String[] parts = version.substring(0, version.indexOf(' ')).split("-");
+         if (parts.length == 4) {
+@@ -215,11 +248,24 @@ public class VersionCommand extends BukkitCommand {
+         } else {
+             setVersionMessage("Unknown version, custom build?");
+         }
++         */
++        // Paper end
+     }
+ 
+-    private void setVersionMessage(@NotNull String msg) {
++    // Paper start
++    private void setVersionMessage(final @NotNull Component msg) {
+         lastCheck = System.currentTimeMillis();
+-        versionMessage = msg;
++        final Component message = Component.textOfChildren(
++            Component.text("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")", NamedTextColor.WHITE),
++            Component.newline(),
++            msg
++        );
++        this.versionMessage = Component.text()
++            .append(message)
++            .hoverEvent(Component.text("Click to copy to clipboard", NamedTextColor.WHITE))
++            .clickEvent(ClickEvent.copyToClipboard(PlainTextComponentSerializer.plainText().serialize(message)))
++            .build();
++        // Paper end
+         versionLock.lock();
+         try {
+             hasVersion = true;

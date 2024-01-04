@@ -5,7 +5,7 @@ Subject: [PATCH] Configurable Player Collision
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
-index 1294b38262505b0d54089e428df9b363219de1f0..ee37ec0de1ca969144824427ae42b0c81434a1b4 100644
+index 3d2a689d11bfa230bab61a2a65c6051328f6b78d..e52644010dc2cf41bbf508b16b8ec2f0003e9d0b 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
 @@ -193,7 +193,7 @@ public class ClientboundSetPlayerTeamPacket implements Packet<ClientGamePacketLi
@@ -18,10 +18,10 @@ index 1294b38262505b0d54089e428df9b363219de1f0..ee37ec0de1ca969144824427ae42b0c8
              buf.writeComponent(this.playerPrefix);
              buf.writeComponent(this.playerSuffix);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 1af6a1ed4111e5e1feaede68be2783070ed90c76..010d0192da65e4dfe5516126b522d30b776394c0 100644
+index 180bcaa2b5a74c527d8556301fb4a8161c76a64c..24f7ecc68c206346e4e2957bc27bf5579ba1b663 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -587,6 +587,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -621,6 +621,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
          }
  
@@ -43,18 +43,10 @@ index 1af6a1ed4111e5e1feaede68be2783070ed90c76..010d0192da65e4dfe5516126b522d30b
          this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
          this.connection.acceptConnections();
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 9e835d63e1592fc064b73c51eecd8b84cbedfa33..7901a8e3659be05d901fd5140e025392ffa0c27c 100644
+index b74689297ca20efee391fe1da80377082d1758e5..828abde34c7d883831e81b7759a862db43cfe2c6 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -99,6 +99,7 @@ import net.minecraft.world.level.storage.PlayerDataStorage;
- import net.minecraft.world.phys.Vec3;
- import net.minecraft.world.scores.Objective;
- import net.minecraft.world.scores.PlayerTeam;
-+import net.minecraft.world.scores.Scoreboard; // Paper
- import net.minecraft.world.scores.Team;
- import org.slf4j.Logger;
- 
-@@ -164,6 +165,7 @@ public abstract class PlayerList {
+@@ -156,6 +156,7 @@ public abstract class PlayerList {
      // CraftBukkit start
      private CraftServer cserver;
      private final Map<String,ServerPlayer> playersByName = new java.util.HashMap<>();
@@ -62,12 +54,12 @@ index 9e835d63e1592fc064b73c51eecd8b84cbedfa33..7901a8e3659be05d901fd5140e025392
  
      public PlayerList(MinecraftServer server, LayeredRegistryAccess<RegistryLayer> registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
          this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
-@@ -416,6 +418,13 @@ public abstract class PlayerList {
+@@ -398,6 +399,13 @@ public abstract class PlayerList {
  
          player.initInventoryMenu();
          // CraftBukkit - Moved from above, added world
 +        // Paper start - Add to collideRule team if needed
-+        final Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
++        final net.minecraft.world.scores.Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
 +        final PlayerTeam collideRuleTeam = scoreboard.getPlayerTeam(this.collideRuleTeamName);
 +        if (this.collideRuleTeamName != null && collideRuleTeam != null && player.getTeam() == null) {
 +            scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
@@ -76,13 +68,13 @@ index 9e835d63e1592fc064b73c51eecd8b84cbedfa33..7901a8e3659be05d901fd5140e025392
          PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
      }
  
-@@ -535,6 +544,16 @@ public abstract class PlayerList {
+@@ -521,6 +529,16 @@ public abstract class PlayerList {
          entityplayer.doTick(); // SPIGOT-924
          // CraftBukkit end
  
 +        // Paper start - Remove from collideRule team if needed
 +        if (this.collideRuleTeamName != null) {
-+            final Scoreboard scoreBoard = this.server.getLevel(Level.OVERWORLD).getScoreboard();
++            final net.minecraft.world.scores.Scoreboard scoreBoard = this.server.getLevel(Level.OVERWORLD).getScoreboard();
 +            final PlayerTeam team = scoreBoard.getPlayersTeam(this.collideRuleTeamName);
 +            if (entityplayer.getTeam() == team && team != null) {
 +                scoreBoard.removePlayerFromTeam(entityplayer.getScoreboardName(), team);
@@ -93,13 +85,13 @@ index 9e835d63e1592fc064b73c51eecd8b84cbedfa33..7901a8e3659be05d901fd5140e025392
          this.save(entityplayer);
          if (entityplayer.isPassenger()) {
              Entity entity = entityplayer.getRootVehicle();
-@@ -1166,6 +1185,13 @@ public abstract class PlayerList {
+@@ -1161,6 +1179,13 @@ public abstract class PlayerList {
          }
          // CraftBukkit end
  
 +        // Paper start - Remove collideRule team if it exists
 +        if (this.collideRuleTeamName != null) {
-+            final Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
++            final net.minecraft.world.scores.Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
 +            final PlayerTeam team = scoreboard.getPlayersTeam(this.collideRuleTeamName);
 +            if (team != null) scoreboard.removePlayerTeam(team);
 +        }

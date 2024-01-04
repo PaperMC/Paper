@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 16 Mar 2022 20:35:21 -0700
+Subject: [PATCH] Implement enchantWithLevels API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+index 259489c7d0f4b5ce3e8f4294f4f853e9b51ded0b..5f6b93be9e81df8fae9a5ab160a232b65ce7b8bc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+@@ -495,8 +495,7 @@ public final class CraftItemFactory implements ItemFactory {
+         }
+ 
+         CraftItemStack craft = (CraftItemStack) itemStack;
+-        EnchantmentHelper.enchantItem(source, craft.handle, level, allowTreasures);
+-        return craft;
++        return EnchantmentHelper.enchantItem(source, craft.handle, level, allowTreasures).asBukkitCopy(); // Paper - fix broken implementation
+     }
+ 
+     // Paper start - Adventure
+@@ -585,4 +584,21 @@ public final class CraftItemFactory implements ItemFactory {
+         return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();
+     }
+     // Paper end
++
++    // Paper start - enchantWithLevels API
++    @Override
++    public ItemStack enchantWithLevels(ItemStack itemStack, int levels, boolean allowTreasure, java.util.Random random) {
++        Preconditions.checkArgument(itemStack != null, "Argument 'itemStack' must not be null");
++        Preconditions.checkArgument(itemStack.getType() != Material.AIR, "Argument 'itemStack' must not be of type AIR");
++        Preconditions.checkArgument(itemStack.getAmount() > 0, "Argument 'itemStack' amount must be greater than 0");
++        Preconditions.checkArgument(levels > 0 && levels <= 30, "Argument 'levels' must be in range [1, 30] (attempted " + levels + ")");
++        Preconditions.checkArgument(random != null, "Argument 'random' must not be null");
++        final net.minecraft.world.item.ItemStack internalStack = CraftItemStack.asNMSCopy(itemStack);
++        if (internalStack.getTag() != null) {
++            internalStack.getTag().remove(net.minecraft.world.item.ItemStack.TAG_ENCH);
++        }
++        final net.minecraft.world.item.ItemStack enchanted = net.minecraft.world.item.enchantment.EnchantmentHelper.enchantItem(new org.bukkit.craftbukkit.util.RandomSourceWrapper(random), internalStack, levels, allowTreasure);
++        return CraftItemStack.asCraftMirror(enchanted);
++    }
++    // Paper end - enchantWithLevels API
+ }

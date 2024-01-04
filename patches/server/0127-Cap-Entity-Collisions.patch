@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 22 Jan 2017 18:07:56 -0500
+Subject: [PATCH] Cap Entity Collisions
+
+Limit a single entity to colliding a max of configurable times per tick.
+This will alleviate issues where living entities are hoarded in 1x1 pens
+
+This is not tied to the maxEntityCramming rule. Cramming will still apply
+just as it does in Vanilla, but entity pushing logic will be capped.
+
+You can set this to 0 to disable collisions.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 1b7b3114cd6ced0587a0e7e4a4c94584c72ed17f..ffd38defdd9b56b1849a3b4e312de2cff7b964c2 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -392,6 +392,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     public void inactiveTick() { }
+     // Spigot end
+     // Paper start
++    protected int numCollisions = 0; // Paper
+     @javax.annotation.Nullable
+     private org.bukkit.util.Vector origin;
+     @javax.annotation.Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 0b6dce5015144cadee3dc856b7e0d152aa66aca3..b8ac19ae63579bf5325b0ebfa37293c170df6205 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3348,10 +3348,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 }
+ 
+                 Iterator iterator1 = list.iterator();
++                this.numCollisions = Math.max(0, this.numCollisions - this.level().paperConfig().collisions.maxEntityCollisions); // Paper
+ 
+-                while (iterator1.hasNext()) {
++                while (iterator1.hasNext() && this.numCollisions < this.level().paperConfig().collisions.maxEntityCollisions) { // Paper
+                     Entity entity1 = (Entity) iterator1.next();
+-
++                    entity1.numCollisions++; // Paper
++                    this.numCollisions++; // Paper
+                     this.doPush(entity1);
+                 }
+             }

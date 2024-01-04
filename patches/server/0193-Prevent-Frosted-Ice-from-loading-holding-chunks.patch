@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 10 Mar 2018 16:33:15 -0500
+Subject: [PATCH] Prevent Frosted Ice from loading/holding chunks
+
+1.17: Shouldn't be needed as blocks no longer tick without at least 1 radius chunk loaded.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java b/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java
+index 0d08a9d5555ebc296a1461aefbf48e8eee6b462d..7f1946d371f9be2662788957c6f11a2e087df616 100644
+--- a/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java
+@@ -46,7 +46,8 @@ public class FrostedIceBlock extends IceBlock {
+ 
+             for(Direction direction : Direction.values()) {
+                 mutableBlockPos.setWithOffset(pos, direction);
+-                BlockState blockState = world.getBlockState(mutableBlockPos);
++                BlockState blockState = world.getBlockStateIfLoaded(mutableBlockPos); // Paper
++                if (blockState == null) { continue; } // Paper
+                 if (blockState.is(this) && !this.slightlyMelt(blockState, world, mutableBlockPos)) {
+                     world.scheduleTick(mutableBlockPos, this, Mth.nextInt(random, world.paperConfig().environment.frostedIce.delay.min, world.paperConfig().environment.frostedIce.delay.max)); // Paper - use configurable min/max delay
+                 }
+@@ -83,7 +84,10 @@ public class FrostedIceBlock extends IceBlock {
+ 
+         for(Direction direction : Direction.values()) {
+             mutableBlockPos.setWithOffset(pos, direction);
+-            if (world.getBlockState(mutableBlockPos).is(this)) {
++            // Paper start
++            BlockState blockState = world.getBlockStateIfLoaded(mutableBlockPos);
++            if (blockState != null && blockState.is(this)) {
++                // Paper end
+                 ++i;
+                 if (i >= maxNeighbors) {
+                     return false;

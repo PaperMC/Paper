@@ -67,7 +67,7 @@ Assuming you have already forked the repository:
 
 1. Clone your fork to your local machine;
 2. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream.
-On Windows, leave out the `./` at the beginning for all `gradlew` commands;
+On Windows, replace the `./` with `.\` at the beginning for all `gradlew` commands;
 3. cd into `Paper-Server` for server changes, and `Paper-API` for API changes.  
 <!--You can also run `./paper server` or `./paper api` for these same directories
 respectively.
@@ -235,6 +235,21 @@ into most IDEs and formatters by default. There are a few notes, however:
 There are exceptions, especially in Spigot-related files
 - When in doubt or the code around your change is in a clearly different style,
 use the same style as the surrounding code.
+
+### Imports
+When adding new imports to a class in a file not created by the current patch, use the fully qualified class name
+instead of adding a new import to the top of the file. If you are using a type a significant number of times, you
+can add an import with a comment. However, if its only used a couple of times, the FQN is preferred to prevent future
+patch conflicts in the import section of the file.
+
+```java
+import org.bukkit.event.Event;
+// don't add import here, use FQN like below
+
+public class SomeEvent extends Event {
+    public final org.bukkit.Location newLocation; // Paper - add location
+}
+```
 
 ## Access Transformers
 Sometimes, vanilla or CraftBukkit code already contains a field, method, or type you want to access
@@ -478,4 +493,4 @@ everything like usual.
 > in Windows like described here:
 > <https://docs.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>
 
-[MappingViewer]: https://nms.screamingsandals.org/
+[MappingViewer]: https://mappings.cephx.dev/

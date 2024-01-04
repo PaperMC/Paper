@@ -3,7 +3,6 @@ From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 17 Mar 2019 23:04:30 +0000
 Subject: [PATCH] Test changes
 
-- convert to mockito for mocking of types
 - Allow use of TYPE_USE annotations
 - Ignore package-private methods for nullability annotations
 - Add excludes for classes which don't pass
@@ -13,46 +12,22 @@ Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 3faf250d59eeefb8477a6e1454914bdd88ff11d6..4a5f1737910c1c87838baf01366f20c814a39a8f 100644
+index cc586ca58c9ef852d7154f29c2dc187047f2c64a..948bd84db9923ef43cf753b7b72bf4d0081ab43a 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -37,6 +37,7 @@ dependencies {
-     compileOnlyApi(checkerQual)
-     testCompileOnly(checkerQual)
-     // Paper end
-+    testImplementation("org.mockito:mockito-core:4.9.0") // Paper - add mockito
+@@ -105,6 +105,12 @@ tasks.test {
+     useJUnitPlatform()
+ }
  
-     testImplementation("org.apache.commons:commons-lang3:3.12.0")
-     testImplementation("junit:junit:4.13.2")
-diff --git a/src/test/java/io/papermc/paper/testing/EmptyRegistry.java b/src/test/java/io/papermc/paper/testing/EmptyRegistry.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..ba9ddce87a9f385e729a5c2cf7c5eec120e388a7
---- /dev/null
-+++ b/src/test/java/io/papermc/paper/testing/EmptyRegistry.java
-@@ -0,0 +1,23 @@
-+package io.papermc.paper.testing;
-+
-+import java.util.Collections;
-+import java.util.Iterator;
-+import org.bukkit.Keyed;
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.Registry;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+public record EmptyRegistry() implements Registry<Keyed> {
-+
-+    @NotNull
-+    @Override
-+    public Iterator<Keyed> iterator() {
-+        return Collections.emptyIterator();
-+    }
-+
-+    @Override
-+    public @Nullable Keyed get(@NotNull final NamespacedKey key) {
-+        return null;
-+    }
++// Paper start - compile tests with -parameters for better junit parameterized test names
++tasks.compileTestJava {
++    options.compilerArgs.add("-parameters")
 +}
++// Paper end
++
+ // Paper start
+ val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
 diff --git a/src/test/java/io/papermc/paper/testing/EmptyTag.java b/src/test/java/io/papermc/paper/testing/EmptyTag.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..77154095cfb8b259bdb318e8ff40cb6f559ebc18
@@ -90,62 +65,8 @@ index 0000000000000000000000000000000000000000..77154095cfb8b259bdb318e8ff40cb6f
 +        return Collections.emptySet();
 +    }
 +}
-diff --git a/src/test/java/io/papermc/paper/testing/TestServer.java b/src/test/java/io/papermc/paper/testing/TestServer.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..756acf231b1b076b08046d86992ba7ce7f62a94f
---- /dev/null
-+++ b/src/test/java/io/papermc/paper/testing/TestServer.java
-@@ -0,0 +1,48 @@
-+package io.papermc.paper.testing;
-+
-+import java.util.logging.Logger;
-+import org.bukkit.Bukkit;
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.Server;
-+import org.bukkit.command.SimpleCommandMap;
-+import org.bukkit.plugin.PluginManager;
-+import org.bukkit.plugin.SimplePluginManager;
-+
-+import static org.mockito.ArgumentMatchers.anyString;
-+import static org.mockito.Mockito.any;
-+import static org.mockito.Mockito.mock;
-+import static org.mockito.Mockito.when;
-+
-+public final class TestServer {
-+
-+    @SuppressWarnings("removal")
-+    public static void setup() {
-+        //noinspection ConstantValue
-+        if (Bukkit.getServer() != null) {
-+            return;
-+        }
-+
-+        final Server dummyServer = mock(Server.class);
-+
-+        final Logger logger = Logger.getLogger(TestServer.class.getCanonicalName());
-+        when(dummyServer.getLogger()).thenReturn(logger);
-+        when(dummyServer.getName()).thenReturn(TestServer.class.getSimpleName());
-+        when(dummyServer.getVersion()).thenReturn("Version_" + TestServer.class.getPackage().getImplementationVersion());
-+        when(dummyServer.getBukkitVersion()).thenReturn("BukkitVersion_" + TestServer.class.getPackage().getImplementationVersion());
-+
-+
-+        final Thread currentThread = Thread.currentThread();
-+        when(dummyServer.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
-+
-+        when(dummyServer.getTag(anyString(), any(NamespacedKey.class), any())).thenAnswer(ignored -> new EmptyTag());
-+
-+        final PluginManager pluginManager = new SimplePluginManager(dummyServer, new SimpleCommandMap(dummyServer));
-+        when(dummyServer.getPluginManager()).thenReturn(pluginManager);
-+
-+        when(dummyServer.getRegistry(any())).thenAnswer(ignored -> new EmptyRegistry());
-+        when(dummyServer.getScoreboardCriteria(anyString())).thenReturn(null);
-+
-+        Bukkit.setServer(dummyServer);
-+    }
-+
-+}
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index 4ac3dd977e75cd8464163351d306e037ee32cb48..c26ea217927ba77611e6ae93f8df50a83bceb3dd 100644
+index 64e7aef6220097edefdff3b98a771b988365930d..abadff47166722fdc756afdbc6ac7242b6bd4fb0 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -29,7 +29,13 @@ public class AnnotationTest {
@@ -241,8 +162,8 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..c26ea217927ba77611e6ae93f8df50a8
 +            builder.append("\t").append(message).append("\n");
          }
  
--        Assert.fail("There " + errors.size() + " are missing annotation(s)");
-+        Assert.fail(builder.toString());
+-        fail("There " + errors.size() + " are missing annotation(s)");
++        fail(builder.toString());
      }
  
      private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
@@ -300,243 +221,30 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..c26ea217927ba77611e6ae93f8df50a8
              return false;
          }
 diff --git a/src/test/java/org/bukkit/BukkitMirrorTest.java b/src/test/java/org/bukkit/BukkitMirrorTest.java
-index 2dfada66067d79b84cd490eadbe0178e8cd8c260..06d66512c91c680130132b79e34fbf32245ff9ee 100644
+index 89ca06ebecdaadd5dfc7bc74473ca15ad36f6eff..5974ceea58940e1799f3589eac0e39b925a42c3b 100644
 --- a/src/test/java/org/bukkit/BukkitMirrorTest.java
 +++ b/src/test/java/org/bukkit/BukkitMirrorTest.java
-@@ -20,6 +20,7 @@ public class BukkitMirrorTest {
+@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
+ import org.junit.jupiter.params.provider.Arguments;
+ import org.junit.jupiter.params.provider.MethodSource;
  
-     @Parameters(name = "{index}: {1}")
-     public static List<Object[]> data() {
-+        if (true) return List.of(); // Paper
-         return Lists.transform(Arrays.asList(Server.class.getDeclaredMethods()), new Function<Method, Object[]>() {
-             @Override
-             public Object[] apply(Method input) {
-diff --git a/src/test/java/org/bukkit/TestServer.java b/src/test/java/org/bukkit/TestServer.java
-deleted file mode 100644
-index 701a17c10f31cd345238a3c568264178ce372faa..0000000000000000000000000000000000000000
---- a/src/test/java/org/bukkit/TestServer.java
-+++ /dev/null
-@@ -1,139 +0,0 @@
--package org.bukkit;
--
--import com.google.common.collect.ImmutableMap;
--import java.lang.reflect.InvocationHandler;
--import java.lang.reflect.Method;
--import java.lang.reflect.Proxy;
--import java.util.Iterator;
--import java.util.Map;
--import java.util.logging.Logger;
--import org.bukkit.command.SimpleCommandMap;
--import org.bukkit.plugin.PluginManager;
--import org.bukkit.plugin.SimplePluginManager;
--import org.jetbrains.annotations.NotNull;
--import org.jetbrains.annotations.Nullable;
--
--public final class TestServer implements InvocationHandler {
--    private static interface MethodHandler {
--        Object handle(TestServer server, Object[] args);
--    }
--
--    private static final Map<Method, MethodHandler> methods;
--
--    static {
--        try {
--            ImmutableMap.Builder<Method, MethodHandler> methodMap = ImmutableMap.builder();
--            methodMap.put(
--                    Server.class.getMethod("isPrimaryThread"),
--                    new MethodHandler() {
--                        @Override
--                        public Object handle(TestServer server, Object[] args) {
--                            return Thread.currentThread().equals(server.creatingThread);
--                        }
--                    }
--                );
--            methodMap.put(
--                    Server.class.getMethod("getPluginManager"),
--                    new MethodHandler() {
--                        @Override
--                        public Object handle(TestServer server, Object[] args) {
--                            return server.pluginManager;
--                        }
--                    }
--                );
--            methodMap.put(
--                    Server.class.getMethod("getLogger"),
--                    new MethodHandler() {
--                        final Logger logger = Logger.getLogger(TestServer.class.getCanonicalName());
--                        @Override
--                        public Object handle(TestServer server, Object[] args) {
--                            return logger;
--                        }
--                    }
--                );
--            methodMap.put(
--                    Server.class.getMethod("getName"),
--                    new MethodHandler() {
--                        @Override
--                        public Object handle(TestServer server, Object[] args) {
--                            return TestServer.class.getSimpleName();
--                        }
--                    }
--                );
--            methodMap.put(
--                    Server.class.getMethod("getVersion"),
--                    new MethodHandler() {
--                        @Override
--                        public Object handle(TestServer server, Object[] args) {
--                            return "Version_" + TestServer.class.getPackage().getImplementationVersion();
--                        }
--                    }
--                );
--            methodMap.put(
--                    Server.class.getMethod("getBukkitVersion"),
--                    new MethodHandler() {
--                        @Override
--                        public Object handle(TestServer server, Object[] args) {
--                            return "BukkitVersion_" + TestServer.class.getPackage().getImplementationVersion();
--                        }
--                    }
--                );
--            methodMap.put(
--                    Server.class.getMethod("getRegistry", Class.class),
--                    new MethodHandler() {
--                        @Override
--                        public Object handle(TestServer server, Object[] args) {
--                            return new Registry() {
--                                @NotNull
--                                @Override
--                                public Iterator iterator() {
--                                    return null;
--                                }
--
--                                @Nullable
--                                @Override
--                                public Keyed get(@NotNull NamespacedKey key) {
--                                    return null;
--                                }
--                            };
--                        }
--                    }
--                );
--            methodMap.put(
--                    Server.class.getMethod("getScoreboardCriteria", String.class),
--                    new MethodHandler() {
--                        @Override
--                        public Object handle(TestServer server, Object[] args) {
--                            // Does not need to return anything. Exists solely to test CriteriaTest which has static init fields
--                            return null;
--                        }
--                    }
--                );
--            methods = methodMap.build();
--
--            TestServer server = new TestServer();
--            Server instance = Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(server);
--            Bukkit.setServer(instance);
--            server.pluginManager = new SimplePluginManager(instance, new SimpleCommandMap(instance));
--        } catch (Throwable t) {
--            throw new Error(t);
--        }
--    }
--
--    private Thread creatingThread = Thread.currentThread();
--    private PluginManager pluginManager;
--    private TestServer() {};
--
--    public static Server getInstance() {
--        return Bukkit.getServer();
--    }
--
--    @Override
--    public Object invoke(Object proxy, Method method, Object[] args) {
--        MethodHandler handler = methods.get(method);
--        if (handler != null) {
--            return handler.handle(this, args);
--        }
--        throw new UnsupportedOperationException(String.valueOf(method));
--    }
--}
-diff --git a/src/test/java/org/bukkit/TestWorld.java b/src/test/java/org/bukkit/TestWorld.java
-index ab34f1199921d415fa2ca6e281a8125c9e6d7173..f64d024f5bbf9482aaddb56597b23b04c66f21bf 100644
---- a/src/test/java/org/bukkit/TestWorld.java
-+++ b/src/test/java/org/bukkit/TestWorld.java
-@@ -18,7 +18,7 @@ public final class TestWorld implements InvocationHandler {
++@org.junit.jupiter.api.Disabled // Paper
+ public class BukkitMirrorTest {
  
-     static {
-         try {
--            TestServer.getInstance();
-+            io.papermc.paper.testing.TestServer.setup(); // Paper
+     public static Stream<Arguments> data() {
+diff --git a/src/test/java/org/bukkit/support/TestServer.java b/src/test/java/org/bukkit/support/TestServer.java
+index 79173d6ed844f1e640e3aa745a9b560ec5e6a2bc..73ec679ac0d1f398b417bd174b47f9af93351e27 100644
+--- a/src/test/java/org/bukkit/support/TestServer.java
++++ b/src/test/java/org/bukkit/support/TestServer.java
+@@ -61,6 +61,11 @@ public final class TestServer {
+         UnsafeValues unsafeValues = mock(withSettings().stubOnly());
+         when(instance.getUnsafe()).thenReturn(unsafeValues);
  
-             ImmutableMap.Builder<Method, MethodHandler> methodMap = ImmutableMap.builder();
-             methodMap.put(
-diff --git a/src/test/java/org/bukkit/event/SyntheticEventTest.java b/src/test/java/org/bukkit/event/SyntheticEventTest.java
-index d402cb59f508205ebe9ee450594826b04cecb90b..09886568ae6167141b463b6262565fa212af3385 100644
---- a/src/test/java/org/bukkit/event/SyntheticEventTest.java
-+++ b/src/test/java/org/bukkit/event/SyntheticEventTest.java
-@@ -1,6 +1,5 @@
- package org.bukkit.event;
- 
--import org.bukkit.TestServer;
- import org.bukkit.plugin.PluginLoader;
- import org.bukkit.plugin.SimplePluginManager;
- import org.bukkit.plugin.TestPlugin;
-@@ -12,14 +11,15 @@ public class SyntheticEventTest {
-     @SuppressWarnings("deprecation")
-     @Test
-     public void test() {
--        final JavaPluginLoader loader = new JavaPluginLoader(TestServer.getInstance());
-+        io.papermc.paper.testing.TestServer.setup(); // Paper
-+        final JavaPluginLoader loader = new JavaPluginLoader(org.bukkit.Bukkit.getServer()); // Paper
-         TestPlugin plugin = new TestPlugin(getClass().getName()) {
-             @Override
-             public PluginLoader getPluginLoader() {
-                 return loader;
-             }
-         };
--        SimplePluginManager pluginManager = new SimplePluginManager(TestServer.getInstance(), null);
-+        SimplePluginManager pluginManager = new SimplePluginManager(org.bukkit.Bukkit.getServer(), null); // Paper
- 
-         TestEvent event = new TestEvent(false);
-         Impl impl = new Impl();
-diff --git a/src/test/java/org/bukkit/plugin/PluginManagerTest.java b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
-index f188cd4f3b07027c30d41f1162db77a506b7b6bb..c46ed2acb82db814d660459b705dd49e6d44240f 100644
---- a/src/test/java/org/bukkit/plugin/PluginManagerTest.java
-+++ b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
-@@ -2,7 +2,6 @@ package org.bukkit.plugin;
- 
- import static org.hamcrest.Matchers.*;
- import static org.junit.Assert.*;
--import org.bukkit.TestServer;
- import org.bukkit.event.Event;
- import org.bukkit.event.TestEvent;
- import org.bukkit.permissions.Permission;
-@@ -14,7 +13,7 @@ public class PluginManagerTest {
-         volatile Object value = null;
++        // Paper start - testing changes
++        when(instance.getTag(anyString(), any(NamespacedKey.class), any())).thenAnswer(ignored -> new io.papermc.paper.testing.EmptyTag());
++        when(instance.getScoreboardCriteria(anyString())).thenReturn(null);
++        // Paper end - testing changes
++
+         Bukkit.setServer(instance);
      }
  
--    private static final PluginManager pm = TestServer.getInstance().getPluginManager();
-+    private static final PluginManager pm = org.bukkit.Bukkit.getServer().getPluginManager(); // Paper
- 
-     private final MutableObject store = new MutableObject();
- 
-diff --git a/src/test/java/org/bukkit/scoreboard/CriteriaTest.java b/src/test/java/org/bukkit/scoreboard/CriteriaTest.java
-index eb94b6f4d58cd9f66b07791c57af7e359992e28c..a93f28e2f987a36e2c7e4f7d31506b750bdb222b 100644
---- a/src/test/java/org/bukkit/scoreboard/CriteriaTest.java
-+++ b/src/test/java/org/bukkit/scoreboard/CriteriaTest.java
-@@ -2,7 +2,6 @@ package org.bukkit.scoreboard;
- 
- import org.bukkit.Material;
- import org.bukkit.Statistic;
--import org.bukkit.TestServer;
- import org.bukkit.entity.EntityType;
- import org.junit.Assert;
- import org.junit.Test;
-@@ -11,7 +10,7 @@ public class CriteriaTest {
- 
-     @Test
-     public void testStatistic() {
--        TestServer.getInstance();
-+        io.papermc.paper.testing.TestServer.setup(); // Paper
- 
-         Assert.assertThrows(IllegalArgumentException.class, () -> Criteria.statistic(Statistic.AVIATE_ONE_CM, Material.STONE)); // Generic statistic with block
-         Assert.assertThrows(IllegalArgumentException.class, () -> Criteria.statistic(Statistic.AVIATE_ONE_CM, EntityType.CREEPER)); // Generic statistic with entity type

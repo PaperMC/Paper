@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 18 Dec 2023 20:05:50 -0800
+Subject: [PATCH] properly read and store sus effect duration
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java
+index bafc7215a3577c857fb7585f0d6dec54e1b95e90..5468b5dd74f81544b4716d46b7430082908b0d26 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java
+@@ -49,7 +49,14 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
+                 if (type == null) {
+                     continue;
+                 }
+-                int duration = effect.getInt(CraftMetaSuspiciousStew.DURATION.NBT);
++                // Paper start - default duration is 160
++                final int duration;
++                if (effect.contains(CraftMetaSuspiciousStew.DURATION.NBT)) {
++                    duration = effect.getInt(CraftMetaSuspiciousStew.DURATION.NBT);
++                } else {
++                    duration = net.minecraft.world.item.SuspiciousStewItem.DEFAULT_DURATION;
++                }
++                // Paper end start - default duration is 160
+                 this.customEffects.add(new PotionEffect(type, duration, 0));
+             }
+         }
+@@ -80,7 +87,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
+             for (PotionEffect effect : this.customEffects) {
+                 CompoundTag effectData = new CompoundTag();
+                 effectData.putString(CraftMetaSuspiciousStew.ID.NBT, effect.getType().getKey().toString());
+-                effectData.putInt(CraftMetaSuspiciousStew.DURATION.NBT, effect.getDuration());
++                if (effect.getDuration() != net.minecraft.world.item.SuspiciousStewItem.DEFAULT_DURATION) effectData.putInt(CraftMetaSuspiciousStew.DURATION.NBT, effect.getDuration()); // Paper - don't save duration if it's the default value
+                 effectList.add(effectData);
+             }
+         }

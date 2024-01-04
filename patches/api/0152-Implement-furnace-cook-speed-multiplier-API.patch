@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tassu <git@tassu.me>
+Date: Thu, 13 Sep 2018 08:45:01 +0300
+Subject: [PATCH] Implement furnace cook speed multiplier API
+
+Signed-off-by: Tassu <git@tassu.me>
+
+diff --git a/src/main/java/org/bukkit/block/Furnace.java b/src/main/java/org/bukkit/block/Furnace.java
+index ac3b24c5c99eeb1435d785efade728dd40947da5..dbdf3dbe9517b09a7965cf9d65cae1edd87af67d 100644
+--- a/src/main/java/org/bukkit/block/Furnace.java
++++ b/src/main/java/org/bukkit/block/Furnace.java
+@@ -74,6 +74,26 @@ public interface Furnace extends Container {
+     @NotNull
+     public Map<CookingRecipe<?>, Integer> getRecipesUsed();
+ 
++    // Paper start
++    /**
++     * Gets the cook speed multiplier that this {@link Furnace} will cook
++     * compared to vanilla.
++     *
++     * @return the multiplier, a value between 0 and 200
++     */
++    public double getCookSpeedMultiplier();
++
++    /**
++     * Sets the speed multiplier that this {@link Furnace} will cook
++     * compared to vanilla.
++     *
++     * @param multiplier the multiplier to set, a value between 0 and 200
++     * @throws IllegalArgumentException if value is less than 0
++     * @throws IllegalArgumentException if value is more than 200
++     */
++    public void setCookSpeedMultiplier(double multiplier);
++    // Paper end
++
+     @NotNull
+     @Override
+     public FurnaceInventory getInventory();
+diff --git a/src/main/java/org/bukkit/event/inventory/FurnaceStartSmeltEvent.java b/src/main/java/org/bukkit/event/inventory/FurnaceStartSmeltEvent.java
+index 0808e7aeffb69160913344de5b5e21d5e857f1d6..d386ab5dd46cc6706ace61fe6b646713ffd50cb7 100644
+--- a/src/main/java/org/bukkit/event/inventory/FurnaceStartSmeltEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/FurnaceStartSmeltEvent.java
+@@ -18,10 +18,17 @@ public class FurnaceStartSmeltEvent extends InventoryBlockStartEvent {
+     private final CookingRecipe<?> recipe;
+     private int totalCookTime;
+ 
++    @Deprecated // Paper - furnace cook speed multiplier
+     public FurnaceStartSmeltEvent(@NotNull final Block furnace, @NotNull ItemStack source, @NotNull final CookingRecipe<?> recipe) {
++        // Paper start
++        this(furnace, source, recipe, recipe.getCookingTime());
++    }
++
++    public FurnaceStartSmeltEvent(final @NotNull Block furnace, final @NotNull ItemStack source, final @NotNull CookingRecipe<?> recipe, final int cookingTime) {
++        // Paper end
+         super(furnace, source);
+         this.recipe = recipe;
+-        this.totalCookTime = recipe.getCookingTime();
++        this.totalCookTime = cookingTime; // Paper - furnace cook speed multiplier
+     }
+ 
+     /**

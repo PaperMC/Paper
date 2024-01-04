@@ -1,0 +1,419 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 26 May 2021 19:34:43 -0400
+Subject: [PATCH] More Projectile API
+
+Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+
+diff --git a/src/main/java/org/bukkit/entity/AbstractArrow.java b/src/main/java/org/bukkit/entity/AbstractArrow.java
+index 225a24898acd25038ea2a8448f9f3b57643d3026..d173010d51d05928c35bb4bf5fbc08ce221ec474 100644
+--- a/src/main/java/org/bukkit/entity/AbstractArrow.java
++++ b/src/main/java/org/bukkit/entity/AbstractArrow.java
+@@ -151,6 +151,36 @@ public interface AbstractArrow extends Projectile {
+     @NotNull
+     org.bukkit.inventory.ItemStack getItemStack();
+ 
++    /**
++     * Sets the amount of ticks this arrow has been alive in the world
++     * This is used to determine when the arrow should be automatically despawned.
++     *
++     * @param ticks lifetime ticks
++     */
++    void setLifetimeTicks(int ticks);
++
++    /**
++     * Gets how many ticks this arrow has been in the world for.
++     *
++     * @return ticks this arrow has been in the world
++     */
++    int getLifetimeTicks();
++
++    /**
++     * Gets the sound that is played when this arrow hits an entity.
++     *
++     * @return sound that plays
++     */
++    @NotNull
++    org.bukkit.Sound getHitSound();
++
++    /**
++     * Sets the sound that is played when this arrow hits an entity.
++     *
++     * @param sound sound that is played
++     */
++    void setHitSound(@NotNull org.bukkit.Sound sound);
++
+     /**
+      * Sets this arrow to "noclip" status.
+      *
+diff --git a/src/main/java/org/bukkit/entity/Firework.java b/src/main/java/org/bukkit/entity/Firework.java
+index 0d31aa0b22cf1e849572294e2cfe38b48c9210af..217d348ad0bbef720b25d3b507a55ca8105b7731 100644
+--- a/src/main/java/org/bukkit/entity/Firework.java
++++ b/src/main/java/org/bukkit/entity/Firework.java
+@@ -16,6 +16,8 @@ public interface Firework extends Projectile {
+ 
+     /**
+      * Apply the provided meta to the fireworks
++     * <p>
++     * Adjusts detonation ticks automatically.
+      *
+      * @param meta The FireworkMeta to apply
+      */
+@@ -54,31 +56,39 @@ public interface Firework extends Projectile {
+      * {@link #getMaxLife()}, the firework will detonate.
+      *
+      * @param ticks the ticks to set. Must be greater than or equal to 0
++     * @deprecated use {@link #setTicksFlown(int)}
+      * @return true if the life was set, false if this firework has already detonated
+      */
++    @Deprecated(forRemoval = true) // Paper
+     boolean setLife(int ticks);
+ 
+     /**
+      * Get the ticks that this firework has been alive. When this value reaches
+      * {@link #getMaxLife()}, the firework will detonate.
+      *
++     * @deprecated use {@link #getTicksFlown()}
+      * @return the life ticks
+      */
++    @Deprecated(forRemoval = true) // Paper
+     int getLife();
+ 
+     /**
+      * Set the time in ticks this firework will exist until it is detonated.
+      *
+      * @param ticks the ticks to set. Must be greater than 0
++     * @deprecated use {@link #setTicksToDetonate(int)}
+      * @return true if the time was set, false if this firework has already detonated
+      */
++    @Deprecated(forRemoval = true) // Paper
+     boolean setMaxLife(int ticks);
+ 
+     /**
+      * Get the time in ticks this firework will exist until it is detonated.
+      *
++     * @deprecated use {@link #getTicksToDetonate()}
+      * @return the maximum life in ticks
+      */
++    @Deprecated(forRemoval = true) // Paper
+     int getMaxLife();
+ 
+     /**
+@@ -127,4 +137,52 @@ public interface Firework extends Projectile {
+         return getAttachedTo();
+     }
+     // Paper end
++
++    // Paper start - Firework API
++    /**
++     * Gets the item used in the firework.
++     *
++     * @return firework item
++     */
++    @NotNull
++    public org.bukkit.inventory.ItemStack getItem();
++
++    /**
++     * Sets the item used in the firework.
++     * <p>
++     * Firework explosion effects are used from this item.
++     *
++     * @param itemStack item to set
++     */
++    void setItem(@org.jetbrains.annotations.Nullable org.bukkit.inventory.ItemStack itemStack);
++
++    /**
++     * Gets the number of ticks the firework has flown.
++     *
++     * @return ticks flown
++     */
++    int getTicksFlown();
++
++    /**
++     * Sets the number of ticks the firework has flown.
++     * Setting this greater than detonation ticks will cause the firework to explode.
++     *
++     * @param ticks ticks flown
++     */
++    void setTicksFlown(int ticks);
++
++    /**
++     * Gets the number of ticks the firework will detonate on.
++     *
++     * @return the tick to detonate on
++     */
++    int getTicksToDetonate();
++
++    /**
++     * Set the amount of ticks the firework will detonate on.
++     *
++     * @param ticks ticks to detonate on
++     */
++    void setTicksToDetonate(int ticks);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/FishHook.java b/src/main/java/org/bukkit/entity/FishHook.java
+index 94e1a30ea1bc26821065a6d89c1f5669bd1d08ae..6ed83d3e4d23e0dc0e1b156a1ee221aaba5c7210 100644
+--- a/src/main/java/org/bukkit/entity/FishHook.java
++++ b/src/main/java/org/bukkit/entity/FishHook.java
+@@ -322,4 +322,20 @@ public interface FishHook extends Projectile {
+          */
+         BOBBING;
+     }
++
++    // Paper start - More FishHook API
++    /**
++     * Get the number of ticks the hook needs to wait for a fish to bite.
++     *
++     * @return Number of ticks
++     */
++    int getWaitTime();
++
++    /**
++     * Sets the number of ticks the hook needs to wait for a fish to bite.
++     *
++     * @param ticks Number of ticks
++     */
++    void setWaitTime(int ticks);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Projectile.java b/src/main/java/org/bukkit/entity/Projectile.java
+index 06e3ad9cd8f39de0ef6ead794df1492415bc4302..c3933fb5cd9708826effeef2ad2f81c9f7900a37 100644
+--- a/src/main/java/org/bukkit/entity/Projectile.java
++++ b/src/main/java/org/bukkit/entity/Projectile.java
+@@ -12,6 +12,7 @@ public interface Projectile extends Entity {
+      * Retrieve the shooter of this projectile.
+      *
+      * @return the {@link ProjectileSource} that shot this projectile
++     * @see #getOwnerUniqueId()
+      */
+     @Nullable
+     public ProjectileSource getShooter();
+@@ -41,4 +42,89 @@ public interface Projectile extends Entity {
+      */
+     @Deprecated(forRemoval = true)
+     public void setBounce(boolean doesBounce);
++    // Paper start
++
++    /**
++     * Gets whether the projectile has left the
++     * hitbox of their shooter and can now hit entities.
++     *
++     * @return has left shooter's hitbox
++     */
++    boolean hasLeftShooter();
++
++    /**
++     * Sets whether the projectile has left the
++     * hitbox of their shooter and can now hit entities.
++     *
++     * This is recalculated each tick if the projectile has a shooter.
++     *
++     * @param leftShooter has left shooter's hitbox
++     */
++    void setHasLeftShooter(boolean leftShooter);
++
++    /**
++     * Gets whether the projectile has been
++     * shot into the world and has sent a projectile
++     * shot game event.
++     *
++     * @return has been shot into the world
++     */
++    boolean hasBeenShot();
++
++    /**
++     * Sets whether the projectile has been
++     * shot into the world and has sent a projectile
++     * shot game event in the next tick.
++     *
++     * Setting this to false will cause a game event
++     * to fire and the value to be set back to true.
++     *
++     * @param beenShot has been in shot into the world
++     */
++    void setHasBeenShot(boolean beenShot);
++
++    /**
++     * Gets whether this projectile can hit an entity.
++     * <p>
++     * This method returns true under the following conditions:
++     * <p>
++     * - The shooter can see the entity ({@link Player#canSee(Entity)}) <p>
++     * - The entity is alive and not a spectator <p>
++     * - The projectile has left the hitbox of the shooter ({@link #hasLeftShooter()})<p>
++     * - If this is an arrow with piercing, it has not pierced the entity already
++     *
++     * @param entity the entity to check if this projectile can hit
++     * @return true if this projectile can damage the entity, false otherwise
++     */
++    boolean canHitEntity(@org.jetbrains.annotations.NotNull Entity entity);
++
++    /**
++     * Makes this projectile hit a specific entity.
++     * This uses the current position of the projectile for the hit point.
++     * Using this method will result in {@link org.bukkit.event.entity.ProjectileHitEvent} being called.
++     * @param entity the entity to hit
++     * @see #hitEntity(Entity, org.bukkit.util.Vector)
++     * @see #canHitEntity(Entity) 
++     */
++    void hitEntity(@org.jetbrains.annotations.NotNull Entity entity);
++
++    /**
++     * Makes this projectile hit a specific entity from a specific point.
++     * Using this method will result in {@link org.bukkit.event.entity.ProjectileHitEvent} being called.
++     * @param entity the entity to hit
++     * @param vector the direction to hit from
++     * @see #hitEntity(Entity)
++     * @see #canHitEntity(Entity) 
++     */
++    void hitEntity(@org.jetbrains.annotations.NotNull Entity entity, @org.jetbrains.annotations.NotNull org.bukkit.util.Vector vector);
++
++    /**
++     * Gets the owner's UUID
++     *
++     * @return the owner's UUID, or null if not owned
++     * @see #getShooter()
++     */
++    @Nullable
++    java.util.UUID getOwnerUniqueId();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/ShulkerBullet.java b/src/main/java/org/bukkit/entity/ShulkerBullet.java
+index 4623e0d767b343cbdc6fcf20b3b2ff7ff14863cf..dd69a68d1f005c25329bb0366d161ae9b061e108 100644
+--- a/src/main/java/org/bukkit/entity/ShulkerBullet.java
++++ b/src/main/java/org/bukkit/entity/ShulkerBullet.java
+@@ -18,4 +18,61 @@ public interface ShulkerBullet extends Projectile {
+      * @param target the entity to target
+      */
+     void setTarget(@Nullable Entity target);
++    // Paper start
++    /**
++     * Gets the relative offset that this shulker bullet should move towards,
++     * note that this will change each tick as the skulker bullet approaches the target.
++     *
++     * @return target delta offset
++     */
++    @org.jetbrains.annotations.NotNull
++    org.bukkit.util.Vector getTargetDelta();
++
++
++    /**
++     * Sets the relative offset that this shulker bullet should move towards,
++     * note that this will change each tick as the skulker bullet approaches the target.
++     * This is usually relative towards their target.
++     *
++     * @param vector target
++     */
++    void setTargetDelta(@org.jetbrains.annotations.NotNull org.bukkit.util.Vector vector);
++
++    /**
++     * Gets the current movement direction.
++     * This is used to determine the next movement direction to ensure
++     * that the bullet does not move in the same direction.
++     *
++     * @return null or their current direction
++     */
++    @Nullable
++    org.bukkit.block.BlockFace getCurrentMovementDirection();
++
++    /**
++     * Set the current movement direction.
++     * This is used to determine the next movement direction to ensure
++     * that the bullet does not move in the same direction.
++     *
++     * Set to null to simply pick a random direction.
++     *
++     * @param movementDirection null or a direction
++     */
++    void setCurrentMovementDirection(@Nullable org.bukkit.block.BlockFace movementDirection);
++
++    /**
++     * Gets how many ticks this shulker bullet
++     * will attempt to move in its current direction.
++     *
++     * @return number of steps
++     */
++    int getFlightSteps();
++
++    /**
++     * Sets how many ticks this shulker bullet
++     * will attempt to move in its current direction.
++     *
++     * @param steps number of steps
++     */
++    void setFlightSteps(int steps);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/ThrownPotion.java b/src/main/java/org/bukkit/entity/ThrownPotion.java
+index 7051e07b4e456aae0ec9e37808b59e5fa62a4027..225ac312613b9e8f3cf680819f2ebe350d1bf48a 100644
+--- a/src/main/java/org/bukkit/entity/ThrownPotion.java
++++ b/src/main/java/org/bukkit/entity/ThrownPotion.java
+@@ -32,12 +32,34 @@ public interface ThrownPotion extends ThrowableProjectile {
+ 
+     /**
+      * Set the ItemStack for this thrown potion.
+-     * <p>
+-     * The ItemStack must be of type {@link org.bukkit.Material#SPLASH_POTION}
+-     * or {@link org.bukkit.Material#LINGERING_POTION}, otherwise an exception
+-     * is thrown.
+      *
+      * @param item New ItemStack
+      */
+     public void setItem(@NotNull ItemStack item);
++
++    // Paper start - Projectile API
++    /**
++     * Gets a copy of the PotionMeta for this thrown potion.
++     * This includes what effects will be applied by this potion.
++     *
++     * @return potion meta
++     */
++    @NotNull
++    org.bukkit.inventory.meta.PotionMeta getPotionMeta();
++
++    /**
++     * Sets the PotionMeta of this thrown potion.
++     * This will modify the effects applied by this potion.
++     * <p>
++     * Note that the type of {@link #getItem()} is irrelevant
++     *
++     * @param meta potion meta
++     */
++    void setPotionMeta(@NotNull org.bukkit.inventory.meta.PotionMeta meta);
++
++    /**
++     * Splashes the potion at its current location.
++     */
++    void splash();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Trident.java b/src/main/java/org/bukkit/entity/Trident.java
+index c8015ff610e3c1222cb368ea1d8a0c2f3785d9c7..02584eced96944a551140f8150c65a7c0f4bb55e 100644
+--- a/src/main/java/org/bukkit/entity/Trident.java
++++ b/src/main/java/org/bukkit/entity/Trident.java
+@@ -38,5 +38,24 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
+      * @throws IllegalArgumentException if the loyalty level is lower than 0 or greater than 127
+      */
+     void setLoyaltyLevel(int loyaltyLevel);
++
++    /**
++     * Gets if this trident has dealt damage to an
++     * entity yet or has hit the floor.
++     *
++     * If neither of these events have occurred yet, this will
++     * return false.
++     *
++     * @return has dealt damage
++     */
++    boolean hasDealtDamage();
++
++    /**
++     * Sets if this trident has dealt damage to an entity
++     * yet or has hit the floor.
++     *
++     * @param hasDealtDamage has dealt damage or hit the floor
++     */
++    void setHasDealtDamage(boolean hasDealtDamage);
+ }
+ // Paper end

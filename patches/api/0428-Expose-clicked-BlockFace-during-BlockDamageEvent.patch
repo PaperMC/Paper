@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: aerulion <aerulion@gmail.com>
+Date: Mon, 21 Aug 2023 04:36:07 +0200
+Subject: [PATCH] Expose clicked BlockFace during BlockDamageEvent
+
+
+diff --git a/src/main/java/org/bukkit/event/block/BlockDamageEvent.java b/src/main/java/org/bukkit/event/block/BlockDamageEvent.java
+index cd04a0bd9d232857408b38605787016a217cb8d2..392cde07d578d684423e1bf369af28696eb7e484 100644
+--- a/src/main/java/org/bukkit/event/block/BlockDamageEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockDamageEvent.java
+@@ -19,9 +19,20 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
+     private boolean instaBreak;
+     private boolean cancel;
+     private final ItemStack itemstack;
++    private final org.bukkit.block.BlockFace blockFace; // Paper - Expose BlockFace
+ 
++    // Paper start - expose blockface
++    @Deprecated(forRemoval = true)
++    @io.papermc.paper.annotation.DoNotUse
+     public BlockDamageEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final ItemStack itemInHand, final boolean instaBreak) {
++        this(player, block, null, itemInHand, instaBreak); // Some plugin do bad things...
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper
++    public BlockDamageEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final org.bukkit.block.BlockFace blockFace, @NotNull final ItemStack itemInHand, final boolean instaBreak) { // Paper - Expose BlockFace
+         super(block);
++        this.blockFace = blockFace;
++        // Paper end - expose blockface
+         this.instaBreak = instaBreak;
+         this.player = player;
+         this.itemstack = itemInHand;
+@@ -67,6 +78,20 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
+     public ItemStack getItemInHand() {
+         return itemstack;
+     }
++    // Paper start - Expose BlockFace
++    /**
++     * Gets the BlockFace the player is interacting with.
++     *
++     * @return The BlockFace clicked to damage the block
++     */
++    @NotNull
++    public org.bukkit.block.BlockFace getBlockFace() {
++        if (this.blockFace == null) {
++            throw new IllegalStateException("BlockFace is not available for this event, most likely due to a bad constructor call by a plugin");
++        }
++        return this.blockFace;
++    }
++    //Paper end
+ 
+     @Override
+     public boolean isCancelled() {

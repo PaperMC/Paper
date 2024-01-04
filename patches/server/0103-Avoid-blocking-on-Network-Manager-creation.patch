@@ -6,10 +6,10 @@ Subject: [PATCH] Avoid blocking on Network Manager creation
 Per Paper issue 294
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index 6c4e41d1d9e16492b1e47b5047810b8ffca992e5..776528e50a5abc0e02d9de99231fb47352aa4f43 100644
+index dbbca784fe45b7099f683745b36f5c195ca4c2af..d870fbec236a3660f12e0f45cf9431067b18468b 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-@@ -60,6 +60,15 @@ public class ServerConnectionListener {
+@@ -61,6 +61,15 @@ public class ServerConnectionListener {
      public volatile boolean running;
      private final List<ChannelFuture> channels = Collections.synchronizedList(Lists.newArrayList());
      final List<Connection> connections = Collections.synchronizedList(Lists.newArrayList());
@@ -25,17 +25,17 @@ index 6c4e41d1d9e16492b1e47b5047810b8ffca992e5..776528e50a5abc0e02d9de99231fb473
  
      public ServerConnectionListener(MinecraftServer server) {
          this.server = server;
-@@ -97,7 +106,8 @@ public class ServerConnectionListener {
+@@ -100,7 +109,8 @@ public class ServerConnectionListener {
                      int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
                      Connection object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND); // CraftBukkit - decompile error
  
 -                    ServerConnectionListener.this.connections.add(object);
-+                    //ServerConnectionListener.this.connections.add(object);
++                    //ServerConnectionListener.this.connections.add(object); // Paper
 +                    pending.add(object); // Paper
-                     channelpipeline.addLast("packet_handler", (ChannelHandler) object);
-                     ((Connection) object).setListener(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
+                     ((Connection) object).configurePacketHandler(channelpipeline);
+                     ((Connection) object).setListenerForServerboundHandshake(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
                  }
-@@ -158,6 +168,7 @@ public class ServerConnectionListener {
+@@ -163,6 +173,7 @@ public class ServerConnectionListener {
  
          synchronized (this.connections) {
              // Spigot Start

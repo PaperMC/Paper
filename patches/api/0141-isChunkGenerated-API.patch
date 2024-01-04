@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: cswhite2000 <18whitechristop@gmail.com>
+Date: Tue, 21 Aug 2018 19:39:46 -0700
+Subject: [PATCH] isChunkGenerated API
+
+
+diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
+index 34eeed3ec165bee9d9172ea636b1cc2d7d05f938..0b202d378d50946f43434e70d9d511cac06749b0 100644
+--- a/src/main/java/org/bukkit/Location.java
++++ b/src/main/java/org/bukkit/Location.java
+@@ -3,6 +3,7 @@ package org.bukkit;
+ import com.google.common.base.Preconditions;
+ import java.lang.ref.Reference;
+ import java.lang.ref.WeakReference;
++import com.google.common.base.Preconditions; // Paper
+ import java.util.HashMap;
+ import java.util.Map;
+ import org.bukkit.block.Block;
+@@ -544,6 +545,19 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
+ 
+     public boolean isChunkLoaded() { return this.getWorld().isChunkLoaded(locToBlock(x) >> 4, locToBlock(z) >> 4); } // Paper
+ 
++    // Paper start - isGenerated API
++    /**
++     * Checks if a {@link Chunk} has been generated at this location.
++     *
++     * @return true if a chunk has been generated at this location
++     */
++    public boolean isGenerated() {
++        World world = this.getWorld();
++        Preconditions.checkNotNull(world, "Location has no world!");
++        return world.isChunkGenerated(locToBlock(x) >> 4, locToBlock(z) >> 4);
++    }
++    // Paper end - isGenerated API
++
+     // Paper start - expand location manipulation API
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 55c0ad31ae8f1831c43404abb7e2e62da63885ce..07f723d5fb72e2eb776af130dc1d5caea16c5295 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -246,6 +246,19 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+     }
+     // Paper end - chunk long key API
+ 
++    // Paper start - isChunkGenerated API
++    /**
++     * Checks if a {@link Chunk} has been generated at the specified chunk key,
++     * which is the X and Z packed into a long.
++     *
++     * @param chunkKey The Chunk Key to look up the chunk by
++     * @return true if the chunk has been generated, otherwise false
++     */
++    default boolean isChunkGenerated(long chunkKey) {
++        return isChunkGenerated((int) chunkKey, (int) (chunkKey >> 32));
++    }
++    // Paper end - isChunkGenerated API
++
+     /**
+      * Checks if the specified {@link Chunk} is loaded
+      *

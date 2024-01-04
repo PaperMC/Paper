@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 25 Apr 2020 15:13:41 -0500
+Subject: [PATCH] Add phantom creative and insomniac controls
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index 170fbb1d80947b9b21c2106497baae5c37bcdc0c..68e4440765636295a74ea942862d772d47282ad6 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -28,6 +28,7 @@ public final class EntitySelector {
+         return !entity.isSpectator();
+     };
+     public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = EntitySelector.NO_SPECTATORS.and(Entity::canBeCollidedWith);
++    public static Predicate<Player> IS_INSOMNIAC = (player) -> net.minecraft.util.Mth.clamp(((net.minecraft.server.level.ServerPlayer) player).getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper
+ 
+     private EntitySelector() {}
+     // Paper start
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+index 658393f451e46a93c5665fe3c580aa395ace68d1..a40852acf5d175cc3a06bc17fb021c76f0c11a28 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+@@ -568,6 +568,7 @@ public class Phantom extends FlyingMob implements Enemy {
+                         Player entityhuman = (Player) iterator.next();
+ 
+                         if (Phantom.this.canAttack(entityhuman, TargetingConditions.DEFAULT)) {
++                            if (!level().paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.IS_INSOMNIAC.test(entityhuman)) // Paper
+                             Phantom.this.setTarget(entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
+                             return true;
+                         }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+index 94ee9c399f59e0198b4d9bc2a4255e8b821bcd36..b1fc786970b5288a02cc3a46e3fe7784ac566c07 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+@@ -49,7 +49,7 @@ public class PhantomSpawner implements CustomSpawner {
+                     while (iterator.hasNext()) {
+                         ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+-                        if (!entityplayer.isSpectator()) {
++                        if (!entityplayer.isSpectator() && (!world.paperConfig().entities.behavior.phantomsDoNotSpawnOnCreativePlayers || !entityplayer.isCreative())) { // Paper
+                             BlockPos blockposition = entityplayer.blockPosition();
+ 
+                             if (!world.dimensionType().hasSkyLight() || blockposition.getY() >= world.getSeaLevel() && world.canSeeSky(blockposition)) {

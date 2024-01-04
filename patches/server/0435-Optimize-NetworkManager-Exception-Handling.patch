@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrew Steinborn <git@steinborn.me>
+Date: Sun, 5 Jul 2020 22:38:18 -0400
+Subject: [PATCH] Optimize NetworkManager Exception Handling
+
+
+diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+index ac1aa37329bd4d411964ea34ea8147f6db945b9a..41899d6c141895fc6c2c5da763bbe36864d557f7 100644
+--- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
++++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+@@ -341,6 +341,7 @@ public enum ConnectionProtocol {
+ 
+         @Nullable
+         public Packet<?> createPacket(int id, FriendlyByteBuf buf) {
++            if (id < 0 || id >= this.idToDeserializer.size()) return null; // Paper
+             Function<FriendlyByteBuf, ? extends Packet<? super T>> function = this.idToDeserializer.get(id);
+             return function != null ? function.apply(buf) : null;
+         }
+diff --git a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
+index 00c170a16a57f41f881c6b282cba474ce485b34c..1f71357a4caef4b2cbff95b560d0f3df268b3621 100644
+--- a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
++++ b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
+@@ -39,6 +39,12 @@ public class Varint21FrameDecoder extends ByteToMessageDecoder {
+     }
+ 
+     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
++        // Paper start - if channel is not active just discard the packet
++        if (!channelHandlerContext.channel().isActive()) {
++            byteBuf.skipBytes(byteBuf.readableBytes());
++            return;
++        }
++        // Paper end - if channel is not active just discard the packet
+         byteBuf.markReaderIndex();
+         this.helperBuf.clear();
+         if (!copyVarint(byteBuf, this.helperBuf)) {

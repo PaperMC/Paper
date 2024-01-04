@@ -5,23 +5,24 @@ Subject: [PATCH] Player Tab List and Title APIs
 
 
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 9020bc6d9ff6bc0c9b3f00470813f3258554cf45..c2f56f4628e42c130e4c55030432cb43aa0d8458 100644
+index 39940edf4aef21842c8abd77bec0d0f1e7e9c762..7dcd8d4e4886e1d35adbc604eafabccb5550f1b4 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-@@ -548,6 +548,11 @@ public class FriendlyByteBuf extends ByteBuf {
-     public FriendlyByteBuf writeComponent(final net.kyori.adventure.text.Component component) {
-         return this.writeUtf(PaperAdventure.asJsonString(component, this.adventure$locale), 262144);
+@@ -545,6 +545,12 @@ public class FriendlyByteBuf extends ByteBuf {
+         return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.localizedCodec(this.adventure$locale), text);
+         // Paper end - adventure
      }
-+
++    // Paper start - deprecated Tab List & Title APIs
 +    @Deprecated
 +    public FriendlyByteBuf writeComponent(final net.md_5.bungee.api.chat.BaseComponent[] component) {
-+        return this.writeUtf(net.md_5.bungee.chat.ComponentSerializer.toString(component), 262144);
++        return this.writeComponent(java.util.Objects.requireNonNull(Component.Serializer.fromJson(net.md_5.bungee.chat.ComponentSerializer.toString(component))));
 +    }
-     // Paper end
++    // Paper end - deprecated Tab List & Title APIs
  
-     public FriendlyByteBuf writeComponent(Component text) {
+     public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
+         return ((T[]) enumClass.getEnumConstants())[this.readVarInt()]; // CraftBukkit - fix decompile error
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetSubtitleTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetSubtitleTextPacket.java
-index c44a276d201fdfa5144d45d319d7761583c60639..f68a1a6dc6add9496e25cb52c318e086e356e2bb 100644
+index e77bd5bb66279f579fad4fdcc8b0606410922e9e..4c05fee93eb20044a4198c43d5ae1eebebaabaf7 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetSubtitleTextPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetSubtitleTextPacket.java
 @@ -7,6 +7,7 @@ import net.minecraft.network.protocol.Packet;
@@ -42,7 +43,7 @@ index c44a276d201fdfa5144d45d319d7761583c60639..f68a1a6dc6add9496e25cb52c318e086
          // Paper end
          buf.writeComponent(this.text);
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitleTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitleTextPacket.java
-index bd808eb312ade7122973a47f4b96505829511da5..bf0f9cab7c66c089f35b851e799ba4a43420b437 100644
+index 7bb08db97c324d13836303cc8a4623c71d6c8a2c..5e9045f7722481e1f83a3d36d7b3d86e9f45d5b1 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitleTextPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitleTextPacket.java
 @@ -7,6 +7,7 @@ import net.minecraft.network.protocol.Packet;
@@ -63,7 +64,7 @@ index bd808eb312ade7122973a47f4b96505829511da5..bf0f9cab7c66c089f35b851e799ba4a4
          // Paper end
          buf.writeComponent(this.text);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index aa3a11a4869678f1fcb126bfde3381e0470c8246..8b611525f74ed39601f64ad964aacffeebe503e8 100644
+index 054ada5455c6570f86d9a010fcb8eaf57bf7151d..6d8b46743473832b2c7c604b3023541a22e3abc9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1,5 +1,6 @@
@@ -73,7 +74,7 @@ index aa3a11a4869678f1fcb126bfde3381e0470c8246..8b611525f74ed39601f64ad964aacffe
  import com.google.common.base.Preconditions;
  import com.google.common.collect.ImmutableSet;
  import com.google.common.io.BaseEncoding;
-@@ -326,6 +327,100 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -340,6 +341,100 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  

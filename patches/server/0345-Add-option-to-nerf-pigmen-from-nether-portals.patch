@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 7 Feb 2020 14:36:56 -0600
+Subject: [PATCH] Add option to nerf pigmen from nether portals
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index cf3742d3d771f6e0c71917bafda7027bd69b1aff..32558b5acfbc13f969d6d5c4e9a61d0beca6c41b 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -397,6 +397,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     // Paper start
+     public long activatedImmunityTick = Integer.MIN_VALUE; // Paper
+     public boolean isTemporarilyActive = false; // Paper
++    public boolean fromNetherPortal; // Paper
+     protected int numCollisions = 0; // Paper
+     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
+     @javax.annotation.Nullable
+@@ -2231,6 +2232,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+             if (spawnedViaMobSpawner) {
+                 nbttagcompound.putBoolean("Paper.FromMobSpawner", true);
+             }
++            if (fromNetherPortal) {
++                nbttagcompound.putBoolean("Paper.FromNetherPortal", true);
++            }
+             // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+@@ -2373,6 +2377,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+             }
+ 
+             spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
++            fromNetherPortal = nbt.getBoolean("Paper.FromNetherPortal");
+             if (nbt.contains("Paper.SpawnReason")) {
+                 String spawnReasonName = nbt.getString("Paper.SpawnReason");
+                 try {
+diff --git a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+index c9ff8a3fd8d65033ce5a476e8ceaf9d1b8e2d887..4e52e92846428b0d01635b90f3480b4a2c13a0b4 100644
+--- a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+@@ -71,6 +71,8 @@ public class NetherPortalBlock extends Block {
+ 
+                 if (entity != null) {
+                     entity.setPortalCooldown();
++                    entity.fromNetherPortal = true; // Paper
++                    if (world.paperConfig().entities.behavior.nerfPigmenFromNetherPortals) ((net.minecraft.world.entity.Mob) entity).aware = false; // Paper
+                 }
+             }
+         }

@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 3 Apr 2016 16:28:17 -0400
+Subject: [PATCH] Configurable random tick rates for blocks
+
+A general purpose patch that includes config options for the tick rate
+of a variety of blocks that are random ticked.
+
+Co-authored-by: MrPowerGamerBR <git@mrpowergamerbr.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/block/FarmBlock.java b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+index 3ce4bb344dbb8b50ef4041801e034e79f0b0d19d..6c1e8ba518c883aa5c079b4c94f068833609acc3 100644
+--- a/src/main/java/net/minecraft/world/level/block/FarmBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+@@ -92,6 +92,8 @@ public class FarmBlock extends Block {
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         int i = (Integer) state.getValue(FarmBlock.MOISTURE);
++        if (i > 0 && world.paperConfig().tickRates.wetFarmland != 1 && (world.paperConfig().tickRates.wetFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.wetFarmland != 0)) { return; } // Paper
++        if (i == 0 && world.paperConfig().tickRates.dryFarmland != 1 && (world.paperConfig().tickRates.dryFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.dryFarmland != 0)) { return; } // Paper
+ 
+         if (!FarmBlock.isNearWater(world, pos) && !world.isRainingAt(pos.above())) {
+             if (i > 0) {
+diff --git a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java b/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
+index 65db2229dae0547c7a3e2847bba7b1a1795ce30f..f38524cbcaa908644d901bf0929331d6dfd99ed9 100644
+--- a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
+@@ -3,6 +3,7 @@ package net.minecraft.world.level.block;
+ import com.mojang.serialization.MapCodec;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.tags.FluidTags;
+ import net.minecraft.util.RandomSource;
+@@ -43,6 +44,7 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
+ 
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
++        if (this instanceof GrassBlock && world.paperConfig().tickRates.grassSpread != 1 && (world.paperConfig().tickRates.grassSpread < 1 || (MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.grassSpread != 0)) { return; } // Paper
+         if (!SpreadingSnowyDirtBlock.canBeGrass(state, world, pos)) {
+             // CraftBukkit start
+             if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {

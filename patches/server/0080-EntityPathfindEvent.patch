@@ -6,7 +6,7 @@ Subject: [PATCH] EntityPathfindEvent
 Fires when an Entity decides to start moving to a location.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
-index a8f69e48937b3ebd2f57a4da747e6762c4a77934..acd0b946cab86eb173e713535194d3a9347c7d48 100644
+index 3db41017c6690d4519564496edd8e7365b2f5a22..027eef4ace908147285c8d72b612d16e4f925672 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
 @@ -40,7 +40,7 @@ public class FlyingPathNavigation extends PathNavigation {
@@ -19,39 +19,41 @@ index a8f69e48937b3ebd2f57a4da747e6762c4a77934..acd0b946cab86eb173e713535194d3a9
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-index 518f47f52105e299e037fe2e7d5870d7555be4bc..71934af2dc4d209a9fbccfd36b5f2815ec196892 100644
+index 12564909abff7da4e5a4bb3d004a7ede2ffda12d..ac996b066415e461af1fcb71b19807401179c7f8 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-@@ -39,14 +39,14 @@ public class GroundPathNavigation extends PathNavigation {
+@@ -41,7 +41,7 @@ public class GroundPathNavigation extends PathNavigation {
      }
  
      @Override
 -    public Path createPath(BlockPos target, int distance) {
 +    public Path createPath(BlockPos target, @javax.annotation.Nullable Entity entity, int distance) { // Paper
-         if (this.level.getBlockState(target).isAir()) {
-             BlockPos blockPos;
-             for(blockPos = target.below(); blockPos.getY() > this.level.getMinBuildHeight() && this.level.getBlockState(blockPos).isAir(); blockPos = blockPos.below()) {
+         LevelChunk levelChunk = this.level.getChunkSource().getChunkNow(SectionPos.blockToSectionCoord(target.getX()), SectionPos.blockToSectionCoord(target.getZ()));
+         if (levelChunk == null) {
+             return null;
+@@ -52,7 +52,7 @@ public class GroundPathNavigation extends PathNavigation {
+                 }
+ 
+                 if (blockPos.getY() > this.level.getMinBuildHeight()) {
+-                    return super.createPath(blockPos.above(), distance);
++                    return super.createPath(blockPos.above(), entity, distance); // Paper
+                 }
+ 
+                 while(blockPos.getY() < this.level.getMaxBuildHeight() && levelChunk.getBlockState(blockPos).isAir()) {
+@@ -63,20 +63,20 @@ public class GroundPathNavigation extends PathNavigation {
              }
  
-             if (blockPos.getY() > this.level.getMinBuildHeight()) {
--                return super.createPath(blockPos.above(), distance);
-+                return super.createPath(blockPos.above(), entity, distance); // Paper
+             if (!levelChunk.getBlockState(target).isSolid()) {
+-                return super.createPath(target, distance);
++                return super.createPath(target, entity, distance); // Paper
+             } else {
+                 BlockPos blockPos2;
+                 for(blockPos2 = target.above(); blockPos2.getY() < this.level.getMaxBuildHeight() && levelChunk.getBlockState(blockPos2).isSolid(); blockPos2 = blockPos2.above()) {
+                 }
+ 
+-                return super.createPath(blockPos2, distance);
++                return super.createPath(blockPos2, entity, distance); // Paper
              }
- 
-             while(blockPos.getY() < this.level.getMaxBuildHeight() && this.level.getBlockState(blockPos).isAir()) {
-@@ -57,19 +57,19 @@ public class GroundPathNavigation extends PathNavigation {
-         }
- 
-         if (!this.level.getBlockState(target).isSolid()) {
--            return super.createPath(target, distance);
-+            return super.createPath(target, entity, distance); // Paper
-         } else {
-             BlockPos blockPos2;
-             for(blockPos2 = target.above(); blockPos2.getY() < this.level.getMaxBuildHeight() && this.level.getBlockState(blockPos2).isSolid(); blockPos2 = blockPos2.above()) {
-             }
- 
--            return super.createPath(blockPos2, distance);
-+            return super.createPath(blockPos2, entity, distance); // Paper
          }
      }
  
@@ -63,7 +65,7 @@ index 518f47f52105e299e037fe2e7d5870d7555be4bc..71934af2dc4d209a9fbccfd36b5f2815
  
      private int getSurfaceY() {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-index f16e9bcefedb582a4bfe7a0b7ec8a97799f5e5ad..1a69a46340eee4f0273c373cc1a40b4d069a89d4 100644
+index fa19df17967f57b5ac99b8eee9d38864c0b7a1bb..d14b329e5bccf13139c32f71da274082efc7199c 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 @@ -110,7 +110,13 @@ public abstract class PathNavigation {

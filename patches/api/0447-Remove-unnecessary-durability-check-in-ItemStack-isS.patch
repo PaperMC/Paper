@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MrPowerGamerBR <git@mrpowergamerbr.com>
+Date: Sun, 26 Nov 2023 20:00:50 -0300
+Subject: [PATCH] Remove unnecessary durability check in
+ "ItemStack#isSimilar(...)"
+
+By removing this check we avoid unnecessarily allocating useless `ItemMeta` objects if we are comparing two items, or one of the two items, that don't have any durability. Don't worry, the durability of the item is checked when it checks if both item metas are equal.
+
+This is a leftover from when checking for the item's durability was "free" because the durability was stored in the `ItemStack` itself, this [was changed in Minecraft 1.13](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/commits/f8b2086d60942eb2cd7ac25a2a1408cb790c222c#src/main/java/org/bukkit/inventory/ItemStack.java).
+
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 0af73cc04edb93b9772136d4d808f657ea40e733..36e3fbc727cd748aa138f52976154ba32954cd87 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -295,7 +295,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+             return true;
+         }
+         Material comparisonType = (this.type.isLegacy()) ? Bukkit.getUnsafe().fromLegacy(this.getData(), true) : this.type; // This may be called from legacy item stacks, try to get the right material
+-        return comparisonType == stack.getType() && getDurability() == stack.getDurability() && hasItemMeta() == stack.hasItemMeta() && (hasItemMeta() ? Bukkit.getItemFactory().equals(getItemMeta(), stack.getItemMeta()) : true);
++        return comparisonType == stack.getType() && /* getDurability() == stack.getDurability() && */hasItemMeta() == stack.hasItemMeta() && (hasItemMeta() ? Bukkit.getItemFactory().equals(getItemMeta(), stack.getItemMeta()) : true); // Paper - remove redundant item durability check
+     }
+ 
+     @NotNull

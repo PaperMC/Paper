@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Thu, 21 Jul 2022 12:07:54 -0400
+Subject: [PATCH] Add and fix missing BlockFadeEvents
+
+Beyond calling the BlockFadeEvent in more places, this patch also aims
+to pass the proper replacement state to the event, specifically for
+potentially waterlogged block states fading.
+
+Co-authored-by: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com
+
+diff --git a/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java b/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java
+index a4ca58384ae2a39ec568b153cc1a4f7704136108..0a2de99c22cfcc96a664dc2afe7379987ea815db 100644
+--- a/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java
+@@ -92,6 +92,11 @@ public class FrogspawnBlock extends Block {
+     }
+ 
+     private void hatchFrogspawn(ServerLevel world, BlockPos pos, RandomSource random) {
++        // Paper start - Call BlockFadeEvent
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) {
++            return;
++        }
++        // Paper end
+         this.destroyBlock(world, pos);
+         world.playSound((Player)null, pos, SoundEvents.FROGSPAWN_HATCH, SoundSource.BLOCKS, 1.0F, 1.0F);
+         this.spawnTadpoles(world, pos, random);
+diff --git a/src/main/java/net/minecraft/world/level/block/ScaffoldingBlock.java b/src/main/java/net/minecraft/world/level/block/ScaffoldingBlock.java
+index f660e58badfcc2a90e6dd618428a21bf5ad34969..13ee09f93ec325e416a2b29e3608e870e7f06aed 100644
+--- a/src/main/java/net/minecraft/world/level/block/ScaffoldingBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ScaffoldingBlock.java
+@@ -103,7 +103,7 @@ public class ScaffoldingBlock extends Block implements SimpleWaterloggedBlock {
+         int i = ScaffoldingBlock.getDistance(world, pos);
+         BlockState iblockdata1 = (BlockState) ((BlockState) state.setValue(ScaffoldingBlock.DISTANCE, i)).setValue(ScaffoldingBlock.BOTTOM, this.isBottom(world, pos, i));
+ 
+-        if ((Integer) iblockdata1.getValue(ScaffoldingBlock.DISTANCE) == 7 && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) { // CraftBukkit - BlockFadeEvent
++        if ((Integer) iblockdata1.getValue(ScaffoldingBlock.DISTANCE) == 7 && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, iblockdata1.getFluidState().createLegacyBlock()).isCancelled()) { // CraftBukkit - BlockFadeEvent // Paper - fix wrong block state
+             if ((Integer) state.getValue(ScaffoldingBlock.DISTANCE) == 7) {
+                 FallingBlockEntity.fall(world, pos, iblockdata1);
+             } else {
+diff --git a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
+index 615ee22b4948d6a4869dc8b2111f48056969dd79..3cedc349e79665d3d471c92b5dca25c9e66ca0bf 100644
+--- a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
+@@ -61,12 +61,26 @@ public class SnifferEggBlock extends Block {
+         return this.getHatchLevel(state) == 2;
+     }
+ 
++    // Paper start
++    private void rescheduleTick(ServerLevel world, BlockPos pos) {
++        int baseDelay = hatchBoost(world, pos) ? BOOSTED_HATCH_TIME_TICKS : REGULAR_HATCH_TIME_TICKS;
++        world.scheduleTick(pos, this, (baseDelay / 3) + world.random.nextInt(RANDOM_HATCH_OFFSET_TICKS));
++        // reschedule to avoid being stuck here and behave like the other calls (see #onPlace)
++    }
++    // Paper end
++
+     @Override
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if (!this.isReadyToHatch(state)) {
+             world.playSound((Player)null, pos, SoundEvents.SNIFFER_EGG_CRACK, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+             world.setBlock(pos, state.setValue(HATCH, Integer.valueOf(this.getHatchLevel(state) + 1)), 2);
+         } else {
++            // Paper start - Call BlockFadeEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, state.getFluidState().createLegacyBlock()).isCancelled()) {
++                rescheduleTick(world, pos);
++                return;
++            }
++            // Paper end
+             world.playSound((Player)null, pos, SoundEvents.SNIFFER_EGG_HATCH, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+             world.destroyBlock(pos, false);
+             Sniffer sniffer = EntityType.SNIFFER.create(world);
