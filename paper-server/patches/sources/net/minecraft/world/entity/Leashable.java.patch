@@ -20,8 +20,18 @@
      }
  
      default void readLeashData(CompoundTag nbt) {
-@@ -64,7 +68,7 @@
-             return new Leashable.LeashData(Either.left(nbt.getCompound("leash").getUUID("UUID")));
+@@ -61,10 +65,16 @@
+     @Nullable
+     private static Leashable.LeashData readLeashDataInternal(CompoundTag nbt) {
+         if (nbt.contains("leash", 10)) {
+-            return new Leashable.LeashData(Either.left(nbt.getCompound("leash").getUUID("UUID")));
++            // Paper start
++            final CompoundTag leashTag = nbt.getCompound("leash");
++            if (!leashTag.hasUUID("UUID")) {
++                return null;
++            }
++            return new Leashable.LeashData(Either.left(leashTag.getUUID("UUID")));
++            // Paper end
          } else {
              if (nbt.contains("leash", 11)) {
 -                Either<UUID, BlockPos> either = (Either) NbtUtils.readBlockPos(nbt, "leash").map(Either::right).orElse((Object) null);
@@ -29,7 +39,7 @@
  
                  if (either != null) {
                      return new Leashable.LeashData(either);
-@@ -79,6 +83,11 @@
+@@ -79,6 +89,11 @@
          if (leashData != null) {
              Either<UUID, BlockPos> either = leashData.delayedLeashInfo;
              Entity entity = leashData.leashHolder;
@@ -41,7 +51,7 @@
  
              if (entity instanceof LeashFenceKnotEntity) {
                  LeashFenceKnotEntity entityleash = (LeashFenceKnotEntity) entity;
-@@ -121,7 +130,9 @@
+@@ -121,7 +136,9 @@
                  }
  
                  if (entity.tickCount > 100) {
@@ -51,7 +61,7 @@
                      ((Leashable) entity).setLeashData((Leashable.LeashData) null);
                  }
              }
-@@ -130,11 +141,11 @@
+@@ -130,11 +147,11 @@
      }
  
      default void dropLeash() {
@@ -65,7 +75,7 @@
      }
  
      default void onLeashRemoved() {}
-@@ -151,7 +162,9 @@
+@@ -151,7 +168,9 @@
                  ServerLevel worldserver = (ServerLevel) world;
  
                  if (dropItem) {
@@ -75,7 +85,7 @@
                  }
  
                  if (sendPacket) {
-@@ -171,7 +184,11 @@
+@@ -171,7 +190,11 @@
  
          if (leashable_a != null && leashable_a.leashHolder != null) {
              if (!entity.isAlive() || !leashable_a.leashHolder.isAlive()) {
@@ -88,7 +98,7 @@
                      ((Leashable) entity).dropLeash();
                  } else {
                      ((Leashable) entity).removeLeash();
-@@ -187,7 +204,7 @@
+@@ -187,7 +210,7 @@
                      return;
                  }
  
@@ -97,7 +107,7 @@
                      ((Leashable) entity).leashTooFarBehaviour();
                  } else if ((double) f > 6.0D) {
                      ((Leashable) entity).elasticRangeLeashBehaviour(entity1, f);
-@@ -205,13 +222,27 @@
+@@ -205,13 +228,27 @@
      }
  
      default void leashTooFarBehaviour() {
@@ -127,7 +137,7 @@
      }
  
      private static <E extends Entity & Leashable> void legacyElasticRangeLeashBehaviour(E entity, Entity leashHolder, float distance) {
-@@ -223,7 +254,7 @@
+@@ -223,7 +260,7 @@
      }
  
      default void setLeashedTo(Entity leashHolder, boolean sendPacket) {
@@ -136,7 +146,7 @@
      }
  
      private static <E extends Entity & Leashable> void setLeashedTo(E entity, Entity leashHolder, boolean sendPacket) {
-@@ -254,7 +285,7 @@
+@@ -254,7 +291,7 @@
  
      @Nullable
      default Entity getLeashHolder() {

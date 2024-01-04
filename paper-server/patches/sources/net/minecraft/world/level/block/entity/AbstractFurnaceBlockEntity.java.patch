@@ -80,8 +80,16 @@
      private boolean isLit() {
          return this.litTimeRemaining > 0;
      }
-@@ -135,6 +181,11 @@
-             this.recipesUsed.put(ResourceKey.create(Registries.RECIPE, ResourceLocation.parse(s)), nbttagcompound1.getInt(s));
+@@ -132,9 +178,18 @@
+         while (iterator.hasNext()) {
+             String s = (String) iterator.next();
+ 
+-            this.recipesUsed.put(ResourceKey.create(Registries.RECIPE, ResourceLocation.parse(s)), nbttagcompound1.getInt(s));
++            // Paper start - Validate ResourceLocation
++            final ResourceLocation resourceLocation = ResourceLocation.tryParse(s);
++            if (resourceLocation != null) {
++                this.recipesUsed.put(ResourceKey.create(Registries.RECIPE, resourceLocation), nbttagcompound1.getInt(s));
++            }
          }
  
 +        // Paper start - cook speed multiplier API
@@ -92,7 +100,7 @@
      }
  
      @Override
-@@ -144,6 +195,7 @@
+@@ -144,6 +199,7 @@
          nbt.putShort("cooking_total_time", (short) this.cookingTotalTime);
          nbt.putShort("lit_time_remaining", (short) this.litTimeRemaining);
          nbt.putShort("lit_total_time", (short) this.litTotalTime);
@@ -100,7 +108,7 @@
          ContainerHelper.saveAllItems(nbt, this.items, registries);
          CompoundTag nbttagcompound1 = new CompoundTag();
  
-@@ -175,7 +227,7 @@
+@@ -175,7 +231,7 @@
              RecipeHolder recipeholder;
  
              if (flag2) {
@@ -109,7 +117,7 @@
              } else {
                  recipeholder = null;
              }
-@@ -183,11 +235,22 @@
+@@ -183,11 +239,22 @@
              int i = blockEntity.getMaxStackSize();
  
              if (!blockEntity.isLit() && AbstractFurnaceBlockEntity.canBurn(world.registryAccess(), recipeholder, singlerecipeinput, blockEntity.items, i)) {
@@ -135,7 +143,7 @@
                          Item item = itemstack.getItem();
  
                          itemstack.shrink(1);
-@@ -199,11 +262,23 @@
+@@ -199,11 +266,23 @@
              }
  
              if (blockEntity.isLit() && AbstractFurnaceBlockEntity.canBurn(world.registryAccess(), recipeholder, singlerecipeinput, blockEntity.items, i)) {
@@ -162,7 +170,7 @@
                          blockEntity.setRecipeUsed(recipeholder);
                      }
  
-@@ -242,20 +317,47 @@
+@@ -242,20 +321,47 @@
          }
      }
  
@@ -176,11 +184,11 @@
 +            ItemStack itemstack = (ItemStack) nonnulllist.get(0);
 +            ItemStack itemstack1 = ((AbstractCookingRecipe) recipeholder.value()).assemble(singlerecipeinput, iregistrycustom);
 +            ItemStack itemstack2 = (ItemStack) nonnulllist.get(2);
-+
+ 
 +            // CraftBukkit start - fire FurnaceSmeltEvent
 +            CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
 +            org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
- 
++
 +            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(CraftBlock.at(world, blockposition), source, result, (org.bukkit.inventory.CookingRecipe<?>) recipeholder.toBukkitRecipe()); // Paper - Add recipe to cook events
 +            world.getCraftServer().getPluginManager().callEvent(furnaceSmeltEvent);
 +
@@ -218,7 +226,7 @@
              }
  
              itemstack.shrink(1);
-@@ -269,12 +371,14 @@
+@@ -269,12 +375,14 @@
          return fuelRegistry.burnDuration(stack);
      }
  
@@ -237,7 +245,7 @@
      }
  
      @Override
-@@ -320,12 +424,11 @@
+@@ -320,12 +428,11 @@
              if (world instanceof ServerLevel) {
                  ServerLevel worldserver = (ServerLevel) world;
  
@@ -251,7 +259,7 @@
      }
  
      @Override
-@@ -358,19 +461,19 @@
+@@ -358,19 +465,19 @@
      }
  
      @Override
@@ -276,7 +284,7 @@
              }
          }
  
-@@ -378,41 +481,56 @@
+@@ -378,41 +485,56 @@
      }
  
      public List<RecipeHolder<?>> getRecipesToAwardAndPopExperience(ServerLevel world, Vec3 pos) {

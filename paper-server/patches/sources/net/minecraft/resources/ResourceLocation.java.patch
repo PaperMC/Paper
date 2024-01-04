@@ -8,7 +8,21 @@
      private final String namespace;
      private final String path;
  
-@@ -246,7 +247,7 @@
+@@ -40,6 +41,13 @@
+ 
+         assert isValidPath(path);
+ 
++        // Paper start - Validate ResourceLocation
++        // Check for the max network string length (capped at Short.MAX_VALUE) as well as the max bytes of a StringTag (length written as an unsigned short)
++        final String resourceLocation = namespace + ":" + path;
++        if (resourceLocation.length() > Short.MAX_VALUE || io.netty.buffer.ByteBufUtil.utf8MaxBytes(resourceLocation) > 2 * Short.MAX_VALUE + 1) {
++            throw new ResourceLocationException("Resource location too long: " + resourceLocation);
++        }
++        // Paper end - Validate ResourceLocation
+         this.namespace = namespace;
+         this.path = path;
+     }
+@@ -246,7 +254,7 @@
  
      private static String assertValidNamespace(String namespace, String path) {
          if (!isValidNamespace(namespace)) {
@@ -17,7 +31,7 @@
          } else {
              return namespace;
          }
-@@ -267,7 +268,7 @@
+@@ -267,7 +275,7 @@
  
      private static String assertValidPath(String namespace, String path) {
          if (!isValidPath(path)) {
