@@ -5,7 +5,7 @@ Subject: [PATCH] Paper Plugins
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 7fbb782ccf17e581a759429ffac6db608c08e3cf..1f4053ce50673585c27494a3c23f6acd119875db 100644
+index ea121fd0ea193410c3e44cf097a10a6d53d5bcbd..863833e05e2363b2e4ba4937f96ecbeac03a1ede 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -52,7 +52,7 @@ dependencies {
@@ -762,10 +762,10 @@ index 0000000000000000000000000000000000000000..e3da0d67cab01e1233dccde1a12ff259
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/library/impl/MavenLibraryResolver.java b/src/main/java/io/papermc/paper/plugin/loader/library/impl/MavenLibraryResolver.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9af07d168beadaa77e4965819200eeb94fe3e092
+index 0000000000000000000000000000000000000000..70f352630de71f575d1aea5a3126da19a94791ab
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/loader/library/impl/MavenLibraryResolver.java
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,133 @@
 +package io.papermc.paper.plugin.loader.library.impl;
 +
 +import io.papermc.paper.plugin.loader.library.ClassPathLibrary;
@@ -841,6 +841,7 @@ index 0000000000000000000000000000000000000000..9af07d168beadaa77e4965819200eeb9
 +        this.repository = locator.getService(RepositorySystem.class);
 +        this.session = MavenRepositorySystemUtils.newSession();
 +
++        this.session.setSystemProperties(System.getProperties());
 +        this.session.setChecksumPolicy(RepositoryPolicy.CHECKSUM_POLICY_FAIL);
 +        this.session.setLocalRepositoryManager(this.repository.newLocalRepositoryManager(this.session, new LocalRepository("libraries")));
 +        this.session.setTransferListener(new AbstractTransferListener() {
@@ -2054,7 +2055,7 @@ index 047c0304fd617cec990f80815b43916c6ef5a94c..ab04ffe4cd05315a2ee0f64c553b4c67
              throw ex;
          } catch (Throwable ex) {
 diff --git a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
-index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..e4b6f278a811acbb0070e311c5c3bdaff7b00474 100644
+index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..653135352c104a6ddeb74a1b6d4916c6952d6271 100644
 --- a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
 @@ -36,7 +36,10 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
@@ -2069,7 +2070,15 @@ index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..e4b6f278a811acbb0070e311c5c3bdaf
  {
  
      private final Logger logger;
-@@ -79,7 +82,7 @@ class LibraryLoader
+@@ -55,6 +58,7 @@ class LibraryLoader
+         this.repository = locator.getService( RepositorySystem.class );
+         this.session = MavenRepositorySystemUtils.newSession();
+ 
++        session.setSystemProperties(System.getProperties()); // Paper - paper plugins, backport system properties fix for transitive dependency parsing, see #10116
+         session.setChecksumPolicy( RepositoryPolicy.CHECKSUM_POLICY_FAIL );
+         session.setLocalRepositoryManager( repository.newLocalRepositoryManager( session, new LocalRepository( "libraries" ) ) );
+         session.setTransferListener( new AbstractTransferListener()
+@@ -79,7 +83,7 @@ class LibraryLoader
          }
          logger.log( Level.INFO, "[{0}] Loading {1} libraries... please wait", new Object[]
          {
@@ -2078,7 +2087,7 @@ index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..e4b6f278a811acbb0070e311c5c3bdaf
          } );
  
          List<Dependency> dependencies = new ArrayList<>();
-@@ -117,7 +120,7 @@ class LibraryLoader
+@@ -117,7 +121,7 @@ class LibraryLoader
              jarFiles.add( url );
              logger.log( Level.INFO, "[{0}] Loaded library {1}", new Object[]
              {
