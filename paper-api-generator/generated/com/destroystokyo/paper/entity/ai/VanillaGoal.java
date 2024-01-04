@@ -199,20 +199,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Blaze> BLAZE_ATTACK = create("blaze_attack", Blaze.class);
 
     /**
-     * net.minecraft.world.entity.ai.goal.CatLieOnBedGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Cat> CAT_LIE_ON_BED = create("cat_lie_on_bed", Cat.class);
-
-    /**
-     * net.minecraft.world.entity.ai.goal.CatSitOnBlockGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Cat> CAT_SIT_ON_BLOCK = create("cat_sit_on_block", Cat.class);
-
-    /**
      * net.minecraft.world.entity.animal.Cat$CatAvoidEntityGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -220,11 +206,25 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Cat> CAT_AVOID_ENTITY = create("cat_avoid_entity", Cat.class);
 
     /**
+     * net.minecraft.world.entity.ai.goal.CatLieOnBedGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Cat> CAT_LIE_ON_BED = create("cat_lie_on_bed", Cat.class);
+
+    /**
      * net.minecraft.world.entity.animal.Cat$CatRelaxOnOwnerGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Cat> CAT_RELAX_ON_OWNER = create("cat_relax_on_owner", Cat.class);
+
+    /**
+     * net.minecraft.world.entity.ai.goal.CatSitOnBlockGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Cat> CAT_SIT_ON_BLOCK = create("cat_sit_on_block", Cat.class);
 
     /**
      * net.minecraft.world.entity.animal.Cat$CatTemptGoal
@@ -248,6 +248,13 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Creature> BREATH_AIR = create("breath_air", Creature.class);
 
     /**
+     * net.minecraft.world.entity.monster.Drowned$DrownedGoToWaterGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Creature> DROWNED_GO_TO_WATER = create("drowned_go_to_water", Creature.class);
+
+    /**
      * net.minecraft.world.entity.ai.goal.FleeSunGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -267,6 +274,13 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Creature> GOLEM_RANDOM_STROLL_IN_VILLAGE = create("golem_random_stroll_in_village", Creature.class);
+
+    /**
+     * net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Creature> HURT_BY = create("hurt_by", Creature.class);
 
     /**
      * net.minecraft.world.entity.ai.goal.MeleeAttackGoal
@@ -290,13 +304,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Creature> MOVE_THROUGH_VILLAGE = create("move_through_village", Creature.class);
 
     /**
-     * net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Creature> MOVE_TOWARDS_RESTRICTION = create("move_towards_restriction", Creature.class);
-
-    /**
      * net.minecraft.world.entity.ai.goal.MoveTowardsTargetGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -304,11 +311,25 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Creature> MOVE_TOWARDS = create("move_towards", Creature.class);
 
     /**
+     * net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Creature> MOVE_TOWARDS_RESTRICTION = create("move_towards_restriction", Creature.class);
+
+    /**
      * net.minecraft.world.entity.ai.goal.PanicGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Creature> PANIC = create("panic", Creature.class);
+
+    /**
+     * net.minecraft.world.entity.animal.Parrot$ParrotWanderGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Creature> PARROT_WANDER = create("parrot_wander", Creature.class);
 
     /**
      * net.minecraft.world.entity.ai.goal.RandomStrollGoal
@@ -372,27 +393,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Creature> WATER_AVOIDING_RANDOM_STROLL = create("water_avoiding_random_stroll", Creature.class);
-
-    /**
-     * net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Creature> HURT_BY = create("hurt_by", Creature.class);
-
-    /**
-     * net.minecraft.world.entity.animal.Parrot$ParrotWanderGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Creature> PARROT_WANDER = create("parrot_wander", Creature.class);
-
-    /**
-     * net.minecraft.world.entity.monster.Drowned$DrownedGoToWaterGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Creature> DROWNED_GO_TO_WATER = create("drowned_go_to_water", Creature.class);
 
     /**
      * net.minecraft.world.entity.ai.goal.SwellGoal
@@ -675,13 +675,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Illusioner> ILLUSIONER_MIRROR_SPELL = create("illusioner_mirror_spell", Illusioner.class);
 
     /**
-     * net.minecraft.world.entity.ai.goal.OfferFlowerGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<IronGolem> OFFER_FLOWER = create("offer_flower", IronGolem.class);
-
-    /**
      * net.minecraft.world.entity.ai.goal.target.DefendVillageTargetGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -689,11 +682,11 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<IronGolem> DEFEND_VILLAGE = create("defend_village", IronGolem.class);
 
     /**
-     * net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal
+     * net.minecraft.world.entity.ai.goal.OfferFlowerGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    GoalKey<Llama> LLAMA_FOLLOW_CARAVAN = create("llama_follow_caravan", Llama.class);
+    GoalKey<IronGolem> OFFER_FLOWER = create("offer_flower", IronGolem.class);
 
     /**
      * net.minecraft.world.entity.animal.horse.Llama$LlamaAttackWolfGoal
@@ -701,6 +694,13 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Llama> LLAMA_ATTACK_WOLF = create("llama_attack_wolf", Llama.class);
+
+    /**
+     * net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Llama> LLAMA_FOLLOW_CARAVAN = create("llama_follow_caravan", Llama.class);
 
     /**
      * net.minecraft.world.entity.animal.horse.Llama$LlamaHurtByTargetGoal
@@ -773,6 +773,13 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Mob> LOOK_AT_PLAYER = create("look_at_player", Mob.class);
 
     /**
+     * net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Mob> NEAREST_ATTACKABLE = create("nearest_attackable", Mob.class);
+
+    /**
      * net.minecraft.world.entity.ai.goal.OcelotAttackGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -794,25 +801,18 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Mob> RANDOM_LOOK_AROUND = create("random_look_around", Mob.class);
 
     /**
-     * net.minecraft.world.entity.ai.goal.UseItemGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Mob> USE_ITEM = create("use_item", Mob.class);
-
-    /**
-     * net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Mob> NEAREST_ATTACKABLE = create("nearest_attackable", Mob.class);
-
-    /**
      * net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Mob> RESET_UNIVERSAL_ANGER = create("reset_universal_anger", Mob.class);
+
+    /**
+     * net.minecraft.world.entity.ai.goal.UseItemGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Mob> USE_ITEM = create("use_item", Mob.class);
 
     /**
      * net.minecraft.world.entity.monster.Vindicator$VindicatorBreakDoorGoal
@@ -1011,11 +1011,18 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Rabbit> RAID_GARDEN = create("raid_garden", Rabbit.class);
 
     /**
-     * net.minecraft.world.entity.ai.goal.PathfindToRaidGoal
+     * net.minecraft.world.entity.raid.Raider$HoldGroundAttackGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    GoalKey<Raider> PATHFIND_TO_RAID = create("pathfind_to_raid", Raider.class);
+    GoalKey<Raider> HOLD_GROUND_ATTACK = create("hold_ground_attack", Raider.class);
+
+    /**
+     * net.minecraft.world.entity.monster.PatrollingMonster$LongDistancePatrolGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Raider> LONG_DISTANCE_PATROL = create("long_distance_patrol", Raider.class);
 
     /**
      * net.minecraft.world.entity.ai.goal.target.NearestAttackableWitchTargetGoal
@@ -1032,25 +1039,18 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Raider> NEAREST_HEALABLE_RAIDER = create("nearest_healable_raider", Raider.class);
 
     /**
-     * net.minecraft.world.entity.monster.PatrollingMonster$LongDistancePatrolGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Raider> LONG_DISTANCE_PATROL = create("long_distance_patrol", Raider.class);
-
-    /**
-     * net.minecraft.world.entity.raid.Raider$HoldGroundAttackGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Raider> HOLD_GROUND_ATTACK = create("hold_ground_attack", Raider.class);
-
-    /**
      * net.minecraft.world.entity.raid.Raider$ObtainRaidLeaderBannerGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Raider> OBTAIN_RAID_LEADER_BANNER = create("obtain_raid_leader_banner", Raider.class);
+
+    /**
+     * net.minecraft.world.entity.ai.goal.PathfindToRaidGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Raider> PATHFIND_TO_RAID = create("pathfind_to_raid", Raider.class);
 
     /**
      * net.minecraft.world.entity.raid.Raider$RaiderCelebration
@@ -1067,18 +1067,18 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Raider> RAIDER_MOVE_THROUGH_VILLAGE = create("raider_move_through_village", Raider.class);
 
     /**
-     * net.minecraft.world.entity.ai.goal.RangedAttackGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<RangedEntity> RANGED_ATTACK = create("ranged_attack", RangedEntity.class);
-
-    /**
      * net.minecraft.world.entity.monster.Drowned$DrownedTridentAttackGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<RangedEntity> DROWNED_TRIDENT_ATTACK = create("drowned_trident_attack", RangedEntity.class);
+
+    /**
+     * net.minecraft.world.entity.ai.goal.RangedAttackGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<RangedEntity> RANGED_ATTACK = create("ranged_attack", RangedEntity.class);
 
     /**
      * net.minecraft.world.entity.ai.goal.FollowFlockLeaderGoal
@@ -1172,18 +1172,18 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Spellcaster> SPELLCASTER_CASTING_SPELL = create("spellcaster_casting_spell", Spellcaster.class);
 
     /**
-     * net.minecraft.world.entity.monster.Spider$SpiderAttackGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Spider> SPIDER_ATTACK = create("spider_attack", Spider.class);
-
-    /**
      * net.minecraft.world.entity.monster.Spider$SpiderTargetGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Spider> SPIDER = create("spider", Spider.class);
+
+    /**
+     * net.minecraft.world.entity.monster.Spider$SpiderAttackGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Spider> SPIDER_ATTACK = create("spider_attack", Spider.class);
 
     /**
      * net.minecraft.world.entity.animal.Squid$SquidFleeGoal
@@ -1214,18 +1214,18 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Tameable> FOLLOW_OWNER = create("follow_owner", Tameable.class);
 
     /**
-     * net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    GoalKey<Tameable> SIT_WHEN_ORDERED_TO = create("sit_when_ordered_to", Tameable.class);
-
-    /**
      * net.minecraft.world.entity.ai.goal.target.NonTameRandomTargetGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     GoalKey<Tameable> NON_TAME_RANDOM = create("non_tame_random", Tameable.class);
+
+    /**
+     * net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    GoalKey<Tameable> OWNER_HURT = create("owner_hurt", Tameable.class);
 
     /**
      * net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal
@@ -1235,11 +1235,11 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Tameable> OWNER_HURT_BY = create("owner_hurt_by", Tameable.class);
 
     /**
-     * net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal
+     * net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    GoalKey<Tameable> OWNER_HURT = create("owner_hurt", Tameable.class);
+    GoalKey<Tameable> SIT_WHEN_ORDERED_TO = create("sit_when_ordered_to", Tameable.class);
 
     /**
      * net.minecraft.world.entity.animal.Turtle$TurtleBreedGoal

@@ -19,9 +19,15 @@ import io.papermc.generator.utils.Annotations;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.generator.utils.Javadocs;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.lang.model.element.Modifier;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Blaze;
@@ -196,10 +202,12 @@ public class MobGoalGenerator extends SimpleGenerator {
 
         List<VanillaGoalKey> vanillaNames = classes.stream()
             .filter(clazz -> !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers()))
-            .filter(clazz -> !net.minecraft.world.entity.ai.goal.WrappedGoal.class.equals(clazz)) // TODO - properly fix
+            .filter(clazz -> !WrappedGoal.class.equals(clazz)) // TODO - properly fix
             .map(goalClass -> new VanillaGoalKey(goalClass, MobGoalNames.getKey(goalClass.getName(), (Class<? extends Goal>) goalClass)))
             .filter((key) -> !MobGoalNames.isIgnored(key.key().getNamespacedKey().getKey()))
-            .sorted(Comparator.comparing(o -> o.key().getEntityClass().getSimpleName()))
+            .sorted(Comparator.<VanillaGoalKey, String>comparing(o -> o.key().getEntityClass().getSimpleName())
+                .thenComparing(vanillaGoalKey -> vanillaGoalKey.key.getNamespacedKey().getKey())
+            )
             .toList();
 
 
