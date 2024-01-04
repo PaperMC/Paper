@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Thu, 4 Jan 2024 13:49:14 +0100
+Subject: [PATCH] Validate ResourceLocation in NBT reading
+
+
+diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
+index 18fad4f083862ace2bc56579883f548f6d697091..80083fed4b44b9d433925f09db83e559582109a1 100644
+--- a/src/main/java/net/minecraft/nbt/NbtUtils.java
++++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
+@@ -230,8 +230,10 @@ public final class NbtUtils {
+         if (!nbt.contains("Name", 8)) {
+             return Blocks.AIR.defaultBlockState();
+         } else {
+-            ResourceLocation resourceLocation = new ResourceLocation(nbt.getString("Name"));
+-            Optional<? extends Holder<Block>> optional = blockLookup.get(ResourceKey.create(Registries.BLOCK, resourceLocation));
++            // Paper start - Validate resource location
++            ResourceLocation resourceLocation = ResourceLocation.tryParse(nbt.getString("Name"));
++            Optional<? extends Holder<Block>> optional = resourceLocation != null ? blockLookup.get(ResourceKey.create(Registries.BLOCK, resourceLocation)) : Optional.empty();
++            // Paper end
+             if (optional.isEmpty()) {
+                 return Blocks.AIR.defaultBlockState();
+             } else {
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index e0cf7771488ab0065708d68b4e8550b865af0ed4..a7fbd329ea6d36a46c00b4476c74e426dbbfe238 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -620,7 +620,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
+ 
+         this.setLeftHanded(nbt.getBoolean("LeftHanded"));
+         if (nbt.contains("DeathLootTable", 8)) {
+-            this.lootTable = new ResourceLocation(nbt.getString("DeathLootTable"));
++            this.lootTable = ResourceLocation.tryParse(nbt.getString("DeathLootTable")); // Paper - Validate ResourceLocation
+             this.lootTableSeed = nbt.getLong("DeathLootTableSeed");
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index 42ebd91196ae420eee57f4380abc558555457163..b61a367048c3d6dfef187fef35a5dc7471f891d0 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -560,7 +560,7 @@ public abstract class AbstractArrow extends Projectile {
+         this.setCritArrow(nbt.getBoolean("crit"));
+         this.setPierceLevel(nbt.getByte("PierceLevel"));
+         if (nbt.contains("SoundEvent", 8)) {
+-            this.soundEvent = (SoundEvent) BuiltInRegistries.SOUND_EVENT.getOptional(new ResourceLocation(nbt.getString("SoundEvent"))).orElse(this.getDefaultHitGroundSoundEvent());
++            this.soundEvent = (SoundEvent) BuiltInRegistries.SOUND_EVENT.getOptional(ResourceLocation.tryParse(nbt.getString("SoundEvent"))).orElse(this.getDefaultHitGroundSoundEvent()); // Paper - Validate resource location
+         }
+ 
+         this.setShotFromCrossbow(nbt.getBoolean("ShotFromCrossbow"));
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+index 7529751afa2932fd16bc4591189b0358268a7b14..e2e1c7a017e82dc7299e5cd1783818e4f0319c0b 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+@@ -67,7 +67,7 @@ public interface ContainerEntity extends Container, MenuProvider {
+     default void readChestVehicleSaveData(CompoundTag nbt) {
+         this.clearItemStacks();
+         if (nbt.contains("LootTable", 8)) {
+-            this.setLootTable(new ResourceLocation(nbt.getString("LootTable")));
++            this.setLootTable(ResourceLocation.tryParse(nbt.getString("LootTable"))); // Paper - Validate ResourceLocation
+             this.setLootTableSeed(nbt.getLong("LootTableSeed"));
+         }
+ 
