@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 5 Jan 2024 16:47:18 -0500
+Subject: [PATCH] Fix Mob Effect Visibility/Attributes syncing
+
+Currently, Minecraft waits a tick before syncing effect visiblity/glowing.
+This is noticeable when adding entities into the world with effects.
+So, this main logic moves the dirty effect logic into the actual updating logic.
+This causes effect visibility to be updated correctly.
+
+Additionally, mob effects are not correctly added when read from NBT due to their attributes not being applied.
+This is a problem for entities that have effects already added before being ticked for the first time.
+We also manually update effect visibility, causing glowing and invisibility to be correctly applied as well.
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index bc908b75cb99536df658281ae7f8b4eeedbbedc9..3a45051cde95fb0b76f2b57dea1d546b8fca8be8 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -831,9 +831,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+                 if (mobeffect != null) {
+                     this.activeEffects.put(mobeffect.getEffect(), mobeffect);
++                    mobeffect.getEffect().addAttributeModifiers(this.getAttributes(), mobeffect.getAmplifier()); // Paper
+                 }
+             }
+         }
++        this.updateEffectVisibility(); // Paper
+ 
+         // CraftBukkit start
+         if (nbt.contains("Bukkit.MaxHealth")) {
+@@ -947,14 +949,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         this.effectsToProcess.clear();
+         // CraftBukkit end
+ 
+-        if (this.effectsDirty) {
+-            if (!this.level().isClientSide) {
+-                this.updateInvisibilityStatus();
+-                this.updateGlowingStatus();
+-            }
+-
+-            this.effectsDirty = false;
+-        }
++        this.updateEffectVisibilityIfDirty(); // Paper -- Move diff down
+ 
+         int i = (Integer) this.entityData.get(LivingEntity.DATA_EFFECT_COLOR_ID);
+         boolean flag = (Boolean) this.entityData.get(LivingEntity.DATA_EFFECT_AMBIENCE_ID);
+@@ -1255,7 +1250,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     protected void onEffectAdded(MobEffectInstance effect, @Nullable Entity source) {
+-        this.effectsDirty = true;
++        this.updateEffectVisibility(); // Paper -- Resync effects right away
+         if (!this.level().isClientSide) {
+             effect.getEffect().addAttributeModifiers(this.getAttributes(), effect.getAmplifier());
+             this.sendEffectToPassengers(effect);
+@@ -1279,7 +1274,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     protected void onEffectUpdated(MobEffectInstance effect, boolean reapplyEffect, @Nullable Entity source) {
+-        this.effectsDirty = true;
++        this.updateEffectVisibility(); // Paper
+         if (reapplyEffect && !this.level().isClientSide) {
+             MobEffect mobeffectlist = effect.getEffect();
+ 
+@@ -1295,7 +1290,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     protected void onEffectRemoved(MobEffectInstance effect) {
+-        this.effectsDirty = true;
++        this.updateEffectVisibility(); // Paper
+         if (!this.level().isClientSide) {
+             effect.getEffect().removeAttributeModifiers(this.getAttributes());
+             this.refreshDirtyAttributes();
+@@ -3809,7 +3804,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+     protected void updateEffectVisibility() {
+         this.effectsDirty = true;
++        this.updateEffectVisibilityIfDirty(); // Paper
+     }
++    // Paper start -- Move effect sync to separate method
++    protected void updateEffectVisibilityIfDirty() {
++        if (this.effectsDirty) {
++            if (!this.level().isClientSide) {
++                this.updateInvisibilityStatus();
++                this.updateGlowingStatus();
++            }
++
++            this.effectsDirty = false;
++        }
++    }
++    // Paper end
+ 
+     public abstract HumanoidArm getMainArm();
+ 
