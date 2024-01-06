@@ -1,0 +1,144 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 22 Oct 2021 16:25:07 -0700
+Subject: [PATCH] Add exploded block state to BlockExplodeEvent and
+ EntityDamageByBlockEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSource.java b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
+index 1a0f86b5a632469942e33c237c247d2d1dee4a3d..25a5a3b949a0eb632611355e74ccd4865be108ca 100644
+--- a/src/main/java/net/minecraft/world/damagesource/DamageSource.java
++++ b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
+@@ -52,6 +52,7 @@ public class DamageSource {
+         return this;
+     }
+     // CraftBukkit end
++    public @Nullable org.bukkit.block.BlockState explodedBlockState; // Paper - add exploded state
+ 
+     public String toString() {
+         return "DamageSource (" + this.type().msgId() + ")";
+diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSources.java b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
+index 8bde8c581796ed11809b80b9a30a33df86116745..4604f8b38460e9113e966889a679d4547f24aff6 100644
+--- a/src/main/java/net/minecraft/world/damagesource/DamageSources.java
++++ b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
+@@ -247,8 +247,17 @@ public class DamageSources {
+         return this.source(DamageTypes.SONIC_BOOM, attacker);
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+     public DamageSource badRespawnPointExplosion(Vec3 position) {
+-        return new DamageSource(this.damageTypes.getHolderOrThrow(DamageTypes.BAD_RESPAWN_POINT), position);
++        // Paper start
++        return this.badRespawnPointExplosion(position, null);
++    }
++
++    public DamageSource badRespawnPointExplosion(Vec3 position, @Nullable org.bukkit.block.BlockState explodedBlockState) {
++        DamageSource source = new DamageSource(this.damageTypes.getHolderOrThrow(DamageTypes.BAD_RESPAWN_POINT), position);
++        source.explodedBlockState = explodedBlockState;
++        return source;
++        // Paper end
+     }
+ 
+     public DamageSource outOfBorder() {
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 5a2e322d349340fa58f133c2034765f90319b2be..dbe679bb81a903668262cdf629469e971b49e088 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -368,7 +368,7 @@ public class Explosion {
+                 bukkitBlocks = event.blockList();
+                 this.yield = event.getYield();
+             } else {
+-                BlockExplodeEvent event = new BlockExplodeEvent(location.getBlock(), blockList, this.yield);
++                BlockExplodeEvent event = new BlockExplodeEvent(location.getBlock(), blockList, this.yield, this.damageSource.explodedBlockState); // Paper - exploded block state
+                 this.level.getCraftServer().getPluginManager().callEvent(event);
+                 this.wasCanceled = event.isCancelled();
+                 bukkitBlocks = event.blockList();
+diff --git a/src/main/java/net/minecraft/world/level/block/BedBlock.java b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+index 0e63fa3b49b1a275254cf108a51ab18e816aad49..2deb0d861a5f66d177068f37dd56da5cf692633e 100644
+--- a/src/main/java/net/minecraft/world/level/block/BedBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+@@ -96,6 +96,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+ 
+             // CraftBukkit - moved world and biome check into EntityHuman
+             if (false && !BedBlock.canSetSpawn(world)) {
++                final org.bukkit.block.BlockState explodedBlockState = org.bukkit.craftbukkit.block.CraftBlockStates.getUnplacedBlockState(world, pos, state); // Paper - exploded block state (this won't be called due to the false, but it's good for reference)
+                 world.removeBlock(pos, false);
+                 BlockPos blockposition1 = pos.relative(((Direction) state.getValue(BedBlock.FACING)).getOpposite());
+ 
+@@ -105,7 +106,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+ 
+                 Vec3 vec3d = pos.getCenter();
+ 
+-                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
++                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+                 return InteractionResult.SUCCESS;
+             } else if ((Boolean) state.getValue(BedBlock.OCCUPIED)) {
+                 if (!this.kickVillagerOutOfBed(world, pos)) {
+@@ -147,6 +148,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+     private InteractionResult explodeBed(BlockState iblockdata, Level world, BlockPos blockposition) {
+         {
+             {
++                final org.bukkit.block.BlockState explodedBlockState = org.bukkit.craftbukkit.block.CraftBlockStates.getUnplacedBlockState(world, blockposition, iblockdata); // Paper - exploded block state
+                 world.removeBlock(blockposition, false);
+                 BlockPos blockposition1 = blockposition.relative(((Direction) iblockdata.getValue(BedBlock.FACING)).getOpposite());
+ 
+@@ -156,7 +158,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+ 
+                 Vec3 vec3d = blockposition.getCenter();
+ 
+-                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
++                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+                 return InteractionResult.SUCCESS;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
+index c83ffba568f33323b0f8b9a03fa0b7bbbfed4355..797ece59c10bdb60a86f71ca3b7bb95dbe0f1078 100644
+--- a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
+@@ -131,6 +131,7 @@ public class RespawnAnchorBlock extends Block {
+     }
+ 
+     private void explode(BlockState state, Level world, final BlockPos explodedPos) {
++        final org.bukkit.block.BlockState explodedBlockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(explodedPos, state, null); // Paper - exploded block state
+         world.removeBlock(explodedPos, false);
+         Stream<Direction> stream = Direction.Plane.HORIZONTAL.stream(); // CraftBukkit - decompile error
+ 
+@@ -147,7 +148,7 @@ public class RespawnAnchorBlock extends Block {
+         };
+         Vec3 vec3d = explodedPos.getCenter();
+ 
+-        world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d), explosiondamagecalculator, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
++        world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), explosiondamagecalculator, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // Paper
+     }
+ 
+     public static boolean canSetSpawn(Level world) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+index 000724a070f7f053c14cb53ecc45f0ee14454c53..9271ff2a9ea05569e3c81886399aa7ab47efb05d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+@@ -277,6 +277,12 @@ public final class CraftBlockStates {
+         BlockEntity tileEntity = (blockEntityTag == null) ? null : BlockEntity.loadStatic(blockPosition, blockData, blockEntityTag);
+         return CraftBlockStates.getBlockState(null, blockPosition, blockData, tileEntity);
+     }
++    // Paper start
++    public static BlockState getUnplacedBlockState(net.minecraft.world.level.BlockGetter levelAccessor, BlockPos blockPos, net.minecraft.world.level.block.state.BlockState blockData) {
++        BlockEntity tileEntity = levelAccessor.getBlockEntity(blockPos);
++        return CraftBlockStates.getBlockState(null, blockPos, blockData, tileEntity);
++    }
++    // Paper end
+ 
+     // See BlockStateFactory#createBlockState(World, BlockPosition, IBlockData, TileEntity)
+     private static CraftBlockState getBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index d51bcd5ccda9e923f0e259c187b9f349df974dfb..a6ccc177a3435d807dd6be3bdfca7f016c094158 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1045,7 +1045,7 @@ public class CraftEventFactory {
+             CraftEventFactory.entityDamage = null;
+             EntityDamageEvent event;
+             if (damager == null) {
+-                event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.BLOCK_EXPLOSION, modifiers, modifierFunctions);
++                event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.BLOCK_EXPLOSION, modifiers, modifierFunctions, source.explodedBlockState); // Paper - handle block state in damage
+             } else if (entity instanceof EnderDragon && /*PAIL FIXME ((EntityEnderDragon) entity).target == damager*/ false) {
+                 event = new EntityDamageEvent(entity.getBukkitEntity(), DamageCause.ENTITY_EXPLOSION, modifiers, modifierFunctions);
+             } else {
