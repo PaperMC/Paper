@@ -7,27 +7,31 @@ import org.bukkit.inventory.meta.tags.ItemTagType;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
-public final class DeprecatedContainerTagType<Z> implements PersistentDataType<PersistentDataContainer, Z> {
+public final class DeprecatedContainerTagType<C> implements PersistentDataType<PersistentDataContainer, C> {
 
-    private final ItemTagType<CustomItemTagContainer, Z> deprecated;
+    private final ItemTagType<CustomItemTagContainer, C> deprecated;
 
-    DeprecatedContainerTagType(ItemTagType<CustomItemTagContainer, Z> deprecated) {
+    DeprecatedContainerTagType(ItemTagType<CustomItemTagContainer, C> deprecated) {
         this.deprecated = deprecated;
     }
 
+    @NotNull
     @Override
     public Class<PersistentDataContainer> getPrimitiveType() {
         return PersistentDataContainer.class;
     }
 
+    @NotNull
     @Override
-    public Class<Z> getComplexType() {
+    public Class<C> getComplexType() {
         return deprecated.getComplexType();
     }
 
+    @NotNull
     @Override
-    public PersistentDataContainer toPrimitive(Z complex, PersistentDataAdapterContext context) {
+    public PersistentDataContainer toPrimitive(@NotNull C complex, @NotNull PersistentDataAdapterContext context) {
         CustomItemTagContainer deprecated = this.deprecated.toPrimitive(complex, new DeprecatedItemAdapterContext(context));
         Preconditions.checkArgument(deprecated instanceof DeprecatedCustomTagContainer, "Could not wrap deprecated API due to foreign CustomItemTagContainer implementation %s", deprecated.getClass().getSimpleName());
 
@@ -39,8 +43,9 @@ public final class DeprecatedContainerTagType<Z> implements PersistentDataType<P
         return new CraftPersistentDataContainer(craftTagContainer.getRaw(), craftTagContainer.getDataTagTypeRegistry());
     }
 
+    @NotNull
     @Override
-    public Z fromPrimitive(PersistentDataContainer primitive, PersistentDataAdapterContext context) {
+    public C fromPrimitive(@NotNull PersistentDataContainer primitive, @NotNull PersistentDataAdapterContext context) {
         Preconditions.checkArgument(primitive instanceof CraftPersistentDataContainer, "Could not wrap deprecated API due to foreign PersistentMetadataContainer implementation %s", primitive.getClass().getSimpleName());
 
         return this.deprecated.fromPrimitive(new DeprecatedCustomTagContainer(primitive), new DeprecatedItemAdapterContext(context));

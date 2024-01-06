@@ -5,6 +5,7 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A child class of the persistent data container that recalls if it has been
@@ -31,13 +32,13 @@ public final class DirtyCraftPersistentDataContainer extends CraftPersistentData
     }
 
     @Override
-    public <T, Z> void set(NamespacedKey key, PersistentDataType<T, Z> type, Z value) {
+    public <T, Z> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
         super.set(key, type, value);
         this.dirty(true);
     }
 
     @Override
-    public void remove(NamespacedKey key) {
+    public void remove(@NotNull NamespacedKey key) {
         super.remove(key);
         this.dirty(true);
     }

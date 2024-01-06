@@ -14,6 +14,7 @@ import org.bukkit.craftbukkit.util.CraftNBTTagConfigSerializer;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftPersistentDataContainer implements PersistentDataContainer {
 
@@ -33,16 +34,16 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
 
 
     @Override
-    public <T, Z> void set(NamespacedKey key, PersistentDataType<T, Z> type, Z value) {
+    public <T, Z> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
         Preconditions.checkArgument(type != null, "The provided type cannot be null");
         Preconditions.checkArgument(value != null, "The provided value cannot be null");
 
-        this.customDataTags.put(key.toString(), registry.wrap(type.getPrimitiveType(), type.toPrimitive(value, adapterContext)));
+        this.customDataTags.put(key.toString(), this.registry.wrap(type, type.toPrimitive(value, adapterContext)));
     }
 
     @Override
-    public <T, Z> boolean has(NamespacedKey key, PersistentDataType<T, Z> type) {
+    public <T, Z> boolean has(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type) {
         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
         Preconditions.checkArgument(type != null, "The provided type cannot be null");
 
@@ -51,7 +52,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
             return false;
         }
 
-        return registry.isInstanceOf(type.getPrimitiveType(), value);
+        return this.registry.isInstanceOf(type, value);
     }
 
     @Override
@@ -60,7 +61,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
     }
 
     @Override
-    public <T, Z> Z get(NamespacedKey key, PersistentDataType<T, Z> type) {
+    public <T, Z> Z get(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type) {
         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
         Preconditions.checkArgument(type != null, "The provided type cannot be null");
 
@@ -69,15 +70,17 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
             return null;
         }
 
-        return type.fromPrimitive(registry.extract(type.getPrimitiveType(), value), adapterContext);
+        return type.fromPrimitive(this.registry.extract(type, value), adapterContext);
     }
 
+    @NotNull
     @Override
-    public <T, Z> Z getOrDefault(NamespacedKey key, PersistentDataType<T, Z> type, Z defaultValue) {
-        Z z = get(key, type);
+    public <T, Z> Z getOrDefault(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z defaultValue) {
+        Z z = this.get(key, type);
         return z != null ? z : defaultValue;
     }
 
+    @NotNull
     @Override
     public Set<NamespacedKey> getKeys() {
         Set<NamespacedKey> keys = new HashSet<>();
@@ -93,7 +96,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
     }
 
     @Override
-    public void remove(NamespacedKey key) {
+    public void remove(@NotNull NamespacedKey key) {
         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
 
         this.customDataTags.remove(key.toString());
@@ -104,6 +107,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
         return this.customDataTags.isEmpty();
     }
 
+    @NotNull
     @Override
     public void copyTo(PersistentDataContainer other, boolean replace) {
         Preconditions.checkArgument(other != null, "The target container cannot be null");
@@ -127,7 +131,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
             return false;
         }
 
-        Map<String, NBTBase> myRawMap = getRaw();
+        Map<String, NBTBase> myRawMap = this.getRaw();
         Map<String, NBTBase> theirRawMap = ((CraftPersistentDataContainer) obj).getRaw();
 
         return Objects.equals(myRawMap, theirRawMap);
@@ -160,7 +164,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
     }
 
     public CraftPersistentDataTypeRegistry getDataTagTypeRegistry() {
-        return registry;
+        return this.registry;
     }
 
     @Override
