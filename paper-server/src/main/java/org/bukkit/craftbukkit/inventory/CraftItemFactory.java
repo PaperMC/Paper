@@ -489,13 +489,8 @@ public final class CraftItemFactory implements ItemFactory {
     private static ItemStack enchantItem(RandomSource source, ItemStack itemStack, int level, boolean allowTreasures) {
         Preconditions.checkArgument(itemStack != null, "ItemStack must not be null");
         Preconditions.checkArgument(!itemStack.getType().isAir(), "ItemStack must not be air");
-
-        if (!(itemStack instanceof CraftItemStack)) {
-            itemStack = CraftItemStack.asCraftCopy(itemStack);
-        }
-
+        itemStack = CraftItemStack.asCraftCopy(itemStack);
         CraftItemStack craft = (CraftItemStack) itemStack;
-        EnchantmentManager.enchantItem(source, craft.handle, level, allowTreasures);
-        return craft;
+        return CraftItemStack.asCraftMirror(EnchantmentManager.enchantItem(source, craft.handle, level, allowTreasures));
     }
 }
