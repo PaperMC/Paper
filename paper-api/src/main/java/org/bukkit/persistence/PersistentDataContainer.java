@@ -22,8 +22,8 @@ public interface PersistentDataContainer {
      * @param key the key this value will be stored under
      * @param type the type this tag uses
      * @param value the value to store in the tag
-     * @param <T> the generic java type of the tag value
-     * @param <Z> the generic type of the object to store
+     * @param <P> the generic java type of the tag value
+     * @param <C> the generic type of the object to store
      *
      * @throws IllegalArgumentException if the key is null
      * @throws IllegalArgumentException if the type is null
@@ -32,7 +32,7 @@ public interface PersistentDataContainer {
      * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
-    <T, Z> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value);
+    <P, C> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<P, C> type, @NotNull C value);
 
     /**
      * Returns if the persistent metadata provider has metadata registered
@@ -54,8 +54,8 @@ public interface PersistentDataContainer {
      *
      * @param key the key the value is stored under
      * @param type the type the primative stored value has to match
-     * @param <T> the generic type of the stored primitive
-     * @param <Z> the generic type of the eventually created complex object
+     * @param <P> the generic type of the stored primitive
+     * @param <C> the generic type of the eventually created complex object
      *
      * @return if a value with the provided key and type exists
      *
@@ -63,7 +63,7 @@ public interface PersistentDataContainer {
      * @throws IllegalArgumentException if the type to cast the found object to is
      * null
      */
-    <T, Z> boolean has(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type);
+    <P, C> boolean has(@NotNull NamespacedKey key, @NotNull PersistentDataType<P, C> type);
 
     /**
      * Returns if the persistent metadata provider has metadata registered matching
@@ -90,8 +90,8 @@ public interface PersistentDataContainer {
      *
      * @param key the key to look up in the custom tag map
      * @param type the type the value must have and will be casted to
-     * @param <T> the generic type of the stored primitive
-     * @param <Z> the generic type of the eventually created complex object
+     * @param <P> the generic type of the stored primitive
+     * @param <C> the generic type of the eventually created complex object
      *
      * @return the value or {@code null} if no value was mapped under the given
      * value
@@ -106,7 +106,7 @@ public interface PersistentDataContainer {
      * PersistentDataType#getPrimitiveType()}
      */
     @Nullable
-    <T, Z> Z get(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type);
+    <P, C> C get(@NotNull NamespacedKey key, @NotNull PersistentDataType<P, C> type);
 
     /**
      * Returns the metadata value that is stored on the
@@ -117,8 +117,8 @@ public interface PersistentDataContainer {
      * @param type the type the value must have and will be casted to
      * @param defaultValue the default value to return if no value was found for
      * the provided key
-     * @param <T> the generic type of the stored primitive
-     * @param <Z> the generic type of the eventually created complex object
+     * @param <P> the generic type of the stored primitive
+     * @param <C> the generic type of the eventually created complex object
      *
      * @return the value or the default value if no value was mapped under the
      * given key
@@ -132,7 +132,7 @@ public interface PersistentDataContainer {
      * the {@link PersistentDataType#getPrimitiveType()}
      */
     @NotNull
-    <T, Z> Z getOrDefault(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z defaultValue);
+    <P, C> C getOrDefault(@NotNull NamespacedKey key, @NotNull PersistentDataType<P, C> type, @NotNull C defaultValue);
 
     /**
      * Get the set of keys present on this {@link PersistentDataContainer}
