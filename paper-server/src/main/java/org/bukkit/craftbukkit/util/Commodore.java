@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -26,6 +27,8 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.ClassRemapper;
+import org.objectweb.asm.commons.SimpleRemapper;
 
 public class Commodore {
 
@@ -41,6 +44,10 @@ public class Commodore {
             "org/bukkit/inventory/ItemStack ()I getTypeId",
             "org/bukkit/inventory/ItemStack (I)V setTypeId"
     ));
+
+    private static final Map<String, String> RENAMES = Map.of(
+            "org/bukkit/entity/TextDisplay$TextAligment", "org/bukkit/entity/TextDisplay$TextAlignment" // SPIGOT-7335
+    );
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -108,7 +115,7 @@ public class Commodore {
         ClassReader cr = new ClassReader(b);
         ClassWriter cw = new ClassWriter(cr, 0);
 
-        cr.accept(new ClassVisitor(Opcodes.ASM9, cw) {
+        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                 return new MethodVisitor(api, super.visitMethod(access, name, desc, signature, exceptions)) {
@@ -170,12 +177,6 @@ public class Commodore {
                                     super.visitFieldInsn(opcode, owner, "ZOMBIFIED_PIGLIN", desc);
                                     return;
                             }
-                        }
-
-                        // SPIGOT-7335
-                        if (owner.equals("org/bukkit/entity/TextDisplay$TextAligment")) {
-                            super.visitFieldInsn(opcode, "org/bukkit/entity/TextDisplay$TextAlignment", name, desc);
-                            return;
                         }
 
                         if (modern) {
@@ -255,57 +256,43 @@ public class Commodore {
                         super.visitFieldInsn(opcode, owner, name, desc);
                     }
 
-                    @Override
-                    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+                    private void handleMethod(MethodPrinter visitor, int opcode, String owner, String name, String desc, boolean itf, Type samMethodType, Type instantiatedMethodType) {
                         // SPIGOT-4496
                         if (owner.equals("org/bukkit/map/MapView") && name.equals("getId") && desc.equals("()S")) {
                             // Should be same size on stack so just call other method
-                            super.visitMethodInsn(opcode, owner, name, "()I", itf);
+                            visitor.visit(opcode, owner, name, "()I", itf, samMethodType, Type.getMethodType("(Lorg/bukkit/map/MapView;)Ljava/lang/Integer;"));
                             return;
                         }
                         // SPIGOT-4608
                         if ((owner.equals("org/bukkit/Bukkit") || owner.equals("org/bukkit/Server")) && name.equals("getMap") && desc.equals("(S)Lorg/bukkit/map/MapView;")) {
                             // Should be same size on stack so just call other method
-                            super.visitMethodInsn(opcode, owner, name, "(I)Lorg/bukkit/map/MapView;", itf);
-                            return;
-                        }
-                        // SPIGOT-7335
-                        if (owner.equals("org/bukkit/entity/TextDisplay$TextAligment")) {
-                            super.visitMethodInsn(opcode, "org/bukkit/entity/TextDisplay$TextAlignment", name, desc, itf);
-                            return;
-                        }
-                        if (desc.equals("(Lorg/bukkit/entity/TextDisplay$TextAligment;)V")) {
-                            super.visitMethodInsn(opcode, owner, name, "(Lorg/bukkit/entity/TextDisplay$TextAlignment;)V", itf);
-                            return;
-                        }
-                        if (desc.equals("()Lorg/bukkit/entity/TextDisplay$TextAligment;")) {
-                            super.visitMethodInsn(opcode, owner, name, "()Lorg/bukkit/entity/TextDisplay$TextAlignment;", itf);
+                            visitor.visit(opcode, owner, name, "(I)Lorg/bukkit/map/MapView;", itf, samMethodType, instantiatedMethodType);
                             return;
                         }
 
                         if (owner.startsWith("org/bukkit") && desc.contains("org/bukkit/util/Consumer")) {
-                            super.visitMethodInsn(opcode, owner, name, desc.replace("org/bukkit/util/Consumer", "java/util/function/Consumer"), itf);
+                            visitor.visit(opcode, owner, name, desc.replace("org/bukkit/util/Consumer", "java/util/function/Consumer"), itf, samMethodType, instantiatedMethodType);
                             return;
                         }
 
                         if (modern) {
-                            if (owner.equals("org/bukkit/Material")) {
+                            if (owner.equals("org/bukkit/Material") || (instantiatedMethodType != null && instantiatedMethodType.getDescriptor().startsWith("(Lorg/bukkit/Material;)"))) {
                                 switch (name) {
                                     case "values":
-                                        super.visitMethodInsn(opcode, "org/bukkit/craftbukkit/util/CraftLegacy", "modern_" + name, desc, itf);
+                                        visitor.visit(opcode, "org/bukkit/craftbukkit/util/CraftLegacy", "modern_" + name, desc, itf, samMethodType, instantiatedMethodType);
                                         return;
                                     case "ordinal":
-                                        super.visitMethodInsn(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/util/CraftLegacy", "modern_" + name, "(Lorg/bukkit/Material;)I", false);
+                                        visitor.visit(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/util/CraftLegacy", "modern_" + name, "(Lorg/bukkit/Material;)I", false, samMethodType, instantiatedMethodType);
                                         return;
                                 }
                             }
 
-                            super.visitMethodInsn(opcode, owner, name, desc, itf);
+                            visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
                             return;
                         }
 
                         if (owner.equals("org/bukkit/ChunkSnapshot") && name.equals("getBlockData") && desc.equals("(III)I")) {
-                            super.visitMethodInsn(opcode, owner, "getData", desc, itf);
+                            visitor.visit(opcode, owner, "getData", desc, itf, samMethodType, instantiatedMethodType);
                             return;
                         }
 
@@ -320,20 +307,20 @@ public class Commodore {
                             newArgs[0] = Type.getObjectType(owner);
                             System.arraycopy(args, 0, newArgs, 1, args.length);
 
-                            super.visitMethodInsn(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftEvil", name, Type.getMethodDescriptor(retType, newArgs), false);
+                            visitor.visit(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftEvil", name, Type.getMethodDescriptor(retType, newArgs), false, samMethodType, instantiatedMethodType);
                             return;
                         }
 
                         if (owner.equals("org/bukkit/DyeColor")) {
                             if (name.equals("valueOf") && desc.equals("(Ljava/lang/String;)Lorg/bukkit/DyeColor;")) {
-                                super.visitMethodInsn(opcode, owner, "legacyValueOf", desc, itf);
+                                visitor.visit(opcode, owner, "legacyValueOf", desc, itf, samMethodType, instantiatedMethodType);
                                 return;
                             }
                         }
 
-                        if (owner.equals("org/bukkit/Material")) {
+                        if (owner.equals("org/bukkit/Material") || (instantiatedMethodType != null && instantiatedMethodType.getDescriptor().startsWith("(Lorg/bukkit/Material;)"))) {
                             if (name.equals("getMaterial") && desc.equals("(I)Lorg/bukkit/Material;")) {
-                                super.visitMethodInsn(opcode, "org/bukkit/craftbukkit/legacy/CraftEvil", name, desc, itf);
+                                visitor.visit(opcode, "org/bukkit/craftbukkit/legacy/CraftEvil", name, desc, itf, samMethodType, instantiatedMethodType);
                                 return;
                             }
 
@@ -342,25 +329,38 @@ public class Commodore {
                                 case "valueOf":
                                 case "getMaterial":
                                 case "matchMaterial":
-                                    super.visitMethodInsn(opcode, "org/bukkit/craftbukkit/legacy/CraftLegacy", name, desc, itf);
+                                    visitor.visit(opcode, "org/bukkit/craftbukkit/legacy/CraftLegacy", name, desc, itf, samMethodType, instantiatedMethodType);
                                     return;
                                 case "ordinal":
-                                    super.visitMethodInsn(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", "ordinal", "(Lorg/bukkit/Material;)I", false);
+                                    visitor.visit(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", "ordinal", "(Lorg/bukkit/Material;)I", false, samMethodType, instantiatedMethodType);
                                     return;
                                 case "name":
                                 case "toString":
-                                    super.visitMethodInsn(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", name, "(Lorg/bukkit/Material;)Ljava/lang/String;", false);
+                                    visitor.visit(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", name, "(Lorg/bukkit/Material;)Ljava/lang/String;", false, samMethodType, instantiatedMethodType);
                                     return;
                             }
                         }
 
-                        if (retType.getSort() == Type.OBJECT && retType.getInternalName().equals("org/bukkit/Material") && owner.startsWith("org/bukkit")) {
-                            super.visitMethodInsn(opcode, owner, name, desc, itf);
-                            super.visitMethodInsn(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", "toLegacy", "(Lorg/bukkit/Material;)Lorg/bukkit/Material;", false);
+                        // TODO: 4/23/23 Handle for InvokeDynamicInsn, does not directly work, since it adds a new method call which InvokeDynamicInsn does not like
+                        // The time required to fixe this is probably higher than the return,
+                        // One possible way could be to write a custom method and delegate the dynamic call to it,
+                        // the method would be needed to be written with asm, to account for different amount of arguments and which normally should be visited
+                        // Or a custom factory is created, this would be a very fancy (but probably overkill) solution
+                        // Anyway, I encourage everyone who is reading this to to give it a shot
+                        if (instantiatedMethodType == null && retType.getSort() == Type.OBJECT && retType.getInternalName().equals("org/bukkit/Material") && owner.startsWith("org/bukkit")) {
+                            visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
+                            visitor.visit(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", "toLegacy", "(Lorg/bukkit/Material;)Lorg/bukkit/Material;", false, samMethodType, instantiatedMethodType);
                             return;
                         }
 
-                        super.visitMethodInsn(opcode, owner, name, desc, itf);
+                        visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
+                    }
+
+                    @Override
+                    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+                        handleMethod((newOpcode, newOwner, newName, newDescription, newItf, newSam, newInstantiated) -> {
+                            super.visitMethodInsn(newOpcode, newOwner, newName, newDescription, newItf);
+                        }, opcode, owner, name, desc, itf, null, null);
                     }
 
                     @Override
@@ -381,27 +381,37 @@ public class Commodore {
                             Handle implMethod = (Handle) bootstrapMethodArguments[1];
                             Type instantiatedMethodType = (Type) bootstrapMethodArguments[2];
 
-                            List<Object> newTypes = new ArrayList<>();
-                            newTypes.add(samMethodType);
+                            handleMethod((newOpcode, newOwner, newName, newDescription, newItf, newSam, newInstantiated) -> {
+                                if (newOpcode == Opcodes.INVOKESTATIC) {
+                                    newOpcode = Opcodes.H_INVOKESTATIC;
+                                }
 
-                            if (implMethod.getOwner().startsWith("org/bukkit") && implMethod.getDesc().contains("org/bukkit/util/Consumer")) {
-                                implMethod = new Handle(implMethod.getTag(), implMethod.getOwner(), implMethod.getName(),
-                                        implMethod.getDesc().replace("org/bukkit/util/Consumer", "java/util/function/Consumer"), implMethod.isInterface());
-                            }
+                                List<Object> methodArgs = new ArrayList<>();
+                                methodArgs.add(newSam);
+                                methodArgs.add(new Handle(newOpcode, newOwner, newName, newDescription, newItf));
+                                methodArgs.add(newInstantiated);
 
-                            newTypes.add(implMethod);
-                            newTypes.add(instantiatedMethodType);
-
-                            super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, newTypes.toArray());
+                                super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, methodArgs.toArray(Object[]::new));
+                            }, implMethod.getTag(), implMethod.getOwner(), implMethod.getName(), implMethod.getDesc(), implMethod.isInterface(), samMethodType, instantiatedMethodType);
                             return;
                         }
 
+                        // TODO: 4/24/23 Handle other factories, other than LambdaMetafactory
+                        // for example the String StringConcatFactory, which handles string concatenation
+                        // -> System.out.println("Some" + hello);
+                        // But as with the todo above, I encourage everyone who is reading this to to give it a shot
                         super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
                     }
                 };
             }
-        }, 0);
+        }, new SimpleRemapper(RENAMES)), 0);
 
         return cw.toByteArray();
+    }
+
+    @FunctionalInterface
+    private interface MethodPrinter {
+
+        void visit(int opcode, String owner, String name, String description, boolean itf, Type samMethodType, Type instantiatedMethodType);
     }
 }
