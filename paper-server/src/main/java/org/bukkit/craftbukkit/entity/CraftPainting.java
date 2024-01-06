@@ -16,7 +16,7 @@ public class CraftPainting extends CraftHanging implements Painting {
 
     @Override
     public Art getArt() {
-        return CraftArt.minecraftHolderToBukkit(this.getHandle().getVariant());
+        return org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.ART, this.getHandle().getVariant()).orElseThrow(() -> new IllegalStateException("Inlined painting variants are not supported yet in the API!")); // Paper
     }
 
     @Override

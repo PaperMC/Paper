@@ -38,7 +38,11 @@ public class CraftBanner extends CraftBlockEntityState<BannerBlockEntity> implem
         if (banner.getPatterns() != null) {
             for (int i = 0; i < banner.getPatterns().layers().size(); i++) {
                 BannerPatternLayers.Layer p = banner.getPatterns().layers().get(i);
-                this.patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.color().getId()), CraftPatternType.minecraftHolderToBukkit(p.pattern())));
+                // Paper start - fix upstream not handling inlined banner pattern
+                java.util.Optional<org.bukkit.block.banner.PatternType> type = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern());
+                if (type.isEmpty()) continue;
+                this.patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.color().getId()), type.get()));
+                // Paper end - fix upstream not handling inlined banner pattern
             }
         }
     }

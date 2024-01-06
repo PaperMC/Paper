@@ -69,6 +69,7 @@ public class CraftPotionType implements PotionType.InternalPotionData {
         string = FieldRename.convertPotionTypeName(ApiVersion.CURRENT, string);
         string = string.toLowerCase(Locale.ROOT);
         NamespacedKey key = NamespacedKey.fromString(string);
+        if (key == null) return null; // Paper - Fixup NamespacedKey handling
 
         // Now also convert from when keys where saved
         return CraftRegistry.get(Registry.POTION, key, ApiVersion.CURRENT);

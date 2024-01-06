@@ -13,7 +13,7 @@ public final class CraftNamespacedKey {
             return null;
         }
         ResourceLocation minecraft = ResourceLocation.tryParse(string);
-        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft);
+        return (minecraft == null || minecraft.getPath().isEmpty()) ? null : CraftNamespacedKey.fromMinecraft(minecraft); // Paper - Bukkit's parser does not match Vanilla for empty paths
     }
 
     public static NamespacedKey fromString(String string) {

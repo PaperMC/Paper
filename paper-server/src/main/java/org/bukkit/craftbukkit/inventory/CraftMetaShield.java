@@ -17,6 +17,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.block.banner.CraftPatternType;
 import org.bukkit.inventory.meta.BlockStateMeta;
@@ -53,7 +54,7 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
             for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
                 BannerPatternLayers.Layer p = patterns.get(i);
                 DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
-                PatternType pattern = CraftPatternType.minecraftHolderToBukkit(p.pattern());
+                PatternType pattern = CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not being correct
 
                 if (color != null && pattern != null) {
                     this.addPattern(new Pattern(color, pattern));

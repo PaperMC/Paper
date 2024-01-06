@@ -42,7 +42,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
             for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
                 BannerPatternLayers.Layer p = patterns.get(i);
                 DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
-                PatternType pattern = CraftPatternType.minecraftHolderToBukkit(p.pattern());
+                PatternType pattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not handling inlined banner pattern
 
                 if (color != null && pattern != null) {
                     this.patterns.add(new Pattern(color, pattern));
