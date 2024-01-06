@@ -15006,12 +15006,13 @@ index 73e83d56a340f0c7dcb8ff737d621003e72c6de4..bdaf062f9b66ceab303a0807eca30134
      }
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c78cbec447032de9fe69748591bef6be300160ed
+index 0000000000000000000000000000000000000000..0d00940d9eb724afc9f2d44d697fbd40832bfabd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 @@ -0,0 +1,607 @@
 +package io.papermc.paper.world;
 +
++import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 +import com.destroystokyo.paper.util.maplist.EntityList;
 +import io.papermc.paper.chunk.system.entity.EntityLookup;
 +import io.papermc.paper.util.TickThread;
@@ -15036,7 +15037,6 @@ index 0000000000000000000000000000000000000000..c78cbec447032de9fe69748591bef6be
 +import java.util.Iterator;
 +import java.util.List;
 +import java.util.function.Predicate;
-+import org.bukkit.event.entity.EntityRemoveEvent;
 +
 +public final class ChunkEntitySlices {
 +
@@ -15132,12 +15132,12 @@ index 0000000000000000000000000000000000000000..c78cbec447032de9fe69748591bef6be
 +                continue;
 +            }
 +            if (entity.shouldBeSaved()) {
-+                entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD);
++                entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveFromWorldEvent.Cause.UNLOAD);
 +                if (entity.isVehicle()) {
 +                    // we cannot assume that these entities are contained within this chunk, because entities can
 +                    // desync - so we need to remove them all
 +                    for (final Entity passenger : entity.getIndirectPassengers()) {
-+                        passenger.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD);
++                        passenger.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveFromWorldEvent.Cause.UNLOAD);
 +                    }
 +                }
 +            }
@@ -16486,7 +16486,7 @@ index 88729d92878f98729eb5669cce5ae5b1418865a1..13d15a135dd0373bef4a5ac9ffb56dbb
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index d3f63185edd1db9fab3887ea3f08982435b3a23c..d6ecee1db17cb9eaeffa94b3d8dd150238fdefe5 100644
+index a5734fd84e863d72489f3eef4c352f5ba324f448..bb623c041c64bfac6a66a493ae5f05a1c7fa98d6 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -122,10 +122,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -18344,7 +18344,7 @@ index 0e89cf0742b9443f5256081987242554de24d893..802e9d266c01eaf8a83e78fe8dbe881e
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b33bf957b1541756e3b983b87b1c83629757739a..0ccdc8d135dd3edb410fbc1d248c20a4a45b37fa 100644
+index b8f313d60e76203986669dffecc3323e6f38019a..dcdc82461df0f5cb7ef8894bebd2be83e07bc0cd 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -199,7 +199,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -19293,7 +19293,7 @@ index c502d9b85eb68b277ae17dfea34e0475f0156647..27d0f1ed58948039004f8f1eba2f7f96
          this.desiredChunksPerTick = Double.isNaN((double)desiredBatchSize) ? 0.01F : Mth.clamp(desiredBatchSize, 0.01F, 64.0F);
          if (this.unacknowledgedBatches == 0) {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 0aa28caa1254137c0bae8e213bd08c9a654f5335..c4b4e5f5c9366b241686e881cda34568a57b4877 100644
+index 2860c8e7df49655bd0f8832ec8362f43e22a1488..62013378c1925134682e7a7c406a398baf2d0358 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -296,7 +296,7 @@ public abstract class PlayerList {
@@ -19552,7 +19552,7 @@ index 62363c09111aaa31220fb260940744c097af7b3c..ff497f0e80889508dd8c183b48cd33bc
 @@ -4519,6 +4584,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      @Override
-     public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
+     public final void setRemoved(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
 +        // Paper start - rewrite chunk system
 +        io.papermc.paper.util.TickThread.ensureTickThread(this, "Cannot remove entity off-main");
 +        if (!((ServerLevel)this.level).getEntityLookup().canRemoveEntity(this)) {
@@ -19560,7 +19560,7 @@ index 62363c09111aaa31220fb260940744c097af7b3c..ff497f0e80889508dd8c183b48cd33bc
 +            return;
 +        }
 +        // Paper end - rewrite chunk system
-         CraftEventFactory.callEntityRemoveEvent(this, cause);
+         CraftEventFactory.callEntityRemoveEvent(this, entity_removalreason, cause); // Paper - EntityRemoveFromWorldEvent
          // CraftBukkit end
          final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
 @@ -4530,7 +4602,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -19867,7 +19867,7 @@ index bd20bea7f76a7307f1698fb2dfef37125032d166..9a28912f52824acdc80a62243b136e6f
  
      <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> filter, AABB box, Predicate<? super T> predicate);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 975fcd4b8f93cb8c602ddeb165c485214eac10a4..d3137c9e5cc42ef191ea233b0d37eafeffc6f82c 100644
+index f2f8f7b1356b0e7fe7010eca2fc55b46b0bcb1dc..75deea9c9b02feea2fb57556e48d97a6f460deb6 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -547,6 +547,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -21685,7 +21685,7 @@ index 7aee9f6b143c89cf8d65ca55eeda808152b4dd26..9c06c3729b09726e1da6ff8fb975cef2
  
      // Paper start - implement pointers
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 68a0b6b8650e9e80e8e8c4037d92389cae899d72..9aec6efef4094bbdb920101df1a7a5a2a6070dde 100644
+index c6c9199e88cd25f2ba8155cea77365f05979c07d..ba6c42530e5995dee4f693fd5d560f21bb8fde7e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -3463,31 +3463,31 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
