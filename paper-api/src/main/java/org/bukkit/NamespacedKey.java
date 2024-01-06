@@ -90,7 +90,7 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key { // Pap
         this.key = key;
 
         String string = toString();
-        Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters", string);
+        Preconditions.checkArgument(string.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters", string); // Paper - Fix improper length validation
     }
 
     /**
@@ -117,7 +117,7 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key { // Pap
         Preconditions.checkArgument(isValidKey(this.key), "Invalid key. Must be [a-z0-9/._-]: %s", this.key);
 
         String string = toString();
-        Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters (%s)", string);
+        Preconditions.checkArgument(string.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters", string); // Paper - Fix improper length validation
     }
 
     @NotNull
@@ -205,7 +205,10 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key { // Pap
      */
     @Nullable
     public static NamespacedKey fromString(@NotNull String string, @Nullable Plugin defaultNamespace) {
-        Preconditions.checkArgument(string != null && !string.isEmpty(), "Input string must not be empty or null");
+        // Paper - Return null for empty string, check length
+        Preconditions.checkArgument(string != null, "Input string must not be null");
+        if (string.isEmpty() || string.length() > Short.MAX_VALUE) return null;
+        // Paper end - Return null for empty string, check length
 
         String[] components = string.split(":", 3);
         if (components.length > 2) {
