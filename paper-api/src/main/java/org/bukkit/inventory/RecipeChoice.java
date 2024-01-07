@@ -144,8 +144,8 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     }
 
     /**
-     * Represents a choice that will be valid only one of the stacks is exactly
-     * matched (aside from stack size).
+     * Represents a choice that will be valid only if one of the stacks is
+     * exactly matched (aside from stack size).
      * <br>
      * <b>Only valid for shaped recipes</b>
      */
