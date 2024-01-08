@@ -49,6 +49,10 @@ public interface Damageable extends Entity {
 
     /**
      * Sets the entity's absorption amount.
+     * <p>
+     * Note: The amount is capped to the value of
+     * {@link Attribute#GENERIC_MAX_ABSORPTION}. The effect of this method on
+     * that attribute is currently unspecified and subject to change.
      *
      * @param amount new absorption amount from 0
      * @throws IllegalArgumentException thrown if health is {@literal < 0} or
