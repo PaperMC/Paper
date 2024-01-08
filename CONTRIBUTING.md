@@ -63,7 +63,7 @@ Because the entire structure is based on patches and git, a basic understanding
 of how to use git is required. A basic tutorial can be found here:
 <https://git-scm.com/docs/gittutorial>.
 
-Assuming you have already forked the repository:
+<!--Assuming you have already forked the repository:-->
 
 1. Clone your fork to your local machine;
 2. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream.
