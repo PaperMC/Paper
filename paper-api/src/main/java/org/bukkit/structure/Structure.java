@@ -1,5 +1,6 @@
 package org.bukkit.structure;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import org.bukkit.Location;
@@ -8,7 +9,10 @@ import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataHolder;
+import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.BlockVector;
+import org.bukkit.util.EntityTransformer;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -92,6 +96,27 @@ public interface Structure extends PersistentDataHolder {
     /**
      * Place a structure in the world.
      *
+     * @param location The location to place the structure at.
+     * @param includeEntities If the entities present in the structure should be
+     * spawned.
+     * @param structureRotation The rotation of the structure.
+     * @param mirror The mirror settings of the structure.
+     * @param palette The palette index of the structure to use, starting at
+     * {@code 0}, or {@code -1} to pick a random palette.
+     * @param integrity Determines how damaged the building should look by
+     * randomly skipping blocks to place. This value can range from 0 to 1. With
+     * 0 removing all blocks and 1 spawning the structure in pristine condition.
+     * @param random The randomizer used for setting the structure's
+     * {@link org.bukkit.loot.LootTable}s and integrity.
+     * @param blockTransformers A collection of {@link BlockTransformer}s to apply to the structure.
+     * @param entityTransformers A collection of {@link EntityTransformer}s to apply to the structure.
+     */
+    @ApiStatus.Experimental
+    void place(@NotNull Location location, boolean includeEntities, @NotNull StructureRotation structureRotation, @NotNull Mirror mirror, int palette, float integrity, @NotNull Random random, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
+
+    /**
+     * Place a structure in the world.
+     *
      * @param regionAccessor The world to place the structure in.
      * @param location The location to place the structure at.
      * @param includeEntities If the entities present in the structure should be
@@ -107,6 +132,28 @@ public interface Structure extends PersistentDataHolder {
      * {@link org.bukkit.loot.LootTable}s and integrity.
      */
     void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, boolean includeEntities, @NotNull StructureRotation structureRotation, @NotNull Mirror mirror, int palette, float integrity, @NotNull Random random);
+
+    /**
+     * Place a structure in the world.
+     *
+     * @param regionAccessor The world to place the structure in.
+     * @param location The location to place the structure at.
+     * @param includeEntities If the entities present in the structure should be
+     * spawned.
+     * @param structureRotation The rotation of the structure.
+     * @param mirror The mirror settings of the structure.
+     * @param palette The palette index of the structure to use, starting at
+     * {@code 0}, or {@code -1} to pick a random palette.
+     * @param integrity Determines how damaged the building should look by
+     * randomly skipping blocks to place. This value can range from 0 to 1. With
+     * 0 removing all blocks and 1 spawning the structure in pristine condition.
+     * @param random The randomizer used for setting the structure's
+     * {@link org.bukkit.loot.LootTable}s and integrity.
+     * @param blockTransformers A collection of {@link BlockTransformer}s to apply to the structure.
+     * @param entityTransformers A collection of {@link EntityTransformer}s to apply to the structure.
+     */
+    @ApiStatus.Experimental
+    void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, boolean includeEntities, @NotNull StructureRotation structureRotation, @NotNull Mirror mirror, int palette, float integrity, @NotNull Random random, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
 
     /**
      * Fills the structure from an area in a world. The origin and size will be
