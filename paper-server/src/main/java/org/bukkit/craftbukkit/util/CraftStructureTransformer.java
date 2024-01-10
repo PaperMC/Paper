@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
+import java.util.Collection;
 import java.util.Objects;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.world.entity.Entity;
@@ -67,6 +68,12 @@ public class CraftStructureTransformer {
         Bukkit.getPluginManager().callEvent(event);
         this.blockTransformers = event.getBlockTransformers().values().toArray(BlockTransformer[]::new);
         this.entityTransformers = event.getEntityTransformers().values().toArray(EntityTransformer[]::new);
+        this.limitedRegion = new CraftLimitedRegion(generatoraccessseed, chunkcoordintpair);
+    }
+
+    public CraftStructureTransformer(GeneratorAccessSeed generatoraccessseed, ChunkCoordIntPair chunkcoordintpair, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
+        this.blockTransformers = blockTransformers.toArray(BlockTransformer[]::new);
+        this.entityTransformers = entityTransformers.toArray(EntityTransformer[]::new);
         this.limitedRegion = new CraftLimitedRegion(generatoraccessseed, chunkcoordintpair);
     }
 
