@@ -257,6 +257,13 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
         this.banner = (Banner) blockState;
     }
 
+    // Paper start - add method to clear block state
+    @Override
+    public void clearBlockState() {
+        this.banner = null;
+    }
+    // Paper end - add method to clear block state
+
     private static Banner getBlockState(DyeColor color) {
         BlockPos pos = BlockPos.ZERO;
         Material stateMaterial = CraftMetaShield.shieldToBannerHack(color);

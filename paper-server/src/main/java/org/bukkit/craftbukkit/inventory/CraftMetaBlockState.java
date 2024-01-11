@@ -239,6 +239,13 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         return this.blockEntityTag != null;
     }
 
+    // Paper start - add method to clear block state
+    @Override
+    public void clearBlockState() {
+        this.blockEntityTag = null;
+    }
+    // Paper end - add method to clear block state
+
     @Override
     public BlockState getBlockState() {
         return (this.blockEntityTag != null) ? this.blockEntityTag.copy() : CraftMetaBlockState.getBlockState(this.material, null);
