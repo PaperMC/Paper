@@ -258,4 +258,17 @@ public interface UnsafeValues {
     // Paper end - namespaced key biome methods
 
     String getStatisticCriteriaKey(@NotNull org.bukkit.Statistic statistic); // Paper - fix custom stats criteria creation
+
+    // Paper start - spawn egg color visibility
+    /**
+     * Obtains the underlying color informating for a spawn egg of a given
+     * entity type, or null if the entity passed does not have a spawn egg.
+     * Spawn eggs have two colors - the background layer (0), and the
+     * foreground layer (1)
+     * @param entityType The entity type to get the color for
+     * @param layer The texture layer to get a color for
+     * @return The color of the layer for the entity's spawn egg
+     */
+    @Nullable org.bukkit.Color getSpawnEggLayerColor(org.bukkit.entity.EntityType entityType, int layer);
+    // Paper end - spawn egg color visibility
 }
