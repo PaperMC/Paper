@@ -14,6 +14,13 @@ public interface BlockStateMeta extends ItemMeta {
      */
     boolean hasBlockState();
 
+    // Paper start - add method to clear block state
+    /**
+     * Clears the block state currently attached to this item.
+     */
+    void clearBlockState();
+    // Paper end - add method to clear block state
+
     /**
      * Returns the currently attached block state for this
      * item or creates a new one if one doesn't exist.
