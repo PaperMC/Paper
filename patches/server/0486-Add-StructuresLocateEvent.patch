@@ -5,12 +5,49 @@ Subject: [PATCH] Add StructuresLocateEvent
 
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+index d45e2855f137d8708139281e8598ed34cc07ddd2..3a2b7f6f2dad856bc1499472970ba8b579df2e33 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+@@ -38,6 +38,12 @@ import static io.papermc.paper.registry.entry.RegistryEntry.entry;
+ @DefaultQualifier(NonNull.class)
+ public final class PaperRegistries {
+ 
++    @Deprecated(forRemoval = true)
++    @org.jetbrains.annotations.VisibleForTesting
++    public static final RegistryKey<io.papermc.paper.world.structure.ConfiguredStructure> CONFIGURED_STRUCTURE_REGISTRY_KEY = RegistryKeyImpl.createInternal("worldgen/structure");
++    @Deprecated(forRemoval = true)
++    static final RegistryEntry<Structure, io.papermc.paper.world.structure.ConfiguredStructure, ?> CONFIGURED_STRUCTURE_REGISTRY_ENTRY = entry(Registries.STRUCTURE, CONFIGURED_STRUCTURE_REGISTRY_KEY, io.papermc.paper.world.structure.ConfiguredStructure.class, io.papermc.paper.world.structure.PaperConfiguredStructure::minecraftToBukkit).delayed();
++
+     static final List<RegistryEntry<?, ?, ?>> REGISTRY_ENTRIES;
+     private static final Map<RegistryKey<?>, RegistryEntry<?, ?, ?>> BY_REGISTRY_KEY;
+     private static final Map<ResourceKey<?>, RegistryEntry<?, ?, ?>> BY_RESOURCE_KEY;
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
+index 958e37a80ea486f460f495a4a6f6a55aa5f1c7ee..0de4a2cf8527a0cbdc7de4c9bdba4230047a1252 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
+@@ -43,8 +43,13 @@ public class PaperRegistryAccess implements RegistryAccess {
+     public <T extends Keyed> @Nullable Registry<T> getRegistry(final Class<T> type) {
+         final RegistryKey<T> registryKey;
+         final @Nullable RegistryEntry<?, T, ?> entry;
+-        registryKey = requireNonNull(byType(type), () -> type + " is not a valid registry type");
+-        entry = PaperRegistries.getEntry(registryKey);
++        if (type == io.papermc.paper.world.structure.ConfiguredStructure.class) { // manually handle "duplicate" registries to avoid polluting maps in PaperRegistries
++            registryKey = (RegistryKey<T>) PaperRegistries.CONFIGURED_STRUCTURE_REGISTRY_KEY;
++            entry = (RegistryEntry<?, T, ?>) PaperRegistries.CONFIGURED_STRUCTURE_REGISTRY_ENTRY;
++        } else {
++            registryKey = requireNonNull(byType(type), () -> type + " is not a valid registry type");
++            entry = PaperRegistries.getEntry(registryKey);
++        }
+         final @Nullable RegistryHolder<T, ?> registry = (RegistryHolder<T, ?>) this.registries.get(registryKey);
+         if (registry != null) {
+             // if the registry exists, return right away. Since this is the "legacy" method, we return DelayedRegistry
 diff --git a/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2667067fd13f61e0464ba88ae4e4a7078351d1a8
+index 0000000000000000000000000000000000000000..013d614a1cf1ab2b5a6ec190c2b4ba7753268731
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.world.structure;
 +
 +import java.util.Objects;
@@ -32,18 +69,10 @@ index 0000000000000000000000000000000000000000..2667067fd13f61e0464ba88ae4e4a707
 +    private PaperConfiguredStructure() {
 +    }
 +
-+    @Deprecated(forRemoval = true)
-+    public static final class LegacyRegistry extends CraftRegistry<ConfiguredStructure, Structure> {
-+
-+        public LegacyRegistry(final Registry<Structure> minecraftRegistry) {
-+            super(ConfiguredStructure.class, minecraftRegistry, LegacyRegistry::minecraftToBukkit);
-+        }
-+
-+        private static @Nullable ConfiguredStructure minecraftToBukkit(NamespacedKey key, Structure nms) {
-+            final ResourceLocation structureTypeLoc = Objects.requireNonNull(BuiltInRegistries.STRUCTURE_TYPE.getKey(nms.type()), "unexpected structure type " + nms.type());
-+            final @Nullable StructureType structureType = StructureType.getStructureTypes().get(structureTypeLoc.getPath());
-+            return structureType == null ? null : new ConfiguredStructure(key, structureType);
-+        }
++    public static @Nullable ConfiguredStructure minecraftToBukkit(NamespacedKey key, Structure nms) {
++        final ResourceLocation structureTypeLoc = Objects.requireNonNull(BuiltInRegistries.STRUCTURE_TYPE.getKey(nms.type()), "unexpected structure type " + nms.type());
++        final @Nullable StructureType structureType = StructureType.getStructureTypes().get(structureTypeLoc.getPath());
++        return structureType == null ? null : new ConfiguredStructure(key, structureType);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
@@ -75,22 +104,6 @@ index 7cdb59cd2f2ffe1195d21519ef97dae0e430285b..a8768f1925d5824ca985be1b53694ee2
          ChunkGeneratorStructureState chunkgeneratorstructurestate = world.getChunkSource().getGeneratorState();
          Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap();
          Iterator iterator = structures.iterator();
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 480313506bf41410de090c59e047323345ea78da..c7d377dbb53cdc1f823a839e3a113136efc16349 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-@@ -139,6 +139,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
-             return new CraftRegistry<>(Wolf.Variant.class, registryHolder.registryOrThrow(Registries.WOLF_VARIANT), CraftWolf.CraftVariant::new);
-         }
-         // TODO registry modification API
-+        // Paper start - remove this after a while along with all ConfiguredStructure stuff
-+        if (bukkitClass == io.papermc.paper.world.structure.ConfiguredStructure.class) {
-+            return new io.papermc.paper.world.structure.PaperConfiguredStructure.LegacyRegistry(registryHolder.registryOrThrow(Registries.STRUCTURE));
-+        }
-+        // Paper end
- 
-         return null;
-     }
 diff --git a/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..9178fe0d01b998ca1442bf2511f8fc00db9388ba
@@ -194,26 +207,26 @@ index 0000000000000000000000000000000000000000..9178fe0d01b998ca1442bf2511f8fc00
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/registry/PerRegistryTest.java b/src/test/java/org/bukkit/registry/PerRegistryTest.java
-index 4e4ea083063daf22f1bb785ef212958ea889c43b..1c4966520b6401e6571aa44d5934dfa280bc80e3 100644
+index 4e4ea083063daf22f1bb785ef212958ea889c43b..523b4b208e05c6b70014440200e3196cc84f36cc 100644
 --- a/src/test/java/org/bukkit/registry/PerRegistryTest.java
 +++ b/src/test/java/org/bukkit/registry/PerRegistryTest.java
 @@ -36,6 +36,7 @@ public class PerRegistryTest extends AbstractTestingBase {
                  if (!(object instanceof CraftRegistry<?, ?> registry)) {
                      continue;
                  }
-+                if (object instanceof io.papermc.paper.world.structure.PaperConfiguredStructure.LegacyRegistry) continue; // Paper - skip
++                if (object == Registry.CONFIGURED_STRUCTURE) continue; // Paper - skip
  
                  data.add(Arguments.of(registry));
              } catch (ReflectiveOperationException e) {
 diff --git a/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java b/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
-index 4adaafafb7140e983a4e90f0ff0deaaf0887a9a5..65cc33c45553e755371ec4313dd38bb61eb7d61c 100644
+index 848ad252c06031d33e659f6116e911f966810442..f538a209af064c1f1333d30f90bfc21523b2f4cd 100644
 --- a/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
 +++ b/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
-@@ -23,6 +23,7 @@ public class RegistryArgumentAddedTest extends AbstractTestingBase {
- 
-         Set<Class<?>> loadedRegistries = new HashSet<>(DummyServer.registers.keySet());
-         Set<Class<?>> notFound = new HashSet<>();
-+        loadedRegistries.remove(io.papermc.paper.world.structure.ConfiguredStructure.class); // Paper - ignore
+@@ -26,6 +26,7 @@ public class RegistryArgumentAddedTest extends AbstractTestingBase {
+         loadedRegistries.addAll(io.papermc.paper.registry.PaperRegistryAccess.instance().loadedRegistryKeys());
+         // Paper end
+         Set<io.papermc.paper.registry.RegistryKey<?>> notFound = new HashSet<>(); // Paper
++        loadedRegistries.remove(io.papermc.paper.registry.PaperRegistries.CONFIGURED_STRUCTURE_REGISTRY_KEY); // Paper - ignore
  
          RegistriesArgumentProvider
                  .getData()

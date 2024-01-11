@@ -5,18 +5,18 @@ Subject: [PATCH] Improve Registry
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index c7d377dbb53cdc1f823a839e3a113136efc16349..73472890e30180dc3cb6aa1bd9c5815087334682 100644
+index e2fcbeb8635280fcd2aeedff9803386c9bcabb0c..a3a00778a8fdbc13f8adbf4e4fbc4f1303d22789 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-@@ -150,6 +150,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -104,6 +104,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
  
-     private final Class<? super B> bukkitClass;
+     private final Class<?> bukkitClass; // Paper - relax preload class
      private final Map<NamespacedKey, B> cache = new HashMap<>();
 +    private final Map<B, NamespacedKey> byValue = new java.util.IdentityHashMap<>(); // Paper - improve Registry
      private final net.minecraft.core.Registry<M> minecraftRegistry;
      private final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
      private boolean init;
-@@ -194,6 +195,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -148,6 +149,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
          }
  
          this.cache.put(namespacedKey, bukkit);
@@ -24,7 +24,7 @@ index c7d377dbb53cdc1f823a839e3a113136efc16349..73472890e30180dc3cb6aa1bd9c58150
  
          return bukkit;
      }
-@@ -216,4 +218,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -170,4 +172,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
  
          return this.minecraftToBukkit.apply(namespacedKey, minecraft);
      }
@@ -61,7 +61,7 @@ index 364f8d7a7106259401154d91b1b79869d014a469..f336bf98574e4fdeabc3b21062983439
      }
  
 diff --git a/src/test/java/org/bukkit/registry/PerRegistryTest.java b/src/test/java/org/bukkit/registry/PerRegistryTest.java
-index 1c4966520b6401e6571aa44d5934dfa280bc80e3..010de6fbb75eb5d51639695d260f916072fdb22d 100644
+index 523b4b208e05c6b70014440200e3196cc84f36cc..12b93a6e091de47522d060fa0cd84fe41318c46a 100644
 --- a/src/test/java/org/bukkit/registry/PerRegistryTest.java
 +++ b/src/test/java/org/bukkit/registry/PerRegistryTest.java
 @@ -49,19 +49,22 @@ public class PerRegistryTest extends AbstractTestingBase {
