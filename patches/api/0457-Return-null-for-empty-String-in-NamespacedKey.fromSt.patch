@@ -5,36 +5,36 @@ Subject: [PATCH] Return null for empty String in NamespacedKey.fromString
 
 
 diff --git a/src/main/java/org/bukkit/NamespacedKey.java b/src/main/java/org/bukkit/NamespacedKey.java
-index 8ac72cb0b05e2c493d98310f2e87c3714d15c5e3..95bc1078e35a92624b6627e78ed80080832d1b57 100644
+index 8ac72cb0b05e2c493d98310f2e87c3714d15c5e3..97cf6b6acdd71740b75658f14ca5cabbacb108d4 100644
 --- a/src/main/java/org/bukkit/NamespacedKey.java
 +++ b/src/main/java/org/bukkit/NamespacedKey.java
-@@ -89,8 +89,6 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
-         this.namespace = namespace;
+@@ -90,7 +90,7 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
          this.key = key;
  
--        String string = toString();
+         String string = toString();
 -        Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters", string);
++        Preconditions.checkArgument(string.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters", string); // Paper - Fix improper length validation
      }
  
      /**
-@@ -116,8 +114,6 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
-         Preconditions.checkArgument(isValidNamespace(this.namespace), "Invalid namespace. Must be [a-z0-9._-]: %s", this.namespace);
+@@ -117,7 +117,7 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
          Preconditions.checkArgument(isValidKey(this.key), "Invalid key. Must be [a-z0-9/._-]: %s", this.key);
  
--        String string = toString();
+         String string = toString();
 -        Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters (%s)", string);
++        Preconditions.checkArgument(string.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters", string); // Paper - Fix improper length validation
      }
  
      @NotNull
-@@ -206,7 +202,10 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
+@@ -206,7 +206,10 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
       */
      @Nullable
      public static NamespacedKey fromString(@NotNull String string, @Nullable Plugin defaultNamespace) {
 -        Preconditions.checkArgument(string != null && !string.isEmpty(), "Input string must not be empty or null");
-+        // Paper - Return null for empty string
++        // Paper - Return null for empty string, check length
 +        Preconditions.checkArgument(string != null, "Input string must not be null");
-+        if (string.isEmpty()) return null;
-+        // Paper end - Return null for empty string
++        if (string.isEmpty() || string.length() > Short.MAX_VALUE) return null;
++        // Paper end - Return null for empty string, check length
  
          String[] components = string.split(":", 3);
          if (components.length > 2) {

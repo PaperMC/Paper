@@ -22,14 +22,20 @@ index 18fad4f083862ace2bc56579883f548f6d697091..80083fed4b44b9d433925f09db83e559
                  return Blocks.AIR.defaultBlockState();
              } else {
 diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
-index 38e2a8cec48bc779b8154d6d719031f457a2403e..9024622a41fdc774713481973c1419a8d18cce93 100644
+index 38e2a8cec48bc779b8154d6d719031f457a2403e..4379090b74d156b62b88163a234c22e78454f5e4 100644
 --- a/src/main/java/net/minecraft/resources/ResourceLocation.java
 +++ b/src/main/java/net/minecraft/resources/ResourceLocation.java
-@@ -31,6 +31,7 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+@@ -31,6 +31,13 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
      private final String path;
  
      protected ResourceLocation(String namespace, String path, @Nullable ResourceLocation.Dummy extraData) {
-+        if (io.netty.buffer.ByteBufUtil.utf8MaxBytes(namespace + ":" + path) > 2 * Short.MAX_VALUE + 1) throw new ResourceLocationException("Resource location too long: " + namespace + ":" + path); // Paper - Validate ResourceLocation
++        // Paper start - Validate ResourceLocation
++        // Check for the max network string length (capped at Short.MAX_VALUE) as well as the max bytes of a StringTag (length written as an unsigned short)
++        final String resourceLocation = namespace + ":" + path;
++        if (resourceLocation.length() > Short.MAX_VALUE || io.netty.buffer.ByteBufUtil.utf8MaxBytes(resourceLocation) > 2 * Short.MAX_VALUE + 1) {
++            throw new ResourceLocationException("Resource location too long: " + resourceLocation);
++        }
++        // Paper end - Validate ResourceLocation
          this.namespace = namespace;
          this.path = path;
      }
