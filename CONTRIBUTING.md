@@ -206,14 +206,16 @@ when making and submitting changes.
 
 All modifications to non-Paper files should be marked.
 
-- Multi-line changes start with `// Paper start` and end with `// Paper end`;
+- Multi-line changes start with `// Paper start - <COMMIT DESCRIPTION>` and end
+  with `// Paper end - <COMMIT DESCRIPTION>`;
 - You can put a comment with an explanation if it isn't obvious, like this:
-`// Paper start - reason`.
-   - The comments should generally be about the reason the change was made, what
-  it was before, or what the change is.
-   - Multi-line messages should start with `// Paper start` and use `/* Multi
-  line message here */` for the message itself.
-- One-line changes should have `// Paper` or `// Paper - reason`.
+  `// Paper start - <COMMIT DESCRIPTION>`.
+    - The comments should generally be about the reason the change was made, what
+      it was before, or what the change is.
+    - Multi-line messages should start with `// Paper start - <COMMIT DESCRIPTION>` and
+      use `/* Multi line message here */` for the message itself.
+- One-line changes should have `// Paper - <COMMIT DESCRIPTION>`.
+- After the general commit description, you can add additional information either after a `;` or in the next line
 
 Here's an example of how to mark changes by Paper:
 
