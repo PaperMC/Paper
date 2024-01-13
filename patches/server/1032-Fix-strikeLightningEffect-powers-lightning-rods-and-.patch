@@ -6,7 +6,7 @@ Subject: [PATCH] Fix strikeLightningEffect powers lightning rods and clears
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
-index 255fb5e922c63130708e4bcab208b4db52a58387..1e76230c078ef07418345b0bc50c574cf63c9094 100644
+index 255fb5e922c63130708e4bcab208b4db52a58387..21f0c986ac3237a2ab560dc545392f04a8bb4ef3 100644
 --- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
 +++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
 @@ -45,7 +45,7 @@ public class LightningBolt extends Entity {
@@ -14,7 +14,7 @@ index 255fb5e922c63130708e4bcab208b4db52a58387..1e76230c078ef07418345b0bc50c574c
      private final Set<Entity> hitEntities = Sets.newHashSet();
      private int blocksSetOnFire;
 -    public boolean isSilent = false; // Spigot
-+    public boolean isEffect; // Paper
++    public boolean isEffect; // Paper - Properly handle lightning effects api
  
      public LightningBolt(EntityType<? extends LightningBolt> type, Level world) {
          super(type, world);
@@ -23,7 +23,7 @@ index 255fb5e922c63130708e4bcab208b4db52a58387..1e76230c078ef07418345b0bc50c574c
      public void tick() {
          super.tick();
 -        if (!this.isSilent && this.life == 2) { // Spigot
-+        if (!this.isEffect && this.life == 2) { // Spigot // Paper
++        if (!this.isEffect && this.life == 2) { // Spigot // Paper - Properly handle lightning effects api
              if (this.level().isClientSide()) {
                  this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 10000.0F, 0.8F + this.random.nextFloat() * 0.2F, false);
                  this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.WEATHER, 2.0F, 0.5F + this.random.nextFloat() * 0.2F, false);
@@ -32,7 +32,7 @@ index 255fb5e922c63130708e4bcab208b4db52a58387..1e76230c078ef07418345b0bc50c574c
          }
  
 -        if (this.life >= 0 && !this.visualOnly) { // CraftBukkit - add !this.visualOnly
-+        if (this.life >= 0 && !this.isEffect) { // CraftBukkit - add !this.visualOnly // Paper - undo
++        if (this.life >= 0 && !this.isEffect) { // CraftBukkit - add !this.visualOnly // Paper - Properly handle lightning effects api
              if (!(this.level() instanceof ServerLevel)) {
                  this.level().setSkyFlashTime(2);
              } else if (!this.visualOnly) {
@@ -41,12 +41,12 @@ index 255fb5e922c63130708e4bcab208b4db52a58387..1e76230c078ef07418345b0bc50c574c
  
      private void spawnFire(int spreadAttempts) {
 -        if (!this.visualOnly && !this.level().isClientSide && this.level().getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
-+        if (!this.visualOnly && !this.isEffect && !this.level().isClientSide && this.level().getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) { // Paper
++        if (!this.visualOnly && !this.isEffect && !this.level().isClientSide && this.level().getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) { // Paper - Properly handle lightning effects api
              BlockPos blockposition = this.blockPosition();
              BlockState iblockdata = BaseFireBlock.getState(this.level(), blockposition);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 5fc06ade042f96ae9f623b18faaa1069d769153f..fd37494da843e70cbb5e707714ff77724d7ff0bb 100644
+index 56ff02ebe9da504f2aa955430ac13b3dba4211f7..f9be183b5971801fbb55db17fcc2fa9d0701daf5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -773,7 +773,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -54,7 +54,7 @@ index 5fc06ade042f96ae9f623b18faaa1069d769153f..fd37494da843e70cbb5e707714ff7772
          LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(this.world);
          lightning.moveTo(loc.getX(), loc.getY(), loc.getZ());
 -        lightning.setVisualOnly(isVisual);
-+        lightning.isEffect = isVisual; // Paper
++        lightning.isEffect = isVisual; // Paper - Properly handle lightning effects api
          this.world.strikeLightning(lightning, LightningStrikeEvent.Cause.CUSTOM);
          return (LightningStrike) lightning.getBukkitEntity();
      }
@@ -72,12 +72,12 @@ index 5fc06ade042f96ae9f623b18faaa1069d769153f..fd37494da843e70cbb5e707714ff7772
              lightning.moveTo( loc.getX(), loc.getY(), loc.getZ() );
 -            lightning.visualOnly = true;
 -            lightning.isSilent = isSilent;
-+            lightning.isEffect = true; // Paper
++            lightning.isEffect = true; // Paper - Properly handle lightning effects api
              CraftWorld.this.world.strikeLightning( lightning, LightningStrikeEvent.Cause.CUSTOM );
              return (LightningStrike) lightning.getBukkitEntity();
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
-index cd9bd7f06e55e970b7791e635610bb5e7491d102..70b377c03346cb8573827aeb493f3b6eb8efb1f8 100644
+index cd9bd7f06e55e970b7791e635610bb5e7491d102..4fd1a856cd2e8ebcce0a14e3244108e8344691cf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
 @@ -13,7 +13,7 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
@@ -85,7 +85,7 @@ index cd9bd7f06e55e970b7791e635610bb5e7491d102..70b377c03346cb8573827aeb493f3b6e
      @Override
      public boolean isEffect() {
 -        return this.getHandle().visualOnly;
-+        return this.getHandle().isEffect; // Paper
++        return this.getHandle().isEffect; // Paper - Properly handle lightning effects api
      }
  
      public int getFlashes() {
@@ -94,7 +94,7 @@ index cd9bd7f06e55e970b7791e635610bb5e7491d102..70b377c03346cb8573827aeb493f3b6e
          public boolean isSilent()
          {
 -            return CraftLightningStrike.this.getHandle().isSilent;
-+            return false; // Paper - the concept of isSilent doesn't exist as sound is controlled by the client
++            return false; // Paper - Properly handle lightning effects api; the concept of isSilent doesn't exist as sound is controlled by the client
          }
      };
  

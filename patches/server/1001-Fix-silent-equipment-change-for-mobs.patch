@@ -5,34 +5,34 @@ Subject: [PATCH] Fix silent equipment change for mobs
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 16d84042e2575418880897c728a99d1b8bbcdd15..5af48151159135b869ec4753bbcf79dd257c1570 100644
+index 16d84042e2575418880897c728a99d1b8bbcdd15..c81c72bf1027fcbaac67808fbcf6e0af112176bc 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -1059,13 +1059,20 @@ public abstract class Mob extends LivingEntity implements Targeting {
  
      @Override
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
-+        // Paper start
++        // Paper start - Fix silent equipment change
 +        setItemSlot(slot, stack, false);
 +    }
 +
 +    @Override
 +    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) {
-+        // Paper end
++        // Paper end - Fix silent equipment change
          this.verifyEquippedItem(stack);
          switch (slot.getType()) {
              case HAND:
 -                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack);
-+                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack, silent); // Paper
++                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
                  break;
              case ARMOR:
 -                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack);
-+                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack, silent); // Paper
++                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
          }
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
-index 8e9469fec42f7b6a132cf173f6f5a95777a29b3b..b319021b22c5dceba6199ed27814b2dcf47b8d50 100644
+index 8e9469fec42f7b6a132cf173f6f5a95777a29b3b..a383c0c8b5c89ef1eef7d18edc3a09f749fdd310 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
 @@ -250,8 +250,8 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
@@ -41,13 +41,13 @@ index 8e9469fec42f7b6a132cf173f6f5a95777a29b3b..b319021b22c5dceba6199ed27814b2dc
      @Override
 -    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
 -        super.setItemSlot(slot, stack);
-+    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) { // Paper
-+        super.setItemSlot(slot, stack, silent); // Paper
++    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) { // Paper - Fix silent equipment change
++        super.setItemSlot(slot, stack, silent); // Paper - Fix silent equipment change
          if (!this.level().isClientSide) {
              this.reassessWeaponGoal();
          }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index d5890f295350ae5fb6e4844c90f6ab8e3a5f5516..a7d40d41a332f0612a2f1ff60c7082e4a8825ba1 100644
+index d5890f295350ae5fb6e4844c90f6ab8e3a5f5516..990bb65f784a2ac52e131d1ed146c2cd6dc19dce 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -1900,7 +1900,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -58,7 +58,7 @@ index d5890f295350ae5fb6e4844c90f6ab8e3a5f5516..a7d40d41a332f0612a2f1ff60c7082e4
 +        // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
 +        // blocks at the same Y level with the same state can be assumed to be saplings which trigger observers regardless of if the
 +        // tree grew or not
-+        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) {
++        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) { // Paper - Fix silent equipment change
              this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
          }
      }

@@ -9,7 +9,7 @@ class to quickly retrieve nearby players instead of possible
 searching all players on the server.
 
 diff --git a/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
-index c3ce8a42dddd76b7189ad5685b23f9d9f8ccadb3..17ba07cbd4792f63d88ce29d00da280f30c4abff 100644
+index c3ce8a42dddd76b7189ad5685b23f9d9f8ccadb3..f164256d59b761264876ca0c85f812d101bfd5de 100644
 --- a/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
 +++ b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
 @@ -17,7 +17,8 @@ public final class NearbyPlayers {
@@ -39,12 +39,12 @@ index c3ce8a42dddd76b7189ad5685b23f9d9f8ccadb3..17ba07cbd4792f63d88ce29d00da280f
          players[NearbyMapType.GENERAL_REALLY_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_REALLY_SMALL_VIEW_DISTANCE);
          players[NearbyMapType.TICK_VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getTickViewDistance(player));
          players[NearbyMapType.VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getLoadViewDistance(player));
-+        players[NearbyMapType.SPAWN_RANGE.ordinal()].update(chunk.x, chunk.z, SPAWN_RANGE_VIEW_DISTANCE);
++        players[NearbyMapType.SPAWN_RANGE.ordinal()].update(chunk.x, chunk.z, SPAWN_RANGE_VIEW_DISTANCE); // Paper - optimise chunk iteration
      }
  
      public TrackedChunk getChunk(final ChunkPos pos) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 2b998bdbe49bf8211b755e0eb7c1bf13ac280eab..5afeb59ff25fed2d565407acacffec8383398006 100644
+index 2b998bdbe49bf8211b755e0eb7c1bf13ac280eab..627a88ec8c3b215b19b55a6d461c8754b4fcd1e8 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -79,11 +79,19 @@ public class ChunkHolder {
@@ -103,12 +103,12 @@ index 2b998bdbe49bf8211b755e0eb7c1bf13ac280eab..5afeb59ff25fed2d565407acacffec83
 +
      public void broadcastChanges(LevelChunk chunk) {
 -        if (this.hasChangedSections || !this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
-+        if (this.needsBroadcastChanges()) { // Paper - moved into above, other logic needs to call
++        if (this.needsBroadcastChanges()) { // Paper - optimise chunk tick iteration; moved into above, other logic needs to call
              Level world = chunk.getLevel();
              List list;
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 0405bc1e17975a74af3d56edf34354f5cb553a1c..d08b4ff04362a5a9add88d060beb48e4119b594d 100644
+index 0405bc1e17975a74af3d56edf34354f5cb553a1c..71606bca60410c8ab6fd6427dc11e35614928702 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -191,6 +191,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -135,7 +135,7 @@ index 0405bc1e17975a74af3d56edf34354f5cb553a1c..d08b4ff04362a5a9add88d060beb48e4
      // Paper end
  
 -    private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
-+    public static double euclideanDistanceSquared(ChunkPos pos, Entity entity) { // Paper - optimise chunk iteration - public
++    public static double euclideanDistanceSquared(ChunkPos pos, Entity entity) { // Paper - optimise chunk iteration; public
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
          double d2 = d0 - entity.getX();

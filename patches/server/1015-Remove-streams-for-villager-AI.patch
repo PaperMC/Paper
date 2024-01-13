@@ -5,7 +5,7 @@ Subject: [PATCH] Remove streams for villager AI
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
-index b45c4f50705f80163d44d9e588f86a5770f5be38..879e16d4c881a97f95eeff8016f9900d6cfe10c2 100644
+index b45c4f50705f80163d44d9e588f86a5770f5be38..64165fed12c6c76d4ceb36d69f47a1235c1e8e44 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 @@ -52,7 +52,7 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
@@ -13,7 +13,7 @@ index b45c4f50705f80163d44d9e588f86a5770f5be38..879e16d4c881a97f95eeff8016f9900d
              this.status = Behavior.Status.RUNNING;
              this.orderPolicy.apply(this.behaviors);
 -            this.runningPolicy.apply(this.behaviors.stream(), world, entity, time);
-+            this.runningPolicy.apply(this.behaviors.entries, world, entity, time);
++            this.runningPolicy.apply(this.behaviors.entries, world, entity, time); // Paper - Remove streams
              return true;
          } else {
              return false;
@@ -26,13 +26,13 @@ index b45c4f50705f80163d44d9e588f86a5770f5be38..879e16d4c881a97f95eeff8016f9900d
 -        }).forEach((task) -> {
 -            task.tickOrStop(world, entity, time);
 -        });
-+        // Paper start
++        // Paper start - Remove streams
 +        for (BehaviorControl<? super E> task : this.behaviors) {
 +            if (task.getStatus() == Behavior.Status.RUNNING) {
 +                task.tickOrStop(world, entity, time);
 +            }
 +        }
-+        // Paper end
++        // Paper end - Remove streams
          if (this.behaviors.stream().noneMatch((task) -> {
              return task.getStatus() == Behavior.Status.RUNNING;
          })) {
@@ -45,13 +45,13 @@ index b45c4f50705f80163d44d9e588f86a5770f5be38..879e16d4c881a97f95eeff8016f9900d
 -        }).forEach((task) -> {
 -            task.doStop(world, entity, time);
 -        });
-+        // Paper start
++        // Paper start - Remove streams
 +        for (BehaviorControl<? super E> behavior : this.behaviors) {
 +            if (behavior.getStatus() == Behavior.Status.RUNNING) {
 +                behavior.doStop(world, entity, time);
 +            }
 +        }
-+        // Paper end
++        // Paper end - Remove streams
          this.exitErasedMemories.forEach(entity.getBrain()::eraseMemory);
      }
  
@@ -65,7 +65,7 @@ index b45c4f50705f80163d44d9e588f86a5770f5be38..879e16d4c881a97f95eeff8016f9900d
 -                }).filter((task) -> {
 -                    return task.tryStart(world, entity, time);
 -                }).findFirst();
-+            // Paper start - remove streams
++            // Paper start - Remove streams
 +            public <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<BehaviorControl<? super E>>> tasks, ServerLevel world, E entity, long time) {
 +                for (ShufflingList.WeightedEntry<BehaviorControl<? super E>> task : tasks) {
 +                    final BehaviorControl<? super E> behavior = task.getData();
@@ -73,7 +73,7 @@ index b45c4f50705f80163d44d9e588f86a5770f5be38..879e16d4c881a97f95eeff8016f9900d
 +                        break;
 +                    }
 +                }
-+                // Paper end - remove streams
++                // Paper end - Remove streams
              }
          },
          TRY_ALL {
@@ -84,7 +84,7 @@ index b45c4f50705f80163d44d9e588f86a5770f5be38..879e16d4c881a97f95eeff8016f9900d
 -                }).forEach((task) -> {
 -                    task.tryStart(world, entity, time);
 -                });
-+            // Paper start - remove streams
++            // Paper start - Remove streams
 +            public <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<BehaviorControl<? super E>>> tasks, ServerLevel world, E entity, long time) {
 +                for (ShufflingList.WeightedEntry<BehaviorControl<? super E>> task : tasks) {
 +                    final BehaviorControl<? super E> behavior = task.getData();
@@ -92,12 +92,12 @@ index b45c4f50705f80163d44d9e588f86a5770f5be38..879e16d4c881a97f95eeff8016f9900d
 +                        behavior.tryStart(world, entity, time);
 +                    }
 +                }
-+                // Paper end - remove streams
++                // Paper end - Remove streams
              }
          };
  
 -        public abstract <E extends LivingEntity> void apply(Stream<BehaviorControl<? super E>> tasks, ServerLevel world, E entity, long time);
-+        public abstract <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<BehaviorControl<? super E>>> tasks, ServerLevel world, E entity, long time); // Paper - remove streams
++        public abstract <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<BehaviorControl<? super E>>> tasks, ServerLevel world, E entity, long time); // Paper - Remove streams
      }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
@@ -114,7 +114,7 @@ index 731ef21dbbd25d6924717de42f4569a9b5935643..fe3ab3d388f0481fb0db06b7f730f868
      private final boolean isUnsafe; // Paper
  
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
-index 1dfcc5cba6ffb463acf161a23fff1ca452184290..61a164c5bfc86faa3f4d04a66e0257016cfd937d 100644
+index 1dfcc5cba6ffb463acf161a23fff1ca452184290..9958690971a2f14bfdb8841e466fa783452c5b0c 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
 @@ -25,13 +25,16 @@ public class NearestItemSensor extends Sensor<Mob> {
@@ -126,7 +126,7 @@ index 1dfcc5cba6ffb463acf161a23fff1ca452184290..61a164c5bfc86faa3f4d04a66e025701
          });
 -        list.sort(Comparator.comparingDouble(entity::distanceToSqr));
 +        list.sort((e1, e2) -> Double.compare(entity.distanceToSqr(e1), entity.distanceToSqr(e2))); // better to take the sort perf hit than using line of sight more than we need to.
-+        // Paper start - remove streams
++        // Paper start - Remove streams
          // Paper start - remove streams in favour of lists
          ItemEntity nearest = null;
 -        for (ItemEntity entityItem : list) {
@@ -134,7 +134,7 @@ index 1dfcc5cba6ffb463acf161a23fff1ca452184290..61a164c5bfc86faa3f4d04a66e025701
 +        for (int i = 0; i < list.size(); i++) {
 +            ItemEntity entityItem = list.get(i);
 +            if (entity.hasLineOfSight(entityItem)) {
-+                // Paper end - remove streams
++                // Paper end - Remove streams
                  nearest = entityItem;
                  break;
              }
