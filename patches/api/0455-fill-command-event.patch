@@ -1,0 +1,240 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Sat, 13 Jan 2024 20:46:18 +0100
+Subject: [PATCH] fill command event
+
+
+diff --git a/src/main/java/io/papermc/paper/event/command/FillCommandEvent.java b/src/main/java/io/papermc/paper/event/command/FillCommandEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1e6c4a8809e052a7e68e3ffc3b33eeb07d111f6a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/command/FillCommandEvent.java
+@@ -0,0 +1,95 @@
++package io.papermc.paper.event.command;
++
++import org.bukkit.block.BlockState;
++import org.bukkit.command.CommandSender;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.bukkit.util.BoundingBox;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Triggers when fill command is executed
++ * For reference <a href="https://minecraft.wiki/w/Commands/fill">Minecraft Wiki Fill Command</a>
++ */
++public class FillCommandEvent extends Event implements Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++
++    private final CommandSender commandSender;
++    private final BoundingBox boundingBox;
++    private final BlockState state;
++    private final FillMode fillMode;
++    private boolean cancel = false;
++
++
++    /**
++     * Ctor
++     *
++     * @param commandSender the sender who executed the command
++     * @param fillMode the fill mode {@link FillMode}
++     */
++    public FillCommandEvent(@NotNull CommandSender commandSender, @NotNull BoundingBox boundingBox, @NotNull BlockState state, @NotNull FillMode fillMode) {
++        this.commandSender = commandSender;
++        this.boundingBox = boundingBox;
++        this.state = state;
++        this.fillMode = fillMode;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public @NotNull HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    /***
++     * Returns the sender of the command.
++     * @return the command sender
++     */
++    public @NotNull CommandSender getCommandSender() {
++        return commandSender;
++    }
++
++
++    /**
++     * Returns the fill mode.
++     * It is one of destroy|hollow|keep|outline|replace
++     *
++     *
++     * @return the fill mode
++     */
++    public @NotNull FillMode getFillMode() {
++        return fillMode;
++    }
++
++    /**
++     * Specifies the bounding box of the two opposing corner blocks of the region to be filled (the "fill region").
++     *
++     * @return the selection bounding box
++     */
++    public @NotNull BoundingBox getBoundingBox() {
++        return boundingBox.clone();
++    }
++
++    /**
++     * Is the state that will be set by the fill command
++     *
++     * @return the block state that will be set
++     */
++    public @NotNull BlockState getState() {
++        return state;
++    }
++
++
++    @Override
++    public boolean isCancelled() {
++        return cancel;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancel = cancel;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/command/FillMode.java b/src/main/java/io/papermc/paper/event/command/FillMode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..20afd62e25b39e416e851ef436cc8429595145ca
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/command/FillMode.java
+@@ -0,0 +1,127 @@
++package io.papermc.paper.event.command;
++
++import java.util.function.Predicate;
++import org.bukkit.Location;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * The placement mode of the fill command see minecraft wiki
++ * <a href="https://minecraft.wiki/w/Commands/fill">FillCommand</a>
++ */
++public sealed interface FillMode {
++
++    /**
++     * Replaces all blocks (including air) in the fill region with the specified block,
++     * without dropping blocks or block contents as entities.
++     * Optionally, instead of specifying a data tag for the replacing block,
++     * block ID and data values may be specified to limit which blocks are replaced.
++     */
++    static @NotNull FillMode replace(@Nullable Predicate<Location> filter) {
++        return new Replace(filter);
++    }
++
++    /**
++     * Replaces all blocks (including air) in the fill region with the specified block,
++     * dropping the existing blocks (including those that are unchanged)
++     * and block contents as entities as if they had been mined with an unenchanted diamond shovel or pickaxe.
++     * (Blocks that can be mined only with shears, such as vines, do not drop; neither do liquids.)
++     */
++    static @NotNull FillMode destroy() {
++        return new Destroy();
++    }
++
++    /**
++     * Replaces only the air blocks in the fill region with the specified block.
++     */
++    static @NotNull FillMode keep() {
++        return new Keep();
++    }
++
++    /**
++     * Replaces only the blocks on the outer edge of the fill region with the specified block.
++     * Inner blocks are changed to air, dropping their contents as entities but not themselves.
++     * If the fill region has no inner blocks (because it is smaller than three blocks in at least one dimension),
++     * acts like replace.
++     */
++    static @NotNull FillMode hollow() {
++        return new Hollow();
++    }
++
++    /**
++     * Replaces only the blocks on the outer edge of the fill region with the specified block.
++     * Inner blocks are not affected.
++     * If the fill region has no inner blocks (because it is smaller than three blocks in at least one dimension),
++     * acts like replace.
++     */
++    static @NotNull FillMode outline() {
++        return new Outline();
++    }
++
++
++    /**
++     * Replaces all blocks (including air) in the fill region with the specified block,
++     * without dropping blocks or block contents as entities.
++     * Optionally, instead of specifying a data tag for the replacing block,
++     * block ID and data values may be specified to limit which blocks are replaced.
++     */
++    final class Replace implements FillMode {
++        private final @Nullable Predicate<Location> filter;
++
++        Replace(@Nullable Predicate<Location> filter) {
++            this.filter = filter;
++        }
++
++        public @Nullable Predicate<Location> filter() {
++            return filter;
++        }
++    }
++
++    /**
++     * Replaces all blocks (including air) in the fill region with the specified block,
++     * dropping the existing blocks (including those that are unchanged)
++     * and block contents as entities as if they had been mined with an unenchanted diamond shovel or pickaxe.
++     * (Blocks that can be mined only with shears, such as vines, do not drop; neither do liquids.)
++     */
++    final class Destroy implements FillMode {
++        /**
++         *
++         */
++        Destroy() {
++        }
++
++    }
++
++    /**
++     * Replaces only the air blocks in the fill region with the specified block.
++     */
++    static final class Keep implements FillMode {
++        /**
++         *
++         */
++        Keep() {
++        }
++    }
++
++    /**
++     * Replaces only the blocks on the outer edge of the fill region with the specified block.
++     * Inner blocks are changed to air, dropping their contents as entities but not themselves.
++     * If the fill region has no inner blocks (because it is smaller than three blocks in at least one dimension),
++     * acts like replace.
++     */
++    static final class Hollow implements FillMode {
++        Hollow() {
++        }
++    }
++
++    /**
++     * Replaces only the blocks on the outer edge of the fill region with the specified block.
++     * Inner blocks are not affected.
++     * If the fill region has no inner blocks (because it is smaller than three blocks in at least one dimension),
++     * acts like replace.
++     */
++    static final class Outline implements FillMode {
++        Outline() {
++        }
++    }
++}

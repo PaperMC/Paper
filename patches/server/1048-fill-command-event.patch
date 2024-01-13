@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Sat, 13 Jan 2024 22:00:48 +0100
+Subject: [PATCH] fill command event
+
+== AT ==
+public net.minecraft.commands.arguments.blocks.BlockInput tag
+
+diff --git a/src/main/java/net/minecraft/server/commands/FillCommand.java b/src/main/java/net/minecraft/server/commands/FillCommand.java
+index 287e0b193060829174d9ac7d127c3034c5eee1e1..1fdb27f64e9d4da5852a6723005f0626453480de 100644
+--- a/src/main/java/net/minecraft/server/commands/FillCommand.java
++++ b/src/main/java/net/minecraft/server/commands/FillCommand.java
+@@ -67,6 +67,14 @@ public class FillCommand {
+             ServerLevel serverLevel = source.getLevel();
+             int k = 0;
+ 
++            // Paper start - add fill command event
++            boolean cancelled = new io.papermc.paper.event.command.FillCommandEvent(
++                source.getBukkitSender(),
++                new org.bukkit.util.BoundingBox(range.minX(), range.minY(), range.minZ(), range.maxX(), range.maxY(), range.maxZ()),
++                org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(block.getState(), block.tag),
++                fromNMS(mode, filter)
++            ).callEvent();
++            if(!cancelled) { // Paper end - add fill command event
+             for(BlockPos blockPos : BlockPos.betweenClosed(range.minX(), range.minY(), range.minZ(), range.maxX(), range.maxY(), range.maxZ())) {
+                 if (filter == null || filter.test(new BlockInWorld(serverLevel, blockPos, true))) {
+                     BlockInput blockInput = mode.filter.filter(range, blockPos, block, serverLevel);
+@@ -85,6 +93,7 @@ public class FillCommand {
+                 Block block2 = serverLevel.getBlockState(blockPos2).getBlock();
+                 serverLevel.blockUpdated(blockPos2, block2);
+             }
++            } // Paper - add fill command event
+ 
+             if (k == 0) {
+                 throw ERROR_FAILED.create();
+@@ -97,6 +106,17 @@ public class FillCommand {
+             }
+         }
+     }
++    // Paper start - add fill command event
++    private static io.papermc.paper.event.command.FillMode fromNMS(Mode mode, @org.jetbrains.annotations.Nullable Predicate<BlockInWorld> filter) {
++        return switch (mode) {
++            case REPLACE -> io.papermc.paper.event.command.FillMode.replace(
++                filter == null ? null : (org.bukkit.Location location) -> filter.test(new BlockInWorld(((org.bukkit.craftbukkit.CraftWorld)location.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(location), true))
++            );
++            case OUTLINE -> io.papermc.paper.event.command.FillMode.outline();
++            case HOLLOW -> io.papermc.paper.event.command.FillMode.hollow();
++            case DESTROY -> io.papermc.paper.event.command.FillMode.destroy();
++        };
++    } // Paper end - add fill command event
+ 
+     static enum Mode {
+         REPLACE((range, pos, block, world) -> {
