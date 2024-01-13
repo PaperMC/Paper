@@ -206,27 +206,28 @@ when making and submitting changes.
 
 All modifications to non-Paper files should be marked.
 
-- Multi-line changes start with `// Paper start` and end with `// Paper end`;
-- You can put a comment with an explanation if it isn't obvious, like this:
-`// Paper start - reason`.
-   - The comments should generally be about the reason the change was made, what
-  it was before, or what the change is.
-   - Multi-line messages should start with `// Paper start` and use `/* Multi
-  line message here */` for the message itself.
-- One-line changes should have `// Paper` or `// Paper - reason`.
+- You need to add a comment with a short and identifiable description of the patch:
+  `// Paper start - <COMMIT DESCRIPTION>`
+    - The comments should generally be about the reason the change was made, what
+      it was before, or what the change is.
+    - After the general commit description, you can add additional information either
+      after a `;` or in the next line.
+- Multi-line changes start with `// Paper start - <COMMIT DESCRIPTION>` and end
+  with `// Paper end - <COMMIT DESCRIPTION>`.
+- One-line changes should have `// Paper - <COMMIT DESCRIPTION>` at the end of the line.
 
 Here's an example of how to mark changes by Paper:
 
 ```java
-entity.getWorld().dontbeStupid(); // Paper - was beStupid() which is bad
+entity.getWorld().dontBeStupid(); // Paper - Was beStupid(), which is bad
 entity.getFriends().forEach(Entity::explode);
-entity.a();
-entity.b();
-// Paper start - use plugin-set spawn
+entity.updateFriends();
+
+// Paper start - Use plugin-set spawn
 // entity.getWorld().explode(entity.getWorld().getSpawn());
 Location spawnLocation = ((CraftWorld)entity.getWorld()).getSpawnLocation();
 entity.getWorld().explode(new BlockPosition(spawnLocation.getX(), spawnLocation.getY(), spawnLocation.getZ()));
-// Paper end
+// Paper end - Use plugin-set spawn
 ```
 
 We generally follow the usual Java style (aka. Oracle style), or what is programmed
