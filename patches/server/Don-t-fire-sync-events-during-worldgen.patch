@@ -26,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit start
      private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
          org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
-+        entity.generation = false; // Reset flag if it was added during a ServerLevel generation process
++        entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
          // Paper start
          if (entity.valid) {
              MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable());
@@ -39,11 +39,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return;
          }
 -        this.level.getCraftServer().getPluginManager().callEvent(new EntityPoseChangeEvent(this.getBukkitEntity(), Pose.values()[pose.ordinal()]));
-+        // Paper start - don't fire event during generation
++        // Paper start - Don't fire sync event during generation
 +        if (!this.generation) {
 +            this.level.getCraftServer().getPluginManager().callEvent(new EntityPoseChangeEvent(this.getBukkitEntity(), Pose.values()[pose.ordinal()]));
 +        }
-+        // Paper end - don't fire event during generation
++        // Paper end - Don't fire sync event during generation
          // CraftBukkit end
          this.entityData.set(Entity.DATA_POSE, pose);
      }
@@ -55,15 +55,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static Optional<Entity> create(CompoundTag nbt, Level world) {
-+        // Paper start - add generation bool param
++        // Paper start - Don't fire sync event during generation
 +        return create(nbt, world, false);
 +    }
 +    public static Optional<Entity> create(CompoundTag nbt, Level world, boolean generation) {
-+        // Paper end - add generation bool param
++        // Paper end - Don't fire sync event during generation
          return Util.ifElse(EntityType.by(nbt).map((entitytypes) -> {
              return entitytypes.create(world);
          }), (entity) -> {
-+            if (generation) entity.generation = true; // Paper - add generation bool param
++            if (generation) entity.generation = true; // Paper - Don't fire sync event during generation
              entity.load(nbt);
          }, () -> {
              EntityType.LOGGER.warn("Skipping Entity with id {}", nbt.getString("id"));
@@ -75,11 +75,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause) {
-+        // Paper start - add boolean param to optionally fire the event
++        // Paper start - Don't fire sync event during generation
 +        return this.addEffect(mobeffect, entity, cause, true);
 +    }
 +    public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause, boolean fireEvent) {
-+        // Paper end
++        // Paper end - Don't fire sync event during generation
          // org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot // Paper - move to API
          if (this.isTickingEffects) {
              this.effectsToProcess.add(new ProcessableEffect(mobeffect, cause));
@@ -87,13 +87,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  override = new MobEffectInstance(mobeffect1).update(mobeffect);
              }
  
-+            if (fireEvent) { // Paper
++            if (fireEvent) { // Paper - Don't fire sync event during generation
              EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobeffect1, mobeffect, cause, override);
-+            override = event.isOverride(); // Paper
++            override = event.isOverride(); // Paper - Don't fire sync event during generation
              if (event.isCancelled()) {
                  return false;
              }
-+            } // Paper
++            } // Paper - Don't fire sync event during generation
              // CraftBukkit end
  
              if (mobeffect1 == null) {
@@ -102,7 +102,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  flag = true;
                  // CraftBukkit start
 -            } else if (event.isOverride()) {
-+            } else if (override) { // Paper
++            } else if (override) { // Paper - Don't fire sync event during generation
                  mobeffect1.update(mobeffect);
                  this.onEffectUpdated(mobeffect1, true, entity);
                  // CraftBukkit end
@@ -115,7 +115,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (mobeffectlist != null) {
 -                this.addEffect(new MobEffectInstance(mobeffectlist, -1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN); // CraftBukkit
-+                this.addEffect(new MobEffectInstance(mobeffectlist, -1), null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN, world instanceof net.minecraft.server.level.ServerLevel); // CraftBukkit // Paper - only fire the effect event if this is happening in a ServerLevel
++                this.addEffect(new MobEffectInstance(mobeffectlist, -1), null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN, world instanceof net.minecraft.server.level.ServerLevel); // CraftBukkit // Paper - Don't fire sync event during generation; only if this is happening in a ServerLevel
              }
          }
  
@@ -128,7 +128,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit start
          // try {
 -            return EntityType.create(nbt, world.getLevel());
-+            return EntityType.create(nbt, world.getLevel(), true); // Paper - set generation bool
++            return EntityType.create(nbt, world.getLevel(), true); // Paper - Don't fire sync event during generation
          // } catch (Exception exception) {
              // return Optional.empty();
          // }
@@ -149,7 +149,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public void addFreshEntityWithPassengers(Entity entity) {
 -        this.handle.addFreshEntityWithPassengers(entity);
 -    }
-+    // Paper start - don't override these methods so all entities are run through addFreshEntity
++    // Paper start - Don't fire sync event during generation; don't override these methods so all entities are run through addFreshEntity
 +    // @Override
 +    // public void addFreshEntityWithPassengers(Entity arg0, CreatureSpawnEvent.SpawnReason arg1) {
 +    //     this.handle.addFreshEntityWithPassengers(arg0, arg1);
@@ -159,7 +159,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // public void addFreshEntityWithPassengers(Entity entity) {
 +    //     this.handle.addFreshEntityWithPassengers(entity);
 +    // }
-+    // Paper end - don't override these methods
++    // Paper end - Don't fire sync event during generation; don't override these methods
  
      @Override
      public ServerLevel getMinecraftWorld() {
@@ -186,7 +186,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }
 -        super.addFreshEntityWithPassengers(arg0, arg1);
 -    }
-+    // Paper start - don't override these methods so all entities are run through addFreshEntity
++    // Paper start - Don't fire sync event during generation; don't override these methods so all entities are run through addFreshEntity
 +    // @Override
 +    // public void addFreshEntityWithPassengers(Entity entity) {
 +    //     if (this.structureTransformer != null && !this.structureTransformer.transformEntity(entity)) {
@@ -202,7 +202,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    //     }
 +    //     super.addFreshEntityWithPassengers(arg0, arg1);
 +    // }
-+    // Paper end - don't override these methods
++    // Paper end - Don't fire sync event during generation; don't override these methods
  
      public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int i, int j) {
          if (this.structureTransformer != null) {

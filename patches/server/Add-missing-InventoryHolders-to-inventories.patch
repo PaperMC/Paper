@@ -34,11 +34,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public org.bukkit.inventory.InventoryHolder getOwner() {
-+        // Paper start
++        // Paper start - Add missing InventoryHolders
 +        if (this.bukkitOwner == null && this.bukkitOwnerCreator != null) {
 +            this.bukkitOwner = this.bukkitOwnerCreator.get();
 +        }
-+        // Paper end
++        // Paper end - Add missing InventoryHolders
          return this.bukkitOwner;
      }
  
@@ -46,13 +46,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public SimpleContainer(int size) {
          this(size, null);
      }
-+    // Paper start
++    // Paper start - Add missing InventoryHolders
 +    private @Nullable java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> bukkitOwnerCreator;
 +    public SimpleContainer(java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> bukkitOwnerCreator, int size) {
 +        this(size);
 +        this.bukkitOwnerCreator = bukkitOwnerCreator;
 +    }
-+    // Paper end
++    // Paper end - Add missing InventoryHolders
  
      public SimpleContainer(int i, org.bukkit.inventory.InventoryHolder owner) {
          this.bukkitOwner = owner;
@@ -65,7 +65,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.stateId;
      }
 +
-+    // Paper start - add missing BlockInventoryHolder to inventories
++    // Paper start - Add missing InventoryHolders
 +    // The reason this is a supplier, is that the createHolder method uses the bukkit InventoryView#getTopInventory to get the inventory in question
 +    // and that can't be obtained safely until the AbstractContainerMenu has been fully constructed. Using a supplier lazily
 +    // initializes the InventoryHolder safely.
@@ -74,7 +74,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Preconditions.checkArgument(context != null, "context was null");
 +        return () -> context.createBlockHolder(this);
 +    }
-+    // Paper end
++    // Paper end - Add missing InventoryHolders
  }
 diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -85,7 +85,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          super(MenuType.BEACON, syncId);
          this.player = (Inventory) inventory; // CraftBukkit - TODO: check this
 -        this.beacon = new SimpleContainer(1) {
-+        this.beacon = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper
++        this.beacon = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders
              @Override
              public boolean canPlaceItem(int slot, ItemStack stack) {
                  return stack.is(ItemTags.BEACON_PAYMENT_ITEMS);
@@ -98,7 +98,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public CartographyTableMenu(int syncId, Inventory inventory, final ContainerLevelAccess context) {
          super(MenuType.CARTOGRAPHY_TABLE, syncId);
 -        this.container = new SimpleContainer(2) {
-+        this.container = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper
++        this.container = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper - Add missing InventoryHolders
              @Override
              public void setChanged() {
                  CartographyTableMenu.this.slotsChanged(this);
@@ -107,7 +107,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // CraftBukkit end
          };
 -        this.resultContainer = new ResultContainer() {
-+        this.resultContainer = new ResultContainer(this.createBlockHolder(context)) { // Paper
++        this.resultContainer = new ResultContainer(this.createBlockHolder(context)) { // Paper - Add missing InventoryHolders
              @Override
              public void setChanged() {
                  CartographyTableMenu.this.slotsChanged(this);
@@ -119,7 +119,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return new org.bukkit.Location(this.getWorld().getWorld(), this.getPosition().getX(), this.getPosition().getY(), this.getPosition().getZ());
      }
      // CraftBukkit end
-+    // Paper start
++    // Paper start - Add missing InventoryHolders
 +    default boolean isBlock() {
 +        return false;
 +    }
@@ -130,7 +130,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        return new org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder(this, menu.getBukkitView().getTopInventory());
 +    }
-+    // Paper end
++    // Paper end - Add missing InventoryHolders
  
      ContainerLevelAccess NULL = new ContainerLevelAccess() {
          @Override
@@ -138,12 +138,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return pos;
              }
              // CraftBukkit end
-+            // Paper start
++            // Paper start - Add missing InventoryHolders
 +            @Override
 +            public boolean isBlock() {
 +                return true;
 +            }
-+            // Paper end
++            // Paper end - Add missing InventoryHolders
  
              @Override
              public <T> Optional<T> evaluate(BiFunction<Level, BlockPos, T> getter) {
@@ -156,7 +156,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public EnchantmentMenu(int syncId, Inventory playerInventory, ContainerLevelAccess context) {
          super(MenuType.ENCHANTMENT, syncId);
 -        this.enchantSlots = new SimpleContainer(2) {
-+        this.enchantSlots = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper
++        this.enchantSlots = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper - Add missing InventoryHolders
              @Override
              public void setChanged() {
                  super.setChanged();
@@ -170,8 +170,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          super(MenuType.GRINDSTONE, syncId);
 -        this.resultSlots = new ResultContainer();
 -        this.repairSlots = new SimpleContainer(2) {
-+        this.resultSlots = new ResultContainer(this.createBlockHolder(context)); // Paper
-+        this.repairSlots = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper
++        this.resultSlots = new ResultContainer(this.createBlockHolder(context)); // Paper - Add missing InventoryHolders
++        this.repairSlots = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper - Add missing InventoryHolders
              @Override
              public void setChanged() {
                  super.setChanged();
@@ -184,7 +184,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected final Container inputSlots;
      private final List<Integer> inputSlotIndexes;
 -    protected final ResultContainer resultSlots = new ResultContainer();
-+    protected final ResultContainer resultSlots; // Paper - delay field init
++    protected final ResultContainer resultSlots; // Paper - Add missing InventoryHolders; delay field init
      private final int resultSlotIndex;
  
      protected abstract boolean mayPickup(Player player, boolean present);
@@ -192,7 +192,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ItemCombinerMenu(@Nullable MenuType<?> type, int syncId, Inventory playerInventory, ContainerLevelAccess context) {
          super(type, syncId);
          this.access = context;
-+        this.resultSlots = new ResultContainer(this.createBlockHolder(this.access)); // Paper - delay field init
++        this.resultSlots = new ResultContainer(this.createBlockHolder(this.access)); // Paper - Add missing InventoryHolders; delay field init
          this.player = playerInventory.player;
          ItemCombinerMenuSlotDefinition itemcombinermenuslotdefinition = this.createInputSlotDefinitions();
  
@@ -201,7 +201,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private SimpleContainer createContainer(int size) {
 -        return new SimpleContainer(size) {
-+        return new SimpleContainer(this.createBlockHolder(this.access), size) { // Paper
++        return new SimpleContainer(this.createBlockHolder(this.access), size) { // Paper - Add missing InventoryHolders
              @Override
              public void setChanged() {
                  super.setChanged();
@@ -214,7 +214,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.slotUpdateListener = () -> {
          };
 -        this.inputContainer = new SimpleContainer(3) {
-+        this.inputContainer = new SimpleContainer(this.createBlockHolder(context), 3) { // Paper
++        this.inputContainer = new SimpleContainer(this.createBlockHolder(context), 3) { // Paper - Add missing InventoryHolders
              @Override
              public void setChanged() {
                  super.setChanged();
@@ -223,7 +223,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // CraftBukkit end
          };
 -        this.outputContainer = new SimpleContainer(1) {
-+        this.outputContainer = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper
++        this.outputContainer = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders
              @Override
              public void setChanged() {
                  super.setChanged();
@@ -236,12 +236,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public org.bukkit.inventory.InventoryHolder getOwner() {
 -        return null; // Result slots don't get an owner
-+        // Paper start
++        // Paper start - Add missing InventoryHolders
 +        if (this.holder == null && this.holderCreator != null) {
 +            this.holder = this.holderCreator.get();
 +        }
 +        return this.holder; // Result slots don't get an owner
-+        // Paper end - yes they do
++        // Paper end - Add missing InventoryHolders
      }
  
      // Don't need a transaction; the InventoryCrafting keeps track of it for us
@@ -249,14 +249,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return null;
      }
      // CraftBukkit end
-+    // Paper start
++    // Paper start - Add missing InventoryHolders
 +    private @Nullable java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> holderCreator;
 +    private @Nullable org.bukkit.inventory.InventoryHolder holder;
 +    public ResultContainer(java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> holderCreator) {
 +        this();
 +        this.holderCreator = holderCreator;
 +    }
-+    // Paper end
++    // Paper end - Add missing InventoryHolders
  
      public ResultContainer() {
          this.itemStacks = NonNullList.withSize(1, ItemStack.EMPTY);
@@ -269,7 +269,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.slotUpdateListener = () -> {
          };
 -        this.container = new SimpleContainer(1) {
-+        this.container = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper
++        this.container = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders
              @Override
              public void setChanged() {
                  super.setChanged();
@@ -278,7 +278,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // CraftBukkit end
          };
 -        this.resultContainer = new ResultContainer();
-+        this.resultContainer = new ResultContainer(this.createBlockHolder(context)); // Paper
++        this.resultContainer = new ResultContainer(this.createBlockHolder(context)); // Paper - Add missing InventoryHolders
          this.access = context;
          this.level = playerInventory.player.level();
          this.inputSlot = this.addSlot(new Slot(this.container, 0, 20, 33));
@@ -290,13 +290,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.block = CraftBlock.at(world, pos);
          this.inventory = new CraftInventory(inv);
      }
-+    // Paper start
++    // Paper start - Add missing InventoryHolders
 +    public CraftBlockInventoryHolder(net.minecraft.world.inventory.ContainerLevelAccess levelAccess, Inventory inventory) {
 +        com.google.common.base.Preconditions.checkArgument(levelAccess.isBlock());
 +        this.block = CraftBlock.at(levelAccess.getWorld(), levelAccess.getPosition());
 +        this.inventory = inventory;
 +    }
-+    // Paper end
++    // Paper end - Add missing InventoryHolders
  
      @Override
      public Block getBlock() {

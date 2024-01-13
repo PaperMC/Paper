@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.status = Behavior.Status.RUNNING;
              this.orderPolicy.apply(this.behaviors);
 -            this.runningPolicy.apply(this.behaviors.stream(), world, entity, time);
-+            this.runningPolicy.apply(this.behaviors.entries, world, entity, time);
++            this.runningPolicy.apply(this.behaviors.entries, world, entity, time); // Paper - Remove streams
              return true;
          } else {
              return false;
@@ -26,13 +26,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }).forEach((task) -> {
 -            task.tickOrStop(world, entity, time);
 -        });
-+        // Paper start
++        // Paper start - Remove streams
 +        for (BehaviorControl<? super E> task : this.behaviors) {
 +            if (task.getStatus() == Behavior.Status.RUNNING) {
 +                task.tickOrStop(world, entity, time);
 +            }
 +        }
-+        // Paper end
++        // Paper end - Remove streams
          if (this.behaviors.stream().noneMatch((task) -> {
              return task.getStatus() == Behavior.Status.RUNNING;
          })) {
@@ -45,13 +45,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }).forEach((task) -> {
 -            task.doStop(world, entity, time);
 -        });
-+        // Paper start
++        // Paper start - Remove streams
 +        for (BehaviorControl<? super E> behavior : this.behaviors) {
 +            if (behavior.getStatus() == Behavior.Status.RUNNING) {
 +                behavior.doStop(world, entity, time);
 +            }
 +        }
-+        // Paper end
++        // Paper end - Remove streams
          this.exitErasedMemories.forEach(entity.getBrain()::eraseMemory);
      }
  
@@ -65,7 +65,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                }).filter((task) -> {
 -                    return task.tryStart(world, entity, time);
 -                }).findFirst();
-+            // Paper start - remove streams
++            // Paper start - Remove streams
 +            public <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<BehaviorControl<? super E>>> tasks, ServerLevel world, E entity, long time) {
 +                for (ShufflingList.WeightedEntry<BehaviorControl<? super E>> task : tasks) {
 +                    final BehaviorControl<? super E> behavior = task.getData();
@@ -73,7 +73,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        break;
 +                    }
 +                }
-+                // Paper end - remove streams
++                // Paper end - Remove streams
              }
          },
          TRY_ALL {
@@ -84,7 +84,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                }).forEach((task) -> {
 -                    task.tryStart(world, entity, time);
 -                });
-+            // Paper start - remove streams
++            // Paper start - Remove streams
 +            public <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<BehaviorControl<? super E>>> tasks, ServerLevel world, E entity, long time) {
 +                for (ShufflingList.WeightedEntry<BehaviorControl<? super E>> task : tasks) {
 +                    final BehaviorControl<? super E> behavior = task.getData();
@@ -92,12 +92,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        behavior.tryStart(world, entity, time);
 +                    }
 +                }
-+                // Paper end - remove streams
++                // Paper end - Remove streams
              }
          };
  
 -        public abstract <E extends LivingEntity> void apply(Stream<BehaviorControl<? super E>> tasks, ServerLevel world, E entity, long time);
-+        public abstract <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<BehaviorControl<? super E>>> tasks, ServerLevel world, E entity, long time); // Paper - remove streams
++        public abstract <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<BehaviorControl<? super E>>> tasks, ServerLevel world, E entity, long time); // Paper - Remove streams
      }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
@@ -126,7 +126,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          });
 -        list.sort(Comparator.comparingDouble(entity::distanceToSqr));
 +        list.sort((e1, e2) -> Double.compare(entity.distanceToSqr(e1), entity.distanceToSqr(e2))); // better to take the sort perf hit than using line of sight more than we need to.
-+        // Paper start - remove streams
++        // Paper start - Remove streams
          // Paper start - remove streams in favour of lists
          ItemEntity nearest = null;
 -        for (ItemEntity entityItem : list) {
@@ -134,7 +134,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (int i = 0; i < list.size(); i++) {
 +            ItemEntity entityItem = list.get(i);
 +            if (entity.hasLineOfSight(entityItem)) {
-+                // Paper end - remove streams
++                // Paper end - Remove streams
                  nearest = entityItem;
                  break;
              }

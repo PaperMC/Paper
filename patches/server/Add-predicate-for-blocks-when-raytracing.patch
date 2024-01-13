@@ -12,12 +12,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
      default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition) {
-+        // Paper start
++        // Paper start - Add predicate for blocks when raytracing
 +        return clip(raytrace1, blockposition, null);
 +    }
 +
 +    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
-+            // Paper end
++            // Paper end - Add predicate for blocks when raytracing
              // Paper start - Prevent raytrace from loading chunks
              BlockState iblockdata = this.getBlockStateIfLoaded(blockposition);
              if (iblockdata == null) {
@@ -34,15 +34,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit end
  
      default BlockHitResult clip(ClipContext context) {
-+        // Paper start
++        // Paper start - Add predicate for blocks when raytracing
 +        return clip(context, (java.util.function.Predicate<org.bukkit.block.Block>) null);
 +    }
 +
 +    default BlockHitResult clip(ClipContext context, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
-+        // Paper end
++        // Paper end - Add predicate for blocks when raytracing
          return (BlockHitResult) BlockGetter.traverseBlocks(context.getFrom(), context.getTo(), context, (raytrace1, blockposition) -> {
 -            return this.clip(raytrace1, blockposition); // CraftBukkit - moved into separate method
-+            return this.clip(raytrace1, blockposition, canCollide); // CraftBukkit - moved into separate method // Paper - use method with canCollide predicate
++            return this.clip(raytrace1, blockposition, canCollide); // CraftBukkit - moved into separate method // Paper - Add predicate for blocks when raytracing
          }, (raytrace1) -> {
              Vec3 vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
  
@@ -54,7 +54,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize, Predicate<? super Entity> filter) {
-+        // Paper start
++        // Paper start - Add predicate for blocks when raytracing
 +        return rayTraceEntities((io.papermc.paper.math.Position) start, direction, maxDistance, raySize, filter);
 +    }
 +
@@ -64,7 +64,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        start.checkFinite();
 +        Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
 +        Preconditions.checkArgument(start.isFinite(), "Location start is not finite");
-+        // Paper end
++        // Paper end - Add predicate for blocks when raytracing
  
          Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
          direction.checkFinite();
@@ -72,7 +72,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks) {
-+        // Paper start
++        // Paper start - Add predicate for blocks when raytracing
 +        return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, null);
 +    }
 +
@@ -83,7 +83,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        start.checkFinite();
 +        Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
 +        Preconditions.checkArgument(start.isFinite(), "Location start is not finite");
-+        // Paper end
++        // Paper end - Add predicate for blocks when raytracing
  
          Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
          direction.checkFinite();
@@ -92,10 +92,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          Vector dir = direction.clone().normalize().multiply(maxDistance);
 -        Vec3 startPos = CraftLocation.toVec3D(start);
-+        Vec3 startPos = io.papermc.paper.util.MCUtil.toVec3(start); // Paper
++        Vec3 startPos = io.papermc.paper.util.MCUtil.toVec3(start); // Paper - Add predicate for blocks when raytracing
          Vec3 endPos = startPos.add(dir.getX(), dir.getY(), dir.getZ());
 -        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), CollisionContext.empty()));
-+        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), CollisionContext.empty()), canCollide); // Paper - use method with canCollide predicate
++        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), CollisionContext.empty()), canCollide); // Paper - Add predicate for blocks when raytracing
  
          return CraftRayTraceResult.fromNMS(this, nmsHitResult);
      }
@@ -103,14 +103,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter) {
 -        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks);
-+        // Paper start
++        // Paper start - Add predicate for blocks when raytracing
 +        return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, null);
 +    }
 +
 +    @Override
 +    public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter, Predicate<? super Block> canCollide) {
 +        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, canCollide);
-+        // Paper end
++        // Paper end - Add predicate for blocks when raytracing
          Vector startVec = null;
          double blockHitDistance = maxDistance;
  
