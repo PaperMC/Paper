@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 457b0f1f469436f6caa7473d91f906f1a61d6c74..2f04f10f5819be04b98ac0b52a2d7f4dfa525cea 100644
+index 9d2ec082302a422e3135dc0ff6fedf86456b74b5..2defe6f950b8a5e1f039f61fa30343ccc7d4617a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -283,7 +283,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -32,7 +32,7 @@ index 457b0f1f469436f6caa7473d91f906f1a61d6c74..2f04f10f5819be04b98ac0b52a2d7f4d
 +    private static final int SAMPLE_INTERVAL = 20; // Paper
      public final double[] recentTps = new double[ 3 ];
      // Spigot end
-     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations;
+     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
 @@ -979,6 +979,57 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      {
          return ( avg * exp ) + ( tps * ( 1 - exp ) );
@@ -103,7 +103,7 @@ index 457b0f1f469436f6caa7473d91f906f1a61d6c74..2f04f10f5819be04b98ac0b52a2d7f4d
 @@ -1024,15 +1075,22 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  }
                  // Spigot start
-                 ++MinecraftServer.currentTickLong; // Paper
+                 ++MinecraftServer.currentTickLong; // Paper - track current tick as a long
 -                if ( tickCount++ % MinecraftServer.SAMPLE_INTERVAL == 0 )
 +                if ( ++MinecraftServer.currentTick % MinecraftServer.SAMPLE_INTERVAL == 0 ) // Paper
                  {
@@ -141,7 +141,7 @@ index 457b0f1f469436f6caa7473d91f906f1a61d6c74..2f04f10f5819be04b98ac0b52a2d7f4d
                  this.startMetricsRecordingTick();
                  this.profiler.push("tick");
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 1c8363ea23c76633b69e4b98b35ea4feb6c1d2ff..d491b3e7a6ec5ef2e2d7bf3fa014a4f501bff124 100644
+index a0608611d17d2e4c05f04c9dc14b6a65e7f63f8d..e2da717c11f48573babe27d0dac1d679e8eb6964 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2573,6 +2573,17 @@ public final class CraftServer implements Server {

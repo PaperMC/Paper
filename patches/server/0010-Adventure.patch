@@ -2077,14 +2077,14 @@ index 0000000000000000000000000000000000000000..c0701d4f93a4d77a8177d2dd8d5076f9
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/ChatFormatting.java b/src/main/java/net/minecraft/ChatFormatting.java
-index e7980c88d036c617420e80bda8e1972723f97b52..44a1c467c429feee2f6292b6fcb1dbfa0354d46b 100644
+index e7980c88d036c617420e80bda8e1972723f97b52..efbc104acc62c5af8acf35b15f1be0d9f11113c9 100644
 --- a/src/main/java/net/minecraft/ChatFormatting.java
 +++ b/src/main/java/net/minecraft/ChatFormatting.java
 @@ -113,6 +113,18 @@ public enum ChatFormatting implements StringRepresentable {
          return name == null ? null : FORMATTING_BY_NAME.get(cleanName(name));
      }
  
-+    // Paper start
++    // Paper start - add method to get by hex value
 +    @Nullable public static ChatFormatting getByHexValue(int i) {
 +        for (ChatFormatting value : values()) {
 +            if (value.getColor() != null && value.getColor() == i) {
@@ -2094,25 +2094,25 @@ index e7980c88d036c617420e80bda8e1972723f97b52..44a1c467c429feee2f6292b6fcb1dbfa
 +
 +        return null;
 +    }
-+    // Paper end
++    // Paper end - add method to get by hex value
 +
      @Nullable
      public static ChatFormatting getById(int colorIndex) {
          if (colorIndex < 0) {
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index db93483cfee13ca4303d7452ecbb47507dc5f89e..b836a85ce3a4374e94061fe9368e86a61522615d 100644
+index db93483cfee13ca4303d7452ecbb47507dc5f89e..f6938c35ac6f6116084d3e7ec9cdc918f20b6f61 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 @@ -65,6 +65,7 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
      private final CommandSigningContext signingContext;
      private final TaskChainer chatMessageChainer;
      public volatile CommandNode currentCommand; // CraftBukkit
-+    public boolean bypassSelectorPermissions = false; // Paper
++    public boolean bypassSelectorPermissions = false; // Paper - add bypass for selector permissions
  
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
          this(output, pos, rot, world, level, name, displayName, server, entity, false, CommandResultCallback.EMPTY, EntityAnchorArgument.Anchor.FEET, CommandSigningContext.ANONYMOUS, TaskChainer.immediate(server));
 diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
-index 979ea69678319338c543185ba026ad0699a388d6..34ed1f92328ee8826b58dfaf239a96b6ee196ca3 100644
+index 979ea69678319338c543185ba026ad0699a388d6..a3e8b2baec7ac8a61f6cbed7095f84273be385e7 100644
 --- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 +++ b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 @@ -51,17 +51,21 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
@@ -2122,11 +2122,11 @@ index 979ea69678319338c543185ba026ad0699a388d6..34ed1f92328ee8826b58dfaf239a96b6
 -        Component component = minecraftServer.getChatDecorator().decorate(source.getPlayer(), message.decoratedContent());
 -        source.getChatMessageChainer().append(completableFuture, (filtered) -> {
 -            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(component).filter(filtered.mask());
-+        // Paper start
++        // Paper start - support asynchronous chat decoration
 +        CompletableFuture<ChatDecorator.Result> componentFuture = minecraftServer.getChatDecorator().decorate(source.getPlayer(), source, message.decoratedContent());
 +        source.getChatMessageChainer().append(CompletableFuture.allOf(completableFuture, componentFuture), (filtered) -> {
-+            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(componentFuture.join().component()).filter(completableFuture.join().mask()); // Paper
-+            // Paper end
++            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(componentFuture.join().component()).filter(completableFuture.join().mask());
++            // Paper end - support asynchronous chat decoration
              callback.accept(playerChatMessage2);
          });
      }
@@ -2135,15 +2135,15 @@ index 979ea69678319338c543185ba026ad0699a388d6..34ed1f92328ee8826b58dfaf239a96b6
          ChatDecorator chatDecorator = source.getServer().getChatDecorator();
 -        Component component = chatDecorator.decorate(source.getPlayer(), message.decoratedContent());
 -        callback.accept(message.withUnsignedContent(component));
-+        // Paper start
++        // Paper start - support asynchronous chat decoration
 +        CompletableFuture<ChatDecorator.Result> componentFuture = chatDecorator.decorate(source.getPlayer(), source, message.decoratedContent());
 +        source.getChatMessageChainer().append(componentFuture, (result) -> callback.accept(message.withUnsignedContent(result.component())));
-+        // Paper end
++        // Paper end - support asynchronous chat decoration
      }
  
      private static CompletableFuture<FilteredText> filterPlainText(CommandSourceStack source, PlayerChatMessage message) {
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java
-index d120fff432d9c4fc7a35ddffdc4186459e45e950..73c15a0c56a103ba4e62f0a51af8d42566b07245 100644
+index d120fff432d9c4fc7a35ddffdc4186459e45e950..676a1499747b071515479130875157263d3a8352 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java
 +++ b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java
 @@ -92,7 +92,7 @@ public class EntitySelector {
@@ -2151,19 +2151,19 @@ index d120fff432d9c4fc7a35ddffdc4186459e45e950..73c15a0c56a103ba4e62f0a51af8d425
  
      private void checkPermissions(CommandSourceStack source) throws CommandSyntaxException {
 -        if (this.usesSelector && !source.hasPermission(2, "minecraft.command.selector")) { // CraftBukkit
-+        if (source.bypassSelectorPermissions || (this.usesSelector && !source.hasPermission(2, "minecraft.command.selector"))) { // CraftBukkit // Paper
++        if (source.bypassSelectorPermissions || (this.usesSelector && !source.hasPermission(2, "minecraft.command.selector"))) { // CraftBukkit // Paper - add bypass for selector perms
              throw EntityArgument.ERROR_SELECTORS_NOT_ALLOWED.create();
          }
      }
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 9373502ede6c8a881af67db005cf12fd9313f37f..39940edf4aef21842c8abd77bec0d0f1e7e9c762 100644
+index 9373502ede6c8a881af67db005cf12fd9313f37f..53f033d2d887909f5f905c00122d1b09809e5e3c 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 @@ -87,6 +87,7 @@ public class FriendlyByteBuf extends ByteBuf {
  
      public static final int DEFAULT_NBT_QUOTA = 2097152;
      private final ByteBuf source;
-+    public java.util.Locale adventure$locale; // Paper
++    public java.util.Locale adventure$locale; // Paper - track player's locale for server-side translations
      public static final short MAX_STRING_LENGTH = 32767;
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
      private static final int PUBLIC_KEY_SIZE = 256;
@@ -2171,17 +2171,17 @@ index 9373502ede6c8a881af67db005cf12fd9313f37f..39940edf4aef21842c8abd77bec0d0f1
      }
  
      public <T> void writeJsonWithCodec(Codec<T> codec, T value) {
-+        // Paper start - Adventure
++        // Paper start - Adventure; add max length parameter
 +        this.writeJsonWithCodec(codec, value, MAX_STRING_LENGTH);
 +    }
 +    public <T> void writeJsonWithCodec(Codec<T> codec, T value, int maxLength) {
-+        // Paper end - Adventure
++        // Paper end - Adventure; add max length parameter
          DataResult<JsonElement> dataresult = codec.encodeStart(JsonOps.INSTANCE, value);
  
          this.writeUtf(FriendlyByteBuf.GSON.toJson((JsonElement) Util.getOrThrow(dataresult, (s) -> {
              return new EncoderException("Failed to encode: " + s + " " + value);
 -        })));
-+        })), maxLength); // Paper - Adventure
++        })), maxLength); // Paper - Adventure; add max length parameter
      }
  
      public <T> void writeId(IdMap<T> registry, T value) {
@@ -2189,7 +2189,7 @@ index 9373502ede6c8a881af67db005cf12fd9313f37f..39940edf4aef21842c8abd77bec0d0f1
          return (Component) this.readWithCodecTrusted(NbtOps.INSTANCE, ComponentSerialization.CODEC);
      }
  
-+    // Paper start - adventure
++    // Paper start - adventure; support writing adventure components directly and server-side translations
 +    public FriendlyByteBuf writeComponent(final net.kyori.adventure.text.Component component) {
 +        return this.writeWithCodec(NbtOps.INSTANCE, io.papermc.paper.adventure.PaperAdventure.localizedCodec(this.adventure$locale), component);
 +    }
@@ -2201,24 +2201,24 @@ index 9373502ede6c8a881af67db005cf12fd9313f37f..39940edf4aef21842c8abd77bec0d0f1
 +        }
 +
 +        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.localizedCodec(this.adventure$locale), text);
-+        // Paper end - adventure
++        // Paper end - adventure; support writing adventure components directly and server-side translations
      }
  
      public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
-index 344c5af75c4a66bb27f3f422937c6c427c15ed25..3d359f80f52bff6f19fcb484f491a874f9dcff27 100644
+index 344c5af75c4a66bb27f3f422937c6c427c15ed25..7070d093c80033b61a9c8495bc56153d986b6b03 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
 @@ -35,6 +35,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
              } else {
                  FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(byteBuf);
                  friendlyByteBuf.writeVarInt(i);
-+                friendlyByteBuf.adventure$locale = channelHandlerContext.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get(); // Paper
++                friendlyByteBuf.adventure$locale = channelHandlerContext.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get(); // Paper - adventure; set player's locale
  
                  try {
                      int j = friendlyByteBuf.writerIndex();
 diff --git a/src/main/java/net/minecraft/network/chat/ChatDecorator.java b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
-index 887b9fd625aa23c4ec828a175d63695f915232d3..8152420b9c3eb1bf13c012dd43505d9913fb9c4d 100644
+index 887b9fd625aa23c4ec828a175d63695f915232d3..8e4a4b15152c2f83444fa8017bec06bbd1389e2c 100644
 --- a/src/main/java/net/minecraft/network/chat/ChatDecorator.java
 +++ b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
 @@ -2,12 +2,72 @@ package net.minecraft.network.chat;
@@ -2231,14 +2231,14 @@ index 887b9fd625aa23c4ec828a175d63695f915232d3..8152420b9c3eb1bf13c012dd43505d99
  public interface ChatDecorator {
      ChatDecorator PLAIN = (sender, message) -> {
 -        return message;
-+        return CompletableFuture.completedFuture(message); // Paper
++        return CompletableFuture.completedFuture(message); // Paper - adventure; support async chat decoration events
      };
  
 -    Component decorate(@Nullable ServerPlayer sender, Component message);
-+    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
-+    CompletableFuture<Component> decorate(@Nullable ServerPlayer sender, Component message); // Paper - make a completable future again
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - adventure; support chat decoration events
++    CompletableFuture<Component> decorate(@Nullable ServerPlayer sender, Component message); // Paper - adventure; support async chat decoration events
 +
-+    // Paper start
++    // Paper start - adventure; support async chat decoration events
 +    default CompletableFuture<Result> decorate(@Nullable ServerPlayer sender, @Nullable net.minecraft.commands.CommandSourceStack commandSourceStack, Component message) {
 +        throw new UnsupportedOperationException("Must override this implementation");
 +    }
@@ -2294,17 +2294,17 @@ index 887b9fd625aa23c4ec828a175d63695f915232d3..8152420b9c3eb1bf13c012dd43505d99
 +            return new MessagePair(adventureComponent, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(adventureComponent));
 +        }
 +    }
-+    // Paper end
++    // Paper end - adventure; support async chat decoration events
  }
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-index 49138ccda0f378b13c7f425be765876eb4026b06..dc572d5be6ee3af74be2ffb4c02351c8be235159 100644
+index 49138ccda0f378b13c7f425be765876eb4026b06..30568c1be4d412bfae5bd07d45b823861ec39ab3 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 @@ -55,12 +55,58 @@ public class ComponentSerialization {
          return ExtraCodecs.orCompressed(mapCodec3, mapCodec2);
      }
  
-+    // Paper start - adventure
++    // Paper start - adventure; create separate codec for each locale
 +    private static final java.util.Map<java.util.Locale, Codec<Component>> LOCALIZED_CODECS = new java.util.concurrent.ConcurrentHashMap<>();
 +
 +    public static Codec<Component> localizedCodec(final java.util.@org.checkerframework.checker.nullness.qual.Nullable Locale locale) {
@@ -2314,21 +2314,21 @@ index 49138ccda0f378b13c7f425be765876eb4026b06..dc572d5be6ee3af74be2ffb4c02351c8
 +        return LOCALIZED_CODECS.computeIfAbsent(locale,
 +            loc -> ExtraCodecs.recursive("Component", selfCodec -> createCodec(selfCodec, loc)));
 +    }
-+    // Paper end
++    // Paper end - adventure; create separate codec for each locale
 +
      private static Codec<Component> createCodec(Codec<Component> selfCodec) {
-+        // Paper start - adventure
++        // Paper start - adventure; create separate codec for each locale
 +        return createCodec(selfCodec, null);
 +    }
 +
 +    private static Codec<Component> createCodec(Codec<Component> selfCodec, @javax.annotation.Nullable java.util.Locale locale) {
-+        // Paper end
++        // Paper end - adventure; create separate codec for each locale
          ComponentContents.Type<?>[] types = new ComponentContents.Type[]{PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE};
          MapCodec<ComponentContents> mapCodec = createLegacyComponentMatcher(types, ComponentContents.Type::codec, ComponentContents::type, "type");
          Codec<Component> codec = RecordCodecBuilder.create((instance) -> {
              return instance.group(mapCodec.forGetter(Component::getContents), ExtraCodecs.strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::getSiblings), Style.Serializer.MAP_CODEC.forGetter(Component::getStyle)).apply(instance, MutableComponent::new);
          });
-+        // Paper start - adventure
++        // Paper start - adventure; create separate codec for each locale
 +        final Codec<Component> origCodec = codec;
 +        codec = new Codec<>() {
 +            @Override
@@ -2355,35 +2355,35 @@ index 49138ccda0f378b13c7f425be765876eb4026b06..dc572d5be6ee3af74be2ffb4c02351c8
 +                return origCodec.toString() + "[AdventureComponentAware]";
 +            }
 +        };
-+        // Paper end
++        // Paper end - adventure; create separate codec for each locale
          return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec).xmap((either) -> {
              return either.map((either2) -> {
                  return either2.map(Component::literal, ComponentSerialization::createFromList);
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
-index b6506e881ef337bfd2a7a0644296b48b7300a0f6..7daca712816a79cc4a30b084afbd3d07b5d3755f 100644
+index b6506e881ef337bfd2a7a0644296b48b7300a0f6..57206594f305961a33542e1f8079c75bfa7c535f 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 @@ -41,6 +41,11 @@ public class ComponentUtils {
          if (depth > 100) {
              return text.copy();
          } else {
-+            // Paper start
++            // Paper start - adventure; pass actual vanilla component
 +            if (text instanceof io.papermc.paper.adventure.AdventureComponent adventureComponent) {
 +                text = adventureComponent.deepConverted();
 +            }
-+            // Paper end
++            // Paper end - adventure; pass actual vanilla component
              MutableComponent mutableComponent = text.getContents().resolve(source, sender, depth + 1);
  
              for(Component component : text.getSiblings()) {
 diff --git a/src/main/java/net/minecraft/network/chat/MessageSignature.java b/src/main/java/net/minecraft/network/chat/MessageSignature.java
-index df9997873c4bbec184379ec14dca1bf4566eb89d..e2812cdce3b1170b7b7d0f52209e8b4fd2b64c61 100644
+index df9997873c4bbec184379ec14dca1bf4566eb89d..a3e2d03ffe9392cc69e850c5db7d71889a0a27ea 100644
 --- a/src/main/java/net/minecraft/network/chat/MessageSignature.java
 +++ b/src/main/java/net/minecraft/network/chat/MessageSignature.java
 @@ -13,11 +13,12 @@ import net.minecraft.util.SignatureUpdater;
  import net.minecraft.util.SignatureValidator;
  
  public record MessageSignature(byte[] bytes) {
-+    public net.kyori.adventure.chat.SignedMessage.Signature adventure() { return () -> this.bytes; } // Paper
++    public net.kyori.adventure.chat.SignedMessage.Signature adventure() { return () -> this.bytes; } // Paper - adventure; support signed messages
      public static final Codec<MessageSignature> CODEC = ExtraCodecs.BASE64_STRING.xmap(MessageSignature::new, MessageSignature::bytes);
      public static final int BYTES = 256;
  
@@ -2439,7 +2439,7 @@ index f8773f2982e6cd40661d138a7c32f219cda9225c..74cf1c043beef03cfd5adf481414a5ee
                  sender.connection.sendPlayerChatMessage(playerChatMessage, params);
              }
 diff --git a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
-index 901c1aba1653ed70f4af931835ceb12a357aff55..4ac5276dae775210d73ae943d183e5aa8c10bf57 100644
+index 901c1aba1653ed70f4af931835ceb12a357aff55..00560ea19c29fd0e16cbe11ab0b07f12a2ff0cb6 100644
 --- a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 @@ -14,7 +14,53 @@ import net.minecraft.Util;
@@ -2447,7 +2447,7 @@ index 901c1aba1653ed70f4af931835ceb12a357aff55..4ac5276dae775210d73ae943d183e5aa
  import net.minecraft.util.SignatureValidator;
  
 -public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask) {
-+// Paper start
++// Paper start - adventure; support signed messages
 +public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask, @Nullable net.minecraft.network.chat.ChatDecorator.Result result) {
 +    public PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask) {
 +        this(link, signature, signedBody, unsignedContent, filterMask, null);
@@ -2493,7 +2493,7 @@ index 901c1aba1653ed70f4af931835ceb12a357aff55..4ac5276dae775210d73ae943d183e5aa
 +    public AdventureView adventureView() {
 +        return new AdventureView();
 +    }
-+    // Paper end
++    // Paper end - adventure; support signed messages
      public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
          return instance.group(SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link), MessageSignature.CODEC.optionalFieldOf("signature").forGetter((message) -> {
              return Optional.ofNullable(message.signature);
@@ -2502,7 +2502,7 @@ index 901c1aba1653ed70f4af931835ceb12a357aff55..4ac5276dae775210d73ae943d183e5aa
  
      public PlayerChatMessage withUnsignedContent(Component unsignedContent) {
 -        Component component = !unsignedContent.equals(Component.literal(this.signedContent())) ? unsignedContent : null;
-+        Component component = !(unsignedContent instanceof io.papermc.paper.adventure.AdventureComponent advComponent ? advComponent.deepConverted() : unsignedContent).equals(Component.literal(this.signedContent())) ? unsignedContent : null; // Paper
++        Component component = !(unsignedContent instanceof io.papermc.paper.adventure.AdventureComponent advComponent ? advComponent.deepConverted() : unsignedContent).equals(Component.literal(this.signedContent())) ? unsignedContent : null; // Paper - adventure; convert adventure component wraps
          return new PlayerChatMessage(this.link, this.signature, this.signedBody, component, this.filterMask);
      }
  
@@ -2648,7 +2648,7 @@ index a5578cbce2d1d39ba3315e53425d5323e6823a65..7a036c08fa67504d06c8f72a32c22814
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 729849caf3e3cb542d5c4097a568c5fadeff0f6d..1eb0809addfd77303b94bb594701ee7f38483909 100644
+index d4fb6d031acbb009fcb600718a16ac0b5437d88e..47f01de166a4048824f3075deb596084b7d42978 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -191,6 +191,7 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot

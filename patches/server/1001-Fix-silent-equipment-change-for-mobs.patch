@@ -46,22 +46,6 @@ index 8e9469fec42f7b6a132cf173f6f5a95777a29b3b..a383c0c8b5c89ef1eef7d18edc3a09f7
          if (!this.level().isClientSide) {
              this.reassessWeaponGoal();
          }
-diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index d5890f295350ae5fb6e4844c90f6ab8e3a5f5516..990bb65f784a2ac52e131d1ed146c2cd6dc19dce 100644
---- a/src/main/java/net/minecraft/world/level/Level.java
-+++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -1900,7 +1900,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-     // Paper end - optimize redstone (Alternate Current)
-     // Paper start - notify observers even if grow failed
-     public void checkCapturedTreeStateForObserverNotify(final BlockPos pos, final CraftBlockState craftBlockState) {
--        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) { // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
-+        // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
-+        // blocks at the same Y level with the same state can be assumed to be saplings which trigger observers regardless of if the
-+        // tree grew or not
-+        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) { // Paper - Fix silent equipment change
-             this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
-         }
-     }
 diff --git a/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java b/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..81947843d1f2f7dc6f59d7b52f327d60b17d0dcc

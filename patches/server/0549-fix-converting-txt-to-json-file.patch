@@ -21,22 +21,22 @@ index a20d47f54f12dfc0a5f76dd969238e34c958b618..935dac757280731bfeb0a8f033cbe315
          this.saveUserBanList();
          this.loadIpBanList();
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index ac918da8234553e4d88664b240feddc1fea8bd6b..e92708f60fec876c62e720420f133a9b28c6f66f 100644
+index 4d76d64fad92510de5098613aa0a04e1bbf7bca5..d7a147cc29f9d6882326ddac29449e1b14ae9c96 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -198,6 +198,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-         io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // Paper - load mappings for stacktrace deobf and etc.
-         paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
-         paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
-+        // Paper start - moved up to right after PlayerList creation but before file load/save
+@@ -199,6 +199,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
+         this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
+         // Paper end - initialize global and world-defaults configuration
++        // Paper start - convert old users earlier after PlayerList creation but before file load/save
 +        if (this.convertOldUsers()) {
 +            this.getProfileCache().save(false); // Paper
 +        }
 +        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
-+        // Paper end - moved up
-         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
-         io.papermc.paper.command.PaperCommands.registerCommands(this);
-         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics();
++        // Paper end - convert old users earlier after PlayerList creation but before file load/save
+         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
+         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
 @@ -253,9 +259,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
          }
@@ -48,7 +48,7 @@ index ac918da8234553e4d88664b240feddc1fea8bd6b..e92708f60fec876c62e720420f133a9b
          if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
              return false;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index bf361396bc2ec5d5c7b45d425af990c037ba0694..c8f40d71619a53f85b71ef5af397bbfa65fd797f 100644
+index 32f93ed20f5f2cec71850d7e0ce8a633fd5efc82..8a13160ff62a671a11740c456a2cbc3ccbac708f 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -176,6 +176,7 @@ public abstract class PlayerList {
