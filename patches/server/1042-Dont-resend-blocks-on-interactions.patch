@@ -8,7 +8,7 @@ In general, the client now has an acknowledgment system which will prevent block
 It should be noted that this system does not yet support block entities, so those still need to resynced when needed.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 4634f4fbb0c06c68436c5e30069621c9fcd4ffb5..a0d69082f5fdeee15bba0d76b940aa48cff36fa9 100644
+index 4634f4fbb0c06c68436c5e30069621c9fcd4ffb5..51bf6c740ac08548eedf0c026c5a66d6a3c6d83e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -199,7 +199,7 @@ public class ServerPlayerGameMode {
@@ -52,7 +52,7 @@ index 4634f4fbb0c06c68436c5e30069621c9fcd4ffb5..a0d69082f5fdeee15bba0d76b940aa48
 +                    //} else if (data.getBlock() instanceof TrapDoorBlock) {
 +                    //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
 +                    //}
-+                    // Paper end
++                    // Paper end - Don't resync blocks
                  } else if (!iblockdata.isAir()) {
                      iblockdata.attack(this.level, pos, this.player);
                      f = iblockdata.getDestroyProgress(this.player, this.player.level(), pos);
@@ -87,7 +87,7 @@ index 4634f4fbb0c06c68436c5e30069621c9fcd4ffb5..a0d69082f5fdeee15bba0d76b940aa48
                  if (isSwordNoBreak) {
                      return false;
                  }
-+                // Paper start - Dont resync blocks
++                // Paper start - Don't resync blocks
                  // Let the client know the block still exists
 -                this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
 +                //this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
@@ -99,7 +99,7 @@ index 4634f4fbb0c06c68436c5e30069621c9fcd4ffb5..a0d69082f5fdeee15bba0d76b940aa48
 +                //for (Direction dir : Direction.values()) {
 +                //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos.relative(dir)));
 +                //}
-+                // Paper end
++                // Paper end - Don't resync blocks
  
                  // Update any tile entity data for this block
                  if (!captureSentBlockEntities) { // Paper - Toggle this location for capturing as this is used for api
@@ -112,17 +112,17 @@ index 4634f4fbb0c06c68436c5e30069621c9fcd4ffb5..a0d69082f5fdeee15bba0d76b940aa48
 +                // Paper start - Don't resync blocks
 +                // boolean bottom = iblockdata.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
 +                // player.connection.send(new ClientboundBlockUpdatePacket(world, bottom ? blockposition.above() : blockposition.below()));
-+                // Paper end
++                // Paper end - Don't resync blocks
              } else if (iblockdata.getBlock() instanceof CakeBlock) {
                  player.getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
              } else if (this.interactItemStack.getItem() instanceof DoubleHighBlockItem) {
                  // send a correcting update to the client, as it already placed the upper half of the bisected item
 -                player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.relative(hitResult.getDirection()).above()));
-+                //player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.relative(hitResult.getDirection()).above())); // Paper - don't resync blocks
++                //player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.relative(hitResult.getDirection()).above())); // Paper - Don't resync blocks
  
                  // send a correcting update to the client for the block above as well, this because of replaceable blocks (such as grass, sea grass etc)
 -                player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.above()));
-+                //player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.above())); // Paper - don't resync blocks
++                //player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.above())); // Paper - Don't resync blocks
              // Paper start  - extend Player Interact cancellation // TODO: consider merging this into the extracted method
              } else if (iblockdata.getBlock() instanceof net.minecraft.world.level.block.StructureBlock) {
                  player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
@@ -149,7 +149,7 @@ index 277555a26e8281dd1a626e572794b08cf51d00c5..aa0f09a18ea781e027ea70928b30d3e9
                      return false;
                  }
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 666533627e772e5e85ba04e65dd2b376efc0b139..5b8a1f31e0b55da15daa4ab271317e4393a87e96 100644
+index 666533627e772e5e85ba04e65dd2b376efc0b139..bab97eedd92f7131fd0cd478580ddd52d2173de9 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
 @@ -457,10 +457,12 @@ public final class ItemStack {
@@ -160,12 +160,12 @@ index 666533627e772e5e85ba04e65dd2b376efc0b139..5b8a1f31e0b55da15daa4ab271317e43
 -                    for (Direction dir : Direction.values()) {
 -                        ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, placedPos.relative(dir)));
 -                    }
-+                    // Paper start - don't resync blocks
++                    // Paper start - Don't resync blocks
 +                    // BlockPos placedPos = ((CraftBlock) placeEvent.getBlock()).getPosition();
 +                    // for (Direction dir : Direction.values()) {
 +                    //     ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, placedPos.relative(dir)));
 +                    // }
-+                    // Paper end
++                    // Paper end - Don't resync blocks
                      SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
                  } else {
                      // Change the stack to its new contents if it hasn't been tampered with.
