@@ -1,9 +1,8 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 18 Mar 2018 11:43:30 -0400
-Subject: [PATCH] Ability to change PlayerProfile in AsyncPreLoginEvent
+Subject: [PATCH] Add more fields to AsyncPreLoginEvent
 
-This will allow you to change the players name or skin on login.
 
 diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -24,10 +23,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private Result result;
      private net.kyori.adventure.text.Component message; // Paper
 -    private final String name;
-+    //private String name; // Paper - Not used anymore
      private final InetAddress ipAddress;
 -    private final UUID uniqueId;
-+    //private UUID uniqueId; // Paper - Not used anymore
++    private PlayerProfile profile; // Paper
++    private final InetAddress rawAddress; // Paper
++    private final String hostname; // Paper
  
      @Deprecated
      public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
@@ -38,36 +38,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start
 +        this(name, ipAddress, uniqueId, Bukkit.createProfile(uniqueId, name));
 +    }
-+    private PlayerProfile profile;
 +
-+    /**
-+     * Gets the PlayerProfile of the player logging in
-+     * @return The Profile
-+     */
-+    @NotNull
-+    public PlayerProfile getPlayerProfile() {
-+        return profile;
-+    }
-+
-+    /**
-+     * Changes the PlayerProfile the player will login as
-+     * @param profile The profile to use
-+     */
-+    public void setPlayerProfile(@NotNull PlayerProfile profile) {
-+        this.profile = profile;
-+    }
-+
++    @Deprecated(forRemoval = true)
 +    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
++        this(name, ipAddress, ipAddress, uniqueId, profile);
++    }
++
++    @Deprecated(forRemoval = true)
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
++        this(name, ipAddress, rawAddress, uniqueId, profile, "");
++    }
++
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile, @NotNull String hostname) {
          super(true);
-+        this.profile = profile;
-+        // Paper end
          this.result = Result.ALLOWED;
          this.message = net.kyori.adventure.text.Component.empty(); // Paper
 -        this.name = name;
-+        //this.name = name; // Paper - Not used anymore
++        this.profile = profile;
          this.ipAddress = ipAddress;
 -        this.uniqueId = uniqueId;
-+        //this.uniqueId = uniqueId; // Paper - Not used anymore
++        this.rawAddress = rawAddress;
++        this.hostname = hostname;
++        // Paper end
      }
  
      /**
@@ -88,4 +80,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return profile.getId(); // Paper
      }
  
++    // Paper start
++    /**
++     * Gets the PlayerProfile of the player logging in
++     * @return The Profile
++     */
++    @NotNull
++    public PlayerProfile getPlayerProfile() {
++        return profile;
++    }
++
++    /**
++     * Changes the PlayerProfile the player will login as
++     * @param profile The profile to use
++     */
++    public void setPlayerProfile(@NotNull PlayerProfile profile) {
++        this.profile = profile;
++    }
++
++    /**
++     * Gets the raw address of the player logging in
++     * @return The address
++     */
++    @NotNull
++    public InetAddress getRawAddress() {
++        return rawAddress;
++    }
++
++    /**
++     * Gets the hostname that the player used to connect to the server, or
++     * blank if unknown
++     *
++     * @return The hostname
++     */
++    @NotNull
++    public String getHostname() {
++        return hostname;
++    }
++    // Paper end
++
      @NotNull
+     @Override
+     public HandlerList getHandlers() {

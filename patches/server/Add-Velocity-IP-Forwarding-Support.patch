@@ -154,16 +154,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
      // CraftBukkit start
-     private void callPlayerPreLoginEvents(GameProfile gameprofile) throws Exception {
+     private GameProfile callPlayerPreLoginEvents(GameProfile gameprofile) throws Exception { // Paper - Add more fields to AsyncPlayerPreLoginEvent
 +        // Paper start - Velocity support
 +        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
 +            disconnect("This server requires you to connect with Velocity.");
-+            return;
++            return gameprofile;
 +        }
-+        // Paper end
++        // Paper end - Velocity support
          String playerName = gameprofile.getName();
          java.net.InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
-         java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) this.connection.channel.remoteAddress()).getAddress(); // Paper
+         java.util.UUID uniqueId = gameprofile.getId();
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
      @Override
@@ -202,7 +202,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Proceed with login
 +            authenticatorPool.execute(() -> {
 +                try {
-+                    this.callPlayerPreLoginEvents(this.authenticatedProfile);
++                    final GameProfile gameprofile = this.callPlayerPreLoginEvents(this.authenticatedProfile);
++                    ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
++                    ServerLoginPacketListenerImpl.this.startClientVerification(gameprofile);
 +                } catch (Exception ex) {
 +                    disconnect("Failed to verify username!");
 +                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + this.authenticatedProfile.getName(), ex);
