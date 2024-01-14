@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 22 Feb 2022 14:21:35 -0800
+Subject: [PATCH] Put world into worldlist before initing the world
+
+Some parts of legacy conversion will need the overworld
+to get the legacy structure data storage
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 67bda174adb74e6176e81f986382b3bbbfe6b95f..4f43e306d70bc733ceba2b375c8732f330abc0e4 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -635,9 +635,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+ 
+             worlddata.setModdedInfo(this.getServerModName(), this.getModdedStatus().shouldReportAsModified());
++            this.addLevel(world); // Paper - move up
+             this.initWorld(world, worlddata, this.worldData, worldoptions);
+ 
+-            this.addLevel(world);
++            // Paper - move up
+             this.getPlayerList().addWorldborderListener(world);
+ 
+             if (worlddata.getCustomBossEvents() != null) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 48961913ed0a437129432cfa5fa707904d5bcdb2..4ffb0a342a553b714a0807591a3d21d7a6b08959 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1288,10 +1288,11 @@ public final class CraftServer implements Server {
+             return null;
+         }
+ 
++        this.console.addLevel(internal); // Paper - move up
+         this.console.initWorld(internal, worlddata, worlddata, worlddata.worldGenOptions());
+ 
+         internal.setSpawnSettings(true, true);
+-        this.console.addLevel(internal);
++        // Paper - move up
+ 
+         this.getServer().prepareLevels(internal.getChunkSource().chunkMap.progressListener, internal);
+         //internal.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API // Paper - rewrite chunk system
