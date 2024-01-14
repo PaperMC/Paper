@@ -5,7 +5,7 @@ Subject: [PATCH] Cache user authenticator threads
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 315f51b6c76695e204ddfae3419103c797ad2dfd..db07502d4d7b73c0e74814334be6603121f60673 100644
+index 55c15d942ddd230dec073039b7c5f95a14ff937c..d4e709b3e3df489d125ab20a98dc4b34bf61dcc9 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -49,6 +49,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
@@ -16,28 +16,30 @@ index 315f51b6c76695e204ddfae3419103c797ad2dfd..db07502d4d7b73c0e74814334be66031
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
      private static final Component DISCONNECT_UNEXPECTED_QUERY = Component.translatable("multiplayer.disconnect.unexpected_query_response");
      private final byte[] challenge;
-@@ -140,8 +141,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -140,7 +141,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge));
              } else {
-                 // Spigot start
--                new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
--
-+            // Paper start - Cache authenticator threads
-+            authenticatorPool.execute(new Runnable() {
+                 // CraftBukkit start
+-                Thread thread = new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
++                // Paper start - Cache authenticator threads
++                authenticatorPool.execute(new Runnable() {
+ 
                      @Override
                      public void run() {
-                         try {
-@@ -151,7 +152,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -155,10 +157,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
                              ServerLoginPacketListenerImpl.this.server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.requestedUsername, ex);
                          }
                      }
--                }.start();
-+            });
-+            // Paper end
-                 // Spigot end
+-                };
+-
+-                thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ServerLoginPacketListenerImpl.LOGGER));
+-                thread.start();
++                });
++                // Paper end
+                 // CraftBukkit end
              }
  
-@@ -218,7 +220,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -225,7 +225,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
              throw new IllegalStateException("Protocol error", cryptographyexception);
          }
  
@@ -47,7 +49,7 @@ index 315f51b6c76695e204ddfae3419103c797ad2dfd..db07502d4d7b73c0e74814334be66031
              public void run() {
                  String s1 = (String) Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
  
-@@ -264,10 +267,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -273,10 +274,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
                  return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
              }
@@ -59,4 +61,4 @@ index 315f51b6c76695e204ddfae3419103c797ad2dfd..db07502d4d7b73c0e74814334be66031
 +        // Paper end
      }
  
-     // Spigot start
+     // CraftBukkit start

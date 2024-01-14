@@ -8,21 +8,26 @@ our own relocation. Also lets us rewrite NMS calls for when we're
 debugging in an IDE pre-relocate.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index afa93af41bf9b45dd7e49378b7fea088087993d5..128c9d81814ba1fb24895962e5f08495dbedb176 100644
+index 6a661bbae8bc35a4c3b4bb7e86dd77a7575fdd97..31714ce05b1023b82e96b36ba52254b4e3e948f2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-@@ -7,8 +7,10 @@ import java.io.InputStream;
+@@ -7,6 +7,7 @@ import java.io.InputStream;
  import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.Enumeration;
 +import java.util.HashMap;
  import java.util.HashSet;
  import java.util.List;
-+import java.util.Map;
- import java.util.Set;
- import java.util.jar.JarEntry;
+ import java.util.Map;
+@@ -15,6 +16,7 @@ import java.util.jar.JarEntry;
  import java.util.jar.JarFile;
-@@ -22,11 +24,15 @@ import org.bukkit.plugin.AuthorNagException;
+ import java.util.jar.JarOutputStream;
+ import java.util.zip.ZipEntry;
++import javax.annotation.Nonnull;
+ import joptsimple.OptionParser;
+ import joptsimple.OptionSet;
+ import joptsimple.OptionSpec;
+@@ -23,7 +25,9 @@ import org.bukkit.plugin.AuthorNagException;
  import org.objectweb.asm.ClassReader;
  import org.objectweb.asm.ClassVisitor;
  import org.objectweb.asm.ClassWriter;
@@ -32,30 +37,23 @@ index afa93af41bf9b45dd7e49378b7fea088087993d5..128c9d81814ba1fb24895962e5f08495
  import org.objectweb.asm.MethodVisitor;
  import org.objectweb.asm.Opcodes;
  import org.objectweb.asm.Type;
- 
-+import javax.annotation.Nonnull;
-+
- /**
-  * This file is imported from Commodore.
-  *
-@@ -49,6 +55,41 @@ public class Commodore
-             "org/bukkit/inventory/ItemStack (I)V setTypeId"
-     ) );
+@@ -51,6 +55,40 @@ public class Commodore {
+             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
+     );
  
 +    // Paper start - Plugin rewrites
 +    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
-+    private static Map<String, String> initReplacementsMap()
-+    {
++    private static Map<String, String> initReplacementsMap() {
 +        Map<String, String> getAndRemove = new HashMap<>();
 +        // Be wary of maven shade's relocations
 +
 +        final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
-+        if ( Boolean.getBoolean( "debug.rewriteForIde" ) && manifest != null)
++        if (Boolean.getBoolean( "debug.rewriteForIde") && manifest != null)
 +        {
 +            // unversion incoming calls for pre-relocate debug work
 +            final String NMS_REVISION_PACKAGE = "v" + manifest.getMainAttributes().getValue("CraftBukkit-Package-Version") + "/";
 +
-+            getAndRemove.put( "org/bukkit/".concat( "craftbukkit/" + NMS_REVISION_PACKAGE ), NMS_REVISION_PACKAGE );
++            getAndRemove.put("org/bukkit/".concat("craftbukkit/" + NMS_REVISION_PACKAGE), NMS_REVISION_PACKAGE);
 +        }
 +
 +        return getAndRemove;
@@ -75,22 +73,23 @@ index afa93af41bf9b45dd7e49378b7fea088087993d5..128c9d81814ba1fb24895962e5f08495
 +
 +        return rewrite != null ? rewrite : original;
 +    }
-+    // Paper end
++    // Paper end - Plugin rewrites
 +
-     public static void main(String[] args)
-     {
+     public static void main(String[] args) {
          OptionParser parser = new OptionParser();
-@@ -133,15 +174,72 @@ public class Commodore
+         OptionSpec<File> inputFlag = parser.acceptsAll(Arrays.asList("i", "input")).withRequiredArg().ofType(File.class).required();
+@@ -118,12 +156,67 @@ public class Commodore {
+         ClassWriter cw = new ClassWriter(cr, 0);
  
-         cr.accept( new ClassVisitor( Opcodes.ASM9, cw )
-         {
+         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
++
 +            // Paper start - Rewrite plugins
 +            @Override
 +            public FieldVisitor visitField(int access, String name, String desc, String signature, Object value)
 +            {
-+                desc = getOriginalOrRewrite( desc );
++                desc = getOriginalOrRewrite(desc);
 +                if ( signature != null ) {
-+                    signature = getOriginalOrRewrite( signature );
++                    signature = getOriginalOrRewrite(signature);
 +                }
 +
 +                return super.visitField( access, name, desc, signature, value) ;
@@ -98,77 +97,70 @@ index afa93af41bf9b45dd7e49378b7fea088087993d5..128c9d81814ba1fb24895962e5f08495
 +            // Paper end
 +
              @Override
-             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions)
-             {
-                 return new MethodVisitor( this.api, super.visitMethod( access, name, desc, signature, exceptions ) )
-                 {
+             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                 return new MethodVisitor(this.api, super.visitMethod(access, name, desc, signature, exceptions)) {
+ 
 +                    // Paper start - Plugin rewrites
 +                    @Override
-+                    public void visitTypeInsn(int opcode, String type)
-+                    {
-+                        type = getOriginalOrRewrite( type );
++                    public void visitTypeInsn(int opcode, String type) {
++                        type = getOriginalOrRewrite(type);
 +
-+                        super.visitTypeInsn( opcode, type );
++                        super.visitTypeInsn(opcode, type);
 +                    }
 +
 +                    @Override
 +                    public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
-+                        for ( int i = 0; i < local.length; i++ )
++                        for (int i = 0; i < local.length; i++)
 +                        {
-+                            if ( !( local[i] instanceof String ) ) { continue; }
++                            if (!(local[i] instanceof String)) { continue; }
 +
-+                            local[i] = getOriginalOrRewrite( (String) local[i] );
++                            local[i] = getOriginalOrRewrite((String) local[i]);
 +                        }
 +
-+                        for ( int i = 0; i < stack.length; i++ )
++                        for (int i = 0; i < stack.length; i++)
 +                        {
-+                            if ( !( stack[i] instanceof String ) ) { continue; }
++                            if (!(stack[i] instanceof String)) { continue; }
 +
-+                            stack[i] = getOriginalOrRewrite( (String) stack[i] );
++                            stack[i] = getOriginalOrRewrite((String) stack[i]);
 +                        }
 +
-+                        super.visitFrame( type, nLocal, local, nStack, stack );
++                        super.visitFrame(type, nLocal, local, nStack, stack);
 +                    }
 +
 +                    @Override
-+                    public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index)
-+                    {
-+                        descriptor = getOriginalOrRewrite( descriptor );
++                    public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index) {
++                        descriptor = getOriginalOrRewrite(descriptor);
 +
-+                        super.visitLocalVariable( name, descriptor, signature, start, end, index );
++                        super.visitLocalVariable(name, descriptor, signature, start, end, index);
 +                    }
 +                    // Paper end
- 
++
                      @Override
-                     public void visitFieldInsn(int opcode, String owner, String name, String desc)
-                     {
+                     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
 +                        // Paper start - Rewrite plugins
-+                        owner = getOriginalOrRewrite( owner );
-+                        if ( desc != null )
-+                        {
-+                            desc = getOriginalOrRewrite( desc );
++                        owner = getOriginalOrRewrite(owner);
++                        if (desc != null) {
++                            desc = getOriginalOrRewrite(desc);
 +                        }
 +                        // Paper end
-+
-                         if ( owner.equals( "org/bukkit/block/Biome" ) )
-                         {
-                             switch ( name )
-@@ -342,6 +440,11 @@ public class Commodore
+                         if (owner.equals("org/bukkit/block/Biome")) {
+                             switch (name) {
+                                 case "NETHER":
+@@ -278,6 +371,10 @@ public class Commodore {
                          }
  
                          // Paper start - Rewrite plugins
-+                        owner = getOriginalOrRewrite( owner) ;
-+                        if (desc != null)
-+                        {
++                        owner = getOriginalOrRewrite(owner) ;
++                        if (desc != null) {
 +                            desc = getOriginalOrRewrite(desc);
 +                        }
                          if ((owner.equals("org/bukkit/OfflinePlayer") || owner.equals("org/bukkit/entity/Player")) && name.equals("getPlayerProfile") && desc.equals("()Lorg/bukkit/profile/PlayerProfile;")) {
                              super.visitMethodInsn(opcode, owner, name, "()Lcom/destroystokyo/paper/profile/PlayerProfile;", itf);
                              return;
-@@ -436,6 +539,13 @@ public class Commodore
+@@ -374,6 +471,13 @@ public class Commodore {
+ 
                      @Override
-                     public void visitLdcInsn(Object value)
-                     {
+                     public void visitLdcInsn(Object value) {
 +                        // Paper start
 +                        if (value instanceof Type type) {
 +                            if (type.getSort() == Type.OBJECT || type.getSort() == Type.ARRAY) {
@@ -176,20 +168,30 @@ index afa93af41bf9b45dd7e49378b7fea088087993d5..128c9d81814ba1fb24895962e5f08495
 +                            }
 +                        }
 +                        // Paper end
-                         if ( value instanceof String && ( (String) value ).equals( "com.mysql.jdbc.Driver" ) )
-                         {
-                             super.visitLdcInsn( "com.mysql.cj.jdbc.Driver" );
-@@ -448,6 +558,13 @@ public class Commodore
+                         if (value instanceof String && ((String) value).equals("com.mysql.jdbc.Driver")) {
+                             super.visitLdcInsn("com.mysql.cj.jdbc.Driver");
+                             return;
+@@ -384,6 +488,14 @@ public class Commodore {
+ 
                      @Override
-                     public void visitInvokeDynamicInsn( String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments )
-                     {
+                     public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
 +                        // Paper start - Rewrite plugins
-+                        name = getOriginalOrRewrite( name );
-+                        if ( descriptor != null )
-+                        {
-+                            descriptor = getOriginalOrRewrite( descriptor );
++                        name = getOriginalOrRewrite(name);
++                        if (descriptor != null) {
++                            descriptor = getOriginalOrRewrite(descriptor);
 +                        }
++                        final String fName = name;
++                        final String fDescriptor = descriptor;
 +                        // Paper end - Rewrite plugins
-                         if ( bootstrapMethodHandle.getOwner().equals( "java/lang/invoke/LambdaMetafactory" )
-                                 && bootstrapMethodHandle.getName().equals( "metafactory" ) && bootstrapMethodArguments.length == 3 )
-                         {
+                         if (bootstrapMethodHandle.getOwner().equals("java/lang/invoke/LambdaMetafactory")
+                                 && bootstrapMethodHandle.getName().equals("metafactory") && bootstrapMethodArguments.length == 3) {
+                             Type samMethodType = (Type) bootstrapMethodArguments[0];
+@@ -400,7 +512,7 @@ public class Commodore {
+                                 methodArgs.add(new Handle(newOpcode, newOwner, newName, newDescription, newItf));
+                                 methodArgs.add(newInstantiated);
+ 
+-                                super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, methodArgs.toArray(Object[]::new));
++                                super.visitInvokeDynamicInsn(fName, fDescriptor, bootstrapMethodHandle, methodArgs.toArray(Object[]::new)); // Paper - use final local vars
+                             }, implMethod.getTag(), implMethod.getOwner(), implMethod.getName(), implMethod.getDesc(), implMethod.isInterface(), samMethodType, instantiatedMethodType);
+                             return;
+                         }
