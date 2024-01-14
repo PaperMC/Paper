@@ -1,6 +1,5 @@
 package org.bukkit.persistence;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
