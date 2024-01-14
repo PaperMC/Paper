@@ -87,9 +87,11 @@ public interface PersistentDataType<P, C> {
         Complex Arrays.
      */
     /**
-     * @deprecated Use {@link #LIST}'s {@link ListPersistentDataTypeProvider#dataContainers()} instead.
+     * @deprecated Use {@link #LIST}'s {@link ListPersistentDataTypeProvider#dataContainers()} instead as
+     * {@link ListPersistentDataType}s offer full support for primitive types, such as the
+     * {@link PersistentDataContainer}.
      */
-    @ApiStatus.Obsolete
+    @Deprecated
     PersistentDataType<PersistentDataContainer[], PersistentDataContainer[]> TAG_CONTAINER_ARRAY = new PrimitivePersistentDataType<>(PersistentDataContainer[].class);
 
     /*
