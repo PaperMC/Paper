@@ -6,24 +6,24 @@ Subject: [PATCH] Ability to change PlayerProfile in AsyncPreLoginEvent
 This will allow you to change the players name or skin on login.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index b7ddb05d7b4ec66def973f15bb2408b0a4fc136a..827774b02136ec1862bc9ffabc76ba3a4eb87716 100644
+index 000e5e6085b95e4fc4995e53dc83d9075e27aa05..08a40d2418dc7e3f481a0a45e0c1845d68a74f07 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -288,8 +288,16 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-                         java.util.UUID uniqueId = gameprofile.getId();
-                         final org.bukkit.craftbukkit.CraftServer server = ServerLoginPacketListenerImpl.this.server.server;
+@@ -293,8 +293,16 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+         java.util.UUID uniqueId = gameprofile.getId();
+         final org.bukkit.craftbukkit.CraftServer server = ServerLoginPacketListenerImpl.this.server.server;
  
--                        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
-+                        // Paper start
-+                        com.destroystokyo.paper.profile.PlayerProfile profile = org.bukkit.Bukkit.createProfile(uniqueId, playerName);
-+                        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
-                         server.getPluginManager().callEvent(asyncEvent);
-+                        profile = asyncEvent.getPlayerProfile();
-+                        profile.complete();
-+                        gameprofile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
-+                        playerName = gameprofile.getName();
-+                        uniqueId = gameprofile.getId();
-+                        // Paper end
+-        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
++        // Paper start
++        com.destroystokyo.paper.profile.PlayerProfile profile = org.bukkit.Bukkit.createProfile(uniqueId, playerName);
++        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
+         server.getPluginManager().callEvent(asyncEvent);
++        profile = asyncEvent.getPlayerProfile();
++        profile.complete();
++        gameprofile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
++        playerName = gameprofile.getName();
++        uniqueId = gameprofile.getId();
++        // Paper end
  
-                         if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
-                             final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
+         if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
+             final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);

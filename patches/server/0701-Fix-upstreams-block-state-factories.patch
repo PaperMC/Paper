@@ -50,7 +50,7 @@ index f7f211b4f08a7f21a183078affd6f875aa30dd50..a8290624d8c5b19506f628d049984d2e
      // Paper start
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
-index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee14454c53 100644
+index 76a3f4ad26718f95f4cf64206efe16e598fa2285..f81c0d07a5efc92942d8ab5c50a8260db033307d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
 @@ -19,6 +19,7 @@ import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
@@ -61,7 +61,7 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
  import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
  import net.minecraft.world.level.block.entity.BrushableBlockEntity;
  import net.minecraft.world.level.block.entity.CalibratedSculkSensorBlockEntity;
-@@ -115,227 +116,64 @@ public final class CraftBlockStates {
+@@ -114,227 +115,64 @@ public final class CraftBlockStates {
      private static final BlockStateFactory<?> DEFAULT_FACTORY = new BlockStateFactory<CraftBlockState>(CraftBlockState.class) {
          @Override
          public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
@@ -71,7 +71,7 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
 -                return new CraftBlockEntityState<>(world, tileEntity);
 -            }
 +            // Paper - revert upstream's revert of the block state changes. Block entities that have already had the block type set to AIR are still valid, upstream decided to ignore them
-             Preconditions.checkState(tileEntity == null, "Unexpected BlockState for %s", CraftMagicNumbers.getMaterial(blockData.getBlock()));
+             Preconditions.checkState(tileEntity == null, "Unexpected BlockState for %s", CraftBlockType.minecraftToBukkit(blockData.getBlock()));
              return new CraftBlockState(world, blockPosition, blockData);
          }
      };
@@ -341,7 +341,7 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
      }
  
      private static void register(Material blockType, BlockStateFactory<?> factory) {
-@@ -343,30 +181,33 @@ public final class CraftBlockStates {
+@@ -342,30 +180,33 @@ public final class CraftBlockStates {
      }
  
      private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
@@ -367,7 +367,7 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
 +        // Paper start
 +        BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, blockEntityType::create);
 +        for (net.minecraft.world.level.block.Block block : blockEntityType.validBlocks) {
-+            CraftBlockStates.register(CraftMagicNumbers.getMaterial(block), factory);
++            CraftBlockStates.register(CraftBlockType.minecraftToBukkit(block), factory);
          }
 +        CraftBlockStates.register(blockEntityType, factory);
 +        // Paper end
@@ -390,7 +390,7 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
      public static Class<? extends CraftBlockState> getBlockStateType(Material material) {
          Preconditions.checkNotNull(material, "material is null");
          return CraftBlockStates.getFactory(material).blockStateType;
-@@ -382,6 +223,13 @@ public final class CraftBlockStates {
+@@ -381,6 +222,13 @@ public final class CraftBlockStates {
          return null;
      }
  
@@ -404,7 +404,7 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
      public static BlockState getBlockState(Block block) {
          // Paper start
          return CraftBlockStates.getBlockState(block, true);
-@@ -439,7 +287,7 @@ public final class CraftBlockStates {
+@@ -438,7 +286,7 @@ public final class CraftBlockStates {
          if (world != null && tileEntity == null && CraftBlockStates.isTileEntityOptional(material)) {
              factory = CraftBlockStates.DEFAULT_FACTORY;
          } else {
@@ -414,7 +414,7 @@ index 2fe8f7dfefd6e1f9b06f1d4821894091a8e6400e..000724a070f7f053c14cb53ecc45f0ee
          return factory.createBlockState(world, blockPosition, blockData, tileEntity);
      }
 diff --git a/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java b/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java
-index e31689815b562c8b0644294b00502f7a1dc9911c..cdb05c98836e07548c993b9b8a588e8000190d21 100644
+index 81d4c8867ebcba1b805be1828e0a6a476963a855..9ff1a8068533ba5fc2fb43188d9a5c544a907618 100644
 --- a/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java
 @@ -7,6 +7,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
@@ -423,9 +423,9 @@ index e31689815b562c8b0644294b00502f7a1dc9911c..cdb05c98836e07548c993b9b8a588e80
  import net.minecraft.world.level.block.entity.BlockEntity;
 +import net.minecraft.world.level.block.entity.BlockEntityType;
  import org.bukkit.Material;
- import org.bukkit.craftbukkit.util.CraftMagicNumbers;
  import org.bukkit.support.AbstractTestingBase;
-@@ -42,4 +43,13 @@ public class BlockStateTest extends AbstractTestingBase {
+ import org.junit.jupiter.api.Test;
+@@ -41,4 +42,13 @@ public class BlockStateTest extends AbstractTestingBase {
              }
          }
      }

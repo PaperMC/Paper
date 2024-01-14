@@ -95,7 +95,7 @@ index 0000000000000000000000000000000000000000..a34381122de53123169927e181df6628
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 5264235c1547c78b8123e2efb07dcb77486cc5bf..db363bca264e37c29fda58291246aba0d3759de0 100644
+index 62c66bb3bcb1cb0a09011aa81bbb39f23623506f..5969f45d479188aceedfbe7931c69c36de78a705 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -274,13 +274,20 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -123,7 +123,7 @@ index 5264235c1547c78b8123e2efb07dcb77486cc5bf..db363bca264e37c29fda58291246aba0
                  DedicatedServer.LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
              }
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index ec6a56e298872a403e0451944f7139256eab31d6..8ce2fd887d9c2cf86fa4ec0332b70681f1572911 100644
+index 82554ec47cd10f4bd27149acb9916249ff55ed3a..b8d9ee1920ce1aa2f881c12e5c8c669287ad677f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -64,6 +64,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
@@ -148,23 +148,23 @@ index ec6a56e298872a403e0451944f7139256eab31d6..8ce2fd887d9c2cf86fa4ec0332b70681
 +                    return;
 +                }
 +                // Paper end
-                 // Spigot start
-             // Paper start - Cache authenticator threads
-             authenticatorPool.execute(new Runnable() {
-@@ -286,6 +297,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-     public class LoginHandler {
+                 // CraftBukkit start
+                 // Paper start - Cache authenticator threads
+                 authenticatorPool.execute(new Runnable() {
+@@ -291,6 +302,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
-         public void fireEvents(GameProfile gameprofile) throws Exception {
-+                        // Paper start - Velocity support
-+                        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
-+                            disconnect("This server requires you to connect with Velocity.");
-+                            return;
-+                        }
-+                        // Paper end
-                         String playerName = gameprofile.getName();
-                         java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
-                         java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.channel.remoteAddress()).getAddress(); // Paper
-@@ -335,6 +352,49 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     // CraftBukkit start
+     private void callPlayerPreLoginEvents(GameProfile gameprofile) throws Exception {
++        // Paper start - Velocity support
++        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
++            disconnect("This server requires you to connect with Velocity.");
++            return;
++        }
++        // Paper end
+         String playerName = gameprofile.getName();
+         java.net.InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
+         java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) this.connection.channel.remoteAddress()).getAddress(); // Paper
+@@ -337,6 +354,49 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
      @Override
      public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket packet) {
@@ -202,7 +202,7 @@ index ec6a56e298872a403e0451944f7139256eab31d6..8ce2fd887d9c2cf86fa4ec0332b70681
 +            // Proceed with login
 +            authenticatorPool.execute(() -> {
 +                try {
-+                    new LoginHandler().fireEvents(this.authenticatedProfile);
++                    this.callPlayerPreLoginEvents(this.authenticatedProfile);
 +                } catch (Exception ex) {
 +                    disconnect("Failed to verify username!");
 +                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + this.authenticatedProfile.getName(), ex);
@@ -215,7 +215,7 @@ index ec6a56e298872a403e0451944f7139256eab31d6..8ce2fd887d9c2cf86fa4ec0332b70681
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 90eca456db0545de8a8247f7638d2e990fdfd246..2836eb1edefc46556d71a23ddbb50cb495b44021 100644
+index 2d12d59974224d1adaf862e5a9bbffe804bd07ce..0b4639e56b87319e78c1b46fb581d8bb74ead2e4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -803,7 +803,7 @@ public final class CraftServer implements Server {

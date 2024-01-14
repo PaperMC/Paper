@@ -9,10 +9,10 @@ upstream. Until then, this test and these fixes
 should address all the known issues with them
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftEffect.java b/src/main/java/org/bukkit/craftbukkit/CraftEffect.java
-index 5a5a8945c786e16ff0df62494ddd1ac85c42b53f..4ce0e1e557a844fb3add866a257a8424885f7d43 100644
+index a4519762175c68256b1f303daca8b9408ac182bb..457e9093adb99d31ffc7f061d8c858f98c5d0572 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftEffect.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftEffect.java
-@@ -15,12 +15,16 @@ public class CraftEffect {
+@@ -16,12 +16,16 @@ public class CraftEffect {
      public static <T> int getDataValue(Effect effect, T data) {
          int datavalue;
          switch (effect) {
@@ -29,9 +29,9 @@ index 5a5a8945c786e16ff0df62494ddd1ac85c42b53f..4ce0e1e557a844fb3add866a257a8424
          case INSTANT_POTION_BREAK:
              datavalue = ((Color) data).asRGB();
              break;
-@@ -28,6 +32,13 @@ public class CraftEffect {
+@@ -29,6 +33,13 @@ public class CraftEffect {
              Preconditions.checkArgument(data == Material.AIR || ((Material) data).isRecord(), "Invalid record type for Material %s!", data);
-             datavalue = Item.getId(CraftMagicNumbers.getItem((Material) data));
+             datavalue = Item.getId(CraftItemType.bukkitToMinecraft((Material) data));
              break;
 +        // Paper start - handle shoot white smoke event
 +        case SHOOT_WHITE_SMOKE:
@@ -43,13 +43,13 @@ index 5a5a8945c786e16ff0df62494ddd1ac85c42b53f..4ce0e1e557a844fb3add866a257a8424
          case SMOKE:
              switch ((BlockFace) data) {
              case DOWN:
-@@ -59,8 +70,15 @@ public class CraftEffect {
+@@ -60,8 +71,15 @@ public class CraftEffect {
              }
              break;
          case STEP_SOUND:
 +            if (data instanceof Material) { // Paper - support BlockData
              Preconditions.checkArgument(((Material) data).isBlock(), "Material %s is not a block!", data);
-             datavalue = Block.getId(CraftMagicNumbers.getBlock((Material) data).defaultBlockState());
+             datavalue = Block.getId(CraftBlockType.bukkitToMinecraft((Material) data).defaultBlockState());
 +            // Paper start - support BlockData
 +                break;
 +            }
@@ -60,7 +60,7 @@ index 5a5a8945c786e16ff0df62494ddd1ac85c42b53f..4ce0e1e557a844fb3add866a257a8424
          case COMPOSTER_FILL_ATTEMPT:
              datavalue = ((Boolean) data) ? 1 : 0;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 4c5d7988e3feea1b8f50d8c1795a4c4301fe2ecb..4f89f38e1d2d9cdb34af8d1d217577e9a437eea5 100644
+index e3a1a1ed5f165d7d37a4f760e5ab7ecbea993a0e..6bd86a7183042f9023b9e8cf6423e0a1cbfde97a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -1430,7 +1430,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
