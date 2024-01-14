@@ -148,22 +148,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    return;
 +                }
 +                // Paper end
-                 // Spigot start
-             // Paper start - Cache authenticator threads
-             authenticatorPool.execute(new Runnable() {
+                 // CraftBukkit start
+                 // Paper start - Cache authenticator threads
+                 authenticatorPool.execute(new Runnable() {
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-     public class LoginHandler {
  
-         public void fireEvents(GameProfile gameprofile) throws Exception {
-+                        // Paper start - Velocity support
-+                        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
-+                            disconnect("This server requires you to connect with Velocity.");
-+                            return;
-+                        }
-+                        // Paper end
-                         String playerName = gameprofile.getName();
-                         java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
-                         java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.channel.remoteAddress()).getAddress(); // Paper
+     // CraftBukkit start
+     private void callPlayerPreLoginEvents(GameProfile gameprofile) throws Exception {
++        // Paper start - Velocity support
++        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
++            disconnect("This server requires you to connect with Velocity.");
++            return;
++        }
++        // Paper end
+         String playerName = gameprofile.getName();
+         java.net.InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
+         java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) this.connection.channel.remoteAddress()).getAddress(); // Paper
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
      @Override
@@ -202,7 +202,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Proceed with login
 +            authenticatorPool.execute(() -> {
 +                try {
-+                    new LoginHandler().fireEvents(this.authenticatedProfile);
++                    this.callPlayerPreLoginEvents(this.authenticatedProfile);
 +                } catch (Exception ex) {
 +                    disconnect("Failed to verify username!");
 +                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + this.authenticatedProfile.getName(), ex);

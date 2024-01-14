@@ -13,7 +13,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private ServerPlayer cause;
      private final Set<Entity> hitEntities = Sets.newHashSet();
      private int blocksSetOnFire;
--    public boolean isSilent = false; // Spigot
 +    public boolean isEffect; // Paper - Properly handle lightning effects api
  
      public LightningBolt(EntityType<? extends LightningBolt> type, Level world) {
@@ -22,8 +21,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void tick() {
          super.tick();
--        if (!this.isSilent && this.life == 2) { // Spigot
-+        if (!this.isEffect && this.life == 2) { // Spigot // Paper - Properly handle lightning effects api
+-        if (this.life == 2) {
++        if (!this.isEffect && this.life == 2) { // Paper - Properly handle lightning effects api
              if (this.level().isClientSide()) {
                  this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 10000.0F, 0.8F + this.random.nextFloat() * 0.2F, false);
                  this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.WEATHER, 2.0F, 0.5F + this.random.nextFloat() * 0.2F, false);
@@ -58,24 +57,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.world.strikeLightning(lightning, LightningStrikeEvent.Cause.CUSTOM);
          return (LightningStrike) lightning.getBukkitEntity();
      }
-@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-         {
-             LightningBolt lightning = EntityType.LIGHTNING_BOLT.create( CraftWorld.this.world );
-             lightning.moveTo( loc.getX(), loc.getY(), loc.getZ() );
--            lightning.isSilent = isSilent;
-             CraftWorld.this.world.strikeLightning( lightning, LightningStrikeEvent.Cause.CUSTOM );
-             return (LightningStrike) lightning.getBukkitEntity();
-         }
-@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-         {
-             LightningBolt lightning = EntityType.LIGHTNING_BOLT.create( CraftWorld.this.world );
-             lightning.moveTo( loc.getX(), loc.getY(), loc.getZ() );
--            lightning.visualOnly = true;
--            lightning.isSilent = isSilent;
-+            lightning.isEffect = true; // Paper - Properly handle lightning effects api
-             CraftWorld.this.world.strikeLightning( lightning, LightningStrikeEvent.Cause.CUSTOM );
-             return (LightningStrike) lightning.getBukkitEntity();
-         }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
@@ -89,12 +70,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public int getFlashes() {
-@@ -0,0 +0,0 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
-         @Override
-         public boolean isSilent()
-         {
--            return CraftLightningStrike.this.getHandle().isSilent;
-+            return false; // Paper - Properly handle lightning effects api; the concept of isSilent doesn't exist as sound is controlled by the client
-         }
-     };
- 

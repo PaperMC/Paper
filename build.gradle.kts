@@ -93,6 +93,8 @@ paperweight {
         mappingsPatch = layout.projectDirectory.file("build-data/mappings-patch.tiny")
         reobfMappingsPatch = layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny")
 
+        spigotServerPatchPatchesDir = layout.projectDirectory.dir("build-data/spigot-server-patches")
+
         reobfPackagesToFix.addAll(
             "co.aikar.timings",
             "com.destroystokyo.paper",

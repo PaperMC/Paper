@@ -26,19 +26,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-                         final org.bukkit.craftbukkit.CraftServer server = ServerLoginPacketListenerImpl.this.server.server;
+         final org.bukkit.craftbukkit.CraftServer server = ServerLoginPacketListenerImpl.this.server.server;
  
-                         // Paper start
--                        com.destroystokyo.paper.profile.PlayerProfile profile = org.bukkit.Bukkit.createProfile(uniqueId, playerName);
-+                        com.destroystokyo.paper.profile.PlayerProfile profile = com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(gameprofile);
-                         AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
-                         server.getPluginManager().callEvent(asyncEvent);
-                         profile = asyncEvent.getPlayerProfile();
--                        profile.complete();
-+                        profile.complete(true); // Paper - setPlayerProfileAPI
-                         gameprofile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
-                         playerName = gameprofile.getName();
-                         uniqueId = gameprofile.getId();
+         // Paper start
+-        com.destroystokyo.paper.profile.PlayerProfile profile = org.bukkit.Bukkit.createProfile(uniqueId, playerName);
++        com.destroystokyo.paper.profile.PlayerProfile profile = com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(gameprofile);
+         AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
+         server.getPluginManager().callEvent(asyncEvent);
+         profile = asyncEvent.getPlayerProfile();
+-        profile.complete();
++        profile.complete(true); // Paper - setPlayerProfileAPI
+         gameprofile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
+         playerName = gameprofile.getName();
+         uniqueId = gameprofile.getId();
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -223,7 +223,7 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-@@ -0,0 +0,0 @@ public class Commodore
+@@ -0,0 +0,0 @@ public class Commodore {
                              return;
                          }
  
@@ -233,6 +233,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                            return;
 +                        }
 +                        // Paper end
-                         if ( modern )
-                         {
-                             if ( owner.equals( "org/bukkit/Material" ) )
++
+                         if (modern) {
+                             if (owner.equals("org/bukkit/Material") || (instantiatedMethodType != null && instantiatedMethodType.getDescriptor().startsWith("(Lorg/bukkit/Material;)"))) {
+                                 switch (name) {
