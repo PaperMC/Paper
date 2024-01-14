@@ -12,7 +12,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.actions = EnumSet.of(action);
          this.entries = List.of(new ClientboundPlayerInfoUpdatePacket.Entry(player));
      }
-+    // Paper start
++    // Paper start - Add Listing API for Player
 +    public ClientboundPlayerInfoUpdatePacket(EnumSet<ClientboundPlayerInfoUpdatePacket.Action> actions, List<ClientboundPlayerInfoUpdatePacket.Entry> entries) {
 +        this.actions = actions;
 +        this.entries = entries;
@@ -22,14 +22,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.actions = actions;
 +        this.entries = List.of(entry);
 +    }
-+    // Paper end
++    // Paper end - Add Listing API for Player
  
      public static ClientboundPlayerInfoUpdatePacket createPlayerInitializing(Collection<ServerPlayer> players) {
          EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME);
          return new ClientboundPlayerInfoUpdatePacket(enumSet, players);
      }
  
-+    // Paper start
++    // Paper start - Add Listing API for Player
 +    public static ClientboundPlayerInfoUpdatePacket createPlayerInitializing(Collection<ServerPlayer> players, ServerPlayer forPlayer) {
 +        final EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME);
 +        final List<ClientboundPlayerInfoUpdatePacket.Entry> entries = new java.util.ArrayList<>(players.size());
@@ -50,7 +50,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED);
 +        return new ClientboundPlayerInfoUpdatePacket(enumSet, new ClientboundPlayerInfoUpdatePacket.Entry(playerInfoId, listed));
 +    }
-+    // Paper end
++    // Paper end - Add Listing API for Player
 +
      public ClientboundPlayerInfoUpdatePacket(FriendlyByteBuf buf) {
          this.actions = buf.readEnumSet(ClientboundPlayerInfoUpdatePacket.Action.class);
@@ -60,18 +60,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static record Entry(UUID profileId, @Nullable GameProfile profile, boolean listed, int latency, GameType gameMode, @Nullable Component displayName, @Nullable RemoteChatSession.Data chatSession) {
          Entry(ServerPlayer player) {
 -            this(player.getUUID(), player.getGameProfile(), true, player.connection.latency(), player.gameMode.getGameModeForPlayer(), player.getTabListDisplayName(), Optionull.map(player.getChatSession(), RemoteChatSession::asData));
-+            // Paper start - add listed
++            // Paper start - Add Listing API for Player
 +            this(player, true);
 +        }
 +        Entry(ServerPlayer player, boolean listed) {
 +            this(player.getUUID(), player.getGameProfile(), listed, player.connection.latency(), player.gameMode.getGameModeForPlayer(), player.getTabListDisplayName(), Optionull.map(player.getChatSession(), RemoteChatSession::asData));
-+            // Paper end - add listed
 +        }
-+        // Paper start
 +        Entry(UUID profileId, boolean listed) {
 +            this(profileId, null, listed, 0, GameType.DEFAULT_MODE, null, null);
          }
-+        // Paper end
++        // Paper end - Add Listing API for Player
      }
  
      static class EntryBuilder {
@@ -84,22 +82,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          // CraftBukkit start - sendAll above replaced with this loop
 -        ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(player));
-+        ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(player)); // Paper
++        ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(player)); // Paper - Add Listing API for Player
  
          final List<ServerPlayer> onlinePlayers = Lists.newArrayListWithExpectedSize(this.players.size() - 1); // Paper - use single player info update packet
          for (int i = 0; i < this.players.size(); ++i) {
              ServerPlayer entityplayer1 = (ServerPlayer) this.players.get(i);
  
              if (entityplayer1.getBukkitEntity().canSee(bukkitPlayer)) {
-+                // Paper start
++                // Paper start - Add Listing API for Player
 +                if (entityplayer1.getBukkitEntity().isListed(bukkitPlayer)) {
-+                // Paper end
++                // Paper end - Add Listing API for Player
                  entityplayer1.connection.send(packet);
-+                // Paper start
++                // Paper start - Add Listing API for Player
 +                } else {
 +                    entityplayer1.connection.send(ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(player, false));
 +                }
-+                // Paper end
++                // Paper end - Add Listing API for Player
              }
  
              if (entityplayer1 == player || !bukkitPlayer.canSee(entityplayer1.getBukkitEntity())) { // Paper - don't include joining player
@@ -108,7 +106,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Paper start - use single player info update packet
          if (!onlinePlayers.isEmpty()) {
 -            player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(onlinePlayers));
-+            player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(onlinePlayers, player));
++            player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(onlinePlayers, player)); // Paper - Add Listing API for Player
          }
          // Paper end
          player.sentListPacket = true;
@@ -120,7 +118,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final ConversationTracker conversationTracker = new ConversationTracker();
      private final Set<String> channels = new HashSet<String>();
      private final Map<UUID, Set<WeakReference<Plugin>>> invertedVisibilityEntities = new HashMap<>();
-+    private final Set<UUID> unlistedEntities = new HashSet<>(); // Paper
++    private final Set<UUID> unlistedEntities = new HashSet<>(); // Paper - Add Listing API for Player
      private static final WeakHashMap<Plugin, WeakReference<Plugin>> pluginWeakReferences = new WeakHashMap<>();
      private int hash = 0;
      private double health = 20;
@@ -129,7 +127,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
              // Paper end
 -            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer)));
-+            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer), this.getHandle())); // Paper
++            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer), this.getHandle())); // Paper - Add Listing API for Player
              if (original != null) otherPlayer.setUUID(original); // Paper - uuid override
          }
  
@@ -137,7 +135,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return (entity != null) ? this.canSee(entity) : false; // If we can't find it, we can't see it
      }
  
-+    // Paper start
++    // Paper start - Add Listing API for Player
 +    @Override
 +    public boolean isListed(Player other) {
 +        return !this.unlistedEntities.contains(other.getUniqueId());
@@ -172,7 +170,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return false;
 +        }
 +    }
-+    // Paper end
++    // Paper end - Add Listing API for Player
 +
      @Override
      public Map<String, Object> serialize() {

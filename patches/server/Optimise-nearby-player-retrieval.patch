@@ -127,6 +127,73 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
+@@ -0,0 +0,0 @@ public class PlayerSensor extends Sensor<LivingEntity> {
+ 
+     @Override
+     protected void doTick(ServerLevel world, LivingEntity entity) {
+-        List<Player> list = world.players().stream().filter(EntitySelector.NO_SPECTATORS).filter((player) -> {
+-            return entity.closerThan(player, 16.0D);
+-        }).sorted(Comparator.comparingDouble(entity::distanceToSqr)).collect(Collectors.toList());
++        // Paper start - Perf: optimise nearby player retrieval & remove streams from hot code
++        io.papermc.paper.util.player.NearbyPlayers nearbyPlayers = world.chunkSource.chunkMap.getNearbyPlayers();
++        net.minecraft.world.phys.Vec3 entityPos = entity.position();
++        com.destroystokyo.paper.util.maplist.ReferenceList<net.minecraft.server.level.ServerPlayer> nearby = nearbyPlayers.getPlayersByChunk(
++            entity.chunkPosition().x,
++            entity.chunkPosition().z,
++            io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.GENERAL_REALLY_SMALL
++        );
++
++        List<Player> players = new java.util.ArrayList<>(nearby == null ? 0 : nearby.size());
++        if (nearby != null) {
++            Object[] rawData = nearby.getRawData();
++            for (int index = 0, len = nearby.size(); index < len; ++index) {
++                net.minecraft.server.level.ServerPlayer player = (net.minecraft.server.level.ServerPlayer) rawData[index];
++                if (player.isSpectator()) {
++                    continue;
++                }
++                if (player.distanceToSqr(entityPos.x, entityPos.y, entityPos.z) >= (16.0 * 16.0)) {
++                    continue;
++                }
++                players.add(player);
++            }
++        }
++        players.sort(Comparator.comparingDouble(entity::distanceToSqr));
+         Brain<?> brain = entity.getBrain();
+-        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, list);
+-        List<Player> list2 = list.stream().filter((player) -> {
+-            return isEntityTargetable(entity, player);
+-        }).collect(Collectors.toList());
+-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, list2.isEmpty() ? null : list2.get(0));
+-        Optional<Player> optional = list2.stream().filter((player) -> {
+-            return isEntityAttackable(entity, player);
+-        }).findFirst();
+-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, optional);
++
++        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, players);
++
++        Player firstTargetable = null;
++        Player firstAttackable = null;
++        for (Player player : players) {
++            if (firstTargetable == null && Sensor.isEntityTargetable(entity, player)) {
++                firstTargetable = player;
++            }
++            if (firstAttackable == null && Sensor.isEntityAttackable(entity, player)) {
++                firstAttackable = player;
++            }
++
++            if (firstAttackable != null && firstTargetable != null) {
++                break;
++            }
++        }
++        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, firstTargetable);
++        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, Optional.ofNullable(firstAttackable));
++        // Paper end - Perf: optimise nearby player retrieval & remove streams from hot code
+     }
+ }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
