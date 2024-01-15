@@ -660,6 +660,23 @@ public class CraftBlockData implements BlockData {
         this.state = state.mirror(EnumBlockMirror.valueOf(mirror.name()));
     }
 
+    @Override
+    public void copyTo(BlockData blockData) {
+        CraftBlockData other = (CraftBlockData) blockData;
+        IBlockData nms = other.state;
+        for (IBlockState<?> property : state.getBlock().getStateDefinition().getProperties()) {
+            if (nms.hasProperty(property)) {
+                nms = copyProperty(state, nms, property);
+            }
+        }
+
+        other.state = nms;
+    }
+
+    private <T extends Comparable<T>> IBlockData copyProperty(IBlockData source, IBlockData target, IBlockState<T> property) {
+        return target.setValue(property, source.getValue(property));
+    }
+
     @NotNull
     @Override
     public BlockState createBlockState() {
