@@ -274,6 +274,11 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
+    public void removeEnchantments() {
+        handle.getTag().remove(ENCHANTMENTS.NBT);
+    }
+
+    @Override
     public Map<Enchantment, Integer> getEnchantments() {
         return getEnchantments(handle);
     }
