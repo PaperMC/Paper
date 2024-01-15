@@ -8,7 +8,7 @@ Areas affected by lag comepnsation:
  - Eating food items
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 9a3ee0a2b2b41baea6988ee0ad64ff5cf61dde9f..2ea52c9aad51967bfefc3fe08073a004f65a9451 100644
+index d34f0d5abd93ed1729a00405d78a34a1873ba086..016b7628b289fb882f3ec15dd5b0cb4e0af72edc 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -311,6 +311,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -27,10 +27,10 @@ index 9a3ee0a2b2b41baea6988ee0ad64ff5cf61dde9f..2ea52c9aad51967bfefc3fe08073a004
              ServerLevel worldserver = (ServerLevel) iterator.next();
 +            worldserver.updateLagCompensationTick(); // Paper - lag compensation
              worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
-             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
+             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
              worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index a7f2e8755af41abc66070f1971e526b4f05bc710..9a7d5aa722eb1e56da8e9e11b46179c9f9ab716f 100644
+index dae52be48e9789db2fbbff699f3e0c44086c864f..2e293fb94024d21769faf0e60e79e91efac79007 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -570,6 +570,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -52,7 +52,7 @@ index a7f2e8755af41abc66070f1971e526b4f05bc710..9a7d5aa722eb1e56da8e9e11b46179c9
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 16cb80c64ebf33b9621fdbd6655becb85db487fa..8e6b4880e9596cf2e9c34fb90f03897f05475000 100644
+index 8bfd31ce3b4f88f0b32adb242c53771d9930b855..921d9d8bc6265631073d105fb8de68562f902778 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -124,7 +124,7 @@ public class ServerPlayerGameMode {
@@ -65,13 +65,13 @@ index 16cb80c64ebf33b9621fdbd6655becb85db487fa..8e6b4880e9596cf2e9c34fb90f03897f
  
          if (this.hasDelayedDestroy) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 3ce5c06a6c154c0b8c9f2aaaa0a2f9d092cc4551..c5a07b414da0209035f3f186f72a8913243187be 100644
+index 668297b8978cbde6635254122f8f29f4a7ead45b..ceb3bfbd955111af183eb16c0946109251289d40 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3818,6 +3818,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
          this.getEntityData().resendPossiblyDesyncedDataValues(java.util.List.of(DATA_LIVING_ENTITY_FLAGS), serverPlayer);
      }
-     // Paper end
+     // Paper end - Properly cancel usable items
 +    // Paper start - lag compensate eating
 +    protected long eatStartTime;
 +    protected int totalEatTimeTicks;

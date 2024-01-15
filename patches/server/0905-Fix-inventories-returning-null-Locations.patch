@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Wed, 15 Mar 2023 18:29:45 -0700
-Subject: [PATCH] Fix certain inventories returning null Locations
+Subject: [PATCH] Fix inventories returning null Locations
 
 Wandering Trader, AbstractHorse, Beacon and Composter inventories returned null locations
 when a block or entity location is readily available
@@ -9,14 +9,14 @@ when a block or entity location is readily available
 Co-authored-by: Lukas Planz <lukas.planz@web.de>
 
 diff --git a/src/main/java/net/minecraft/world/SimpleContainer.java b/src/main/java/net/minecraft/world/SimpleContainer.java
-index d5eeb2fcb119b815213aeffb3811d4a843502e50..061e870e0cdd5bf00351b7e8104361bce86809f3 100644
+index d5eeb2fcb119b815213aeffb3811d4a843502e50..ff1aba1e69cfde633fd01724f1a8d0af7f59437f 100644
 --- a/src/main/java/net/minecraft/world/SimpleContainer.java
 +++ b/src/main/java/net/minecraft/world/SimpleContainer.java
 @@ -63,6 +63,16 @@ public class SimpleContainer implements Container, StackedContentsCompatible {
  
      @Override
      public Location getLocation() {
-+        // Paper start
++        // Paper start - Fix inventories returning null Locations
 +        // When the block inventory does not have a tile state that implements getLocation, e. g. composters
 +        if (this.bukkitOwner instanceof org.bukkit.inventory.BlockInventoryHolder blockInventoryHolder) {
 +            return blockInventoryHolder.getBlock().getLocation();
@@ -25,29 +25,29 @@ index d5eeb2fcb119b815213aeffb3811d4a843502e50..061e870e0cdd5bf00351b7e8104361bc
 +        if (this.bukkitOwner instanceof org.bukkit.entity.Entity entity) {
 +            return entity.getLocation();
 +        }
-+        // Paper end
++        // Paper end - Fix inventories returning null Locations
          return null;
      }
  
 diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
-index 0b1a0be964d799f1706c273092dc653fa04e8014..a6e712606ece631502ae4c7513403092df77524f 100644
+index 0b1a0be964d799f1706c273092dc653fa04e8014..3c67132bd3c1e4886f7ba823fe330b019359ac9d 100644
 --- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
 @@ -51,6 +51,12 @@ public class BeaconMenu extends AbstractContainerMenu {
              public int getMaxStackSize() {
                  return 1;
              }
-+            // Paper start
++            // Paper start - Fix inventories returning null Locations
 +            @Override
 +            public org.bukkit.Location getLocation() {
 +                return context.getLocation();
 +            }
-+            // Paper end
++            // Paper end - Fix inventories returning null Locations
          };
          checkContainerDataCount(propertyDelegate, 3);
          this.beaconData = propertyDelegate;
 diff --git a/src/main/java/net/minecraft/world/inventory/MerchantContainer.java b/src/main/java/net/minecraft/world/inventory/MerchantContainer.java
-index 083e50e27685f441ede4c75e913d671fe45d1d15..98cbcf67d8fdb1c80fb7ba8ba7734821e2818da6 100644
+index 083e50e27685f441ede4c75e913d671fe45d1d15..ac4ec7157cf93b0cbc4472dc42fbbbff3402335a 100644
 --- a/src/main/java/net/minecraft/world/inventory/MerchantContainer.java
 +++ b/src/main/java/net/minecraft/world/inventory/MerchantContainer.java
 @@ -65,7 +65,7 @@ public class MerchantContainer implements Container {
@@ -55,7 +55,7 @@ index 083e50e27685f441ede4c75e913d671fe45d1d15..98cbcf67d8fdb1c80fb7ba8ba7734821
      @Override
      public Location getLocation() {
 -        return (this.merchant instanceof Villager) ? ((Villager) this.merchant).getBukkitEntity().getLocation() : null;
-+        return (this.merchant instanceof AbstractVillager) ? ((AbstractVillager) this.merchant).getBukkitEntity().getLocation() : null; // Paper
++        return (this.merchant instanceof AbstractVillager) ? ((AbstractVillager) this.merchant).getBukkitEntity().getLocation() : null; // Paper - Fix inventories returning null Locations
      }
      // CraftBukkit end
  

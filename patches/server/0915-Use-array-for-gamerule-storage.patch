@@ -5,14 +5,14 @@ Subject: [PATCH] Use array for gamerule storage
 
 
 diff --git a/src/main/java/net/minecraft/world/level/GameRules.java b/src/main/java/net/minecraft/world/level/GameRules.java
-index 6c1af24f2f02ef5fe1be135b4071362f2297147a..4f2fa47d094348bb8f86a86e808019ddba56e187 100644
+index 6c1af24f2f02ef5fe1be135b4071362f2297147a..a9be16e53a9df34af3495048aa9af7b1a3efea4a 100644
 --- a/src/main/java/net/minecraft/world/level/GameRules.java
 +++ b/src/main/java/net/minecraft/world/level/GameRules.java
 @@ -114,6 +114,7 @@ public class GameRules {
      public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_VINES_SPREAD = GameRules.register("doVinesSpread", GameRules.Category.UPDATES, GameRules.BooleanValue.create(true));
      public static final GameRules.Key<GameRules.BooleanValue> RULE_ENDER_PEARLS_VANISH_ON_DEATH = GameRules.register("enderPearlsVanishOnDeath", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
      private final Map<GameRules.Key<?>, GameRules.Value<?>> rules;
-+    private final GameRules.Value<?>[] gameruleArray; // Paper
++    private final GameRules.Value<?>[] gameruleArray; // Paper - Perf: Use array for gamerule storage
  
      private static <T extends GameRules.Value<T>> GameRules.Key<T> register(String name, GameRules.Category category, GameRules.Type<T> type) {
          GameRules.Key<T> gamerules_gamerulekey = new GameRules.Key<>(name, category);
@@ -21,18 +21,18 @@ index 6c1af24f2f02ef5fe1be135b4071362f2297147a..4f2fa47d094348bb8f86a86e808019dd
  
      public GameRules() {
 -        this.rules = (Map) GameRules.GAME_RULE_TYPES.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry) -> {
-+        // Paper start - use this to ensure gameruleArray is initialized
++        // Paper start - Perf: Use array for gamerule storage
 +        this((Map) GameRules.GAME_RULE_TYPES.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry) -> {
              return ((GameRules.Type) entry.getValue()).createRule();
 -        }));
 +        })));
-+        // Paper end
++        // Paper end - Perf: Use array for gamerule storage
      }
  
      private GameRules(Map<GameRules.Key<?>, GameRules.Value<?>> rules) {
          this.rules = rules;
 +
-+        // Paper start
++        // Paper start - Perf: Use array for gamerule storage
 +        int arraySize = rules.keySet().stream().mapToInt(key -> key.gameRuleIndex).max().orElse(-1) + 1;
 +        GameRules.Value<?>[] values = new GameRules.Value[arraySize];
 +
@@ -41,12 +41,12 @@ index 6c1af24f2f02ef5fe1be135b4071362f2297147a..4f2fa47d094348bb8f86a86e808019dd
 +        }
 +
 +        this.gameruleArray = values;
-+        // Paper end
++        // Paper end - Perf: Use array for gamerule storage
      }
  
      public <T extends GameRules.Value<T>> T getRule(GameRules.Key<T> key) {
 -        return (T) this.rules.get(key); // CraftBukkit - decompile error
-+        return key == null ? null : (T) this.gameruleArray[key.gameRuleIndex]; // Paper
++        return key == null ? null : (T) this.gameruleArray[key.gameRuleIndex]; // Paper - Perf: Use array for gamerule storage
      }
  
      public CompoundTag createTag() {
@@ -54,10 +54,10 @@ index 6c1af24f2f02ef5fe1be135b4071362f2297147a..4f2fa47d094348bb8f86a86e808019dd
      }
  
      public static final class Key<T extends GameRules.Value<T>> {
-+        // Paper start
++        // Paper start - Perf: Use array for gamerule storage
 +        private static int lastGameRuleIndex = 0;
 +        public final int gameRuleIndex = lastGameRuleIndex++;
-+        // Paper end
++        // Paper end - Perf: Use array for gamerule storage
  
          final String id;
          private final GameRules.Category category;

@@ -5,24 +5,24 @@ Subject: [PATCH] Fix cmd permission levels for command blocks
 
 
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index 82ca6267bca684a8f04ca37d40816686677a852a..4e81a823c49807d9978aeaef8293baaa67194c4d 100644
+index 82ca6267bca684a8f04ca37d40816686677a852a..ec4152f7372ddad216039a489fb5d72f963b4f18 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 @@ -204,10 +204,29 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
          return this.permissionLevel >= level;
      }
  
-+    // Paper start
++    // Paper start - Fix permission levels for command blocks
 +    private boolean forceRespectPermissionLevel() {
 +        return this.source == CommandSource.NULL || (this.source instanceof final net.minecraft.world.level.BaseCommandBlock commandBlock && commandBlock.getLevel().paperConfig().commandBlocks.forceFollowPermLevel);
 +    }
-+    // Paper end
++    // Paper end - Fix permission levels for command blocks
 +
      // CraftBukkit start
      public boolean hasPermission(int i, String bukkitPermission) {
 -        // World is null when loading functions
 -        return ((this.getLevel() == null || !this.getLevel().getCraftServer().ignoreVanillaPermissions) && this.permissionLevel >= i) || this.getBukkitSender().hasPermission(bukkitPermission);
-+        // Paper start
++        // Paper start - Fix permission levels for command blocks
 +        final java.util.function.BooleanSupplier hasBukkitPerm = () -> this.source == CommandSource.NULL /*treat NULL as having all bukkit perms*/ || this.getBukkitSender().hasPermission(bukkitPermission); // lazily check bukkit perms to the benefit of custom permission setups
 +        // if the server is null, we must check the vanilla perm level system
 +        // if ignoreVanillaPermissions is true, we can skip vanilla perms and just run the bukkit perm check
@@ -36,12 +36,12 @@ index 82ca6267bca684a8f04ca37d40816686677a852a..4e81a823c49807d9978aeaef8293baaa
 +            }
 +        }
 +        return hasBukkitPerm.getAsBoolean();
-+        // Paper end
++        // Paper end - Fix permission levels for command blocks
      }
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index 6abef7947cadca6bccac809a8d58d38961132e0f..55a835bbe69453fe010d03f3b2e80b954dfc208e 100644
+index 6abef7947cadca6bccac809a8d58d38961132e0f..1a5b1be217e210db3f498b93fbcae7509be597ee 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
 @@ -296,16 +296,7 @@ public class Commands {
@@ -58,7 +58,7 @@ index 6abef7947cadca6bccac809a8d58d38961132e0f..55a835bbe69453fe010d03f3b2e80b95
 -                || cmd.equalsIgnoreCase("pardon") || cmd.equalsIgnoreCase("pardon-ip") || cmd.equalsIgnoreCase("reload")) {
 -            return;
 -        }
-+        // Paper - use proper permission levels to block these commands
++        // Paper - Fix permission levels for command blocks
  
          // Handle vanilla commands;
          if (sender.getLevel().getCraftServer().getCommandBlockOverride(args[0])) {

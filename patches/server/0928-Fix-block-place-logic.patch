@@ -9,7 +9,7 @@ Fix several issues when a player interact with a block:
 * poi can desync when the BlockPhysicsEvent is cancelled
 
 diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
-index e581dc10f3c805f7f8b6e4c842092609e7e1a0f8..6819cea2858f0035a4fbf3671612d43fead883b6 100644
+index e581dc10f3c805f7f8b6e4c842092609e7e1a0f8..b6b5abba349fecfecd8f3a3c237693607f9bf0ad 100644
 --- a/src/main/java/net/minecraft/world/item/BlockItem.java
 +++ b/src/main/java/net/minecraft/world/item/BlockItem.java
 @@ -130,7 +130,7 @@ public class BlockItem extends Item {
@@ -17,12 +17,12 @@ index e581dc10f3c805f7f8b6e4c842092609e7e1a0f8..6819cea2858f0035a4fbf3671612d43f
                      SoundType soundeffecttype = iblockdata1.getSoundType();
  
 -                    // world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), SoundCategory.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
-+                    if (entityhuman == null) world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), net.minecraft.sounds.SoundSource.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F); // Paper - reintroduce this for the dispenser (i.e the shulker)
++                    if (entityhuman == null) world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), net.minecraft.sounds.SoundSource.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F); // Paper - Fix block place logic; reintroduce this for the dispenser (i.e the shulker)
                      world.gameEvent(GameEvent.BLOCK_PLACE, blockposition, GameEvent.Context.of(entityhuman, iblockdata1));
                      if ((entityhuman == null || !entityhuman.getAbilities().instabuild) && itemstack != ItemStack.EMPTY) { // CraftBukkit
                          itemstack.shrink(1);
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 3f420bbe8c2b9128a051030c4acd3603ea487132..453f48b540560a340721d762ca80eadf229c4dce 100644
+index 8d051e23e16cef71e54fef2955720f604c306221..9ac862354c7026845287344bbc2a94c958f65a59 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
 @@ -493,13 +493,7 @@ public final class ItemStack {
@@ -36,19 +36,19 @@ index 3f420bbe8c2b9128a051030c4acd3603ea487132..453f48b540560a340721d762ca80eadf
 -                            }
 -
 -                            tileentityjukebox.setTheItem(record);
-+                            tileentityjukebox.setTheItem(this.copy()); // Paper - sync this with record item, jukebox has now an inventory
++                            tileentityjukebox.setTheItem(this.copy()); // Paper - Fix block place logic; sync this with record item, jukebox has now an inventory
                              world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entityhuman, world.getBlockState(blockposition)));
                          }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index c7eb97008b8096f69602678722506fddbeac3148..7a4c21beaa4004f72cbfe75e567cafb3279a1c94 100644
+index c7eb97008b8096f69602678722506fddbeac3148..28e56e61ff5c14683f55780ed83e593f6b06503c 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -1038,17 +1038,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                  // CraftBukkit start
                  iblockdata1.updateIndirectNeighbourShapes(this, blockposition, k, j - 1); // Don't call an event for the old block to limit event spam
                  CraftWorld world = ((ServerLevel) this).getWorld();
-+                boolean cancelledUpdates = false; // Paper
++                boolean cancelledUpdates = false; // Paper - Fix block place logic
                  if (world != null && ((ServerLevel)this).hasPhysicsEvent) { // Paper
                      BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
                      this.getCraftServer().getPluginManager().callEvent(event);
@@ -56,13 +56,13 @@ index c7eb97008b8096f69602678722506fddbeac3148..7a4c21beaa4004f72cbfe75e567cafb3
 -                    if (event.isCancelled()) {
 -                        return;
 -                    }
-+                    cancelledUpdates = event.isCancelled(); // Paper
++                    cancelledUpdates = event.isCancelled(); // Paper - Fix block place logic
                  }
                  // CraftBukkit end
-+                if (!cancelledUpdates) { // Paper
++                if (!cancelledUpdates) { // Paper - Fix block place logic
                  iblockdata.updateNeighbourShapes(this, blockposition, k, j - 1);
                  iblockdata.updateIndirectNeighbourShapes(this, blockposition, k, j - 1);
-+                } // Paper
++                } // Paper - Fix block place logic
              }
  
              // CraftBukkit start - SPIGOT-5710
