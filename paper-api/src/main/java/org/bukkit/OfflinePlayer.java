@@ -425,4 +425,13 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      */
     @Nullable
     public Location getLastDeathLocation();
+
+    /**
+     * Gets the player's current location.
+     *
+     * @return the player's location, {@code null} if player hasn't ever played
+     * before.
+     */
+    @Nullable
+    public Location getLocation();
 }
