@@ -72,7 +72,6 @@ import org.jetbrains.annotations.Nullable;
 public class MobGoalGenerator extends SimpleGenerator {
 
     private static final String CLASS_HEADER = Javadocs.getVersionDependentClassHeader("Mob Goals");
-    private static final String FIELD_HEADER = Javadocs.getVersionDependentField("$L");
 
     private static final DeprecatedEntry[] DEPRECATED_ENTRIES = {
         //<editor-fold defaultstate="collapsed" desc="legacy entries">
@@ -219,7 +218,6 @@ public class MobGoalGenerator extends SimpleGenerator {
             String keyPath = key.getKey();
             String fieldName = Formatting.formatKeyAsField(key);
             FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKey, fieldName, Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
-                .addJavadoc(FIELD_HEADER, vanillaGoalKey.clazz.getName())
                 .initializer("$N($S, $T.class)", createMethod.build(), keyPath, value.getEntityClass());
             typeBuilder.addField(fieldBuilder.build());
         }
