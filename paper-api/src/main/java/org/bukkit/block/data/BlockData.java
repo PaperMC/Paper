@@ -248,6 +248,16 @@ public interface BlockData extends Cloneable {
     void mirror(@NotNull Mirror mirror);
 
     /**
+     * Copies all applicable properties from this BlockData to the provided
+     * BlockData.
+     * <p>
+     * Only modifies properties that both blocks share in common.
+     *
+     * @param other the BlockData to copy properties to
+     */
+    void copyTo(@NotNull BlockData other);
+
+    /**
      * Creates a new default {@link BlockState} for this type of Block, not
      * bound to a location.
      *
