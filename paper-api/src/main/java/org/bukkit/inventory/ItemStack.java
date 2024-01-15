@@ -449,6 +449,17 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return level;
     }
 
+    /**
+     * Removes all enchantments on this ItemStack.
+     */
+    public void removeEnchantments() {
+        if (meta == null) {
+            return;
+        }
+
+        meta.removeEnchantments();
+    }
+
     @Override
     @NotNull
     @Utility

@@ -188,6 +188,11 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     boolean removeEnchant(@NotNull Enchantment ench);
 
     /**
+     * Removes all enchantments from this item meta.
+     */
+    void removeEnchantments();
+
+    /**
      * Checks if the specified enchantment conflicts with any enchantments in
      * this ItemMeta.
      *
