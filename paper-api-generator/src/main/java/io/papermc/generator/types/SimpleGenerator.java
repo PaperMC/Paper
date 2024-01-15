@@ -24,14 +24,14 @@ public abstract class SimpleGenerator implements SourceGenerator {
 
     @Override
     public void writeToFile(Path parent) throws IOException {
-        Path pkgDir = parent.resolve(this.packageName.replace('.', '/'));
-        Files.createDirectories(pkgDir);
+        Path packagePath = parent.resolve(this.packageName.replace('.', '/'));
+        Files.createDirectories(packagePath);
 
         JavaFile.Builder builder = JavaFile.builder(this.packageName, this.getTypeSpec())
             .indent("    ");
         this.file(builder);
 
-        Files.writeString(pkgDir.resolve(this.className + ".java"), this.file(builder).build().toString(), StandardCharsets.UTF_8);
+        Files.writeString(packagePath.resolve(this.className + ".java"), this.file(builder).build().toString(), StandardCharsets.UTF_8);
     }
 
 }
