@@ -12,6 +12,7 @@ import java.util.UUID;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.DynamicOpsNBT;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.players.WhiteListEntry;
 import net.minecraft.stats.ServerStatisticManager;
 import net.minecraft.world.level.storage.WorldNBTStorage;
@@ -266,6 +267,31 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         if (getData().contains("LastDeathLocation", 10)) {
             return GlobalPos.CODEC.parse(DynamicOpsNBT.INSTANCE, getData().get("LastDeathLocation")).result().map(CraftMemoryMapper::fromNms).orElse(null);
         }
+        return null;
+    }
+
+    @Override
+    public Location getLocation() {
+        NBTTagCompound data = getData();
+        if (data == null) {
+            return null;
+        }
+
+        if (data.contains("Pos") && data.contains("Rotation")) {
+            NBTTagList position = (NBTTagList) data.get("Pos");
+            NBTTagList rotation = (NBTTagList) data.get("Rotation");
+
+            UUID uuid = new UUID(data.getLong("WorldUUIDMost"), data.getLong("WorldUUIDLeast"));
+
+            return new Location(server.getWorld(uuid),
+                position.getDouble(0),
+                position.getDouble(1),
+                position.getDouble(2),
+                rotation.getFloat(0),
+                rotation.getFloat(1)
+            );
+        }
+
         return null;
     }
 
