@@ -57,7 +57,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
              worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
-+            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
++            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
              worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
  
              this.profiler.push(() -> {
@@ -70,17 +70,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public ItemStack copy() {
 -        if (this.isEmpty()) {
-+        // Paper start
++        // Paper start - Perf: Optimize Hoppers
 +        return this.copy(false);
 +    }
 +
 +    public ItemStack copy(boolean originalItem) {
 +        if (!originalItem && this.isEmpty()) {
-+            // Paper end
++            // Paper end - Perf: Optimize Hoppers
              return ItemStack.EMPTY;
          } else {
 -            ItemStack itemstack = new ItemStack(this.getItem(), this.count);
-+            ItemStack itemstack = new ItemStack(originalItem ? this.item : this.getItem(), this.count); // Paper
++            ItemStack itemstack = new ItemStack(originalItem ? this.item : this.getItem(), this.count); // Paper - Perf: Optimize Hoppers
  
              itemstack.setPopTime(this.getPopTime());
              if (this.tag != null) {
@@ -92,7 +92,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import co.aikar.timings.Timing; // Paper
  
  public abstract class BlockEntity {
-+    static boolean ignoreTileUpdates; // Paper
++    static boolean ignoreTileUpdates; // Paper - Perf: Optimize Hoppers
  
      public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
      // CraftBukkit start - data containers
@@ -100,7 +100,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void setChanged() {
          if (this.level != null) {
-+            if (ignoreTileUpdates) return; // Paper
++            if (ignoreTileUpdates) return; // Paper - Perf: Optimize Hoppers
              BlockEntity.setChanged(this.level, this.worldPosition, this.blockState);
          }
  
@@ -112,7 +112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
-+    // Paper start - optimize hoppers
++    // Paper start - Perf: Optimize Hoppers
 +    private static final int HOPPER_EMPTY = 0;
 +    private static final int HOPPER_HAS_ITEMS = 1;
 +    private static final int HOPPER_IS_FULL = 2;
@@ -147,7 +147,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        return empty ? HOPPER_EMPTY : (full ? HOPPER_IS_FULL : HOPPER_HAS_ITEMS);
 +    }
-+    // Paper end - optimize hoppers
++    // Paper end - Perf: Optimize Hoppers
 +
      private static boolean tryMoveItems(Level world, BlockPos pos, BlockState state, HopperBlockEntity blockEntity, BooleanSupplier booleansupplier) {
          if (world.isClientSide) {
@@ -157,14 +157,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  boolean flag = false;
  
 -                if (!blockEntity.isEmpty()) {
-+                int fullState = getFullState(blockEntity); // Paper - optimize hoppers
++                int fullState = getFullState(blockEntity); // Paper - Perf: Optimize Hoppers
 +
-+                if (fullState != HOPPER_EMPTY) { // Paper - optimize hoppers
++                if (fullState != HOPPER_EMPTY) { // Paper - Perf: Optimize Hopperss
                      flag = HopperBlockEntity.ejectItems(world, pos, state, (Container) blockEntity, blockEntity); // CraftBukkit
                  }
  
 -                if (!blockEntity.inventoryFull()) {
-+                if (fullState != HOPPER_IS_FULL || flag) { // Paper - optimize hoppers
++                if (fullState != HOPPER_IS_FULL || flag) { // Paper - Perf: Optimize Hoppers
                      flag |= booleansupplier.getAsBoolean();
                  }
  
@@ -172,7 +172,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return false;
      }
  
-+    // Paper start - Optimize Hoppers
++    // Paper start - Perf: Optimize Hoppers
 +    private static boolean skipPullModeEventFire;
 +    private static boolean skipPushModeEventFire;
 +    public static boolean skipHopperEvents;
@@ -366,7 +366,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    private static final java.util.function.BiPredicate<ItemStack, Integer> STACK_SIZE_TEST = (itemstack, i) -> itemstack.getCount() >= itemstack.getMaxStackSize();
 +    private static final java.util.function.BiPredicate<ItemStack, Integer> IS_EMPTY_TEST = (itemstack, i) -> itemstack.isEmpty();
-+    // Paper end
++    // Paper end - Perf: Optimize Hoppers
 +
      private static boolean ejectItems(Level world, BlockPos blockposition, BlockState iblockdata, Container iinventory, HopperBlockEntity hopper) { // CraftBukkit
          Container iinventory1 = HopperBlockEntity.getAttachedContainer(world, blockposition, iblockdata);
@@ -453,7 +453,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -                return false;
 +                // return false;
-+                // Paper end
++                // Paper end - Perf: Optimize Hoppers
              }
          }
      }
@@ -466,7 +466,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -            return itemstack.getCount() >= itemstack.getMaxStackSize();
 -        });
-+        // Paper start - optimize hoppers
++        // Paper start - Perf: Optimize Hoppers
 +        if (inventory instanceof WorldlyContainer worldlyContainer) {
 +            for (final int slot : worldlyContainer.getSlotsForFace(direction)) {
 +                final ItemStack stack = inventory.getItem(slot);
@@ -484,14 +484,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            return true;
 +        }
-+        // Paper end - optimize hoppers
++        // Paper end - Perf: Optimize Hoppers
      }
  
      private static boolean isEmptyContainer(Container inv, Direction facing) {
 -        return HopperBlockEntity.getSlots(inv, facing).allMatch((i) -> {
 -            return inv.getItem(i).isEmpty();
 -        });
-+        return allMatch(inv, facing, IS_EMPTY_TEST);
++        return allMatch(inv, facing, IS_EMPTY_TEST); // Paper - Perf: Optimize Hoppers
      }
  
      public static boolean suckInItems(Level world, Hopper hopper) {
@@ -502,7 +502,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            return HopperBlockEntity.isEmptyContainer(iinventory, enumdirection) ? false : HopperBlockEntity.getSlots(iinventory, enumdirection).anyMatch((i) -> {
 -                return HopperBlockEntity.a(hopper, iinventory, i, enumdirection, world); // Spigot
 -            });
-+            // Paper start - optimize hoppers and remove streams
++            // Paper start - Perf: Optimize Hoppers
 +            skipPullModeEventFire = skipHopperEvents;
 +            // merge container isEmpty check and move logic into one loop
 +            if (iinventory instanceof WorldlyContainer worldlyContainer) {
@@ -528,7 +528,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +                return false;
 +            }
-+            // Paper end
++            // Paper end - Perf: Optimize Hoppers
          } else {
              Iterator iterator = HopperBlockEntity.getItemsAtAndAbove(world, hopper).iterator();
  
@@ -579,7 +579,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -            itemstack1.shrink(origCount - itemstack2.getCount()); // Spigot
 -            iinventory.setItem(i, itemstack1);
-+        // Paper start - replace pull logic; MAKE SURE TO CHECK FOR DIFFS WHEN UPDATING
++        // Paper start - Perf: Optimize Hoppers; replace pull logic; MAKE SURE TO CHECK FOR DIFFS WHEN UPDATING
 +        if (!itemstack.isEmpty() && HopperBlockEntity.canTakeItemFromContainer(ihopper, iinventory, itemstack, i, enumdirection)) { // If this logic changes, update above. this is left unused incase reflective plugins
 +            return hopperPull(world, ihopper, iinventory, itemstack, i);
 +            // ItemStack itemstack1 = itemstack.copy();
@@ -620,7 +620,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            // itemstack1.shrink(origCount - itemstack2.getCount()); // Spigot
 +            // iinventory.setItem(i, itemstack1);
-+            // Paper end
++            // Paper end - Perf: Optimize Hoppers
          }
  
          return false;
@@ -630,13 +630,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit start
 -        InventoryPickupItemEvent event = new InventoryPickupItemEvent(inventory.getOwner().getInventory(), (org.bukkit.entity.Item) itemEntity.getBukkitEntity());
 +        if (InventoryPickupItemEvent.getHandlerList().getRegisteredListeners().length > 0) { // Paper - optimize hoppers
-+        InventoryPickupItemEvent event = new InventoryPickupItemEvent(getInventory(inventory), (org.bukkit.entity.Item) itemEntity.getBukkitEntity()); // Paper - use getInventory() to avoid snapshot creation
++        InventoryPickupItemEvent event = new InventoryPickupItemEvent(getInventory(inventory), (org.bukkit.entity.Item) itemEntity.getBukkitEntity()); // Paper - Perf: Optimize Hoppers; use getInventory() to avoid snapshot creation
          itemEntity.level().getCraftServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              return false;
          }
          // CraftBukkit end
-+        } // Paper - optimize hoppers
++        } // Paper - Perf: Optimize Hoppers
          ItemStack itemstack = itemEntity.getItem().copy();
          ItemStack itemstack1 = HopperBlockEntity.addItem((Container) null, inventory, itemstack, (Direction) null);
  
@@ -644,9 +644,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      stack = stack.split(to.getMaxStackSize());
                  }
                  // Spigot end
-+                ignoreTileUpdates = true; // Paper
++                ignoreTileUpdates = true; // Paper - Perf: Optimize Hoppers
                  to.setItem(slot, stack);
-+                ignoreTileUpdates = false; // Paper
++                ignoreTileUpdates = false; // Paper - Perf: Optimize Hoppers
                  stack = leftover; // Paper
                  flag = true;
              } else if (HopperBlockEntity.canMergeItems(itemstack1, stack)) {
@@ -654,16 +654,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit end
      }
  
-+    // Paper start - optimize hopper item suck in
++    // Paper start - Perf: Optimize Hoppers
 +    static final AABB HOPPER_ITEM_SUCK_OVERALL = Hopper.SUCK.bounds();
 +    static final AABB[] HOPPER_ITEM_SUCK_INDIVIDUAL = Hopper.SUCK.toAabbs().toArray(new AABB[0]);
-+    // Paper end - optimize hopper item suck in
++    // Paper end - Perf: Optimize Hoppers
 +
      public static List<ItemEntity> getItemsAtAndAbove(Level world, Hopper hopper) {
 -        return (List) hopper.getSuckShape().toAabbs().stream().flatMap((axisalignedbb) -> {
 -            return world.getEntitiesOfClass(ItemEntity.class, axisalignedbb.move(hopper.getLevelX() - 0.5D, hopper.getLevelY() - 0.5D, hopper.getLevelZ() - 0.5D), EntitySelector.ENTITY_STILL_ALIVE).stream();
 -        }).collect(Collectors.toList());
-+        // Paper start - optimize hopper item suck in
++        // Paper start - Perf: Optimize Hoppers
 +        // eliminate multiple getEntitiesOfClass() but maintain the voxelshape collision by moving
 +        // the individual AABB checks into the predicate
 +        final double shiftX = hopper.getLevelX() - 0.5D;
@@ -682,23 +682,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            return false;
 +        });
-+        // Paper end - optimize hopper item suck in
++        // Paper end - Perf: Optimize Hoppers
      }
  
      @Nullable
      public static Container getContainerAt(Level world, BlockPos pos) {
 -        return HopperBlockEntity.getContainerAt(world, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D);
-+        return HopperBlockEntity.getContainerAt(world, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, true); // Paper
++        return HopperBlockEntity.getContainerAt(world, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, true); // Paper - Perf: Optimize Hoppers
      }
  
      @Nullable
      private static Container getContainerAt(Level world, double x, double y, double z) {
-+        // Paper start - add optimizeEntities parameter
++        // Paper start - Perf: Optimize Hoppers
 +        return HopperBlockEntity.getContainerAt(world, x, y, z, false);
 +    }
 +    @Nullable
 +    private static Container getContainerAt(Level world, double x, double y, double z, final boolean optimizeEntities) {
-+        // Paper end - add optimizeEntities parameter
++        // Paper end - Perf: Optimize Hoppers
          Object object = null;
          BlockPos blockposition = BlockPos.containing(x, y, z);
          if ( !world.spigotConfig.hopperCanLoadChunks && !world.hasChunkAt( blockposition ) ) return null; // Spigot
@@ -708,8 +708,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        if (object == null) {
 -            List<Entity> list = world.getEntities((Entity) null, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR);
-+        if (object == null && (!optimizeEntities || !world.paperConfig().hopper.ignoreOccludingBlocks || !iblockdata.getBukkitMaterial().isOccluding())) { // Paper
-+            List<Entity> list = world.getEntitiesOfClass((Class)Container.class, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR); // Paper - optimize hoppers, use getEntitiesOfClass
++        if (object == null && (!optimizeEntities || !world.paperConfig().hopper.ignoreOccludingBlocks || !iblockdata.getBukkitMaterial().isOccluding())) { // Paper - Perf: Optimize Hoppers
++            List<Entity> list = world.getEntitiesOfClass((Class)Container.class, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR); // Paper - Perf: Optimize Hoppers
  
              if (!list.isEmpty()) {
                  object = (Container) list.get(world.random.nextInt(list.size()));
@@ -718,7 +718,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private static boolean canMergeItems(ItemStack first, ItemStack second) {
 -        return first.getCount() <= first.getMaxStackSize() && ItemStack.isSameItemSameTags(first, second);
-+        return first.getCount() < first.getMaxStackSize() && first.is(second.getItem()) && first.getDamageValue() == second.getDamageValue() && ((first.isEmpty() && second.isEmpty()) || java.util.Objects.equals(first.getTag(), second.getTag())); // Paper - used to return true for full itemstacks?!
++        return first.getCount() < first.getMaxStackSize() && first.is(second.getItem()) && first.getDamageValue() == second.getDamageValue() && ((first.isEmpty() && second.isEmpty()) || java.util.Objects.equals(first.getTag(), second.getTag())); // Paper - Perf: Optimize Hoppers; used to return true for full itemstacks?!
      }
  
      @Override
@@ -731,20 +731,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean isEmpty() {
          this.unpackLootTable((Player)null);
 -        return this.getItems().stream().allMatch(ItemStack::isEmpty);
-+        // Paper start
++        // Paper start - Perf: Optimize Hoppers
 +        for (final ItemStack itemStack : this.getItems()) {
 +            if (!itemStack.isEmpty()) {
 +                return false;
 +            }
 +        }
 +        return true;
-+        // Paper end
++        // Paper end - Perf: Optimize Hoppers
      }
  
      @Override
      public ItemStack getItem(int slot) {
 -        this.unpackLootTable((Player)null);
-+        if (slot == 0) this.unpackLootTable((Player)null); // Paper
++        if (slot == 0) this.unpackLootTable((Player) null); // Paper - Perf: Optimize Hoppers
          return this.getItems().get(slot);
      }
  

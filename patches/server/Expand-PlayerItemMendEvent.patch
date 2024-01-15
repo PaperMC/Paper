@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              int j = Math.min(this.xpToDurability(amount), itemstack.getDamageValue());
              // CraftBukkit start
 -            org.bukkit.event.player.PlayerItemMendEvent event = CraftEventFactory.callPlayerItemMendEvent(player, this, itemstack, entry.getKey(), j);
-+            org.bukkit.event.player.PlayerItemMendEvent event = CraftEventFactory.callPlayerItemMendEvent(player, this, itemstack, entry.getKey(), j, this::durabilityToXp); // Paper
++            org.bukkit.event.player.PlayerItemMendEvent event = CraftEventFactory.callPlayerItemMendEvent(player, this, itemstack, entry.getKey(), j, this::durabilityToXp); // Paper - Expand PlayerItemMendEvent
              j = event.getRepairAmount();
              if (event.isCancelled()) {
                  return amount;
@@ -22,13 +22,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              itemstack.setDamageValue(itemstack.getDamageValue() - j);
 -            int k = amount - this.durabilityToXp(j);
-+            int k = amount - event.getDurabilityToXpOperation().applyAsInt(j); // Paper
++            int k = amount - event.getDurabilityToXpOperation().applyAsInt(j); // Paper - Expand PlayerItemMendEvent
              this.value = k; // CraftBukkit - update exp value of orb for PlayerItemMendEvent calls
-+            // Paper start
++            // Paper start - Expand PlayerItemMendEvent
 +            if (j == 0 && amount == k) { // if repair amount is 0 and no xp was removed, don't do recursion; treat as cancelled
 +                return k;
 +            }
-+            // Paper end
++            // Paper end - Expand PlayerItemMendEvent
  
              return k > 0 ? this.repairPlayerItems(player, k) : 0;
          } else {
@@ -41,12 +41,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              int i = Math.min(orb.xpToDurability(amount), itemstack.getDamageValue());
 -            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.getKey(), i);
-+            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.getKey(), i, orb::durabilityToXp); // Paper
++            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.getKey(), i, orb::durabilityToXp); // Paper - Expand PlayerItemMendEvent
              i = event.getRepairAmount();
              orb.discard();
              if (!event.isCancelled()) {
 -                amount -= orb.durabilityToXp(i);
-+                amount -= event.getDurabilityToXpOperation().applyAsInt(i); // Paper
++                amount -= event.getDurabilityToXpOperation().applyAsInt(i); // Paper - Expand PlayerItemMendEvent
                  itemstack.setDamageValue(itemstack.getDamageValue() - i);
              }
          }
@@ -59,11 +59,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    public static PlayerItemMendEvent callPlayerItemMendEvent(net.minecraft.world.entity.player.Player entity, net.minecraft.world.entity.ExperienceOrb orb, net.minecraft.world.item.ItemStack nmsMendedItem, net.minecraft.world.entity.EquipmentSlot slot, int repairAmount) {
-+    public static PlayerItemMendEvent callPlayerItemMendEvent(net.minecraft.world.entity.player.Player entity, net.minecraft.world.entity.ExperienceOrb orb, net.minecraft.world.item.ItemStack nmsMendedItem, net.minecraft.world.entity.EquipmentSlot slot, int repairAmount, java.util.function.IntUnaryOperator durabilityToXpOp) { // Paper
++    public static PlayerItemMendEvent callPlayerItemMendEvent(net.minecraft.world.entity.player.Player entity, net.minecraft.world.entity.ExperienceOrb orb, net.minecraft.world.item.ItemStack nmsMendedItem, net.minecraft.world.entity.EquipmentSlot slot, int repairAmount, java.util.function.IntUnaryOperator durabilityToXpOp) { // Paper - Expand PlayerItemMendEvent
          Player player = (Player) entity.getBukkitEntity();
          org.bukkit.inventory.ItemStack bukkitStack = CraftItemStack.asCraftMirror(nmsMendedItem);
 -        PlayerItemMendEvent event = new PlayerItemMendEvent(player, bukkitStack, CraftEquipmentSlot.getSlot(slot), (ExperienceOrb) orb.getBukkitEntity(), repairAmount);
-+        PlayerItemMendEvent event = new PlayerItemMendEvent(player, bukkitStack, CraftEquipmentSlot.getSlot(slot), (ExperienceOrb) orb.getBukkitEntity(), repairAmount, durabilityToXpOp); // Paper
++        PlayerItemMendEvent event = new PlayerItemMendEvent(player, bukkitStack, CraftEquipmentSlot.getSlot(slot), (ExperienceOrb) orb.getBukkitEntity(), repairAmount, durabilityToXpOp); // Paper - Expand PlayerItemMendEvent
          Bukkit.getPluginManager().callEvent(event);
          return event;
      }
