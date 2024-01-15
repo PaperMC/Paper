@@ -21,6 +21,7 @@ minecraft {
 dependencies {
     implementation("com.squareup:javapoet:1.13.0")
     implementation(project(":paper-api"))
+    implementation("io.github.classgraph:classgraph:4.8.47")
 }
 
 group = "io.papermc.paper"

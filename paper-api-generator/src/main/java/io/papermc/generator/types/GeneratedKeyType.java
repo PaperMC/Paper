@@ -1,6 +1,5 @@
 package io.papermc.generator.types;
 
-import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -9,16 +8,13 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import io.papermc.generator.Main;
+import io.papermc.generator.utils.Annotations;
 import io.papermc.generator.utils.CollectingContext;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.generator.utils.Javadocs;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +23,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
-import net.minecraft.SharedConstants;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.data.registries.UpdateOneTwentyOneRegistries;
@@ -37,9 +32,9 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 
 import static com.squareup.javapoet.TypeSpec.classBuilder;
-import static io.papermc.generator.types.Annotations.EXPERIMENTAL_API_ANNOTATION;
-import static io.papermc.generator.types.Annotations.NOT_NULL;
-import static io.papermc.generator.types.Annotations.experimentalAnnotations;
+import static io.papermc.generator.utils.Annotations.EXPERIMENTAL_API_ANNOTATION;
+import static io.papermc.generator.utils.Annotations.NOT_NULL;
+import static io.papermc.generator.utils.Annotations.experimentalAnnotations;
 import static java.util.Objects.requireNonNull;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -47,7 +42,7 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
 @DefaultQualifier(NonNull.class)
-public class GeneratedKeyType<T, A> implements SourceGenerator {
+public class GeneratedKeyType<T, A> extends SimpleGenerator {
 
     private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = UpdateOneTwentyOneRegistries.BUILDER.entries.stream()
             .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
@@ -68,27 +63,6 @@ public class GeneratedKeyType<T, A> implements SourceGenerator {
         }
     }
 
-    private static final AnnotationSpec SUPPRESS_WARNINGS = AnnotationSpec.builder(SuppressWarnings.class)
-        .addMember("value", "$S", "unused")
-        .addMember("value", "$S", "SpellCheckingInspection")
-        .build();
-    private static final AnnotationSpec GENERATED_FROM = AnnotationSpec.builder(GeneratedFrom.class)
-        .addMember("value", "$S", SharedConstants.getCurrentVersion().getName())
-        .build();
-    private static final String TYPE_JAVADOC = """
-        Vanilla keys for {@link $T#$L}.
-        
-        @apiNote The fields provided here are a direct representation of
-        what is available from the vanilla game source. They may be
-        changed (including removals) on any Minecraft version
-        bump, so cross-version compatibility is not provided on the
-        same level as it is on most of the other API.
-        """;
-    private static final String FIELD_JAVADOC = """
-        {@code $L}
-        
-        @apiNote This field is version-dependant and may be removed in future Minecraft versions
-        """;
     private static final String CREATE_JAVADOC = """
         Creates a key for {@link $T} in a registry.
         
@@ -96,17 +70,14 @@ public class GeneratedKeyType<T, A> implements SourceGenerator {
         @return a new typed key
         """;
 
-    private final String keysClassName;
     private final Class<A> apiType;
-    private final String pkg;
     private final ResourceKey<? extends Registry<T>> registryKey;
     private final RegistryKey<A> apiRegistryKey;
     private final boolean publicCreateKeyMethod;
 
     public GeneratedKeyType(final String keysClassName, final Class<A> apiType, final String pkg, final ResourceKey<? extends Registry<T>> registryKey, final RegistryKey<A> apiRegistryKey, final boolean publicCreateKeyMethod) {
-        this.keysClassName = keysClassName;
+        super(keysClassName, pkg);
         this.apiType = apiType;
-        this.pkg = pkg;
         this.registryKey = registryKey;
         this.apiRegistryKey = apiRegistryKey;
         this.publicCreateKeyMethod = publicCreateKeyMethod;
@@ -129,17 +100,18 @@ public class GeneratedKeyType<T, A> implements SourceGenerator {
     }
 
     private TypeSpec.Builder keyHolderType() {
-        return classBuilder(this.keysClassName)
+        return classBuilder(this.className)
             .addModifiers(PUBLIC, FINAL)
-            .addJavadoc(TYPE_JAVADOC, RegistryKey.class, REGISTRY_KEY_FIELD_NAMES.get(this.apiRegistryKey))
-            .addAnnotation(SUPPRESS_WARNINGS).addAnnotation(GENERATED_FROM)
+            .addJavadoc(Javadocs.getVersionDependentClassHeader("{@link $T#$L}"), RegistryKey.class, REGISTRY_KEY_FIELD_NAMES.get(this.apiRegistryKey))
+            .addAnnotations(Annotations.CLASS_HEADER)
             .addMethod(MethodSpec.constructorBuilder()
                 .addModifiers(PRIVATE)
                 .build()
             );
     }
 
-    protected TypeSpec createTypeSpec() {
+    @Override
+    protected TypeSpec getTypeSpec() {
         final TypeName typedKey = ParameterizedTypeName.get(TypedKey.class, this.apiType);
 
         final TypeSpec.Builder typeBuilder = this.keyHolderType();
@@ -156,7 +128,7 @@ public class GeneratedKeyType<T, A> implements SourceGenerator {
             final String fieldName = keyPath.toUpperCase(Locale.ENGLISH).replaceAll("[.-/]", "_"); // replace invalid field name chars
             final FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKey, fieldName, PUBLIC, STATIC, FINAL)
                 .initializer("$N(key($S))", createMethod.build(), keyPath)
-                .addJavadoc(FIELD_JAVADOC, key.location().toString());
+                .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.location().toString());
             if (experimental.contains(key)) {
                 fieldBuilder.addAnnotations(experimentalAnnotations("update 1.21"));
             } else {
@@ -183,23 +155,11 @@ public class GeneratedKeyType<T, A> implements SourceGenerator {
         return experimental;
     }
 
-    protected JavaFile createFile() {
-        return JavaFile.builder(this.pkg, this.createTypeSpec())
+    @Override
+    protected JavaFile.Builder file(JavaFile.Builder builder) {
+        return builder
             .skipJavaLangImports(true)
             .addStaticImport(Key.class, "key")
-            .indent("    ")
-            .build();
-    }
-
-    @Override
-    public final String outputString() {
-        return this.createFile().toString();
-    }
-
-    @Override
-    public void writeToFile(final Path parent) throws IOException {
-        final Path pkgDir = parent.resolve(this.pkg.replace('.', '/'));
-        Files.createDirectories(pkgDir);
-        Files.writeString(pkgDir.resolve(this.keysClassName + ".java"), this.outputString(), StandardCharsets.UTF_8);
+            .indent("    ");
     }
 }
