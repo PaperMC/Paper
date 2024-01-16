@@ -11,14 +11,17 @@ more than one Netty IO thread.
 Fixes https://github.com/PaperMC/Folia/issues/11
 
 diff --git a/src/main/java/net/minecraft/resources/RegistryOps.java b/src/main/java/net/minecraft/resources/RegistryOps.java
-index 7709eeac907c4895a264cec0a3d453aa8b194c18..29182c49b30110809f786ae99b47fcc67976562f 100644
+index 7709eeac907c4895a264cec0a3d453aa8b194c18..c7cfc3ca58f9439142fe5828117f6d576d7df10e 100644
 --- a/src/main/java/net/minecraft/resources/RegistryOps.java
 +++ b/src/main/java/net/minecraft/resources/RegistryOps.java
-@@ -19,11 +19,11 @@ public class RegistryOps<T> extends DelegatingOps<T> {
+@@ -19,11 +19,14 @@ public class RegistryOps<T> extends DelegatingOps<T> {
  
      private static RegistryOps.RegistryInfoLookup memoizeLookup(final RegistryOps.RegistryInfoLookup registryInfoGetter) {
          return new RegistryOps.RegistryInfoLookup() {
 -            private final Map<ResourceKey<? extends Registry<?>>, Optional<? extends RegistryOps.RegistryInfo<?>>> lookups = new HashMap<>();
++            // The concurrent access occurs on the Netty IO threads when serializing packets.
++            // Thus, it seems it was an oversight of the implementator of this function as there
++            // are typically more than one Netty IO thread.
 +            private final Map<ResourceKey<? extends Registry<?>>, Optional<? extends RegistryOps.RegistryInfo<?>>> lookups = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - fix concurrent access to lookups field
  
              @Override

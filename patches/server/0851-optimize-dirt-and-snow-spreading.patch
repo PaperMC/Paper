@@ -1,25 +1,25 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: lukas81298 <lukas81298@gommehd.net>
 Date: Fri, 22 Jan 2021 21:50:18 +0100
-Subject: [PATCH] optimized dirt and snow spreading
+Subject: [PATCH] optimize dirt and snow spreading
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java b/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
-index f38524cbcaa908644d901bf0929331d6dfd99ed9..1acdf9dad2621a20b077c5f88dab5e0f8688a38f 100644
+index f38524cbcaa908644d901bf0929331d6dfd99ed9..35a70bd30bc4beb06de4bb6e305ec3a787b43044 100644
 --- a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
 @@ -19,8 +19,13 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
      }
  
      private static boolean canBeGrass(BlockState state, LevelReader world, BlockPos pos) {
-+    // Paper start
++    // Paper start - Perf: optimize dirt and snow spreading
 +        return canBeGrass(world.getChunk(pos), state, world, pos);
 +    }
 +    private static boolean canBeGrass(net.minecraft.world.level.chunk.ChunkAccess chunk, BlockState state, LevelReader world, BlockPos pos) {
-+    // Paper end
++    // Paper end - Perf: optimize dirt and snow spreading
          BlockPos blockposition1 = pos.above();
 -        BlockState iblockdata1 = world.getBlockState(blockposition1);
-+        BlockState iblockdata1 = chunk.getBlockState(blockposition1); // Paper
++        BlockState iblockdata1 = chunk.getBlockState(blockposition1); // Paper - Perf: optimize dirt and snow spreading
  
          if (iblockdata1.is(Blocks.SNOW) && (Integer) iblockdata1.getValue(SnowLayerBlock.LAYERS) == 1) {
              return true;
@@ -27,29 +27,29 @@ index f38524cbcaa908644d901bf0929331d6dfd99ed9..1acdf9dad2621a20b077c5f88dab5e0f
      protected abstract MapCodec<? extends SpreadingSnowyDirtBlock> codec();
  
      private static boolean canPropagate(BlockState state, LevelReader world, BlockPos pos) {
-+    // Paper start
++    // Paper start - Perf: optimize dirt and snow spreading
 +        return canPropagate(world.getChunk(pos), state, world, pos);
 +    }
 +
 +    private static boolean canPropagate(net.minecraft.world.level.chunk.ChunkAccess chunk, BlockState state, LevelReader world, BlockPos pos) {
-+    // Paper end
++    // Paper end - Perf: optimize dirt and snow spreading
          BlockPos blockposition1 = pos.above();
  
 -        return SpreadingSnowyDirtBlock.canBeGrass(state, world, pos) && !world.getFluidState(blockposition1).is(FluidTags.WATER);
-+        return SpreadingSnowyDirtBlock.canBeGrass(chunk, state, world, pos) && !chunk.getFluidState(blockposition1).is(FluidTags.WATER); // Paper
++        return SpreadingSnowyDirtBlock.canBeGrass(chunk, state, world, pos) && !chunk.getFluidState(blockposition1).is(FluidTags.WATER); // Paper - Perf: optimize dirt and snow spreading
      }
  
      @Override
      public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          if (this instanceof GrassBlock && world.paperConfig().tickRates.grassSpread != 1 && (world.paperConfig().tickRates.grassSpread < 1 || (MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.grassSpread != 0)) { return; } // Paper
 -        if (!SpreadingSnowyDirtBlock.canBeGrass(state, world, pos)) {
-+        // Paper start
++        // Paper start - Perf: optimize dirt and snow spreading
 +        net.minecraft.world.level.chunk.ChunkAccess cachedBlockChunk = world.getChunkIfLoaded(pos);
 +        if (cachedBlockChunk == null) { // Is this needed?
 +            return;
 +        }
 +        if (!SpreadingSnowyDirtBlock.canBeGrass(cachedBlockChunk, state, world, pos)) {
-+        // Paper end
++        // Paper end - Perf: optimize dirt and snow spreading
              // CraftBukkit start
              if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
                  return;
@@ -60,7 +60,7 @@ index f38524cbcaa908644d901bf0929331d6dfd99ed9..1acdf9dad2621a20b077c5f88dab5e0f
 -
 -                    if (world.getBlockState(blockposition1).is(Blocks.DIRT) && SpreadingSnowyDirtBlock.canPropagate(iblockdata1, world, blockposition1)) {
 -                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, (BlockState) iblockdata1.setValue(SpreadingSnowyDirtBlock.SNOWY, world.getBlockState(blockposition1.above()).is(Blocks.SNOW))); // CraftBukkit
-+                    // Paper start
++                    // Paper start - Perf: optimize dirt and snow spreading
 +                    if (pos.getX() == blockposition1.getX() && pos.getY() == blockposition1.getY() && pos.getZ() == blockposition1.getZ()) {
 +                        continue;
 +                    }
@@ -72,7 +72,7 @@ index f38524cbcaa908644d901bf0929331d6dfd99ed9..1acdf9dad2621a20b077c5f88dab5e0f
 +                    }
 +                    if (access.getBlockState(blockposition1).is(Blocks.DIRT) && SpreadingSnowyDirtBlock.canPropagate(access, iblockdata1, world, blockposition1)) {
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, (BlockState) iblockdata1.setValue(SpreadingSnowyDirtBlock.SNOWY, access.getBlockState(blockposition1.above()).is(Blocks.SNOW))); // CraftBukkit
-+                    // Paper end
++                    // Paper end - Perf: optimize dirt and snow spreading
                      }
                  }
              }

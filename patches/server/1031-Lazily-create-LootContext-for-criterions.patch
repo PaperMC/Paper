@@ -8,7 +8,7 @@ For each player on each tick, enter block triggers are invoked, and these create
 To avoid this, we now lazily create the LootContext if the criterion passes the predicate AND if any of the listener triggers require a loot context instance
 
 diff --git a/src/main/java/net/minecraft/advancements/critereon/SimpleCriterionTrigger.java b/src/main/java/net/minecraft/advancements/critereon/SimpleCriterionTrigger.java
-index 0a22ed467d04c6421f4f8ef227a665ae135a5b0b..31fa6a0cb00139bfcb71f4fd30da8b736bf491f2 100644
+index 0a22ed467d04c6421f4f8ef227a665ae135a5b0b..00bf770559d9c628119658cb027eb0b970c04e1b 100644
 --- a/src/main/java/net/minecraft/advancements/critereon/SimpleCriterionTrigger.java
 +++ b/src/main/java/net/minecraft/advancements/critereon/SimpleCriterionTrigger.java
 @@ -45,14 +45,14 @@ public abstract class SimpleCriterionTrigger<T extends SimpleCriterionTrigger.Si
@@ -16,7 +16,7 @@ index 0a22ed467d04c6421f4f8ef227a665ae135a5b0b..31fa6a0cb00139bfcb71f4fd30da8b73
          Set<CriterionTrigger.Listener<T>> set = (Set) playerAdvancements.criterionData.get(this); // Paper - fix AdvancementDataPlayer leak
          if (set != null && !set.isEmpty()) {
 -            LootContext lootContext = EntityPredicate.createContext(player, player);
-+            LootContext lootContext = null; // EntityPredicate.createContext(player, player); // Paper - lazily create LootContext for criterions
++            LootContext lootContext = null; // EntityPredicate.createContext(player, player); // Paper - Perf: lazily create LootContext for criterions
              List<CriterionTrigger.Listener<T>> list = null;
  
              for(CriterionTrigger.Listener<T> listener : set) {
@@ -24,7 +24,7 @@ index 0a22ed467d04c6421f4f8ef227a665ae135a5b0b..31fa6a0cb00139bfcb71f4fd30da8b73
                  if (predicate.test(simpleInstance)) {
                      Optional<ContextAwarePredicate> optional = simpleInstance.player();
 -                    if (optional.isEmpty() || optional.get().matches(lootContext)) {
-+                    if (optional.isEmpty() || optional.get().matches(lootContext = (lootContext == null ? EntityPredicate.createContext(player, player) : lootContext))) { // Paper - lazily create LootContext for criterions
++                    if (optional.isEmpty() || optional.get().matches(lootContext = (lootContext == null ? EntityPredicate.createContext(player, player) : lootContext))) { // Paper - Perf: lazily create LootContext for criterions
                          if (list == null) {
                              list = Lists.newArrayList();
                          }

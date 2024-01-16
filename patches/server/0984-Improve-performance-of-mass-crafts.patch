@@ -20,7 +20,7 @@ After this patch, the full iteration over all recipes checking for a match shoul
 initial recipe match. Then that recipe will be checked first for all future recipe match checks.
 
 diff --git a/src/main/java/net/minecraft/world/inventory/CraftingMenu.java b/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
-index a7aa2a4845cbf5a0843dcb93f7bdc5501f62a145..4c8ce073094e55ea0df67fe02c0d1cc8aef76562 100644
+index a7aa2a4845cbf5a0843dcb93f7bdc5501f62a145..1b05847cd5ec69ecaf75a2d3803089efbb89d165 100644
 --- a/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
 @@ -76,7 +76,8 @@ public class CraftingMenu extends RecipeBookMenu<CraftingContainer> {
@@ -28,13 +28,13 @@ index a7aa2a4845cbf5a0843dcb93f7bdc5501f62a145..4c8ce073094e55ea0df67fe02c0d1cc8
              ServerPlayer entityplayer = (ServerPlayer) player;
              ItemStack itemstack = ItemStack.EMPTY;
 -            Optional<RecipeHolder<CraftingRecipe>> optional = world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world);
-+            final RecipeHolder<?> currentRecipe = craftingInventory.getCurrentRecipe(); // Paper - check last recipe used first
-+            Optional<RecipeHolder<CraftingRecipe>> optional = currentRecipe == null ? world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world) : world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world, currentRecipe.id()).map(com.mojang.datafixers.util.Pair::getSecond); // Paper - check last recipe used first
++            final RecipeHolder<?> currentRecipe = craftingInventory.getCurrentRecipe(); // Paper - Perf: Improve mass crafting; check last recipe used first
++            Optional<RecipeHolder<CraftingRecipe>> optional = currentRecipe == null ? world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world) : world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world, currentRecipe.id()).map(com.mojang.datafixers.util.Pair::getSecond); // Paper - Perf: Improve mass crafting; check last recipe used first
  
              if (optional.isPresent()) {
                  RecipeHolder<CraftingRecipe> recipeholder = (RecipeHolder) optional.get();
 diff --git a/src/main/java/net/minecraft/world/inventory/ResultSlot.java b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
-index 7b2ac37e8bd305919f04ded043e50f13b3fe4253..8c97a7269040436cacc65fd182fa8e5f931b6c16 100644
+index 7b2ac37e8bd305919f04ded043e50f13b3fe4253..245731757f2593c736916ac6ee59e2c91d179934 100644
 --- a/src/main/java/net/minecraft/world/inventory/ResultSlot.java
 +++ b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
 @@ -59,7 +59,7 @@ public class ResultSlot extends Slot {
@@ -42,28 +42,28 @@ index 7b2ac37e8bd305919f04ded043e50f13b3fe4253..8c97a7269040436cacc65fd182fa8e5f
      public void onTake(Player player, ItemStack stack) {
          this.checkTakeAchievements(stack);
 -        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level());
-+        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level(), this.craftSlots.getCurrentRecipe() != null ? this.craftSlots.getCurrentRecipe().id() : null); // Paper - check last recipe used first
++        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level(), this.craftSlots.getCurrentRecipe() != null ? this.craftSlots.getCurrentRecipe().id() : null); // Paper - Perf: Improve mass crafting; check last recipe used first
  
          for(int i = 0; i < nonNullList.size(); ++i) {
              ItemStack itemStack = this.craftSlots.getItem(i);
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index 93e7d350a4176250d9ae3f0e1e7e6a4197d613b0..b81e1802c8dcc8ebdef96d70088c18379598a66b 100644
+index a0ab3c55826af292d1cdac05648139b4d31f1376..d87124f5356180a37e581febc6141fdc5f1395a7 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 @@ -122,13 +122,16 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
              RecipeHolder<T> recipeholder = (RecipeHolder) map.get(id);
  
              if (recipeholder != null && recipeholder.value().matches(inventory, world)) {
-+                inventory.setCurrentRecipe(recipeholder); // Paper
++                inventory.setCurrentRecipe(recipeholder); // Paper - Perf: Improve mass crafting
                  return Optional.of(Pair.of(id, recipeholder));
              }
          }
  
-+        inventory.setCurrentRecipe(null); // Paper - clear before it might be set again
++        inventory.setCurrentRecipe(null); // Paper - Perf: Improve mass crafting;; clear before it might be set again
          return map.entrySet().stream().filter((entry) -> {
              return ((RecipeHolder) entry.getValue()).value().matches(inventory, world);
          }).findFirst().map((entry) -> {
-+            inventory.setCurrentRecipe(entry.getValue()); // Paper
++            inventory.setCurrentRecipe(entry.getValue()); // Paper - Perf: Improve mass crafting
              return Pair.of((ResourceLocation) entry.getKey(), (RecipeHolder) entry.getValue());
          });
      }
@@ -72,12 +72,12 @@ index 93e7d350a4176250d9ae3f0e1e7e6a4197d613b0..b81e1802c8dcc8ebdef96d70088c1837
  
      public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world) {
 -        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, inventory, world);
-+        // Paper start - check last recipe used first
++        // Paper start - Perf: Improve mass crafting;; check last recipe used first
 +        return this.getRemainingItemsFor(type, inventory, world, null);
 +    }
 +    public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world, @Nullable ResourceLocation firstToCheck) {
 +        Optional<RecipeHolder<T>> optional = firstToCheck == null ? this.getRecipeFor(type, inventory, world) : this.getRecipeFor(type, inventory, world, firstToCheck).map(Pair::getSecond);
-+        // Paper end
++        // Paper end - Perf: Improve mass crafting
  
          if (optional.isPresent()) {
              return ((RecipeHolder) optional.get()).value().getRemainingItems(inventory);

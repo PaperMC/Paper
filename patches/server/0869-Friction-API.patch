@@ -5,14 +5,14 @@ Subject: [PATCH] Friction API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 944463496a9c2757e8ddb0104c77bbfb40e0d4ca..a833036642b35e23b6887e0413d214ce0a6a4287 100644
+index f3d201cba18be448a52304a43ec05b109010bb98..38d0def27625f5b7918cc2cebad0d9db2596ff3b 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -261,6 +261,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
      public boolean bukkitPickUpLoot;
      public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
      public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
-+    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper
++    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
  
      @Override
      public float getBukkitYaw() {
@@ -21,7 +21,7 @@ index 944463496a9c2757e8ddb0104c77bbfb40e0d4ca..a833036642b35e23b6887e0413d214ce
  
      public boolean shouldDiscardFriction() {
 -        return this.discardFriction;
-+        return !this.frictionState.toBooleanOrElse(!this.discardFriction); // Paper
++        return !this.frictionState.toBooleanOrElse(!this.discardFriction); // Paper - Friction API
      }
  
      public void setDiscardFriction(boolean noDrag) {
@@ -29,19 +29,19 @@ index 944463496a9c2757e8ddb0104c77bbfb40e0d4ca..a833036642b35e23b6887e0413d214ce
  
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
-+        // Paper start
++        // Paper start - Friction API
 +        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
 +            nbt.putString("Paper.FrictionState", this.frictionState.toString());
 +        }
-+        // Paper end
++        // Paper end - Friction API
          nbt.putFloat("Health", this.getHealth());
          nbt.putShort("HurtTime", (short) this.hurtTime);
          nbt.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
-@@ -802,6 +808,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -802,6 +808,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
              absorptionAmount = 0;
          }
          this.internalSetAbsorptionAmount(absorptionAmount);
-+
++        // Paper start - Friction API
 +        if (nbt.contains("Paper.FrictionState")) {
 +            String fs = nbt.getString("Paper.FrictionState");
 +            try {
@@ -50,18 +50,19 @@ index 944463496a9c2757e8ddb0104c77bbfb40e0d4ca..a833036642b35e23b6887e0413d214ce
 +                LOGGER.error("Unknown friction state " + fs + " for " + this);
 +            }
 +        }
++        // Paper end - Friction API
          // Paper end
          if (nbt.contains("Attributes", 9) && this.level() != null && !this.level().isClientSide) {
              this.getAttributes().load(nbt.getList("Attributes", 10));
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-index 6b18f23b57c7000dce9726df98a509ee9477f6d2..a39db702063887cf530f272deaf4f334047cc7d4 100644
+index 6b18f23b57c7000dce9726df98a509ee9477f6d2..c34c698d389da29c9cfaa56cb8023e30416a14ba 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 @@ -57,6 +57,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
      private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
      public boolean canMobPickup = true; // Paper
      private int despawnRate = -1; // Paper
-+    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper
++    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
@@ -70,11 +71,11 @@ index 6b18f23b57c7000dce9726df98a509ee9477f6d2..a39db702063887cf530f272deaf4f334
                  float f1 = 0.98F;
  
 -                if (this.onGround()) {
-+                // Paper start
++                // Paper start - Friction API
 +                if (frictionState == net.kyori.adventure.util.TriState.FALSE) {
 +                    f1 = 1F;
 +                } else if (this.onGround()) {
-+                    // Paper end
++                    // Paper end - Friction API
                      f1 = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getBlock().getFriction() * 0.98F;
                  }
  
@@ -82,11 +83,11 @@ index 6b18f23b57c7000dce9726df98a509ee9477f6d2..a39db702063887cf530f272deaf4f334
  
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
-+        // Paper start
++        // Paper start - Friction API
 +        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
 +            nbt.putString("Paper.FrictionState", this.frictionState.toString());
 +        }
-+        // Paper end
++        // Paper end - Friction API
          nbt.putShort("Health", (short) this.health);
          nbt.putShort("Age", (short) this.age);
          nbt.putShort("PickupDelay", (short) this.pickupDelay);
@@ -94,7 +95,7 @@ index 6b18f23b57c7000dce9726df98a509ee9477f6d2..a39db702063887cf530f272deaf4f334
              this.cachedThrower = null;
          }
  
-+        // Paper start
++        // Paper start - Friction API
 +        if (nbt.contains("Paper.FrictionState")) {
 +            String fs = nbt.getString("Paper.FrictionState");
 +            try {
@@ -103,7 +104,7 @@ index 6b18f23b57c7000dce9726df98a509ee9477f6d2..a39db702063887cf530f272deaf4f334
 +                com.mojang.logging.LogUtils.getLogger().error("Unknown friction state " + fs + " for " + this);
 +            }
 +        }
-+        // Paper end
++        // Paper end - Friction API
 +
          CompoundTag nbttagcompound1 = nbt.getCompound("Item");
  

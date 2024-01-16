@@ -5,7 +5,7 @@ Subject: [PATCH] Ability to control player's insomnia and phantoms
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index 93a41156a01a1638f3ef469b1518a07e7961f378..2986c3b1c9dd7f3a00ed7f25b25bfc2b513b35eb 100644
+index 93a41156a01a1638f3ef469b1518a07e7961f378..dbbce471c35849ea7d7ad07e9db9b7d8d85690df 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 @@ -28,7 +28,18 @@ public final class EntitySelector {
@@ -13,7 +13,7 @@ index 93a41156a01a1638f3ef469b1518a07e7961f378..2986c3b1c9dd7f3a00ed7f25b25bfc2b
      };
      public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = EntitySelector.NO_SPECTATORS.and(Entity::canBeCollidedWith);
 -    public static Predicate<Player> IS_INSOMNIAC = (player) -> net.minecraft.util.Mth.clamp(((net.minecraft.server.level.ServerPlayer) player).getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper
-+    // Paper start
++    // Paper start - Ability to control player's insomnia and phantoms
 +    public static Predicate<Player> IS_INSOMNIAC = (player) -> {
 +        net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
 +        int playerInsomniaTicks = serverPlayer.level().paperConfig().entities.behavior.playerInsomniaStartTicks;
@@ -24,23 +24,23 @@ index 93a41156a01a1638f3ef469b1518a07e7961f378..2986c3b1c9dd7f3a00ed7f25b25bfc2b
 +
 +        return net.minecraft.util.Mth.clamp(serverPlayer.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= playerInsomniaTicks;
 +    };
-+    // Paper end
++    // Paper end - Ability to control player's insomnia and phantoms
  
      private EntitySelector() {}
      // Paper start
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
-index b1fc786970b5288a02cc3a46e3fe7784ac566c07..dfeb3e336e06ef01f5401a362755030db942bb07 100644
+index b1fc786970b5288a02cc3a46e3fe7784ac566c07..7d7d37334321c844958ce09e77547dd61dcba6c8 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 @@ -33,13 +33,22 @@ public class PhantomSpawner implements CustomSpawner {
          } else if (!world.getGameRules().getBoolean(GameRules.RULE_DOINSOMNIA)) {
              return 0;
          } else {
-+            // Paper start
++            // Paper start - Ability to control player's insomnia and phantoms
 +            if (world.paperConfig().entities.behavior.phantomsSpawnAttemptMaxSeconds <= 0) {
 +                return 0;
 +            }
-+            // Paper end
++            // Paper end - Ability to control player's insomnia and phantoms
              RandomSource randomsource = world.random;
  
              --this.nextTick;
@@ -48,11 +48,11 @@ index b1fc786970b5288a02cc3a46e3fe7784ac566c07..dfeb3e336e06ef01f5401a362755030d
                  return 0;
              } else {
 -                this.nextTick += (60 + randomsource.nextInt(60)) * 20;
-+                // Paper start
++                // Paper start - Ability to control player's insomnia and phantoms
 +                int spawnAttemptMinSeconds = world.paperConfig().entities.behavior.phantomsSpawnAttemptMinSeconds;
 +                int spawnAttemptMaxSeconds = world.paperConfig().entities.behavior.phantomsSpawnAttemptMaxSeconds;
 +                this.nextTick += (spawnAttemptMinSeconds + randomsource.nextInt(spawnAttemptMaxSeconds - spawnAttemptMinSeconds + 1)) * 20;
-+                // Paper end
++                // Paper end - Ability to control player's insomnia and phantoms
                  if (world.getSkyDarken() < 5 && world.dimensionType().hasSkyLight()) {
                      return 0;
                  } else {
@@ -61,7 +61,7 @@ index b1fc786970b5288a02cc3a46e3fe7784ac566c07..dfeb3e336e06ef01f5401a362755030d
                                      boolean flag2 = true;
  
 -                                    if (randomsource.nextInt(j) >= 72000) {
-+                                    if (randomsource.nextInt(j) >= world.paperConfig().entities.behavior.playerInsomniaStartTicks) { // Paper
++                                    if (randomsource.nextInt(j) >= world.paperConfig().entities.behavior.playerInsomniaStartTicks) { // Paper - Ability to control player's insomnia and phantoms
                                          BlockPos blockposition1 = blockposition.above(20 + randomsource.nextInt(15)).east(-10 + randomsource.nextInt(21)).south(-10 + randomsource.nextInt(21));
                                          BlockState iblockdata = world.getBlockState(blockposition1);
                                          FluidState fluid = world.getFluidState(blockposition1);
