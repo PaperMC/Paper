@@ -28,8 +28,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              ServerPlayer entityplayer = (ServerPlayer) player;
              ItemStack itemstack = ItemStack.EMPTY;
 -            Optional<RecipeHolder<CraftingRecipe>> optional = world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world);
-+            final RecipeHolder<?> currentRecipe = craftingInventory.getCurrentRecipe(); // Paper - check last recipe used first
-+            Optional<RecipeHolder<CraftingRecipe>> optional = currentRecipe == null ? world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world) : world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world, currentRecipe.id()).map(com.mojang.datafixers.util.Pair::getSecond); // Paper - check last recipe used first
++            final RecipeHolder<?> currentRecipe = craftingInventory.getCurrentRecipe(); // Paper - Perf: Improve mass crafting; check last recipe used first
++            Optional<RecipeHolder<CraftingRecipe>> optional = currentRecipe == null ? world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world) : world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world, currentRecipe.id()).map(com.mojang.datafixers.util.Pair::getSecond); // Paper - Perf: Improve mass crafting; check last recipe used first
  
              if (optional.isPresent()) {
                  RecipeHolder<CraftingRecipe> recipeholder = (RecipeHolder) optional.get();
@@ -42,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void onTake(Player player, ItemStack stack) {
          this.checkTakeAchievements(stack);
 -        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level());
-+        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level(), this.craftSlots.getCurrentRecipe() != null ? this.craftSlots.getCurrentRecipe().id() : null); // Paper - check last recipe used first
++        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level(), this.craftSlots.getCurrentRecipe() != null ? this.craftSlots.getCurrentRecipe().id() : null); // Paper - Perf: Improve mass crafting; check last recipe used first
  
          for(int i = 0; i < nonNullList.size(); ++i) {
              ItemStack itemStack = this.craftSlots.getItem(i);
@@ -54,16 +54,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              RecipeHolder<T> recipeholder = (RecipeHolder) map.get(id);
  
              if (recipeholder != null && recipeholder.value().matches(inventory, world)) {
-+                inventory.setCurrentRecipe(recipeholder); // Paper
++                inventory.setCurrentRecipe(recipeholder); // Paper - Perf: Improve mass crafting
                  return Optional.of(Pair.of(id, recipeholder));
              }
          }
  
-+        inventory.setCurrentRecipe(null); // Paper - clear before it might be set again
++        inventory.setCurrentRecipe(null); // Paper - Perf: Improve mass crafting;; clear before it might be set again
          return map.entrySet().stream().filter((entry) -> {
              return ((RecipeHolder) entry.getValue()).value().matches(inventory, world);
          }).findFirst().map((entry) -> {
-+            inventory.setCurrentRecipe(entry.getValue()); // Paper
++            inventory.setCurrentRecipe(entry.getValue()); // Paper - Perf: Improve mass crafting
              return Pair.of((ResourceLocation) entry.getKey(), (RecipeHolder) entry.getValue());
          });
      }
@@ -72,12 +72,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world) {
 -        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, inventory, world);
-+        // Paper start - check last recipe used first
++        // Paper start - Perf: Improve mass crafting;; check last recipe used first
 +        return this.getRemainingItemsFor(type, inventory, world, null);
 +    }
 +    public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world, @Nullable ResourceLocation firstToCheck) {
 +        Optional<RecipeHolder<T>> optional = firstToCheck == null ? this.getRecipeFor(type, inventory, world) : this.getRecipeFor(type, inventory, world, firstToCheck).map(Pair::getSecond);
-+        // Paper end
++        // Paper end - Perf: Improve mass crafting
  
          if (optional.isPresent()) {
              return ((RecipeHolder) optional.get()).value().getRemainingItems(inventory);
