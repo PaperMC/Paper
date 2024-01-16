@@ -41,11 +41,9 @@ https://bugs.mojang.com/browse/MC-263999
   Fix mobs breaking doors not spawning block break particles
 
 https://bugs.mojang.com/browse/MC-210802
-  by: BillyGalbreath <Blake.Galbreath@Gmail.com>
   Fixes sheep eating blocks outside of ticking range
 
 https://bugs.mojang.com/browse/MC-123848
-  by: BillyGalbreath <blake.galbreath@gmail.com>
   Fixes item frames dropping items above when pointing down
 
 https://bugs.mojang.com/browse/MC-84789
@@ -70,6 +68,7 @@ https://bugs.mojang.com/browse/MC-200092
 public net/minecraft/world/entity/Mob leashInfoTag
 
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -170,6 +169,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.player.onUpdateAbilities();
              this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
              this.level.updateSleepingPlayerList();
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         Player player = entity.getBukkitEntity();
+         PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.connection.channel.remoteAddress()).getAddress());
+ 
+-        if (this.getBans().isBanned(gameprofile) && !this.getBans().get(gameprofile).hasExpired()) {
+-            UserBanListEntry gameprofilebanentry = (UserBanListEntry) this.bans.get(gameprofile);
++        // Paper start - Fix MC-158900
++        UserBanListEntry gameprofilebanentry;
++        if (getBans().isBanned(gameprofile) && (gameprofilebanentry = getBans().get(gameprofile)) != null) {
++            // Paper end - Fix MC-158900
+ 
+             ichatmutablecomponent = Component.translatable("multiplayer.disconnect.banned.reason", gameprofilebanentry.getReason());
+             if (gameprofilebanentry.getExpires() != null) {
 diff --git a/src/main/java/net/minecraft/world/entity/Saddleable.java b/src/main/java/net/minecraft/world/entity/Saddleable.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Saddleable.java
