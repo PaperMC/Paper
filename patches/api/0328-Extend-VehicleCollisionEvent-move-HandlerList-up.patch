@@ -1,0 +1,111 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 13 Dec 2021 14:35:27 -0800
+Subject: [PATCH] Extend VehicleCollisionEvent, move HandlerList up
+
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
+
+diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleBlockCollisionEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleBlockCollisionEvent.java
+index 316f625aa595d2ada16529b16d09f013fc4daeac..d0a437bd8aeec18f800893f51ece06deb0c8972c 100644
+--- a/src/main/java/org/bukkit/event/vehicle/VehicleBlockCollisionEvent.java
++++ b/src/main/java/org/bukkit/event/vehicle/VehicleBlockCollisionEvent.java
+@@ -9,13 +9,31 @@ import org.jetbrains.annotations.NotNull;
+  * Raised when a vehicle collides with a block.
+  */
+ public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
+-    private static final HandlerList handlers = new HandlerList();
+     private final Block block;
++    private final org.bukkit.util.Vector velocity; // Paper
+ 
++    // Paper start - Add pre-collision velocity
++    @Deprecated
+     public VehicleBlockCollisionEvent(@NotNull final Vehicle vehicle, @NotNull final Block block) {
++        this(vehicle, block, vehicle.getVelocity());
++    }
++
++    public VehicleBlockCollisionEvent(@NotNull final Vehicle vehicle, @NotNull final Block block, @NotNull final org.bukkit.util.Vector velocity) { // Paper - Added velocity
+         super(vehicle);
+         this.block = block;
++        this.velocity = velocity;
++    }
++
++    /**
++     * Gets velocity at which the vehicle collided with the block
++     *
++     * @return pre-collision moving velocity
++     */
++    @NotNull
++    public org.bukkit.util.Vector getVelocity() {
++        return velocity;
+     }
++    // Paper end
+ 
+     /**
+      * Gets the block the vehicle collided with
+@@ -26,15 +44,4 @@ public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
+     public Block getBlock() {
+         return block;
+     }
+-
+-    @NotNull
+-    @Override
+-    public HandlerList getHandlers() {
+-        return handlers;
+-    }
+-
+-    @NotNull
+-    public static HandlerList getHandlerList() {
+-        return handlers;
+-    }
+ }
+diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleCollisionEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleCollisionEvent.java
+index 9d493c155ad5c26430c1e404fcf0db5f734679e4..aa1d74eade479195bde8095aafcc91a83635102d 100644
+--- a/src/main/java/org/bukkit/event/vehicle/VehicleCollisionEvent.java
++++ b/src/main/java/org/bukkit/event/vehicle/VehicleCollisionEvent.java
+@@ -7,7 +7,18 @@ import org.jetbrains.annotations.NotNull;
+  * Raised when a vehicle collides.
+  */
+ public abstract class VehicleCollisionEvent extends VehicleEvent {
++    private static final org.bukkit.event.HandlerList HANDLER_LIST = new org.bukkit.event.HandlerList(); // Paper
+     public VehicleCollisionEvent(@NotNull final Vehicle vehicle) {
+         super(vehicle);
+     }
++    // Paper start
++    @Override
++    public org.bukkit.event.@org.jetbrains.annotations.NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static org.bukkit.event.@NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleEntityCollisionEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleEntityCollisionEvent.java
+index 50c762d777ac90a05772501a28cacff8fd3f5126..77fb04bdf5b1a6d94693a7374a750e020131dc3d 100644
+--- a/src/main/java/org/bukkit/event/vehicle/VehicleEntityCollisionEvent.java
++++ b/src/main/java/org/bukkit/event/vehicle/VehicleEntityCollisionEvent.java
+@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
+  * Raised when a vehicle collides with an entity.
+  */
+ public class VehicleEntityCollisionEvent extends VehicleCollisionEvent implements Cancellable {
+-    private static final HandlerList handlers = new HandlerList();
+     private final Entity entity;
+     private boolean cancelled = false;
+     private boolean cancelledPickup = false;
+@@ -55,15 +54,4 @@ public class VehicleEntityCollisionEvent extends VehicleCollisionEvent implement
+     public void setCollisionCancelled(boolean cancel) {
+         cancelledCollision = cancel;
+     }
+-
+-    @NotNull
+-    @Override
+-    public HandlerList getHandlers() {
+-        return handlers;
+-    }
+-
+-    @NotNull
+-    public static HandlerList getHandlerList() {
+-        return handlers;
+-    }
+ }

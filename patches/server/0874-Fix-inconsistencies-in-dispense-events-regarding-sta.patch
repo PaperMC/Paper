@@ -1,0 +1,525 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 11 Dec 2022 23:47:22 -0800
+Subject: [PATCH] Fix inconsistencies in dispense events regarding stack size
+
+The javadocs for BlockDispenseEvent suggest the ItemStack is a single
+item which is being dispensed. Before this fix, sometimes it was the whole
+stack before a single item had been taken. This fixes that so the stack size
+is always 1.
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java b/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
+index e22d71c371952e91b838d10206d3dcdf9dc8716d..155bd3d6d9c7d3cac7fd04de8210301251d1e17a 100644
+--- a/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
+@@ -27,7 +27,7 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
+ 
+         // CraftBukkit start
+         // iprojectile.shoot((double) enumdirection.getStepX(), (double) ((float) enumdirection.getStepY() + 0.1F), (double) enumdirection.getStepZ(), this.getPower(), this.getUncertainty());
+-        ItemStack itemstack1 = stack.split(1);
++        ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
+         org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+         CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
+@@ -37,12 +37,13 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
+         }
+ 
+         if (event.isCancelled()) {
+-            stack.grow(1);
++            // stack.grow(1); // Paper - shrink below
+             return stack;
+         }
+ 
++        boolean shrink = true; // Paper
+         if (!event.getItem().equals(craftItem)) {
+-            stack.grow(1);
++            shrink = false; // Paper - shrink below
+             // Chain to handler for new item
+             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+             DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -56,7 +57,7 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
+         ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
+         // CraftBukkit end
+         worldserver.addFreshEntity(iprojectile);
+-        // itemstack.shrink(1); // CraftBukkit - Handled during event processing
++        if (shrink) stack.shrink(1); // Paper - actually handle here
+         return stack;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
+index 90e1914599b43c8bf813596b3b428d8be3bac1b5..6df0db8b4cdab23494ea34236949ece4989110a3 100644
+--- a/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
+@@ -58,7 +58,7 @@ public class BoatDispenseItemBehavior extends DefaultDispenseItemBehavior {
+ 
+         // Object object = this.isChestBoat ? new ChestBoat(worldserver, d1, d2 + d4, d3) : new EntityBoat(worldserver, d1, d2 + d4, d3);
+         // CraftBukkit start
+-        ItemStack itemstack1 = stack.split(1);
++        ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink at end and single item in event
+         org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+         CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
+@@ -68,12 +68,13 @@ public class BoatDispenseItemBehavior extends DefaultDispenseItemBehavior {
+         }
+ 
+         if (event.isCancelled()) {
+-            stack.grow(1);
++            // stack.grow(1); // Paper - shrink below
+             return stack;
+         }
+ 
++        boolean shrink = true; // Paper
+         if (!event.getItem().equals(craftItem)) {
+-            stack.grow(1);
++            shrink = false; // Paper - shrink below
+             // Chain to handler for new item
+             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+             DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -89,8 +90,7 @@ public class BoatDispenseItemBehavior extends DefaultDispenseItemBehavior {
+         EntityType.createDefaultStackConfig(worldserver, stack, (Player) null).accept(object);
+         ((Boat) object).setVariant(this.type);
+         ((Boat) object).setYRot(enumdirection.toYRot());
+-        if (!worldserver.addFreshEntity((Entity) object)) stack.grow(1); // CraftBukkit
+-        // itemstack.shrink(1); // CraftBukkit - handled during event processing
++        if (worldserver.addFreshEntity((Entity) object) && shrink) stack.shrink(1); // Paper - if entity add was successful and supposed to shrink
+         return stack;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index da3081ff803431288843deda87f90165e2bc73f9..21bba99bf1f06a95cc6834de2886b03ebeb9562f 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -217,7 +217,7 @@ public interface DispenseItemBehavior {
+ 
+                 // CraftBukkit start
+                 ServerLevel worldserver = pointer.level();
+-                ItemStack itemstack1 = stack.split(1);
++                ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
+                 org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
+@@ -227,12 +227,13 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 if (event.isCancelled()) {
+-                    stack.grow(1);
++                    // stack.grow(1); // Paper - shrink below
+                     return stack;
+                 }
+ 
++                boolean shrink = true; // Paper
+                 if (!event.getItem().equals(craftItem)) {
+-                    stack.grow(1);
++                    shrink = false; // Paper - shrink below
+                     // Chain to handler for new item
+                     ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                     DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -249,7 +250,7 @@ public interface DispenseItemBehavior {
+                     return ItemStack.EMPTY;
+                 }
+ 
+-                // itemstack.shrink(1); // Handled during event processing
++                if (shrink) stack.shrink(1); // Paper - actually handle here
+                 // CraftBukkit end
+                 pointer.level().gameEvent((Entity) null, GameEvent.ENTITY_PLACE, pointer.pos());
+                 return stack;
+@@ -271,7 +272,7 @@ public interface DispenseItemBehavior {
+                 ServerLevel worldserver = pointer.level();
+ 
+                 // CraftBukkit start
+-                ItemStack itemstack1 = stack.split(1);
++                ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
+                 org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
+@@ -281,12 +282,13 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 if (event.isCancelled()) {
+-                    stack.grow(1);
++                    // stack.grow(1); // Paper - shrink below
+                     return stack;
+                 }
+ 
++                boolean shrink = true; // Paper
+                 if (!event.getItem().equals(craftItem)) {
+-                    stack.grow(1);
++                    shrink = false; // Paper - shrink below
+                     // Chain to handler for new item
+                     ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                     DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -303,7 +305,7 @@ public interface DispenseItemBehavior {
+                 ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, stack.getTag(), consumer, blockposition, MobSpawnType.DISPENSER, false, false);
+ 
+                 if (entityarmorstand != null) {
+-                    // itemstack.shrink(1); // CraftBukkit - Handled during event processing
++                    if (shrink) stack.shrink(1); // Paper - actually handle here
+                 }
+ 
+                 return stack;
+@@ -325,7 +327,7 @@ public interface DispenseItemBehavior {
+ 
+                 if (!list.isEmpty()) {
+                     // CraftBukkit start
+-                    ItemStack itemstack1 = stack.split(1);
++                    ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
+                     Level world = pointer.level();
+                     org.bukkit.block.Block block = CraftBlock.at(world, pointer.pos());
+                     CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+@@ -336,12 +338,13 @@ public interface DispenseItemBehavior {
+                     }
+ 
+                     if (event.isCancelled()) {
+-                        stack.grow(1);
++                        // stack.grow(1); // Paper - shrink below
+                         return stack;
+                     }
+ 
++                    boolean shrink = true; // Paper
+                     if (!event.getItem().equals(craftItem)) {
+-                        stack.grow(1);
++                        shrink = false; // Paper - shrink below
+                         // Chain to handler for new item
+                         ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                         DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -352,7 +355,7 @@ public interface DispenseItemBehavior {
+                     }
+                     // CraftBukkit end
+                     ((Saddleable) list.get(0)).equipSaddle(SoundSource.BLOCKS, CraftItemStack.asNMSCopy(event.getItem())); // Paper - Fix saddles losing nbt data - MC-191591
+-                    // itemstack.shrink(1); // CraftBukkit - handled above
++                    if (shrink) stack.shrink(1); // Paper - actually handle here
+                     this.setSuccess(true);
+                     return stack;
+                 } else {
+@@ -380,7 +383,7 @@ public interface DispenseItemBehavior {
+                 } while (!entityhorseabstract.isArmor(stack) || entityhorseabstract.isWearingArmor() || !entityhorseabstract.isTamed());
+ 
+                 // CraftBukkit start
+-                ItemStack itemstack1 = stack.split(1);
++                ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
+                 Level world = pointer.level();
+                 org.bukkit.block.Block block = CraftBlock.at(world, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+@@ -391,12 +394,13 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 if (event.isCancelled()) {
+-                    stack.grow(1);
++                    // stack.grow(1); // Paper - shrink below
+                     return stack;
+                 }
+ 
++                boolean shrink = true; // Paper
+                 if (!event.getItem().equals(craftItem)) {
+-                    stack.grow(1);
++                    shrink = false; // Paper - shrink below
+                     // Chain to handler for new item
+                     ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                     DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -406,6 +410,7 @@ public interface DispenseItemBehavior {
+                     }
+                 }
+ 
++                if (shrink) stack.shrink(1); // Paper - shrink here
+                 entityhorseabstract.getSlot(401).set(CraftItemStack.asNMSCopy(event.getItem()));
+                 // CraftBukkit end
+                 this.setSuccess(true);
+@@ -452,7 +457,7 @@ public interface DispenseItemBehavior {
+                     entityhorsechestedabstract = (AbstractChestedHorse) iterator1.next();
+                     // CraftBukkit start
+                 } while (!entityhorsechestedabstract.isTamed());
+-                ItemStack itemstack1 = stack.split(1);
++                ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below
+                 Level world = pointer.level();
+                 org.bukkit.block.Block block = CraftBlock.at(world, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+@@ -463,10 +468,13 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 if (event.isCancelled()) {
++                    // stack.grow(1); // Paper - shrink below (this was actually missing and should be here, added it commented out to be consistent)
+                     return stack;
+                 }
+ 
++                boolean shrink = true; // Paper
+                 if (!event.getItem().equals(craftItem)) {
++                    shrink = false; // Paper - shrink below
+                     // Chain to handler for new item
+                     ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                     DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -478,7 +486,7 @@ public interface DispenseItemBehavior {
+                 entityhorsechestedabstract.getSlot(499).set(CraftItemStack.asNMSCopy(event.getItem()));
+                 // CraftBukkit end
+ 
+-                // itemstack.shrink(1); // CraftBukkit - handled above
++                if (shrink) stack.shrink(1); // Paper - actually handle here
+                 this.setSuccess(true);
+                 return stack;
+             }
+@@ -489,7 +497,7 @@ public interface DispenseItemBehavior {
+                 Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
+                 // CraftBukkit start
+                 ServerLevel worldserver = pointer.level();
+-                ItemStack itemstack1 = stack.split(1);
++                ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
+                 org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
+@@ -499,12 +507,13 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 if (event.isCancelled()) {
+-                    stack.grow(1);
++                    // stack.grow(1); // Paper - shrink below
+                     return stack;
+                 }
+ 
++                boolean shrink = true; // Paper
+                 if (!event.getItem().equals(craftItem)) {
+-                    stack.grow(1);
++                    shrink = false; // Paper - shrink below
+                     // Chain to handler for new item
+                     ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                     DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -521,7 +530,7 @@ public interface DispenseItemBehavior {
+ 
+                 entityfireworks.shoot((double) enumdirection.getStepX(), (double) enumdirection.getStepY(), (double) enumdirection.getStepZ(), 0.5F, 1.0F);
+                 pointer.level().addFreshEntity(entityfireworks);
+-                // itemstack.shrink(1); // Handled during event processing
++                if (shrink) stack.shrink(1); // Paper - actually handle here
+                 // CraftBukkit end
+                 return stack;
+             }
+@@ -546,7 +555,7 @@ public interface DispenseItemBehavior {
+                 double d5 = randomsource.triangle((double) enumdirection.getStepZ(), 0.11485000000000001D);
+ 
+                 // CraftBukkit start
+-                ItemStack itemstack1 = stack.split(1);
++                ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
+                 org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
+@@ -556,12 +565,13 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 if (event.isCancelled()) {
+-                    stack.grow(1);
++                    // stack.grow(1); // Paper - shrink at end
+                     return stack;
+                 }
+ 
++                boolean shrink = true; // Paper
+                 if (!event.getItem().equals(craftItem)) {
+-                    stack.grow(1);
++                    shrink = false; // Paper - shrink at end
+                     // Chain to handler for new item
+                     ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                     DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -576,7 +586,7 @@ public interface DispenseItemBehavior {
+                 entitysmallfireball.projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
+ 
+                 worldserver.addFreshEntity(entitysmallfireball);
+-                // itemstack.shrink(1); // Handled during event processing
++                if (shrink) stack.shrink(1); // Paper - actually handle here
+                 // CraftBukkit end
+                 return stack;
+             }
+@@ -620,7 +630,7 @@ public interface DispenseItemBehavior {
+                 BlockState iblockdata = worldserver.getBlockState(blockposition);
+                 if (iblockdata.isAir() || iblockdata.canBeReplaced() || (dispensiblecontaineritem instanceof BucketItem && iblockdata.getBlock() instanceof LiquidBlockContainer && ((LiquidBlockContainer) iblockdata.getBlock()).canPlaceLiquid((Player) null, worldserver, blockposition, iblockdata, ((BucketItem) dispensiblecontaineritem).content))) {
+                     org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+-                    CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
++                    CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - single item in event
+ 
+                     BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(x, y, z));
+                     if (!DispenserBlock.eventFired) {
+@@ -694,7 +704,7 @@ public interface DispenseItemBehavior {
+ 
+                         // CraftBukkit start
+                         org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+-                        CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
++                        CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - single item in event
+ 
+                         BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
+                         if (!DispenserBlock.eventFired) {
+@@ -741,7 +751,7 @@ public interface DispenseItemBehavior {
+ 
+                 // CraftBukkit start
+                 org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+-                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
++                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack); // Paper - ignore stack size on damageable items
+ 
+                 BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
+                 if (!DispenserBlock.eventFired) {
+@@ -802,7 +812,7 @@ public interface DispenseItemBehavior {
+                 BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
+                 // CraftBukkit start
+                 org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+-                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
++                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - single item in event
+ 
+                 BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
+                 if (!DispenserBlock.eventFired) {
+@@ -868,7 +878,7 @@ public interface DispenseItemBehavior {
+                 // CraftBukkit start
+                 // EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, (EntityLiving) null);
+ 
+-                ItemStack itemstack1 = stack.split(1);
++                ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink at end and single item in event
+                 org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
+@@ -878,12 +888,13 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 if (event.isCancelled()) {
+-                    stack.grow(1);
++                    // stack.grow(1); // Paper - shrink below
+                     return stack;
+                 }
+ 
++                boolean shrink = true; // Paper
+                 if (!event.getItem().equals(craftItem)) {
+-                    stack.grow(1);
++                    shrink = false; // Paper - shrink below
+                     // Chain to handler for new item
+                     ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                     DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -899,7 +910,7 @@ public interface DispenseItemBehavior {
+                 worldserver.addFreshEntity(entitytntprimed);
+                 worldserver.playSound((Player) null, entitytntprimed.getX(), entitytntprimed.getY(), entitytntprimed.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 1.0F);
+                 worldserver.gameEvent((Entity) null, GameEvent.ENTITY_PLACE, blockposition);
+-                // itemstack.shrink(1); // CraftBukkit - handled above
++                if (shrink) stack.shrink(1); // Paper - actually handle here
+                 return stack;
+             }
+         });
+@@ -926,7 +937,7 @@ public interface DispenseItemBehavior {
+ 
+                 // CraftBukkit start
+                 org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+-                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
++                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - single item in event
+ 
+                 BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
+                 if (!DispenserBlock.eventFired) {
+@@ -975,7 +986,7 @@ public interface DispenseItemBehavior {
+ 
+                 // CraftBukkit start
+                 org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+-                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
++                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - single item in event
+ 
+                 BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
+                 if (!DispenserBlock.eventFired) {
+@@ -1048,7 +1059,7 @@ public interface DispenseItemBehavior {
+ 
+                 // CraftBukkit start
+                 org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+-                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
++                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - only single item in event
+ 
+                 BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
+                 if (!DispenserBlock.eventFired) {
+diff --git a/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
+index e17090003988ad2c890d48666c2234b14d511345..45d356c1ed888b4d749379ceaa8a95d7d7c876d5 100644
+--- a/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
+@@ -37,7 +37,7 @@ public class ShearsDispenseItemBehavior extends OptionalDispenseItemBehavior {
+         ServerLevel worldserver = pointer.level();
+         // CraftBukkit start
+         org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+-        CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
++        CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack); // Paper - ignore stack size on damageable items
+ 
+         BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
+         if (!DispenserBlock.eventFired) {
+diff --git a/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java b/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
+index f84987c36a16df19286d6f1badfb1ffb9cc7e770..6f2adf2334e35e8a617a4ced0c1af2abf32bbd8d 100644
+--- a/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
+@@ -34,7 +34,7 @@ public class ShulkerBoxDispenseBehavior extends OptionalDispenseItemBehavior {
+ 
+             // CraftBukkit start
+             org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
+-            CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
++            CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - single item in event
+ 
+             BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
+             if (!DispenserBlock.eventFired) {
+diff --git a/src/main/java/net/minecraft/world/item/ArmorItem.java b/src/main/java/net/minecraft/world/item/ArmorItem.java
+index a745dc02ae25bcf10cee954b6e53f8b106fd045d..42d87800a328f71c5127ce5599ca4c71cc9bb1cd 100644
+--- a/src/main/java/net/minecraft/world/item/ArmorItem.java
++++ b/src/main/java/net/minecraft/world/item/ArmorItem.java
+@@ -62,7 +62,7 @@ public class ArmorItem extends Item implements Equipable {
+         } else {
+             LivingEntity entityliving = (LivingEntity) list.get(0);
+             EquipmentSlot enumitemslot = Mob.getEquipmentSlotForItem(armor);
+-            ItemStack itemstack1 = armor.split(1);
++            ItemStack itemstack1 = armor.copyWithCount(1); // Paper - shrink below and single item in event
+             // CraftBukkit start
+             Level world = pointer.level();
+             org.bukkit.block.Block block = CraftBlock.at(world, pointer.pos());
+@@ -74,12 +74,13 @@ public class ArmorItem extends Item implements Equipable {
+             }
+ 
+             if (event.isCancelled()) {
+-                armor.grow(1);
++                // armor.grow(1); // Paper - shrink below
+                 return false;
+             }
+ 
++            boolean shrink = true; // Paper
+             if (!event.getItem().equals(craftItem)) {
+-                armor.grow(1);
++                shrink = false; // Paper - shrink below
+                 // Chain to handler for new item
+                 ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                 DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -96,6 +97,7 @@ public class ArmorItem extends Item implements Equipable {
+                 ((Mob) entityliving).setPersistenceRequired();
+             }
+ 
++            if (shrink) armor.shrink(1); // Paper
+             return true;
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/item/MinecartItem.java b/src/main/java/net/minecraft/world/item/MinecartItem.java
+index 9bcca21ba03dc838f3e857018adee9506d8bb6a3..3aa73cd44aa8c86b78c35bc1788e4f83018c49ed 100644
+--- a/src/main/java/net/minecraft/world/item/MinecartItem.java
++++ b/src/main/java/net/minecraft/world/item/MinecartItem.java
+@@ -65,7 +65,7 @@ public class MinecartItem extends Item {
+ 
+             // CraftBukkit start
+             // EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).type);
+-            ItemStack itemstack1 = stack.split(1);
++            ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
+             org.bukkit.block.Block block2 = CraftBlock.at(worldserver, pointer.pos());
+             CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
+@@ -75,12 +75,13 @@ public class MinecartItem extends Item {
+             }
+ 
+             if (event.isCancelled()) {
+-                stack.grow(1);
++                // stack.grow(1); // Paper - shrink below
+                 return stack;
+             }
+ 
++            boolean shrink = true; // Paper
+             if (!event.getItem().equals(craftItem)) {
+-                stack.grow(1);
++                shrink = false; // Paper - shrink below
+                 // Chain to handler for new item
+                 ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                 DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+@@ -93,8 +94,7 @@ public class MinecartItem extends Item {
+             itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
+             AbstractMinecart entityminecartabstract = AbstractMinecart.createMinecart(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((MinecartItem) itemstack1.getItem()).type, itemstack1, (Player) null);
+ 
+-            if (!worldserver.addFreshEntity(entityminecartabstract)) stack.grow(1);
+-            // itemstack.shrink(1); // CraftBukkit - handled during event processing
++            if (worldserver.addFreshEntity(entityminecartabstract) && shrink) stack.shrink(1); // Paper - actually handle here
+             // CraftBukkit end
+             return stack;
+         }

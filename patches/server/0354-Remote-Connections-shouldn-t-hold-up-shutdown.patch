@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 31 Mar 2020 03:50:42 -0400
+Subject: [PATCH] Remote Connections shouldn't hold up shutdown
+
+Bugs in the connection logic appears to leave stale connections even, preventing shutdown
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 7bc90a4b0cbbb2251122038d374860ff02f5edee..5f4f993243f19f1e88b7f2bc5e40a6b2125fd819 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -390,11 +390,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+ 
+         if (this.rconThread != null) {
+-            this.rconThread.stop();
++            this.rconThread.stopNonBlocking(); // Paper - don't wait for remote connections
+         }
+ 
+         if (this.queryThreadGs4 != null) {
+-            this.queryThreadGs4.stop();
++            // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
+         }
+ 
+         System.exit(0); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+index 3bf60f640aa9fa4cabd2b3e5d3931e8467b9df24..2c1289aa2bf8b7bb67709190263b82b811c17fff 100644
+--- a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
++++ b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+@@ -107,6 +107,14 @@ public class RconThread extends GenericThread {
+ 
+         this.clients.clear();
+     }
++    // Paper start
++    public void stopNonBlocking() {
++        this.running = false;
++        for (RconClient client : this.clients) {
++            client.running = false;
++        }
++    }
++    // Paper stop
+ 
+     private void closeSocket(ServerSocket socket) {
+         LOGGER.debug("closeSocket: {}", (Object)socket);

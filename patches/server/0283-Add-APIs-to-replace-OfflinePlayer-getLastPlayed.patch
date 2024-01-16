@@ -1,0 +1,164 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach@zachbr.io>
+Date: Wed, 2 Jan 2019 00:35:43 -0600
+Subject: [PATCH] Add APIs to replace OfflinePlayer#getLastPlayed
+
+Currently OfflinePlayer#getLastPlayed could more accurately be described
+as "OfflinePlayer#getLastTimeTheirDataWasSaved".
+
+The API doc says it should return the last time the server "witnessed"
+the player, whilst also saying it should return the last time they
+logged in. The current implementation does neither.
+
+Given this interesting contradiction in the API documentation and the
+current defacto implementation, I've elected to deprecate (with no
+intent to remove) and replace it with two new methods, clearly named and
+documented as to their purpose.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 54297045b5da66827426ae354883a9709d9cdefc..7a5977aa72a0a198144d7b490abe0685326de260 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -248,6 +248,7 @@ public class ServerPlayer extends Player {
+     private int containerCounter;
+     public boolean wonGame;
+     private int containerUpdateDelay; // Paper
++    public long loginTime; // Paper
+     // Paper start - cancellable death event
+     public boolean queueHealthUpdatePacket = false;
+     public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 6a3961350030e63b27512261402f675c3cd78485..d3f57dfd5156a5df17a5a7a6e5fe51d8804fd38f 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -179,6 +179,7 @@ public abstract class PlayerList {
+ 
+     public void placeNewPlayer(Connection connection, ServerPlayer player, CommonListenerCookie clientData) {
+         player.isRealPlayer = true; // Paper
++        player.loginTime = System.currentTimeMillis(); // Paper
+         GameProfile gameprofile = player.getGameProfile();
+         GameProfileCache usercache = this.server.getProfileCache();
+         String s;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+index e8490a58dd4d9bc39a5bb2f9fc109526e031b971..5f590575f95eff8bf0cdcafde7dee0e3c7fc30ad 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+@@ -261,6 +261,61 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+         return this.getData() != null;
+     }
+ 
++    // Paper start
++    @Override
++    public long getLastLogin() {
++        Player player = getPlayer();
++        if (player != null) return player.getLastLogin();
++
++        CompoundTag data = getPaperData();
++
++        if (data != null) {
++            if (data.contains("LastLogin")) {
++                return data.getLong("LastLogin");
++            } else {
++                // if the player file cannot provide accurate data, this is probably the closest we can approximate
++                File file = getDataFile();
++                return file.lastModified();
++            }
++        } else {
++            return 0;
++        }
++    }
++
++    @Override
++    public long getLastSeen() {
++        Player player = getPlayer();
++        if (player != null) return player.getLastSeen();
++
++        CompoundTag data = getPaperData();
++
++        if (data != null) {
++            if (data.contains("LastSeen")) {
++                return data.getLong("LastSeen");
++            } else {
++                // if the player file cannot provide accurate data, this is probably the closest we can approximate
++                File file = getDataFile();
++                return file.lastModified();
++            }
++        } else {
++            return 0;
++        }
++    }
++
++    private CompoundTag getPaperData() {
++        CompoundTag result = getData();
++
++        if (result != null) {
++            if (!result.contains("Paper")) {
++                result.put("Paper", new CompoundTag());
++            }
++            result = result.getCompound("Paper");
++        }
++
++        return result;
++    }
++    // Paper end
++
+     @Override
+     public Location getLastDeathLocation() {
+         if (this.getData().contains("LastDeathLocation", 10)) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index ce73a8c652cf95bae62808fc27db2ab852691fd8..9df9b465df75dd41eabd789e85ee841ed4be092c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -191,6 +191,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
+     public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
+     private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
++    private long lastSaveTime; // Paper - getLastPlayed replacement API
+ 
+     public CraftPlayer(CraftServer server, ServerPlayer entity) {
+         super(server, entity);
+@@ -1953,6 +1954,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.firstPlayed = firstPlayed;
+     }
+ 
++    // Paper start - getLastPlayed replacement API
++    @Override
++    public long getLastLogin() {
++        return this.getHandle().loginTime;
++    }
++
++    @Override
++    public long getLastSeen() {
++        return this.isOnline() ? System.currentTimeMillis() : this.lastSaveTime;
++    }
++    // Paper end - getLastPlayed replacement API
++
+     public void readExtraData(CompoundTag nbttagcompound) {
+         this.hasPlayedBefore = true;
+         if (nbttagcompound.contains("bukkit")) {
+@@ -1975,6 +1988,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     public void setExtraData(CompoundTag nbttagcompound) {
++        this.lastSaveTime = System.currentTimeMillis(); // Paper
++
+         if (!nbttagcompound.contains("bukkit")) {
+             nbttagcompound.put("bukkit", new CompoundTag());
+         }
+@@ -1989,6 +2004,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         data.putLong("firstPlayed", this.getFirstPlayed());
+         data.putLong("lastPlayed", System.currentTimeMillis());
+         data.putString("lastKnownName", handle.getScoreboardName());
++
++        // Paper start - persist for use in offline save data
++        if (!nbttagcompound.contains("Paper")) {
++            nbttagcompound.put("Paper", new CompoundTag());
++        }
++
++        CompoundTag paper = nbttagcompound.getCompound("Paper");
++        paper.putLong("LastLogin", handle.loginTime);
++        paper.putLong("LastSeen", System.currentTimeMillis());
++        // Paper end
+     }
+ 
+     @Override

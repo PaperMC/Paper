@@ -1,0 +1,206 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 5 Apr 2020 22:23:14 -0500
+Subject: [PATCH] Add tick times API and /mspt command
+
+
+diff --git a/src/main/java/io/papermc/paper/command/MSPTCommand.java b/src/main/java/io/papermc/paper/command/MSPTCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8b5293b0c696ef21d0101493ffa41b60bf0bc86b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/MSPTCommand.java
+@@ -0,0 +1,102 @@
++package io.papermc.paper.command;
++
++import net.kyori.adventure.text.Component;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.Location;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++
++import java.text.DecimalFormat;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.Collections;
++import java.util.List;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GOLD;
++import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
++
++@DefaultQualifier(NonNull.class)
++public final class MSPTCommand extends Command {
++    private static final DecimalFormat DF = new DecimalFormat("########0.0");
++    private static final Component SLASH = text("/");
++
++    public MSPTCommand(final String name) {
++        super(name);
++        this.description = "View server tick times";
++        this.usageMessage = "/mspt";
++        this.setPermission("bukkit.command.mspt");
++    }
++
++    @Override
++    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
++        return Collections.emptyList();
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if (!testPermission(sender)) return true;
++
++        MinecraftServer server = MinecraftServer.getServer();
++
++        List<Component> times = new ArrayList<>();
++        times.addAll(eval(server.tickTimes5s.getTimes()));
++        times.addAll(eval(server.tickTimes10s.getTimes()));
++        times.addAll(eval(server.tickTimes60s.getTimes()));
++
++        sender.sendMessage(text().content("Server tick times ").color(GOLD)
++            .append(text().color(YELLOW)
++                .append(
++                    text("("),
++                    text("avg", GRAY),
++                    text("/"),
++                    text("min", GRAY),
++                    text("/"),
++                    text("max", GRAY),
++                    text(")")
++                )
++            ).append(
++                text(" from last 5s"),
++                text(",", GRAY),
++                text(" 10s"),
++                text(",", GRAY),
++                text(" 1m"),
++                text(":", YELLOW)
++            )
++        );
++        sender.sendMessage(text().content("◴ ").color(GOLD)
++            .append(text().color(GRAY)
++                .append(
++                    times.get(0), SLASH, times.get(1), SLASH, times.get(2), text(", ", YELLOW),
++                    times.get(3), SLASH, times.get(4), SLASH, times.get(5), text(", ", YELLOW),
++                    times.get(6), SLASH, times.get(7), SLASH, times.get(8)
++                )
++            )
++        );
++        return true;
++    }
++
++    private static List<Component> eval(long[] times) {
++        long min = Integer.MAX_VALUE;
++        long max = 0L;
++        long total = 0L;
++        for (long value : times) {
++            if (value > 0L && value < min) min = value;
++            if (value > max) max = value;
++            total += value;
++        }
++        double avgD = ((double) total / (double) times.length) * 1.0E-6D;
++        double minD = ((double) min) * 1.0E-6D;
++        double maxD = ((double) max) * 1.0E-6D;
++        return Arrays.asList(getColor(avgD), getColor(minD), getColor(maxD));
++    }
++
++    private static Component getColor(double avg) {
++        return text(DF.format(avg), avg >= 50 ? RED : avg >= 40 ? YELLOW : GREEN);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommands.java b/src/main/java/io/papermc/paper/command/PaperCommands.java
+index 72f2e81b9905a0d57ed8e2a88578f62d5235c456..7b58b2d6297800c2dcdbf7539e5ab8e7703f39f1 100644
+--- a/src/main/java/io/papermc/paper/command/PaperCommands.java
++++ b/src/main/java/io/papermc/paper/command/PaperCommands.java
+@@ -18,6 +18,7 @@ public final class PaperCommands {
+     static {
+         COMMANDS.put("paper", new PaperCommand("paper"));
+         COMMANDS.put("callback", new CallbackCommand("callback"));
++        COMMANDS.put("mspt", new MSPTCommand("mspt"));
+     }
+ 
+     public static void registerCommands(final MinecraftServer server) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 6024a9e0dca38b1c21332f5c131d824190a2be90..ce113cc2bc52c1135799190a22e0be21744b58cc 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -252,6 +252,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private int playerIdleTimeout;
+     private final long[] tickTimesNanos;
+     private long aggregatedTickTimesNanos;
++    // Paper start
++    public final TickTimes tickTimes5s = new TickTimes(100);
++    public final TickTimes tickTimes10s = new TickTimes(200);
++    public final TickTimes tickTimes60s = new TickTimes(1200);
++    // Paper end
+     @Nullable
+     private KeyPair keyPair;
+     @Nullable
+@@ -1393,6 +1398,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) j / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
+         long l = Util.getNanos();
+ 
++        // Paper start
++        tickTimes5s.add(this.tickCount, j);
++        tickTimes10s.add(this.tickCount, j);
++        tickTimes60s.add(this.tickCount, j);
++        // Paper end
+         this.logTickTime(l - i);
+         this.profiler.pop();
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+@@ -2669,4 +2679,30 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
+ 
+     }
++
++    // Paper start
++    public static class TickTimes {
++        private final long[] times;
++
++        public TickTimes(int length) {
++            times = new long[length];
++        }
++
++        void add(int index, long time) {
++            times[index % times.length] = time;
++        }
++
++        public long[] getTimes() {
++            return times.clone();
++        }
++
++        public double getAverage() {
++            long total = 0L;
++            for (long value : times) {
++                total += value;
++            }
++            return ((double) total / (double) times.length) * 1.0E-6D;
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 217fd2af254f7206cf4c1d7d7ad08384a38427d2..a74d346cd72d841be195f02801bba8cd00ac4097 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2628,6 +2628,16 @@ public final class CraftServer implements Server {
+                 net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
+         };
+     }
++
++    @Override
++    public long[] getTickTimes() {
++        return getServer().tickTimes5s.getTimes();
++    }
++
++    @Override
++    public double getAverageTickTime() {
++        return getServer().tickTimes5s.getAverage();
++    }
+     // Paper end
+ 
+     // Spigot start
