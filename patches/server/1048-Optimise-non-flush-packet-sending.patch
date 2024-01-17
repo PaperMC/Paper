@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 22 Sep 2020 01:49:19 -0700
+Subject: [PATCH] Optimise non-flush packet sending
+
+Places like entity tracking make heavy use of packet sending,
+and internally netty will use some very expensive thread wakeup
+calls when scheduling.
+
+Thanks to various hacks in ProtocolLib as well as other
+plugins, we cannot simply use a queue of packets to group
+send on execute. We have to call execute for each packet.
+
+Tux's suggestion here is exactly what was needed - tag
+the Runnable indicating it should not make a wakeup call.
+
+Big thanks to Tux for making this possible as I had given
+up on this optimisation before he came along.
+
+Locally this patch drops the entity tracker tick by a full 1.5x.
+
+Co-authored-by: Quang Tran <3d7777456@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 2ae08b21c63490bbf8cd870f9585d82ed131f815..49fe7e623e4815232781ece9d0c2aff396676e1e 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -148,6 +148,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         this.stopReadingPackets = true;
+     }
+     // Paper end - packet limiter
++    private io.netty.channel.SingleThreadEventLoop eventLoop; // Paper - optimise packets that are not flushed
+ 
+     public Connection(PacketFlow side) {
+         this.receiving = side;
+@@ -156,6 +157,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     public void channelActive(ChannelHandlerContext channelhandlercontext) throws Exception {
+         super.channelActive(channelhandlercontext);
+         this.channel = channelhandlercontext.channel();
++        this.eventLoop = (io.netty.channel.SingleThreadEventLoop) this.channel.eventLoop(); // Paper - optimise packets that are not flushed
+         this.address = this.channel.remoteAddress();
+         // Spigot Start
+         this.preparing = false;
+@@ -429,6 +431,11 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         if (this.channel.eventLoop().inEventLoop()) {
+             this.doSendPacket(packet, callbacks, flush);
+         } else {
++            // Paper start - optimise packets that are not flushed
++            if (!flush) {
++                this.eventLoop.lazyExecute(() -> this.doSendPacket(packet, callbacks, flush));
++            } else
++            // Paper end - optimise packets that are not flushed
+             this.channel.eventLoop().execute(() -> {
+                 this.doSendPacket(packet, callbacks, flush);
+             });
