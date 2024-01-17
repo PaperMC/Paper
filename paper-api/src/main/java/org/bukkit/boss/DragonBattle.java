@@ -57,6 +57,17 @@ public interface DragonBattle {
     public boolean hasBeenPreviouslyKilled();
 
     /**
+     * Sets whether the first dragon has been killed already.
+     * <br>
+     * If the dragon has not previously been killed, a portal will be generated
+     * when it is finally killed.
+     *
+     * @param previouslyKilled true if the dragon has been killed before, false
+     * otherwise
+     */
+    public void setPreviouslyKilled(boolean previouslyKilled);
+
+    /**
      * Try to initiate a respawn sequence to summon the dragon as though a player has
      * placed 4 end crystals on the portal.
      */
