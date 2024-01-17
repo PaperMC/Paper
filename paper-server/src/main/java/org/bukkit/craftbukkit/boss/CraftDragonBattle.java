@@ -63,6 +63,11 @@ public class CraftDragonBattle implements DragonBattle {
     }
 
     @Override
+    public void setPreviouslyKilled(boolean previouslyKilled) {
+        handle.previouslyKilled = previouslyKilled;
+    }
+
+    @Override
     public void initiateRespawn() {
         this.handle.tryRespawn();
     }
