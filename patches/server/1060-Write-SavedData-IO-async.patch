@@ -5,14 +5,14 @@ Subject: [PATCH] Write SavedData IO async
 
 
 diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
-index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..13f5ad1ecfebf831ae5fa4b149c3781f3f9c9609 100644
+index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..9017907c0ec67a37a506f09b7e4499cef7885279 100644
 --- a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
 +++ b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
 @@ -97,6 +97,15 @@ public class ThreadedWorldUpgrader {
              }
  
              this.threadPool.execute(new ConvertTask(info, regionPos.x >> 5, regionPos.z >> 5));
-+            // Paper start
++            // Paper start - Write SavedData IO async
 +            this.threadPool.execute(() -> {
 +                try {
 +                    worldPersistentData.close();
@@ -20,30 +20,30 @@ index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..13f5ad1ecfebf831ae5fa4b149c3781f
 +                    LOGGER.error("Failed to close persistent world data", exception);
 +                }
 +            });
-+            // Paper end
++            // Paper end - Write SavedData IO async
          }
          this.threadPool.shutdown();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 44ada45d9bf2d9b48e5de1c3cb1a855902f3884b..a2e1ccdfefa940e084f0295d135719c5503bab51 100644
+index 44ada45d9bf2d9b48e5de1c3cb1a855902f3884b..2aaf1cc630f9cf4b61ad58d1adde5f93ba237fd6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -467,6 +467,13 @@ public class ServerChunkCache extends ChunkSource {
  
      public void close(boolean save) { // Paper - rewrite chunk system
          this.level.chunkTaskScheduler.chunkHolderManager.close(save, true); // Paper - rewrite chunk system
-+        // Paper start
++        // Paper start - Write SavedData IO async
 +        try {
 +            this.dataStorage.close();
 +        } catch (IOException exception) {
 +            LOGGER.error("Failed to close persistent world data", exception);
 +        }
-+        // Paper end
++        // Paper end - Write SavedData IO async
      }
  
      // CraftBukkit start - modelled on below
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 676087c3addd712939c865b39ddb5d9f0bc7ce25..7564b9226fa38a5d94eba3ca5e579e53892d0706 100644
+index 676087c3addd712939c865b39ddb5d9f0bc7ce25..a52ca83572c21f5977d7d0573de443ef5f931279 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1492,7 +1492,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -51,7 +51,7 @@ index 676087c3addd712939c865b39ddb5d9f0bc7ce25..7564b9226fa38a5d94eba3ca5e579e53
          try (co.aikar.timings.Timing ignored = this.timings.worldSave.startTiming()) {
              if (doFull) {
 -                this.saveLevelData();
-+                this.saveLevelData(true); // Paper
++                this.saveLevelData(true); // Paper - Write SavedData IO async
              }
  
              this.timings.worldSaveChunks.startTiming(); // Paper
@@ -60,7 +60,7 @@ index 676087c3addd712939c865b39ddb5d9f0bc7ce25..7564b9226fa38a5d94eba3ca5e579e53
              }
  
 -            this.saveLevelData();
-+            this.saveLevelData(!close); // Paper
++            this.saveLevelData(!close); // Paper - Write SavedData IO async
              if (progressListener != null) {
                  progressListener.progressStage(Component.translatable("menu.savingChunks"));
              }
@@ -69,18 +69,18 @@ index 676087c3addd712939c865b39ddb5d9f0bc7ce25..7564b9226fa38a5d94eba3ca5e579e53
      }
  
 -    private void saveLevelData() {
-+    private void saveLevelData(boolean async) { // Paper
++    private void saveLevelData(boolean async) { // Paper - Write SavedData IO async
          if (this.dragonFight != null) {
              this.serverLevelData.setEndDragonFightData(this.dragonFight.saveData()); // CraftBukkit
          }
  
 -        this.getChunkSource().getDataStorage().save();
-+        this.getChunkSource().getDataStorage().save(async); // Paper
++        this.getChunkSource().getDataStorage().save(async); // Paper - Write SavedData IO async
      }
  
      public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> filter, Predicate<? super T> predicate) {
 diff --git a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
-index f2a7cb6ebed7a4b4019a09af2a025f624f6fe9c9..edb159ac0b617bb3754c79d30784a04556d82f4e 100644
+index f2a7cb6ebed7a4b4019a09af2a025f624f6fe9c9..77dd632a266f4abed30b87b7909d77857c01e316 100644
 --- a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 +++ b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 @@ -224,7 +224,13 @@ public class WorldUpgrader {
@@ -88,58 +88,66 @@ index f2a7cb6ebed7a4b4019a09af2a025f624f6fe9c9..edb159ac0b617bb3754c79d30784a045
              }
  
 -            this.overworldDataStorage.save();
-+            // Paper start
++            // Paper start - Write SavedData IO async
 +            try {
 +                this.overworldDataStorage.close();
 +            } catch (IOException exception) {
 +                LOGGER.error("Failed to close persistent world data", exception);
 +            }
-+            // Paper end
++            // Paper end - Write SavedData IO async
              i = Util.getMillis() - i;
              WorldUpgrader.LOGGER.info("World optimizaton finished after {} ms", i);
              this.finished = true;
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/SavedData.java b/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
-index 697df9a9f050c0130246ce2b08a859965bddf184..b3e2954f28986e334089bfff39d92f857bc48a36 100644
+index 697df9a9f050c0130246ce2b08a859965bddf184..28c400ebe099e17159dd5d348bdcfd1f88eacb16 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
 +++ b/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
-@@ -29,20 +29,35 @@ public abstract class SavedData {
+@@ -29,22 +29,37 @@ public abstract class SavedData {
          return this.dirty;
      }
  
-+    @io.papermc.paper.annotation.DoNotUse // Paper - This is dead
++    @io.papermc.paper.annotation.DoNotUse // Paper - Write SavedData IO async -This is dead
      public void save(File file) {
-+        save(file, null).join(); // Paper - joining is evil, but we assume the old blocking behavior here just for safety
++        save(file, null).join(); // Paper - Write SavedData IO async - joining is evil, but we assume the old blocking behavior here just for safety
 +    }
 +
-+    public java.util.concurrent.CompletableFuture<Void> save(File file, @org.jetbrains.annotations.Nullable java.util.concurrent.ExecutorService ioExecutor) {
-+        // Paper end
++    public java.util.concurrent.CompletableFuture<Void> save(File file, @org.jetbrains.annotations.Nullable java.util.concurrent.ExecutorService ioExecutor) { // Paper - Write SavedData IO async
          if (this.isDirty()) {
              CompoundTag compoundTag = new CompoundTag();
              compoundTag.put("data", this.save(new CompoundTag()));
              NbtUtils.addCurrentDataVersion(compoundTag);
  
-+            // Paper start
-+            Runnable writeRunnable = () -> {
-             try {
-                 NbtIo.writeCompressed(compoundTag, file.toPath());
-             } catch (IOException var4) {
-                 LOGGER.error("Could not save data {}", this, var4);
-             }
-+            };
-+            // Paper end
+-            try {
+-                NbtIo.writeCompressed(compoundTag, file.toPath());
+-            } catch (IOException var4) {
+-                LOGGER.error("Could not save data {}", this, var4);
+-            }
++            Runnable writeRunnable = () -> { // Paper - Write SavedData IO async
++                try {
++                    NbtIo.writeCompressed(compoundTag, file.toPath());
++                } catch (IOException var4) {
++                    LOGGER.error("Could not save data {}", this, var4);
++                }
++            }; // Paper - Write SavedData IO async
  
              this.setDirty(false);
++            // Paper start - Write SavedData IO async
 +            if (ioExecutor == null) {
-+                return java.util.concurrent.CompletableFuture.runAsync(writeRunnable); // Paper - No executor, just use common pool
++                return java.util.concurrent.CompletableFuture.runAsync(writeRunnable); //  No executor, just use common pool
 +            }
-+            return java.util.concurrent.CompletableFuture.runAsync(writeRunnable, ioExecutor); // Paper
++            return java.util.concurrent.CompletableFuture.runAsync(writeRunnable, ioExecutor);
          }
-+        return java.util.concurrent.CompletableFuture.completedFuture(null); // Paper
++        return java.util.concurrent.CompletableFuture.completedFuture(null);
++        // Paper end - Write SavedData IO async
      }
  
-     public static record Factory<T extends SavedData>(Supplier<T> constructor, Function<CompoundTag, T> deserializer, DataFixTypes type) {
+-    public static record Factory<T extends SavedData>(Supplier<T> constructor, Function<CompoundTag, T> deserializer, DataFixTypes type) {
++    public static record Factory<T extends SavedData>(Supplier<T> constructor, Function<CompoundTag, T> deserializer,
++                                                      DataFixTypes type) {
+     }
+ }
 diff --git a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
-index d051e8c1db6b5c42b8df0be54d9d48ba0e7b0077..036063e2ba6eeecb2fabe11830370ab41f179f7c 100644
+index d051e8c1db6b5c42b8df0be54d9d48ba0e7b0077..4e055937d33448bbe25ef03dec22ee96e204ed12 100644
 --- a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
 +++ b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
 @@ -20,15 +20,18 @@ import net.minecraft.util.datafix.DataFixTypes;
@@ -147,18 +155,18 @@ index d051e8c1db6b5c42b8df0be54d9d48ba0e7b0077..036063e2ba6eeecb2fabe11830370ab4
  import org.slf4j.Logger;
  
 -public class DimensionDataStorage {
-+public class DimensionDataStorage implements java.io.Closeable { //Paper
++public class DimensionDataStorage implements java.io.Closeable { //Paper - Write SavedData IO async
      private static final Logger LOGGER = LogUtils.getLogger();
      public final Map<String, SavedData> cache = Maps.newHashMap();
      private final DataFixer fixerUpper;
      private final File dataFolder;
-+    protected final java.util.concurrent.ExecutorService ioExecutor; // Paper
++    protected final java.util.concurrent.ExecutorService ioExecutor; // Paper - Write SavedData IO async
  
      public DimensionDataStorage(File directory, DataFixer dataFixer) {
          this.fixerUpper = dataFixer;
          this.dataFolder = directory;
-+        String worldFolder = dataFolder.getParent(); // Paper
-+        this.ioExecutor = java.util.concurrent.Executors.newSingleThreadExecutor(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("DimensionDataIO - " + worldFolder + " - %d").setDaemon(true).build()); // Paper
++        String worldFolder = dataFolder.getParent(); // Paper - Write SavedData IO async
++        this.ioExecutor = java.util.concurrent.Executors.newSingleThreadExecutor(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("DimensionDataIO - " + worldFolder + " - %d").setDaemon(true).build()); // Paper - Write SavedData IO async
      }
  
      private File getDataFile(String id) {
@@ -167,24 +175,24 @@ index d051e8c1db6b5c42b8df0be54d9d48ba0e7b0077..036063e2ba6eeecb2fabe11830370ab4
      }
  
 -    public void save() {
-+    // Paper start
++    // Paper start - Write SavedData IO async
 +    @Override
 +    public void close() throws IOException {
 +        save(false);
 +        this.ioExecutor.shutdown();
 +    }
-+    // Paper end
++    // Paper end - Write SavedData IO async
 +
-+    public void save(boolean async) { // Paper
++    public void save(boolean async) { // Paper - Write SavedData IO async
          this.cache.forEach((id, state) -> {
              if (state != null) {
 -                state.save(this.getDataFile(id));
-+                // Paper start
++                // Paper start - Write SavedData IO async
 +                final java.util.concurrent.CompletableFuture<Void> save = state.save(this.getDataFile(id), ioExecutor);// Paper
 +                if (!async) {
 +                    save.join();
 +                }
-+                // Paper end
++                // Paper end - Write SavedData IO async
              }
  
          });
