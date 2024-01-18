@@ -5,10 +5,10 @@ Subject: [PATCH] Write SavedData IO async
 
 
 diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
-index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..ef957036de071908964a53c7a157b95e54dfefe3 100644
+index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..13f5ad1ecfebf831ae5fa4b149c3781f3f9c9609 100644
 --- a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
 +++ b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
-@@ -97,6 +97,14 @@ public class ThreadedWorldUpgrader {
+@@ -97,6 +97,15 @@ public class ThreadedWorldUpgrader {
              }
  
              this.threadPool.execute(new ConvertTask(info, regionPos.x >> 5, regionPos.z >> 5));
@@ -16,7 +16,8 @@ index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..ef957036de071908964a53c7a157b95e
 +            this.threadPool.execute(() -> {
 +                try {
 +                    worldPersistentData.close();
-+                } catch (IOException ignored) {
++                } catch (IOException exception) {
++                    LOGGER.error("Failed to close persistent world data", exception);
 +                }
 +            });
 +            // Paper end
@@ -24,17 +25,18 @@ index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..ef957036de071908964a53c7a157b95e
          this.threadPool.shutdown();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 44ada45d9bf2d9b48e5de1c3cb1a855902f3884b..a4410cf67280f8a985e6019e6712c617b31fcd1b 100644
+index 44ada45d9bf2d9b48e5de1c3cb1a855902f3884b..a2e1ccdfefa940e084f0295d135719c5503bab51 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -467,6 +467,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -467,6 +467,13 @@ public class ServerChunkCache extends ChunkSource {
  
      public void close(boolean save) { // Paper - rewrite chunk system
          this.level.chunkTaskScheduler.chunkHolderManager.close(save, true); // Paper - rewrite chunk system
 +        // Paper start
 +        try {
 +            this.dataStorage.close();
-+        } catch (IOException ignored) {
++        } catch (IOException exception) {
++            LOGGER.error("Failed to close persistent world data", exception);
 +        }
 +        // Paper end
      }
@@ -78,10 +80,10 @@ index 676087c3addd712939c865b39ddb5d9f0bc7ce25..7564b9226fa38a5d94eba3ca5e579e53
  
      public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> filter, Predicate<? super T> predicate) {
 diff --git a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
-index f2a7cb6ebed7a4b4019a09af2a025f624f6fe9c9..cf07f435b5ec720807297e47d5f0d515b711fe41 100644
+index f2a7cb6ebed7a4b4019a09af2a025f624f6fe9c9..edb159ac0b617bb3754c79d30784a04556d82f4e 100644
 --- a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 +++ b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
-@@ -224,7 +224,12 @@ public class WorldUpgrader {
+@@ -224,7 +224,13 @@ public class WorldUpgrader {
                  }
              }
  
@@ -89,7 +91,8 @@ index f2a7cb6ebed7a4b4019a09af2a025f624f6fe9c9..cf07f435b5ec720807297e47d5f0d515
 +            // Paper start
 +            try {
 +                this.overworldDataStorage.close();
-+            } catch (IOException ignored) {
++            } catch (IOException exception) {
++                LOGGER.error("Failed to close persistent world data", exception);
 +            }
 +            // Paper end
              i = Util.getMillis() - i;
