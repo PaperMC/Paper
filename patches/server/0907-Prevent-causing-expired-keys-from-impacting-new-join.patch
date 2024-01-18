@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 3 Apr 2023 08:55:52 +0100
+Subject: [PATCH] Prevent causing expired keys from impacting new joins
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+index 0e54e8faa48751a651b953bec72543a94edf74bc..d43106eb89b14667e85cd6e8fa047d64f2e8ec87 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+@@ -96,7 +96,13 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+         INITIALIZE_CHAT((serialized, buf) -> {
+             serialized.chatSession = buf.readNullable(RemoteChatSession.Data::read);
+         }, (buf, entry) -> {
+-            buf.writeNullable(entry.chatSession, RemoteChatSession.Data::write);
++            // Paper start - Prevent causing expired keys from impacting new joins
++            RemoteChatSession.Data chatSession = entry.chatSession;
++            if (chatSession != null && chatSession.profilePublicKey().hasExpired()) {
++                chatSession = null;
++            }
++            buf.writeNullable(chatSession, RemoteChatSession.Data::write);
++            // Paper end - Prevent causing expired keys from impacting new joins
+         }),
+         UPDATE_GAME_MODE((serialized, buf) -> {
+             serialized.gameMode = GameType.byId(buf.readVarInt());
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index b537c2d1e00eee4da9ca53c731791f46ae5013cb..294dd52de7b0b19b19bbef9bb6ec6b5b2845cdeb 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -287,6 +287,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     private int knownMovePacketCount;
+     @Nullable
+     private RemoteChatSession chatSession;
++    private boolean hasLoggedExpiry = false; // Paper - Prevent causing expired keys from impacting new joins
+     private SignedMessageChain.Decoder signedMessageDecoder;
+     private final LastSeenMessagesValidator lastSeenMessages = new LastSeenMessagesValidator(20);
+     private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
+@@ -395,6 +396,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             this.disconnect(Component.translatable("multiplayer.disconnect.idling"), org.bukkit.event.player.PlayerKickEvent.Cause.IDLING); // Paper - kick event cause
+         }
+ 
++        // Paper start - Prevent causing expired keys from impacting new joins
++        if (!hasLoggedExpiry && this.chatSession != null && this.chatSession.profilePublicKey().data().hasExpired()) {
++            LOGGER.info("Player profile key for {} has expired!", this.player.getName().getString());
++            hasLoggedExpiry = true;
++        }
++        // Paper end - Prevent causing expired keys from impacting new joins
++
+     }
+ 
+     public void resetPosition() {
+@@ -3423,6 +3431,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     private void resetPlayerChatState(RemoteChatSession session) {
+         this.chatSession = session;
++        this.hasLoggedExpiry = false; // Paper - Prevent causing expired keys from impacting new joins
+         this.signedMessageDecoder = session.createMessageDecoder(this.player.getUUID());
+         this.chatMessageChain.append(() -> {
+             this.player.setChatSession(session);

@@ -27,7 +27,7 @@ Co-authored-by: Zach Brown <zach@zachbr.io>
 Co-authored-by: Madeline Miller <mnmiller1@me.com>
 
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-index cda90023ad662e8875365eac98ec69f476dcb42d..b9025fcc6a4db9533cdc42034c9e77323d0785fa 100644
+index cda90023ad662e8875365eac98ec69f476dcb42d..470495903a9f0f8b925ddc4fb3d8213c556fccd9 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 @@ -159,15 +159,15 @@ public class PistonBaseBlock extends DirectionalBlock {
@@ -43,7 +43,7 @@ index cda90023ad662e8875365eac98ec69f476dcb42d..b9025fcc6a4db9533cdc42034c9e7732
 -                    return;
 -                }
 -            }
-+            // if (!this.isSticky) { // Paper - Move further down
++            // if (!this.isSticky) { // Paper - Fix sticky pistons and BlockPistonRetractEvent; Move further down
 +            //     org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
 +            //     BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumdirection));
 +            //     world.getCraftServer().getPluginManager().callEvent(event);
@@ -59,13 +59,13 @@ index cda90023ad662e8875365eac98ec69f476dcb42d..b9025fcc6a4db9533cdc42034c9e7732
  
              BlockState iblockdata2 = (BlockState) ((BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(MovingPistonBlock.FACING, enumdirection)).setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
  
-+            // Paper start - Move empty piston retract call to fix multiple event fires
++            // Paper start - Fix sticky pistons and BlockPistonRetractEvent; Move empty piston retract call to fix multiple event fires
 +            if (!this.isSticky) {
 +                if (!new BlockPistonRetractEvent(CraftBlock.at(world, pos), java.util.Collections.emptyList(), CraftBlock.notchToBlockFace(enumdirection)).callEvent()) {
 +                    return false;
 +                }
 +            }
-+            // Paper end
++            // Paper end - Fix sticky pistons and BlockPistonRetractEvent
              world.setBlock(pos, iblockdata2, 20);
              world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata2, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - diff on change
              world.blockUpdated(pos, iblockdata2.getBlock());
@@ -73,13 +73,13 @@ index cda90023ad662e8875365eac98ec69f476dcb42d..b9025fcc6a4db9533cdc42034c9e7732
                      if (type == 1 && !iblockdata3.isAir() && PistonBaseBlock.isPushable(iblockdata3, world, blockposition1, enumdirection.getOpposite(), false, enumdirection) && (iblockdata3.getPistonPushReaction() == PushReaction.NORMAL || iblockdata3.is(Blocks.PISTON) || iblockdata3.is(Blocks.STICKY_PISTON))) {
                          this.moveBlocks(world, pos, enumdirection, false);
                      } else {
-+                        // Paper start - fire BlockPistonRetractEvent for sticky pistons retracting nothing (air)
++                        // Paper start - Fix sticky pistons and BlockPistonRetractEvent; fire BlockPistonRetractEvent for sticky pistons retracting nothing (air)
 +                        if (type == TRIGGER_CONTRACT && iblockdata2.isAir()) {
 +                            if (!new BlockPistonRetractEvent(CraftBlock.at(world, pos), java.util.Collections.emptyList(), CraftBlock.notchToBlockFace(enumdirection)).callEvent()) {
 +                                return false;
 +                            }
 +                        }
-+                        // Paper end
++                        // Paper end - Fix sticky pistons and BlockPistonRetractEvent
                          world.removeBlock(pos.relative(enumdirection), false);
                      }
                  }

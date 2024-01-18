@@ -8,7 +8,7 @@ This ensures at least a valid version of the chunk exists
 on disk, even if outdated
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 98c8b676fc5b2add44d6ddf5d32f85bc07ea22cb..84b2fd9db39e0cdf3e1cbe6444579f7ca839bc45 100644
+index 98c8b676fc5b2add44d6ddf5d32f85bc07ea22cb..83966430240d375e7618e13c75676d510a222c37 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -1003,6 +1003,9 @@ public class RegionFile implements AutoCloseable {
@@ -41,13 +41,13 @@ index 98c8b676fc5b2add44d6ddf5d32f85bc07ea22cb..84b2fd9db39e0cdf3e1cbe6444579f7c
 +            }
 +            super.write(b, off, len);
 +        }
-+        // Paper end
++        // Paper end - don't write garbage data to disk if writing serialization fails
 +
          public void close() throws IOException {
              ByteBuffer bytebuffer = ByteBuffer.wrap(this.buf, 0, this.count);
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index a2794ec3d846136da64b6888d846587499a5f635..6eaeb2db0da59611501f2b1a63b5b48816a0ba48 100644
+index a2794ec3d846136da64b6888d846587499a5f635..6bec4549fbcfb68a053300451e25babf8ff38e99 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -342,10 +342,17 @@ public class RegionFileStorage implements AutoCloseable {
@@ -77,7 +77,7 @@ index a2794ec3d846136da64b6888d846587499a5f635..6eaeb2db0da59611501f2b1a63b5b488
 -            if (dataoutputstream != null) {
 -                dataoutputstream.close();
 -            }
-+            // Paper - move into try block to only write if successfully serialized
++            // Paper - don't write garbage data to disk if writing serialization fails; move into try block to only write if successfully serialized
          }
          // Paper start
          return;
@@ -86,12 +86,12 @@ index a2794ec3d846136da64b6888d846587499a5f635..6eaeb2db0da59611501f2b1a63b5b488
  
      }
 +
-+    // Paper start
++    // Paper start - don't write garbage data to disk if writing serialization fails
 +    public static final class RegionFileSizeException extends RuntimeException {
 +
 +        public RegionFileSizeException(String message) {
 +            super(message);
 +        }
 +    }
-+    // Paper end
++    // Paper end - don't write garbage data to disk if writing serialization fails
  }

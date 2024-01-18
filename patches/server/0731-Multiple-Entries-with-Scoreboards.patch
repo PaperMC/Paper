@@ -5,31 +5,31 @@ Subject: [PATCH] Multiple Entries with Scoreboards
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
-index e52644010dc2cf41bbf508b16b8ec2f0003e9d0b..b25f0e0a4ea12de2606d273e7c1ee534002c8d5a 100644
+index e52644010dc2cf41bbf508b16b8ec2f0003e9d0b..f06ee212528d5670fb83720c2b543f864b64e873 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
 @@ -42,6 +42,12 @@ public class ClientboundSetPlayerTeamPacket implements Packet<ClientGamePacketLi
          return new ClientboundSetPlayerTeamPacket(team.getName(), operation == ClientboundSetPlayerTeamPacket.Action.ADD ? 3 : 4, Optional.empty(), ImmutableList.of(playerName));
      }
  
-+    // Paper start
++    // Paper start - Multiple Entries with Scoreboards
 +    public static ClientboundSetPlayerTeamPacket createMultiplePlayerPacket(PlayerTeam team, Collection<String> players, ClientboundSetPlayerTeamPacket.Action operation) {
 +        return new ClientboundSetPlayerTeamPacket(team.getName(), operation == ClientboundSetPlayerTeamPacket.Action.ADD ? 3 : 4, Optional.empty(), players);
 +    }
-+    // Paper end
++    // Paper end - Multiple Entries with Scoreboards
 +
      public ClientboundSetPlayerTeamPacket(FriendlyByteBuf buf) {
          this.name = buf.readUtf();
          this.method = buf.readByte();
 diff --git a/src/main/java/net/minecraft/server/ServerScoreboard.java b/src/main/java/net/minecraft/server/ServerScoreboard.java
-index c4904b358fc2f493e6a9572a84b8110a927da208..5cc8173e845bf8d3414ac3347d25e1f6d0c65ce9 100644
+index c4904b358fc2f493e6a9572a84b8110a927da208..76d67d01388ecc1af6b43212e018edc678e84d72 100644
 --- a/src/main/java/net/minecraft/server/ServerScoreboard.java
 +++ b/src/main/java/net/minecraft/server/ServerScoreboard.java
 @@ -104,6 +104,25 @@ public class ServerScoreboard extends Scoreboard {
          }
      }
  
-+    // Paper start
++    // Paper start - Multiple Entries with Scoreboards
 +    public boolean addPlayersToTeam(java.util.Collection<String> players, PlayerTeam team) {
 +        boolean anyAdded = false;
 +        for (String playerName : players) {
@@ -46,7 +46,7 @@ index c4904b358fc2f493e6a9572a84b8110a927da208..5cc8173e845bf8d3414ac3347d25e1f6
 +            return false;
 +        }
 +    }
-+    // Paper end
++    // Paper end - Multiple Entries with Scoreboards
 +
      @Override
      public void removePlayerFromTeam(String scoreHolderName, PlayerTeam team) {
@@ -55,7 +55,7 @@ index c4904b358fc2f493e6a9572a84b8110a927da208..5cc8173e845bf8d3414ac3347d25e1f6
          this.setDirty();
      }
  
-+    // Paper start
++    // Paper start - Multiple Entries with Scoreboards
 +    public void removePlayersFromTeam(java.util.Collection<String> players, PlayerTeam team) {
 +        for (String playerName : players) {
 +            super.removePlayerFromTeam(playerName, team);
@@ -64,20 +64,20 @@ index c4904b358fc2f493e6a9572a84b8110a927da208..5cc8173e845bf8d3414ac3347d25e1f6
 +        this.broadcastAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.REMOVE));
 +        this.setDirty();
 +    }
-+    // Paper end
++    // Paper end - Multiple Entries with Scoreboards
 +
      @Override
      public void onObjectiveAdded(Objective objective) {
          super.onObjectiveAdded(objective);
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
-index 27219bf2f16aed64c78623d44c3cc84aa9f47065..fd86c1d43cccd036f60cb270b56fd33f95707720 100644
+index 27219bf2f16aed64c78623d44c3cc84aa9f47065..2b335c750ce5f9ccc2651a8701497ca9b8f46704 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 @@ -229,6 +229,21 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
          scoreboard.board.addPlayerToTeam(entry, this.team);
      }
  
-+    // Paper start
++    // Paper start - Multiple Entries with Scoreboards
 +    @Override
 +    public void addEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
 +        this.addEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
@@ -90,7 +90,7 @@ index 27219bf2f16aed64c78623d44c3cc84aa9f47065..fd86c1d43cccd036f60cb270b56fd33f
 +
 +        ((net.minecraft.server.ServerScoreboard) scoreboard.board).addPlayersToTeam(entries, this.team);
 +    }
-+    // Paper end
++    // Paper end - Multiple Entries with Scoreboards
 +
      @Override
      public boolean removePlayer(OfflinePlayer player) {
@@ -99,7 +99,7 @@ index 27219bf2f16aed64c78623d44c3cc84aa9f47065..fd86c1d43cccd036f60cb270b56fd33f
          return true;
      }
  
-+    // Paper start
++    // Paper start - Multiple Entries with Scoreboards
 +    @Override
 +    public boolean removeEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
 +        return this.removeEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
@@ -119,7 +119,7 @@ index 27219bf2f16aed64c78623d44c3cc84aa9f47065..fd86c1d43cccd036f60cb270b56fd33f
 +
 +        return false;
 +    }
-+    // Paper end
++    // Paper end - Multiple Entries with Scoreboards
 +
      @Override
      public boolean hasPlayer(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {

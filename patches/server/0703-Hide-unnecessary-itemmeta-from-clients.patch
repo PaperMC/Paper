@@ -5,7 +5,7 @@ Subject: [PATCH] Hide unnecessary itemmeta from clients
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 8d2870c780c4c253f6570c7ef73f6e7c2ccc46ad..0cbb5dd17c5b37ad90ce11a31b64470722026d06 100644
+index 945a0317e9e49a159a1f42882a0a267a2141e86d..e9fd9590e90e58fd4c31985a704a4511b2663096 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
 @@ -337,7 +337,7 @@ public class ServerEntity {
@@ -13,12 +13,12 @@ index 8d2870c780c4c253f6570c7ef73f6e7c2ccc46ad..0cbb5dd17c5b37ad90ce11a31b644707
                      // Paper start - prevent oversized data
                      final ItemStack sanitized = LivingEntity.sanitizeItemStack(itemstack.copy(), false);
 -                    list.add(Pair.of(enumitemslot, sanitized));
-+                    list.add(Pair.of(enumitemslot, ((LivingEntity) this.entity).stripMeta(sanitized, false))); // Paper - remove unnecessary item meta
-                     // Paper end
++                    list.add(Pair.of(enumitemslot, ((LivingEntity) this.entity).stripMeta(sanitized, false))); // Paper - Hide unnecessary item meta
+                     // Paper end - prevent oversized data
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 648530ce3183362ed71cbd2de534471da65ab787..1e519cdd673a4d4beb53ae84822e7b85c25a5e97 100644
+index 648530ce3183362ed71cbd2de534471da65ab787..bfbbb0f6e73e9d59e73944b77e08802132f2a739 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -2566,8 +2566,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -27,13 +27,13 @@ index 648530ce3183362ed71cbd2de534471da65ab787..1e519cdd673a4d4beb53ae84822e7b85
                                  // SPIGOT-7136 - Allays
 -                                if (entity instanceof Allay) {
 -                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
-+                                if (entity instanceof Allay allay) { // Paper
-+                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, allay.stripMeta(allay.getItemBySlot(slot), true))).collect(Collectors.toList()))); // Paper - remove unnecessary item meta
++                                if (entity instanceof Allay allay) { // Paper - Hide unnecessary item meta
++                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, allay.stripMeta(allay.getItemBySlot(slot), true))).collect(Collectors.toList()))); // Paper - Hide unnecessary item meta
                                      ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
                                  }
                              }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 3de3e938195c79c65b7e11438ca92585aaccf529..cf91a4b9d2aab2ed32d7d53e5d3bd97838b7a8a4 100644
+index d1210e8cd501f0f3be92189d129f1d354ddb00cb..1a16dc3ac00c2756f1ea7154c38345393f3d5a96 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3190,7 +3190,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -41,15 +41,15 @@ index 3de3e938195c79c65b7e11438ca92585aaccf529..cf91a4b9d2aab2ed32d7d53e5d3bd978
              // Paper start - prevent oversized data
              ItemStack toSend = sanitizeItemStack(itemstack1, true);
 -            list.add(Pair.of(enumitemslot, toSend));
-+            list.add(Pair.of(enumitemslot, stripMeta(toSend, toSend == itemstack1))); // Paper - hide unnecessary item meta
-             // Paper end
++            list.add(Pair.of(enumitemslot, stripMeta(toSend, toSend == itemstack1))); // Paper - Hide unnecessary item meta
+             // Paper end - prevent oversized data
              switch (enumitemslot.getType()) {
                  case HAND:
 @@ -3204,6 +3204,77 @@ public abstract class LivingEntity extends Entity implements Attackable {
          ((ServerLevel) this.level()).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list));
      }
  
-+    // Paper start - hide unnecessary item meta
++    // Paper start - Hide unnecessary item meta
 +    public ItemStack stripMeta(final ItemStack itemStack, final boolean copyItemStack) {
 +        if (itemStack.isEmpty() || (!itemStack.hasTag() && itemStack.getCount() < 2)) {
 +            return itemStack;
@@ -118,7 +118,7 @@ index 3de3e938195c79c65b7e11438ca92585aaccf529..cf91a4b9d2aab2ed32d7d53e5d3bd978
 +
 +        return copy;
 +    }
-+    // Paper end
++    // Paper end - Hide unnecessary item meta
 +
      // Paper start - prevent oversized data
      public static ItemStack sanitizeItemStack(final ItemStack itemStack, final boolean copyItemStack) {

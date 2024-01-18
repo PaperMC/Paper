@@ -24,7 +24,7 @@ to corrupted data. This is also something that Anti-Xray is currently
 relying on.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/HashMapPalette.java b/src/main/java/net/minecraft/world/level/chunk/HashMapPalette.java
-index 26e093243c70313b777483d9555fb1557443c9b8..7b7b614e5c3a30be89eeea2d25112fc9bcb3052c 100644
+index 26e093243c70313b777483d9555fb1557443c9b8..92c360f02ef6be77c6c8eee3226947468194ec23 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/HashMapPalette.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/HashMapPalette.java
 @@ -20,7 +20,7 @@ public class HashMapPalette<T> implements Palette<T> {
@@ -32,7 +32,7 @@ index 26e093243c70313b777483d9555fb1557443c9b8..7b7b614e5c3a30be89eeea2d25112fc9
  
      public HashMapPalette(IdMap<T> idList, int indexBits, PaletteResize<T> listener) {
 -        this(idList, indexBits, listener, CrudeIncrementalIntIdentityHashBiMap.create(1 << indexBits));
-+        this(idList, indexBits, listener, CrudeIncrementalIntIdentityHashBiMap.create((1 << indexBits) + 1)); // Paper - Avoid unnecessary resize operation in CrudeIncrementalIntIdentityHashBiMap
++        this(idList, indexBits, listener, CrudeIncrementalIntIdentityHashBiMap.create((1 << indexBits) + 1)); // Paper - Perf: Avoid unnecessary resize operation in CrudeIncrementalIntIdentityHashBiMap
      }
  
      private HashMapPalette(IdMap<T> idList, int indexBits, PaletteResize<T> listener, CrudeIncrementalIntIdentityHashBiMap<T> map) {
@@ -42,7 +42,7 @@ index 26e093243c70313b777483d9555fb1557443c9b8..7b7b614e5c3a30be89eeea2d25112fc9
          if (i == -1) {
 -            i = this.values.add(object);
 -            if (i >= 1 << this.bits) {
-+            // Paper start - Avoid unnecessary resize operation in CrudeIncrementalIntIdentityHashBiMap and optimize
++            // Paper start - Perf: Avoid unnecessary resize operation in CrudeIncrementalIntIdentityHashBiMap and optimize
 +            // We use size() instead of the result from add(K)
 +            // This avoids adding another object unnecessarily
 +            // Without this change, + 2 would be required in the constructor
@@ -51,7 +51,7 @@ index 26e093243c70313b777483d9555fb1557443c9b8..7b7b614e5c3a30be89eeea2d25112fc9
 +            } else {
 +                i = this.values.add(object);
              }
-+            // Paper end
++            // Paper end - Perf: Avoid unnecessary resize operation in CrudeIncrementalIntIdentityHashBiMap and optimize
          }
  
          return i;

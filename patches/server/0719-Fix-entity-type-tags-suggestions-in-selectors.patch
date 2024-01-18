@@ -10,14 +10,14 @@ when if this was fixed on the client, that wouldn't be needed.
 Mojira Issue: https://bugs.mojang.com/browse/MC-235045
 
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index 79732086bc4cdbca8364d78eb60d68c758055966..82ca6267bca684a8f04ca37d40816686677a852a 100644
+index 79732086bc4cdbca8364d78eb60d68c758055966..e65d7980b7ebed60786bc31e2f8156fda3b59556 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 @@ -447,4 +447,20 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
          return this.source.getBukkitSender(this);
      }
      // CraftBukkit end
-+    // Paper start - override getSelectedEntities
++    // Paper start - tell clients to ask server for suggestions for EntityArguments
 +    @Override
 +    public Collection<String> getSelectedEntities() {
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
@@ -32,7 +32,7 @@ index 79732086bc4cdbca8364d78eb60d68c758055966..82ca6267bca684a8f04ca37d40816686
 +        }
 +        return SharedSuggestionProvider.super.getSelectedEntities();
 +    }
-+    // Paper end
++    // Paper end - tell clients to ask server for suggestions for EntityArguments
  }
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
 index bc0f9bf88de8f79f8e2aa2261d5a8bdc9dd1f53a..c2bd7eea15437f3526da37ce1c8642084a26406b 100644
@@ -60,7 +60,7 @@ index bc0f9bf88de8f79f8e2aa2261d5a8bdc9dd1f53a..c2bd7eea15437f3526da37ce1c864208
                  }
  
 diff --git a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
-index 850db283bf12345e9e7d7e8e590dbe8135c6dce1..a71726cee91fb406875a4540c9fb7c0ecf757294 100644
+index 850db283bf12345e9e7d7e8e590dbe8135c6dce1..d93698fd814683d451a3c8e8bcbb9cd475c79515 100644
 --- a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
 +++ b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
 @@ -128,7 +128,7 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
@@ -68,7 +68,7 @@ index 850db283bf12345e9e7d7e8e590dbe8135c6dce1..a71726cee91fb406875a4540c9fb7c0e
  
              stringreader.setCursor(suggestionsbuilder.getStart());
 -            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2));
-+            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2), true); // Paper
++            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2), true); // Paper - tell clients to ask server for suggestions for EntityArguments
  
              try {
                  argumentparserselector.parse();
@@ -77,7 +77,7 @@ index 850db283bf12345e9e7d7e8e590dbe8135c6dce1..a71726cee91fb406875a4540c9fb7c0e
  
              return argumentparserselector.fillSuggestions(suggestionsbuilder, (suggestionsbuilder1) -> {
 -                Collection<String> collection = icompletionprovider.getOnlinePlayerNames();
-+                // Paper start
++                // Paper start - tell clients to ask server for suggestions for EntityArguments
 +                final Collection<String> collection;
 +                if (icompletionprovider instanceof CommandSourceStack commandSourceStack && commandSourceStack.getEntity() instanceof ServerPlayer sourcePlayer) {
 +                    collection = new java.util.ArrayList<>();
@@ -89,43 +89,43 @@ index 850db283bf12345e9e7d7e8e590dbe8135c6dce1..a71726cee91fb406875a4540c9fb7c0e
 +                } else {
 +                    collection = icompletionprovider.getOnlinePlayerNames();
 +                }
-+                // Paper end
++                // Paper end - tell clients to ask server for suggestions for EntityArguments
                  Iterable<String> iterable = this.playersOnly ? collection : Iterables.concat(collection, icompletionprovider.getSelectedEntities());
  
                  SharedSuggestionProvider.suggest((Iterable) iterable, suggestionsbuilder1);
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
-index 3d897ec6920eff6176ddac9f0442a997b9ef14fd..489b2ba7d4ef9c52a60db0c7e3fdd36226f5672d 100644
+index 3d897ec6920eff6176ddac9f0442a997b9ef14fd..abaf1ea340c69c8bee80e64567b44b5ce66d5fa3 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
 +++ b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
 @@ -113,12 +113,19 @@ public class EntitySelectorParser {
      private boolean hasScores;
      private boolean hasAdvancements;
      private boolean usesSelectors;
-+    public boolean parsingEntityArgumentSuggestions; // Paper - track when parsing EntityArgument suggestions
++    public boolean parsingEntityArgumentSuggestions; // Paper - tell clients to ask server for suggestions for EntityArguments
  
      public EntitySelectorParser(StringReader reader) {
          this(reader, true);
      }
  
      public EntitySelectorParser(StringReader reader, boolean atAllowed) {
-+        // Paper start
++        // Paper start - tell clients to ask server for suggestions for EntityArguments
 +        this(reader, atAllowed, false);
 +    }
 +    public EntitySelectorParser(StringReader reader, boolean atAllowed, boolean parsingEntityArgumentSuggestions) {
 +        this.parsingEntityArgumentSuggestions = parsingEntityArgumentSuggestions;
-+        // Paper end
++        // Paper end - tell clients to ask server for suggestions for EntityArguments
          this.distance = MinMaxBounds.Doubles.ANY;
          this.level = MinMaxBounds.Ints.ANY;
          this.rotX = WrappedMinMaxBounds.ANY;
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
-index 7863833c9a761a2b9364ff572ec909ec5a4538c3..0b36bd0a02082e8ec0ebef537656547ee3f1d748 100644
+index 7863833c9a761a2b9364ff572ec909ec5a4538c3..36e26929306c04af7a44012fd7fc9902027e9ea2 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
 +++ b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
 @@ -69,6 +69,19 @@ public class EntitySelectorOptions {
      public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType((entity) -> {
          return Component.translatableEscape("argument.entity.options.type.invalid", entity);
      });
-+    // Paper start
++    // Paper start - tell clients to ask server for suggestions for EntityArguments
 +    public static final DynamicCommandExceptionType ERROR_ENTITY_TAG_INVALID = new DynamicCommandExceptionType((object) -> {
 +        return io.papermc.paper.adventure.PaperAdventure
 +            .asVanilla(net.kyori.adventure.text.Component
@@ -137,7 +137,7 @@ index 7863833c9a761a2b9364ff572ec909ec5a4538c3..0b36bd0a02082e8ec0ebef537656547e
 +                )
 +            );
 +    });
-+    // Paper end
++    // Paper end - tell clients to ask server for suggestions for EntityArguments
  
      private static void register(String id, EntitySelectorOptions.Modifier handler, Predicate<EntitySelectorParser> condition, Component description) {
          OPTIONS.put(id, new EntitySelectorOptions.Option(handler, condition, description));
@@ -145,12 +145,12 @@ index 7863833c9a761a2b9364ff572ec909ec5a4538c3..0b36bd0a02082e8ec0ebef537656547e
  
                      if (reader.isTag()) {
                          TagKey<EntityType<?>> tagKey = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.read(reader.getReader()));
-+                        // Paper start - throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
++                        // Paper start - tell clients to ask server for suggestions for EntityArguments; throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
 +                        if (reader.parsingEntityArgumentSuggestions && io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tagKey).isEmpty()) {
 +                            reader.getReader().setCursor(i);
 +                            throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagKey);
 +                        }
-+                        // Paper end
++                        // Paper end - tell clients to ask server for suggestions for EntityArguments
                          reader.addPredicate((entity) -> {
                              return entity.getType().is(tagKey) != bl;
                          });
