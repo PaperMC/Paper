@@ -13,14 +13,14 @@ public net.minecraft.world.entity.item.FallingBlockEntity blockState
 Co-authored-by: Lukas Planz <lukas.planz@web.de>
 
 diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-index fc33d05cf1a3cceb220dab1ee1da33ffe37834db..45c07733f03b5c11f6d8e820f65dc950c70d9a67 100644
+index fc33d05cf1a3cceb220dab1ee1da33ffe37834db..21a4669b01e9c57100224e20500bc23f8e101434 100644
 --- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 @@ -66,6 +66,7 @@ public class FallingBlockEntity extends Entity {
      @Nullable
      public CompoundTag blockData;
      protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
-+    public boolean autoExpire = true; // Paper - Auto expire setting
++    public boolean autoExpire = true; // Paper - Expand FallingBlock API
  
      public FallingBlockEntity(EntityType<? extends FallingBlockEntity> type, Level world) {
          super(type, world);
@@ -29,7 +29,7 @@ index fc33d05cf1a3cceb220dab1ee1da33ffe37834db..45c07733f03b5c11f6d8e820f65dc950
  
                  if (!this.onGround() && !flag1) {
 -                    if (!this.level().isClientSide && (this.time > 100 && (blockposition.getY() <= this.level().getMinBuildHeight() || blockposition.getY() > this.level().getMaxBuildHeight()) || this.time > 600)) {
-+                    if (!this.level().isClientSide && ((this.time > 100 && autoExpire) && (blockposition.getY() <= this.level().getMinBuildHeight() || blockposition.getY() > this.level().getMaxBuildHeight()) || (this.time > 600 && autoExpire))) { // Paper - Auto expire setting
++                    if (!this.level().isClientSide && ((this.time > 100 && autoExpire) && (blockposition.getY() <= this.level().getMinBuildHeight() || blockposition.getY() > this.level().getMaxBuildHeight()) || (this.time > 600 && autoExpire))) { // Paper - Expand FallingBlock API
                          if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                              this.spawnAtLocation((ItemLike) block);
                          }
@@ -37,7 +37,7 @@ index fc33d05cf1a3cceb220dab1ee1da33ffe37834db..45c07733f03b5c11f6d8e820f65dc950
          }
  
          nbt.putBoolean("CancelDrop", this.cancelDrop);
-+        if (!autoExpire) {nbt.putBoolean("Paper.AutoExpire", false);} // Paper - AutoExpire setting
++        if (!autoExpire) {nbt.putBoolean("Paper.AutoExpire", false);} // Paper - Expand FallingBlock API
      }
  
      @Override
@@ -45,23 +45,23 @@ index fc33d05cf1a3cceb220dab1ee1da33ffe37834db..45c07733f03b5c11f6d8e820f65dc950
              this.setOrigin(new org.bukkit.Location(this.level().getWorld(), srcX, srcY, srcZ));
          }
          // Paper end
-+        // Paper start
++        // Paper start - Expand FallingBlock API
 +         if (nbt.contains("Paper.AutoExpire")) {
 +            this.autoExpire = nbt.getBoolean("Paper.AutoExpire");
 +         }
-+        // Paper end
++        // Paper end - Expand FallingBlock API
      }
  
      public void setHurtsEntities(float fallHurtAmount, int fallHurtMax) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
-index a7a3f74b846112d752fe04162b30805961457b11..73911b81f4e927026657953a0c68ddda9a8f93c1 100644
+index a7a3f74b846112d752fe04162b30805961457b11..2ba8f461d32a7c517a93461bf6f8f5cd4defdef4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
 @@ -33,6 +33,31 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
      public BlockData getBlockData() {
          return CraftBlockData.fromData(this.getHandle().getBlockState());
      }
-+    // Paper start
++    // Paper start - Expand FallingBlock API
 +    @Override
 +    public void setBlockData(final BlockData blockData) {
 +        Preconditions.checkArgument(blockData != null, "blockData");
@@ -85,7 +85,7 @@ index a7a3f74b846112d752fe04162b30805961457b11..73911b81f4e927026657953a0c68ddda
 +        this.setBlockData(blockState.getBlockData());
 +        if (blockState instanceof final org.bukkit.craftbukkit.block.CraftBlockEntityState<?> tileEntity) this.getHandle().blockData = tileEntity.getSnapshotNBT();
 +    }
-+    // Paper end
++    // Paper end - Expand FallingBlock API
  
      @Override
      public boolean getDropItem() {
@@ -93,7 +93,7 @@ index a7a3f74b846112d752fe04162b30805961457b11..73911b81f4e927026657953a0c68ddda
              this.setHurtEntities(true);
          }
      }
-+    // Paper Start - Auto expire setting
++    // Paper Start - Expand FallingBlock API
 +    @Override
 +    public boolean doesAutoExpire() {
 +        return this.getHandle().autoExpire;
@@ -103,5 +103,5 @@ index a7a3f74b846112d752fe04162b30805961457b11..73911b81f4e927026657953a0c68ddda
 +    public void shouldAutoExpire(boolean autoExpires) {
 +        this.getHandle().autoExpire = autoExpires;
 +    }
-+    // Paper End - Auto expire setting
++    // Paper End - Expand FallingBlock API
  }

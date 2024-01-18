@@ -10,7 +10,7 @@ indefinitely. Instead of using the world state, we use the already
 supplied ServerLevelAccessor which will always have the chunk available.
 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Cat.java b/src/main/java/net/minecraft/world/entity/animal/Cat.java
-index 534630b0161c8d869e49e7a59572193550be0671..a744cb70ac719eae376fb2ab2271e4f8ac7b12f2 100644
+index 534630b0161c8d869e49e7a59572193550be0671..7dfd2b17e82a80683af28779d0bd8f64a909c3b6 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Cat.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Cat.java
 @@ -364,7 +364,7 @@ public class Cat extends TamableAnimal implements VariantHolder<CatVariant> {
@@ -18,12 +18,12 @@ index 534630b0161c8d869e49e7a59572193550be0671..a744cb70ac719eae376fb2ab2271e4f8
          ServerLevel worldserver = world.getLevel();
  
 -        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
-+        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - fix deadlock
++        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - Fix swamp hut cat generation deadlock
              this.setVariant((CatVariant) BuiltInRegistries.CAT_VARIANT.getOrThrow(CatVariant.ALL_BLACK));
              this.setPersistenceRequired();
          }
 diff --git a/src/main/java/net/minecraft/world/level/StructureManager.java b/src/main/java/net/minecraft/world/level/StructureManager.java
-index b33a015b834873f279bf33a64974ef440a37df79..09c85ed428b8eaf51f8b3c6e45cce925f05ab354 100644
+index b33a015b834873f279bf33a64974ef440a37df79..b59581b92aed0bc1b09008c695b0b112c3e65743 100644
 --- a/src/main/java/net/minecraft/world/level/StructureManager.java
 +++ b/src/main/java/net/minecraft/world/level/StructureManager.java
 @@ -44,7 +44,12 @@ public class StructureManager {
@@ -31,12 +31,12 @@ index b33a015b834873f279bf33a64974ef440a37df79..09c85ed428b8eaf51f8b3c6e45cce925
  
      public List<StructureStart> startsForStructure(ChunkPos pos, Predicate<Structure> predicate) {
 -        Map<Structure, LongSet> map = this.level.getChunk(pos.x, pos.z, ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
-+        // Paper start
++        // Paper start - Fix swamp hut cat generation deadlock
 +        return this.startsForStructure(pos, predicate, null);
 +    }
 +    public List<StructureStart> startsForStructure(ChunkPos pos, Predicate<Structure> predicate, @Nullable ServerLevelAccessor levelAccessor) {
 +        Map<Structure, LongSet> map = (levelAccessor == null ? this.level : levelAccessor).getChunk(pos.x, pos.z, ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
-+        // Paper end
++        // Paper end - Fix swamp hut cat generation deadlock
          ImmutableList.Builder<StructureStart> builder = ImmutableList.builder();
  
          for(Map.Entry<Structure, LongSet> entry : map.entrySet()) {
@@ -44,11 +44,11 @@ index b33a015b834873f279bf33a64974ef440a37df79..09c85ed428b8eaf51f8b3c6e45cce925
      }
  
      public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> structureTag) {
-+        // Paper start
++        // Paper start - Fix swamp hut cat generation deadlock
 +        return this.getStructureWithPieceAt(pos, structureTag, null);
 +    }
 +    public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> structureTag, @Nullable ServerLevelAccessor levelAccessor) {
-+        // Paper end
++        // Paper end - Fix swamp hut cat generation deadlock
          Registry<Structure> registry = this.registryAccess().registryOrThrow(Registries.STRUCTURE);
  
          for(StructureStart structureStart : this.startsForStructure(new ChunkPos(pos), (structure) -> {
@@ -56,7 +56,7 @@ index b33a015b834873f279bf33a64974ef440a37df79..09c85ed428b8eaf51f8b3c6e45cce925
                  return reference.is(structureTag);
              }).orElse(false);
 -        })) {
-+        }, levelAccessor)) { // Paper
++        }, levelAccessor)) { // Paper - Fix swamp hut cat generation deadlock
              if (this.structureHasPieceAt(pos, structureStart)) {
                  return structureStart;
              }

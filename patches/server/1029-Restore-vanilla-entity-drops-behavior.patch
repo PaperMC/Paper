@@ -9,7 +9,7 @@ on dropping the item instead of generalizing it for all dropped
 items like CB does.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index ab8129da3d41c9e64897f66d0f6de24dc6d697d1..d186a46f9195d45aa91e3a2712e583ba024487f4 100644
+index f4f8c60a24664b6fb33361ae830987701a0e9394..3506cd1c5960b58fe2805d9cc7ea6758f45d4e2a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -944,22 +944,20 @@ public class ServerPlayer extends Player {
@@ -28,7 +28,7 @@ index ab8129da3d41c9e64897f66d0f6de24dc6d697d1..d186a46f9195d45aa91e3a2712e583ba
                  }
              }
          }
-         if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - preserve this check from vanilla
+         if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
          // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
          this.dropFromLootTable(damageSource, this.lastHurtByPlayerTime > 0);
 -        for (org.bukkit.inventory.ItemStack item : this.drops) {
@@ -36,7 +36,7 @@ index ab8129da3d41c9e64897f66d0f6de24dc6d697d1..d186a46f9195d45aa91e3a2712e583ba
 -        }
 +        loot.addAll(this.drops); // Paper
          this.drops.clear(); // SPIGOT-5188: make sure to clear
-         } // Paper
+         } // Paper - fix player loottables running when mob loot gamerule is false
  
 @@ -2442,8 +2440,8 @@ public class ServerPlayer extends Player {
      }
@@ -50,7 +50,7 @@ index ab8129da3d41c9e64897f66d0f6de24dc6d697d1..d186a46f9195d45aa91e3a2712e583ba
          if (entityitem == null) {
              return null;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 8a7fc07a8500c25b427c13d38da005b56f0892c0..36e94a6afef269007384938aa0a2c25af212ec7c 100644
+index 96d2fa0278ada7fb706a39ca2a93f5259239229c..6f45f2fff258fa712c2637c8901453b13b34ee0b 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2703,6 +2703,25 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
@@ -104,7 +104,7 @@ index 8a7fc07a8500c25b427c13d38da005b56f0892c0..36e94a6afef269007384938aa0a2c25a
              return this.spawnAtLocation(entityitem);
          }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index a42023793805b294dc167ec2cd5445f32b0c51eb..38793c3ab6db7e311866de88ba272b8e98178a4b 100644
+index 8713ee8ff8a2b269c6d138e7f483a80fa2521793..102fa2c9ed1a749503aa22f57666a9f28940f4a8 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -254,7 +254,7 @@ public abstract class LivingEntity extends Entity implements Attackable {

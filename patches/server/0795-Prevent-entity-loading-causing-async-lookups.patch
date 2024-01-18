@@ -5,19 +5,19 @@ Subject: [PATCH] Prevent entity loading causing async lookups
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 2c3193fdfb0e4b4a47cceb2da8b3fe85bd1e6848..edea89eebb9a99e41dc2bcbabc94b6775f5470df 100644
+index ab409aae677a5ed4ca50113e88397c4543373df8..e5f4388d531910c238fcd809a1c5d92267858c53 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -803,6 +803,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
      public void baseTick() {
          this.level().getProfiler().push("entityBaseTick");
-+        if (firstTick && this instanceof net.minecraft.world.entity.NeutralMob neutralMob) neutralMob.tickInitialPersistentAnger(level); // Paper - Update last hurt when ticking
++        if (firstTick && this instanceof net.minecraft.world.entity.NeutralMob neutralMob) neutralMob.tickInitialPersistentAnger(level); // Paper - Prevent entity loading causing async lookups
          this.feetBlockState = null;
          if (this.isPassenger() && this.getVehicle().isRemoved()) {
              this.stopRiding();
 diff --git a/src/main/java/net/minecraft/world/entity/NeutralMob.java b/src/main/java/net/minecraft/world/entity/NeutralMob.java
-index fa64c7baa7587f2cfe80b78ed83be011239618cf..55defe4f42bea4600a4e2b93c88e90231e61f6ef 100644
+index fa64c7baa7587f2cfe80b78ed83be011239618cf..47d5a0928f3c86d71f851738bfe7beedc98cfbb3 100644
 --- a/src/main/java/net/minecraft/world/entity/NeutralMob.java
 +++ b/src/main/java/net/minecraft/world/entity/NeutralMob.java
 @@ -42,18 +42,11 @@ public interface NeutralMob {
@@ -36,7 +36,7 @@ index fa64c7baa7587f2cfe80b78ed83be011239618cf..55defe4f42bea4600a4e2b93c88e9023
 -                    }
 -
 -                }
-+                // Paper - Moved diff to separate method
++                // Paper - Prevent entity loading causing async lookups; Moved diff to separate method
 +                // If this entity already survived its first tick, e.g. is loaded and ticked in sync, actively
 +                // tick the initial persistent anger.
 +                // If not, let the first tick on the baseTick call the method later down the line.
@@ -44,12 +44,13 @@ index fa64c7baa7587f2cfe80b78ed83be011239618cf..55defe4f42bea4600a4e2b93c88e9023
              }
          }
      }
-@@ -127,4 +120,26 @@ public interface NeutralMob {
+@@ -127,4 +120,27 @@ public interface NeutralMob {
  
      @Nullable
      LivingEntity getTarget();
 +
-+    // Paper start - Update last hurt when ticking
++    // Paper start - Prevent entity loading causing async lookups
++    // Update last hurt when ticking
 +    default void tickInitialPersistentAnger(Level level) {
 +        UUID target = getPersistentAngerTarget();
 +        if (target == null) {
@@ -69,5 +70,5 @@ index fa64c7baa7587f2cfe80b78ed83be011239618cf..55defe4f42bea4600a4e2b93c88e9023
 +
 +        }
 +    }
-+    // Paper end
++    // Paper end - Prevent entity loading causing async lookups
  }

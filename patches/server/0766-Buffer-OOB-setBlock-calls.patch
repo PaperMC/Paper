@@ -13,14 +13,14 @@ we'll also only gen a trace for the first one, I see no real pressing need
 to generate more, given that that would *massively* negate this patch otherwise
 
 diff --git a/src/main/java/net/minecraft/server/level/WorldGenRegion.java b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
-index 3f5ba2b2f01d8cc07c4200a60b1b08cb584b170e..49c7825156afd053df1b7721a63070b51427aff2 100644
+index 3f5ba2b2f01d8cc07c4200a60b1b08cb584b170e..1c2ec978f923521322aaec59b4e88d26d656b6cd 100644
 --- a/src/main/java/net/minecraft/server/level/WorldGenRegion.java
 +++ b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
 @@ -296,6 +296,7 @@ public class WorldGenRegion implements WorldGenLevel {
          }
      }
  
-+    private boolean hasSetFarWarned = false; // Paper
++    private boolean hasSetFarWarned = false; // Paper - Buffer OOB setBlock calls
      @Override
      public boolean ensureCanWrite(BlockPos pos) {
          int i = SectionPos.blockToSectionCoord(pos.getX());
@@ -28,7 +28,7 @@ index 3f5ba2b2f01d8cc07c4200a60b1b08cb584b170e..49c7825156afd053df1b7721a63070b5
  
              return true;
          } else {
-+            // Paper start
++            // Paper start - Buffer OOB setBlock calls
 +            if (!hasSetFarWarned) {
              Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + pos + ", status: " + this.generatingStatus + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
 +            hasSetFarWarned = true;
@@ -36,7 +36,7 @@ index 3f5ba2b2f01d8cc07c4200a60b1b08cb584b170e..49c7825156afd053df1b7721a63070b5
 +                io.papermc.paper.util.TraceUtil.dumpTraceForThread("far setBlock call");
 +            }
 +            }
-+            // Paper end
++            // Paper end - Buffer OOB setBlock calls
              return false;
          }
      }

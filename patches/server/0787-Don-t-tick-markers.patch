@@ -10,7 +10,7 @@ list is only used in the tick and tickPassenger methods, so we can safely not ad
 markers to it. When the config option is set to true, markers are ticked as normal.
 
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
-index ff99336e0b8131ae161cfa5c4fc83c6905e3dbc8..5f43aedc6596e2b1ac7af9711515714752c262e3 100644
+index ff99336e0b8131ae161cfa5c4fc83c6905e3dbc8..5e5a018433414af76eaa1e781f61612ddc305b07 100644
 --- a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
 +++ b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
 @@ -109,7 +109,7 @@ public final class EntityCommand implements PaperSubcommand {
@@ -18,7 +18,7 @@ index ff99336e0b8131ae161cfa5c4fc83c6905e3dbc8..5f43aedc6596e2b1ac7af97115157147
                  info.left++;
                  info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
 -                if (!chunkProviderServer.isPositionTicking(e)) {
-+                if (!chunkProviderServer.isPositionTicking(e) || (e instanceof net.minecraft.world.entity.Marker && !world.paperConfig().entities.markers.tick)) { // Configurable marker ticking
++                if (!chunkProviderServer.isPositionTicking(e) || (e instanceof net.minecraft.world.entity.Marker && !world.paperConfig().entities.markers.tick)) { // Paper - Configurable marker ticking
                      nonEntityTicking.merge(key, 1, Integer::sum);
                  }
              });
@@ -35,21 +35,21 @@ index cae00701c5dbf40be07ea5c2d01ea8929f4fa216..646fb7e4a83e9f9a1b78d8c70f3518b9
          }
  
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 3495981419a75efe42bce45a89a32378dd6b8372..2d31752478636bd21bbff5b430e5acb76b5d91c2 100644
+index 3495981419a75efe42bce45a89a32378dd6b8372..fafc8b84d6b6368c70b8eedfdb4c3a9deace9c26 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -213,8 +213,14 @@ public class ActivationRange
  
              // Paper start
              java.util.List<Entity> entities = world.getEntities((Entity)null, ActivationRange.maxBB, null);
-+            boolean tickMarkers = world.paperConfig().entities.markers.tick; // Paper - configurable marker ticking
++            boolean tickMarkers = world.paperConfig().entities.markers.tick; // Paper - Configurable marker ticking
              for (int i = 0; i < entities.size(); i++) {
                  Entity entity = entities.get(i);
-+                // Paper start - configurable marker ticking
++                // Paper start - Configurable marker ticking
 +                if (!tickMarkers && entity instanceof net.minecraft.world.entity.Marker) {
 +                    continue;
 +                }
-+                // Paper end - configurable marker ticking
++                // Paper end - Configurable marker ticking
                  ActivationRange.activateEntity(entity);
              }
              // Paper end

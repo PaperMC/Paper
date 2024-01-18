@@ -32,19 +32,19 @@ index 0000000000000000000000000000000000000000..7ea357ac2f3a93db4ebdf24b5072be7d
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4f43e306d70bc733ceba2b375c8732f330abc0e4..d8eb1dbc1601c1f76183ddd78b88d0ee6df68bed 100644
+index 15828a88b8b31f4b622a1395eda5cc195d616479..e5dccd330cbf3301a60b65453e87a4005f954716 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -2213,6 +2213,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
              this.worldData.setDataConfiguration(worlddataconfiguration);
              this.resources.managers.updateRegistryTags(this.registryAccess());
-+            net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper
++            net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper - Custom Potion Mixes
              // Paper start
              if (Thread.currentThread() != this.serverThread) {
                  return;
 diff --git a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
-index ad012400d76c263bf26cfa07e2e24f26dc32276b..82311188348d673d83b70bf4d5357ecee562b6d6 100644
+index ad012400d76c263bf26cfa07e2e24f26dc32276b..054555c6b9c61243b1f14139b5c0eb2579403707 100644
 --- a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
 @@ -169,7 +169,7 @@ public class BrewingStandMenu extends AbstractContainerMenu {
@@ -52,19 +52,19 @@ index ad012400d76c263bf26cfa07e2e24f26dc32276b..82311188348d673d83b70bf4d5357ece
  
          public static boolean mayPlaceItem(ItemStack stack) {
 -            return stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE);
-+            return stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || PotionBrewing.isCustomInput(stack); // Paper
++            return stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || PotionBrewing.isCustomInput(stack); // Paper - Custom Potion Mixes
          }
      }
  
 diff --git a/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java b/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
-index 25e909b90293855321b8f05ab3488bad8c064853..ef798adc296ae1595cfcd33fed5aa71b9ad00037 100644
+index 25e909b90293855321b8f05ab3488bad8c064853..0bba74bd22d66881fc6851797d29c1442f509445 100644
 --- a/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
 +++ b/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
 @@ -14,6 +14,7 @@ public class PotionBrewing {
      public static final int BREWING_TIME_SECONDS = 20;
      private static final List<PotionBrewing.Mix<Potion>> POTION_MIXES = Lists.newArrayList();
      private static final List<PotionBrewing.Mix<Item>> CONTAINER_MIXES = Lists.newArrayList();
-+    private static final it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<org.bukkit.NamespacedKey, io.papermc.paper.potion.PaperPotionMix> CUSTOM_MIXES = new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>(); // Paper
++    private static final it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<org.bukkit.NamespacedKey, io.papermc.paper.potion.PaperPotionMix> CUSTOM_MIXES = new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>(); // Paper - Custom Potion Mixes
      private static final List<Ingredient> ALLOWED_CONTAINERS = Lists.newArrayList();
      private static final Predicate<ItemStack> ALLOWED_CONTAINER = (stack) -> {
          for(Ingredient ingredient : ALLOWED_CONTAINERS) {
@@ -73,7 +73,7 @@ index 25e909b90293855321b8f05ab3488bad8c064853..ef798adc296ae1595cfcd33fed5aa71b
  
      public static boolean isIngredient(ItemStack stack) {
 -        return isContainerIngredient(stack) || isPotionIngredient(stack);
-+        return isContainerIngredient(stack) || isPotionIngredient(stack) || isCustomIngredient(stack); // Paper
++        return isContainerIngredient(stack) || isPotionIngredient(stack) || isCustomIngredient(stack); // Paper - Custom Potion Mixes
      }
  
      protected static boolean isContainerIngredient(ItemStack stack) {
@@ -81,11 +81,11 @@ index 25e909b90293855321b8f05ab3488bad8c064853..ef798adc296ae1595cfcd33fed5aa71b
      }
  
      public static boolean hasMix(ItemStack input, ItemStack ingredient) {
-+        // Paper start
++        // Paper start - Custom Potion Mixes
 +        if (hasCustomMix(input, ingredient)) {
 +            return true;
 +        }
-+        // Paper end
++        // Paper end - Custom Potion Mixes
          if (!ALLOWED_CONTAINER.test(input)) {
              return false;
          } else {
@@ -93,13 +93,13 @@ index 25e909b90293855321b8f05ab3488bad8c064853..ef798adc296ae1595cfcd33fed5aa71b
  
      public static ItemStack mix(ItemStack ingredient, ItemStack input) {
          if (!input.isEmpty()) {
-+            // Paper start
++            // Paper start - Custom Potion Mixes
 +            for (var mix : CUSTOM_MIXES.values()) {
 +                if (mix.input().test(input) && mix.ingredient().test(ingredient)) {
 +                    return mix.result().copy();
 +                }
 +            }
-+            // Paper end
++            // Paper end - Custom Potion Mixes
              Potion potion = PotionUtils.getPotion(input);
              Item item = input.getItem();
  
@@ -107,7 +107,7 @@ index 25e909b90293855321b8f05ab3488bad8c064853..ef798adc296ae1595cfcd33fed5aa71b
          return input;
      }
  
-+    // Paper start
++    // Paper start - Custom Potion Mixes
 +    public static boolean isCustomIngredient(ItemStack stack) {
 +        for (var mix : CUSTOM_MIXES.values()) {
 +            if (mix.ingredient().test(stack)) {
@@ -153,13 +153,13 @@ index 25e909b90293855321b8f05ab3488bad8c064853..ef798adc296ae1595cfcd33fed5aa71b
 +        CUSTOM_MIXES.clear();
 +        bootStrap();
 +    }
-+    // Paper end
++    // Paper end - Custom Potion Mixes
 +
      public static void bootStrap() {
          addContainer(Items.POTION);
          addContainer(Items.SPLASH_POTION);
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
-index 424406d2692856cfd82b6f3b7b6228fa3bd20c2f..c57efcb9a79337ec791e4e8f6671612f0a82b441 100644
+index 424406d2692856cfd82b6f3b7b6228fa3bd20c2f..bc01481ac5990ad1cfd1def5a16dd0ed2f9de8c9 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
 @@ -341,7 +341,7 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
@@ -167,19 +167,19 @@ index 424406d2692856cfd82b6f3b7b6228fa3bd20c2f..c57efcb9a79337ec791e4e8f6671612f
      @Override
      public boolean canPlaceItem(int slot, ItemStack stack) {
 -        return slot == 3 ? PotionBrewing.isIngredient(stack) : (slot == 4 ? stack.is(Items.BLAZE_POWDER) : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE)) && this.getItem(slot).isEmpty());
-+        return slot == 3 ? PotionBrewing.isIngredient(stack) : (slot == 4 ? stack.is(Items.BLAZE_POWDER) : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || PotionBrewing.isCustomInput(stack)) && this.getItem(slot).isEmpty()); // Paper
++        return slot == 3 ? PotionBrewing.isIngredient(stack) : (slot == 4 ? stack.is(Items.BLAZE_POWDER) : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || PotionBrewing.isCustomInput(stack)) && this.getItem(slot).isEmpty()); // Paper - Custom Potion Mixes
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 316a901f5d943209d94ba6631cfaa9be43fdae3b..536057656dfb7af96977b692b854e5a4fff98dd9 100644
+index 546b510e8ed683007c1dbcc1ab66374ce0944e70..ead1161020064ceea6d04857de5bdbce460fd59e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -304,6 +304,7 @@ public final class CraftServer implements Server {
      private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
      public static Exception excessiveVelEx; // Paper - Velocity warnings
      private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
-+    private final CraftPotionBrewer potionBrewer = new CraftPotionBrewer(); // Paper
++    private final CraftPotionBrewer potionBrewer = new CraftPotionBrewer(); // Paper - Custom Potion Mixes
  
      static {
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
@@ -188,7 +188,7 @@ index 316a901f5d943209d94ba6631cfaa9be43fdae3b..536057656dfb7af96977b692b854e5a4
          CraftRegistry.setMinecraftRegistry(console.registryAccess());
  
 -        Potion.setPotionBrewer(new CraftPotionBrewer());
-+        Potion.setPotionBrewer(potionBrewer); // Paper
++        Potion.setPotionBrewer(potionBrewer); // Paper - Custom Potion Mixes
          // Ugly hack :(
  
          if (!Main.useConsole) {

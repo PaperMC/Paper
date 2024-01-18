@@ -7,14 +7,14 @@ There are no plans to support creating worlds while worlds are
 being ticked themselvess.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index d8eb1dbc1601c1f76183ddd78b88d0ee6df68bed..002511a54565aab9eb4552fecdf974fe0eab9122 100644
+index e5dccd330cbf3301a60b65453e87a4005f954716..b9df0b37b5568758c04ee41e258395c3a2d493c1 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -310,6 +310,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      public volatile Thread shutdownThread; // Paper
      public volatile boolean abnormalExit = false; // Paper
-+    public boolean isIteratingOverLevels = false; // Paper
++    public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
@@ -23,7 +23,7 @@ index d8eb1dbc1601c1f76183ddd78b88d0ee6df68bed..002511a54565aab9eb4552fecdf974fe
          MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot // Paper
          this.profiler.popPush("levels");
 -        Iterator iterator = this.getAllLevels().iterator();
-+        //Iterator iterator = this.getAllLevels().iterator(); // Paper - moved down
++        //Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; moved down
  
          // CraftBukkit start
          // Run tasks that are waiting on processing
@@ -31,8 +31,8 @@ index d8eb1dbc1601c1f76183ddd78b88d0ee6df68bed..002511a54565aab9eb4552fecdf974fe
          // Paper end
          MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
  
-+        this.isIteratingOverLevels = true; // Paper
-+        Iterator iterator = this.getAllLevels().iterator(); // Paper - move down
++        this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
++        Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; move down
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
              worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
@@ -40,12 +40,12 @@ index d8eb1dbc1601c1f76183ddd78b88d0ee6df68bed..002511a54565aab9eb4552fecdf974fe
              this.profiler.pop();
              worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
          }
-+        this.isIteratingOverLevels = false; // Paper
++        this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
  
          this.profiler.popPush("connection");
          MinecraftTimings.connectionTimer.startTiming(); // Spigot // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 08eb6f115fe5fb2414a35010faa91d6fab7db0e2..398a89a1f695f1e99b30ca0d5ebb192c8f465748 100644
+index 170da30329f2a0d65a05c0d5c7a4170405df6aef..e549dc84ac05a8b5f4dc602689904eb92445c687 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -874,6 +874,11 @@ public final class CraftServer implements Server {
