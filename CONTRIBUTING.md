@@ -204,7 +204,8 @@ when making and submitting changes.
 
 ## Formatting
 
-All modifications to non-Paper files should be marked.
+All modifications to non-Paper files should be marked. The one exception to this is
+when modifying javadoc comments, which should not have these markers.
 
 - You need to add a comment with a short and identifiable description of the patch:
   `// Paper start - <COMMIT DESCRIPTION>`

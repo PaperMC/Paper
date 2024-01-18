@@ -14,8 +14,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private BlockPos delayedDestroyPos;
      private int delayedTickStart;
      private int lastSentState;
-+    public boolean captureSentBlockEntities = false; // Paper
-+    public boolean capturedBlockEntity = false; // Paper
++    public boolean captureSentBlockEntities = false; // Paper - Send block entities after destroy prediction
++    public boolean capturedBlockEntity = false; // Paper - Send block entities after destroy prediction
  
      public ServerPlayerGameMode(ServerPlayer player) {
          this.gameModeForPlayer = GameType.DEFAULT_MODE;
@@ -27,7 +27,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    if (tileentity != null) {
 -                        this.player.connection.send(tileentity.getUpdatePacket());
 -                    }
-+                    capturedBlockEntity = true; // Paper - send block entity after predicting
++                    capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
                      // CraftBukkit end
                      return;
                  }
@@ -39,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    if (tileentity != null) {
 -                        this.player.connection.send(tileentity.getUpdatePacket());
 -                    }
-+                    capturedBlockEntity = true; // Paper - send block entity after predicting
++                    capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
                      return;
                  }
                  // CraftBukkit end
@@ -47,12 +47,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
  
                  // Update any tile entity data for this block
-+                if (!captureSentBlockEntities) { // Paper - Toggle this location for capturing as this is used for api
++                if (!captureSentBlockEntities) { // Paper - Send block entities after destroy prediction
                  BlockEntity tileentity = this.level.getBlockEntity(pos);
                  if (tileentity != null) {
                      this.player.connection.send(tileentity.getUpdatePacket());
                  }
-+                } else {capturedBlockEntity = true;} // Paper end
++                } else {capturedBlockEntity = true;} // Paper - Send block entities after destroy prediction
                  return false;
              }
          }
@@ -64,13 +64,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      return;
                  }
                  // Paper end - Don't allow digging in unloaded chunks
-+                // Paper start - send block entities after prediction
++                // Paper start - Send block entities after destroy prediction
 +                this.player.gameMode.capturedBlockEntity = false;
 +                this.player.gameMode.captureSentBlockEntities = true;
-+                // Paper end - send block entities after prediction
++                // Paper end - Send block entities after destroy prediction
                  this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level().getMaxBuildHeight(), packet.getSequence());
                  this.player.connection.ackBlockChangesUpTo(packet.getSequence());
-+                // Paper start - send block entities after prediction
++                // Paper start - Send block entities after destroy prediction
 +                this.player.gameMode.captureSentBlockEntities = false;
 +                // If a block entity was modified speedup the block change ack to avoid the block entity
 +                // being overriden.
@@ -85,7 +85,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        this.player.connection.send(tileentity.getUpdatePacket());
 +                    }
 +                }
-+                // Paper end - send block entities after prediction
++                // Paper end - Send block entities after destroy prediction
                  return;
              default:
                  throw new IllegalArgumentException("Invalid player action");
