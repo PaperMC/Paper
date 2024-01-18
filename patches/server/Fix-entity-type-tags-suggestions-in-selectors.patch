@@ -17,7 +17,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.source.getBukkitSender(this);
      }
      // CraftBukkit end
-+    // Paper start - override getSelectedEntities
++    // Paper start - tell clients to ask server for suggestions for EntityArguments
 +    @Override
 +    public Collection<String> getSelectedEntities() {
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
@@ -32,7 +32,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        return SharedSuggestionProvider.super.getSelectedEntities();
 +    }
-+    // Paper end
++    // Paper end - tell clients to ask server for suggestions for EntityArguments
  }
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -68,7 +68,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              stringreader.setCursor(suggestionsbuilder.getStart());
 -            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2));
-+            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2), true); // Paper
++            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2), true); // Paper - tell clients to ask server for suggestions for EntityArguments
  
              try {
                  argumentparserselector.parse();
@@ -77,7 +77,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              return argumentparserselector.fillSuggestions(suggestionsbuilder, (suggestionsbuilder1) -> {
 -                Collection<String> collection = icompletionprovider.getOnlinePlayerNames();
-+                // Paper start
++                // Paper start - tell clients to ask server for suggestions for EntityArguments
 +                final Collection<String> collection;
 +                if (icompletionprovider instanceof CommandSourceStack commandSourceStack && commandSourceStack.getEntity() instanceof ServerPlayer sourcePlayer) {
 +                    collection = new java.util.ArrayList<>();
@@ -89,7 +89,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                } else {
 +                    collection = icompletionprovider.getOnlinePlayerNames();
 +                }
-+                // Paper end
++                // Paper end - tell clients to ask server for suggestions for EntityArguments
                  Iterable<String> iterable = this.playersOnly ? collection : Iterables.concat(collection, icompletionprovider.getSelectedEntities());
  
                  SharedSuggestionProvider.suggest((Iterable) iterable, suggestionsbuilder1);
@@ -101,19 +101,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private boolean hasScores;
      private boolean hasAdvancements;
      private boolean usesSelectors;
-+    public boolean parsingEntityArgumentSuggestions; // Paper - track when parsing EntityArgument suggestions
++    public boolean parsingEntityArgumentSuggestions; // Paper - tell clients to ask server for suggestions for EntityArguments
  
      public EntitySelectorParser(StringReader reader) {
          this(reader, true);
      }
  
      public EntitySelectorParser(StringReader reader, boolean atAllowed) {
-+        // Paper start
++        // Paper start - tell clients to ask server for suggestions for EntityArguments
 +        this(reader, atAllowed, false);
 +    }
 +    public EntitySelectorParser(StringReader reader, boolean atAllowed, boolean parsingEntityArgumentSuggestions) {
 +        this.parsingEntityArgumentSuggestions = parsingEntityArgumentSuggestions;
-+        // Paper end
++        // Paper end - tell clients to ask server for suggestions for EntityArguments
          this.distance = MinMaxBounds.Doubles.ANY;
          this.level = MinMaxBounds.Ints.ANY;
          this.rotX = WrappedMinMaxBounds.ANY;
@@ -125,7 +125,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType((entity) -> {
          return Component.translatableEscape("argument.entity.options.type.invalid", entity);
      });
-+    // Paper start
++    // Paper start - tell clients to ask server for suggestions for EntityArguments
 +    public static final DynamicCommandExceptionType ERROR_ENTITY_TAG_INVALID = new DynamicCommandExceptionType((object) -> {
 +        return io.papermc.paper.adventure.PaperAdventure
 +            .asVanilla(net.kyori.adventure.text.Component
@@ -137,7 +137,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                )
 +            );
 +    });
-+    // Paper end
++    // Paper end - tell clients to ask server for suggestions for EntityArguments
  
      private static void register(String id, EntitySelectorOptions.Modifier handler, Predicate<EntitySelectorParser> condition, Component description) {
          OPTIONS.put(id, new EntitySelectorOptions.Option(handler, condition, description));
@@ -145,12 +145,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                      if (reader.isTag()) {
                          TagKey<EntityType<?>> tagKey = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.read(reader.getReader()));
-+                        // Paper start - throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
++                        // Paper start - tell clients to ask server for suggestions for EntityArguments; throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
 +                        if (reader.parsingEntityArgumentSuggestions && io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tagKey).isEmpty()) {
 +                            reader.getReader().setCursor(i);
 +                            throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagKey);
 +                        }
-+                        // Paper end
++                        // Paper end - tell clients to ask server for suggestions for EntityArguments
                          reader.addPredicate((entity) -> {
                              return entity.getType().is(tagKey) != bl;
                          });

@@ -13,8 +13,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      // Paper start - prevent oversized data
                      final ItemStack sanitized = LivingEntity.sanitizeItemStack(itemstack.copy(), false);
 -                    list.add(Pair.of(enumitemslot, sanitized));
-+                    list.add(Pair.of(enumitemslot, ((LivingEntity) this.entity).stripMeta(sanitized, false))); // Paper - remove unnecessary item meta
-                     // Paper end
++                    list.add(Pair.of(enumitemslot, ((LivingEntity) this.entity).stripMeta(sanitized, false))); // Paper - Hide unnecessary item meta
+                     // Paper end - prevent oversized data
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
@@ -27,8 +27,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                                  // SPIGOT-7136 - Allays
 -                                if (entity instanceof Allay) {
 -                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
-+                                if (entity instanceof Allay allay) { // Paper
-+                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, allay.stripMeta(allay.getItemBySlot(slot), true))).collect(Collectors.toList()))); // Paper - remove unnecessary item meta
++                                if (entity instanceof Allay allay) { // Paper - Hide unnecessary item meta
++                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, allay.stripMeta(allay.getItemBySlot(slot), true))).collect(Collectors.toList()))); // Paper - Hide unnecessary item meta
                                      ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
                                  }
                              }
@@ -41,15 +41,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Paper start - prevent oversized data
              ItemStack toSend = sanitizeItemStack(itemstack1, true);
 -            list.add(Pair.of(enumitemslot, toSend));
-+            list.add(Pair.of(enumitemslot, stripMeta(toSend, toSend == itemstack1))); // Paper - hide unnecessary item meta
-             // Paper end
++            list.add(Pair.of(enumitemslot, stripMeta(toSend, toSend == itemstack1))); // Paper - Hide unnecessary item meta
+             // Paper end - prevent oversized data
              switch (enumitemslot.getType()) {
                  case HAND:
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
          ((ServerLevel) this.level()).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list));
      }
  
-+    // Paper start - hide unnecessary item meta
++    // Paper start - Hide unnecessary item meta
 +    public ItemStack stripMeta(final ItemStack itemStack, final boolean copyItemStack) {
 +        if (itemStack.isEmpty() || (!itemStack.hasTag() && itemStack.getCount() < 2)) {
 +            return itemStack;
@@ -118,7 +118,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        return copy;
 +    }
-+    // Paper end
++    // Paper end - Hide unnecessary item meta
 +
      // Paper start - prevent oversized data
      public static ItemStack sanitizeItemStack(final ItemStack itemStack, final boolean copyItemStack) {

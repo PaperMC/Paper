@@ -28,7 +28,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 -            if (structureplacement.isStructureChunk(placementCalculator, chunkcoordintpair.x, chunkcoordintpair.z)) {
-+            if (structureplacement.isStructureChunk(placementCalculator, chunkcoordintpair.x, chunkcoordintpair.z, structureplacement instanceof net.minecraft.world.level.chunk.ChunkGeneratorStructureState.KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - add missing structure set configs
++            if (structureplacement.isStructureChunk(placementCalculator, chunkcoordintpair.x, chunkcoordintpair.z, structureplacement instanceof net.minecraft.world.level.chunk.ChunkGeneratorStructureState.KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - Add missing structure set seed configs
                  if (list.size() == 1) {
                      this.tryGenerateStructure((StructureSet.StructureSelectionEntry) list.get(0), structureAccessor, registryManager, randomstate, structureTemplateManager, placementCalculator.getLevelSeed(), chunk, chunkcoordintpair, sectionposition);
                  } else {
@@ -40,7 +40,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final Map<ConcentricRingsStructurePlacement, CompletableFuture<List<ChunkPos>>> ringPositions = new Object2ObjectArrayMap();
      private boolean hasGeneratedPositions;
      private final List<Holder<StructureSet>> possibleStructureSets;
-+    public final SpigotWorldConfig conf; // Paper
++    public final SpigotWorldConfig conf; // Paper - Add missing structure set seed configs
  
      public static ChunkGeneratorStructureState createForFlat(RandomState randomstate, long i, BiomeSource worldchunkmanager, Stream<Holder<StructureSet>> stream, SpigotWorldConfig conf) { // Spigot
          List<Holder<StructureSet>> list = stream.filter((holder) -> {
@@ -59,7 +59,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, i, ChunkGeneratorStructureState.injectSpigot(list, conf)); // Spigot
 +        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, i, ChunkGeneratorStructureState.injectSpigot(list, conf), conf); // Spigot
      }
-+    // Paper start - horrible hack because spigot creates a ton of direct Holders which lose track of the identifying key
++    // Paper start - Add missing structure set seed configs; horrible hack because spigot creates a ton of direct Holders which lose track of the identifying key
 +    public static final class KeyedRandomSpreadStructurePlacement extends RandomSpreadStructurePlacement {
 +        public final net.minecraft.resources.ResourceKey<StructureSet> key;
 +        public KeyedRandomSpreadStructurePlacement(net.minecraft.resources.ResourceKey<StructureSet> key, net.minecraft.core.Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, java.util.Optional<StructurePlacement.ExclusionZone> exclusionZone, int spacing, int separation, net.minecraft.world.level.levelgen.structure.placement.RandomSpreadType spreadType) {
@@ -67,15 +67,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.key = key;
 +        }
 +    }
-+    // Paper end
++    // Paper end - Add missing structure set seed configs
  
      // Spigot start
      private static List<Holder<StructureSet>> injectSpigot(List<Holder<StructureSet>> list, SpigotWorldConfig conf) {
          return list.stream().map((holder) -> {
              StructureSet structureset = holder.value();
 -            if (structureset.placement() instanceof RandomSpreadStructurePlacement randomConfig) {
-+            final Holder<StructureSet> newHolder; // Paper
-+            if (structureset.placement() instanceof RandomSpreadStructurePlacement randomConfig && holder.unwrapKey().orElseThrow().location().getNamespace().equals(net.minecraft.resources.ResourceLocation.DEFAULT_NAMESPACE)) { // Paper - check namespace cause datapacks could add structure sets with the same path
++            final Holder<StructureSet> newHolder; // Paper - Add missing structure set seed configs
++            if (structureset.placement() instanceof RandomSpreadStructurePlacement randomConfig && holder.unwrapKey().orElseThrow().location().getNamespace().equals(net.minecraft.resources.ResourceLocation.DEFAULT_NAMESPACE)) { // Paper - Add missing structure set seed configs; check namespace cause datapacks could add structure sets with the same path
                  String name = holder.unwrapKey().orElseThrow().location().getPath();
                  int seed = randomConfig.salt;
  
@@ -83,7 +83,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      case "villages":
                          seed = conf.villageSeed;
                          break;
-+                    // Paper start
++                    // Paper start - Add missing structure set seed configs
 +                    case "ancient_cities":
 +                        seed = conf.ancientCitySeed;
 +                        break;
@@ -93,11 +93,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    case "trial_chambers":
 +                        seed = conf.trialChambersSeed;
 +                        break;
-+                    // Paper end
++                    // Paper end - Add missing structure set seed configs
                  }
  
 -                structureset = new StructureSet(structureset.structures(), new RandomSpreadStructurePlacement(randomConfig.locateOffset, randomConfig.frequencyReductionMethod, randomConfig.frequency, seed, randomConfig.exclusionZone, randomConfig.spacing(), randomConfig.separation(), randomConfig.spreadType()));
-+            // Paper start
++            // Paper start - Add missing structure set seed configs
 +                structureset = new StructureSet(structureset.structures(), new KeyedRandomSpreadStructurePlacement(holder.unwrapKey().orElseThrow(), randomConfig.locateOffset, randomConfig.frequencyReductionMethod, randomConfig.frequency, seed, randomConfig.exclusionZone, randomConfig.spacing(), randomConfig.separation(), randomConfig.spreadType()));
 +                newHolder = Holder.direct(structureset); // I really wish we didn't have to do this here
 +            } else {
@@ -105,7 +105,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
 -            return Holder.direct(structureset);
 +            return newHolder;
-+            // Paper end
++            // Paper end - Add missing structure set seed configs
          }).collect(Collectors.toUnmodifiableList());
      }
      // Spigot end
@@ -114,13 +114,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    private ChunkGeneratorStructureState(RandomState noiseConfig, BiomeSource biomeSource, long structureSeed, long concentricRingSeed, List<Holder<StructureSet>> structureSets) {
-+    private ChunkGeneratorStructureState(RandomState noiseConfig, BiomeSource biomeSource, long structureSeed, long concentricRingSeed, List<Holder<StructureSet>> structureSets, SpigotWorldConfig conf) { // Paper
++    private ChunkGeneratorStructureState(RandomState noiseConfig, BiomeSource biomeSource, long structureSeed, long concentricRingSeed, List<Holder<StructureSet>> structureSets, SpigotWorldConfig conf) { // Paper - Add missing structure set seed configs
          this.randomState = noiseConfig;
          this.levelSeed = structureSeed;
          this.biomeSource = biomeSource;
          this.concentricRingsSeed = concentricRingSeed;
          this.possibleStructureSets = structureSets;
-+        this.conf = conf; // Paper
++        this.conf = conf; // Paper - Add missing structure set seed configs
      }
  
      public List<Holder<StructureSet>> possibleStructureSets() {
@@ -128,13 +128,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              HolderSet<Biome> holderset = placement.preferredBiomes();
              RandomSource randomsource = RandomSource.create();
  
-+            // Paper start
++            // Paper start - Add missing structure set seed configs
 +            if (this.conf.strongholdSeed != null && structureSetEntry.is(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.STRONGHOLDS)) {
 +                randomsource.setSeed(this.conf.strongholdSeed);
 +            } else {
-+            // Paper end
++            // Paper end - Add missing structure set seed configs
              randomsource.setSeed(this.concentricRingsSeed);
-+            } // Paper
++            } // Paper - Add missing structure set seed configs
              double d0 = randomsource.nextDouble() * 3.141592653589793D * 2.0D;
              int l = 0;
              int i1 = 0;
@@ -143,7 +143,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          for (int l = centerChunkX - chunkCount; l <= centerChunkX + chunkCount; ++l) {
              for (int i1 = centerChunkZ - chunkCount; i1 <= centerChunkZ + chunkCount; ++i1) {
 -                if (structureplacement.isStructureChunk(this, l, i1)) {
-+                if (structureplacement.isStructureChunk(this, l, i1, structureplacement instanceof KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - add missing structure set configs
++                if (structureplacement.isStructureChunk(this, l, i1, structureplacement instanceof KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - Add missing structure set seed configs
                      return true;
                  }
              }
@@ -155,9 +155,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.exclusionZone;
      }
  
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add missing structure set seed configs
      public boolean isStructureChunk(ChunkGeneratorStructureState calculator, int chunkX, int chunkZ) {
-+        // Paper start - add missing structure set configs
++        // Paper start - Add missing structure set seed configs
 +        return this.isStructureChunk(calculator, chunkX, chunkZ, null);
 +    }
 +    public boolean isStructureChunk(ChunkGeneratorStructureState calculator, int chunkX, int chunkZ, @org.jetbrains.annotations.Nullable net.minecraft.resources.ResourceKey<StructureSet> structureSetKey) {
@@ -169,11 +169,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                saltOverride = calculator.conf.buriedTreasureSeed;
 +            }
 +        }
-+        // Paper end
++        // Paper end - Add missing structure set seed configs
          if (!this.isPlacementChunk(calculator, chunkX, chunkZ)) {
              return false;
 -        } else if (this.frequency < 1.0F && !this.frequencyReductionMethod.shouldGenerate(calculator.getLevelSeed(), this.salt, chunkX, chunkZ, this.frequency)) {
-+        } else if (this.frequency < 1.0F && !this.frequencyReductionMethod.shouldGenerate(calculator.getLevelSeed(), this.salt, chunkX, chunkZ, this.frequency, saltOverride)) { // Paper
++        } else if (this.frequency < 1.0F && !this.frequencyReductionMethod.shouldGenerate(calculator.getLevelSeed(), this.salt, chunkX, chunkZ, this.frequency, saltOverride)) { // Paper - Add missing structure set seed configs
              return false;
          } else {
              return !this.exclusionZone.isPresent() || !this.exclusionZone.get().isPlacementForbidden(calculator, chunkX, chunkZ);
@@ -182,35 +182,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public abstract StructurePlacementType<?> type();
  
 -    private static boolean probabilityReducer(long seed, int salt, int chunkX, int chunkZ, float frequency) {
-+    private static boolean probabilityReducer(long seed, int salt, int chunkX, int chunkZ, float frequency, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper - ignore here
++    private static boolean probabilityReducer(long seed, int salt, int chunkX, int chunkZ, float frequency, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs; ignore here
          WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
          worldgenRandom.setLargeFeatureWithSalt(seed, salt, chunkX, chunkZ);
          return worldgenRandom.nextFloat() < frequency;
      }
  
 -    private static boolean legacyProbabilityReducerWithDouble(long seed, int salt, int chunkX, int chunkZ, float frequency) {
-+    private static boolean legacyProbabilityReducerWithDouble(long seed, int salt, int chunkX, int chunkZ, float frequency, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper
++    private static boolean legacyProbabilityReducerWithDouble(long seed, int salt, int chunkX, int chunkZ, float frequency, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs
          WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
-+        if (saltOverride == null) { // Paper
++        if (saltOverride == null) { // Paper - Add missing structure set seed configs
          worldgenRandom.setLargeFeatureSeed(seed, chunkX, chunkZ);
-+        // Paper start
++        // Paper start - Add missing structure set seed configs
 +        } else {
 +            worldgenRandom.setLargeFeatureWithSalt(seed, chunkX, chunkZ, saltOverride);
 +        }
-+        // Paper end
++        // Paper end - Add missing structure set seed configs
          return worldgenRandom.nextDouble() < (double)frequency;
      }
  
 -    private static boolean legacyArbitrarySaltProbabilityReducer(long seed, int salt, int chunkX, int chunkZ, float frequency) {
-+    private static boolean legacyArbitrarySaltProbabilityReducer(long seed, int salt, int chunkX, int chunkZ, float frequency, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper
++    private static boolean legacyArbitrarySaltProbabilityReducer(long seed, int salt, int chunkX, int chunkZ, float frequency, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs
          WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
 -        worldgenRandom.setLargeFeatureWithSalt(seed, chunkX, chunkZ, 10387320);
-+        worldgenRandom.setLargeFeatureWithSalt(seed, chunkX, chunkZ, saltOverride != null ? saltOverride : HIGHLY_ARBITRARY_RANDOM_SALT); // Paper
++        worldgenRandom.setLargeFeatureWithSalt(seed, chunkX, chunkZ, saltOverride != null ? saltOverride : HIGHLY_ARBITRARY_RANDOM_SALT); // Paper - Add missing structure set seed configs
          return worldgenRandom.nextFloat() < frequency;
      }
  
 -    private static boolean legacyPillagerOutpostReducer(long seed, int salt, int chunkX, int chunkZ, float frequency) {
-+    private static boolean legacyPillagerOutpostReducer(long seed, int salt, int chunkX, int chunkZ, float frequency, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper - ignore here
++    private static boolean legacyPillagerOutpostReducer(long seed, int salt, int chunkX, int chunkZ, float frequency, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs; ignore here
          int i = chunkX >> 4;
          int j = chunkZ >> 4;
          WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
@@ -219,7 +219,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @FunctionalInterface
      public interface FrequencyReducer {
 -        boolean shouldGenerate(long seed, int salt, int chunkX, int chunkZ, float chance);
-+        boolean shouldGenerate(long seed, int salt, int chunkX, int chunkZ, float chance, @org.jetbrains.annotations.Nullable Integer saltOverride); // Paper
++        boolean shouldGenerate(long seed, int salt, int chunkX, int chunkZ, float chance, @org.jetbrains.annotations.Nullable Integer saltOverride); // Paper - Add missing structure set seed configs
      }
  
      public static enum FrequencyReductionMethod implements StringRepresentable {
@@ -229,8 +229,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        public boolean shouldGenerate(long seed, int salt, int chunkX, int chunkZ, float chance) {
 -            return this.reducer.shouldGenerate(seed, salt, chunkX, chunkZ, chance);
-+        public boolean shouldGenerate(long seed, int salt, int chunkX, int chunkZ, float chance, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper
-+            return this.reducer.shouldGenerate(seed, salt, chunkX, chunkZ, chance, saltOverride); // Paper
++        public boolean shouldGenerate(long seed, int salt, int chunkX, int chunkZ, float chance, @org.jetbrains.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs
++            return this.reducer.shouldGenerate(seed, salt, chunkX, chunkZ, chance, saltOverride); // Paper - Add missing structure set seed configs
          }
  
          @Override
