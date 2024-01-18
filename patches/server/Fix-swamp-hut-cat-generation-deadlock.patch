@@ -18,7 +18,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          ServerLevel worldserver = world.getLevel();
  
 -        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
-+        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - fix deadlock
++        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - Fix swamp hut cat generation deadlock
              this.setVariant((CatVariant) BuiltInRegistries.CAT_VARIANT.getOrThrow(CatVariant.ALL_BLACK));
              this.setPersistenceRequired();
          }
@@ -31,12 +31,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public List<StructureStart> startsForStructure(ChunkPos pos, Predicate<Structure> predicate) {
 -        Map<Structure, LongSet> map = this.level.getChunk(pos.x, pos.z, ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
-+        // Paper start
++        // Paper start - Fix swamp hut cat generation deadlock
 +        return this.startsForStructure(pos, predicate, null);
 +    }
 +    public List<StructureStart> startsForStructure(ChunkPos pos, Predicate<Structure> predicate, @Nullable ServerLevelAccessor levelAccessor) {
 +        Map<Structure, LongSet> map = (levelAccessor == null ? this.level : levelAccessor).getChunk(pos.x, pos.z, ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
-+        // Paper end
++        // Paper end - Fix swamp hut cat generation deadlock
          ImmutableList.Builder<StructureStart> builder = ImmutableList.builder();
  
          for(Map.Entry<Structure, LongSet> entry : map.entrySet()) {
@@ -44,11 +44,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> structureTag) {
-+        // Paper start
++        // Paper start - Fix swamp hut cat generation deadlock
 +        return this.getStructureWithPieceAt(pos, structureTag, null);
 +    }
 +    public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> structureTag, @Nullable ServerLevelAccessor levelAccessor) {
-+        // Paper end
++        // Paper end - Fix swamp hut cat generation deadlock
          Registry<Structure> registry = this.registryAccess().registryOrThrow(Registries.STRUCTURE);
  
          for(StructureStart structureStart : this.startsForStructure(new ChunkPos(pos), (structure) -> {
@@ -56,7 +56,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return reference.is(structureTag);
              }).orElse(false);
 -        })) {
-+        }, levelAccessor)) { // Paper
++        }, levelAccessor)) { // Paper - Fix swamp hut cat generation deadlock
              if (this.structureHasPieceAt(pos, structureStart)) {
                  return structureStart;
              }

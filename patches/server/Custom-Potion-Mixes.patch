@@ -39,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              this.worldData.setDataConfiguration(worlddataconfiguration);
              this.resources.managers.updateRegistryTags(this.registryAccess());
-+            net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper
++            net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper - Custom Potion Mixes
              // Paper start
              if (Thread.currentThread() != this.serverThread) {
                  return;
@@ -52,7 +52,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          public static boolean mayPlaceItem(ItemStack stack) {
 -            return stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE);
-+            return stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || PotionBrewing.isCustomInput(stack); // Paper
++            return stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || PotionBrewing.isCustomInput(stack); // Paper - Custom Potion Mixes
          }
      }
  
@@ -64,7 +64,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final int BREWING_TIME_SECONDS = 20;
      private static final List<PotionBrewing.Mix<Potion>> POTION_MIXES = Lists.newArrayList();
      private static final List<PotionBrewing.Mix<Item>> CONTAINER_MIXES = Lists.newArrayList();
-+    private static final it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<org.bukkit.NamespacedKey, io.papermc.paper.potion.PaperPotionMix> CUSTOM_MIXES = new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>(); // Paper
++    private static final it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<org.bukkit.NamespacedKey, io.papermc.paper.potion.PaperPotionMix> CUSTOM_MIXES = new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>(); // Paper - Custom Potion Mixes
      private static final List<Ingredient> ALLOWED_CONTAINERS = Lists.newArrayList();
      private static final Predicate<ItemStack> ALLOWED_CONTAINER = (stack) -> {
          for(Ingredient ingredient : ALLOWED_CONTAINERS) {
@@ -73,7 +73,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static boolean isIngredient(ItemStack stack) {
 -        return isContainerIngredient(stack) || isPotionIngredient(stack);
-+        return isContainerIngredient(stack) || isPotionIngredient(stack) || isCustomIngredient(stack); // Paper
++        return isContainerIngredient(stack) || isPotionIngredient(stack) || isCustomIngredient(stack); // Paper - Custom Potion Mixes
      }
  
      protected static boolean isContainerIngredient(ItemStack stack) {
@@ -81,11 +81,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static boolean hasMix(ItemStack input, ItemStack ingredient) {
-+        // Paper start
++        // Paper start - Custom Potion Mixes
 +        if (hasCustomMix(input, ingredient)) {
 +            return true;
 +        }
-+        // Paper end
++        // Paper end - Custom Potion Mixes
          if (!ALLOWED_CONTAINER.test(input)) {
              return false;
          } else {
@@ -93,13 +93,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static ItemStack mix(ItemStack ingredient, ItemStack input) {
          if (!input.isEmpty()) {
-+            // Paper start
++            // Paper start - Custom Potion Mixes
 +            for (var mix : CUSTOM_MIXES.values()) {
 +                if (mix.input().test(input) && mix.ingredient().test(ingredient)) {
 +                    return mix.result().copy();
 +                }
 +            }
-+            // Paper end
++            // Paper end - Custom Potion Mixes
              Potion potion = PotionUtils.getPotion(input);
              Item item = input.getItem();
  
@@ -107,7 +107,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return input;
      }
  
-+    // Paper start
++    // Paper start - Custom Potion Mixes
 +    public static boolean isCustomIngredient(ItemStack stack) {
 +        for (var mix : CUSTOM_MIXES.values()) {
 +            if (mix.ingredient().test(stack)) {
@@ -153,7 +153,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        CUSTOM_MIXES.clear();
 +        bootStrap();
 +    }
-+    // Paper end
++    // Paper end - Custom Potion Mixes
 +
      public static void bootStrap() {
          addContainer(Items.POTION);
@@ -167,7 +167,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public boolean canPlaceItem(int slot, ItemStack stack) {
 -        return slot == 3 ? PotionBrewing.isIngredient(stack) : (slot == 4 ? stack.is(Items.BLAZE_POWDER) : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE)) && this.getItem(slot).isEmpty());
-+        return slot == 3 ? PotionBrewing.isIngredient(stack) : (slot == 4 ? stack.is(Items.BLAZE_POWDER) : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || PotionBrewing.isCustomInput(stack)) && this.getItem(slot).isEmpty()); // Paper
++        return slot == 3 ? PotionBrewing.isIngredient(stack) : (slot == 4 ? stack.is(Items.BLAZE_POWDER) : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || PotionBrewing.isCustomInput(stack)) && this.getItem(slot).isEmpty()); // Paper - Custom Potion Mixes
      }
  
      @Override
@@ -179,7 +179,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
      public static Exception excessiveVelEx; // Paper - Velocity warnings
      private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
-+    private final CraftPotionBrewer potionBrewer = new CraftPotionBrewer(); // Paper
++    private final CraftPotionBrewer potionBrewer = new CraftPotionBrewer(); // Paper - Custom Potion Mixes
  
      static {
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
@@ -188,7 +188,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          CraftRegistry.setMinecraftRegistry(console.registryAccess());
  
 -        Potion.setPotionBrewer(new CraftPotionBrewer());
-+        Potion.setPotionBrewer(potionBrewer); // Paper
++        Potion.setPotionBrewer(potionBrewer); // Paper - Custom Potion Mixes
          // Ugly hack :(
  
          if (!Main.useConsole) {
