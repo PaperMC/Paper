@@ -15,10 +15,10 @@ login plugin message packet.
 
 diff --git a/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a34381122de53123169927e181df662814df4816
+index 0000000000000000000000000000000000000000..3c31ff3330c2e925e205c0c9ff4f0b832682b576
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,86 @@
 +package com.destroystokyo.paper.proxy;
 +
 +import io.papermc.paper.configuration.GlobalConfiguration;
@@ -37,6 +37,17 @@ index 0000000000000000000000000000000000000000..a34381122de53123169927e181df6628
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.world.entity.player.ProfilePublicKey;
 +
++/**
++ * While Velocity supports BungeeCord-style IP forwarding, it is not secure. Users
++ * have a lot of problems setting up firewalls or setting up plugins like IPWhitelist.
++ * Further, the BungeeCord IP forwarding protocol still retains essentially its original
++ * form, when there is brand-new support for custom login plugin messages in 1.13.
++ * <p>
++ * Velocity's modern IP forwarding uses an HMAC-SHA256 code to ensure authenticity
++ * of messages, is packed into a binary format that is smaller than BungeeCord's
++ * forwarding, and is integrated into the Minecraft login process by using the 1.13
++ * login plugin message packet.
++ */
 +public class VelocityProxy {
 +    private static final int SUPPORTED_FORWARDING_VERSION = 1;
 +    public static final int MODERN_FORWARDING_WITH_KEY = 2;
@@ -95,18 +106,18 @@ index 0000000000000000000000000000000000000000..a34381122de53123169927e181df6628
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 4d7124ae7cefcc8c65bf74ac9d3c103fe6817c42..9d7e1b306f8c96883dbe1adbf7e77825da4cbc21 100644
+index 4d7124ae7cefcc8c65bf74ac9d3c103fe6817c42..bbe9ad20a664bcd3952f3a4643add957d20fce20 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -274,13 +274,20 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
          // CraftBukkit end
  
-+        // Paper start
++        // Paper start - Add Velocity IP Forwarding Support
 +        boolean usingProxy = org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
 +        String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
 +        String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
-+        // Paper end
++        // Paper end - Add Velocity IP Forwarding Support
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
@@ -114,23 +125,23 @@ index 4d7124ae7cefcc8c65bf74ac9d3c103fe6817c42..9d7e1b306f8c96883dbe1adbf7e77825
 -            if (org.spigotmc.SpigotConfig.bungee) {
 -                DedicatedServer.LOGGER.warn("Whilst this makes it possible to use BungeeCord, unless access to your server is properly restricted, it also opens up the ability for hackers to connect with any username they choose.");
 -                DedicatedServer.LOGGER.warn("Please see http://www.spigotmc.org/wiki/firewall-guide/ for further information.");
-+            // Paper start
++            // Paper start - Add Velocity IP Forwarding Support
 +            if (usingProxy) {
 +                DedicatedServer.LOGGER.warn("Whilst this makes it possible to use " + proxyFlavor + ", unless access to your server is properly restricted, it also opens up the ability for hackers to connect with any username they choose.");
 +                DedicatedServer.LOGGER.warn("Please see " + proxyLink + " for further information.");
-+            // Paper end
++            // Paper end - Add Velocity IP Forwarding Support
              } else {
                  DedicatedServer.LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
              }
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 6121a3879eeb1d13653e93da02ecdbbcb2a866ac..b9117be53b8b8b37af54621f54480f275546f0fd 100644
+index 6121a3879eeb1d13653e93da02ecdbbcb2a866ac..a9f5af48c1f97b2e635727b48f4383502b17d82f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -64,6 +64,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
      private final String serverId;
      private ServerPlayer player; // CraftBukkit
      public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
-+    private int velocityLoginMessageId = -1; // Paper - Velocity support
++    private int velocityLoginMessageId = -1; // Paper - Add Velocity IP Forwarding Support
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
@@ -138,7 +149,7 @@ index 6121a3879eeb1d13653e93da02ecdbbcb2a866ac..b9117be53b8b8b37af54621f54480f27
                  this.state = ServerLoginPacketListenerImpl.State.KEY;
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge));
              } else {
-+                // Paper start - Velocity support
++                // Paper start - Add Velocity IP Forwarding Support
 +                if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
 +                    this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
 +                    net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
@@ -147,7 +158,7 @@ index 6121a3879eeb1d13653e93da02ecdbbcb2a866ac..b9117be53b8b8b37af54621f54480f27
 +                    this.connection.send(packet1);
 +                    return;
 +                }
-+                // Paper end
++                // Paper end - Add Velocity IP Forwarding Support
                  // CraftBukkit start
                  // Paper start - Cache authenticator threads
                  authenticatorPool.execute(new Runnable() {
@@ -155,12 +166,12 @@ index 6121a3879eeb1d13653e93da02ecdbbcb2a866ac..b9117be53b8b8b37af54621f54480f27
  
      // CraftBukkit start
      private GameProfile callPlayerPreLoginEvents(GameProfile gameprofile) throws Exception { // Paper - Add more fields to AsyncPlayerPreLoginEvent
-+        // Paper start - Velocity support
++        // Paper start - Add Velocity IP Forwarding Support
 +        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
 +            disconnect("This server requires you to connect with Velocity.");
 +            return gameprofile;
 +        }
-+        // Paper end - Velocity support
++        // Paper end - Add Velocity IP Forwarding Support
          String playerName = gameprofile.getName();
          java.net.InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
          java.util.UUID uniqueId = gameprofile.getId();
@@ -168,7 +179,7 @@ index 6121a3879eeb1d13653e93da02ecdbbcb2a866ac..b9117be53b8b8b37af54621f54480f27
  
      @Override
      public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket packet) {
-+        // Paper start - Velocity support
++        // Paper start - Add Velocity IP Forwarding Support
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && packet.transactionId() == this.velocityLoginMessageId) {
 +            ServerboundCustomQueryAnswerPacket.QueryAnswerPayload payload = (ServerboundCustomQueryAnswerPacket.QueryAnswerPayload)packet.payload();
 +            if (payload == null) {
@@ -212,12 +223,12 @@ index 6121a3879eeb1d13653e93da02ecdbbcb2a866ac..b9117be53b8b8b37af54621f54480f27
 +            });
 +            return;
 +        }
-+        // Paper end
++        // Paper end - Add Velocity IP Forwarding Support
          this.disconnect(ServerLoginPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 84d6b1b3ec3972281218cbe5e72c9d4ce6419c59..56e5dff13323068ad2911649e6285aa915d787bd 100644
+index 7749d9740c965baf901512b242426f9a15aca24f..7f238c76a57c9d26c0bafa3f7b4f0436c0a1b93b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -803,7 +803,7 @@ public final class CraftServer implements Server {
@@ -225,7 +236,7 @@ index 84d6b1b3ec3972281218cbe5e72c9d4ce6419c59..56e5dff13323068ad2911649e6285aa9
      public long getConnectionThrottle() {
          // Spigot Start - Automatically set connection throttle for bungee configurations
 -        if (org.spigotmc.SpigotConfig.bungee) {
-+        if (org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) { // Paper - Velocity support
++        if (org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) { // Paper - Add Velocity IP Forwarding Support
              return -1;
          } else {
              return this.configuration.getInt("settings.connection-throttle");

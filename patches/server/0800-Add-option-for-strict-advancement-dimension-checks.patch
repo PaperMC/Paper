@@ -11,7 +11,7 @@ distance trigger. This adds a config option to ignore that
 and use the exact dimension key of the worlds involved.
 
 diff --git a/src/main/java/net/minecraft/advancements/critereon/LocationPredicate.java b/src/main/java/net/minecraft/advancements/critereon/LocationPredicate.java
-index 5f9cb2c7a2874e423087d04d3360af0364692b5c..f81aa5adf9a499cef6dc45bf3f9de2df3dc61460 100644
+index 5f9cb2c7a2874e423087d04d3360af0364692b5c..428e0afef2cac9f2a19d8cfe8f2504ddd8e50887 100644
 --- a/src/main/java/net/minecraft/advancements/critereon/LocationPredicate.java
 +++ b/src/main/java/net/minecraft/advancements/critereon/LocationPredicate.java
 @@ -25,7 +25,7 @@ public record LocationPredicate(Optional<LocationPredicate.PositionPredicate> po
@@ -19,24 +19,24 @@ index 5f9cb2c7a2874e423087d04d3360af0364692b5c..f81aa5adf9a499cef6dc45bf3f9de2df
          if (this.position.isPresent() && !this.position.get().matches(x, y, z)) {
              return false;
 -        } else if (this.dimension.isPresent() && this.dimension.get() != world.dimension()) {
-+        } else if (this.dimension.isPresent() && this.dimension.get() != (io.papermc.paper.configuration.GlobalConfiguration.get().misc.strictAdvancementDimensionCheck ? world.dimension() : org.bukkit.craftbukkit.util.CraftDimensionUtil.getMainDimensionKey(world))) { // Paper
++        } else if (this.dimension.isPresent() && this.dimension.get() != (io.papermc.paper.configuration.GlobalConfiguration.get().misc.strictAdvancementDimensionCheck ? world.dimension() : org.bukkit.craftbukkit.util.CraftDimensionUtil.getMainDimensionKey(world))) { // Paper - Add option for strict advancement dimension checks
              return false;
          } else {
              BlockPos blockPos = BlockPos.containing(x, y, z);
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 1f7b13806ffbcf81df67a02129aa2c07dfc7b8f5..08acf8c6e6c624016ca97eef15da29d338433411 100644
+index 1f7b13806ffbcf81df67a02129aa2c07dfc7b8f5..f2677922cb97c9aa34f2e80769ac9cccc3dc8089 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1321,6 +1321,12 @@ public class ServerPlayer extends Player {
          ResourceKey<Level> maindimensionkey = CraftDimensionUtil.getMainDimensionKey(origin);
          ResourceKey<Level> maindimensionkey1 = CraftDimensionUtil.getMainDimensionKey(this.level());
  
-+        // Paper start - config for strict advancement checks for dimensions
++        // Paper start - Add option for strict advancement dimension checks
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.strictAdvancementDimensionCheck) {
 +            maindimensionkey = resourcekey;
 +            maindimensionkey1 = resourcekey1;
 +        }
-+        // Paper end
++        // Paper end - Add option for strict advancement dimension checks
          CriteriaTriggers.CHANGED_DIMENSION.trigger(this, maindimensionkey, maindimensionkey1);
          if (maindimensionkey != resourcekey || maindimensionkey1 != resourcekey1) {
              CriteriaTriggers.CHANGED_DIMENSION.trigger(this, resourcekey, resourcekey1);

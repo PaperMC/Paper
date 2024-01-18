@@ -6,7 +6,7 @@ Subject: [PATCH] Fire EntityChangeBlockEvent in more places
 Co-authored-by: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
-index 09c981e2573305bd7f5c3cbcc8f240fa8705a9f2..17f664f75aaaea042477e4b467c17c17d1024e3d 100644
+index 09c981e2573305bd7f5c3cbcc8f240fa8705a9f2..0db0d67f9ac15372becc1166c37f7f0aede4a4da 100644
 --- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
 +++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
 @@ -97,7 +97,7 @@ public class LightningBolt extends Entity {
@@ -14,7 +14,7 @@ index 09c981e2573305bd7f5c3cbcc8f240fa8705a9f2..17f664f75aaaea042477e4b467c17c17
  
                  this.powerLightningRod();
 -                LightningBolt.clearCopperOnLightningStrike(this.level(), this.getStrikePosition());
-+                LightningBolt.clearCopperOnLightningStrike(this.level(), this.getStrikePosition(), this); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
++                LightningBolt.clearCopperOnLightningStrike(this.level(), this.getStrikePosition(), this); // Paper - Call EntityChangeBlockEvent
                  this.gameEvent(GameEvent.LIGHTNING_STRIKE);
              }
          }
@@ -23,7 +23,7 @@ index 09c981e2573305bd7f5c3cbcc8f240fa8705a9f2..17f664f75aaaea042477e4b467c17c17
      }
  
 -    private static void clearCopperOnLightningStrike(Level world, BlockPos pos) {
-+    private static void clearCopperOnLightningStrike(Level world, BlockPos pos, Entity lightning) { // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
++    private static void clearCopperOnLightningStrike(Level world, BlockPos pos, Entity lightning) { // Paper - Call EntityChangeBlockEvent
          BlockState iblockdata = world.getBlockState(pos);
          BlockPos blockposition1;
          BlockState iblockdata1;
@@ -32,12 +32,12 @@ index 09c981e2573305bd7f5c3cbcc8f240fa8705a9f2..17f664f75aaaea042477e4b467c17c17
  
          if (iblockdata1.getBlock() instanceof WeatheringCopper) {
 -            world.setBlockAndUpdate(blockposition1, WeatheringCopper.getFirst(world.getBlockState(blockposition1)));
-+            // Paper start - call EntityChangeBlockEvent
++            // Paper start - Call EntityChangeBlockEvent
 +            BlockState newBlock = WeatheringCopper.getFirst(world.getBlockState(blockposition1));
 +            if (CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1, newBlock)) {
 +                world.setBlockAndUpdate(blockposition1, newBlock);
 +            }
-+            // Paper end
++            // Paper end - Call EntityChangeBlockEvent
              BlockPos.MutableBlockPos blockposition_mutableblockposition = pos.mutable();
              int i = world.random.nextInt(3) + 3;
  
