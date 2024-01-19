@@ -2153,19 +2153,19 @@ index 0000000000000000000000000000000000000000..1f42bdfdb052056e62a939ab0d1944f8
 +
 +}
 diff --git a/src/main/java/net/minecraft/core/Direction.java b/src/main/java/net/minecraft/core/Direction.java
-index d0a8092bf57a29ab7c00ec0ddf52a9fdb2a33267..392406722b0a040c1d41fdc1154d75d39f6e9c86 100644
+index 073c717bb676b9e99aada00c349fb7eee91df1e7..2a9fc1f1dfc0c5894c1e74dad5a79ae9b02ac74f 100644
 --- a/src/main/java/net/minecraft/core/Direction.java
 +++ b/src/main/java/net/minecraft/core/Direction.java
 @@ -57,6 +57,21 @@ public enum Direction implements StringRepresentable {
      private final int adjY;
      private final int adjZ;
-     // Paper end
+     // Paper end - Perf: Inline shift direction fields
 +    // Paper start - optimise collisions
 +    private static final int RANDOM_OFFSET = 2017601568;
 +    private Direction opposite;
 +    static {
 +        for (final Direction direction : VALUES) {
-+            direction.opposite = from3DDataValue(direction.oppositeIndex);;
++            direction.opposite = from3DDataValue(direction.oppositeIndex);
 +        }
 +    }
 +
@@ -2179,7 +2179,7 @@ index d0a8092bf57a29ab7c00ec0ddf52a9fdb2a33267..392406722b0a040c1d41fdc1154d75d3
      private Direction(int id, int idOpposite, int idHorizontal, String name, Direction.AxisDirection direction, Direction.Axis axis, Vec3i vector) {
          this.data3d = id;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 6571692d00f88947316454e2f10cac30e3756ac0..0492704f7f365310d7ea930c30330a468a39c0de 100644
+index f35bd06e3ae16922dfde76abda5b6f938f5b50f7..cb18d1a0ad8c06336d4bfe53b5231fdb9164ae60 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -469,7 +469,7 @@ public class ServerPlayer extends Player {
@@ -2201,7 +2201,7 @@ index 6571692d00f88947316454e2f10cac30e3756ac0..0492704f7f365310d7ea930c30330a46
              }
          }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 1bbcae2411205799b00dba7ee82c3ceb461289cf..5921b4c5c38354c4782783d0debddb8bf4e356c7 100644
+index 91fa10899f7f10dc056b4668c1f9758a8de09b9b..81303bc614b47fdd6db90ad1fbdaf9fed65b6cf3 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -909,7 +909,7 @@ public abstract class PlayerList {
@@ -2214,7 +2214,7 @@ index 1bbcae2411205799b00dba7ee82c3ceb461289cf..5921b4c5c38354c4782783d0debddb8b
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 3086ded2c65b2d623a50401fb0a1612d073da450..5be92231bf62285f29dcf32b2ef65baaf5755804 100644
+index 9b9c09f57905d52721e9ab911dbb4df67d235ea7..e19204ff0d29d522ae653805429dc76f628f2ebc 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1217,9 +1217,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S

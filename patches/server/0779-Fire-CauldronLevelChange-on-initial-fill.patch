@@ -7,7 +7,7 @@ Also don't fire level events or game events if stalactite
 drip is cancelled
 
 diff --git a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java b/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
-index 4c9334dde0734a3550a810845cee53f474e9c96b..dc1d20691ae5bd9026143e143a9bfdc1b6cfd6eb 100644
+index 4c9334dde0734a3550a810845cee53f474e9c96b..50fd3e43b4971cd72efd1f609f0cdc4b0f57bed4 100644
 --- a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
 +++ b/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
 @@ -80,7 +80,7 @@ public interface CauldronInteraction {
@@ -15,7 +15,7 @@ index 4c9334dde0734a3550a810845cee53f474e9c96b..dc1d20691ae5bd9026143e143a9bfdc1
                  if (!world.isClientSide) {
                      // CraftBukkit start
 -                    if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, Blocks.WATER_CAULDRON.defaultBlockState(), entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY)) {
-+                    if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, Blocks.WATER_CAULDRON.defaultBlockState(), entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY, false)) { // Paper - Call CauldronLevelChange
++                    if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, Blocks.WATER_CAULDRON.defaultBlockState(), entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY, false)) { // Paper - Call CauldronLevelChangeEvent
                          return InteractionResult.SUCCESS;
                      }
                      // CraftBukkit end
@@ -24,7 +24,7 @@ index 4c9334dde0734a3550a810845cee53f474e9c96b..dc1d20691ae5bd9026143e143a9bfdc1
                  if (!world.isClientSide) {
                      // CraftBukkit start
 -                    if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, iblockdata.cycle(LayeredCauldronBlock.LEVEL), entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY)) {
-+                    if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, iblockdata.cycle(LayeredCauldronBlock.LEVEL), entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY, false)) { // Paper - Call CauldronLevelChange
++                    if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, iblockdata.cycle(LayeredCauldronBlock.LEVEL), entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY, false)) { // Paper - Call CauldronLevelChangeEvent
                          return InteractionResult.SUCCESS;
                      }
                      // CraftBukkit end
@@ -33,7 +33,7 @@ index 4c9334dde0734a3550a810845cee53f474e9c96b..dc1d20691ae5bd9026143e143a9bfdc1
              if (!world.isClientSide) {
                  // CraftBukkit start
 -                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.CAULDRON.defaultBlockState(), player, CauldronLevelChangeEvent.ChangeReason.BUCKET_FILL)) {
-+                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.CAULDRON.defaultBlockState(), player, CauldronLevelChangeEvent.ChangeReason.BUCKET_FILL, false)) { // Paper - Call CauldronLevelChange
++                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.CAULDRON.defaultBlockState(), player, CauldronLevelChangeEvent.ChangeReason.BUCKET_FILL, false)) { // Paper - Call CauldronLevelChangeEvent
                      return InteractionResult.SUCCESS;
                  }
                  // CraftBukkit end
@@ -42,12 +42,12 @@ index 4c9334dde0734a3550a810845cee53f474e9c96b..dc1d20691ae5bd9026143e143a9bfdc1
          if (!world.isClientSide) {
              // CraftBukkit start
 -            if (!LayeredCauldronBlock.changeLevel(state, world, pos, state, player, CauldronLevelChangeEvent.ChangeReason.BUCKET_EMPTY)) {
-+            if (!LayeredCauldronBlock.changeLevel(state, world, pos, state, player, CauldronLevelChangeEvent.ChangeReason.BUCKET_EMPTY, false)) { // Paper - Call CauldronLevelChange
++            if (!LayeredCauldronBlock.changeLevel(state, world, pos, state, player, CauldronLevelChangeEvent.ChangeReason.BUCKET_EMPTY, false)) { // Paper - Call CauldronLevelChangeEvent
                  return InteractionResult.SUCCESS;
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/level/block/CauldronBlock.java b/src/main/java/net/minecraft/world/level/block/CauldronBlock.java
-index 588b3e911d9b22dad2928ea9e32e8a8a3a8e9b96..274dc56a71fb05060de42169df34dfd8097f2b62 100644
+index 588b3e911d9b22dad2928ea9e32e8a8a3a8e9b96..47b6b83842201620bd6620f5acf11bb14334e35d 100644
 --- a/src/main/java/net/minecraft/world/level/block/CauldronBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CauldronBlock.java
 @@ -43,10 +43,18 @@ public class CauldronBlock extends AbstractCauldronBlock {
@@ -55,19 +55,19 @@ index 588b3e911d9b22dad2928ea9e32e8a8a3a8e9b96..274dc56a71fb05060de42169df34dfd8
          if (CauldronBlock.shouldHandlePrecipitation(world, precipitation)) {
              if (precipitation == Biome.Precipitation.RAIN) {
 -                world.setBlockAndUpdate(pos, Blocks.WATER_CAULDRON.defaultBlockState());
-+                // Paper start - Call CauldronLevelChange
++                // Paper start - Call CauldronLevelChangeEvent
 +                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.WATER_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL, false)) { // avoid duplicate game event
 +                    return;
 +                }
-+                // Paper end - Call CauldronLevelChange
++                // Paper end - Call CauldronLevelChangeEvent
                  world.gameEvent((Entity) null, GameEvent.BLOCK_CHANGE, pos);
              } else if (precipitation == Biome.Precipitation.SNOW) {
 -                world.setBlockAndUpdate(pos, Blocks.POWDER_SNOW_CAULDRON.defaultBlockState());
-+                // Paper start - Call CauldronLevelChange
++                // Paper start - Call CauldronLevelChangeEvent
 +                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.POWDER_SNOW_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL, false)) { // avoid duplicate game event
 +                    return;
 +                }
-+                // Paper end - Call CauldronLevelChange
++                // Paper end - Call CauldronLevelChangeEvent
                  world.gameEvent((Entity) null, GameEvent.BLOCK_CHANGE, pos);
              }
  
@@ -76,25 +76,25 @@ index 588b3e911d9b22dad2928ea9e32e8a8a3a8e9b96..274dc56a71fb05060de42169df34dfd8
          if (fluid == Fluids.WATER) {
              iblockdata1 = Blocks.WATER_CAULDRON.defaultBlockState();
 -            LayeredCauldronBlock.changeLevel(state, world, pos, iblockdata1, null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL); // CraftBukkit
-+            // Paper start - Call CauldronLevelChange; don't send level event or game event if cancelled
++            // Paper start - Call CauldronLevelChangeEvent; don't send level event or game event if cancelled
 +            if (!LayeredCauldronBlock.changeLevel(state, world, pos, iblockdata1, null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) { // CraftBukkit
 +                return;
 +            }
-+            // Paper end - Call CauldronLevelChange
++            // Paper end - Call CauldronLevelChangeEvent
              world.levelEvent(1047, pos, 0);
          } else if (fluid == Fluids.LAVA) {
              iblockdata1 = Blocks.LAVA_CAULDRON.defaultBlockState();
 -            LayeredCauldronBlock.changeLevel(state, world, pos, iblockdata1, null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL); // CraftBukkit
-+            // Paper start - Call CauldronLevelChange; don't send level event or game event if cancelled
++            // Paper start - Call CauldronLevelChangeEvent; don't send level event or game event if cancelled
 +            if (!LayeredCauldronBlock.changeLevel(state, world, pos, iblockdata1, null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) { // CraftBukkit
 +                return;
 +            }
-+            // Paper end - Call CauldronLevelChange
++            // Paper end - Call CauldronLevelChangeEvent
              world.levelEvent(1046, pos, 0);
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
-index 18ca086e28f4295cb9303919222d7c8ae0ca5d9a..9c828328f5b8c1fe723437ed4a42cc1fe6a23d3d 100644
+index 18ca086e28f4295cb9303919222d7c8ae0ca5d9a..542bc6be48d5c53eee988156e7aa6ecfccb51069 100644
 --- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
 @@ -101,7 +101,13 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
@@ -102,13 +102,13 @@ index 18ca086e28f4295cb9303919222d7c8ae0ca5d9a..9c828328f5b8c1fe723437ed4a42cc1f
  
      // CraftBukkit start
 -    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, Entity entity, CauldronLevelChangeEvent.ChangeReason reason) {
-+    // Paper start - Call CauldronLevelChange
++    // Paper start - Call CauldronLevelChangeEvent
 +    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason) { // Paper - entity is nullable
 +        return changeLevel(iblockdata, world, blockposition, newBlock, entity, reason, true);
 +    }
 +
 +    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason, boolean sendGameEvent) { // Paper - entity is nullable
-+    // Paper end - Call CauldronLevelChange
++    // Paper end - Call CauldronLevelChangeEvent
          CraftBlockState newState = CraftBlockStates.getBlockState(world, blockposition);
          newState.setData(newBlock);
  
@@ -117,7 +117,7 @@ index 18ca086e28f4295cb9303919222d7c8ae0ca5d9a..9c828328f5b8c1fe723437ed4a42cc1f
          }
          newState.update(true);
 -        world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(newBlock));
-+        if (sendGameEvent) world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(newBlock)); // Paper - Call CauldronLevelChange
++        if (sendGameEvent) world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(newBlock)); // Paper - Call CauldronLevelChangeEvent
          return true;
      }
      // CraftBukkit end

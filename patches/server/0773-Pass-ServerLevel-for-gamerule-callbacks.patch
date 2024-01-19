@@ -5,7 +5,7 @@ Subject: [PATCH] Pass ServerLevel for gamerule callbacks
 
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 753bec96a829a153dc54b5e1013359b86f1776b3..d721c96b2b76209176f295896bff3bd03c241c4f 100644
+index 3fb0d020493db8e5bde9f6fc76637c74b80fd791..0f562a8e0c5d4b2907174c9409977570869bd331 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -304,7 +304,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -18,7 +18,7 @@ index 753bec96a829a153dc54b5e1013359b86f1776b3..d721c96b2b76209176f295896bff3bd0
  
              if (dedicatedserverproperties.enableQuery) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 5e0466b0522ea325b2c37e3d4c80f3d61c1816fe..5433681fc3765d744193556217169995fbbb3c7d 100644
+index 7eba2244e1e92dec7b81dea44b05d5e59887d242..2301445fb77cb8777632d81b60cbc04a42d86533 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -2761,7 +2761,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -31,7 +31,7 @@ index 5e0466b0522ea325b2c37e3d4c80f3d61c1816fe..5433681fc3765d744193556217169995
                  }
                  break;
 diff --git a/src/main/java/net/minecraft/world/level/GameRules.java b/src/main/java/net/minecraft/world/level/GameRules.java
-index 2a480026c3bfb06e6556fe5b11d9712c8e02debe..dd03426943dd380cefe12afe3e63c3180a22ec4f 100644
+index f3cdf1fa7731eb7bb1cb89aa6a37204d81257cb0..0112ef51815c4fab38b95d5e917d335eeaaa21cd 100644
 --- a/src/main/java/net/minecraft/world/level/GameRules.java
 +++ b/src/main/java/net/minecraft/world/level/GameRules.java
 @@ -52,7 +52,7 @@ public class GameRules {
@@ -92,8 +92,8 @@ index 2a480026c3bfb06e6556fe5b11d9712c8e02debe..dd03426943dd380cefe12afe3e63c318
              this.callback = changeCallback;
 @@ -289,10 +289,10 @@ public class GameRules {
  
-         public void setFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<T> gameRuleKey) { // Paper
-             this.updateFromArgument(context, name, gameRuleKey); // Paper
+         public void setFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<T> gameRuleKey) { // Paper - Add WorldGameRuleChangeEvent
+             this.updateFromArgument(context, name, gameRuleKey); // Paper - Add WorldGameRuleChangeEvent
 -            this.onChanged(((CommandSourceStack) context.getSource()).getServer());
 +            this.onChanged(((CommandSourceStack) context.getSource()).getLevel()); // Paper - Pass ServerLevel for gamerule callbacks
          }
@@ -167,22 +167,22 @@ index 2a480026c3bfb06e6556fe5b11d9712c8e02debe..dd03426943dd380cefe12afe3e63c318
              this.onChanged(server);
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index cd7367672b91829d1ffef73e32062af730df7d95..19f91e08664c996b540447a46cc79e89c8e55023 100644
+index f41d56da115c14d22d7256be6f16409fdf0e49cd..6b40538ecf9b42473114c3f2acfff5ff0bcf2167 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -2038,7 +2038,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-         // Paper end
+         // Paper end - Add WorldGameRuleChangeEvent
          GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule));
-         handle.deserialize(event.getValue()); // Paper
+         handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
 -        handle.onChanged(this.getHandle().getServer());
 +        handle.onChanged(this.getHandle()); // Paper - Pass ServerLevel for gamerule callbacks
          return true;
      }
  
 @@ -2079,7 +2079,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-         // Paper end
+         // Paper end - Add WorldGameRuleChangeEvent
          GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName()));
-         handle.deserialize(event.getValue()); // Paper
+         handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
 -        handle.onChanged(this.getHandle().getServer());
 +        handle.onChanged(this.getHandle()); // Paper - Pass ServerLevel for gamerule callbacks
          return true;

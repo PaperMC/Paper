@@ -5,7 +5,7 @@ Subject: [PATCH] Add recipe to cook events
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-index 7bcc4ede30f9cd1af2b0560bd3eca18e11a5524c..97b8dc205fb22e17ab457e8d1f4d73a7b2f8cc47 100644
+index 5c65be04ac88f1308eae6a8cde36d5f7e8aad879..14406c07dc505525ddcd257ca7e3779c1338eb05 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 @@ -438,7 +438,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
@@ -13,33 +13,32 @@ index 7bcc4ede30f9cd1af2b0560bd3eca18e11a5524c..97b8dc205fb22e17ab457e8d1f4d73a7
              org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
  
 -            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(CraftBlock.at(world, blockposition), source, result);
-+            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(CraftBlock.at(world, blockposition), source, result, (org.bukkit.inventory.CookingRecipe<?>) recipeholder.toBukkitRecipe()); // Paper
++            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(CraftBlock.at(world, blockposition), source, result, (org.bukkit.inventory.CookingRecipe<?>) recipeholder.toBukkitRecipe()); // Paper - Add recipe to cook events
              world.getCraftServer().getPluginManager().callEvent(furnaceSmeltEvent);
  
              if (furnaceSmeltEvent.isCancelled()) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
-index f706c787f7608f7440a5f5e05e7e9c4cb582368c..f776289eea00bd741ad55bb9bc338dd2c05c8b39 100644
+index f706c787f7608f7440a5f5e05e7e9c4cb582368c..daeced350310020b99ab0244daf7f7a69c29b069 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
-@@ -63,8 +63,10 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+@@ -63,7 +63,10 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
  
                  if (campfire.cookingProgress[i] >= campfire.cookingTime[i]) {
                      SimpleContainer inventorysubcontainer = new SimpleContainer(new ItemStack[]{itemstack});
 -                    ItemStack itemstack1 = (ItemStack) campfire.quickCheck.getRecipeFor(inventorysubcontainer, world).map((recipeholder) -> {
--                        return ((CampfireCookingRecipe) recipeholder.value()).assemble(inventorysubcontainer, world.registryAccess());
-+                    Optional<RecipeHolder<CampfireCookingRecipe>> recipeHolderOptional = campfire.quickCheck.getRecipeFor( inventorysubcontainer, world);
++                    // Paper start - Add recipe to cook events; re-use recipeHolderOptional below
++                    Optional<RecipeHolder<CampfireCookingRecipe>> recipeHolderOptional = campfire.quickCheck.getRecipeFor(inventorysubcontainer, world);
 +                    ItemStack itemstack1 = (ItemStack) recipeHolderOptional.map((recipeholder) -> {
-+                        // Paper end
-+                        return recipeholder.value().assemble(inventorysubcontainer, world.registryAccess());
++                        // Paper end - Add recipe to cook events
+                         return ((CampfireCookingRecipe) recipeholder.value()).assemble(inventorysubcontainer, world.registryAccess());
                      }).orElse(itemstack);
  
-                     if (itemstack1.isItemEnabled(world.enabledFeatures())) {
-@@ -72,7 +74,7 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+@@ -72,7 +75,7 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
                          CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
                          org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
  
 -                        BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(world, pos), source, result);
-+                        BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(world, pos), source, result, (org.bukkit.inventory.CookingRecipe<?>) recipeHolderOptional.map(RecipeHolder::toBukkitRecipe).orElse(null)); // Paper
++                        BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(world, pos), source, result, (org.bukkit.inventory.CookingRecipe<?>) recipeHolderOptional.map(RecipeHolder::toBukkitRecipe).orElse(null)); // Paper - Add recipe to cook events
                          world.getCraftServer().getPluginManager().callEvent(blockCookEvent);
  
                          if (blockCookEvent.isCancelled()) {

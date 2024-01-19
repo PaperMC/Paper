@@ -5,18 +5,18 @@ Subject: [PATCH] Add sendOpLevel API
 
 
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 0c495698438e4dd29d4bcddb0c88978fc58db8f3..3aeaf4cb425b141d1a90a40cdee95bc98b2aeb56 100644
+index 617f8776797e07b5d2ad632b5e049b287984d504..d80b05fb33d1f519923f8ef189ff9025335d9390 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -1103,6 +1103,11 @@ public abstract class PlayerList {
      }
  
      private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
-+        // Paper start - add recalculatePermissions parameter
++        // Paper start - Add sendOpLevel API
 +        this.sendPlayerPermissionLevel(player, permissionLevel, true);
 +    }
 +    public void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel, boolean recalculatePermissions) {
-+        // Paper end
++        // Paper end - Add sendOpLevel API
          if (player.connection != null) {
              byte b0;
  
@@ -24,29 +24,29 @@ index 0c495698438e4dd29d4bcddb0c88978fc58db8f3..3aeaf4cb425b141d1a90a40cdee95bc9
              player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
-+        if (recalculatePermissions) { // Paper
++        if (recalculatePermissions) { // Paper - Add sendOpLevel API
          player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
          this.server.getCommands().sendCommands(player);
-+        } // Paper
++        } // Paper - Add sendOpLevel API
      }
  
      public boolean isWhiteListed(GameProfile profile) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index ba30c5e17a294cee9f408fdd4e31849c0e5d28ed..8a924ae677a93a177651aa1ec0728e3b8d5528a6 100644
+index ba30c5e17a294cee9f408fdd4e31849c0e5d28ed..298380e217f41f01d0818767a6d8f1da5a004037 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -633,6 +633,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
      // Paper end
  
-+    // Paper start - sendOpLevel API
++    // Paper start - Add sendOpLevel API
 +    @Override
 +    public void sendOpLevel(byte level) {
 +        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
 +
 +        this.getHandle().getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
 +    }
-+    // Paper end - sendOpLevel API
++    // Paper end - Add sendOpLevel API
 +
      @Override
      public void setCompassTarget(Location loc) {

@@ -67,9 +67,6 @@ https://bugs.mojang.com/browse/MC-200092
 https://bugs.mojang.com/browse/MC-158900
   Fix error when joining after tempban expired
 
-https://bugs.mojang.com/browse/MC-259571
-  Fix last gamemode not being saved on death or reload
-
 == AT ==
 public net/minecraft/world/entity/Mob leashInfoTag
 
@@ -129,7 +126,7 @@ index 534493aaddced9200e1618d5eabf2b176a1f35b6..a58c47b16254262ec705a8f986ef42c7
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 1089c0ad619784d25b1384db2f09eebb53fa4536..4ffb462f051744d5f7f7b4cf0c49f5d1533d1d53 100644
+index 82a71a150c555dd4dfe0ce03a3addba53fda5387..9ef3445aadf98d205a60803f459d07c4ac820ba9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1032,7 +1032,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -142,7 +139,7 @@ index 1089c0ad619784d25b1384db2f09eebb53fa4536..4ffb462f051744d5f7f7b4cf0c49f5d1
  
              if (!list.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index c03ea45afb5537058cdeecc654184338b9aa0bd8..6251e68eff87a0b26d6123fdb658749e90fcfc42 100644
+index d27793e21f9352896a96d5ccfdd0281b0b102a03..6cf989b4827b78d25bcb0ad4b683b6b1569e12dd 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -468,14 +468,14 @@ public class ServerPlayer extends Player {
@@ -176,7 +173,7 @@ index c14ab35c4336c025c242e8a350ac4b8d1b1d5c78..15f6bd2e61c02392e8383dc93d734990
              this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
              this.level.updateSleepingPlayerList();
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 6e47d01db9e7f8519e560681922a0f15980d6acc..cd0f6f3c1cf2a4004e238d0e23104209d6384c4e 100644
+index 92b88e82e9a49a0e967a7e694f1d2f4ade8adbf1..fbf388fe93383daf5e87e54a8a413a2239bfdc69 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -711,8 +711,10 @@ public abstract class PlayerList {
@@ -301,7 +298,7 @@ index 110dd5418b0512a2f27f0c4d5a5f1812356a6a12..5d247ac38fe8a61603b3d934f3000bcd
              }
  
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-index bd0165d9ca52665a52fbd9678ed895bf4bed2fe7..8fe5a4ccf474c094b8081828c93e8973cdabb6ed 100644
+index 7a990fb47f39da00026d3005d5bb11d3abd14026..ea5fffa7e045d854ce9522f00246e3746f40f028 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 @@ -252,7 +252,13 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
@@ -375,11 +372,11 @@ index 4a0f4c83228187a2082ad029680056b1801f77bd..31831811ce16265e9828fa34d9e67d8a
                          player.awardStat(Stats.RAID_TRIGGER);
                          CriteriaTriggers.BAD_OMEN.trigger(player);
 diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
-index 685c35419de7e3c4e854a28118a243e65250ef59..0b1a0be964d799f1706c273092dc653fa04e8014 100644
+index 611cbe0e47474f94cd203ac86ca9e80cab621134..de919d72e6e3ef160c7d22ca6a4e9f79a1fe493e 100644
 --- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
 @@ -178,6 +178,11 @@ public class BeaconMenu extends AbstractContainerMenu {
-     // Paper end
+     // Paper end - Add PlayerChangeBeaconEffectEvent
  
      public void updateEffects(Optional<MobEffect> primary, Optional<MobEffect> secondary) {
 +        // Paper start - fix MC-174630 - validate secondary power
@@ -388,7 +385,7 @@ index 685c35419de7e3c4e854a28118a243e65250ef59..0b1a0be964d799f1706c273092dc653f
 +        }
 +        // Paper end
          if (this.paymentSlot.hasItem()) {
-             // Paper start
+             // Paper start - Add PlayerChangeBeaconEffectEvent
              io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
 diff --git a/src/main/java/net/minecraft/world/item/BundleItem.java b/src/main/java/net/minecraft/world/item/BundleItem.java
 index 10b0720ce7eed58fa3cd8c8051efa6225f7d73e1..ac0bc87f60c4e1562d1301522183e449558d42f8 100644
@@ -442,7 +439,7 @@ index 6e45582f8ea7dd2a46f58369c5581764538bff0d..3ecc92439fc85d224ff52f41c5e34079
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
-index 5199ad9ca36ccd18eb2ff191feaf4331404049d2..f41ffeb9062b661c2b8cf09c0d6848550591eaa7 100644
+index 333cc37e4f3ca3ea95191dcaafda6be59ef79b96..91071fa934222c9246547c788e3e6cb18fcaa990 100644
 --- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
 @@ -68,7 +68,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
@@ -455,7 +452,7 @@ index 5199ad9ca36ccd18eb2ff191feaf4331404049d2..f41ffeb9062b661c2b8cf09c0d684855
                      return;
                  }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-index b7760cc0f85b5db37d5a309aae3c26a00a65e32e..d493136283ae5100c0dc22f8da5f7e5b64fdc5f5 100644
+index 0813e7510c43ed6916e83635f2be6d39ce2feb5b..137ee0271f1d7adbf3c463b96e9c4627fd5ca74b 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 @@ -675,13 +675,10 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
