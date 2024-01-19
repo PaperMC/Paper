@@ -5,14 +5,14 @@ Subject: [PATCH] fix PigZombieAngerEvent cancellation
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java b/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
-index 7e703bf1ca3cf824b06b6be731b866cd407aaff1..1afe8a8694c1fd0bf43ce3c0c36a83fda9aec141 100644
+index 7e703bf1ca3cf824b06b6be731b866cd407aaff1..fbabbd0808304f5d0d12f987d00c9e43a89fb1c9 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
 @@ -57,6 +57,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
      private int ticksUntilNextAlert;
      private static final float ZOMBIFIED_PIGLIN_EYE_HEIGHT = 1.79F;
      private static final float ZOMBIFIED_PIGLIN_BABY_EYE_HEIGHT_ADJUSTMENT = 0.82F;
-+    private HurtByTargetGoal pathfinderGoalHurtByTarget; // Paper
++    private HurtByTargetGoal pathfinderGoalHurtByTarget; // Paper - fix PigZombieAngerEvent cancellation
  
      public ZombifiedPiglin(EntityType<? extends ZombifiedPiglin> type, Level world) {
          super(type, world);
@@ -21,7 +21,7 @@ index 7e703bf1ca3cf824b06b6be731b866cd407aaff1..1afe8a8694c1fd0bf43ce3c0c36a83fd
          this.goalSelector.addGoal(2, new ZombieAttackGoal(this, 1.0D, false));
          this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
 -        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers());
-+        this.targetSelector.addGoal(1, pathfinderGoalHurtByTarget = (new HurtByTargetGoal(this, new Class[0])).setAlertOthers()); // Paper - assign field
++        this.targetSelector.addGoal(1, pathfinderGoalHurtByTarget = (new HurtByTargetGoal(this, new Class[0])).setAlertOthers()); // Paper - fix PigZombieAngerEvent cancellation
          this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
          this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
      }
@@ -29,7 +29,7 @@ index 7e703bf1ca3cf824b06b6be731b866cd407aaff1..1afe8a8694c1fd0bf43ce3c0c36a83fd
          this.level().getCraftServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              this.setPersistentAngerTarget(null);
-+            pathfinderGoalHurtByTarget.stop(); // Paper - clear goalTargets to fix cancellation
++            pathfinderGoalHurtByTarget.stop(); // Paper - fix PigZombieAngerEvent cancellation
              return;
          }
          this.setRemainingPersistentAngerTime(event.getNewAnger());

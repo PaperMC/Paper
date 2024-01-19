@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 30 Dec 2021 14:02:13 -0800
+Subject: [PATCH] fix powder snow cauldrons not turning to water
+
+Powder snow cauldrons should turn to water when
+extinguishing an entity
+
+diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+index 9c828328f5b8c1fe723437ed4a42cc1fe6a23d3d..5199ad9ca36ccd18eb2ff191feaf4331404049d2 100644
+--- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+@@ -69,7 +69,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+         if (!world.isClientSide && entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
+             // CraftBukkit start
+             if (entity.mayInteract(world, pos)) {
+-                if (!LayeredCauldronBlock.lowerFillLevel(state, world, pos, entity, CauldronLevelChangeEvent.ChangeReason.EXTINGUISH)) {
++                if (!this.handleEntityOnFireInsideWithEvent(state, world, pos, entity)) { // Paper - fix powdered snow cauldron extinguishing entities
+                     return;
+                 }
+             }
+@@ -79,6 +79,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+ 
+     }
+ 
++    @Deprecated // Paper - fix powdered snow cauldron extinguishing entities; use #handleEntityOnFireInsideWithEvent
+     private void handleEntityOnFireInside(BlockState state, Level world, BlockPos pos) {
+         if (this.precipitationType == Biome.Precipitation.SNOW) {
+             LayeredCauldronBlock.lowerFillLevel((BlockState) Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, (Integer) state.getValue(LayeredCauldronBlock.LEVEL)), world, pos);
+@@ -87,6 +88,15 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+         }
+ 
+     }
++    // Paper start - fix powdered snow cauldron extinguishing entities
++    protected boolean handleEntityOnFireInsideWithEvent(BlockState state, Level world, BlockPos pos, Entity entity) {
++        if (this.precipitationType == Biome.Precipitation.SNOW) {
++            return LayeredCauldronBlock.lowerFillLevel((BlockState) Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, (Integer) state.getValue(LayeredCauldronBlock.LEVEL)), world, pos, entity, CauldronLevelChangeEvent.ChangeReason.EXTINGUISH);
++        } else {
++            return LayeredCauldronBlock.lowerFillLevel(state, world, pos, entity, CauldronLevelChangeEvent.ChangeReason.EXTINGUISH);
++        }
++    }
++    // Paper end - fix powdered snow cauldron extinguishing entities
+ 
+     public static void lowerFillLevel(BlockState state, Level world, BlockPos pos) {
+         // CraftBukkit start

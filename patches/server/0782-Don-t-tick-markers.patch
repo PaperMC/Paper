@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Fri, 7 Jan 2022 11:58:26 +0100
+Subject: [PATCH] Don't tick markers
+
+Fixes https://github.com/PaperMC/Paper/issues/7276 and https://github.com/PaperMC/Paper/issues/8118
+by using a config option that, when set to false, does not add markers to the entity
+tick list at all and ignores them in Spigot's activation range checks. The entity tick
+list is only used in the tick and tickPassenger methods, so we can safely not add the
+markers to it. When the config option is set to true, markers are ticked as normal.
+
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
+index ff99336e0b8131ae161cfa5c4fc83c6905e3dbc8..5e5a018433414af76eaa1e781f61612ddc305b07 100644
+--- a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
++++ b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
+@@ -109,7 +109,7 @@ public final class EntityCommand implements PaperSubcommand {
+                 ChunkPos chunk = e.chunkPosition();
+                 info.left++;
+                 info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
+-                if (!chunkProviderServer.isPositionTicking(e)) {
++                if (!chunkProviderServer.isPositionTicking(e) || (e instanceof net.minecraft.world.entity.Marker && !world.paperConfig().entities.markers.tick)) { // Paper - Configurable marker ticking
+                     nonEntityTicking.merge(key, 1, Integer::sum);
+                 }
+             });
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 15224b31e926ab16b1ef8f2ebdca4dba20637789..cb2f5d727971c809bcb3eea0db04de4fa91459fb 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2605,6 +2605,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         }
+ 
+         public void onTickingStart(Entity entity) {
++            if (entity instanceof net.minecraft.world.entity.Marker && !paperConfig().entities.markers.tick) return; // Paper - Configurable marker ticking
+             ServerLevel.this.entityTickList.add(entity);
+         }
+ 
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 3495981419a75efe42bce45a89a32378dd6b8372..fafc8b84d6b6368c70b8eedfdb4c3a9deace9c26 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -213,8 +213,14 @@ public class ActivationRange
+ 
+             // Paper start
+             java.util.List<Entity> entities = world.getEntities((Entity)null, ActivationRange.maxBB, null);
++            boolean tickMarkers = world.paperConfig().entities.markers.tick; // Paper - Configurable marker ticking
+             for (int i = 0; i < entities.size(); i++) {
+                 Entity entity = entities.get(i);
++                // Paper start - Configurable marker ticking
++                if (!tickMarkers && entity instanceof net.minecraft.world.entity.Marker) {
++                    continue;
++                }
++                // Paper end - Configurable marker ticking
+                 ActivationRange.activateEntity(entity);
+             }
+             // Paper end

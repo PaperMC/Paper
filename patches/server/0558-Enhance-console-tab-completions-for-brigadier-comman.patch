@@ -208,7 +208,7 @@ index 0000000000000000000000000000000000000000..dd9d77d7c7f1a5a130a1f4c15e5b1e68
 +    public void setErrorIndex(final int errorIndex) {}
 +}
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index b5acccc3339e3e2b817116ecf2af228cb641b175..d3e5235d4aa7240ba91bd40c3e1809e1fc1c4632 100644
+index b5acccc3339e3e2b817116ecf2af228cb641b175..d0551eb2aae8a26222827fdd7c1b7ee81c8c95b9 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -173,7 +173,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -216,7 +216,7 @@ index b5acccc3339e3e2b817116ecf2af228cb641b175..d3e5235d4aa7240ba91bd40c3e1809e1
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
 -        thread.start();
-+        // thread.start(); // Paper - moved down
++        // thread.start(); // Paper - Enhance console tab completions for brigadier commands; moved down
          DedicatedServer.LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().getName());
          if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
              DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
@@ -224,23 +224,23 @@ index b5acccc3339e3e2b817116ecf2af228cb641b175..d3e5235d4aa7240ba91bd40c3e1809e1
          this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
          // Paper end - convert old users earlier after PlayerList creation but before file load/save
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
-+        thread.start(); // Paper - start console thread after MinecraftServer.console & PaperConfig are initialized
++        thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
          io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
-index 8f82041f0482df22a6a9ea38d50d56228131775d..12eeabafbad9da8796dc6fc383b732cf75bb7ddb 100644
+index 8f82041f0482df22a6a9ea38d50d56228131775d..3e93a6c489972ff2b4ecff3d83cc72b2d5c970f8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 @@ -18,9 +18,11 @@ import org.bukkit.event.server.TabCompleteEvent;
  
  public class ConsoleCommandCompleter implements Completer {
      private final DedicatedServer server; // Paper - CraftServer -> DedicatedServer
-+    private final io.papermc.paper.console.BrigadierCommandCompleter brigadierCompleter; // Paper
++    private final io.papermc.paper.console.BrigadierCommandCompleter brigadierCompleter; // Paper - Enhance console tab completions for brigadier commands
  
      public ConsoleCommandCompleter(DedicatedServer server) { // Paper - CraftServer -> DedicatedServer
          this.server = server;
-+        this.brigadierCompleter = new io.papermc.paper.console.BrigadierCommandCompleter(this.server); // Paper
++        this.brigadierCompleter = new io.papermc.paper.console.BrigadierCommandCompleter(this.server); // Paper - Enhance console tab completions for brigadier commands
      }
  
      // Paper start - Change method signature for JLine update
@@ -265,7 +265,7 @@ index 8f82041f0482df22a6a9ea38d50d56228131775d..12eeabafbad9da8796dc6fc383b732cf
          try {
              List<String> offers = waitable.get();
              if (offers == null) {
-+                this.addCompletions(reader, line, candidates, Collections.emptyList()); // Paper
++                this.addCompletions(reader, line, candidates, Collections.emptyList()); // Paper - Enhance console tab completions for brigadier commands
                  return; // Paper - Method returns void
              }
  

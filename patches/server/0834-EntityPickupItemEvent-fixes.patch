@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 4 Jul 2022 21:45:36 -0700
+Subject: [PATCH] EntityPickupItemEvent fixes
+
+Fixes double firing of the event in PiglinAi
+
+Fixes cancelling the event for piglins still triggering the
+advancement trigger
+
+Fires the event when a Raider tries to pick up a raid banner
+to become raid leader.
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+index ea0902b4ba68a89b1f51281b10c1dfd1bfb42833..a9813da7f2b248f98f22e0ad2e7842915025ec12 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+@@ -424,7 +424,7 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+ 
+     @Override
+     protected void pickUpItem(ItemEntity item) {
+-        this.onItemPickup(item);
++        // this.onItemPickup(item); // Paper - EntityPickupItemEvent fixes; call in PiglinAi#pickUpItem after EntityPickupItemEvent is fired
+         PiglinAi.pickUpItem(this, item);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+index 965cef329f1c0aa80ee95f932ab60c98ebd4d2ec..fc93dc1c402c29dba7751c0f873a1e87d6abc358 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+@@ -241,11 +241,16 @@ public class PiglinAi {
+         ItemStack itemstack;
+ 
+         // CraftBukkit start
+-        if (drop.getItem().is(Items.GOLD_NUGGET) && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, drop, 0, false).isCancelled()) {
++        // Paper start - EntityPickupItemEvent fixes; fix event firing twice
++        if (drop.getItem().is(Items.GOLD_NUGGET) /* && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, drop, 0, false).isCancelled() */) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, drop, 0, false).isCancelled()) return;
++            piglin.onItemPickup(drop); // Paper - moved from Piglin#pickUpItem - call prior to item entity modification
++            // Paper end - EntityPickupItemEvent fixes
+             piglin.take(drop, drop.getItem().getCount());
+             itemstack = drop.getItem();
+             drop.discard();
+         } else if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, drop, drop.getItem().getCount() - 1, false).isCancelled()) {
++            piglin.onItemPickup(drop); // Paper - EntityPickupItemEvent fixes; moved from Piglin#pickUpItem - call prior to item entity modification
+             piglin.take(drop, 1);
+             itemstack = PiglinAi.removeOneItemFromItemEntity(drop);
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raider.java b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+index 798a774c19361bfaf8583a602192e9e547fa85e8..226fb5c88dd43c8008c5237299ef80db9e847af7 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raider.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+@@ -245,6 +245,11 @@ public abstract class Raider extends PatrollingMonster {
+         boolean flag = this.hasActiveRaid() && this.getCurrentRaid().getLeader(this.getWave()) != null;
+ 
+         if (this.hasActiveRaid() && !flag && ItemStack.matches(itemstack, Raid.getLeaderBannerInstance())) {
++            // Paper start - EntityPickupItemEvent fixes
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, item, 0, false).isCancelled()) {
++                return;
++            }
++            // Paper end - EntityPickupItemEvent fixes
+             EquipmentSlot enumitemslot = EquipmentSlot.HEAD;
+             ItemStack itemstack1 = this.getItemBySlot(enumitemslot);
+             double d0 = (double) this.getEquipmentDropChance(enumitemslot);
