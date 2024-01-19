@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Sun, 20 Dec 2020 16:41:44 -0800
-Subject: [PATCH] Added WorldGameRuleChangeEvent
+Subject: [PATCH] Add WorldGameRuleChangeEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/commands/GameRuleCommand.java b/src/main/java/net/minecraft/server/commands/GameRuleCommand.java
@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          T t0 = commandlistenerwrapper.getLevel().getGameRules().getRule(key); // CraftBukkit
  
 -        t0.setFromArgument(context, "value");
-+        t0.setFromArgument(context, "value", key); // Paper
++        t0.setFromArgument(context, "value", key); // Paper - Add WorldGameRuleChangeEvent
          commandlistenerwrapper.sendSuccess(() -> {
              return Component.translatable("commands.gamerule.set", key.getId(), t0.toString());
          }, true);
@@ -26,12 +26,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 -        protected abstract void updateFromArgument(CommandContext<CommandSourceStack> context, String name);
-+        protected abstract void updateFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<T> gameRuleKey); // Paper
++        protected abstract void updateFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<T> gameRuleKey); // Paper - Add WorldGameRuleChangeEvent
  
 -        public void setFromArgument(CommandContext<CommandSourceStack> context, String name) {
 -            this.updateFromArgument(context, name);
-+        public void setFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<T> gameRuleKey) { // Paper
-+            this.updateFromArgument(context, name, gameRuleKey); // Paper
++        public void setFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<T> gameRuleKey) { // Paper - Add WorldGameRuleChangeEvent
++            this.updateFromArgument(context, name, gameRuleKey); // Paper - Add WorldGameRuleChangeEvent
              this.onChanged(((CommandSourceStack) context.getSource()).getServer());
          }
  
@@ -41,11 +41,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          @Override
 -        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name) {
 -            this.value = BoolArgumentType.getBool(context, name);
-+        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<BooleanValue> gameRuleKey) { // Paper start
++        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<BooleanValue> gameRuleKey) { // Paper start - Add WorldGameRuleChangeEvent
 +            io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(context.getSource().getBukkitWorld(), context.getSource().getBukkitSender(), (org.bukkit.GameRule<Boolean>) org.bukkit.GameRule.getByName(gameRuleKey.toString()), String.valueOf(BoolArgumentType.getBool(context, name)));
 +            if (!event.callEvent()) return;
 +            this.value = Boolean.parseBoolean(event.getValue());
-+            // Paper end
++            // Paper end - Add WorldGameRuleChangeEvent
          }
  
          public boolean get() {
@@ -55,11 +55,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          @Override
 -        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name) {
 -            this.value = IntegerArgumentType.getInteger(context, name);
-+        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<IntegerValue> gameRuleKey) { // Paper start
++        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<IntegerValue> gameRuleKey) { // Paper start - Add WorldGameRuleChangeEvent
 +            io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(context.getSource().getBukkitWorld(), context.getSource().getBukkitSender(), (org.bukkit.GameRule<Integer>) org.bukkit.GameRule.getByName(gameRuleKey.toString()), String.valueOf(IntegerArgumentType.getInteger(context, name)));
 +            if (!event.callEvent()) return;
 +            this.value = Integer.parseInt(event.getValue());
-+            // Paper end
++            // Paper end - Add WorldGameRuleChangeEvent
          }
  
          public int get() {
@@ -71,14 +71,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (!this.isGameRule(rule)) return false;
  
-+        // Paper start
++        // Paper start - Add WorldGameRuleChangeEvent
 +        GameRule<?> gameRule = GameRule.getByName(rule);
 +        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this, null, gameRule, value);
 +        if (!event.callEvent()) return false;
-+        // Paper end
++        // Paper end - Add WorldGameRuleChangeEvent
          GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule));
 -        handle.deserialize(value);
-+        handle.deserialize(event.getValue()); // Paper
++        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
          handle.onChanged(this.getHandle().getServer());
          return true;
      }
@@ -86,13 +86,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (!this.isGameRule(rule.getName())) return false;
  
-+        // Paper start
++        // Paper start - Add WorldGameRuleChangeEvent
 +        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this, null, rule, String.valueOf(newValue));
 +        if (!event.callEvent()) return false;
-+        // Paper end
++        // Paper end - Add WorldGameRuleChangeEvent
          GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName()));
 -        handle.deserialize(newValue.toString());
-+        handle.deserialize(event.getValue()); // Paper
++        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
          handle.onChanged(this.getHandle().getServer());
          return true;
      }
