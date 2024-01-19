@@ -1,0 +1,147 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 26 Sep 2021 12:57:28 -0700
+Subject: [PATCH] Option to prevent NBT copy in smithing recipes
+
+
+diff --git a/src/main/java/net/minecraft/world/item/crafting/SmithingTransformRecipe.java b/src/main/java/net/minecraft/world/item/crafting/SmithingTransformRecipe.java
+index 566b588006da2b46ec1727be85560ccd59c42c6f..67f7eb89570934b73ff5b894ae3e89fdb874b923 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/SmithingTransformRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/SmithingTransformRecipe.java
+@@ -23,8 +23,15 @@ public class SmithingTransformRecipe implements SmithingRecipe {
+     final Ingredient base;
+     final Ingredient addition;
+     final ItemStack result;
++    final boolean copyNBT; // Paper - Option to prevent NBT copy
+ 
+     public SmithingTransformRecipe(Ingredient template, Ingredient base, Ingredient addition, ItemStack result) {
++        // Paper start - Option to prevent NBT copy
++        this(template, base, addition, result, true);
++    }
++    public SmithingTransformRecipe(Ingredient template, Ingredient base, Ingredient addition, ItemStack result, boolean copyNBT) {
++        this.copyNBT = copyNBT;
++        // Paper end - Option to prevent NBT copy
+         this.template = template;
+         this.base = base;
+         this.addition = addition;
+@@ -39,11 +46,13 @@ public class SmithingTransformRecipe implements SmithingRecipe {
+     @Override
+     public ItemStack assemble(Container inventory, RegistryAccess registryManager) {
+         ItemStack itemstack = this.result.copy();
++        if (this.copyNBT) { // Paper - Option to prevent NBT copy
+         CompoundTag nbttagcompound = inventory.getItem(1).getTag();
+ 
+         if (nbttagcompound != null) {
+             itemstack.setTag(nbttagcompound.copy());
+         }
++        } // Paper - Option to prevent NBT copy
+ 
+         return itemstack;
+     }
+@@ -83,7 +92,7 @@ public class SmithingTransformRecipe implements SmithingRecipe {
+     public Recipe toBukkitRecipe(NamespacedKey id) {
+         CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
+ 
+-        CraftSmithingTransformRecipe recipe = new CraftSmithingTransformRecipe(id, result, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition));
++        CraftSmithingTransformRecipe recipe = new CraftSmithingTransformRecipe(id, result, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyNBT); // Paper - Option to prevent NBT copy
+ 
+         return recipe;
+     }
+diff --git a/src/main/java/net/minecraft/world/item/crafting/SmithingTrimRecipe.java b/src/main/java/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
+index e0b24c140e04a159a7b8aaef64ab94e19fc03dfd..a3686cede266c0205247abcec3ce082ae4a048a0 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
+@@ -29,8 +29,15 @@ public class SmithingTrimRecipe implements SmithingRecipe {
+     final Ingredient template;
+     final Ingredient base;
+     final Ingredient addition;
++    final boolean copyNbt; // Paper - Option to prevent NBT copy
+ 
+     public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition) {
++        // Paper start - Option to prevent NBT copy
++        this(template, base, addition, true);
++    }
++    public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition, boolean copyNbt) {
++        this.copyNbt = copyNbt;
++        // Paper end - Option to prevent NBT copy
+         this.template = template;
+         this.base = base;
+         this.addition = addition;
+@@ -56,7 +63,7 @@ public class SmithingTrimRecipe implements SmithingRecipe {
+                     return ItemStack.EMPTY;
+                 }
+ 
+-                ItemStack itemstack1 = itemstack.copy();
++                ItemStack itemstack1 = this.copyNbt ? itemstack.copy() : new ItemStack(itemstack.getItem(), itemstack.getCount()); // Paper - Option to prevent NBT copy
+ 
+                 itemstack1.setCount(1);
+                 ArmorTrim armortrim = new ArmorTrim((Holder) optional.get(), (Holder) optional1.get());
+@@ -116,7 +123,7 @@ public class SmithingTrimRecipe implements SmithingRecipe {
+     // CraftBukkit start
+     @Override
+     public Recipe toBukkitRecipe(NamespacedKey id) {
+-        return new CraftSmithingTrimRecipe(id, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition));
++        return new CraftSmithingTrimRecipe(id, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyNbt); // Paper - Option to prevent NBT copy
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTransformRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTransformRecipe.java
+index 8c381e2745e7d5b63e72a60c5541b549f0d1b9bf..ced6dc7db823ecabe91d438dbcbd78f5a4bbdcae 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTransformRecipe.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTransformRecipe.java
+@@ -12,12 +12,17 @@ public class CraftSmithingTransformRecipe extends SmithingTransformRecipe implem
+     public CraftSmithingTransformRecipe(NamespacedKey key, ItemStack result, RecipeChoice template, RecipeChoice base, RecipeChoice addition) {
+         super(key, result, template, base, addition);
+     }
++    // Paper start - Option to prevent NBT copy
++    public CraftSmithingTransformRecipe(NamespacedKey key, ItemStack result, RecipeChoice template, RecipeChoice base, RecipeChoice addition, boolean copyNbt) {
++        super(key, result, template, base, addition, copyNbt);
++    }
++    // Paper endv
+ 
+     public static CraftSmithingTransformRecipe fromBukkitRecipe(SmithingTransformRecipe recipe) {
+         if (recipe instanceof CraftSmithingTransformRecipe) {
+             return (CraftSmithingTransformRecipe) recipe;
+         }
+-        CraftSmithingTransformRecipe ret = new CraftSmithingTransformRecipe(recipe.getKey(), recipe.getResult(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition());
++        CraftSmithingTransformRecipe ret = new CraftSmithingTransformRecipe(recipe.getKey(), recipe.getResult(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition(), recipe.willCopyNbt()); // Paper - Option to prevent NBT copy
+         return ret;
+     }
+ 
+@@ -25,6 +30,6 @@ public class CraftSmithingTransformRecipe extends SmithingTransformRecipe implem
+     public void addToCraftingManager() {
+         ItemStack result = this.getResult();
+ 
+-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(this.toNMS(this.getTemplate(), true), this.toNMS(this.getBase(), true), this.toNMS(this.getAddition(), true), CraftItemStack.asNMSCopy(result))));
++        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(this.toNMS(this.getTemplate(), true), this.toNMS(this.getBase(), true), this.toNMS(this.getAddition(), true), CraftItemStack.asNMSCopy(result), this.willCopyNbt()))); // Paper - Option to prevent NBT copy
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTrimRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTrimRecipe.java
+index 87f20a4811d082f217638768417c1c0feb84f741..2217e7ed9533c52a3b7d27d4dfff23ada6f2cef1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTrimRecipe.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTrimRecipe.java
+@@ -12,17 +12,22 @@ public class CraftSmithingTrimRecipe extends SmithingTrimRecipe implements Craft
+     public CraftSmithingTrimRecipe(NamespacedKey key, RecipeChoice template, RecipeChoice base, RecipeChoice addition) {
+         super(key, template, base, addition);
+     }
++    // Paper start - Option to prevent NBT copy
++    public CraftSmithingTrimRecipe(NamespacedKey key, RecipeChoice template, RecipeChoice base, RecipeChoice addition, boolean copyNbt) {
++        super(key, template, base, addition, copyNbt);
++    }
++    // Paper end - Option to prevent NBT copy
+ 
+     public static CraftSmithingTrimRecipe fromBukkitRecipe(SmithingTrimRecipe recipe) {
+         if (recipe instanceof CraftSmithingTrimRecipe) {
+             return (CraftSmithingTrimRecipe) recipe;
+         }
+-        CraftSmithingTrimRecipe ret = new CraftSmithingTrimRecipe(recipe.getKey(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition());
++        CraftSmithingTrimRecipe ret = new CraftSmithingTrimRecipe(recipe.getKey(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition(), recipe.willCopyNbt()); // Paper - Option to prevent NBT copy
+         return ret;
+     }
+ 
+     @Override
+     public void addToCraftingManager() {
+-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTrimRecipe(this.toNMS(this.getTemplate(), true), this.toNMS(this.getBase(), true), this.toNMS(this.getAddition(), true))));
++        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTrimRecipe(this.toNMS(this.getTemplate(), true), this.toNMS(this.getBase(), true), this.toNMS(this.getAddition(), true), this.willCopyNbt()))); // Paper - Option to prevent NBT copy
+     }
+ }

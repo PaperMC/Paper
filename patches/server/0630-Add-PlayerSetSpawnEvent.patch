@@ -5,51 +5,51 @@ Subject: [PATCH] Add PlayerSetSpawnEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/commands/SetSpawnCommand.java b/src/main/java/net/minecraft/server/commands/SetSpawnCommand.java
-index a2d0699e8427b2262a2396495111125eccafbb66..d797637f61bdf8a424f56fbb48e28b7c9117d604 100644
+index a2d0699e8427b2262a2396495111125eccafbb66..15db9368227dbc29d07d74e85bd126b345b526b6 100644
 --- a/src/main/java/net/minecraft/server/commands/SetSpawnCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/SetSpawnCommand.java
 @@ -38,24 +38,34 @@ public class SetSpawnCommand {
          ResourceKey<Level> resourcekey = source.getLevel().dimension();
          Iterator iterator = targets.iterator();
  
-+        final Collection<ServerPlayer> actualTargets = new java.util.ArrayList<>(); // Paper
++        final Collection<ServerPlayer> actualTargets = new java.util.ArrayList<>(); // Paper - Add PlayerSetSpawnEvent
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
 -            entityplayer.setRespawnPosition(resourcekey, pos, angle, true, false, org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.COMMAND); // CraftBukkit
-+            // Paper start - PlayerSetSpawnEvent
++            // Paper start - Add PlayerSetSpawnEvent
 +            if (entityplayer.setRespawnPosition(resourcekey, pos, angle, true, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {
 +                actualTargets.add(entityplayer);
 +            }
-+            // Paper end
++            // Paper end - Add PlayerSetSpawnEvent
          }
-+        // Paper start
++        // Paper start - Add PlayerSetSpawnEvent
 +        if (actualTargets.isEmpty()) {
 +            return 0;
 +        }
-+        // Paper end
++        // Paper end - Add PlayerSetSpawnEvent
  
          String s = resourcekey.location().toString();
  
 -        if (targets.size() == 1) {
-+        if (actualTargets.size() == 1) { // Paper
++        if (actualTargets.size() == 1) { // Paper - Add PlayerSetSpawnEvent
              source.sendSuccess(() -> {
 -                return Component.translatable("commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), angle, s, ((ServerPlayer) targets.iterator().next()).getDisplayName());
-+                return Component.translatable("commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), angle, s, ((ServerPlayer) actualTargets.iterator().next()).getDisplayName()); // Paper
++                return Component.translatable("commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), angle, s, ((ServerPlayer) actualTargets.iterator().next()).getDisplayName()); // Paper - Add PlayerSetSpawnEvent
              }, true);
          } else {
              source.sendSuccess(() -> {
 -                return Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), angle, s, targets.size());
-+                return Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), angle, s, actualTargets.size()); // Paper
++                return Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), angle, s, actualTargets.size()); // Paper - Add PlayerSetSpawnEvent
              }, true);
          }
  
 -        return targets.size();
-+        return actualTargets.size(); // Paper
++        return actualTargets.size(); // Paper - Add PlayerSetSpawnEvent
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index b49b56848bdbbd07c49e44d85997fa36192332c5..9f7c149d3ad1175d55ec02e295ee43bc571c3280 100644
+index 29e94d937f88763fef3c1f748e110cd1dae9a27b..b14f65b657c1a00923bec4a338e06e39f6642dfc 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1356,7 +1356,7 @@ public class ServerPlayer extends Player {
@@ -57,7 +57,7 @@ index b49b56848bdbbd07c49e44d85997fa36192332c5..9f7c149d3ad1175d55ec02e295ee43bc
                  return Either.left(Player.BedSleepingProblem.OBSTRUCTED);
              } else {
 -                this.setRespawnPosition(this.level().dimension(), blockposition, this.getYRot(), false, true, PlayerSpawnChangeEvent.Cause.BED); // CraftBukkit
-+                this.setRespawnPosition(this.level().dimension(), blockposition, this.getYRot(), false, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.BED); // Paper - PlayerSetSpawnEvent
++                this.setRespawnPosition(this.level().dimension(), blockposition, this.getYRot(), false, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.BED); // Paper - Add PlayerSetSpawnEvent
                  if (this.level().isDay()) {
                      return Either.left(Player.BedSleepingProblem.NOT_POSSIBLE_NOW);
                  } else {
@@ -65,7 +65,7 @@ index b49b56848bdbbd07c49e44d85997fa36192332c5..9f7c149d3ad1175d55ec02e295ee43bc
          return this.respawnForced;
      }
  
-+    @Deprecated // Paper
++    @Deprecated // Paper - Add PlayerSetSpawnEvent
      public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage) {
 -        // CraftBukkit start
 -        this.setRespawnPosition(dimension, pos, angle, forced, sendMessage, PlayerSpawnChangeEvent.Cause.UNKNOWN);
@@ -91,7 +91,7 @@ index b49b56848bdbbd07c49e44d85997fa36192332c5..9f7c149d3ad1175d55ec02e295ee43bc
 -            resourcekey = Level.OVERWORLD;
 -            blockposition = null;
 -            f = 0.0F;
-+        // Paper start
++        // Paper start - Add PlayerSetSpawnEvent
 +        this.setRespawnPosition(dimension, pos, angle, forced, sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.UNKNOWN);
 +    }
 +    @Deprecated
@@ -126,12 +126,12 @@ index b49b56848bdbbd07c49e44d85997fa36192332c5..9f7c149d3ad1175d55ec02e295ee43bc
 +            pos = io.papermc.paper.util.MCUtil.toBlockPosition(event.getLocation());
 +            angle = event.getLocation().getYaw();
 +            forced = event.isForced();
-+            // Paper end
++            // Paper end - Add PlayerSetSpawnEvent
  
 -            if (flag1 && !flag2) {
 -                this.sendSystemMessage(Component.translatable("block.minecraft.set_spawn"));
-+            if (event.willNotifyPlayer() && event.getNotification() != null) { // Paper
-+                this.sendSystemMessage(PaperAdventure.asVanilla(event.getNotification())); // Paper
++            if (event.willNotifyPlayer() && event.getNotification() != null) { // Paper - Add PlayerSetSpawnEvent
++                this.sendSystemMessage(PaperAdventure.asVanilla(event.getNotification())); // Paper - Add PlayerSetSpawnEvent
              }
  
 -            this.respawnPosition = blockposition;
@@ -149,12 +149,12 @@ index b49b56848bdbbd07c49e44d85997fa36192332c5..9f7c149d3ad1175d55ec02e295ee43bc
              this.respawnForced = false;
          }
  
-+        return true; // Paper
++        return true; // Paper - Add PlayerSetSpawnEvent
      }
  
      public SectionPos getLastSectionPos() {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 29ad37a8d449b5addfd48ef46dde9835f34a057a..f7588787769902506e317bdb052483c5dc377693 100644
+index 75b81f0852241a8edc931e514f06d46583b6ac43..a0a17fa35c5333655afa8e4e8b3a66ffa41bcc24 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -872,7 +872,7 @@ public abstract class PlayerList {
@@ -162,12 +162,12 @@ index 29ad37a8d449b5addfd48ef46dde9835f34a057a..f7588787769902506e317bdb052483c5
                  } else if (blockposition != null) {
                      entityplayer1.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
 -                    entityplayer1.setRespawnPosition(null, null, 0f, false, false, PlayerSpawnChangeEvent.Cause.RESET); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed
-+                    entityplayer1.setRespawnPosition(null, null, 0f, false, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - PlayerSetSpawnEvent
++                    entityplayer1.setRespawnPosition(null, null, 0f, false, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - Add PlayerSetSpawnEvent
                  }
              }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
-index ecaa7f0b2bf795f16187f11fa27f6d5d435ccbfe..c83ffba568f33323b0f8b9a03fa0b7bbbfed4355 100644
+index ecaa7f0b2bf795f16187f11fa27f6d5d435ccbfe..acd5ec218b8d4c096f44ae2eec1379eeaf30ddc5 100644
 --- a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
 @@ -87,9 +87,14 @@ public class RespawnAnchorBlock extends Block {
@@ -175,19 +175,19 @@ index ecaa7f0b2bf795f16187f11fa27f6d5d435ccbfe..c83ffba568f33323b0f8b9a03fa0b7bb
  
                  if (entityplayer.getRespawnDimension() != world.dimension() || !pos.equals(entityplayer.getRespawnPosition())) {
 -                    entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true, org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.RESPAWN_ANCHOR); // CraftBukkit
-+                    if (entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - PlayerSetSpawnEvent
++                    if (entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
                      world.playSound((Player) null, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
                      return InteractionResult.SUCCESS;
-+                    // Paper start - handle failed set spawn
++                    // Paper start - Add PlayerSetSpawnEvent
 +                    } else {
 +                        return InteractionResult.FAIL;
 +                    }
-+                    // Paper end
++                    // Paper end - Add PlayerSetSpawnEvent
                  }
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 11507cbf0f213079b39b35d06f8fc675d437469b..cb72755c1b1e04797dbe99612d7bdd0bfd4b540e 100644
+index 11507cbf0f213079b39b35d06f8fc675d437469b..97d489d0130e5854b82be73cd538c3305737f3be 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1318,9 +1318,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -195,10 +195,10 @@ index 11507cbf0f213079b39b35d06f8fc675d437469b..cb72755c1b1e04797dbe99612d7bdd0b
      public void setBedSpawnLocation(Location location, boolean override) {
          if (location == null) {
 -            this.getHandle().setRespawnPosition(null, null, 0.0F, override, false, PlayerSpawnChangeEvent.Cause.PLUGIN);
-+            this.getHandle().setRespawnPosition(null, null, 0.0F, override, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLUGIN); // Paper - PlayerSetSpawnEvent
++            this.getHandle().setRespawnPosition(null, null, 0.0F, override, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLUGIN); // Paper - Add PlayerSetSpawnEvent
          } else {
 -            this.getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().dimension(), CraftLocation.toBlockPosition(location), location.getYaw(), override, false, PlayerSpawnChangeEvent.Cause.PLUGIN);
-+            this.getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().dimension(), CraftLocation.toBlockPosition(location), location.getYaw(), override, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLUGIN); // Paper - PlayerSetSpawnEvent
++            this.getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().dimension(), CraftLocation.toBlockPosition(location), location.getYaw(), override, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLUGIN); // Paper - Add PlayerSetSpawnEvent
          }
      }
  

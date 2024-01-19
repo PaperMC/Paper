@@ -8,18 +8,18 @@ Fixes SPIGOT-6221: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-6
 Fix splash events cancellation that still show particles/sound
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index b87077c47a0131c5f4ca085b6b32e657043a9e1a..40307233e5bc67d538f580bc514a033c64d1316a 100644
+index b87077c47a0131c5f4ca085b6b32e657043a9e1a..bb116b0c75a311d0dc65c032a7727598890ef942 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 @@ -105,56 +105,77 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
              Potion potionregistry = PotionUtils.getPotion(itemstack);
              List<MobEffectInstance> list = PotionUtils.getMobEffects(itemstack);
              boolean flag = potionregistry == Potions.WATER && list.isEmpty();
-+            boolean showParticles = true; // Paper
++            boolean showParticles = true; // Paper - Fix potions splash events
  
              if (flag) {
 -                this.applyWater();
-+                showParticles = this.applyWater(); // Paper
++                showParticles = this.applyWater(); // Paper - Fix potions splash events
              } else if (true || !list.isEmpty()) { // CraftBukkit - Call event even if no effects to apply
                  if (this.isLingering()) {
 -                    this.makeAreaOfEffectCloud(itemstack, potionregistry, hitResult); // CraftBukkit - Pass MovingObjectPosition
@@ -30,21 +30,21 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..40307233e5bc67d538f580bc514a033c
                  }
              }
  
-+            if (showParticles) { // Paper
++            if (showParticles) { // Paper - Fix potions splash events
              int i = potionregistry.hasInstantEffects() ? 2007 : 2002;
  
              this.level().levelEvent(i, this.blockPosition(), PotionUtils.getColor(itemstack));
-+            } // Paper
++            } // Paper - Fix potions splash events
              this.discard();
          }
      }
  
 -    private void applyWater() {
-+    private static final Predicate<net.minecraft.world.entity.LivingEntity> APPLY_WATER_GET_ENTITIES_PREDICATE = ThrownPotion.WATER_SENSITIVE_OR_ON_FIRE.or(Axolotl.class::isInstance); // Paper
-+    private boolean applyWater() { // Paper
++    private static final Predicate<net.minecraft.world.entity.LivingEntity> APPLY_WATER_GET_ENTITIES_PREDICATE = ThrownPotion.WATER_SENSITIVE_OR_ON_FIRE.or(Axolotl.class::isInstance); // Paper - Fix potions splash events
++    private boolean applyWater() { // Paper - Fix potions splash events
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
 -        List<net.minecraft.world.entity.LivingEntity> list = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.WATER_SENSITIVE_OR_ON_FIRE);
-+        // Paper start
++        // Paper start - Fix potions splash events
 +        List<net.minecraft.world.entity.LivingEntity> list = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.APPLY_WATER_GET_ENTITIES_PREDICATE);
 +        Map<LivingEntity, Double> affected = new HashMap<>();
 +        java.util.Set<LivingEntity> rehydrate = new java.util.HashSet<>();
@@ -93,14 +93,14 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..40307233e5bc67d538f580bc514a033c
 +                    axolotl.rehydrate();
 +                }
 +            }
-+            // Paper end
++            // Paper end - Fix potions splash events
          }
-+        return !event.isCancelled(); // Paper
++        return !event.isCancelled(); // Paper - Fix potions splash events
  
      }
  
 -    private void applySplash(List<MobEffectInstance> list, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition
-+    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean
++    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
          List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
          Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
@@ -116,7 +116,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..40307233e5bc67d538f580bc514a033c
                  }
              }
          }
-+        return !event.isCancelled(); // Paper
++        return !event.isCancelled(); // Paper - Fix potions splash events
  
      }
  
@@ -129,12 +129,12 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..40307233e5bc67d538f580bc514a033c
          entityareaeffectcloud.setPotion(potionregistry);
          Iterator iterator = PotionUtils.getCustomEffects(itemstack).iterator();
  
-+        boolean noEffects = potionregistry.getEffects().isEmpty(); // Paper
++        boolean noEffects = potionregistry.getEffects().isEmpty(); // Paper - Fix potions splash events
          while (iterator.hasNext()) {
              MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
  
              entityareaeffectcloud.addEffect(new MobEffectInstance(mobeffect));
-+            noEffects = false; // Paper
++            noEffects = false; // Paper - Fix potions splash events
          }
  
          CompoundTag nbttagcompound = itemstack.getTag();
@@ -149,7 +149,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..40307233e5bc67d538f580bc514a033c
              entityareaeffectcloud.discard();
          }
          // CraftBukkit end
-+        return !event.isCancelled(); // Paper
++        return !event.isCancelled(); // Paper - Fix potions splash events
      }
  
      public boolean isLingering() {

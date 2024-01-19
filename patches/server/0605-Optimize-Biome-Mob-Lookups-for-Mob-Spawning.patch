@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize Biome Mob Lookups for Mob Spawning
 Uses an EnumMap as well as a Set paired List for O(1) contains calls.
 
 diff --git a/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java b/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
-index 4f4ef3349f512cc6e1588eb58de5b2558c0bd8b9..9e2f7fc64b284efd6388be35f250642c47e7603b 100644
+index 4f4ef3349f512cc6e1588eb58de5b2558c0bd8b9..b10dfbaef9bde9d94c4971b47d77a1514e476f86 100644
 --- a/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
 +++ b/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
 @@ -61,11 +61,43 @@ public class MobSpawnSettings {
@@ -14,7 +14,7 @@ index 4f4ef3349f512cc6e1588eb58de5b2558c0bd8b9..9e2f7fc64b284efd6388be35f250642c
  
      public static class Builder {
 -        private final Map<MobCategory, List<MobSpawnSettings.SpawnerData>> spawners = Stream.of(MobCategory.values()).collect(ImmutableMap.toImmutableMap((mobCategory) -> {
-+        // Paper start - keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
++        // Paper start - Perf: keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
 +        public static class MobList extends java.util.ArrayList<MobSpawnSettings.SpawnerData> {
 +            java.util.Set<MobSpawnSettings.SpawnerData> biomes = new java.util.HashSet<>();
 +
@@ -51,7 +51,7 @@ index 4f4ef3349f512cc6e1588eb58de5b2558c0bd8b9..9e2f7fc64b284efd6388be35f250642c
 -            return Lists.newArrayList();
 +            return new MobList(); // Use MobList instead of ArrayList
          }));
-+        // Paper end
++        // Paper end - Perf: keep track of data in a pair set to give O(1) contains calls
          private final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts = Maps.newLinkedHashMap();
          private float creatureGenerationProbability = 0.1F;
  

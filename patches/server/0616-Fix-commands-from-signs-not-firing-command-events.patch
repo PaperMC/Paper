@@ -58,7 +58,7 @@ index 0000000000000000000000000000000000000000..01a2bc1feec808790bb93618ce46adb9
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-index 1a54db9f8b2fb3071e79ec26c49242b528b8cd9e..da3d947c58bdb79372e64b2cea6e49b99a4a9ad8 100644
+index 1a54db9f8b2fb3071e79ec26c49242b528b8cd9e..393e6e5fb2c901cdf369cfe5bcde454dee2b1b0d 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 @@ -273,7 +273,17 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
@@ -66,7 +66,7 @@ index 1a54db9f8b2fb3071e79ec26c49242b528b8cd9e..da3d947c58bdb79372e64b2cea6e49b9
  
              if (chatclickable != null && chatclickable.getAction() == ClickEvent.Action.RUN_COMMAND) {
 -                player.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(player, world, pos), chatclickable.getValue());
-+                // Paper start
++                // Paper start - Fix commands from signs not firing command events
 +                String command = chatclickable.getValue().startsWith("/") ? chatclickable.getValue() : "/" + chatclickable.getValue();
 +                if (org.spigotmc.SpigotConfig.logCommands)  {
 +                    LOGGER.info("{} issued server command: {}", player.getScoreboardName(), command);
@@ -76,7 +76,7 @@ index 1a54db9f8b2fb3071e79ec26c49242b528b8cd9e..da3d947c58bdb79372e64b2cea6e49b9
 +                    return false;
 +                }
 +                player.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(((org.bukkit.craftbukkit.entity.CraftPlayer) event.getPlayer()).getHandle(), world, pos), event.getMessage());
-+                // Paper end
++                // Paper end - Fix commands from signs not firing command events
                  flag1 = true;
              }
          }
@@ -84,7 +84,7 @@ index 1a54db9f8b2fb3071e79ec26c49242b528b8cd9e..da3d947c58bdb79372e64b2cea6e49b9
          String s = player == null ? "Sign" : player.getName().getString();
          Object object = player == null ? Component.literal("Sign") : player.getDisplayName();
  
-+        // Paper start - send messages back to the player
++        // Paper start - Fix commands from signs not firing command events
 +        CommandSource commandSource = this.level.paperConfig().misc.showSignClickCommandFailureMsgsToPlayer ? new io.papermc.paper.commands.DelegatingCommandSource(this) {
 +            @Override
 +            public void sendSystemMessage(Component message) {
@@ -98,15 +98,15 @@ index 1a54db9f8b2fb3071e79ec26c49242b528b8cd9e..da3d947c58bdb79372e64b2cea6e49b9
 +                return true;
 +            }
 +        } : this;
-+        // Paper end
++        // Paper end - Fix commands from signs not firing command events
          // CraftBukkit - this
 -        return new CommandSourceStack(this, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, s, (Component) object, world.getServer(), player);
-+        return new CommandSourceStack(commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, s, (Component) object, world.getServer(), player); // Paper
++        return new CommandSourceStack(commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, s, (Component) object, world.getServer(), player); // Paper - Fix commands from signs not firing command events
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
-index d113e54a30db16e2ad955170df6030d15de530d6..26f3a2799e687731d883e7733591f6934479e88d 100644
+index d113e54a30db16e2ad955170df6030d15de530d6..21b6f90cf5bd7087d1a0f512289d971f2c3e1afa 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
 @@ -61,7 +61,7 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
@@ -114,7 +114,7 @@ index d113e54a30db16e2ad955170df6030d15de530d6..26f3a2799e687731d883e7733591f693
  
          try {
 -            return this.server.dispatchCommand(sender, context.getInput()) ? 1 : 0;
-+            return this.server.dispatchCommand(sender, context.getRange().get(context.getInput())) ? 1 : 0; // Paper - actually use the StringRange from context
++            return this.server.dispatchCommand(sender, context.getRange().get(context.getInput())) ? 1 : 0; // Paper - Fix commands from signs not firing command events; actually use the StringRange from context
          } catch (CommandException ex) {
              sender.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
              this.server.getLogger().log(Level.SEVERE, null, ex);

@@ -5,19 +5,19 @@ Subject: [PATCH] Improve boat collision performance
 
 
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 8188febd6f1039a31619b42af23df18afd2e985c..e67a2aa92f9c9bb5a4ba9fc869aa738a43cd8595 100644
+index 90f5e7d36719dc9b464dd6ba0335da035bab29d3..006a7876a0c8e1180dada6694992f596948be53b 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
 @@ -121,6 +121,7 @@ public class Util {
      }).findFirst().orElseThrow(() -> {
          return new IllegalStateException("No jar file system provider found");
      });
-+    public static final double COLLISION_EPSILON = 1.0E-7; // Paper
++    public static final double COLLISION_EPSILON = 1.0E-7; // Paper - Improve boat collision performance
      private static Consumer<String> thePauser = (message) -> {
      };
  
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 0e004d32250fea991c66caead50f2f64dbe0bbf7..b137ce3be71fa92cb196f5725dd7cfc71f93fcf7 100644
+index 6518d7972f7902b3f7b65d7e5f6629491b531f22..394af8382455d2a039534b87142679f52dc8f2a6 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -1413,7 +1413,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -25,7 +25,7 @@ index 0e004d32250fea991c66caead50f2f64dbe0bbf7..b137ce3be71fa92cb196f5725dd7cfc7
                      Entity entity = source.getDirectEntity();
  
 -                    if (entity instanceof LivingEntity) {
-+                    if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper
++                    if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Improve boat collision performance
                          LivingEntity entityliving = (LivingEntity) entity;
  
                          this.blockUsingShield(entityliving);
@@ -34,13 +34,13 @@ index 0e004d32250fea991c66caead50f2f64dbe0bbf7..b137ce3be71fa92cb196f5725dd7cfc7
  
                  if (entity1 != null && !source.is(DamageTypeTags.NO_KNOCKBACK)) {
 -                    double d0 = entity1.getX() - this.getX();
-+                    final boolean far = entity1.distanceToSqr(this) > (200.0 * 200.0); // Paper
-+                    double d0 = far ? (Math.random() - Math.random()) : entity1.getX() - this.getX(); // Paper
++                    final boolean far = entity1.distanceToSqr(this) > (200.0 * 200.0); // Paper - Improve boat collision performance
++                    double d0 = far ? (Math.random() - Math.random()) : entity1.getX() - this.getX(); // Paper - Improve boat collision performance
  
                      double d1;
  
 -                    for (d1 = entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) {
-+                    for (d1 = far ? Math.random() - Math.random() : entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) { // Paper
++                    for (d1 = far ? Math.random() - Math.random() : entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) { // Paper - Improve boat collision performance
                          d0 = (Math.random() - Math.random()) * 0.01D;
                      }
  
@@ -49,12 +49,12 @@ index 0e004d32250fea991c66caead50f2f64dbe0bbf7..b137ce3be71fa92cb196f5725dd7cfc7
                  Entity entity = damagesource.getDirectEntity();
  
 -                if (entity instanceof LivingEntity) {
-+                if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper
++                if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Improve boat collision performance
                      this.blockUsingShield((LivingEntity) entity);
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-index 8b0efc4d78a04effddae0799b7ee5759ed5c720f..c041c0b81be41cfd128c2f5ba56a5329d50b2efc 100644
+index 8b0efc4d78a04effddae0799b7ee5759ed5c720f..dfd53ca465c9d4864020c14a49f4e74b717df5d6 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
 @@ -689,8 +689,8 @@ public class Boat extends VehicleEntity implements VariantHolder<Boat.Type> {
@@ -63,8 +63,8 @@ index 8b0efc4d78a04effddae0799b7ee5759ed5c720f..c041c0b81be41cfd128c2f5ba56a5329
              this.waterLevel = this.getY(1.0D);
 -            this.setPos(this.getX(), (double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D, this.getZ());
 -            this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
-+            this.move(MoverType.SELF, new Vec3(0.0, ((double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D) - this.getY(), 0.0)); // Paper
-+            this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D)); // Paper
++            this.move(MoverType.SELF, new Vec3(0.0, ((double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D) - this.getY(), 0.0)); // Paper - Improve boat collision performance
++            this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D)); // Paper - Improve boat collision performance
              this.lastYd = 0.0D;
              this.status = Boat.Status.IN_WATER;
          } else {
