@@ -9,10 +9,13 @@ type and we are not using its capabilities.
 Set thread priorities so main thread has above normal priority over
 server threads
 
-Allow usage of a single thread executor by not using ForkJoin so single core CPU's.
+Allow usage of a single thread executor by not using ForkJoin so single core CPU's
+and reduce worldgen thread worker count for low core count CPUs.
 
 == AT ==
 public net.minecraft.Util onThreadException(Ljava/lang/Thread;Ljava/lang/Throwable;)V
+
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/ServerWorkerThread.java b/src/main/java/io/papermc/paper/util/ServerWorkerThread.java
 new file mode 100644
@@ -54,11 +57,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private static ExecutorService makeExecutor(String name) {
 -        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
 +    private static ExecutorService makeExecutor(String s, int priorityModifier) { // Paper - add priority
-+        // Paper start - use simpler thread pool that allows 1 thread
-+        int i = Math.min(8, Math.max(Runtime.getRuntime().availableProcessors() - 2, 1));
++        // Paper start - use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
++        int cpus = Runtime.getRuntime().availableProcessors() / 2;
++        int i;
++        if (cpus <= 4) {
++            i = cpus <= 2 ? 1 : 2;
++        } else if (cpus <= 8) {
++            // [5, 8]
++            i = Math.max(3, cpus - 2);
++        } else {
++            i = cpus * 2 / 3;
++        }
++        i = Math.min(8, i);
 +        i = Integer.getInteger("Paper.WorkerThreadCount", i);
          ExecutorService executorService;
-+
          if (i <= 0) {
              executorService = MoreExecutors.newDirectExecutorService();
          } else {
