@@ -3,12 +3,6 @@ From: Andrew Steinborn <git@steinborn.me>
 Date: Tue, 11 May 2021 17:39:22 -0400
 Subject: [PATCH] Add Unix domain socket support
 
-For Windows and ARM support, JEP-380 is required:
-https://inside.java/2021/02/03/jep380-unix-domain-sockets-channels/
-This will be possible as of the Minecraft 1.17 Java version bump.
-
-Tested-by: Mariell Hoversholm <proximyst@proximyst.com>
-Reviewed-by: Mariell Hoversholm <proximyst@proximyst.com>
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -41,7 +35,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
 +        bindAddress = new java.net.InetSocketAddress(inetaddress, this.getPort());
 +        }
-+        // Paper end
++        // Paper end - Unix domain socket support
  
          this.initializeKeyPair();
          DedicatedServer.LOGGER.info("Starting Minecraft server on {}:{}", this.getLocalIp().isEmpty() ? "*" : this.getLocalIp(), this.getPort());
@@ -60,12 +54,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.running = true;
      }
  
-+    // Paper start
++    // Paper start - Unix domain socket support
      public void startTcpServerListener(@Nullable InetAddress address, int port) throws IOException {
 +        bind(new java.net.InetSocketAddress(address, port));
 +    }
 +    public void bind(java.net.SocketAddress address) throws IOException {
-+    // Paper end
++    // Paper end - Unix domain socket support
          List list = this.channels;
  
          synchronized (this.channels) {
@@ -73,13 +67,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              EventLoopGroup eventloopgroup;
  
              if (Epoll.isAvailable() && this.server.isEpollEnabled()) {
-+                // Paper start
++                // Paper start - Unix domain socket support
 +                if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
 +                    oclass = io.netty.channel.epoll.EpollServerDomainSocketChannel.class;
 +                } else {
                  oclass = EpollServerSocketChannel.class;
 +                }
-+                // Paper end
++                // Paper end - Unix domain socket support
                  eventloopgroup = (EventLoopGroup) ServerConnectionListener.SERVER_EPOLL_EVENT_GROUP.get();
                  ServerConnectionListener.LOGGER.info("Using epoll channel type");
              } else {
@@ -88,7 +82,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      io.papermc.paper.network.ChannelInitializeListenerHolder.callListeners(channel); // Paper
                  }
 -            }).group(eventloopgroup).localAddress(address, port)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
-+            }).group(eventloopgroup).localAddress(address)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit // Paper
++            }).group(eventloopgroup).localAddress(address)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit // Paper - Unix domain socket support
          }
      }
  
@@ -100,11 +94,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot Start
      public SocketAddress getRawAddress()
      {
-+        // Paper start - this can be nullable in the case of a Unix domain socket, so if it is, fake something
++        // Paper start - Unix domain socket support; this can be nullable in the case of a Unix domain socket, so if it is, fake something
 +        if (connection.channel.remoteAddress() == null) {
 +            return new java.net.InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0);
 +        }
-+        // Paper end
++        // Paper end - Unix domain socket support
          return this.connection.channel.remoteAddress();
      }
      // Spigot End
@@ -116,7 +110,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.connection.setClientboundProtocolAfterHandshake(ClientIntent.LOGIN);
                  // CraftBukkit start - Connection throttle
                  try {
-+                    if (!(this.connection.channel.localAddress() instanceof io.netty.channel.unix.DomainSocketAddress)) { // Paper - the connection throttle is useless when you have a Unix domain socket
++                    if (!(this.connection.channel.localAddress() instanceof io.netty.channel.unix.DomainSocketAddress)) { // Paper - Unix domain socket support; the connection throttle is useless when you have a Unix domain socket
                      long currentTime = System.currentTimeMillis();
                      long connectionThrottle = this.server.server.getConnectionThrottle();
                      InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
@@ -124,7 +118,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              }
                          }
                      }
-+                    } // Paper - add closing bracket for if check above
++                    } // Paper - Unix domain socket support
                  } catch (Throwable t) {
                      org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
                  }
@@ -137,7 +131,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              this.connection.hostname = split[0];
 -                            this.connection.address = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getPort());
 +                            this.connection.address = new java.net.InetSocketAddress(split[1], socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
-+                            // Paper end
++                            // Paper end - Unix domain socket support
                              this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient( split[2] );
                          } else
                          {
