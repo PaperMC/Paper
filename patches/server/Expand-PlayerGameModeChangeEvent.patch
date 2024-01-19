@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Sat, 15 May 2021 10:04:43 -0700
-Subject: [PATCH] additions to PlayerGameModeChangeEvent
+Subject: [PATCH] Expand PlayerGameModeChangeEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java b/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java
@@ -14,12 +14,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              for(ServerPlayer serverPlayer : minecraftServer.getPlayerList().getPlayers()) {
 -                if (serverPlayer.setGameMode(gameType)) {
 -                    ++i;
-+                // Paper start - extend PlayerGameModeChangeEvent
++                // Paper start - Expand PlayerGameModeChangeEvent
 +                org.bukkit.event.player.PlayerGameModeChangeEvent event = serverPlayer.setGameMode(gameType, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, net.kyori.adventure.text.Component.empty());
 +                if (event != null && event.isCancelled()) {
 +                    source.sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), false);
                  }
-+                // Paper end
++                // Paper end - Expand PlayerGameModeChangeEvent
 +                    ++i;
              }
          }
@@ -33,14 +33,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          for(ServerPlayer serverPlayer : targets) {
 -            if (serverPlayer.setGameMode(gameMode)) {
-+            // Paper start - extend PlayerGameModeChangeEvent
++            // Paper start - Expand PlayerGameModeChangeEvent
 +            org.bukkit.event.player.PlayerGameModeChangeEvent event = serverPlayer.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.COMMAND, net.kyori.adventure.text.Component.empty());
 +            if (event != null && !event.isCancelled()) {
                  logGamemodeChange(context.getSource(), serverPlayer, gameMode);
                  ++i;
 +            } else if (event != null && event.cancelMessage() != null) {
 +                context.getSource().sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), true);
-+                // Paper end
++                // Paper end - Expand PlayerGameModeChangeEvent
              }
          }
  
@@ -54,7 +54,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean setGameMode(GameType gameMode) {
 -        if (!this.gameMode.changeGameModeForPlayer(gameMode)) {
 -            return false;
-+        // Paper start - Add cause and nullable message to event
++        // Paper start - Expand PlayerGameModeChangeEvent
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
 +        return event == null ? false : event.isCancelled();
 +    }
@@ -62,8 +62,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component message) {
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(gameMode, cause, message);
 +        if (event == null || event.isCancelled()) {
-+            // Paper end
 +            return null;
++            // Paper end - Expand PlayerGameModeChangeEvent
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
              if (gameMode == GameType.SPECTATOR) {
@@ -72,7 +72,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.onUpdateAbilities();
              this.updateEffectVisibility();
 -            return true;
-+            return event; // Paper
++            return event; // Paper - Expand PlayerGameModeChangeEvent
          }
      }
  
@@ -80,7 +80,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void loadGameTypes(@Nullable CompoundTag nbt) {
-+        // Paper start
++        // Paper start - Expand PlayerGameModeChangeEvent
 +        if (this.server.getForcedGameType() != null && this.server.getForcedGameType() != ServerPlayer.readPlayerMode(nbt, "playerGameType")) {
 +            if (new org.bukkit.event.player.PlayerGameModeChangeEvent(this.getBukkitEntity(), org.bukkit.GameMode.getByValue(this.server.getDefaultGameType().getId()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null).callEvent()) {
 +                this.gameMode.setGameModeForPlayer(this.server.getForcedGameType(), GameType.DEFAULT_MODE);
@@ -89,7 +89,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            return;
 +        }
-+        // Paper end
++        // Paper end - Expand PlayerGameModeChangeEvent
          this.gameMode.setGameModeForPlayer(this.calculateGameModeForNewPlayer(ServerPlayer.readPlayerMode(nbt, "playerGameType")), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
      }
  
@@ -101,16 +101,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public boolean changeGameModeForPlayer(GameType gameMode) {
-+        // Paper end
++        // Paper end - Expand PlayerGameModeChangeEvent
 +        PlayerGameModeChangeEvent event = this.changeGameModeForPlayer(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
 +        return event != null && event.isCancelled();
 +    }
 +    @Nullable
 +    public PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component cancelMessage) {
-+        // Paper end
++        // Paper end - Expand PlayerGameModeChangeEvent
          if (gameMode == this.gameModeForPlayer) {
 -            return false;
-+            return null; // Paper
++            return null; // Paper - Expand PlayerGameModeChangeEvent
          } else {
              // CraftBukkit start
 -            PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this.player.getBukkitEntity(), GameMode.getByValue(gameMode.getId()));
@@ -118,7 +118,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.level.getCraftServer().getPluginManager().callEvent(event);
              if (event.isCancelled()) {
 -                return false;
-+                return event; // Paper
++                return event; // Paper - Expand PlayerGameModeChangeEvent
              }
              // CraftBukkit end
              this.setGameModeForPlayer(gameMode, this.previousGameModeForPlayer);
@@ -126,7 +126,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
              this.level.updateSleepingPlayerList();
 -            return true;
-+            return event; // Paper
++            return event; // Paper - Expand PlayerGameModeChangeEvent
          }
      }
  
@@ -139,7 +139,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      this.player = this.server.getPlayerList().respawn(this.player, false, RespawnReason.DEATH);
                      if (this.server.isHardcore()) {
 -                        this.player.setGameMode(GameType.SPECTATOR);
-+                        this.player.setGameMode(GameType.SPECTATOR, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.HARDCORE_DEATH, null); // Paper
++                        this.player.setGameMode(GameType.SPECTATOR, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.HARDCORE_DEATH, null); // Paper - Expand PlayerGameModeChangeEvent
                          ((GameRules.BooleanValue) this.player.level().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS)).set(false, this.server);
                      }
                  }
@@ -152,7 +152,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.getHandle().connection == null) return;
  
 -        this.getHandle().setGameMode(GameType.byId(mode.getValue()));
-+        this.getHandle().setGameMode(GameType.byId(mode.getValue()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.PLUGIN, null); // Paper
++        this.getHandle().setGameMode(GameType.byId(mode.getValue()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.PLUGIN, null); // Paper - Expand PlayerGameModeChangeEvent
      }
  
      @Override
