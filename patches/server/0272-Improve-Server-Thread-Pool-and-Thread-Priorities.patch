@@ -9,10 +9,13 @@ type and we are not using its capabilities.
 Set thread priorities so main thread has above normal priority over
 server threads
 
-Allow usage of a single thread executor by not using ForkJoin so single core CPU's.
+Allow usage of a single thread executor by not using ForkJoin so single core CPU's
+and reduce worldgen thread worker count for low core count CPUs.
 
 == AT ==
 public net.minecraft.Util onThreadException(Ljava/lang/Thread;Ljava/lang/Throwable;)V
+
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/ServerWorkerThread.java b/src/main/java/io/papermc/paper/util/ServerWorkerThread.java
 new file mode 100644
@@ -35,7 +38,7 @@ index 0000000000000000000000000000000000000000..b60f59cf5cc8eb84a6055b7861857dec
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index aa52b271bd556a29f774fde375b713d0d187521b..8188febd6f1039a31619b42af23df18afd2e985c 100644
+index aa52b271bd556a29f774fde375b713d0d187521b..90f5e7d36719dc9b464dd6ba0335da035bab29d3 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
 @@ -86,7 +86,7 @@ public class Util {
@@ -47,18 +50,27 @@ index aa52b271bd556a29f774fde375b713d0d187521b..8188febd6f1039a31619b42af23df18a
      private static final ExecutorService IO_POOL = makeIoExecutor("IO-Worker-", false);
      private static final ExecutorService DOWNLOAD_POOL = makeIoExecutor("Download-", true);
      // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
-@@ -152,15 +152,18 @@ public class Util {
+@@ -152,15 +152,27 @@ public class Util {
          return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
      }
  
 -    private static ExecutorService makeExecutor(String name) {
 -        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
 +    private static ExecutorService makeExecutor(String s, int priorityModifier) { // Paper - add priority
-+        // Paper start - use simpler thread pool that allows 1 thread
-+        int i = Math.min(8, Math.max(Runtime.getRuntime().availableProcessors() - 2, 1));
++        // Paper start - use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
++        int cpus = Runtime.getRuntime().availableProcessors() / 2;
++        int i;
++        if (cpus <= 4) {
++            i = cpus <= 2 ? 1 : 2;
++        } else if (cpus <= 8) {
++            // [5, 8]
++            i = Math.max(3, cpus - 2);
++        } else {
++            i = cpus * 2 / 3;
++        }
++        i = Math.min(8, i);
 +        i = Integer.getInteger("Paper.WorkerThreadCount", i);
          ExecutorService executorService;
-+
          if (i <= 0) {
              executorService = MoreExecutors.newDirectExecutorService();
          } else {
@@ -71,7 +83,7 @@ index aa52b271bd556a29f774fde375b713d0d187521b..8188febd6f1039a31619b42af23df18a
                      @Override
                      protected void onTermination(Throwable throwable) {
                          if (throwable != null) {
-@@ -176,6 +179,7 @@ public class Util {
+@@ -176,6 +188,7 @@ public class Util {
                  return forkJoinWorkerThread;
              }, Util::onThreadException, true);
          }
@@ -80,7 +92,7 @@ index aa52b271bd556a29f774fde375b713d0d187521b..8188febd6f1039a31619b42af23df18a
          return executorService;
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 06d9cafeeedb3020c5e2313d32c6fe9285f99925..eac560bf8af3c7c28ed5eed61ef352f52d823cef 100644
+index 79a7f64edcfc750bf2753b5b20e4c2ae322e01ab..7a12c0f5a6cb205e8ae7667b9334efe1999e2a6a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -312,6 +312,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa

@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: stonar96 <minecraft.stonar96@gmail.com>
+Date: Sun, 12 Sep 2021 00:14:21 +0200
+Subject: [PATCH] Check requirement before suggesting root nodes
+
+Child nodes are handled by CommandDispatcher#parse checking
+requirements.
+
+Vanilla clients only send ServerboundCommandSuggestionPacket when
+encountering a command node with ASK_SERVER suggestions, however a
+modified client can send this packet whenever it wants.
+
+diff --git a/src/main/java/com/mojang/brigadier/CommandDispatcher.java b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+index 858e41fba7dc285dd21a93f3918cc5de3887df5f..92848b64a78fce7a92e1657c2da6fc5ee53eea44 100644
+--- a/src/main/java/com/mojang/brigadier/CommandDispatcher.java
++++ b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+@@ -538,10 +538,14 @@ public class CommandDispatcher<S> {
+         int i = 0;
+         for (final CommandNode<S> node : parent.getChildren()) {
+             CompletableFuture<Suggestions> future = Suggestions.empty();
++            // Paper start - Don't suggest if the requirement isn't met
++            if (parent != this.root || node.canUse(context.getSource())) {
+             try {
+-                if (node.canUse(parse.getContext().getSource())) future = node.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, truncatedInputLowerCase, start)); // CraftBukkit
++                future = node.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, truncatedInputLowerCase, start)); // CraftBukkit
+             } catch (final CommandSyntaxException ignored) {
+             }
++            }
++            // Paper end - Don't suggest if the requirement isn't met
+             futures[i++] = future;
+         }
+ 

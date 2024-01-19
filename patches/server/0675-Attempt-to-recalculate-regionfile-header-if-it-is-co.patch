@@ -10,14 +10,14 @@ hoping that at least then we don't swap chunks, and maybe recover
 them all.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index a95909bc818f395ce5772c5129f9cc9b789ce133..df9ae808c5a59ea25145c9df62f42fb33d159021 100644
+index a95909bc818f395ce5772c5129f9cc9b789ce133..72cfe25cbc2076bc83c9f965ab70b0e636800212 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -70,6 +70,18 @@ import net.minecraft.world.ticks.ProtoChunkTicks;
  import org.slf4j.Logger;
  
  public class ChunkSerializer {
-+    // Paper start
++    // Paper start - Attempt to recalculate regionfile header if it is corrupt
 +    // TODO: Check on update
 +    public static long getLastWorldSaveTime(CompoundTag chunkData) {
 +        final int dataVersion = ChunkStorage.getVersion(chunkData);
@@ -28,7 +28,7 @@ index a95909bc818f395ce5772c5129f9cc9b789ce133..df9ae808c5a59ea25145c9df62f42fb3
 +            return chunkData.getLong("LastUpdate");
 +        }
 +    }
-+    // Paper end
++    // Paper end - Attempt to recalculate regionfile header if it is corrupt
  
      public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState(), null); // Paper - Anti-Xray - Add preset block states
      private static final Logger LOGGER = LogUtils.getLogger();
@@ -42,7 +42,7 @@ index a95909bc818f395ce5772c5129f9cc9b789ce133..df9ae808c5a59ea25145c9df62f42fb3
          nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(chunk.getStatus()).toString());
          BlendingData blendingdata = chunk.getBlendingData();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-index dfeda27add86be0d56ad023f7391fa21e36c5062..8ebecb588058da174b0e0e19e54fcddfeeca1422 100644
+index 7f7c05c498dfe11842a0c35d6e8c2c428cf7647b..4a84ada69c6abc8f2743579d4451e639836274b4 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 @@ -41,7 +41,7 @@ public class ChunkStorage implements AutoCloseable {
@@ -50,19 +50,19 @@ index dfeda27add86be0d56ad023f7391fa21e36c5062..8ebecb588058da174b0e0e19e54fcddf
          // Paper start - async chunk io
          // remove IO worker
 -        this.regionFileCache = new RegionFileStorage(directory, dsync); // Paper - nuke IOWorker
-+        this.regionFileCache = new RegionFileStorage(directory, dsync, true); // Paper - nuke IOWorker // Paper
++        this.regionFileCache = new RegionFileStorage(directory, dsync, true); // Paper - nuke IOWorker // Paper - Attempt to recalculate regionfile header if it is corrupt
          // Paper end - async chunk io
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java
-index c8298a597818227de33a4afce4698ec0666cf758..6baceb6ce9021c489be6e79d338a9704285afa26 100644
+index c8298a597818227de33a4afce4698ec0666cf758..6762b0f71ea9e369bb77103b7f1938983cb77a44 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java
 @@ -9,6 +9,27 @@ import java.util.BitSet;
  public class RegionBitmap {
      private final BitSet used = new BitSet();
  
-+    // Paper start
++    // Paper start - Attempt to recalculate regionfile header if it is corrupt
 +    public final void copyFrom(RegionBitmap other) {
 +        BitSet thisBitset = this.used;
 +        BitSet otherBitset = other.used;
@@ -81,20 +81,20 @@ index c8298a597818227de33a4afce4698ec0666cf758..6baceb6ce9021c489be6e79d338a9704
 +        bitset.set(from, from + length);
 +        return true;
 +    }
-+    // Paper end
++    // Paper end - Attempt to recalculate regionfile header if it is corrupt
 +
      public void force(int start, int size) {
          this.used.set(start, start + size);
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 647ce340c81606ab86d33e1f9dec1fb0afc262d8..98c8b676fc5b2add44d6ddf5d32f85bc07ea22cb 100644
+index 647ce340c81606ab86d33e1f9dec1fb0afc262d8..2c951dfb17a11bd81c19080a1f8f498f8e534cff 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -50,6 +50,355 @@ public class RegionFile implements AutoCloseable {
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
      public final Path regionFile; // Paper
  
-+    // Paper start - try to recover from RegionFile header corruption
++    // Paper start - Attempt to recalculate regionfile header if it is corrupt
 +    private static long roundToSectors(long bytes) {
 +        long sectors = bytes >>> 12; // 4096 = 2^12
 +        long remainingBytes = bytes & 4095;
@@ -441,7 +441,7 @@ index 647ce340c81606ab86d33e1f9dec1fb0afc262d8..98c8b676fc5b2add44d6ddf5d32f85bc
 +    }
 +
 +    final boolean canRecalcHeader; // final forces compile fail on new constructor
-+    // Paper end
++    // Paper end - Attempt to recalculate regionfile header if it is corrupt
 +
      // Paper start - Cache chunk status
      private final net.minecraft.world.level.chunk.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.ChunkStatus[32 * 32];
