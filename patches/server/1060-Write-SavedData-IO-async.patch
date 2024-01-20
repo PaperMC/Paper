@@ -3,6 +3,7 @@ From: Cryptite <cryptite@gmail.com>
 Date: Tue, 27 Jun 2023 11:35:52 -0500
 Subject: [PATCH] Write SavedData IO async
 
+Co-Authored-By: Shane Freeder <theboyetronic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
 index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..9017907c0ec67a37a506f09b7e4499cef7885279 100644
@@ -99,10 +100,10 @@ index f2a7cb6ebed7a4b4019a09af2a025f624f6fe9c9..77dd632a266f4abed30b87b7909d7785
              WorldUpgrader.LOGGER.info("World optimizaton finished after {} ms", i);
              this.finished = true;
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/SavedData.java b/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
-index 697df9a9f050c0130246ce2b08a859965bddf184..7a9bede28c7158f3cb9a9a5f4147156e44238935 100644
+index 697df9a9f050c0130246ce2b08a859965bddf184..0655a26a58b3df19d81b18abf6b8ab81fd000ef7 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
 +++ b/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
-@@ -29,22 +29,37 @@ public abstract class SavedData {
+@@ -29,20 +29,34 @@ public abstract class SavedData {
          return this.dirty;
      }
  
@@ -117,23 +118,18 @@ index 697df9a9f050c0130246ce2b08a859965bddf184..7a9bede28c7158f3cb9a9a5f4147156e
              compoundTag.put("data", this.save(new CompoundTag()));
              NbtUtils.addCurrentDataVersion(compoundTag);
  
--            try {
--                NbtIo.writeCompressed(compoundTag, file.toPath());
--            } catch (IOException var4) {
--                LOGGER.error("Could not save data {}", this, var4);
--            }
 +            Runnable writeRunnable = () -> { // Paper - Write SavedData IO async
-+                try {
-+                    NbtIo.writeCompressed(compoundTag, file.toPath());
-+                } catch (IOException var4) {
-+                    LOGGER.error("Could not save data {}", this, var4);
-+                }
+             try {
+                 NbtIo.writeCompressed(compoundTag, file.toPath());
+             } catch (IOException var4) {
+                 LOGGER.error("Could not save data {}", this, var4);
+             }
 +            }; // Paper - Write SavedData IO async
  
              this.setDirty(false);
 +            // Paper start - Write SavedData IO async
 +            if (ioExecutor == null) {
-+                return java.util.concurrent.CompletableFuture.runAsync(writeRunnable); //  No executor, just use common pool
++                return java.util.concurrent.CompletableFuture.runAsync(writeRunnable); // No executor, just use common pool
 +            }
 +            return java.util.concurrent.CompletableFuture.runAsync(writeRunnable, ioExecutor);
          }
@@ -141,13 +137,9 @@ index 697df9a9f050c0130246ce2b08a859965bddf184..7a9bede28c7158f3cb9a9a5f4147156e
 +        // Paper end - Write SavedData IO async
      }
  
--    public static record Factory<T extends SavedData>(Supplier<T> constructor, Function<CompoundTag, T> deserializer, DataFixTypes type) {
-+    public static record Factory<T extends SavedData>(Supplier<T> constructor, Function<CompoundTag, T> deserializer,
-+                                                      DataFixTypes type) {
-     }
- }
+     public static record Factory<T extends SavedData>(Supplier<T> constructor, Function<CompoundTag, T> deserializer, DataFixTypes type) {
 diff --git a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
-index d051e8c1db6b5c42b8df0be54d9d48ba0e7b0077..4e055937d33448bbe25ef03dec22ee96e204ed12 100644
+index d051e8c1db6b5c42b8df0be54d9d48ba0e7b0077..1c16f43872d9cf9b087f247e9aaa04e7abe3d4ae 100644
 --- a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
 +++ b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
 @@ -20,15 +20,18 @@ import net.minecraft.util.datafix.DataFixTypes;
@@ -155,7 +147,7 @@ index d051e8c1db6b5c42b8df0be54d9d48ba0e7b0077..4e055937d33448bbe25ef03dec22ee96
  import org.slf4j.Logger;
  
 -public class DimensionDataStorage {
-+public class DimensionDataStorage implements java.io.Closeable { //Paper - Write SavedData IO async
++public class DimensionDataStorage implements java.io.Closeable { // Paper - Write SavedData IO async
      private static final Logger LOGGER = LogUtils.getLogger();
      public final Map<String, SavedData> cache = Maps.newHashMap();
      private final DataFixer fixerUpper;
@@ -188,7 +180,7 @@ index d051e8c1db6b5c42b8df0be54d9d48ba0e7b0077..4e055937d33448bbe25ef03dec22ee96
              if (state != null) {
 -                state.save(this.getDataFile(id));
 +                // Paper start - Write SavedData IO async
-+                final java.util.concurrent.CompletableFuture<Void> save = state.save(this.getDataFile(id), ioExecutor);// Paper
++                final java.util.concurrent.CompletableFuture<Void> save = state.save(this.getDataFile(id), ioExecutor);
 +                if (!async) {
 +                    save.join();
 +                }
