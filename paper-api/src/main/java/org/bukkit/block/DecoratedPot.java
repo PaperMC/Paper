@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a decorated pot.
  */
-public interface DecoratedPot extends TileState, BlockInventoryHolder {
+public interface DecoratedPot extends TileState, BlockInventoryHolder , org.bukkit.loot.Lootable { // Paper - expose loot table
 
     /**
      * Set the sherd on the provided side.
