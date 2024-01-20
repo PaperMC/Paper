@@ -5,19 +5,19 @@ Subject: [PATCH] Brand support
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index fddbd703071ec93d6e3a9ecc1ff17b3e74eb8986..8eb1d297ff0317ac679e85e03d0b4546fa1ed315 100644
+index fddbd703071ec93d6e3a9ecc1ff17b3e74eb8986..1635cd4a6e03005c1cdfce82bf3ffa657c3c25ed 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -278,6 +278,7 @@ public class ServerPlayer extends Player {
      public boolean isRealPlayer; // Paper
      public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
      public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
-+    public @Nullable String clientBrandName = null; // Paper - Brand name
++    public @Nullable String clientBrandName = null; // Paper - Brand support
  
      // Paper start - replace player chunk loader
      private final java.util.concurrent.atomic.AtomicReference<io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances> viewDistances = new java.util.concurrent.atomic.AtomicReference<>(new io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances(-1, -1, -1));
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 44aa178968c87fa72023a2c0f33c1a8123f3db72..f489b207cd3b62a33723f2e9ed0f46020d7f4fd1 100644
+index b68301f4cf650891140d3be6aebdc7ddf0d2a54f..f453b3023b713877b286e61d3c60b0b3cfce2cdd 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -55,6 +55,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -32,11 +32,11 @@ index 44aa178968c87fa72023a2c0f33c1a8123f3db72..f489b207cd3b62a33723f2e9ed0f4602
  
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
-+        // Paper start - handle brand payload packet
++        // Paper start - Brand support
 +        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload brandPayload) {
 +            this.player.clientBrandName = brandPayload.brand();
 +        }
-+        // Paper end - handle brand payload
++        // Paper end - Brand support
          if (!(packet.payload() instanceof ServerboundCustomPayloadPacket.UnknownPayload)) {
              return;
          }
@@ -44,7 +44,7 @@ index 44aa178968c87fa72023a2c0f33c1a8123f3db72..f489b207cd3b62a33723f2e9ed0f4602
              try {
                  byte[] data = new byte[payload.readableBytes()];
                  payload.readBytes(data);
-+                // Paper start - Brand support - Retain this incase upstream decides to 'break' the new mechanism in favour of backwards compat...
++                // Paper start - Brand support; Retain this incase upstream decides to 'break' the new mechanism in favour of backwards compat...
 +                if (identifier.equals(MINECRAFT_BRAND)) {
 +                    try {
 +                        this.player.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.copiedBuffer(data)).readUtf(256);
@@ -52,7 +52,7 @@ index 44aa178968c87fa72023a2c0f33c1a8123f3db72..f489b207cd3b62a33723f2e9ed0f4602
 +                        this.player.clientBrandName = "illegal";
 +                    }
 +                }
-+                // Paper end
++                // Paper end - Brand support
                  this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);

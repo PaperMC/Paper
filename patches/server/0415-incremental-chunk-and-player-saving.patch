@@ -5,7 +5,7 @@ Subject: [PATCH] incremental chunk and player saving
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8a037e12ba9419ec29c62799e30312c50b7ee4ad..706e8a5e17ccd87266a5c154cd938974d380cb21 100644
+index 6ffb81f09e7422adeb29f0651a9d3b6e7f6860d3..2ebfa60a2b0175a9cb107648652c9150d9f93732 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -901,7 +901,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -13,7 +13,7 @@ index 8a037e12ba9419ec29c62799e30312c50b7ee4ad..706e8a5e17ccd87266a5c154cd938974
          try {
              this.isSaving = true;
 -            this.getPlayerList().saveAll();
-+            this.getPlayerList().saveAll(); // Diff on change
++            this.getPlayerList().saveAll(); // Paper - Incremental chunk and player saving; diff on change
              flag3 = this.saveAllChunks(suppressLogs, flush, force);
          } finally {
              this.isSaving = false;
@@ -30,11 +30,11 @@ index 8a037e12ba9419ec29c62799e30312c50b7ee4ad..706e8a5e17ccd87266a5c154cd938974
 -            this.saveEverything(true, false, false);
 -            this.profiler.pop();
 -            MinecraftServer.LOGGER.debug("Autosave finished");
-+        // Paper start - incremental chunk and player saving
++        // Paper start - Incremental chunk and player saving
 +        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.rate;
 +        if (playerSaveInterval < 0) {
 +            playerSaveInterval = autosavePeriod;
-         }
++        }
 +        this.profiler.push("save");
 +        final boolean fullSave = autosavePeriod > 0 && this.tickCount % autosavePeriod == 0;
 +        try {
@@ -49,41 +49,41 @@ index 8a037e12ba9419ec29c62799e30312c50b7ee4ad..706e8a5e17ccd87266a5c154cd938974
 +            }
 +        } finally {
 +            this.isSaving = false;
-+        }
+         }
 +        this.profiler.pop();
-+        // Paper end
++        // Paper end - Incremental chunk and player saving
          io.papermc.paper.util.CachedLists.reset(); // Paper
          // Paper start - move executeAll() into full server tick timing
          try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 974b4970be214ca36a801d39932abcc751e540a5..63fad53a9184d7ab97f143b7d85ae9ef2ca9f8bc 100644
+index 974b4970be214ca36a801d39932abcc751e540a5..c7a8078e4bb4df5ad2345125d49c6b40611da539 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -450,6 +450,15 @@ public class ServerChunkCache extends ChunkSource {
          } // Paper - Timings
      }
  
-+    // Paper start - duplicate save, but call incremental
++    // Paper start - Incremental chunk and player saving; duplicate save, but call incremental
 +    public void saveIncrementally() {
 +        this.runDistanceManagerUpdates();
 +        try (co.aikar.timings.Timing timed = level.timings.chunkSaveData.startTiming()) { // Paper - Timings
 +            this.chunkMap.saveIncrementally();
 +        } // Paper - Timings
 +    }
-+    // Paper end
++    // Paper end - Incremental chunk and player saving
 +
      @Override
      public void close() throws IOException {
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 51379dc93af2eaa3294179debe067d62627b60e1..8a7dd236435b08e0857041641eec9edcef936503 100644
+index 51379dc93af2eaa3294179debe067d62627b60e1..b0d5eca878e391fa29dd81947b6e79b113122ab3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1306,6 +1306,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
          return !this.server.isUnderSpawnProtection(this, pos, player) && this.getWorldBorder().isWithinBounds(pos);
      }
  
-+    // Paper start - derived from below
++    // Paper start - Incremental chunk and player saving
 +    public void saveIncrementally(boolean doFull) {
 +        ServerChunkCache chunkproviderserver = this.getChunkSource();
 +
@@ -112,32 +112,32 @@ index 51379dc93af2eaa3294179debe067d62627b60e1..8a7dd236435b08e0857041641eec9edc
 +            // CraftBukkit end
 +        }
 +    }
-+    // Paper end
++    // Paper end - Incremental chunk and player saving
 +
      public void save(@Nullable ProgressListener progressListener, boolean flush, boolean savingDisabled) {
          // Paper start - rewrite chunk system - add close param
          this.save(progressListener, flush, savingDisabled, false);
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index d43bf7ff39e9424f5cdcc93d29779570c8735869..fddbd703071ec93d6e3a9ecc1ff17b3e74eb8986 100644
+index da445644b1f2de9f80e8198a8ed150103627187b..6d083f49ba3700ff3bc222e594b6d9545dd4edba 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -190,6 +190,7 @@ import org.bukkit.inventory.MainHand;
  public class ServerPlayer extends Player {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-+    public long lastSave = MinecraftServer.currentTick; // Paper
++    public long lastSave = MinecraftServer.currentTick; // Paper - Incremental chunk and player saving
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_XZ = 32;
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      private static final int FLY_STAT_RECORDING_SPEED = 25;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 5c5d1e387ea00a17db99b3ef1f68eede01b09789..43bdada020a5a28cbe9eb18ec24529be633a49f3 100644
+index 5c5d1e387ea00a17db99b3ef1f68eede01b09789..38ff44cdcf9720d916de228f02d579b5e37bc45a 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -552,6 +552,7 @@ public abstract class PlayerList {
  
      protected void save(ServerPlayer player) {
          if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
-+        player.lastSave = MinecraftServer.currentTick; // Paper
++        player.lastSave = MinecraftServer.currentTick; // Paper - Incremental chunk and player saving
          this.playerIo.save(player);
          ServerStatsCounter serverstatisticmanager = (ServerStatsCounter) player.getStats(); // CraftBukkit
  
@@ -145,7 +145,7 @@ index 5c5d1e387ea00a17db99b3ef1f68eede01b09789..43bdada020a5a28cbe9eb18ec24529be
      }
  
      public void saveAll() {
-+        // Paper start - incremental player saving
++        // Paper start - Incremental chunk and player saving
 +        this.saveAll(-1);
 +    }
 +
@@ -161,7 +161,7 @@ index 5c5d1e387ea00a17db99b3ef1f68eede01b09789..43bdada020a5a28cbe9eb18ec24529be
 +                this.save(entityplayer);
 +                if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) { break; }
 +            }
-+            // Paper end
++            // Paper end - Incremental chunk and player saving
          }
          MinecraftTimings.savePlayers.stopTiming(); // Paper
          return null; }); // Paper - ensure main

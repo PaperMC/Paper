@@ -9,20 +9,20 @@ the game, immediately stop the server to prevent data corruption.
 You can override this functionality at your own peril.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 02beedb84a8bec001270116c6ce496db012e6b8a..a95909bc818f395ce5772c5129f9cc9b789ce133 100644
+index 02beedb84a8bec001270116c6ce496db012e6b8a..08abe8064f01b20aae0c7a018e11fe2ef42de71b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -124,8 +124,20 @@ public class ChunkSerializer {
          InProgressChunkHolder holder = loadChunk(world, poiStorage, chunkPos, nbt, true);
          return holder.protoChunk;
      }
-+    // Paper start
++    // Paper start - Do not let the server load chunks from newer versions
 +    private static final int CURRENT_DATA_VERSION = net.minecraft.SharedConstants.getCurrentVersion().getDataVersion().getVersion();
 +    private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
-+    // Paper end
++    // Paper end - Do not let the server load chunks from newer versions
  
      public static InProgressChunkHolder loadChunk(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt, boolean distinguish) {
-+        // Paper start - Do NOT attempt to load chunks saved with newer versions
++        // Paper start - Do not let the server load chunks from newer versions
 +        if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
 +            int dataVersion = nbt.getInt("DataVersion");
 +            if (!JUST_CORRUPT_IT && dataVersion > CURRENT_DATA_VERSION) {

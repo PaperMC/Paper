@@ -9,7 +9,7 @@ to race conditions.
 Plus, .canUse we want to be safe for async anyways.
 
 diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
-index 3384501f83d445f45aa8233e98c7597daa67b8ef..6875e15aac37d3566bf04f1a6ee79a21537d2939 100644
+index 3384501f83d445f45aa8233e98c7597daa67b8ef..bd12d372a04172504b3664a8136e534ca1b1712d 100644
 --- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 +++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 @@ -75,10 +75,10 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
@@ -17,16 +17,16 @@ index 3384501f83d445f45aa8233e98c7597daa67b8ef..6875e15aac37d3566bf04f1a6ee79a21
          if (source instanceof CommandSourceStack) {
              try {
 -                ((CommandSourceStack) source).currentCommand = this;
-+                ((CommandSourceStack) source).currentCommand.put(Thread.currentThread(), this); // Paper
++                ((CommandSourceStack) source).currentCommand.put(Thread.currentThread(), this); // Paper - Thread Safe Vanilla Command permission checking
                  return this.requirement.test(source);
              } finally {
 -                ((CommandSourceStack) source).currentCommand = null;
-+                ((CommandSourceStack) source).currentCommand.remove(Thread.currentThread()); // Paper
++                ((CommandSourceStack) source).currentCommand.remove(Thread.currentThread()); // Paper - Thread Safe Vanilla Command permission checking
              }
          }
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index c772fa3b7a1276b0b41c45c6e0f5584b9c3a90cd..79732086bc4cdbca8364d78eb60d68c758055966 100644
+index c772fa3b7a1276b0b41c45c6e0f5584b9c3a90cd..55c394fb00d0c7caee3a06720c37f04db571fe93 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 @@ -64,7 +64,7 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
@@ -34,7 +34,7 @@ index c772fa3b7a1276b0b41c45c6e0f5584b9c3a90cd..79732086bc4cdbca8364d78eb60d68c7
      private final CommandSigningContext signingContext;
      private final TaskChainer chatMessageChainer;
 -    public volatile CommandNode currentCommand; // CraftBukkit
-+    public java.util.Map<Thread, CommandNode> currentCommand = new java.util.concurrent.ConcurrentHashMap<>(); // CraftBukkit // Paper - make thread-safe
++    public java.util.Map<Thread, CommandNode> currentCommand = new java.util.concurrent.ConcurrentHashMap<>(); // CraftBukkit // Paper - Thread Safe Vanilla Command permission checking
      public boolean bypassSelectorPermissions = false; // Paper - add bypass for selector permissions
  
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
@@ -43,11 +43,11 @@ index c772fa3b7a1276b0b41c45c6e0f5584b9c3a90cd..79732086bc4cdbca8364d78eb60d68c7
      public boolean hasPermission(int level) {
          // CraftBukkit start
 -        CommandNode currentCommand = this.currentCommand;
-+        // Paper start - fix concurrency issue
++        // Paper start - Thread Safe Vanilla Command permission checking
 +        CommandNode currentCommand = this.currentCommand.get(Thread.currentThread());
          if (currentCommand != null) {
              return this.hasPermission(level, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
-+            // Paper end
++            // Paper end - Thread Safe Vanilla Command permission checking
          }
          // CraftBukkit end
  

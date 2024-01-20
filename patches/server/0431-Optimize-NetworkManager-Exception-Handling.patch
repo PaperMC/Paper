@@ -5,31 +5,31 @@ Subject: [PATCH] Optimize NetworkManager Exception Handling
 
 
 diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
-index ac1aa37329bd4d411964ea34ea8147f6db945b9a..41899d6c141895fc6c2c5da763bbe36864d557f7 100644
+index ac1aa37329bd4d411964ea34ea8147f6db945b9a..cc96aeebfe96fabc399ba8772a488e48b504e65d 100644
 --- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
 +++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
 @@ -341,6 +341,7 @@ public enum ConnectionProtocol {
  
          @Nullable
          public Packet<?> createPacket(int id, FriendlyByteBuf buf) {
-+            if (id < 0 || id >= this.idToDeserializer.size()) return null; // Paper
++            if (id < 0 || id >= this.idToDeserializer.size()) return null; // Paper - Perf: Optmize exception handling
              Function<FriendlyByteBuf, ? extends Packet<? super T>> function = this.idToDeserializer.get(id);
              return function != null ? function.apply(buf) : null;
          }
 diff --git a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
-index 00c170a16a57f41f881c6b282cba474ce485b34c..1f71357a4caef4b2cbff95b560d0f3df268b3621 100644
+index 00c170a16a57f41f881c6b282cba474ce485b34c..e3c30a096aee3ae0df933647a0c3079e3ae02868 100644
 --- a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
 +++ b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
 @@ -39,6 +39,12 @@ public class Varint21FrameDecoder extends ByteToMessageDecoder {
      }
  
      protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
-+        // Paper start - if channel is not active just discard the packet
++        // Paper start - Perf: Optmize exception handling; if channel is not active just discard the packet
 +        if (!channelHandlerContext.channel().isActive()) {
 +            byteBuf.skipBytes(byteBuf.readableBytes());
 +            return;
 +        }
-+        // Paper end - if channel is not active just discard the packet
++        // Paper end - Perf: Optmize exception handling
          byteBuf.markReaderIndex();
          this.helperBuf.clear();
          if (!copyVarint(byteBuf, this.helperBuf)) {

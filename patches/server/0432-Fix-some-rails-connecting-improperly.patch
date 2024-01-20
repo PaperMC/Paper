@@ -5,42 +5,42 @@ Subject: [PATCH] Fix some rails connecting improperly
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
-index d8dd9f26fe4344541d0544e35bbc66c5d567a80b..dcf49e21208c78b471e6c38cdb0746a0c88fe5a7 100644
+index d8dd9f26fe4344541d0544e35bbc66c5d567a80b..6bd4e4d173f34e0234f4474e49ce2d897f85386f 100644
 --- a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
 @@ -68,6 +68,7 @@ public abstract class BaseRailBlock extends Block implements SimpleWaterloggedBl
          state = this.updateDir(world, pos, state, true);
          if (this.isStraight) {
              world.neighborChanged(state, pos, this, pos, notify);
-+            state = world.getBlockState(pos); // Paper - don't desync, update again
++            state = world.getBlockState(pos); // Paper - Fix some rails connecting improperly
          }
  
          return state;
 diff --git a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
-index 41452abc7b761858ff2f3ff6a833b09c16fded4f..8eff69cb70ba094f9dcc0849f0436d4a3498fceb 100644
+index 41452abc7b761858ff2f3ff6a833b09c16fded4f..17242c24d73c9ffb1c976a45925f85d1aa9e96b3 100644
 --- a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
 @@ -77,6 +77,7 @@ public class DetectorRailBlock extends BaseRailBlock {
  
      private void checkPressed(Level world, BlockPos pos, BlockState state) {
          if (this.canSurvive(state, world, pos)) {
-+            if (state.getBlock() != this) { return; } // Paper - not our block, don't do anything
++            if (state.getBlock() != this) { return; } // Paper - Fix some rails connecting improperly
              boolean flag = (Boolean) state.getValue(DetectorRailBlock.POWERED);
              boolean flag1 = false;
              List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (entity) -> {
 diff --git a/src/main/java/net/minecraft/world/level/block/RailState.java b/src/main/java/net/minecraft/world/level/block/RailState.java
-index 0cbfad97371b59de95963a09aa16f3dad7a37222..d873625c1b8439a727d39ce207b5e84a1d86e5eb 100644
+index 0cbfad97371b59de95963a09aa16f3dad7a37222..939665cbe4cce36cd64c299908a738a4d1c2140e 100644
 --- a/src/main/java/net/minecraft/world/level/block/RailState.java
 +++ b/src/main/java/net/minecraft/world/level/block/RailState.java
 @@ -17,6 +17,12 @@ public class RailState {
      private final boolean isStraight;
      private final List<BlockPos> connections = Lists.newArrayList();
  
-+    // Paper start - prevent desync
++    // Paper start - Fix some rails connecting improperly
 +    public boolean isValid() {
 +        return this.level.getBlockState(this.pos).getBlock() == this.state.getBlock();
 +    }
-+    // Paper end - prevent desync
++    // Paper end - Fix some rails connecting improperly
 +
      public RailState(Level world, BlockPos pos, BlockState state) {
          this.level = world;
@@ -49,11 +49,11 @@ index 0cbfad97371b59de95963a09aa16f3dad7a37222..d873625c1b8439a727d39ce207b5e84a
      }
  
      private void connectTo(RailState placementHelper) {
-+        // Paper start - prevent desync
++        // Paper start - Fix some rails connecting improperly
 +        if (!this.isValid() || !placementHelper.isValid()) {
 +            return;
 +        }
-+        // Paper end - prevent desync
++        // Paper end - Fix some rails connecting improperly
          this.connections.add(placementHelper.pos);
          BlockPos blockPos = this.pos.north();
          BlockPos blockPos2 = this.pos.south();
@@ -61,16 +61,16 @@ index 0cbfad97371b59de95963a09aa16f3dad7a37222..d873625c1b8439a727d39ce207b5e84a
          this.state = this.state.setValue(this.block.getShapeProperty(), railShape2);
          if (forceUpdate || this.level.getBlockState(this.pos) != this.state) {
              this.level.setBlock(this.pos, this.state, 3);
-+            // Paper start - prevent desync
++            // Paper start - Fix some rails connecting improperly
 +            if (!this.isValid()) {
 +                return this;
 +            }
-+            // Paper end - prevent desync
++            // Paper end - Fix some rails connecting improperly
  
              for(int i = 0; i < this.connections.size(); ++i) {
                  RailState railState = this.getRail(this.connections.get(i));
 -                if (railState != null) {
-+                if (railState != null && railState.isValid()) { // Paper - prevent desync
++                if (railState != null && railState.isValid()) { // Paper - Fix some rails connecting improperly
                      railState.removeSoftConnections();
                      if (railState.canConnectTo(this)) {
                          railState.connectTo(this);
@@ -79,6 +79,6 @@ index 0cbfad97371b59de95963a09aa16f3dad7a37222..d873625c1b8439a727d39ce207b5e84a
  
      public BlockState getState() {
 -        return this.state;
-+        return this.level.getBlockState(this.pos); // Paper - prevent desync
++        return this.level.getBlockState(this.pos); // Paper - Fix some rails connecting improperly
      }
  }

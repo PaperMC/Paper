@@ -5,23 +5,23 @@ Subject: [PATCH] Fix SpawnChangeEvent not firing for all use-cases
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 8a7dd236435b08e0857041641eec9edcef936503..307f2d8adae141cfb7f5fd3c08e68863ce3ed75f 100644
+index 8a7dd236435b08e0857041641eec9edcef936503..3be046b4062e9eb9e642c17ba43b4d446e6ba9d7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2034,9 +2034,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
      public void setDefaultSpawnPos(BlockPos pos, float angle) {
          // Paper - configurable spawn radius
          BlockPos prevSpawn = this.getSharedSpawnPos();
-+        Location prevSpawnLoc = this.getWorld().getSpawnLocation(); // Paper
++        Location prevSpawnLoc = this.getWorld().getSpawnLocation(); // Paper - Call SpawnChangeEvent
          //ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
  
          this.levelData.setSpawn(pos, angle);
-+        new org.bukkit.event.world.SpawnChangeEvent(this.getWorld(), prevSpawnLoc).callEvent(); // Paper
++        new org.bukkit.event.world.SpawnChangeEvent(this.getWorld(), prevSpawnLoc).callEvent(); // Paper - Call SpawnChangeEvent
          if (this.keepSpawnInMemory) {
              // if this keepSpawnInMemory is false a plugin has already removed our tickets, do not re-add
              this.removeTicketsForSpawn(this.paperConfig().spawn.keepSpawnLoadedRange * 16, prevSpawn);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 36d7c41505d41443e6034dfc88ce177fe47d980f..6a6bdc23767d4b0413352eda860f3fd3076f492e 100644
+index 36d7c41505d41443e6034dfc88ce177fe47d980f..4fe507969849f8abd12aadb6943a8a2fce27b5b5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -262,12 +262,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -30,16 +30,16 @@ index 36d7c41505d41443e6034dfc88ce177fe47d980f..6a6bdc23767d4b0413352eda860f3fd3
          try {
 -            Location previousLocation = this.getSpawnLocation();
 -            this.world.levelData.setSpawn(new BlockPos(x, y, z), angle);
-+            // Location previousLocation = this.getSpawnLocation(); // Paper - moved to nms.ServerLevel
++            // Location previousLocation = this.getSpawnLocation(); // Paper - Call SpawnChangeEvent; moved to nms.ServerLevel
 +            this.world.setDefaultSpawnPos(new BlockPos(x, y, z), angle); // Paper - use ServerLevel#setDefaultSpawnPos
  
-+            // Paper start - move to nms.ServerLevel
++            // Paper start - Call SpawnChangeEvent; move to nms.ServerLevel
              // Notify anyone who's listening.
 -            SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
 -            this.server.getPluginManager().callEvent(event);
 +            // SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
 +            // server.getPluginManager().callEvent(event);
-+            // Paper end
++            // Paper end - Call SpawnChangeEvent
  
              return true;
          } catch (Exception e) {

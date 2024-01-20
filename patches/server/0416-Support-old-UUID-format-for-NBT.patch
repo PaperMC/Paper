@@ -8,19 +8,19 @@ We have stored UUID in plenty of places that did not get DFU'd
 So just look for old format and load it if it exists.
 
 diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/net/minecraft/nbt/CompoundTag.java
-index 135530bc9d7ecd0348ace6474f4ca6d2e1bad283..4c8f2dbdd6e384be026ae1c890096f89fd744eb0 100644
+index 135530bc9d7ecd0348ace6474f4ca6d2e1bad283..22106323902ceb4fc58a95918c754234a581f7a1 100644
 --- a/src/main/java/net/minecraft/nbt/CompoundTag.java
 +++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
 @@ -237,6 +237,12 @@ public class CompoundTag implements Tag {
      }
  
      public void putUUID(String key, UUID value) {
-+        // Paper start - support old format
++        // Paper start - Support old UUID format
 +        if (this.contains(key + "Most", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC) && this.contains(key + "Least", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
 +            this.tags.remove(key + "Most");
 +            this.tags.remove(key + "Least");
 +        }
-+        // Paper end
++        // Paper end - Support old UUID format
          this.tags.put(key, NbtUtils.createUUID(value));
      }
  
@@ -28,39 +28,39 @@ index 135530bc9d7ecd0348ace6474f4ca6d2e1bad283..4c8f2dbdd6e384be026ae1c890096f89
       * You must use {@link #hasUUID(String)} before or else it <b>will</b> throw an NPE.
       */
      public UUID getUUID(String key) {
-+        // Paper start - support old format
++        // Paper start - Support old UUID format
 +        if (!contains(key, 11) && this.contains(key + "Most", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC) && this.contains(key + "Least", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
 +            return new UUID(this.getLong(key + "Most"), this.getLong(key + "Least"));
 +        }
-+        // Paper end
++        // Paper end - Support old UUID format
          return NbtUtils.loadUUID(this.get(key));
      }
  
      public boolean hasUUID(String key) {
-+        // Paper start - support old format
++        // Paper start - Support old UUID format
 +        if (this.contains(key + "Most", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC) && this.contains(key + "Least", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
 +            return true;
 +        }
-+        // Paper end
++        // Paper end - Support old UUID format
          Tag tag = this.get(key);
          return tag != null && tag.getType() == IntArrayTag.TYPE && ((IntArrayTag)tag).getAsIntArray().length == 4;
      }
 diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
-index 4388f2a8b05f5ed2f0934c1693299a4c92072adc..18fad4f083862ace2bc56579883f548f6d697091 100644
+index 4388f2a8b05f5ed2f0934c1693299a4c92072adc..ba0726157417cdde1c9bca93a9e37e68d9b2286d 100644
 --- a/src/main/java/net/minecraft/nbt/NbtUtils.java
 +++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
 @@ -72,6 +72,14 @@ public final class NbtUtils {
      @Nullable
      public static GameProfile readGameProfile(CompoundTag nbt) {
          UUID uUID = nbt.hasUUID("Id") ? nbt.getUUID("Id") : Util.NIL_UUID;
-+        // Paper start - Support string UUIDs
++        // Paper start - Support old UUID format
 +        if (nbt.contains("Id", Tag.TAG_STRING)) {
 +            try {
 +                uUID = UUID.fromString(nbt.getString("Id"));
 +            } catch (IllegalArgumentException ignored){
 +            }
 +        }
-+        // Paper end - Support string UUIDs
++        // Paper end - Support old UUID format
          String string = nbt.getString("Name");
  
          try {
