@@ -15,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final GateBehavior.OrderPolicy orderPolicy;
      private final GateBehavior.RunningPolicy runningPolicy;
 -    private final ShufflingList<BehaviorControl<? super E>> behaviors = new ShufflingList<>();
-+    private final ShufflingList<BehaviorControl<? super E>> behaviors = new ShufflingList<>(false); // Paper - don't use a clone
++    private final ShufflingList<BehaviorControl<? super E>> behaviors = new ShufflingList<>(false); // Paper - Fix Concurrency issue in ShufflingList during worldgen
      private Behavior.Status status = Behavior.Status.STOPPED;
  
      public GateBehavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState, Set<MemoryModuleType<?>> memoriesToForgetWhenStopped, GateBehavior.OrderPolicy order, GateBehavior.RunningPolicy runMode, List<Pair<? extends BehaviorControl<? super E>, Integer>> tasks) {
@@ -27,25 +27,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public class ShufflingList<U> implements Iterable<U> {
      protected final List<ShufflingList.WeightedEntry<U>> entries;
      private final RandomSource random = RandomSource.create();
-+    private final boolean isUnsafe; // Paper
++    private final boolean isUnsafe; // Paper - Fix Concurrency issue in ShufflingList during worldgen
  
      public ShufflingList() {
-+        // Paper start
++        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
 +        this(true);
 +    }
 +    public ShufflingList(boolean isUnsafe) {
 +        this.isUnsafe = isUnsafe;
-+        // Paper end
++        // Paper end - Fix Concurrency issue in ShufflingList during worldgen
          this.entries = Lists.newArrayList();
      }
  
      private ShufflingList(List<ShufflingList.WeightedEntry<U>> list) {
-+        // Paper start
++        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
 +        this(list, true);
 +    }
 +    private ShufflingList(List<ShufflingList.WeightedEntry<U>> list, boolean isUnsafe) {
 +        this.isUnsafe = isUnsafe;
-+        // Paper end
++        // Paper end - Fix Concurrency issue in ShufflingList during worldgen
          this.entries = Lists.newArrayList(list);
      }
  
@@ -58,12 +58,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        });
 -        this.entries.sort(Comparator.comparingDouble(ShufflingList.WeightedEntry::getRandWeight));
 -        return this;
-+        // Paper start - make concurrent safe, work off a clone of the list
++        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
 +        List<ShufflingList.WeightedEntry<U>> list = this.isUnsafe ? Lists.newArrayList(this.entries) : this.entries;
 +        list.forEach(entry -> entry.setRandom(this.random.nextFloat()));
 +        list.sort(Comparator.comparingDouble(ShufflingList.WeightedEntry::getRandWeight));
 +        return this.isUnsafe ? new ShufflingList<>(list, this.isUnsafe) : this;
-+        // Paper end
++        // Paper end - Fix Concurrency issue in ShufflingList during worldgen
      }
  
      public Stream<U> stream() {

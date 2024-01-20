@@ -17,7 +17,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 -            this.player.absMoveTo(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot());
-+            this.player.moveTo(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot()); // Paper - use proper moveTo for teleportation
++            this.player.moveTo(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot()); // Paper - Fix Entity Teleportation and cancel velocity if teleported
              this.lastGoodX = this.awaitingPositionFromClient.x;
              this.lastGoodY = this.awaitingPositionFromClient.y;
              this.lastGoodZ = this.awaitingPositionFromClient.z;
@@ -26,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          this.awaitingTeleportTime = this.tickCount;
 -        this.player.absMoveTo(d0, d1, d2, f, f1);
-+        this.player.moveTo(d0, d1, d2, f, f1); // Paper - use proper moveTo for teleportation
++        this.player.moveTo(d0, d1, d2, f, f1); // Paper - Fix Entity Teleportation and cancel velocity if teleported
          this.player.connection.send(new ClientboundPlayerPositionPacket(d0 - d3, d1 - d4, d2 - d5, f - f2, f1 - f3, set, this.awaitingTeleport));
      }
  
@@ -38,7 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      // CraftBukkit start
      private static final int CURRENT_LEVEL = 2;
-+    public boolean preserveMotion = true; // Paper - keep initial motion on first setPositionRotation
++    public boolean preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; keep initial motion on first setPositionRotation
      static boolean isLevelAtLeast(CompoundTag tag, int level) {
          return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
      }
@@ -46,13 +46,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void moveTo(double x, double y, double z, float yaw, float pitch) {
-+        // Paper - cancel entity velocity if teleported
++        // Paper - Fix Entity Teleportation and cancel velocity if teleported
 +        if (!preserveMotion) {
 +            this.deltaMovement = Vec3.ZERO;
 +        } else {
 +            this.preserveMotion = false;
 +        }
-+        // Paper end
++        // Paper end - Fix Entity Teleportation and cancel velocity if teleported
          this.setPosRaw(x, y, z);
          this.setYRot(yaw);
          this.setXRot(pitch);
@@ -64,7 +64,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              return;
                          }
  
-+                        entity.preserveMotion = true; // Paper - preserve entity motion from tag
++                        entity.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; preserve entity motion from tag
                          entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), randomsource.nextFloat() * 360.0F, 0.0F);
                          if (entity instanceof Mob) {
                              Mob entityinsentient = (Mob) entity;

@@ -26,12 +26,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap((pos) -> {
 -                return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
 -            }, Function.identity()));
-+            // Paper start - remove streams - and optimize collection
++            // Paper start - Perf: remove streams and optimize collection
 +            List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
 +            for (BlockPos pos : positions) {
 +                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos));
 +            }
-+            // Paper end
++            // Paper end - Perf: remove streams and optimize collection
              Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
              this.nodeEvaluator.done();
              return path;
@@ -40,7 +40,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Nullable
 -    private Path findPath(ProfilerFiller profiler, Node startNode, Map<Target, BlockPos> positions, float followRange, int distance, float rangeMultiplier) {
-+    // Paper start - optimize collection
++    // Paper start - Perf: remove streams and optimize collection - optimize collection
 +    private Path findPath(ProfilerFiller profiler, Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
          profiler.push("find_path");
          profiler.markForCharting(MetricCategory.PATH_FINDING);
@@ -73,12 +73,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      target.setReached();
 -                    set3.add(target);
 +                    entryList.add(entry);
-+                    // Paper end
++                    // Paper end - Perf: remove streams and optimize collection
                  }
              }
  
 -            if (!set3.isEmpty()) {
-+            if (!entryList.isEmpty()) { // Paper - rename variable
++            if (!entryList.isEmpty()) { // Paper - Perf: remove streams and optimize collection; rename
                  break;
              }
  
@@ -87,7 +87,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          node2.cameFrom = node;
                          node2.g = g;
 -                        node2.h = this.getBestH(node2, set) * 1.5F;
-+                        node2.h = this.getBestH(node2, positions) * 1.5F; // Paper - list instead of set
++                        node2.h = this.getBestH(node2, positions) * 1.5F; // Paper - Perf: remove streams and optimize collection
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
@@ -102,7 +102,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }).min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
 -        profiler.pop();
 -        return optional.isEmpty() ? null : optional.get();
-+        // Paper start - remove streams - and optimize collection
++        // Paper start - Perf: remove streams and optimize collection
 +        Path best = null;
 +        boolean entryListIsEmpty = entryList.isEmpty();
 +        Comparator<Path> comparator = entryListIsEmpty ? Comparator.comparingInt(Path::getNodeCount)
@@ -113,7 +113,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                best = path;
 +        }
 +        return best;
-+        // Paper end
++        // Paper end - Perf: remove streams and optimize collection
      }
  
      protected float distance(Node a, Node b) {
@@ -121,14 +121,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    private float getBestH(Node node, Set<Target> targets) {
-+    private float getBestH(Node node, List<Map.Entry<Target, BlockPos>> targets) { // Paper - optimize collection - Set<Target> -> List<Map.Entry<Target, BlockPos>>
++    private float getBestH(Node node, List<Map.Entry<Target, BlockPos>> targets) { // Paper - Perf: remove streams and optimize collection; Set<Target> -> List<Map.Entry<Target, BlockPos>>
          float f = Float.MAX_VALUE;
  
 -        for(Target target : targets) {
-+        // Paper start - optimize collection
++        // Paper start - Perf: remove streams and optimize collection
 +        for (int i = 0, targetsSize = targets.size(); i < targetsSize; i++) {
 +            final Target target = targets.get(i).getKey();
-+            // Paper end
++            // Paper end - Perf: remove streams and optimize collection
              float g = node.distanceTo(target);
              target.updateBest(g, node);
              f = Math.min(g, f);

@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void overrideXp(int experience) {}
  
-+    // Paper start
++    // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
 +    @Override
 +    public void processTrade(MerchantOffer recipe, @Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
 +        if (event == null || event.willIncreaseTradeUses()) {
@@ -24,15 +24,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        this.notifyTrade(recipe);
 +    }
-+    // Paper end
++    // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
 +
      @Override
      public void notifyTrade(MerchantOffer offer) {
 -        offer.increaseUses();
-+        // offer.increaseUses(); // Paper - handled in processTrade
++        // offer.increaseUses(); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
          this.ambientSoundTime = -this.getAmbientSoundInterval();
 -        this.rewardTradeXp(offer);
-+        // this.rewardTradeXp(offer); // Paper - handled in processTrade
++        // this.rewardTradeXp(offer); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
          if (this.tradingPlayer instanceof ServerPlayer) {
              CriteriaTriggers.TRADE.trigger((ServerPlayer) this.tradingPlayer, this, offer.getResult());
          }
@@ -44,14 +44,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public abstract boolean stillValid(Player player);
  
      protected boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean fromLast) {
-+        // Paper start
++        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
 +        return this.moveItemStackTo(stack, startIndex, endIndex, fromLast, false);
 +    }
 +    protected boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean fromLast, boolean isCheck) {
 +        if (isCheck) {
 +            stack = stack.copy();
 +        }
-+        // Paper end
++        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
          boolean flag1 = false;
          int k = startIndex;
  
@@ -59,27 +59,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  slot = (Slot) this.slots.get(k);
                  itemstack1 = slot.getItem();
-+                // Paper start - clone if only a check
++                // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent; clone if only a check
 +                if (isCheck) {
 +                    itemstack1 = itemstack1.copy();
 +                }
-+                // Paper end
++                // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
                  if (!itemstack1.isEmpty() && ItemStack.isSameItemSameTags(stack, itemstack1)) {
                      int l = itemstack1.getCount() + stack.getCount();
  
                      if (l <= stack.getMaxStackSize()) {
                          stack.setCount(0);
                          itemstack1.setCount(l);
-+                        if (!isCheck) { // Paper - dont update if only a check
++                        if (!isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                          slot.setChanged();
-+                        } // Paper
++                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                          flag1 = true;
                      } else if (itemstack1.getCount() < stack.getMaxStackSize()) {
                          stack.shrink(stack.getMaxStackSize() - itemstack1.getCount());
                          itemstack1.setCount(stack.getMaxStackSize());
-+                        if (!isCheck) { // Paper - dont update if only a check
++                        if (!isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                          slot.setChanged();
-+                        } // Paper
++                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                          flag1 = true;
                      }
                  }
@@ -87,33 +87,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  slot = (Slot) this.slots.get(k);
                  itemstack1 = slot.getItem();
-+                // Paper start - clone if only a check
++                // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
 +                if (isCheck) {
 +                    itemstack1 = itemstack1.copy();
 +                }
-+                // Paper end
++                // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
                  if (itemstack1.isEmpty() && slot.mayPlace(stack)) {
                      if (stack.getCount() > slot.getMaxStackSize()) {
-+                        // Paper start - dont set slot if only check
++                        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
 +                        if (isCheck) {
 +                            stack.shrink(slot.getMaxStackSize());
 +                        } else {
-+                        // Paper end
++                        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
                          slot.setByPlayer(stack.split(slot.getMaxStackSize()));
-+                        } // Paper
++                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                      } else {
-+                        // Paper start - dont set slot if only check
++                        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
 +                        if (isCheck) {
 +                            stack.shrink(stack.getCount());
 +                        } else {
-+                        // Paper end
++                        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
                          slot.setByPlayer(stack.split(stack.getCount()));
-+                        } // Paper
++                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                      }
  
-+                    if (!isCheck) { // Paper - dont update if only check
++                    if (!isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                      slot.setChanged();
-+                    } // Paper
++                    } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                      flag1 = true;
                      break;
                  }
@@ -126,13 +126,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              itemstack = itemstack1.copy();
              if (slot == 2) {
 -                if (!this.moveItemStackTo(itemstack1, 3, 39, true)) {
-+                if (!this.moveItemStackTo(itemstack1, 3, 39, true, true)) { // Paper
++                if (!this.moveItemStackTo(itemstack1, 3, 39, true, true)) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                      return ItemStack.EMPTY;
                  }
  
 -                slot1.onQuickCraft(itemstack1, itemstack);
 -                this.playTradeSound();
-+                //  slot1.onQuickCraft(itemstack1, itemstack); // Paper - moved to after the non-check moveItemStackTo call
++                //  slot1.onQuickCraft(itemstack1, itemstack); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; moved to after the non-check moveItemStackTo call
 +                // this.playTradeSound();
              } else if (slot != 0 && slot != 1) {
                  if (slot >= 3 && slot < 30) {
@@ -141,7 +141,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return ItemStack.EMPTY;
              }
  
-+            if (slot != 2) { // Paper - moved down for slot 2
++            if (slot != 2) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; moved down for slot 2
              if (itemstack1.isEmpty()) {
                  slot1.setByPlayer(ItemStack.EMPTY);
              } else {
@@ -149,7 +149,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              slot1.onTake(player, itemstack1);
-+            } // Paper start - handle slot 2
++            } // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent; handle slot 2
 +            if (slot == 2) { // is merchant result slot
 +                slot1.onTake(player, itemstack1);
 +                if (itemstack1.isEmpty()) {
@@ -163,7 +163,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                this.playTradeSound();
 +                slot1.set(ItemStack.EMPTY); // itemstack1 should ALWAYS be empty
 +            }
-+            // Paper end
++            // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
          }
  
          return itemstack;
@@ -176,9 +176,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void onTake(Player player, ItemStack stack) {
 -        this.checkTakeAchievements(stack);
-+        // this.checkTakeAchievements(stack); // Paper - move to after event is called and not cancelled
++        // this.checkTakeAchievements(stack); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; move to after event is called and not cancelled
          MerchantOffer merchantOffer = this.slots.getActiveOffer();
-+        // Paper start
++        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
 +        io.papermc.paper.event.player.PlayerPurchaseEvent event = null;
 +        if (merchantOffer != null && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
 +            if (this.merchant instanceof net.minecraft.world.entity.npc.AbstractVillager abstractVillager) {
@@ -196,13 +196,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +        this.checkTakeAchievements(stack);
-+        // Paper end
++        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
          if (merchantOffer != null) {
              ItemStack itemStack = this.slots.getItem(0);
              ItemStack itemStack2 = this.slots.getItem(1);
              if (merchantOffer.take(itemStack, itemStack2) || merchantOffer.take(itemStack2, itemStack)) {
 -                this.merchant.notifyTrade(merchantOffer);
-+                this.merchant.processTrade(merchantOffer, event); // Paper
++                this.merchant.processTrade(merchantOffer, event); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                  player.awardStat(Stats.TRADED_WITH_VILLAGER);
                  this.slots.setItem(0, itemStack);
                  this.slots.setItem(1, itemStack2);
@@ -226,7 +226,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return this.trades;
          }
  
-+        // Paper start
++        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
 +        @Override
 +        public void processTrade(MerchantOffer merchantRecipe, @javax.annotation.Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
 +            /** Based on {@link net.minecraft.world.entity.npc.AbstractVillager#processTrade(MerchantOffer, io.papermc.paper.event.player.PlayerPurchaseEvent)} */
@@ -240,12 +240,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            this.notifyTrade(merchantRecipe);
 +        }
-+        // Paper end
++        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
          @Override
          public void notifyTrade(MerchantOffer offer) {
              // increase recipe's uses
 -            offer.increaseUses();
-+            // offer.increaseUses(); // Paper - handled above in processTrade
++            // offer.increaseUses(); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; handled above in processTrade
          }
  
          @Override
