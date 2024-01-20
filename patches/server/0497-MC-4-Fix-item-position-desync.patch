@@ -9,7 +9,7 @@ loss, which forces the server to lose the same precision as the client
 keeping them in sync.
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
-index 05ac41e136da43284fb24a6b698ebd36318278fb..33d9131e9c75ef23cd637f5d6c39a2704a0c92a5 100644
+index 05ac41e136da43284fb24a6b698ebd36318278fb..3c4ac79c094dc2fff7de94150a34b7bf814ac0de 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
 @@ -9,12 +9,12 @@ public class VecDeltaCodec {
@@ -17,25 +17,25 @@ index 05ac41e136da43284fb24a6b698ebd36318278fb..33d9131e9c75ef23cd637f5d6c39a270
      @VisibleForTesting
      static long encode(double value) {
 -        return Math.round(value * 4096.0D);
-+        return Math.round(value * 4096.0D); // Paper - diff on change
++        return Math.round(value * 4096.0D); // Paper - Fix MC-4; diff on change
      }
  
      @VisibleForTesting
      static double decode(long value) {
 -        return (double)value / 4096.0D;
-+        return (double)value / 4096.0D; // Paper - diff on change
++        return (double)value / 4096.0D; // Paper - Fix MC-4; diff on change
      }
  
      public Vec3 decode(long x, long y, long z) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 02b102b2d3e8e8ca9d0c95d3a44a56a88bee3b18..3a8572ded5c9bdf621a8c16123707da9ceb70d54 100644
+index 180f87a67c84fc0cf3f54755da9801365d4158f8..9085eeffaa7b50e5e59a794d0323cae83248f242 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -4286,6 +4286,16 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              return;
          }
          // Paper end - rewrite chunk system
-+        // Paper start - fix MC-4
++        // Paper start - Fix MC-4
 +        if (this instanceof ItemEntity) {
 +            if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.fixEntityPositionDesync) {
 +                // encode/decode from ClientboundMoveEntityPacket
@@ -44,7 +44,7 @@ index 02b102b2d3e8e8ca9d0c95d3a44a56a88bee3b18..3a8572ded5c9bdf621a8c16123707da9
 +                z = Mth.lfloor(z * 4096.0D) * (1 / 4096.0D);
 +            }
 +        }
-+        // Paper end - fix MC-4
++        // Paper end - Fix MC-4
          if (this.position.x != x || this.position.y != y || this.position.z != z) {
              this.position = new Vec3(x, y, z);
              int i = Mth.floor(x);

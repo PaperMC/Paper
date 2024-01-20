@@ -12,14 +12,14 @@ JSON representation of the NBT object.
 Now we will just skip the value when 99.9999% of the time the text is never even printed.
 
 diff --git a/src/main/java/com/mojang/serialization/Dynamic.java b/src/main/java/com/mojang/serialization/Dynamic.java
-index a24cc02a62585d7c04d36456739b11bddccf1a15..683f516b86f246792dcb3d6f9a738fc14155d2f6 100644
+index a24cc02a62585d7c04d36456739b11bddccf1a15..984e41619230db4579b028af18670c471aa13096 100644
 --- a/src/main/java/com/mojang/serialization/Dynamic.java
 +++ b/src/main/java/com/mojang/serialization/Dynamic.java
 @@ -17,6 +17,7 @@ import java.util.stream.Stream;
  
  @SuppressWarnings("unused")
  public class Dynamic<T> extends DynamicLike<T> {
-+    private static final boolean DEBUG_MISSING_KEYS = Boolean.getBoolean("Paper.debugDynamicMissingKeys"); // Paper
++    private static final boolean DEBUG_MISSING_KEYS = Boolean.getBoolean("Paper.debugDynamicMissingKeys"); // Paper - Perf: Skip toString on values like NBT
      private final T value;
  
      public Dynamic(final DynamicOps<T> ops) {
@@ -28,7 +28,7 @@ index a24cc02a62585d7c04d36456739b11bddccf1a15..683f516b86f246792dcb3d6f9a738fc1
              final T value = m.get(key);
              if (value == null) {
 -                return DataResult.error(() -> "key missing: " + key + " in " + this.value);
-+                return DataResult.error(() -> DEBUG_MISSING_KEYS ? "key missing: " + key + " in " + this.value : "key missing: " + key); // Paper
++                return DataResult.error(() -> DEBUG_MISSING_KEYS ? "key missing: " + key + " in " + this.value : "key missing: " + key); // Paper - Perf: Skip toString on values like NBT
              }
              return DataResult.success(new Dynamic<>(ops, value));
          }));

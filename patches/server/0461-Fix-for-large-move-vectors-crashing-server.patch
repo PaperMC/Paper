@@ -6,7 +6,7 @@ Subject: [PATCH] Fix for large move vectors crashing server
 Check movement distance also based on current position.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 5550f60424d827616c935e3b0036f1b4f6144e5c..27b84c1db793af21c947ab31e7732a3b371da40a 100644
+index 0a2f711b7feba83b39c042df71b3dc6546601ed8..6e1bfe5342e23a0dd97dfbc06a43bf77dfab23cc 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -473,9 +473,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -22,7 +22,7 @@ index 5550f60424d827616c935e3b0036f1b4f6144e5c..27b84c1db793af21c947ab31e7732a3b
                  double d3 = ServerGamePacketListenerImpl.clampHorizontal(packet.getX()); final double toX = d3; // Paper - OBFHELPER
                  double d4 = ServerGamePacketListenerImpl.clampVertical(packet.getY()); final double toY = d4; // Paper - OBFHELPER
                  double d5 = ServerGamePacketListenerImpl.clampHorizontal(packet.getZ()); final double toZ = d5; // Paper - OBFHELPER
-@@ -485,7 +485,19 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -485,7 +485,16 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  double d7 = d4 - this.vehicleFirstGoodY;
                  double d8 = d5 - this.vehicleFirstGoodZ;
                  double d9 = entity.getDeltaMovement().lengthSqr();
@@ -32,9 +32,6 @@ index 5550f60424d827616c935e3b0036f1b4f6144e5c..27b84c1db793af21c947ab31e7732a3b
 +                double currDeltaY = toY - fromY;
 +                double currDeltaZ = toZ - fromZ;
 +                double d10 = Math.max(d6 * d6 + d7 * d7 + d8 * d8, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
-+                // Paper end - fix large move vectors killing the server
-+
-+                // Paper start - fix large move vectors killing the server
 +                double otherFieldX = d3 - this.vehicleLastGoodX;
 +                double otherFieldY = d4 - this.vehicleLastGoodY - 1.0E-6D;
 +                double otherFieldZ = d5 - this.vehicleLastGoodZ;
@@ -43,7 +40,7 @@ index 5550f60424d827616c935e3b0036f1b4f6144e5c..27b84c1db793af21c947ab31e7732a3b
  
                  // CraftBukkit start - handle custom speeds and skipped ticks
                  this.allowedPlayerTicks += (System.currentTimeMillis() / 50) - this.lastTick;
-@@ -531,9 +543,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -531,9 +540,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
                  boolean flag = worldserver.noCollision(entity, entity.getBoundingBox().deflate(0.0625D));
  
@@ -56,7 +53,7 @@ index 5550f60424d827616c935e3b0036f1b4f6144e5c..27b84c1db793af21c947ab31e7732a3b
                  boolean flag1 = entity.verticalCollisionBelow;
  
                  if (entity instanceof LivingEntity) {
-@@ -1272,7 +1284,18 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1272,7 +1281,16 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                          double d7 = d1 - this.firstGoodY;
                          double d8 = d2 - this.firstGoodZ;
                          double d9 = this.player.getDeltaMovement().lengthSqr();
@@ -66,8 +63,6 @@ index 5550f60424d827616c935e3b0036f1b4f6144e5c..27b84c1db793af21c947ab31e7732a3b
 +                        double currDeltaY = toY - prevY;
 +                        double currDeltaZ = toZ - prevZ;
 +                        double d10 = Math.max(d6 * d6 + d7 * d7 + d8 * d8, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
-+                        // Paper end - fix large move vectors killing the server
-+                        // Paper start - fix large move vectors killing the server
 +                        double otherFieldX = d0 - this.lastGoodX;
 +                        double otherFieldY = d1 - this.lastGoodY;
 +                        double otherFieldZ = d2 - this.lastGoodZ;
@@ -76,7 +71,7 @@ index 5550f60424d827616c935e3b0036f1b4f6144e5c..27b84c1db793af21c947ab31e7732a3b
  
                          if (this.player.isSleeping()) {
                              if (d10 > 1.0D) {
-@@ -1326,9 +1349,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1326,9 +1344,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
                              AABB axisalignedbb = this.player.getBoundingBox();
  

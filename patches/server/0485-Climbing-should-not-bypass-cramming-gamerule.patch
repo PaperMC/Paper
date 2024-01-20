@@ -5,46 +5,46 @@ Subject: [PATCH] Climbing should not bypass cramming gamerule
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 4a1245fb3ad821ee997b35f180390a07bc871982..82eb980dd463c423b2b30a3149166a227608bb96 100644
+index cdfc00e4bee78fc7ac7dc9f52301f16cd7846698..180f87a67c84fc0cf3f54755da9801365d4158f8 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2064,6 +2064,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      }
  
      public boolean isPushable() {
-+        // Paper start
++        // Paper start - Climbing should not bypass cramming gamerule
 +        return isCollidable(false);
 +    }
 +
 +    public boolean isCollidable(boolean ignoreClimbing) {
-+        // Paper end
++        // Paper end - Climbing should not bypass cramming gamerule
          return false;
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index 68e4440765636295a74ea942862d772d47282ad6..93a41156a01a1638f3ef469b1518a07e7961f378 100644
+index 68e4440765636295a74ea942862d772d47282ad6..7bd719db017425627c982728abec7b7f99edbc66 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 @@ -46,11 +46,16 @@ public final class EntitySelector {
      }
  
      public static Predicate<Entity> pushableBy(Entity entity) {
-+        // Paper start - ignoreClimbing param
++        // Paper start - Climbing should not bypass cramming gamerule
 +        return pushable(entity, false);
 +    }
 +    public static Predicate<Entity> pushable(Entity entity, boolean ignoreClimbing) {
-+        // Paper end
++        // Paper end - Climbing should not bypass cramming gamerule
          PlayerTeam scoreboardteam = entity.getTeam();
          Team.CollisionRule scoreboardteambase_enumteampush = scoreboardteam == null ? Team.CollisionRule.ALWAYS : scoreboardteam.getCollisionRule();
  
          return (Predicate) (scoreboardteambase_enumteampush == Team.CollisionRule.NEVER ? Predicates.alwaysFalse() : EntitySelector.NO_SPECTATORS.and((entity1) -> {
 -            if (!entity1.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(entity1)) { // CraftBukkit - collidable API
-+            if (!entity1.isCollidable(ignoreClimbing) || !entity1.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(entity1)) { // CraftBukkit - collidable API // Paper - isCollidable
++            if (!entity1.isCollidable(ignoreClimbing) || !entity1.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(entity1)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
                  return false;
              } else if (entity.level().isClientSide && (!(entity1 instanceof Player) || !((Player) entity1).isLocalPlayer())) {
                  return false;
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 05fe4828af59e3cd894c9979ecb08ad0e1c6b2d3..7d72477cdeaa8238da1291c0a902d090463b95c8 100644
+index 05fe4828af59e3cd894c9979ecb08ad0e1c6b2d3..720b889796cd023308cf6f8e8a75b2548ca0e45f 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3426,7 +3426,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -52,7 +52,7 @@ index 05fe4828af59e3cd894c9979ecb08ad0e1c6b2d3..7d72477cdeaa8238da1291c0a902d090
              }
              // Paper end - don't run getEntities if we're not going to use its result
 -            List<Entity> list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushableBy(this));
-+            List<Entity> list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushable(this, this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule)); // Paper - fix climbing bypassing cramming rule
++            List<Entity> list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushable(this, this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule)); // Paper - Climbing should not bypass cramming gamerule
  
              if (!list.isEmpty()) {
                  // Paper - moved up
@@ -60,7 +60,7 @@ index 05fe4828af59e3cd894c9979ecb08ad0e1c6b2d3..7d72477cdeaa8238da1291c0a902d090
          return !this.isRemoved() && this.collides; // CraftBukkit
      }
  
-+    // Paper start
++    // Paper start - Climbing should not bypass cramming gamerule
      @Override
      public boolean isPushable() {
 -        return this.isAlive() && !this.isSpectator() && !this.onClimbable() && this.collides; // CraftBukkit
@@ -70,12 +70,12 @@ index 05fe4828af59e3cd894c9979ecb08ad0e1c6b2d3..7d72477cdeaa8238da1291c0a902d090
 +    @Override
 +    public boolean isCollidable(boolean ignoreClimbing) {
 +        return this.isAlive() && !this.isSpectator() && (ignoreClimbing || !this.onClimbable()) && this.collides; // CraftBukkit
-+        // Paper end
++        // Paper end - Climbing should not bypass cramming gamerule
      }
  
      // CraftBukkit start - collidable API
 diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
-index bc9a710a92662b1f69b0f5b289780fe0a0d5ed32..6b614818b14ecfc8fc82b523eeb7e21fdf9bf1ba 100644
+index bc9a710a92662b1f69b0f5b289780fe0a0d5ed32..44fa2d4f90389f5526746bd94a2450c03340bd0b 100644
 --- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
 +++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
 @@ -90,7 +90,7 @@ public class Bat extends AmbientCreature {
@@ -83,12 +83,12 @@ index bc9a710a92662b1f69b0f5b289780fe0a0d5ed32..6b614818b14ecfc8fc82b523eeb7e21f
  
      @Override
 -    public boolean isPushable() {
-+    public boolean isCollidable(boolean ignoreClimbing) { // Paper
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
          return false;
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Parrot.java b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
-index fbad0e512b990c3d6885ecf92766ba6fd851cc20..4c34edc55fa0e136ccf49a3aef001f413274dfac 100644
+index fbad0e512b990c3d6885ecf92766ba6fd851cc20..f3f48225c2a1e4bd3d0091d1b4b7e4e150850ed2 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Parrot.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
 @@ -383,8 +383,8 @@ public class Parrot extends ShoulderRidingEntity implements VariantHolder<Parrot
@@ -97,13 +97,13 @@ index fbad0e512b990c3d6885ecf92766ba6fd851cc20..4c34edc55fa0e136ccf49a3aef001f41
      @Override
 -    public boolean isPushable() {
 -        return super.isPushable(); // CraftBukkit - collidable API
-+    public boolean isCollidable(boolean ignoreClimbing) { // Paper
-+        return super.isCollidable(ignoreClimbing); // CraftBukkit - collidable API // Paper
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
++        return super.isCollidable(ignoreClimbing); // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
      }
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-index 6b7453281e32aae20778f26b4098df418401c45b..a13a1725356ca4430f1f0a6d121fc08679de62db 100644
+index 6b7453281e32aae20778f26b4098df418401c45b..8fc65fd7347340a89dba0b9839497aadfcc67d79 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 @@ -286,7 +286,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
@@ -111,12 +111,12 @@ index 6b7453281e32aae20778f26b4098df418401c45b..a13a1725356ca4430f1f0a6d121fc086
  
      @Override
 -    public boolean isPushable() {
-+    public boolean isCollidable(boolean ignoreClimbing) { // Paper
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
          return !this.isVehicle();
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index 4f9afae94a4cbf28a532e889d441c63df50642d9..d46b3b346540cc78cb93f3ce8bc8adc89b3d9b3d 100644
+index 4f9afae94a4cbf28a532e889d441c63df50642d9..e29d1801f15c4c5680b683783e97a7aae3da753e 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -343,7 +343,7 @@ public class ArmorStand extends LivingEntity {
@@ -124,12 +124,12 @@ index 4f9afae94a4cbf28a532e889d441c63df50642d9..d46b3b346540cc78cb93f3ce8bc8adc8
  
      @Override
 -    public boolean isPushable() {
-+    public boolean isCollidable(boolean ignoreClimbing) { // Paper
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
          return false;
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
-index e390735d411d815dcc4591da58db7017452acf31..82ffd50017dc234a9718db551fca0e73a6deded0 100644
+index e390735d411d815dcc4591da58db7017452acf31..be16ab6da56d2aa2a21ee378cfc44dbb14e108b3 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
 @@ -172,7 +172,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
@@ -137,12 +137,12 @@ index e390735d411d815dcc4591da58db7017452acf31..82ffd50017dc234a9718db551fca0e73
  
      @Override
 -    public boolean isPushable() {
-+    public boolean isCollidable(boolean ignoreClimbing) { // Paper
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
          return true;
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-index e6a7bf9a27fb66d8c2210678dbe8afa8bbf5e7c8..6b0ec9da5a368775924f5b97c74acc5bfd609fa1 100644
+index e6a7bf9a27fb66d8c2210678dbe8afa8bbf5e7c8..0178eb918179b12d7d8eb56cd72e5bfc34cfdbaf 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
 @@ -157,7 +157,7 @@ public class Boat extends VehicleEntity implements VariantHolder<Boat.Type> {
@@ -150,7 +150,7 @@ index e6a7bf9a27fb66d8c2210678dbe8afa8bbf5e7c8..6b0ec9da5a368775924f5b97c74acc5b
  
      @Override
 -    public boolean isPushable() {
-+    public boolean isCollidable(boolean ignoreClimbing) { // Paper
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
          return true;
      }
  

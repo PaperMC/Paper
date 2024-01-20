@@ -12,14 +12,14 @@ Co-authored-by: Dylan Xaldin <Puremin0rez515@gmail.com>
 Co-authored-by: pop4959 <pop4959@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java b/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java
-index fac92f37c32e0398ebc05d9a0378446fcabaef1a..1beacd84bb0eee1f3e8f451fc1c514e23cc62826 100644
+index fac92f37c32e0398ebc05d9a0378446fcabaef1a..01b60aaf484e1e327ca42d3573fd86d2abd749fa 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java
 @@ -490,6 +490,16 @@ public final class DensityFunctions {
          public static final KeyDispatchDataCodec<DensityFunctions.EndIslandDensityFunction> CODEC = KeyDispatchDataCodec.of(MapCodec.unit(new DensityFunctions.EndIslandDensityFunction(0L)));
          private static final float ISLAND_THRESHOLD = -0.9F;
          private final SimplexNoise islandNoise;
-+        // Paper start
++        // Paper start - Perf: Optimize end generation
 +        private static final class NoiseCache {
 +            public long[] keys = new long[8192];
 +            public float[] values = new float[8192];
@@ -28,7 +28,7 @@ index fac92f37c32e0398ebc05d9a0378446fcabaef1a..1beacd84bb0eee1f3e8f451fc1c514e2
 +            }
 +        }
 +        private static final ThreadLocal<java.util.Map<SimplexNoise, NoiseCache>> noiseCache = ThreadLocal.withInitial(java.util.WeakHashMap::new);
-+        // Paper end
++        // Paper end - Perf: Optimize end generation
  
          public EndIslandDensityFunction(long seed) {
              RandomSource randomSource = new LegacyRandomSource(seed);
@@ -36,14 +36,14 @@ index fac92f37c32e0398ebc05d9a0378446fcabaef1a..1beacd84bb0eee1f3e8f451fc1c514e2
              float f = 100.0F - Mth.sqrt((long) x * (long) x + (long) z * (long) z) * 8.0F; // Paper - cast ints to long to avoid integer overflow
              f = Mth.clamp(f, -100.0F, 80.0F);
  
-+            NoiseCache cache = noiseCache.get().computeIfAbsent(sampler, noiseKey -> new NoiseCache()); // Paper
++            NoiseCache cache = noiseCache.get().computeIfAbsent(sampler, noiseKey -> new NoiseCache()); // Paper - Perf: Optimize end generation
              for(int m = -12; m <= 12; ++m) {
                  for(int n = -12; n <= 12; ++n) {
                      long o = (long)(i + m);
                      long p = (long)(j + n);
 -                    if (o * o + p * p > 4096L && sampler.getValue((double)o, (double)p) < (double)-0.9F) {
 -                        float g = (Mth.abs((float)o) * 3439.0F + Mth.abs((float)p) * 147.0F) % 13.0F + 9.0F;
-+                    // Paper start - Significantly improve end generation performance by using a noise cache
++                    // Paper start - Perf: Optimize end generation by using a noise cache
 +                    long key = net.minecraft.world.level.ChunkPos.asLong((int) o, (int) p);
 +                    int index = (int) it.unimi.dsi.fastutil.HashCommon.mix(key) & 8191;
 +                    float g = Float.MIN_VALUE;
@@ -57,7 +57,7 @@ index fac92f37c32e0398ebc05d9a0378446fcabaef1a..1beacd84bb0eee1f3e8f451fc1c514e2
 +                        cache.values[index] = g;
 +                    }
 +                    if (g != Float.MIN_VALUE) {
-+                        // Paper end
++                        // Paper end - Perf: Optimize end generation
                          float h = (float)(k - m * 2);
                          float q = (float)(l - n * 2);
                          float r = 100.0F - Mth.sqrt(h * h + q * q) * g;

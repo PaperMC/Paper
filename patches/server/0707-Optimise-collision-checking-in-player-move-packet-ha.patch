@@ -8,10 +8,10 @@ Move collision logic to just the hasNewCollision call instead of getCubes + hasN
 CHECK ME
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index c44c07776006cd447946a53f2a1aca17e6067986..af43b1cf239a319f765058ff082485764528e01e 100644
+index 643b98097bf77c55961cf1722faad6fb63504abd..ffe050bed7096b147b327f3adb7d1d0d699bce7a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -543,7 +543,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -540,7 +540,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                      return;
                  }
  
@@ -20,7 +20,7 @@ index c44c07776006cd447946a53f2a1aca17e6067986..af43b1cf239a319f765058ff08248576
  
                  d6 = d3 - this.vehicleLastGoodX; // Paper - diff on change, used for checking large move vectors above
                  d7 = d4 - this.vehicleLastGoodY - 1.0E-6D; // Paper - diff on change, used for checking large move vectors above
-@@ -559,6 +559,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -556,6 +556,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  }
  
                  entity.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
@@ -28,7 +28,7 @@ index c44c07776006cd447946a53f2a1aca17e6067986..af43b1cf239a319f765058ff08248576
                  double d11 = d7;
  
                  d6 = d3 - entity.getX();
-@@ -572,15 +573,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -569,15 +570,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  boolean flag2 = false;
  
                  if (d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
@@ -55,7 +55,7 @@ index c44c07776006cd447946a53f2a1aca17e6067986..af43b1cf239a319f765058ff08248576
                      entity.absMoveTo(d0, d1, d2, f, f1);
                      this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(new ClientboundMoveVehiclePacket(entity));
-@@ -659,7 +668,32 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -656,7 +665,32 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      }
  
      private boolean noBlocksAround(Entity entity) {
@@ -89,7 +89,7 @@ index c44c07776006cd447946a53f2a1aca17e6067986..af43b1cf239a319f765058ff08248576
      }
  
      @Override
-@@ -1258,7 +1292,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1255,7 +1289,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  }
  
                  if (this.awaitingPositionFromClient != null) {
@@ -98,7 +98,7 @@ index c44c07776006cd447946a53f2a1aca17e6067986..af43b1cf239a319f765058ff08248576
                          this.awaitingTeleportTime = this.tickCount;
                          this.teleport(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot());
                      }
-@@ -1354,7 +1388,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1349,7 +1383,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                  }
                              }
  
@@ -107,7 +107,7 @@ index c44c07776006cd447946a53f2a1aca17e6067986..af43b1cf239a319f765058ff08248576
  
                              d6 = d0 - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
                              d7 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
-@@ -1396,6 +1430,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1391,6 +1425,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
                              this.player.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
                              this.player.onGround = packet.isOnGround(); // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
@@ -115,7 +115,7 @@ index c44c07776006cd447946a53f2a1aca17e6067986..af43b1cf239a319f765058ff08248576
                              // Paper start - prevent position desync
                              if (this.awaitingPositionFromClient != null) {
                                  return; // ... thanks Mojang for letting move calls teleport across dimensions.
-@@ -1414,11 +1449,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1409,11 +1444,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                              boolean flag2 = false;
  
                              if (!this.player.isChangingDimension() && d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.isSleeping() && !this.player.gameMode.isCreative() && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) { // Spigot
@@ -141,7 +141,7 @@ index c44c07776006cd447946a53f2a1aca17e6067986..af43b1cf239a319f765058ff08248576
                                  this.internalTeleport(d3, d4, d5, f, f1, Collections.emptySet()); // CraftBukkit - SPIGOT-1807: Don't call teleport event, when the client thinks the player is falling, because the chunks are not loaded on the client yet.
                                  this.player.doCheckFallDamage(this.player.getX() - d3, this.player.getY() - d4, this.player.getZ() - d5, packet.isOnGround());
                              } else {
-@@ -1509,6 +1556,33 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1504,6 +1551,33 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
      }
  

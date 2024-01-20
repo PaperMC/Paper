@@ -7,7 +7,7 @@ if multiple threads from worldgen sort at same time, it will crash.
 So make a copy of the list for sorting purposes.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
-index 281b5cf91135984a37ad013614c910f7d4d2fee3..4190acc01b8bf91b02d92143391979df58f6935c 100644
+index 281b5cf91135984a37ad013614c910f7d4d2fee3..79e7a7adf9f9d8b9fee7ae3bb3bebab86fa7fd72 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 @@ -17,7 +17,7 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
@@ -15,37 +15,37 @@ index 281b5cf91135984a37ad013614c910f7d4d2fee3..4190acc01b8bf91b02d92143391979df
      private final GateBehavior.OrderPolicy orderPolicy;
      private final GateBehavior.RunningPolicy runningPolicy;
 -    private final ShufflingList<BehaviorControl<? super E>> behaviors = new ShufflingList<>();
-+    private final ShufflingList<BehaviorControl<? super E>> behaviors = new ShufflingList<>(false); // Paper - don't use a clone
++    private final ShufflingList<BehaviorControl<? super E>> behaviors = new ShufflingList<>(false); // Paper - Fix Concurrency issue in ShufflingList during worldgen
      private Behavior.Status status = Behavior.Status.STOPPED;
  
      public GateBehavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState, Set<MemoryModuleType<?>> memoriesToForgetWhenStopped, GateBehavior.OrderPolicy order, GateBehavior.RunningPolicy runMode, List<Pair<? extends BehaviorControl<? super E>, Integer>> tasks) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
-index 9fb20cd00568aeea25284ea0e80fe52cb1c3eede..731ef21dbbd25d6924717de42f4569a9b5935643 100644
+index 9fb20cd00568aeea25284ea0e80fe52cb1c3eede..9d01471da0571c92a60cd57ebd22a5f0b5648fb4 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
 @@ -16,12 +16,25 @@ import net.minecraft.util.RandomSource;
  public class ShufflingList<U> implements Iterable<U> {
      protected final List<ShufflingList.WeightedEntry<U>> entries;
      private final RandomSource random = RandomSource.create();
-+    private final boolean isUnsafe; // Paper
++    private final boolean isUnsafe; // Paper - Fix Concurrency issue in ShufflingList during worldgen
  
      public ShufflingList() {
-+        // Paper start
++        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
 +        this(true);
 +    }
 +    public ShufflingList(boolean isUnsafe) {
 +        this.isUnsafe = isUnsafe;
-+        // Paper end
++        // Paper end - Fix Concurrency issue in ShufflingList during worldgen
          this.entries = Lists.newArrayList();
      }
  
      private ShufflingList(List<ShufflingList.WeightedEntry<U>> list) {
-+        // Paper start
++        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
 +        this(list, true);
 +    }
 +    private ShufflingList(List<ShufflingList.WeightedEntry<U>> list, boolean isUnsafe) {
 +        this.isUnsafe = isUnsafe;
-+        // Paper end
++        // Paper end - Fix Concurrency issue in ShufflingList during worldgen
          this.entries = Lists.newArrayList(list);
      }
  
@@ -58,12 +58,12 @@ index 9fb20cd00568aeea25284ea0e80fe52cb1c3eede..731ef21dbbd25d6924717de42f4569a9
 -        });
 -        this.entries.sort(Comparator.comparingDouble(ShufflingList.WeightedEntry::getRandWeight));
 -        return this;
-+        // Paper start - make concurrent safe, work off a clone of the list
++        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
 +        List<ShufflingList.WeightedEntry<U>> list = this.isUnsafe ? Lists.newArrayList(this.entries) : this.entries;
 +        list.forEach(entry -> entry.setRandom(this.random.nextFloat()));
 +        list.sort(Comparator.comparingDouble(ShufflingList.WeightedEntry::getRandWeight));
 +        return this.isUnsafe ? new ShufflingList<>(list, this.isUnsafe) : this;
-+        // Paper end
++        // Paper end - Fix Concurrency issue in ShufflingList during worldgen
      }
  
      public Stream<U> stream() {

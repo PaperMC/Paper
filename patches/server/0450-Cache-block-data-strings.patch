@@ -5,19 +5,19 @@ Subject: [PATCH] Cache block data strings
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 706e8a5e17ccd87266a5c154cd938974d380cb21..1eaf509c37c176ad94035d0612f69d6ef53b3626 100644
+index 1b67fbad7c14186e70919946938a512950077635..eb77196548f5cac77d0814f3523c35074d57fd6c 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -2134,6 +2134,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.getPlayerList().reloadResources();
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
-+            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
++            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings; they can be defined by datapacks so refresh it here
          }, this);
  
          if (this.isSameThread()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-index 85ee8a3d6db6610104f8a10d77d7cad5dc9b667e..bbf58089dd5de3e38a236bb662ea3e139d159161 100644
+index 85ee8a3d6db6610104f8a10d77d7cad5dc9b667e..d95f56356a8d1fc82f548d93038bd81c57f46f9e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
 @@ -154,7 +154,7 @@ public class CraftBlockData implements BlockData {
@@ -25,7 +25,7 @@ index 85ee8a3d6db6610104f8a10d77d7cad5dc9b667e..bbf58089dd5de3e38a236bb662ea3e13
      }
  
 -    private static final Map<Class<? extends Enum<?>>, Enum<?>[]> ENUM_VALUES = new HashMap<>();
-+    private static final Map<Class<? extends Enum<?>>, Enum<?>[]> ENUM_VALUES = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - make thread safe
++    private static final Map<Class<? extends Enum<?>>, Enum<?>[]> ENUM_VALUES = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - cache block data strings; make thread safe
  
      /**
       * Convert an NMS Enum (usually a BlockStateEnum) to its appropriate Bukkit
@@ -46,7 +46,7 @@ index 85ee8a3d6db6610104f8a10d77d7cad5dc9b667e..bbf58089dd5de3e38a236bb662ea3e13
 +        stringDataCache.clear();
 +        Block.BLOCK_STATE_REGISTRY.forEach(blockData -> stringDataCache.put(blockData.toString(), blockData.createCraftBlockData()));
 +    }
-+    // Paper end
++    // Paper end - cache block data strings
 +
      public static CraftBlockData newData(Material material, String data) {
          Preconditions.checkArgument(material == null || material.isBlock(), "Cannot get data for not block %s", material);

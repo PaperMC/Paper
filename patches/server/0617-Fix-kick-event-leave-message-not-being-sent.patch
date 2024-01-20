@@ -5,7 +5,7 @@ Subject: [PATCH] Fix kick event leave message not being sent
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 592f8a1277cba26bf07623782bf85110e959be8c..c9842d0641b43c10b857ccc89f90b167150f359d 100644
+index eabab52143ff490c4ec646628a9dc96cf15efb72..d848119476e5ba254ce86873f1d997d0fe3da876 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -273,7 +273,6 @@ public class ServerPlayer extends Player {
@@ -17,7 +17,7 @@ index 592f8a1277cba26bf07623782bf85110e959be8c..c9842d0641b43c10b857ccc89f90b167
      public boolean isRealPlayer; // Paper
      public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 70458ff8c9bf6f3263868b0f5570840fe3d89ed2..134a84841a1e05b212794c00477f20eb30e53ec5 100644
+index 761dd36bcf0318e28613d852f95566879d835912..5d0500ee2740977c6b6eb89ed51e29b5a2e66760 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -77,6 +77,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -50,10 +50,10 @@ index 70458ff8c9bf6f3263868b0f5570840fe3d89ed2..134a84841a1e05b212794c00477f20eb
          MinecraftServer minecraftserver = this.server;
          Connection networkmanager = this.connection;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 17cf920cc7bbd662a08b075466b8c534f0493802..d3d1195522e50b00663b274f68fae1cc5ed9d021 100644
+index c477c6c47d6b707fcee671152bfb516eeea2cebd..8fb479bcf55f71857404d9b34eef6cd26cf0babf 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1887,6 +1887,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1882,6 +1882,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void onDisconnect(Component reason) {
@@ -66,7 +66,7 @@ index 17cf920cc7bbd662a08b075466b8c534f0493802..d3d1195522e50b00663b274f68fae1cc
          // CraftBukkit start - Rarely it would send a disconnect line twice
          if (this.processedDisconnect) {
              return;
-@@ -1895,11 +1901,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1890,11 +1896,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
          // CraftBukkit end
          ServerGamePacketListenerImpl.LOGGER.info("{} lost connection: {}", this.player.getName().getString(), reason.getString());
@@ -86,7 +86,7 @@ index 17cf920cc7bbd662a08b075466b8c534f0493802..d3d1195522e50b00663b274f68fae1cc
          this.chatMessageChain.close();
          // CraftBukkit start - Replace vanilla quit message handling with our own.
          /*
-@@ -1909,7 +1921,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1904,7 +1916,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
          this.player.disconnect();
          // Paper start - Adventure
@@ -96,7 +96,7 @@ index 17cf920cc7bbd662a08b075466b8c534f0493802..d3d1195522e50b00663b274f68fae1cc
              this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(quitMessage), false);
              // Paper end
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index f3f8c7b7391370455fe913206a1bc9b80bdaadf8..2a1b64e5d30cde7b2b2696a6cf5f3163071ab2d6 100644
+index 3e88b648cf4fcc19598fb50ca5651af1a52a0a84..60e60166485bc87a5ff9919f9c1603dc4eaeecc9 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -570,6 +570,11 @@ public abstract class PlayerList {
@@ -111,12 +111,3 @@ index f3f8c7b7391370455fe913206a1bc9b80bdaadf8..2a1b64e5d30cde7b2b2696a6cf5f3163
          ServerLevel worldserver = entityplayer.serverLevel();
  
          entityplayer.awardStat(Stats.LEAVE_GAME);
-@@ -580,7 +585,7 @@ public abstract class PlayerList {
-             entityplayer.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
-         }
- 
--        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(entityplayer.getDisplayName())), entityplayer.quitReason); // Paper - Adventure & quit reason
-+        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), leaveMessage, entityplayer.quitReason); // Paper - Adventure & quit reason
-         this.cserver.getPluginManager().callEvent(playerQuitEvent);
-         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
- 
