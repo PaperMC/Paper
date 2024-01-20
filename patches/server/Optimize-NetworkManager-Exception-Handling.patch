@@ -12,7 +12,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          @Nullable
          public Packet<?> createPacket(int id, FriendlyByteBuf buf) {
-+            if (id < 0 || id >= this.idToDeserializer.size()) return null; // Paper
++            if (id < 0 || id >= this.idToDeserializer.size()) return null; // Paper - Perf: Optmize exception handling
              Function<FriendlyByteBuf, ? extends Packet<? super T>> function = this.idToDeserializer.get(id);
              return function != null ? function.apply(buf) : null;
          }
@@ -24,12 +24,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
-+        // Paper start - if channel is not active just discard the packet
++        // Paper start - Perf: Optmize exception handling; if channel is not active just discard the packet
 +        if (!channelHandlerContext.channel().isActive()) {
 +            byteBuf.skipBytes(byteBuf.readableBytes());
 +            return;
 +        }
-+        // Paper end - if channel is not active just discard the packet
++        // Paper end - Perf: Optmize exception handling
          byteBuf.markReaderIndex();
          this.helperBuf.clear();
          if (!copyVarint(byteBuf, this.helperBuf)) {

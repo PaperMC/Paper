@@ -17,11 +17,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (source instanceof CommandSourceStack) {
              try {
 -                ((CommandSourceStack) source).currentCommand = this;
-+                ((CommandSourceStack) source).currentCommand.put(Thread.currentThread(), this); // Paper
++                ((CommandSourceStack) source).currentCommand.put(Thread.currentThread(), this); // Paper - Thread Safe Vanilla Command permission checking
                  return this.requirement.test(source);
              } finally {
 -                ((CommandSourceStack) source).currentCommand = null;
-+                ((CommandSourceStack) source).currentCommand.remove(Thread.currentThread()); // Paper
++                ((CommandSourceStack) source).currentCommand.remove(Thread.currentThread()); // Paper - Thread Safe Vanilla Command permission checking
              }
          }
          // CraftBukkit end
@@ -34,7 +34,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final CommandSigningContext signingContext;
      private final TaskChainer chatMessageChainer;
 -    public volatile CommandNode currentCommand; // CraftBukkit
-+    public java.util.Map<Thread, CommandNode> currentCommand = new java.util.concurrent.ConcurrentHashMap<>(); // CraftBukkit // Paper - make thread-safe
++    public java.util.Map<Thread, CommandNode> currentCommand = new java.util.concurrent.ConcurrentHashMap<>(); // CraftBukkit // Paper - Thread Safe Vanilla Command permission checking
      public boolean bypassSelectorPermissions = false; // Paper - add bypass for selector permissions
  
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
@@ -43,11 +43,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean hasPermission(int level) {
          // CraftBukkit start
 -        CommandNode currentCommand = this.currentCommand;
-+        // Paper start - fix concurrency issue
++        // Paper start - Thread Safe Vanilla Command permission checking
 +        CommandNode currentCommand = this.currentCommand.get(Thread.currentThread());
          if (currentCommand != null) {
              return this.hasPermission(level, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
-+            // Paper end
++            // Paper end - Thread Safe Vanilla Command permission checking
          }
          // CraftBukkit end
  
