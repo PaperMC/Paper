@@ -6,7 +6,7 @@ Subject: [PATCH] Handle Oversized Tile Entities in chunks
 Splits out Extra Packets if too many TE's are encountered to prevent
 creating too large of a packet to sed.
 
-Co authored by Spottedleaf
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -16,14 +16,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final CompoundTag heightmaps;
      private final byte[] buffer;
      private final List<ClientboundLevelChunkPacketData.BlockEntityInfo> blockEntitiesData;
-+    // Paper start
++    // Paper start - Handle oversized block entities in chunks
 +    private final java.util.List<net.minecraft.network.protocol.Packet<?>> extraPackets = new java.util.ArrayList<>();
 +    private static final int TE_LIMIT = Integer.getInteger("Paper.excessiveTELimit", 750);
 +
 +    public List<net.minecraft.network.protocol.Packet<?>> getExtraPackets() {
 +        return this.extraPackets;
 +    }
-+    // Paper end
++    // Paper end - Handle oversized block entities in chunks
  
      public ClientboundLevelChunkPacketData(LevelChunk chunk) {
          this.heightmaps = new CompoundTag();
@@ -31,10 +31,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.buffer = new byte[calculateChunkSize(chunk)];
          extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), chunk);
          this.blockEntitiesData = Lists.newArrayList();
-+        int totalTileEntities = 0; // Paper
++        int totalTileEntities = 0; // Paper - Handle oversized block entities in chunks
  
          for(Map.Entry<BlockPos, BlockEntity> entry2 : chunk.getBlockEntities().entrySet()) {
-+            // Paper start
++            // Paper start - Handle oversized block entities in chunks
 +            if (++totalTileEntities > TE_LIMIT) {
 +                var packet = entry2.getValue().getUpdatePacket();
 +                if (packet != null) {
@@ -42,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    continue;
 +                }
 +            }
-+            // Paper end
++            // Paper end - Handle oversized block entities in chunks
              this.blockEntitiesData.add(ClientboundLevelChunkPacketData.BlockEntityInfo.create(entry2.getValue()));
          }
  
@@ -55,10 +55,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.lightData;
      }
 +
-+    // Paper start - handle over-sized TE packets
++    // Paper start - Handle oversized block entities in chunks
 +    @Override
 +    public java.util.List<Packet<?>> getExtraPackets() {
 +        return this.chunkData.getExtraPackets();
 +    }
-+    // Paper end
++    // Paper end - Handle oversized block entities in chunks
  }

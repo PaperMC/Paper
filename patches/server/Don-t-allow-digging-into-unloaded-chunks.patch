@@ -14,8 +14,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.hasDelayedDestroy) {
 -            iblockdata = this.level.getBlockState(this.delayedDestroyPos);
 -            if (iblockdata.isAir()) {
-+            iblockdata = this.level.getBlockStateIfLoaded(this.delayedDestroyPos); // Paper
-+            if (iblockdata == null || iblockdata.isAir()) { // Paper
++            iblockdata = this.level.getBlockStateIfLoaded(this.delayedDestroyPos); // Paper - Don't allow digging into unloaded chunks
++            if (iblockdata == null || iblockdata.isAir()) { // Paper - Don't allow digging into unloaded chunks
                  this.hasDelayedDestroy = false;
              } else {
                  float f = this.incrementDestroyProgress(iblockdata, this.delayedDestroyPos, this.delayedTickStart);
@@ -24,13 +24,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          } else if (this.isDestroyingBlock) {
 -            iblockdata = this.level.getBlockState(this.destroyPos);
-+            // Paper start - don't want to do same logic as above, return instead
++            // Paper start - Don't allow digging into unloaded chunks; don't want to do same logic as above, return instead
 +            iblockdata = this.level.getBlockStateIfLoaded(this.destroyPos);
 +            if (iblockdata == null) {
 +                this.isDestroyingBlock = false;
 +                return;
 +            }
-+            // Paper end
++            // Paper end - Don't allow digging into unloaded chunks
              if (iblockdata.isAir()) {
                  this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
                  this.lastSentState = -1;
@@ -38,7 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void handleBlockBreakAction(BlockPos pos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, int sequence) {
          if (this.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > ServerGamePacketListenerImpl.MAX_INTERACTION_DISTANCE) {
-+            if (true) return; // Paper - Don't notify if unreasonably far away
++            if (true) return; // Paper - Don't allow digging into unloaded chunks; Don't notify if unreasonably far away
              this.debugLogging(pos, false, sequence, "too far");
          } else if (pos.getY() >= worldHeight) {
              this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
@@ -66,12 +66,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              case START_DESTROY_BLOCK:
              case ABORT_DESTROY_BLOCK:
              case STOP_DESTROY_BLOCK:
-+                // Paper start - Don't allow digging in unloaded chunks
++                // Paper start - Don't allow digging into unloaded chunks
 +                if (this.player.level().getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) == null) {
 +                    this.player.connection.ackBlockChangesUpTo(packet.getSequence());
 +                    return;
 +                }
-+                // Paper end - Don't allow digging in unloaded chunks
++                // Paper end - Don't allow digging into unloaded chunks
                  this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level().getMaxBuildHeight(), packet.getSequence());
                  this.player.connection.ackBlockChangesUpTo(packet.getSequence());
                  return;

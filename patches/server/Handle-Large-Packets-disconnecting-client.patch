@@ -14,7 +14,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
-+        // Paper start
++        // Paper start - Handle large packets disconnecting client
 +        if (throwable instanceof io.netty.handler.codec.EncoderException && throwable.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
 +            final Packet<?> packet = packetTooLargeException.getPacket();
 +            final io.netty.util.Attribute<ConnectionProtocol.CodecData<?>> codecDataAttribute = channelhandlercontext.channel().attr(packetTooLargeException.codecKey);
@@ -29,7 +29,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                throwable = throwable.getCause();
 +            }
 +        }
-+        // Paper end
++        // Paper end - Handle large packets disconnecting client
          if (throwable instanceof SkipPacketException) {
              Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
          } else {
@@ -42,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      packet.write(friendlyByteBuf);
                      int k = friendlyByteBuf.writerIndex() - j;
 -                    if (k > 8388608) {
-+                    if (false && k > 8388608) { // Paper - disable
++                    if (false && k > 8388608) { // Paper - Handle large packets disconnecting client; disable
                          throw new IllegalArgumentException("Packet too big (is " + k + ", should be less than 8388608): " + packet);
                      }
  
@@ -50,12 +50,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                      throw var13;
                  } finally {
-+                    // Paper start
++                    // Paper start - Handle large packets disconnecting client
 +                    int packetLength = friendlyByteBuf.readableBytes();
 +                    if (packetLength > MAX_PACKET_SIZE) {
 +                        throw new PacketTooLargeException(packet, this.codecKey, packetLength);
 +                    }
-+                    // Paper end
++                    // Paper end - Handle large packets disconnecting client
                      ProtocolSwapHandler.swapProtocolIfNeeded(attribute, packet);
                  }
  

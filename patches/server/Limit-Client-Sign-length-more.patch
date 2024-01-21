@@ -29,7 +29,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
      private final FutureChain chatMessageChain;
      private boolean waitingForSwitchToConfig;
-+    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper
++    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper - Limit client sign length
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie clientData) {
          super(server, connection, clientData, player); // CraftBukkit
@@ -38,7 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void handleSignUpdate(ServerboundSignUpdatePacket packet) {
 -        List<String> list = (List) Stream.of(packet.getLines()).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
-+        // Paper start - cap line length - modified clients can send longer data than normal
++        // Paper start - Limit client sign length
 +        String[] lines = packet.getLines();
 +        for (int i = 0; i < lines.length; ++i) {
 +            if (MAX_SIGN_LINE_LENGTH > 0 && lines[i].length() > MAX_SIGN_LINE_LENGTH) {
@@ -50,7 +50,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +        List<String> list = (List) Stream.of(lines).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
-+        // Paper end
++        // Paper end - Limit client sign length
  
          this.filterTextPacket(list).thenAcceptAsync((list1) -> {
              this.updateSignText(packet, list1);
