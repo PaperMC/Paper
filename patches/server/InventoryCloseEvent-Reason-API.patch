@@ -15,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (tileentity instanceof net.minecraft.world.Container) {
                  for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((net.minecraft.world.Container) tileentity).getViewers())) {
 -                    h.closeInventory();
-+                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper
++                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
                  }
              }
          }
@@ -24,7 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(entity instanceof ServerPlayer) || entity.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
                  for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((org.bukkit.inventory.InventoryHolder) entity.getBukkitEntity()).getInventory().getViewers())) {
 -                    h.closeInventory();
-+                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper
++                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
                  }
              }
              // Spigot End
@@ -37,7 +37,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Paper end
          if (!this.level().isClientSide && !this.containerMenu.stillValid(this)) {
 -            this.closeContainer();
-+            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
++            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper - Inventory close reason
              this.containerMenu = this.inventoryMenu;
          }
  
@@ -46,7 +46,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // SPIGOT-943 - only call if they have an inventory open
          if (this.containerMenu != this.inventoryMenu) {
 -            this.closeContainer();
-+            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DEATH); // Paper
++            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DEATH); // Paper - Inventory close reason
          }
  
          net.kyori.adventure.text.Component deathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
@@ -55,7 +55,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit end
          if (this.containerMenu != this.inventoryMenu) {
 -            this.closeContainer();
-+            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper
++            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
          }
  
          // this.nextContainerCounter(); // CraftBukkit - moved up
@@ -64,13 +64,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void closeContainer() {
 -        CraftEventFactory.handleInventoryCloseEvent(this); // CraftBukkit
-+        // Paper start
++        // Paper start - Inventory close reason
 +        this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNKNOWN);
 +    }
 +    @Override
 +    public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
-+        // Paper end
++        // Paper end - Inventory close reason
          this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
          this.doCloseContainer();
      }
@@ -90,11 +90,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public void handleContainerClose(ServerboundContainerClosePacket packet) {
-+        // Paper start
++        // Paper start - Inventory close reason
 +        this.handleContainerClose(packet, InventoryCloseEvent.Reason.PLAYER);
 +    }
 +    public void handleContainerClose(ServerboundContainerClosePacket packet, InventoryCloseEvent.Reason reason) {
-+        // Paper end
++        // Paper end - Inventory close reason
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
  
          if (this.player.isImmobile()) return; // CraftBukkit
@@ -112,7 +112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // See SPIGOT-5799, SPIGOT-6145
          if (entityplayer.containerMenu != entityplayer.inventoryMenu) {
 -            entityplayer.closeContainer();
-+            entityplayer.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
++            entityplayer.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper - Inventory close reason
          }
  
          PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(entityplayer.getDisplayName()))); // Paper - Adventure
@@ -125,7 +125,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          super.tick();
          if (!this.level().isClientSide && this.containerMenu != null && !this.containerMenu.stillValid(this)) {
 -            this.closeContainer();
-+            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
++            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper - Inventory close reason
              this.containerMenu = this.inventoryMenu;
          }
  
@@ -133,12 +133,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
-+    // Paper start - unused code, but to keep signatures aligned
++    // Paper start - Inventory close reason; unused code, but to keep signatures aligned
 +    public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        closeContainer();
 +        this.containerMenu = this.inventoryMenu;
 +    }
-+    // Paper end
++    // Paper end - Inventory close reason
 +
      public void closeContainer() {
          this.containerMenu = this.inventoryMenu;
@@ -152,7 +152,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
              // fire INVENTORY_CLOSE if one already open
 -            ((ServerPlayer) this.getHandle()).connection.handleContainerClose(new ServerboundContainerClosePacket(this.getHandle().containerMenu.containerId));
-+            ((ServerPlayer) this.getHandle()).connection.handleContainerClose(new ServerboundContainerClosePacket(this.getHandle().containerMenu.containerId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper
++            ((ServerPlayer) this.getHandle()).connection.handleContainerClose(new ServerboundContainerClosePacket(this.getHandle().containerMenu.containerId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
          }
          ServerPlayer player = (ServerPlayer) this.getHandle();
          AbstractContainerMenu container;
@@ -161,14 +161,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void closeInventory() {
 -        this.getHandle().closeContainer();
-+        // Paper start
++        // Paper start - Inventory close reason
 +        this.getHandle().closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.PLUGIN);
      }
 +    @Override
 +    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        getHandle().closeContainer(reason);
 +    }
-+    // Paper end
++    // Paper end - Inventory close reason
  
      @Override
      public boolean isBlocking() {
@@ -181,7 +181,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Close any foreign inventory
          if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
 -            this.getHandle().closeContainer();
-+            this.getHandle().closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.TELEPORT); // Paper
++            this.getHandle().closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.TELEPORT); // Paper - Inventory close reason
          }
  
          // Check if the fromWorld and toWorld are the same.
@@ -194,7 +194,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
          if (player.containerMenu != player.inventoryMenu) { // fire INVENTORY_CLOSE if one already open
 -            player.connection.handleContainerClose(new ServerboundContainerClosePacket(player.containerMenu.containerId));
-+            player.connection.handleContainerClose(new ServerboundContainerClosePacket(player.containerMenu.containerId), InventoryCloseEvent.Reason.OPEN_NEW); // Paper
++            player.connection.handleContainerClose(new ServerboundContainerClosePacket(player.containerMenu.containerId), InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
          }
  
          CraftServer server = player.level().getCraftServer();
