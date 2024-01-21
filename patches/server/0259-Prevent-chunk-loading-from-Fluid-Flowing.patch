@@ -5,7 +5,7 @@ Subject: [PATCH] Prevent chunk loading from Fluid Flowing
 
 
 diff --git a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java b/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
-index 818c83934a97c4b2ad4db69f4b0fcf0a500ea918..f7527ed1d47901e52df4e3fffbdcd838782c90db 100644
+index 818c83934a97c4b2ad4db69f4b0fcf0a500ea918..0aeb9faa1ce22359361741a591aa3d465d955970 100644
 --- a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
 +++ b/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
 @@ -176,7 +176,8 @@ public abstract class FlowingFluid extends Fluid {
@@ -13,29 +13,28 @@ index 818c83934a97c4b2ad4db69f4b0fcf0a500ea918..f7527ed1d47901e52df4e3fffbdcd838
                  FluidState fluid1 = (FluidState) entry.getValue();
                  BlockPos blockposition1 = pos.relative(enumdirection);
 -                BlockState iblockdata1 = world.getBlockState(blockposition1);
-+                BlockState iblockdata1 = world.getBlockStateIfLoaded(blockposition1); // Paper
-+                if (iblockdata1 == null) continue; // Paper
++                BlockState iblockdata1 = world.getBlockStateIfLoaded(blockposition1); // Paper - Prevent chunk loading from fluid flowing
++                if (iblockdata1 == null) continue; // Paper - Prevent chunk loading from fluid flowing
  
                  if (this.canSpreadTo(world, pos, blockState, enumdirection, blockposition1, iblockdata1, world.getFluidState(blockposition1), fluid1.getType())) {
                      // CraftBukkit start
-@@ -203,7 +204,9 @@ public abstract class FlowingFluid extends Fluid {
+@@ -203,7 +204,8 @@ public abstract class FlowingFluid extends Fluid {
          while (iterator.hasNext()) {
              Direction enumdirection = (Direction) iterator.next();
              BlockPos blockposition1 = pos.relative(enumdirection);
 -            BlockState iblockdata1 = world.getBlockState(blockposition1);
-+
-+            BlockState iblockdata1 = world.getBlockStateIfLoaded(blockposition1); // Paper
-+            if (iblockdata1 == null) continue; // Paper
++            BlockState iblockdata1 = world.getBlockStateIfLoaded(blockposition1); // Paper - Prevent chunk loading from fluid flowing
++            if (iblockdata1 == null) continue; // Paper - Prevent chunk loading from fluid flowing
              FluidState fluid = iblockdata1.getFluidState();
  
              if (fluid.getType().isSame(this) && this.canPassThroughWall(enumdirection, world, pos, state, blockposition1, iblockdata1)) {
-@@ -320,11 +323,18 @@ public abstract class FlowingFluid extends Fluid {
+@@ -320,11 +322,18 @@ public abstract class FlowingFluid extends Fluid {
              if (enumdirection1 != direction) {
                  BlockPos blockposition2 = pos.relative(enumdirection1);
                  short short0 = FlowingFluid.getCacheKey(fromPos, blockposition2);
 -                Pair<BlockState, FluidState> pair = (Pair) stateCache.computeIfAbsent(short0, (short1) -> {
 -                    BlockState iblockdata1 = world.getBlockState(blockposition2);
-+                // Paper start - avoid loading chunks
++                // Paper start - Prevent chunk loading from fluid flowing
 +                Pair<BlockState, FluidState> pair = stateCache.get(short0);
 +                if (pair == null) {
 +                    BlockState iblockdatax = world.getBlockStateIfLoaded(blockposition2);
@@ -48,11 +47,11 @@ index 818c83934a97c4b2ad4db69f4b0fcf0a500ea918..f7527ed1d47901e52df4e3fffbdcd838
 +                    pair = Pair.of(iblockdatax, iblockdatax.getFluidState());
 +                    stateCache.put(short0, pair);
 +                }
-+                // Paper end
++                // Paper end - Prevent chunk loading from fluid flowing
                  BlockState iblockdata1 = (BlockState) pair.getFirst();
                  FluidState fluid = (FluidState) pair.getSecond();
  
-@@ -396,11 +406,16 @@ public abstract class FlowingFluid extends Fluid {
+@@ -396,11 +405,16 @@ public abstract class FlowingFluid extends Fluid {
              Direction enumdirection = (Direction) iterator.next();
              BlockPos blockposition1 = pos.relative(enumdirection);
              short short0 = FlowingFluid.getCacheKey(pos, blockposition1);
@@ -61,7 +60,7 @@ index 818c83934a97c4b2ad4db69f4b0fcf0a500ea918..f7527ed1d47901e52df4e3fffbdcd838
 -
 -                return Pair.of(iblockdata1, iblockdata1.getFluidState());
 -            });
-+            // Paper start
++            // Paper start - Prevent chunk loading from fluid flowing
 +            Pair pair = (Pair) short2objectmap.get(short0);
 +            if (pair == null) {
 +                BlockState iblockdatax = world.getBlockStateIfLoaded(blockposition1);
@@ -70,7 +69,7 @@ index 818c83934a97c4b2ad4db69f4b0fcf0a500ea918..f7527ed1d47901e52df4e3fffbdcd838
 +                pair = Pair.of(iblockdatax, iblockdatax.getFluidState());
 +                short2objectmap.put(short0, pair);
 +            }
-+            // Paper end
++            // Paper end - Prevent chunk loading from fluid flowing
              BlockState iblockdata1 = (BlockState) pair.getFirst();
              FluidState fluid = (FluidState) pair.getSecond();
              FluidState fluid1 = this.getNewLiquid(world, blockposition1, iblockdata1);

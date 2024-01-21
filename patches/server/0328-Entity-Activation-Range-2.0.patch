@@ -18,7 +18,7 @@ public net.minecraft.world.entity.Entity isInsidePortal
 public net.minecraft.world.entity.LivingEntity jumping
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b10097cd28f0dc360cda9b31e8184ed3a7003780..2d1aa3acd41615b1b2c9cf5751152a56f1f18ec5 100644
+index 1b3df2f8e83b6bff4bbe8d37836072be2b2e6084..0ed44bc939b256a4b91eb24812e4de10a9af01b7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2,7 +2,6 @@ package net.minecraft.server.level;
@@ -112,7 +112,7 @@ index b10097cd28f0dc360cda9b31e8184ed3a7003780..2d1aa3acd41615b1b2c9cf5751152a56
          } else {
              passenger.stopRiding();
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index e1ad7394abdbf938841150e4f7092ac70181ddb0..26a611b8d75513690811fbbd15dc37e6f4a50dd4 100644
+index 14e2077aba3b2fcf347f7184a53ca8dda943322b..3c0725ca02f6ab9adde307aab864d856dc6e42e1 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -397,6 +397,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
@@ -148,7 +148,7 @@ index e1ad7394abdbf938841150e4f7092ac70181ddb0..26a611b8d75513690811fbbd15dc37e6
              movement = this.maybeBackOffFromEdge(movement, movementType);
              Vec3 vec3d1 = this.collide(movement);
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index efef5df4cf720058c0b07ef795cfa6a567113811..d330b6d291cd2967358e892ccbc480bb3bd8022d 100644
+index 08bf4e4f108ae2eb87eb3b98e2b74d7d0f1d6a7c..3da1debb3ad884d9ba2f8ebea52643e8fcb3a747 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -221,6 +221,19 @@ public abstract class Mob extends LivingEntity implements Targeting {
@@ -217,19 +217,10 @@ index 07c1ca01c38d5d7d0a95ad5004b5df9f4a222935..e5995d0db5dcfba59a873ff439601894
          this.availableGoals.stream().filter((wrappedGoal) -> {
              return wrappedGoal.getGoal() == goal;
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-index 7153e00a640abfeb134ff1dcb93f363b972a4233..4bbc36404b396500df0d9db380cf223b5897662e 100644
+index 9fc374c17f6b3ee4ab3c582d05e96321b772f2d6..07519c817cc6de04a98198c43a0c2b02ba3141eb 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-@@ -14,7 +14,7 @@ public abstract class MoveToBlockGoal extends Goal {
-     protected int nextStartTick;
-     protected int tryTicks;
-     private int maxStayTicks;
--    protected BlockPos blockPos = BlockPos.ZERO; @Deprecated public final BlockPos getTargetPosition() { return this.blockPos; } // Paper - OBFHELPER
-+    protected BlockPos blockPos = BlockPos.ZERO; @Deprecated public final BlockPos getTargetPosition() { return this.blockPos; } @Deprecated public void setTargetPosition(BlockPos pos) { this.blockPos = pos; mob.movingTarget = pos != BlockPos.ZERO ? pos : null; } // Paper - OBFHELPER
-     private boolean reachedTarget;
-     private final int searchRange;
-     private final int verticalSearchRange;
-@@ -23,6 +23,13 @@ public abstract class MoveToBlockGoal extends Goal {
+@@ -23,6 +23,14 @@ public abstract class MoveToBlockGoal extends Goal {
      public MoveToBlockGoal(PathfinderMob mob, double speed, int range) {
          this(mob, speed, range, 1);
      }
@@ -237,17 +228,18 @@ index 7153e00a640abfeb134ff1dcb93f363b972a4233..4bbc36404b396500df0d9db380cf223b
 +    @Override
 +    public void stop() {
 +        super.stop();
-+        setTargetPosition(BlockPos.ZERO);
++        this.blockPos = BlockPos.ZERO;
++        this.mob.movingTarget = null;
 +    }
 +    // Paper end
  
      public MoveToBlockGoal(PathfinderMob mob, double speed, int range, int maxYDifference) {
          this.mob = mob;
-@@ -114,6 +121,7 @@ public abstract class MoveToBlockGoal extends Goal {
+@@ -114,6 +122,7 @@ public abstract class MoveToBlockGoal extends Goal {
                          mutableBlockPos.setWithOffset(blockPos, m, k - 1, n);
                          if (this.mob.isWithinRestriction(mutableBlockPos) && this.isValidTarget(this.mob.level(), mutableBlockPos)) {
                              this.blockPos = mutableBlockPos;
-+                            setTargetPosition(mutableBlockPos.immutable()); // Paper
++                            this.mob.movingTarget = mutableBlockPos == BlockPos.ZERO ? null : mutableBlockPos.immutable(); // Paper
                              return true;
                          }
                      }
@@ -348,7 +340,7 @@ index b149e8bcac034bb3fc118a9adcb0de45e18ed5e9..fc35cfc9d045f3e5b6a50af1d0ba83b6
 +
  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 3fdec0ff323ac94517f1ab9a13764a8959148127..9e4ab11521b853d0db55b382413c1f49cbff9e9e 100644
+index 5ce8c8b13dd380f483406af5356d347b60868606..ec35b05aeae0fb8e413653fd6495067f06144556 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -163,6 +163,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {

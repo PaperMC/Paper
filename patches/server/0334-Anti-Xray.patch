@@ -1017,12 +1017,12 @@ index 6cff1a98dc7cf33947ec760dbc3d3d0ec5db5f6c..51f647de153255c919b1440338cf1b3e
  
          }
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
-index 0711ad682206e783fd0a1e566828670321f297e2..bf6cdc08367fc26716e7904162a21e63fecab3ed 100644
+index dda7151d333144399ba5602e1b651b1f5b8f8f0d..8ffb99aedaa57c1e96ddcc05143776b59c9700a3 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 @@ -33,7 +33,10 @@ public class ClientboundLevelChunkPacketData {
      }
-     // Paper end
+     // Paper end - Handle oversized block entities in chunks
  
 -    public ClientboundLevelChunkPacketData(LevelChunk chunk) {
 +    // Paper start - Anti-Xray - Add chunk packet info
@@ -1046,7 +1046,7 @@ index 0711ad682206e783fd0a1e566828670321f297e2..bf6cdc08367fc26716e7904162a21e63
 +        extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), chunk, chunkPacketInfo);
 +        // Paper end
          this.blockEntitiesData = Lists.newArrayList();
-         int totalTileEntities = 0; // Paper
+         int totalTileEntities = 0; // Paper - Handle oversized block entities in chunks
  
 @@ -103,9 +113,15 @@ public class ClientboundLevelChunkPacketData {
          return byteBuf;
@@ -1067,7 +1067,7 @@ index 0711ad682206e783fd0a1e566828670321f297e2..bf6cdc08367fc26716e7904162a21e63
  
      }
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
-index be89e5b8c1ea7f85aef267a15986affa5fa1fd4b..43472855136f26b282d94fd241853d862a19ae17 100644
+index 90ec22d35edb2874417bbea590e0d3c37ad93d64..fc230d835f9aa526a4b179d36d921f0fec348aa8 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 @@ -13,13 +13,30 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
@@ -1104,7 +1104,7 @@ index be89e5b8c1ea7f85aef267a15986affa5fa1fd4b..43472855136f26b282d94fd241853d86
  
      public ClientboundLevelChunkWithLightPacket(FriendlyByteBuf buf) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 2d1aa3acd41615b1b2c9cf5751152a56f1f18ec5..6d6ad6a33f3f8e4b8bc39fea00506daf7b31275c 100644
+index 0ed44bc939b256a4b91eb24812e4de10a9af01b7..8eff58898faea024787e56cf98c8498c46db16d4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -572,7 +572,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -1155,7 +1155,7 @@ index 5de5209e04d631bd6a50e28e8d3abebf148252c1..19b3f4fa7678a038bf25efc2a8b46dda
          DebugPackets.sendPoiPacketsForChunk(world, chunkPos);
      }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 9e4ab11521b853d0db55b382413c1f49cbff9e9e..8782c443d6288cb1cadc181e7f2923cbcd3061d2 100644
+index 322f2ef70273d52bf6daced17aec09f7d34c9200..a58df7552766abb0c923402bfa40e5d72d972e83 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -178,6 +178,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -1491,7 +1491,7 @@ index 9a2bf744abd8916d492e901be889223591bac3fd..1dd415c96d17eff8e7555c33d3c52e57
      int getSerializedSize();
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 982fb3ef071d6a66f16744717e8e146bef6d9e8c..02beedb84a8bec001270116c6ce496db012e6b8a 100644
+index 7862caa0f787634cec14af81fe1f39803a43f115..0341d9e951366b77e7eeac7cdaa950af62c88aab 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -71,7 +71,7 @@ import org.slf4j.Logger;
@@ -1571,7 +1571,7 @@ index 01fa200bc6911388ee3b0e700e82ad681e02fe4a..217fd2af254f7206cf4c1d7d7ad08384
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index bcd782f9b13c71f1a5bce4836463d0b57e5ada72..357b82e110b789b7a12735a844a9c7e720b4f479 100644
+index d4518b9c1338226a9a814d2512aaddbb76a42da8..729c3c273e2393674f30af1cfb0ab0dcf0fb3e20 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -421,11 +421,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {

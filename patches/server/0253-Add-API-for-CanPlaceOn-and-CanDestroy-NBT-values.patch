@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
 Date: Wed, 12 Sep 2018 18:53:55 +0300
-Subject: [PATCH] Implement an API for CanPlaceOn and CanDestroy NBT values
+Subject: [PATCH] Add API for CanPlaceOn and CanDestroy NBT values
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38814c18e1 100644
+index ff199678850d848c5d2ce76270d674738eec58f7..1ecea757fffb480af0d27c3326093d79cb93c73b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -85,6 +85,12 @@ import org.bukkit.persistence.PersistentDataContainer;
@@ -25,10 +25,10 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
      @Specific(Specific.To.NBT)
      static final ItemMetaKey BLOCK_DATA = new ItemMetaKey("BlockStateTag");
      static final ItemMetaKey BUKKIT_CUSTOM_TAG = new ItemMetaKey("PublicBukkitValues");
-+    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++    // Paper start - Add API for CanPlaceOn and CanDestroy NBT values
 +    static final ItemMetaKey CAN_DESTROY = new ItemMetaKey("CanDestroy");
 +    static final ItemMetaKey CAN_PLACE_ON = new ItemMetaKey("CanPlaceOn");
-+    // Paper end
++    // Paper end - Add API for CanPlaceOn and CanDestroy NBT values
  
      // We store the raw original JSON representation of all text data. See SPIGOT-5063, SPIGOT-5656, SPIGOT-5304
      private String displayName;
@@ -36,10 +36,10 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
      private int hideFlag;
      private boolean unbreakable;
      private int damage;
-+    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++    // Paper start - Add API for CanPlaceOn and CanDestroy NBT values
 +    private Set<Namespaced> placeableKeys = Sets.newHashSet();
 +    private Set<Namespaced> destroyableKeys = Sets.newHashSet();
-+    // Paper end
++    // Paper end - Add API for CanPlaceOn and CanDestroy NBT values
  
      private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
@@ -47,7 +47,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
          this.hideFlag = meta.hideFlag;
          this.unbreakable = meta.unbreakable;
          this.damage = meta.damage;
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Add API for CanPlaceOn and CanDestroy NBT values
 +        if (meta.hasPlaceableKeys()) {
 +            this.placeableKeys = new java.util.HashSet<>(meta.placeableKeys);
 +        }
@@ -55,7 +55,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
 +        if (meta.hasDestroyableKeys()) {
 +            this.destroyableKeys = new java.util.HashSet<>(meta.destroyableKeys);
 +        }
-+        // Paper end
++        // Paper end - Add API for CanPlaceOn and CanDestroy NBT values
          this.unhandledTags.putAll(meta.unhandledTags);
          this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
  
@@ -63,7 +63,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
                  this.persistentDataContainer.put(key, compound.get(key).copy());
              }
          }
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Add API for CanPlaceOn and CanDestroy NBT values
 +        if (tag.contains(CAN_DESTROY.NBT)) {
 +            ListTag list = tag.getList(CAN_DESTROY.NBT, CraftMagicNumbers.NBT.TAG_STRING);
 +            for (int i = 0; i < list.size(); i++) {
@@ -87,7 +87,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
 +                this.placeableKeys.add(namespaced);
 +            }
 +        }
-+        // Paper end
++        // Paper end - Add API for CanPlaceOn and CanDestroy NBT values
  
          Set<String> keys = tag.getAllKeys();
          for (String key : keys) {
@@ -95,7 +95,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
              this.setDamage(damage);
          }
  
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Add API for CanPlaceOn and CanDestroy NBT values
 +        Iterable<?> canPlaceOnSerialized = SerializableMeta.getObject(Iterable.class, map, CAN_PLACE_ON.BUKKIT, true);
 +        if (canPlaceOnSerialized != null) {
 +            for (Object canPlaceOnElement : canPlaceOnSerialized) {
@@ -121,7 +121,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
 +                this.destroyableKeys.add(value);
 +            }
 +        }
-+        // Paper end
++        // Paper end - Add API for CanPlaceOn and CanDestroy NBT values
 +
          String internal = SerializableMeta.getString(map, "internal", true);
          if (internal != null) {
@@ -130,7 +130,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
          if (this.hasDamage()) {
              itemTag.putInt(CraftMetaItem.DAMAGE.NBT, this.damage);
          }
-+        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        // Paper start - Add API for CanPlaceOn and CanDestroy NBT values
 +        if (hasPlaceableKeys()) {
 +            List<String> items = this.placeableKeys.stream()
 +                .map(this::serializeNamespaced)
@@ -146,7 +146,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
 +
 +            itemTag.put(CAN_DESTROY.NBT, createNonComponentStringList(items));
 +        }
-+        // Paper end
++        // Paper end - Add API for CanPlaceOn and CanDestroy NBT values
  
          for (Map.Entry<String, Tag> e : this.unhandledTags.entrySet()) {
              itemTag.put(e.getKey(), e.getValue());
@@ -154,7 +154,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
          }
      }
  
-+    // Paper start
++    // Paper start - Add API for CanPlaceOn and CanDestroy NBT values
 +    static ListTag createNonComponentStringList(List<String> list) {
 +        if (list == null || list.isEmpty()) {
 +            return null;
@@ -167,7 +167,7 @@ index ff199678850d848c5d2ce76270d674738eec58f7..df7a93208a2a0720fc3cd33f84cace38
 +
 +        return tagList;
 +    }
-+    // Paper end
++    // Paper end - Add API for CanPlaceOn and CanDestroy NBT values
 +
      ListTag createStringList(List<String> list) {
          if (list == null) {

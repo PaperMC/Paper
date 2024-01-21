@@ -10,42 +10,42 @@ persistenting Living Entity, SPAWNER for spawners,
 or DEFAULT since data was not stored.
 
 diff --git a/src/main/java/net/minecraft/server/commands/SummonCommand.java b/src/main/java/net/minecraft/server/commands/SummonCommand.java
-index 2eddeb8d5239bbfeefbf4d3bd363f1ad083299b6..a7c89cdf20cb63792c76de81c1ff9f2cbbfcea84 100644
+index 2eddeb8d5239bbfeefbf4d3bd363f1ad083299b6..e2b44b8ddb8afc6e1f7dddadb434c2268f284809 100644
 --- a/src/main/java/net/minecraft/server/commands/SummonCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/SummonCommand.java
 @@ -57,6 +57,7 @@ public class SummonCommand {
              ServerLevel worldserver = source.getLevel();
              Entity entity = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (entity1) -> {
                  entity1.moveTo(pos.x, pos.y, pos.z, entity1.getYRot(), entity1.getXRot());
-+                entity1.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND; // Paper
++                entity1.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND; // Paper - Entity#getEntitySpawnReason
                  return entity1;
              });
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 1e10d55962a7221e197723eb42434be052a7661a..43424a9d8e985f4965b4d101f7fee398e3d1f52c 100644
+index 1e10d55962a7221e197723eb42434be052a7661a..cf2ae848a3860a5a27723047b02bde3aa8255d62 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1454,6 +1454,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
              return true;
          }
          // Paper end
-+        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper
++        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper - Entity#getEntitySpawnReason
          if (entity.isRemoved()) {
              // Paper start
              if (DEBUG_ENTITIES) {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 18dc5ef7892c24f4071c8c0621ac412a5d8767bd..c98e4469fa8940762c26a8d787bfabe4b2719fb5 100644
+index c9dbc32561ddd39b40ed42d8cc6550a904ac158e..63d793ee00b14a12d0dbad15bee579a330f1eb07 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -223,6 +223,11 @@ public abstract class PlayerList {
              worldserver1 = worldserver;
          }
  
-+        // Paper start
++        // Paper start - Entity#getEntitySpawnReason
 +        if (nbttagcompound == null) {
 +            player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
 +        }
-+        // Paper end
++        // Paper end - Entity#getEntitySpawnReason
          player.setServerLevel(worldserver1);
          String s1 = connection.getLoggableAddress(this.server.logIPs());
  
@@ -54,19 +54,19 @@ index 18dc5ef7892c24f4071c8c0621ac412a5d8767bd..c98e4469fa8940762c26a8d787bfabe4
              ServerLevel finalWorldServer = worldserver1;
              Entity entity = EntityType.loadEntityRecursive(nbttagcompound1.getCompound("Entity"), finalWorldServer, (entity1) -> {
 -                return !finalWorldServer.addWithUUID(entity1) ? null : entity1;
-+                return !finalWorldServer.addWithUUID(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // Paper
++                return !finalWorldServer.addWithUUID(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // Paper - Entity#getEntitySpawnReason
                  // CraftBukkit end
              });
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index e44d983e7b44225bdd7395488d2b246761e8e02a..e1ad7394abdbf938841150e4f7092ac70181ddb0 100644
+index e44d983e7b44225bdd7395488d2b246761e8e02a..748bc33b9812791ffe4b811c405b45d07c18cdcd 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -237,6 +237,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
          }
      }
      // Paper end
-+    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper
++    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
  
      public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
      private CraftEntity bukkitEntity;
@@ -108,19 +108,19 @@ index e44d983e7b44225bdd7395488d2b246761e8e02a..e1ad7394abdbf938841150e4f7092ac7
  
          } catch (Throwable throwable) {
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index 713608239cc7518d05b04d3dd79c3af0c358c64e..231674f1483ad71630ac71ba92efc50f94a5659b 100644
+index 713608239cc7518d05b04d3dd79c3af0c358c64e..0d04581b73a9daa91bbcb0ef0b28d601fc0e9599 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -189,6 +189,7 @@ public abstract class BaseSpawner {
                          }
  
                          entity.spawnedViaMobSpawner = true; // Paper
-+                        entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER; // Paper
++                        entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER; // Paper - Entity#getEntitySpawnReason
                          flag = true; // Paper
                          // CraftBukkit start
                          if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
-index faad948f089575e4988d989790cc1dd13f8a79cd..ee11a52e82091911aa3a196bcc1f7ab829626cef 100644
+index faad948f089575e4988d989790cc1dd13f8a79cd..e143f42e71ac774d49b75e6d85591aa1189ee210 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
 @@ -186,7 +186,7 @@ public class SculkShriekerBlockEntity extends BlockEntity implements GameEventLi
@@ -128,7 +128,7 @@ index faad948f089575e4988d989790cc1dd13f8a79cd..ee11a52e82091911aa3a196bcc1f7ab8
  
      private boolean trySummonWarden(ServerLevel world) {
 -        return this.warningLevel < 4 ? false : SpawnUtil.trySpawnMob(EntityType.WARDEN, MobSpawnType.TRIGGERED, world, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER).isPresent();
-+        return this.warningLevel < 4 ? false : SpawnUtil.trySpawnMob(EntityType.WARDEN, MobSpawnType.TRIGGERED, world, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL, null).isPresent(); // Paper
++        return this.warningLevel < 4 ? false : SpawnUtil.trySpawnMob(EntityType.WARDEN, MobSpawnType.TRIGGERED, world, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL, null).isPresent(); // Paper - Entity#getEntitySpawnReason
      }
  
      @Override

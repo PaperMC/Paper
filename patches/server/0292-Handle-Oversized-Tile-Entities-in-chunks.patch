@@ -6,24 +6,24 @@ Subject: [PATCH] Handle Oversized Tile Entities in chunks
 Splits out Extra Packets if too many TE's are encountered to prevent
 creating too large of a packet to sed.
 
-Co authored by Spottedleaf
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
-index f47eeb70661661610ef1a96dd9da67785825c126..0711ad682206e783fd0a1e566828670321f297e2 100644
+index f47eeb70661661610ef1a96dd9da67785825c126..dda7151d333144399ba5602e1b651b1f5b8f8f0d 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 @@ -24,6 +24,14 @@ public class ClientboundLevelChunkPacketData {
      private final CompoundTag heightmaps;
      private final byte[] buffer;
      private final List<ClientboundLevelChunkPacketData.BlockEntityInfo> blockEntitiesData;
-+    // Paper start
++    // Paper start - Handle oversized block entities in chunks
 +    private final java.util.List<net.minecraft.network.protocol.Packet<?>> extraPackets = new java.util.ArrayList<>();
 +    private static final int TE_LIMIT = Integer.getInteger("Paper.excessiveTELimit", 750);
 +
 +    public List<net.minecraft.network.protocol.Packet<?>> getExtraPackets() {
 +        return this.extraPackets;
 +    }
-+    // Paper end
++    // Paper end - Handle oversized block entities in chunks
  
      public ClientboundLevelChunkPacketData(LevelChunk chunk) {
          this.heightmaps = new CompoundTag();
@@ -31,10 +31,10 @@ index f47eeb70661661610ef1a96dd9da67785825c126..0711ad682206e783fd0a1e5668286703
          this.buffer = new byte[calculateChunkSize(chunk)];
          extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), chunk);
          this.blockEntitiesData = Lists.newArrayList();
-+        int totalTileEntities = 0; // Paper
++        int totalTileEntities = 0; // Paper - Handle oversized block entities in chunks
  
          for(Map.Entry<BlockPos, BlockEntity> entry2 : chunk.getBlockEntities().entrySet()) {
-+            // Paper start
++            // Paper start - Handle oversized block entities in chunks
 +            if (++totalTileEntities > TE_LIMIT) {
 +                var packet = entry2.getValue().getUpdatePacket();
 +                if (packet != null) {
@@ -42,12 +42,12 @@ index f47eeb70661661610ef1a96dd9da67785825c126..0711ad682206e783fd0a1e5668286703
 +                    continue;
 +                }
 +            }
-+            // Paper end
++            // Paper end - Handle oversized block entities in chunks
              this.blockEntitiesData.add(ClientboundLevelChunkPacketData.BlockEntityInfo.create(entry2.getValue()));
          }
  
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
-index 26e46d751c8f8162c2bafe2fc109fc91dc4b7c0f..be89e5b8c1ea7f85aef267a15986affa5fa1fd4b 100644
+index 26e46d751c8f8162c2bafe2fc109fc91dc4b7c0f..90ec22d35edb2874417bbea590e0d3c37ad93d64 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 @@ -57,4 +57,11 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
@@ -55,10 +55,10 @@ index 26e46d751c8f8162c2bafe2fc109fc91dc4b7c0f..be89e5b8c1ea7f85aef267a15986affa
          return this.lightData;
      }
 +
-+    // Paper start - handle over-sized TE packets
++    // Paper start - Handle oversized block entities in chunks
 +    @Override
 +    public java.util.List<Packet<?>> getExtraPackets() {
 +        return this.chunkData.getExtraPackets();
 +    }
-+    // Paper end
++    // Paper end - Handle oversized block entities in chunks
  }

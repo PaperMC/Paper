@@ -38,7 +38,7 @@ index 0000000000000000000000000000000000000000..b60f59cf5cc8eb84a6055b7861857dec
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index aa52b271bd556a29f774fde375b713d0d187521b..90f5e7d36719dc9b464dd6ba0335da035bab29d3 100644
+index aa52b271bd556a29f774fde375b713d0d187521b..765e4bc00a0526aab6e263dae7233f63f7f31498 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
 @@ -86,7 +86,7 @@ public class Util {
@@ -46,7 +46,7 @@ index aa52b271bd556a29f774fde375b713d0d187521b..90f5e7d36719dc9b464dd6ba0335da03
      private static final int DEFAULT_SAFE_FILE_OPERATION_RETRIES = 10;
      private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
 -    private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
-+    private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - add -1 priority
++    private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - Perf: add priority
      private static final ExecutorService IO_POOL = makeIoExecutor("IO-Worker-", false);
      private static final ExecutorService DOWNLOAD_POOL = makeIoExecutor("Download-", true);
      // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
@@ -56,8 +56,8 @@ index aa52b271bd556a29f774fde375b713d0d187521b..90f5e7d36719dc9b464dd6ba0335da03
  
 -    private static ExecutorService makeExecutor(String name) {
 -        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
-+    private static ExecutorService makeExecutor(String s, int priorityModifier) { // Paper - add priority
-+        // Paper start - use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
++    private static ExecutorService makeExecutor(String s, int priorityModifier) { // Paper - Perf: add priority
++        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
 +        int cpus = Runtime.getRuntime().availableProcessors() / 2;
 +        int i;
 +        if (cpus <= 4) {
@@ -87,19 +87,19 @@ index aa52b271bd556a29f774fde375b713d0d187521b..90f5e7d36719dc9b464dd6ba0335da03
                  return forkJoinWorkerThread;
              }, Util::onThreadException, true);
          }
-+        }*/ // Paper end
++        }*/ // Paper end - Perf: use simpler thread pool
  
          return executorService;
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 79a7f64edcfc750bf2753b5b20e4c2ae322e01ab..7a12c0f5a6cb205e8ae7667b9334efe1999e2a6a 100644
+index 85beb9c7a02f7f561716d017f40ae24ad49a61a3..b57661a04bba7d32a338a0ee485f9ee8475ea246 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -312,6 +312,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          thread.setUncaughtExceptionHandler((thread1, throwable) -> {
              MinecraftServer.LOGGER.error("Uncaught exception in server thread", throwable);
          });
-+        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - boost priority
++        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - Perf: Boost priority
          if (Runtime.getRuntime().availableProcessors() > 4) {
              thread.setPriority(8);
          }

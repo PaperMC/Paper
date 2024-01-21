@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 19 Apr 2020 18:15:29 -0400
-Subject: [PATCH] Implement Brigadier Mojang API
+Subject: [PATCH] Brigadier Mojang API
 
 Adds AsyncPlayerSendCommandsEvent
   - Allows modifying on a per command basis what command data they see.
@@ -22,7 +22,7 @@ index 30edfbf16e7bed29b3261b51d9e4f3124beef026..eaaf9a9779f57ee048245899750bf7a1
      implementation("org.jline:jline-terminal-jansi:3.21.0")
      implementation("net.minecrell:terminalconsoleappender:1.3.0")
 diff --git a/src/main/java/com/mojang/brigadier/exceptions/CommandSyntaxException.java b/src/main/java/com/mojang/brigadier/exceptions/CommandSyntaxException.java
-index 3370731ee064d2693b972a0765c13dd4fd69f66a..614eba6cc55d1eb7755cac35c671cb6f6cacca13 100644
+index 3370731ee064d2693b972a0765c13dd4fd69f66a..09d486a05179b9d878e1c33725b4e614c3544da9 100644
 --- a/src/main/java/com/mojang/brigadier/exceptions/CommandSyntaxException.java
 +++ b/src/main/java/com/mojang/brigadier/exceptions/CommandSyntaxException.java
 @@ -5,7 +5,7 @@ package com.mojang.brigadier.exceptions;
@@ -30,7 +30,7 @@ index 3370731ee064d2693b972a0765c13dd4fd69f66a..614eba6cc55d1eb7755cac35c671cb6f
  import com.mojang.brigadier.Message;
  
 -public class CommandSyntaxException extends Exception {
-+public class CommandSyntaxException extends Exception implements net.kyori.adventure.util.ComponentMessageThrowable { // Paper
++public class CommandSyntaxException extends Exception implements net.kyori.adventure.util.ComponentMessageThrowable { // Paper - Brigadier API
      public static final int CONTEXT_AMOUNT = 10;
      public static boolean ENABLE_COMMAND_STACK_TRACES = true;
      public static BuiltInExceptionProvider BUILT_IN_EXCEPTIONS = new BuiltInExceptions();
@@ -39,27 +39,27 @@ index 3370731ee064d2693b972a0765c13dd4fd69f66a..614eba6cc55d1eb7755cac35c671cb6f
          return cursor;
      }
 +
-+    // Paper start
++    // Paper start - Brigadier API
 +    @Override
 +    public @org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component componentMessage() {
 +        return io.papermc.paper.brigadier.PaperBrigadier.componentFromMessage(this.message);
 +    }
-+    // Paper end
++    // Paper end - Brigadier API
  }
 diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
-index da6250df1c5f3385b683cffde47754bca4606f5e..3384501f83d445f45aa8233e98c7597daa67b8ef 100644
+index da6250df1c5f3385b683cffde47754bca4606f5e..d8142624f9f3a5909e7cc5665f1629a1a67dd302 100644
 --- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 +++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 @@ -34,6 +34,7 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
      private final RedirectModifier<S> modifier;
      private final boolean forks;
      private Command<S> command;
-+    public LiteralCommandNode<CommandSourceStack> clientNode = null; // Paper
++    public LiteralCommandNode<CommandSourceStack> clientNode; // Paper - Brigadier API
      // CraftBukkit start
      public void removeCommand(String name) {
          this.children.remove(name);
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index 5cca4fcdc97d803460e95c534022186a5aad526f..c772fa3b7a1276b0b41c45c6e0f5584b9c3a90cd 100644
+index 5cca4fcdc97d803460e95c534022186a5aad526f..8e0ea79a41136b697f5e58b5cd71f6a9bc3cab73 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 @@ -45,7 +45,7 @@ import net.minecraft.world.phys.Vec2;
@@ -67,7 +67,7 @@ index 5cca4fcdc97d803460e95c534022186a5aad526f..c772fa3b7a1276b0b41c45c6e0f5584b
  import com.mojang.brigadier.tree.CommandNode; // CraftBukkit
  
 -public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider {
-+public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper
++public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper - Brigadier API
  
      public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
      public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
@@ -75,7 +75,7 @@ index 5cca4fcdc97d803460e95c534022186a5aad526f..c772fa3b7a1276b0b41c45c6e0f5584b
          return this.textName;
      }
  
-+    // Paper start
++    // Paper start - Brigadier API
 +    @Override
 +    public org.bukkit.entity.Entity getBukkitEntity() {
 +        return getEntity() != null ? getEntity().getBukkitEntity() : null;
@@ -93,28 +93,28 @@ index 5cca4fcdc97d803460e95c534022186a5aad526f..c772fa3b7a1276b0b41c45c6e0f5584b
 +        Vec2 rot = getRotation();
 +        return world != null && pos != null ? new org.bukkit.Location(world, pos.x, pos.y, pos.z, rot != null ? rot.y : 0, rot != null ? rot.x : 0) : null;
 +    }
-+    // Paper end
++    // Paper end - Brigadier API
 +
      @Override
      public boolean hasPermission(int level) {
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index 2a88cf008c98284954108f2362f46ac14c84200a..b27256d251e5db5781197319f79f89cc7638c80b 100644
+index 2b722091920116ded43ff54c413d4dd47da65ed4..867f22bdeed5f1c3f063a5815a3477d143057152 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
 @@ -494,6 +494,7 @@ public class Commands {
              bukkit.add(node.getName());
          }
-         // Paper start - Async command map building
-+        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper
+         // Paper start - Perf: Async command map building
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper - Brigadier API
          net.minecraft.server.MinecraftServer.getServer().execute(() -> {
             runSync(player, bukkit, rootcommandnode);
          });
 @@ -501,6 +502,7 @@ public class Commands {
  
      private void runSync(ServerPlayer player, Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootcommandnode) {
-         // Paper end - Async command map building
-+        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper
+         // Paper end - Perf: Async command map building
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper - Brigadier API
          PlayerCommandSendEvent event = new PlayerCommandSendEvent(player.getBukkitEntity(), new LinkedHashSet<>(bukkit));
          event.getPlayer().getServer().getPluginManager().callEvent(event);
  
@@ -122,16 +122,16 @@ index 2a88cf008c98284954108f2362f46ac14c84200a..b27256d251e5db5781197319f79f89cc
  
          while (iterator.hasNext()) {
              CommandNode<CommandSourceStack> commandnode2 = (CommandNode) iterator.next();
-+            // Paper start
++            // Paper start - Brigadier API
 +            if (commandnode2.clientNode != null) {
 +                commandnode2 = commandnode2.clientNode;
 +            }
-+            // Paper end
++            // Paper end - Brigadier API
              if ( !org.spigotmc.SpigotConfig.sendNamespaced && commandnode2.getName().contains( ":" ) ) continue; // Spigot
  
              if (commandnode2.canUse(source)) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 564cc26f8201bd864f5f58c740c9de942d384394..833fb2f340065a72903620f974e6ac71cc86f3f9 100644
+index 2ee2e497f716f54dc8cd3d9b906d7bc2b7106448..715e80bbb683da9c13d57b6b0bca70342e67c294 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -740,8 +740,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl

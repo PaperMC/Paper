@@ -11,35 +11,21 @@ public net.minecraft.world.entity.animal.Turtle setGoingHome(Z)V
 public net.minecraft.world.entity.animal.Turtle isTravelling()Z
 public net.minecraft.world.entity.animal.Turtle setTravelling(Z)V
 
-diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-index 9fc374c17f6b3ee4ab3c582d05e96321b772f2d6..7153e00a640abfeb134ff1dcb93f363b972a4233 100644
---- a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-@@ -14,7 +14,7 @@ public abstract class MoveToBlockGoal extends Goal {
-     protected int nextStartTick;
-     protected int tryTicks;
-     private int maxStayTicks;
--    protected BlockPos blockPos = BlockPos.ZERO;
-+    protected BlockPos blockPos = BlockPos.ZERO; @Deprecated public final BlockPos getTargetPosition() { return this.blockPos; } // Paper - OBFHELPER
-     private boolean reachedTarget;
-     private final int searchRange;
-     private final int verticalSearchRange;
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-index 0dab0da65788720e56a568918de458ab7195ef5c..722e323d2ae3f4ac8aa3197fed79f7d926d5ccfa 100644
+index 0dab0da65788720e56a568918de458ab7195ef5c..6bbcdd34fb89ea5774e825de8f9a588552716fc2 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-@@ -491,14 +491,18 @@ public class Turtle extends Animal {
+@@ -491,14 +491,17 @@ public class Turtle extends Animal {
  
              if (!this.turtle.isInWater() && this.isReachedTarget()) {
                  if (this.turtle.layEggCounter < 1) {
 -                    this.turtle.setLayingEgg(true);
-+                    this.turtle.setLayingEgg(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), io.papermc.paper.util.MCUtil.toLocation(this.turtle.level(), this.getTargetPosition())).callEvent()); // Paper
++                    this.turtle.setLayingEgg(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), io.papermc.paper.util.MCUtil.toLocation(this.turtle.level(), this.blockPos)).callEvent()); // Paper - Turtle API
                  } else if (this.turtle.layEggCounter > this.adjustedTickDelay(200)) {
                      Level world = this.turtle.level();
  
 -                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1))) { // CraftBukkit
-+                    // CraftBukkit start
-+                    // Paper start
++                    // Paper start - Turtle API
 +                    int eggCount = this.turtle.random.nextInt(4) + 1;
 +                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), io.papermc.paper.util.MCUtil.toLocation(this.turtle.level(), this.blockPos.above()), eggCount);
 +                    if (layEggEvent.callEvent() && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()))) {
@@ -50,12 +36,12 @@ index 0dab0da65788720e56a568918de458ab7195ef5c..722e323d2ae3f4ac8aa3197fed79f7d9
  
                      world.setBlock(blockposition1, iblockdata, 3);
                      world.gameEvent(GameEvent.BLOCK_PLACE, blockposition1, GameEvent.Context.of(this.turtle, iblockdata));
-@@ -568,7 +572,7 @@ public class Turtle extends Animal {
+@@ -568,7 +571,7 @@ public class Turtle extends Animal {
  
          @Override
          public boolean canUse() {
 -            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(reducedTickDelay(700)) != 0 ? false : !this.turtle.getHomePos().closerToCenterThan(this.turtle.position(), 64.0D)));
-+            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(reducedTickDelay(700)) != 0 ? false : !this.turtle.getHomePos().closerToCenterThan(this.turtle.position(), 64.0D))) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity()).callEvent(); // Paper
++            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(reducedTickDelay(700)) != 0 ? false : !this.turtle.getHomePos().closerToCenterThan(this.turtle.position(), 64.0D))) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity()).callEvent(); // Paper - Turtle API
          }
  
          @Override

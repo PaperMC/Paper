@@ -22,14 +22,14 @@ it only impacts data sent from the client.
 Set -DPaper.maxSignLength=XX to change limit or -1 to disable
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 833fb2f340065a72903620f974e6ac71cc86f3f9..00fa6126ca51b6ffdb46b59f07725ffdcca9f20a 100644
+index 833fb2f340065a72903620f974e6ac71cc86f3f9..748321534eab7a8c35a85b4d4ab8020bd4623654 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -291,6 +291,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
      private final FutureChain chatMessageChain;
      private boolean waitingForSwitchToConfig;
-+    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper
++    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper - Limit client sign length
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie clientData) {
          super(server, connection, clientData, player); // CraftBukkit
@@ -38,7 +38,7 @@ index 833fb2f340065a72903620f974e6ac71cc86f3f9..00fa6126ca51b6ffdb46b59f07725ffd
      @Override
      public void handleSignUpdate(ServerboundSignUpdatePacket packet) {
 -        List<String> list = (List) Stream.of(packet.getLines()).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
-+        // Paper start - cap line length - modified clients can send longer data than normal
++        // Paper start - Limit client sign length
 +        String[] lines = packet.getLines();
 +        for (int i = 0; i < lines.length; ++i) {
 +            if (MAX_SIGN_LINE_LENGTH > 0 && lines[i].length() > MAX_SIGN_LINE_LENGTH) {
@@ -50,7 +50,7 @@ index 833fb2f340065a72903620f974e6ac71cc86f3f9..00fa6126ca51b6ffdb46b59f07725ffd
 +            }
 +        }
 +        List<String> list = (List) Stream.of(lines).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
-+        // Paper end
++        // Paper end - Limit client sign length
  
          this.filterTextPacket(list).thenAcceptAsync((list1) -> {
              this.updateSignText(packet, list1);

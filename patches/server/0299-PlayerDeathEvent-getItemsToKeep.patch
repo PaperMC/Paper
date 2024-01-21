@@ -11,14 +11,14 @@ Example Usage: https://gist.github.com/aikar/5bb202de6057a051a950ce1f29feb0b4
 public net.minecraft.world.entity.player.Inventory compartments
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 8cc33c1b14668c085dbad1f3feabf7b602812471..91053c2b19751aa3ff219b615b595b730ffa134f 100644
+index 8cc33c1b14668c085dbad1f3feabf7b602812471..5d491a5a885b00cad003538fc20720355c7f218a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -857,6 +857,46 @@ public class ServerPlayer extends Player {
          });
      }
  
-+    // Paper start - process inventory
++    // Paper start - PlayerDeathEvent#getItemsToKeep
 +    private static void processKeep(org.bukkit.event.entity.PlayerDeathEvent event, NonNullList<ItemStack> inv) {
 +        List<org.bukkit.inventory.ItemStack> itemsToKeep = event.getItemsToKeep();
 +        if (inv == null) {
@@ -56,7 +56,7 @@ index 8cc33c1b14668c085dbad1f3feabf7b602812471..91053c2b19751aa3ff219b615b595b73
 +            }
 +        }
 +    }
-+    // Paper end
++    // Paper end - PlayerDeathEvent#getItemsToKeep
 +
      @Override
      public void die(DamageSource damageSource) {
@@ -66,12 +66,12 @@ index 8cc33c1b14668c085dbad1f3feabf7b602812471..91053c2b19751aa3ff219b615b595b73
          // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
          if (!event.getKeepInventory()) {
 -            this.getInventory().clearContent();
-+            // Paper start - replace logic
++            // Paper start - PlayerDeathEvent#getItemsToKeep
 +            for (NonNullList<ItemStack> inv : this.getInventory().compartments) {
 +                processKeep(event, inv);
 +            }
 +            processKeep(event, null);
-+            // Paper end
++            // Paper end - PlayerDeathEvent#getItemsToKeep
          }
  
          this.setCamera(this); // Remove spectated target
