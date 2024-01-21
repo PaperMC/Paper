@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 14 Mar 2022 12:35:37 -0700
+Subject: [PATCH] Don't allow vehicle movement from players while teleporting
+
+Bring the vehicle move packet behavior in line with the
+regular player move packet.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index e6e9a2688a3d2f789831a9e095e555f784bd9c4a..6842ccf68ab5ae2b2c093ea8ac34eeabc0f95770 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -465,6 +465,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             this.disconnect(Component.translatable("multiplayer.disconnect.invalid_vehicle_movement"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_VEHICLE_MOVEMENT); // Paper - kick event cause
+         } else {
+             Entity entity = this.player.getRootVehicle();
++            // Paper start - Don't allow vehicle movement from players while teleporting
++            if (this.awaitingPositionFromClient != null || this.player.isImmobile() || entity.isRemoved()) {
++                return;
++            }
++            // Paper end - Don't allow vehicle movement from players while teleporting
+ 
+             if (entity != this.player && entity.getControllingPassenger() == this.player && entity == this.lastVehicle) {
+                 ServerLevel worldserver = this.player.serverLevel();

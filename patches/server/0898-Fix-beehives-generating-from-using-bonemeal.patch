@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 26 Mar 2023 18:07:56 -0700
+Subject: [PATCH] Fix beehives generating from using bonemeal
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 6d1986d4dfa4dd4f5988c6afa023f9bd518e1d4e..71d93daa527ae34b83138394fa79289c403a33d8 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -422,6 +422,7 @@ public final class ItemStack {
+                     }
+                     for (CraftBlockState blockstate : blocks) {
+                         world.setBlock(blockstate.getPosition(),blockstate.getHandle(), blockstate.getFlag()); // SPIGOT-7248 - manual update to avoid physics where appropriate
++                        if (blockstate instanceof org.bukkit.craftbukkit.block.CapturedBlockState capturedBlockState) capturedBlockState.checkTreeBlockHack(); // Paper - Fix beehives generating from using bonemeal
+                     }
+                     entityhuman.awardStat(Stats.ITEM_USED.get(item)); // SPIGOT-7236 - award stat
+                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CapturedBlockState.java b/src/main/java/org/bukkit/craftbukkit/block/CapturedBlockState.java
+index 2aab5ba9e90f09e6d679ee0d0d5d5e52c44b677f..c17c8b2bff32bfd101675d73f8ab81b35a9e1c15 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CapturedBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CapturedBlockState.java
+@@ -31,6 +31,12 @@ public final class CapturedBlockState extends CraftBlockState {
+     public boolean update(boolean force, boolean applyPhysics) {
+         boolean result = super.update(force, applyPhysics);
+ 
++        // Paper start - Fix beehives generating from using bonemeal
++        this.checkTreeBlockHack();
++        return result;
++    }
++    public void checkTreeBlockHack() {
++        // Paper end - Fix beehives generating from using bonemeal
+         // SPIGOT-5537: Horrible hack to manually add bees given World.captureTreeGeneration does not support tiles
+         if (this.treeBlock && this.getType() == Material.BEE_NEST) {
+             WorldGenLevel generatoraccessseed = this.world.getHandle();
+@@ -53,7 +59,7 @@ public final class CapturedBlockState extends CraftBlockState {
+             // End copied block
+         }
+ 
+-        return result;
++        // Paper - Fix beehives generating from using bonemeal
+     }
+ 
+     @Override

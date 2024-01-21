@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Fri, 5 Jun 2020 18:24:06 -0400
+Subject: [PATCH] Add PlayerRecipeBookClickEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 802602882a76fbb026c524225f74bb3780d219c0..d244a20961e5e3e459bf2bc784014b3f963590ea 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2973,16 +2973,40 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             if (!this.player.containerMenu.stillValid(this.player)) {
+                 ServerGamePacketListenerImpl.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
+             } else {
++                // Paper start - Add PlayerRecipeBookClickEvent
++                ResourceLocation recipeName = packet.getRecipe();
++                boolean makeAll = packet.isShiftDown();
++                com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent paperEvent = new com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent(
++                    this.player.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(recipeName), makeAll
++                );
++                if (!paperEvent.callEvent()) {
++                    return;
++                }
++                recipeName = CraftNamespacedKey.toMinecraft(paperEvent.getRecipe());
++                makeAll = paperEvent.isMakeAll();
++                if (org.bukkit.event.player.PlayerRecipeBookClickEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                // Paper end - Add PlayerRecipeBookClickEvent
+                 // CraftBukkit start - implement PlayerRecipeBookClickEvent
+-                org.bukkit.inventory.Recipe recipe = this.cserver.getRecipe(CraftNamespacedKey.fromMinecraft(packet.getRecipe()));
++                org.bukkit.inventory.Recipe recipe = this.cserver.getRecipe(CraftNamespacedKey.fromMinecraft(recipeName)); // Paper
+                 if (recipe == null) {
+                     return;
+                 }
+-                org.bukkit.event.player.PlayerRecipeBookClickEvent event = CraftEventFactory.callRecipeBookClickEvent(this.player, recipe, packet.isShiftDown());
++                // Paper start - Add PlayerRecipeBookClickEvent
++                org.bukkit.event.player.PlayerRecipeBookClickEvent event = CraftEventFactory.callRecipeBookClickEvent(this.player, recipe, makeAll);
++                recipeName = CraftNamespacedKey.toMinecraft(((org.bukkit.Keyed) event.getRecipe()).getKey());
++                makeAll = event.isShiftClick();
++                }
++                if (!(this.player.containerMenu instanceof RecipeBookMenu<?> recipeBookMenu)) {
++                    return;
++                }
++                // Paper end - Add PlayerRecipeBookClickEvent
+ 
+                 // Cast to keyed should be safe as the recipe will never be a MerchantRecipe.
+-                this.server.getRecipeManager().byKey(CraftNamespacedKey.toMinecraft(((org.bukkit.Keyed) event.getRecipe()).getKey())).ifPresent((recipeholder) -> {
+-                    ((RecipeBookMenu) this.player.containerMenu).handlePlacement(event.isShiftClick(), recipeholder, this.player);
++                // Paper start - Add PlayerRecipeBookClickEvent
++                final boolean finalMakeAll = makeAll;
++                this.server.getRecipeManager().byKey(recipeName).ifPresent((recipeholder) -> {
++                    recipeBookMenu.handlePlacement(finalMakeAll, recipeholder, this.player);
++                    // Paper end - Add PlayerRecipeBookClickEvent
+                 });
+                 // CraftBukkit end
+             }

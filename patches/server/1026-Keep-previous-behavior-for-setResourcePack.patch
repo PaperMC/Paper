@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 8 Dec 2023 15:06:16 -0800
+Subject: [PATCH] Keep previous behavior for setResourcePack
+
+Before multiple packs were allowed, setResourcePack
+resulted in the client's existing server pack being
+replaced. To keep this behavior, we will remove all
+packs before sending the new pack. Other API exists
+for adding a new pack to the existing packs on a client.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d1a15bd280fdd90c282d8badfdee5b944b75b2de..fd67e7571841b345630078892e321283760341dd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2351,8 +2351,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         if (hash != null) {
+             Preconditions.checkArgument(hash.length == 20, "Resource pack hash should be 20 bytes long but was %s", hash.length);
+ 
++            this.getHandle().connection.send(new net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket(Optional.empty())); // Paper - keep previous behavior of clearing packs
+             this.getHandle().connection.send(new ClientboundResourcePackPushPacket(id, url, BaseEncoding.base16().lowerCase().encode(hash), force, CraftChatMessage.fromStringOrNull(prompt, true)));
+         } else {
++            this.getHandle().connection.send(new net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket(Optional.empty())); // Paper - keep previous behavior of clearing packs
+             this.getHandle().connection.send(new ClientboundResourcePackPushPacket(id, url, "", force, CraftChatMessage.fromStringOrNull(prompt, true)));
+         }
+     }

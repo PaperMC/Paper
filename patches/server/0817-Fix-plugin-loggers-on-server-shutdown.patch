@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jos=C3=A9=20Miguel=20Moreno?= <josemmo@pm.me>
+Date: Sat, 5 Jun 2021 13:45:15 +0200
+Subject: [PATCH] Fix plugin loggers on server shutdown
+
+
+diff --git a/src/main/java/io/papermc/paper/log/CustomLogManager.java b/src/main/java/io/papermc/paper/log/CustomLogManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c1d3bac79bb8b4796c013ff4472f75dcd79602dc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/log/CustomLogManager.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.log;
++
++import java.util.logging.LogManager;
++
++public class CustomLogManager extends LogManager {
++    private static CustomLogManager instance;
++
++    public CustomLogManager() {
++        instance = this;
++    }
++
++    @Override
++    public void reset() {
++        // Ignore calls to this method
++    }
++
++    private void superReset() {
++        super.reset();
++    }
++
++    public static void forceReset() {
++        if (instance != null) {
++            instance.superReset();
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index c3ce869eb8c53ba01f41840d050502ce94771253..ed9839ff23d0810912a6961979690c3fe9fc0e16 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1026,6 +1026,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
+         } catch (Exception e) {
+         }
++        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
+         this.onServerExit();
+         // Paper end - move final shutdown items here
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 68b849321757493c64e874b5a2c5d5357a52d698..5ad5b54e977af7dc86c2505f7ccdc77422adb33b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -18,6 +18,12 @@ public class Main {
+     public static boolean useJline = true;
+     public static boolean useConsole = true;
+ 
++    // Paper start - Reset loggers after shutdown
++    static {
++        System.setProperty("java.util.logging.manager", "io.papermc.paper.log.CustomLogManager");
++    }
++    // Paper end - Reset loggers after shutdown
++
+     public static void main(String[] args) {
+         // Paper start
+         final String warnWhenLegacyFormattingDetected = String.join(".", "net", "kyori", "adventure", "text", "warnWhenLegacyFormattingDetected");

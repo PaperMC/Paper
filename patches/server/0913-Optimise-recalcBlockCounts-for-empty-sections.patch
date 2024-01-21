@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 15 May 2023 20:25:26 -0700
+Subject: [PATCH] Optimise recalcBlockCounts() for empty sections
+
+In 1.18, every chunk section is initialised to a non-null value
+and recalcBlockCounts() is invoked for each section.
+However, in a standard world, most sections are empty. In such cases,
+recalcBlockCounts() would iterate over ever position - even though
+the block data would all be air. To avoid this, we skip
+searching the section unless the palette indicates there _could_ be
+a non-air block state or non-empty fluid state.
+
+Chunk loading initially showed that recalcBlockCounts() over
+sections with a ZeroBitStorage data to to take ~20% of the process,
+now it takes <1%.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
+index 6d340a9b64ae900dfe84eeeaf7a39f7e7a139198..1a473187c22c4158959a3aae33a6823229c5b7a7 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
+@@ -144,6 +144,7 @@ public class LevelChunkSection {
+         this.nonEmptyBlockCount = 0;
+         this.tickingBlockCount = 0;
+         this.tickingFluidCount = 0;
++        if (this.maybeHas((BlockState state) -> !state.isAir() || !state.getFluidState().isEmpty())) { // Paper - Perf: do not run forEachLocation on clearly empty sections
+         this.states.forEachLocation((BlockState iblockdata, int i) -> {
+             FluidState fluid = iblockdata.getFluidState();
+ 
+@@ -169,6 +170,7 @@ public class LevelChunkSection {
+             // Paper end - optimise collisions
+ 
+         });
++        } // Paper - Perf: do not run forEachLocation on clearly empty sections
+         // Paper end
+     }
+ 

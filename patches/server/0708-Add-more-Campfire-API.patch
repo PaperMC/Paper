@@ -1,0 +1,112 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LemonCaramel <admin@caramel.moe>
+Date: Fri, 16 Jul 2021 00:39:03 +0900
+Subject: [PATCH] Add more Campfire API
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+index 5da0c6bf4f04448f640a11931b2cc5b91cf83f12..9f7b49a6a50cb53d914c8f4b5132c035c5ab71da 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+@@ -42,6 +42,7 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+     public final int[] cookingProgress;
+     public final int[] cookingTime;
+     private final RecipeManager.CachedCheck<Container, CampfireCookingRecipe> quickCheck;
++    public final boolean[] stopCooking; // Paper - Add more Campfire API
+ 
+     public CampfireBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.CAMPFIRE, pos, state);
+@@ -49,6 +50,7 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+         this.cookingProgress = new int[4];
+         this.cookingTime = new int[4];
+         this.quickCheck = RecipeManager.createCheck(RecipeType.CAMPFIRE_COOKING);
++        this.stopCooking = new boolean[4]; // Paper - Add more Campfire API
+     }
+ 
+     public static void cookTick(Level world, BlockPos pos, BlockState state, CampfireBlockEntity campfire) {
+@@ -59,7 +61,9 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+ 
+             if (!itemstack.isEmpty()) {
+                 flag = true;
++                if (!campfire.stopCooking[i]) { // Paper - Add more Campfire API
+                 int j = campfire.cookingProgress[i]++;
++                } // Paper - Add more Campfire API
+ 
+                 if (campfire.cookingProgress[i] >= campfire.cookingTime[i]) {
+                     SimpleContainer inventorysubcontainer = new SimpleContainer(new ItemStack[]{itemstack});
+@@ -172,6 +176,16 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+             System.arraycopy(aint, 0, this.cookingTime, 0, Math.min(this.cookingTime.length, aint.length));
+         }
+ 
++        // Paper start - Add more Campfire API
++        if (nbt.contains("Paper.StopCooking", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_BYTE_ARRAY)) {
++            byte[] abyte = nbt.getByteArray("Paper.StopCooking");
++            boolean[] cookingState = new boolean[4];
++            for (int index = 0; index < abyte.length; index++) {
++                cookingState[index] = abyte[index] == 1;
++            }
++            System.arraycopy(cookingState, 0, this.stopCooking, 0, Math.min(this.stopCooking.length, abyte.length));
++        }
++        // Paper end - Add more Campfire API
+     }
+ 
+     @Override
+@@ -180,6 +194,13 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+         ContainerHelper.saveAllItems(nbt, this.items, true);
+         nbt.putIntArray("CookingTimes", this.cookingProgress);
+         nbt.putIntArray("CookingTotalTimes", this.cookingTime);
++        // Paper start - Add more Campfire API
++        byte[] cookingState = new byte[4];
++        for (int index = 0; index < cookingState.length; index++) {
++            cookingState[index] = (byte) (this.stopCooking[index] ? 1 : 0);
++        }
++        nbt.putByteArray("Paper.StopCooking", cookingState);
++        // Paper end - Add more Campfire API
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCampfire.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCampfire.java
+index 07556d0961569c1be62a697414bd4ec512b04ac0..cc641dc70dc12b902bd9cad93fffded9032f1e82 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCampfire.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCampfire.java
+@@ -56,4 +56,40 @@ public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> im
+     public CraftCampfire copy() {
+         return new CraftCampfire(this);
+     }
++
++    // Paper start
++    @Override
++    public void stopCooking() {
++        for (int i = 0; i < getSnapshot().stopCooking.length; ++i)
++            this.stopCooking(i);
++    }
++
++    @Override
++    public void startCooking() {
++        for (int i = 0; i < getSnapshot().stopCooking.length; ++i)
++            this.startCooking(i);
++    }
++
++    @Override
++    public boolean stopCooking(int index) {
++        org.apache.commons.lang.Validate.isTrue(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
++        boolean previous = this.isCookingDisabled(index);
++        getSnapshot().stopCooking[index] = true;
++        return previous;
++    }
++
++    @Override
++    public boolean startCooking(int index) {
++        org.apache.commons.lang.Validate.isTrue(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
++        boolean previous = this.isCookingDisabled(index);
++        getSnapshot().stopCooking[index] = false;
++        return previous;
++    }
++
++    @Override
++    public boolean isCookingDisabled(int index) {
++        org.apache.commons.lang.Validate.isTrue(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
++        return getSnapshot().stopCooking[index];
++    }
++    // Paper end
+ }

@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zero <zero@cock.li>
+Date: Sat, 22 Feb 2020 16:10:31 -0500
+Subject: [PATCH] Configurable chance of villager zombie infection
+
+This allows you to solve an issue in vanilla behavior where:
+* On easy difficulty your villagers will NEVER get infected, meaning they will always die.
+* On normal difficulty they will have a 50% of getting infected or dying.
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 37730675250f03ff6786992949813d67583610b3..ac4916a898af8c3584d84088b18e8b38b5eb6b13 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -452,12 +452,8 @@ public class Zombie extends Monster {
+     public boolean killedEntity(ServerLevel world, LivingEntity other) {
+         boolean flag = super.killedEntity(world, other);
+ 
+-        if ((world.getDifficulty() == Difficulty.NORMAL || world.getDifficulty() == Difficulty.HARD) && other instanceof Villager) {
+-            Villager entityvillager = (Villager) other;
+-
+-            if (world.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
+-                return flag;
+-            }
++        final double fallbackChance = world.getDifficulty() == Difficulty.HARD ? 100d : world.getDifficulty() == Difficulty.NORMAL ? 50d : 0d; // Paper - Configurable chance of villager zombie infection
++        if (this.random.nextDouble() * 100 < world.paperConfig().entities.behavior.zombieVillagerInfectionChance.or(fallbackChance) && other instanceof Villager entityvillager) { // Paper - Configurable chance of villager zombie infection
+             // CraftBukkit start
+             flag = Zombie.zombifyVillager(world, entityvillager, this.blockPosition(), this.isSilent(), CreatureSpawnEvent.SpawnReason.INFECTION) == null;
+         }

@@ -10,43 +10,43 @@ Adds an option to control the force mode of the particle.
 This adds a new Builder API which is much friendlier to use.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 8afcd4e3a3805c7bccffaf6ff751e23101db6ed8..e96abf6afd434c104437e2461431f8b4c82c1d00 100644
+index c6fd543d03813d6edc12aa919e77bb9a7c7315e7..d5ff2037fd2756da1aac9660e65453913be172cd 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1742,12 +1742,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
      }
  
      public <T extends ParticleOptions> int sendParticles(ServerPlayer sender, T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, boolean force) {
-+        // Paper start - Particle API Expansion
++        // Paper start - Particle API
 +        return sendParticles(players, sender, t0, d0, d1, d2, i, d3, d4, d5, d6, force);
 +    }
 +    public <T extends ParticleOptions> int sendParticles(List<ServerPlayer> receivers, @Nullable ServerPlayer sender, T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, boolean force) {
-+        // Paper end
++        // Paper end - Particle API
          ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(t0, force, d0, d1, d2, (float) d3, (float) d4, (float) d5, (float) d6, i);
          // CraftBukkit end
          int j = 0;
  
 -        for (int k = 0; k < this.players.size(); ++k) {
 -            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
-+        for (Player entityhuman : receivers) { // Paper - Particle API Expansion
-+            ServerPlayer entityplayer = (ServerPlayer) entityhuman; // Paper - Particle API Expansion
++        for (Player entityhuman : receivers) { // Paper - Particle API
++            ServerPlayer entityplayer = (ServerPlayer) entityhuman; // Paper - Particle API
              if (sender != null && !entityplayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
  
              if (this.sendParticles(entityplayer, force, d0, d1, d2, packetplayoutworldparticles)) { // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index eeb62a48a4c56d3465f74f63278bf76c6abe84ec..ac6bafab570738db2b706bf2b045ea4eec12131c 100644
+index 35ac3878b4391da29e248d26a6c76bf1582ea09d..c8e13ea3bc256b112fa5fd916c0fb583322c081b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -1948,13 +1948,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-+        // Paper start - Particle API Expansion
++        // Paper start - Particle API
 +        spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, force);
 +    }
 +    @Override
 +    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-+        // Paper end
++        // Paper end - Particle API
          particle = CraftParticle.convertLegacy(particle);
          data = CraftParticle.convertLegacy(data);
          if (data != null) {
@@ -54,8 +54,8 @@ index eeb62a48a4c56d3465f74f63278bf76c6abe84ec..ac6bafab570738db2b706bf2b045ea4e
          }
          this.getHandle().sendParticles(
 -                null, // Sender
-+                receivers == null ? getHandle().players() : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API Expansion
-+                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API Expansion
++                receivers == null ? getHandle().players() : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API
++                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API
                  CraftParticle.createParticleParam(particle, data), // Particle
                  x, y, z, // Position
                  count,  // Count

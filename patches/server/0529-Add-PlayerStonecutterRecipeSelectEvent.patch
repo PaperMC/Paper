@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 27 Nov 2020 17:14:27 -0800
+Subject: [PATCH] Add PlayerStonecutterRecipeSelectEvent
+
+Co-Authored-By: MiniDigger <admin@benndorf.dev>
+
+diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+index e40d9dbdbe5359c38af6d764d01c9be422654aaa..4924993fab57bcf72a5d75cc2f7e6bed4f9f511c 100644
+--- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -63,7 +63,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+ 
+     public StonecutterMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context) {
+         super(MenuType.STONECUTTER, syncId);
+-        this.selectedRecipeIndex = DataSlot.standalone();
++        this.selectedRecipeIndex = DataSlot.shared(new int[1], 0); // Paper - Add PlayerStonecutterRecipeSelectEvent
+         this.recipes = Lists.newArrayList();
+         this.input = ItemStack.EMPTY;
+         this.slotUpdateListener = () -> {
+@@ -161,7 +161,29 @@ public class StonecutterMenu extends AbstractContainerMenu {
+     @Override
+     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+         if (this.isValidRecipeIndex(id)) {
+-            this.selectedRecipeIndex.set(id);
++            // Paper start - Add PlayerStonecutterRecipeSelectEvent
++            int recipeIndex = id;
++            this.selectedRecipeIndex.set(recipeIndex);
++            this.selectedRecipeIndex.checkAndClearUpdateFlag(); // mark as changed
++            if (this.isValidRecipeIndex(id)) {
++                io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent event = new io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent((Player) player.getBukkitEntity(), (org.bukkit.inventory.StonecutterInventory) getBukkitView().getTopInventory(), (org.bukkit.inventory.StonecuttingRecipe) this.getRecipes().get(id).toBukkitRecipe());
++                if (!event.callEvent()) {
++                    ((Player) player.getBukkitEntity()).updateInventory();
++                    return false;
++                }
++                int newRecipeIndex;
++                if (!this.getRecipes().get(recipeIndex).id().equals(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) { // If the recipe did NOT stay the same
++                    for (newRecipeIndex = 0; newRecipeIndex < this.getRecipes().size(); newRecipeIndex++) {
++                        if (this.getRecipes().get(newRecipeIndex).id().equals(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) {
++                            recipeIndex = newRecipeIndex;
++                            break;
++                        }
++                    }
++                }
++            }
++            ((Player) player.getBukkitEntity()).updateInventory();
++            this.selectedRecipeIndex.set(recipeIndex); // set new index, so that listeners can read it
++            // Paper end - Add PlayerStonecutterRecipeSelectEvent
+             this.setupResultSlot();
+         }
+ 

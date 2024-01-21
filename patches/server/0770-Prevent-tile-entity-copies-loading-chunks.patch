@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 13 Apr 2022 08:25:42 +0100
+Subject: [PATCH] Prevent tile entity copies loading chunks
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 6842ccf68ab5ae2b2c093ea8ac34eeabc0f95770..985fdb70d4bc9fd6c08de83889108824facfd049 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3192,7 +3192,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 BlockPos blockposition = BlockEntity.getPosFromTag(nbttagcompound);
+ 
+                 if (this.player.level().isLoaded(blockposition)) {
+-                    BlockEntity tileentity = this.player.level().getBlockEntity(blockposition);
++                    // Paper start - Prevent tile entity copies loading chunks
++                    BlockEntity tileentity = null;
++                    if (this.player.distanceToSqr(blockposition.getX(), blockposition.getY(), blockposition.getZ()) < 32 * 32 && this.player.serverLevel().isLoadedAndInBounds(blockposition)) {
++                        tileentity = this.player.level().getBlockEntity(blockposition);
++                    }
++                    // Paper end - Prevent tile entity copies loading chunks
+ 
+                     if (tileentity != null) {
+                         tileentity.saveToItem(itemstack);

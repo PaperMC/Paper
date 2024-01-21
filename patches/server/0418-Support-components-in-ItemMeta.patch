@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@benndorf.dev>
+Date: Sat, 6 Jun 2020 18:13:42 +0200
+Subject: [PATCH] Support components in ItemMeta
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 6a3a8c4cc09a045134a7c3751b33f2763e5a4953..ad3a289af7922bfc8d503eb1da93db72b31a03f6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -879,11 +879,23 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         return CraftChatMessage.fromJSONComponent(this.displayName);
+     }
+ 
++    // Paper start
++    @Override
++    public net.md_5.bungee.api.chat.BaseComponent[] getDisplayNameComponent() {
++        return displayName == null ? new net.md_5.bungee.api.chat.BaseComponent[0] : net.md_5.bungee.chat.ComponentSerializer.parse(displayName);
++    }
++    // Paper end
+     @Override
+     public final void setDisplayName(String name) {
+         this.displayName = CraftChatMessage.fromStringOrNullToJSON(name);
+     }
+ 
++    // Paper start
++    @Override
++    public void setDisplayNameComponent(net.md_5.bungee.api.chat.BaseComponent[] component) {
++        this.displayName = net.md_5.bungee.chat.ComponentSerializer.toString(component);
++    }
++    // Paper end
+     @Override
+     public boolean hasDisplayName() {
+         return this.displayName != null;
+@@ -1024,6 +1036,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         return this.lore == null ? null : new ArrayList<String>(Lists.transform(this.lore, CraftChatMessage::fromJSONComponent));
+     }
+ 
++    // Paper start
++    @Override
++    public List<net.md_5.bungee.api.chat.BaseComponent[]> getLoreComponents() {
++        return this.lore == null ? null : new ArrayList<>(this.lore.stream().map(entry ->
++            net.md_5.bungee.chat.ComponentSerializer.parse(entry)
++        ).collect(java.util.stream.Collectors.toList()));
++    }
++    // Paper end
+     @Override
+     public void setLore(List<String> lore) {
+         if (lore == null || lore.isEmpty()) {
+@@ -1038,6 +1058,21 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void setLoreComponents(List<net.md_5.bungee.api.chat.BaseComponent[]> lore) {
++        if (lore == null) {
++            this.lore = null;
++        } else {
++            if (this.lore == null) {
++                safelyAdd(lore, this.lore = new ArrayList<>(lore.size()), false);
++            } else {
++                this.lore.clear();
++                safelyAdd(lore, this.lore, false);
++            }
++        }
++    }
++    // Paper end
+     @Override
+     public boolean hasCustomModelData() {
+         return this.customModelData != null;
+@@ -1506,6 +1541,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         }
+ 
+         for (Object object : addFrom) {
++            // Paper start - support components
++            if(object instanceof net.md_5.bungee.api.chat.BaseComponent[]) {
++                addTo.add(net.md_5.bungee.chat.ComponentSerializer.toString((net.md_5.bungee.api.chat.BaseComponent[]) object));
++            } else
++            // Paper end
+             if (!(object instanceof String)) {
+                 if (object != null) {
+                     // SPIGOT-7399: Null check via if is important,

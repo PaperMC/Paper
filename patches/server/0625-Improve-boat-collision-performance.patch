@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 2 Aug 2021 10:10:40 +0200
+Subject: [PATCH] Improve boat collision performance
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 765e4bc00a0526aab6e263dae7233f63f7f31498..eb80741b313daab36dcfeb1079eb0fbb19614904 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -121,6 +121,7 @@ public class Util {
+     }).findFirst().orElseThrow(() -> {
+         return new IllegalStateException("No jar file system provider found");
+     });
++    public static final double COLLISION_EPSILON = 1.0E-7; // Paper - Improve boat collision performance
+     private static Consumer<String> thePauser = (message) -> {
+     };
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 8673e4eff6bd66b5cdf0fc6101aa9ff9c226dbfe..36ffb7f61e2e29a67c069336f251172130dda207 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1413,7 +1413,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
+                     Entity entity = source.getDirectEntity();
+ 
+-                    if (entity instanceof LivingEntity) {
++                    if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Improve boat collision performance
+                         LivingEntity entityliving = (LivingEntity) entity;
+ 
+                         this.blockUsingShield(entityliving);
+@@ -1507,11 +1507,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 }
+ 
+                 if (entity1 != null && !source.is(DamageTypeTags.NO_KNOCKBACK)) {
+-                    double d0 = entity1.getX() - this.getX();
++                    final boolean far = entity1.distanceToSqr(this) > (200.0 * 200.0); // Paper - Improve boat collision performance
++                    double d0 = far ? (Math.random() - Math.random()) : entity1.getX() - this.getX(); // Paper - Improve boat collision performance
+ 
+                     double d1;
+ 
+-                    for (d1 = entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) {
++                    for (d1 = far ? Math.random() - Math.random() : entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) { // Paper - Improve boat collision performance
+                         d0 = (Math.random() - Math.random()) * 0.01D;
+                     }
+ 
+@@ -2241,7 +2242,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
+                 Entity entity = damagesource.getDirectEntity();
+ 
+-                if (entity instanceof LivingEntity) {
++                if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Improve boat collision performance
+                     this.blockUsingShield((LivingEntity) entity);
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+index 1ced6d60a74fac028804b3c2d938e89af4706823..db6aa75d642f4a7258f197933671907faf79c8f2 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+@@ -689,7 +689,7 @@ public class Boat extends VehicleEntity implements VariantHolder<Boat.Type> {
+         this.invFriction = 0.05F;
+         if (this.oldStatus == Boat.Status.IN_AIR && this.status != Boat.Status.IN_AIR && this.status != Boat.Status.ON_LAND) {
+             this.waterLevel = this.getY(1.0D);
+-            this.setPos(this.getX(), (double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D, this.getZ());
++            this.move(MoverType.SELF, new Vec3(0.0, ((double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D) - this.getY(), 0.0)); // Paper - Improve boat collision performance
+             this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
+             this.lastYd = 0.0D;
+             this.status = Boat.Status.IN_WATER;
