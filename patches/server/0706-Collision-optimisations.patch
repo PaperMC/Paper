@@ -2214,10 +2214,10 @@ index 1f14b904807d4b593b608c8dc7a97bd8c320eceb..0da976438be3de7b82e8b1e3ce06d01c
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 71ea121661874c11147bea0f9a4a147583f312fc..b6146726e767fa0401da3d7f5bbbf95b7c7a17d9 100644
+index 78034cef7c7555eb4f772a618662a8ef9d0b7083..515c948cce0066cfd6e292afd65ceefc320ed553 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1217,9 +1217,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -1216,9 +1216,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                  float f = this.getBlockSpeedFactor();
  
                  this.setDeltaMovement(this.getDeltaMovement().multiply((double) f, 1.0D, (double) f));
@@ -2265,7 +2265,7 @@ index 71ea121661874c11147bea0f9a4a147583f312fc..b6146726e767fa0401da3d7f5bbbf95b
                      if (this.remainingFireTicks <= 0) {
                          this.setRemainingFireTicks(-this.getFireImmuneTicks());
                      }
-@@ -1399,32 +1434,82 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -1398,32 +1433,82 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      }
  
      private Vec3 collide(Vec3 movement) {
@@ -2364,7 +2364,7 @@ index 71ea121661874c11147bea0f9a4a147583f312fc..b6146726e767fa0401da3d7f5bbbf95b
      }
  
      public static Vec3 collideBoundingBox(@Nullable Entity entity, Vec3 movement, AABB entityBoundingBox, Level world, List<VoxelShape> collisions) {
-@@ -2629,11 +2714,70 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -2628,11 +2713,70 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              float f = this.dimensions.width * 0.8F;
              AABB axisalignedbb = AABB.ofSize(this.getEyePosition(), (double) f, 1.0E-6D, (double) f);
  
@@ -2440,7 +2440,7 @@ index 71ea121661874c11147bea0f9a4a147583f312fc..b6146726e767fa0401da3d7f5bbbf95b
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index e29d1801f15c4c5680b683783e97a7aae3da753e..1e42372f038757b48990643aa2f118be415e0463 100644
+index 5bda9612cbc7c233ad0195cb4e943de063130d00..81b54fd9f867666d688068d39344c7e19ed639c3 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -353,7 +353,7 @@ public class ArmorStand extends LivingEntity {
@@ -2600,10 +2600,10 @@ index a25497eec004add7408a63b1a0f09e3fa443b324..9f892de55ab03367daed4c30cc44c9dd
  
      // Paper start
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 2d2ef8455ea650baa1db74135c9321d97d10d12e..b023626467fc1f507d979653098bf30b18bd47c3 100644
+index 38ad089c87bcc3f81998142e49edae4f4fad8ba9..8c363306b5dac302ab3c26a245aa4a768b304ed4 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -300,6 +300,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -299,6 +299,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
          this.chunkPacketBlockController = this.paperConfig().anticheat.antiXray.enabled ? new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
@@ -2613,11 +2613,11 @@ index 2d2ef8455ea650baa1db74135c9321d97d10d12e..b023626467fc1f507d979653098bf30b
 +        // Paper end - optimise collisions
      }
  
-     // Paper start
-@@ -341,6 +345,370 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     // Paper start - Cancel hit for vanished players
+@@ -340,6 +344,370 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return true;
      }
-     // Paper end
+     // Paper end - Cancel hit for vanished players
 +    // Paper start - optimise collisions
 +    public final int minSection;
 +    public final int maxSection;
@@ -2985,7 +2985,7 @@ index 2d2ef8455ea650baa1db74135c9321d97d10d12e..b023626467fc1f507d979653098bf30b
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -961,7 +1329,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -960,7 +1328,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      @Override
      public boolean noCollision(@Nullable Entity entity, AABB box) {
          if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return false;
@@ -3018,7 +3018,7 @@ index af62781cc96354c87aa63d4f03f9e25b81959081..6c4fd56956982eee743b4dea4e8b9258
  
      public boolean propagatesSkylightDown(BlockState state, BlockGetter world, BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 10e8532ed21895f98808c86fa2ae5a2e41d3965f..5b5a472e446e21f46e5f92c3e1fd79498a1aa4a6 100644
+index d1d00b9a078ee1f5a6c5dd51c2f0409d12c85c26..100c2629f2746fc00435f60998dba70135637ef7 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -882,6 +882,10 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -3030,7 +3030,7 @@ index 10e8532ed21895f98808c86fa2ae5a2e41d3965f..5b5a472e446e21f46e5f92c3e1fd7949
 +            this.id2 = it.unimi.dsi.fastutil.HashCommon.murmurHash3(it.unimi.dsi.fastutil.HashCommon.murmurHash3(ID_GENERATOR.getAndIncrement() + RANDOM_OFFSET) + RANDOM_OFFSET);
 +            // Paper end - optimise collisions
          }
-         // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
+         // Paper start - Perf: impl cached craft block data, lazy load to fix issue with loading at the wrong time
          private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
 @@ -930,6 +934,52 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.conditionallyFullOpaque;

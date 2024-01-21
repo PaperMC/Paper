@@ -23,7 +23,7 @@ Modified isEmpty to use the isEmpty() method instead of the slightly confusing s
 The point of this is readability, but does have a side-benefit of a small microptimization
 
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 5607616c933556de00bfb4218ba75ee477bb2201..27bfddd847175717697fb589b820ec5a81e08578 100644
+index 49e3252d6af633d69bdf05ce71dc2a1b3d24f05a..6a3961350030e63b27512261402f675c3cd78485 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -634,7 +634,7 @@ public abstract class PlayerList {
@@ -36,7 +36,7 @@ index 5607616c933556de00bfb4218ba75ee477bb2201..27bfddd847175717697fb589b820ec5a
  
              ichatmutablecomponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipbanentry.getReason());
 diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
-index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..665120a62525f56912263a3e1b6f12f6c3e15dec 100644
+index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..35f973cc2c0989256fa21abaf0327c2f36dbe4c9 100644
 --- a/src/main/java/net/minecraft/server/players/StoredUserList.java
 +++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
 @@ -31,7 +31,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
@@ -44,69 +44,61 @@ index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..665120a62525f56912263a3e1b6f12f6
      private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
      private final File file;
 -    private final Map<String, V> map = Maps.newHashMap();
-+    private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - replace HashMap is ConcurrentHashMap
++    private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - Use ConcurrentHashMap in JsonList
  
      public StoredUserList(File file) {
          this.file = file;
-@@ -54,8 +54,13 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -54,8 +54,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
  
      @Nullable
      public V get(K key) {
 -        this.removeExpired();
 -        return (V) this.map.get(this.getKeyForUser(key)); // CraftBukkit - fix decompile error
-+        // Paper start
-+        // this.g();
-+        // return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
++        // Paper start - Use ConcurrentHashMap in JsonList
 +        return (V) this.map.computeIfPresent(this.getKeyForUser(key), (k, v) -> {
 +            return v.hasExpired() ? null : v;
 +        });
-+        // Paper end
++        // Paper end - Use ConcurrentHashMap in JsonList
      }
  
      public void remove(K key) {
-@@ -78,7 +83,8 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -78,7 +81,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      }
  
      public boolean isEmpty() {
 -        return this.map.size() < 1;
-+        // return this.d.size() < 1; // Paper
-+        return this.map.isEmpty(); // Paper - readability is the goal. As an aside, isEmpty() uses only sumCount() and a comparison. size() uses sumCount(), casts, and boolean logic
++        return this.map.isEmpty(); // Paper - Use ConcurrentHashMap in JsonList
      }
  
      protected String getKeyForUser(K profile) {
-@@ -90,14 +96,14 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -90,25 +93,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      }
  
      private void removeExpired() {
 -        List<K> list = Lists.newArrayList();
 -        Iterator iterator = this.map.values().iterator();
-+        /*List<K> list = Lists.newArrayList();
-+        Iterator iterator = this.d.values().iterator();
- 
-         while (iterator.hasNext()) {
-             V v0 = (V) iterator.next(); // CraftBukkit - decompile error
- 
-             if (v0.hasExpired()) {
+-
+-        while (iterator.hasNext()) {
+-            V v0 = (V) iterator.next(); // CraftBukkit - decompile error
+-
+-            if (v0.hasExpired()) {
 -                list.add(v0.getUser());
-+                list.add(v0.getKey());
-             }
-         }
- 
-@@ -106,9 +112,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
-         while (iterator.hasNext()) {
-             K k0 = (K) iterator.next(); // CraftBukkit - decompile error
- 
+-            }
+-        }
+-
+-        iterator = list.iterator();
+-
+-        while (iterator.hasNext()) {
+-            K k0 = (K) iterator.next(); // CraftBukkit - decompile error
+-
 -            this.map.remove(this.getKeyForUser(k0));
 -        }
-+            this.d.remove(this.a(k0));
-+        }*/
- 
-+        this.map.values().removeIf(StoredUserEntry::hasExpired);
-+        // Paper end
+-
++        this.map.values().removeIf(StoredUserEntry::hasExpired); // Paper - Use ConcurrentHashMap in JsonList
      }
  
      protected abstract StoredUserEntry<K> createEntry(JsonObject json);
-@@ -118,6 +126,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -118,6 +103,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      }
  
      public void save() throws IOException {

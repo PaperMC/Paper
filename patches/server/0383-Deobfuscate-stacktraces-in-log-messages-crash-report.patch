@@ -495,7 +495,7 @@ index 52eb3176437113f9a0ff85d10ce5c2415e1b5570..b54ddd0ba0b001fbcb1838a838ca4890
          }
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 93d3f29b08c79479c27d3f39e6c799c705e69902..38650109c1d2683a27da5788dc6013d8d0db26ad 100644
+index c66fc75fb88c4f0a4273d69009a4e6defb0b29e9..b99dbe3878df8f67a6920195088c00a01289a79f 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -75,13 +75,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -525,7 +525,7 @@ index 93d3f29b08c79479c27d3f39e6c799c705e69902..38650109c1d2683a27da5788dc6013d8
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
-index 2907536f8f9b4b9dccb96f8b4f19d75fa3c5b864..b5b228e67284baad3639b283595427a819bb1a44 100644
+index 61f05f34ca33837c643f2915e753ec3935a38314..85b8be8ffac0fb40e9cae0528271ed41473811c8 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
 @@ -47,7 +47,14 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
@@ -545,7 +545,7 @@ index 2907536f8f9b4b9dccb96f8b4f19d75fa3c5b864..b5b228e67284baad3639b283595427a8
                          throw new SkipPacketException(var13);
                      }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index c9cca6ba3500791485bf19155156c38c24f1c761..684e9e9d78f0d410176fa8b9c9d0fbfda6a156dc 100644
+index 0e2978b6e4f03932c4ebdf1309d20454b9130132..ab84c4b098184370c8b63cbae687116a7b077cf5 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -194,6 +194,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -556,30 +556,6 @@ index c9cca6ba3500791485bf19155156c38c24f1c761..684e9e9d78f0d410176fa8b9c9d0fbfd
          // Paper start - initialize global and world-defaults configuration
          this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
          this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
-diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 46101e6bef0f81968cb194303e19e437a3417733..1bab7d1c76a087e5bd22d7adbee5e065e8e2241e 100644
---- a/src/main/java/net/minecraft/server/level/ServerLevel.java
-+++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -222,7 +222,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
-     public final UUID uuid;
-     public boolean hasPhysicsEvent = true; // Paper
-     public static Throwable getAddToWorldStackTrace(Entity entity) {
--        return new Throwable(entity + " Added to world at " + new java.util.Date());
-+        final Throwable thr = new Throwable(entity + " Added to world at " + new java.util.Date());
-+        io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
-+        return thr;
-     }
- 
-     @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
-@@ -1492,7 +1494,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         if (entity.isRemoved()) {
-             // Paper start
-             if (DEBUG_ENTITIES) {
--                new Throwable("Tried to add entity " + entity + " but it was marked as removed already").printStackTrace(); // CraftBukkit
-+                io.papermc.paper.util.TraceUtil.dumpTraceForThread("Tried to add entity " + entity + " but it was marked as removed already"); // CraftBukkit
-                 getAddToWorldStackTrace(entity).printStackTrace();
-             }
-             // Paper end
 diff --git a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 index d130f843975236018df4fa2ccc3ca6aaca7a06b8..76f31845fe50200d09e5ab6a6c08da00444414ad 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
@@ -633,7 +609,7 @@ index 14bd0b94ece3f826f822b4900c7250ebdc27d937..59eb65e207ff0206b0dfad6f2dcffe78
                              }
                         }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 45ecda3b67025881a145d40a5291c34e5a1f9590..27e8ee4507460b1cc72de692b41562b9f4f13929 100644
+index 4891073602609fc2709715460e0675a7cc2a4cdd..d85ed706703e50f76df8db414827ccd41a5985d9 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -599,7 +599,7 @@ public class LevelChunk extends ChunkAccess {

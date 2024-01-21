@@ -5,7 +5,7 @@ Subject: [PATCH] Vanished players don't have rights
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-index e8620ad6be2dda7fe288f884c4ae88a924be4a62..01a2c6c3ee4e1500b6ee9986943f84dbe8663860 100644
+index e8620ad6be2dda7fe288f884c4ae88a924be4a62..75f08dcce4ac923678bf8c1f25ca02b0efbab7c2 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 @@ -237,6 +237,15 @@ public abstract class Projectile extends Entity implements TraceableEntity {
@@ -20,12 +20,12 @@ index e8620ad6be2dda7fe288f884c4ae88a924be4a62..01a2c6c3ee4e1500b6ee9986943f84db
 +                    return false;
 +                }
 +            }
-+            // Paper end
++            // Paper end - Cancel hit for vanished players
              return entity1 == null || this.leftOwner || !entity1.isPassengerOfSameVehicle(entity);
          }
      }
 diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
-index a6638e626600e4304a973497a39e3fac52203b16..e68b7a1b03783e4f9de24c5ae8773fc359bd2d37 100644
+index a6638e626600e4304a973497a39e3fac52203b16..c19069f65a9ecbc9000ea4333417a2df4ace1007 100644
 --- a/src/main/java/net/minecraft/world/item/BlockItem.java
 +++ b/src/main/java/net/minecraft/world/item/BlockItem.java
 @@ -197,7 +197,8 @@ public class BlockItem extends Item {
@@ -33,20 +33,20 @@ index a6638e626600e4304a973497a39e3fac52203b16..e68b7a1b03783e4f9de24c5ae8773fc3
          CollisionContext voxelshapecollision = entityhuman == null ? CollisionContext.empty() : CollisionContext.of(entityhuman);
          // CraftBukkit start - store default return
 -        boolean defaultReturn = (!this.mustSurvive() || state.canSurvive(context.getLevel(), context.getClickedPos())) && context.getLevel().isUnobstructed(state, context.getClickedPos(), voxelshapecollision);
-+        Level world = context.getLevel(); // Paper
-+        boolean defaultReturn = (!this.mustSurvive() || state.canSurvive(context.getLevel(), context.getClickedPos())) && world.checkEntityCollision(state, entityhuman, voxelshapecollision, context.getClickedPos(), true); // Paper
++        Level world = context.getLevel(); // Paper - Cancel hit for vanished players
++        boolean defaultReturn = (!this.mustSurvive() || state.canSurvive(context.getLevel(), context.getClickedPos())) && world.checkEntityCollision(state, entityhuman, voxelshapecollision, context.getClickedPos(), true); // Paper - Cancel hit for vanished players
          org.bukkit.entity.Player player = (context.getPlayer() instanceof ServerPlayer) ? (org.bukkit.entity.Player) context.getPlayer().getBukkitEntity() : null;
  
          BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(context.getLevel(), context.getClickedPos()), player, CraftBlockData.fromData(state), defaultReturn);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 4751f83571688cf1e0aa669accc813942d85c60c..4fb29ca40e1caba3f205afc13fb4d7a95fd81ce6 100644
+index 4fead0be6e8b754d0bafa1a988207fb8829b9180..30c69940c331f12dfe732052fcd917ea9231362f 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -276,6 +276,45 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
      }
  
-+    // Paper start
++    // Paper start - Cancel hit for vanished players
 +    // ret true if no collision
 +    public final boolean checkEntityCollision(BlockState data, Entity source, net.minecraft.world.phys.shapes.CollisionContext voxelshapedcollision,
 +                                              BlockPos position, boolean checkCanSee) {
@@ -84,12 +84,12 @@ index 4751f83571688cf1e0aa669accc813942d85c60c..4fb29ca40e1caba3f205afc13fb4d7a9
 +
 +        return true;
 +    }
-+    // Paper end
++    // Paper end - Cancel hit for vanished players
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 49b6b109eec1220b8d669adc435baf5636cba9cd..c5736eb070209d0ecad1007e4c4c633c4615be83 100644
+index 0b847125f67e19e6f0bdc6d0f2fcc8c5ad720fe9..712c92120d2d4b8188b47141e6f0252ad57e66d8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -1368,6 +1368,14 @@ public class CraftEventFactory {

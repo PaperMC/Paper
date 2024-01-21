@@ -19,22 +19,22 @@ where generation happened directly to a ServerLevel and the
 entity still has the flag set.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index fa16260652c0c47df2a02f728850d6e949ae774f..9b0b2510edb4984b0714244bbe513e077af7b455 100644
+index 56f80db3dccc9db7bb5d5cb194fcf6af39c92aac..f27c9f99e70d45c433a348dd315bb31b44fefa78 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1681,6 +1681,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1676,6 +1676,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
      // CraftBukkit start
      private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
          org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
 +        entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
-         // Paper start
+         // Paper start - extra debug info
          if (entity.valid) {
-             MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable());
+             MinecraftServer.LOGGER.error("Attempted Double World add on {}", entity, new Throwable());
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index f0e40ea053ca7b6749b443b2733271f71755329b..a70633d9585f94e673c58fc69660d984ca169561 100644
+index 39b1fe633a301d8cf948e5d63c2cf8a26a4b8854..5dabf6c4ba63b82aefa22cf41ec65dcf85779fe9 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -713,7 +713,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -712,7 +712,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
          if (pose == this.getPose()) {
              return;
          }
@@ -68,7 +68,7 @@ index dd4cf9011bf48623e95d5d0f3ff27ee962c88200..a039217f9293ad3b0cc74c49450472eb
          }, () -> {
              EntityType.LOGGER.warn("Skipping Entity with id {}", nbt.getString("id"));
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index eb0e6cff1d93b06fea3e9b28a4ea1067e416183c..6860e588ad9daaf3d9afa11132967a50eeefe860 100644
+index efbb37255885badf6908cad948614df7beda9712..e937ace0c4c1097de3f95198b1bc1830dbc74658 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -1134,6 +1134,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
