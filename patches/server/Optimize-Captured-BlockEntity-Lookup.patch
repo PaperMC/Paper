@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 6 Apr 2019 10:16:48 -0400
-Subject: [PATCH] Optimize Captured TileEntity Lookup
+Subject: [PATCH] Optimize Captured BlockEntity Lookup
 
 upstream was doing a containsKey/get pattern, and always doing it at that.
 that scenario is only even valid if were in the middle of a block place.
@@ -19,12 +19,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public BlockEntity getBlockEntity(BlockPos blockposition, boolean validate) {
 -        if (this.capturedTileEntities.containsKey(blockposition)) {
 -            return this.capturedTileEntities.get(blockposition);
-+        // Paper start - Optimize capturedTileEntities lookup
++        // Paper start - Perf: Optimize capturedTileEntities lookup
 +        net.minecraft.world.level.block.entity.BlockEntity blockEntity;
 +        if (!this.capturedTileEntities.isEmpty() && (blockEntity = this.capturedTileEntities.get(blockposition)) != null) {
 +            return blockEntity;
          }
-+        // Paper end
++        // Paper end - Perf: Optimize capturedTileEntities lookup
          // CraftBukkit end
          return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && !io.papermc.paper.util.TickThread.isTickThread() ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE)); // Paper - rewrite chunk system
      }

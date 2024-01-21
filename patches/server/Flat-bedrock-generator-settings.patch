@@ -108,7 +108,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      CauldronInteraction.bootStrap();
                      // Paper start
                      BuiltInRegistries.bootStrap(() -> {
-+                        io.papermc.paper.world.worldgen.OptionallyFlatBedrockConditionSource.bootstrap(); // Paper - optional flat bedrock
++                        io.papermc.paper.world.worldgen.OptionallyFlatBedrockConditionSource.bootstrap(); // Paper - Flat bedrock generator settings
                          io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
                      });
                      // Paper end
@@ -121,7 +121,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void buildSurface(WorldGenRegion region, StructureManager structures, RandomState noiseConfig, ChunkAccess chunk) {
          if (!SharedConstants.debugVoidTerrain(chunk.getPos())) {
 -            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region);
-+            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region, region.getMinecraftWorld()); // Paper
++            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region, region.getMinecraftWorld()); // Paper - Flat bedrock generator settings
  
              this.buildSurface(chunk, worldgenerationcontext, noiseConfig, structures, region.getBiomeManager(), region.registryAccess().registryOrThrow(Registries.BIOME), Blender.of(region));
          }
@@ -130,7 +130,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          });
          Aquifer aquifer = noisechunk.aquifer();
 -        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk, noiseConfig, ((NoiseGeneratorSettings) this.settings.value()).surfaceRule());
-+        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk, noiseConfig, ((NoiseGeneratorSettings) this.settings.value()).surfaceRule(), chunkRegion.getMinecraftWorld()); // Paper
++        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk, noiseConfig, ((NoiseGeneratorSettings) this.settings.value()).surfaceRule(), chunkRegion.getMinecraftWorld()); // Paper - Flat bedrock generator settings
          CarvingMask carvingmask = ((ProtoChunk) chunk).getOrCreateCarvingMask(carverStep);
  
          for (int j = -8; j <= 8; ++j) {
@@ -142,14 +142,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public class WorldGenerationContext {
      private final int minY;
      private final int height;
-+    private final @javax.annotation.Nullable net.minecraft.world.level.Level level; // Paper
++    private final @javax.annotation.Nullable net.minecraft.world.level.Level level; // Paper - Flat bedrock generator settings
  
 -    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world) {
-+    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world) { this(generator, world, null); } // Paper
-+    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level level) { // Paper
++    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world) { this(generator, world, null); } // Paper - Flat bedrock generator settings
++    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level level) { // Paper - Flat bedrock generator settings
          this.minY = Math.max(world.getMinBuildHeight(), generator.getMinY());
          this.height = Math.min(world.getHeight(), generator.getGenDepth());
-+        this.level = level; // Paper
++        this.level = level; // Paper - Flat bedrock generator settings
      }
  
      public int getMinGenY() {
@@ -158,14 +158,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.height;
      }
 +
-+    // Paper start
++    // Paper start - Flat bedrock generator settings
 +    public net.minecraft.world.level.Level getWorld() {
 +        if (this.level == null) {
 +            throw new NullPointerException("WorldGenerationContext was initialized without a Level, but WorldGenerationContext#getWorld was called");
 +        }
 +        return this.level;
 +    }
-+    // Paper end
++    // Paper end - Flat bedrock generator settings
  }
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/carver/CarvingContext.java b/src/main/java/net/minecraft/world/level/levelgen/carver/CarvingContext.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -177,8 +177,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    public CarvingContext(NoiseBasedChunkGenerator noiseChunkGenerator, RegistryAccess registryManager, LevelHeightAccessor heightLimitView, NoiseChunk chunkNoiseSampler, RandomState noiseConfig, SurfaceRules.RuleSource materialRule) {
 -        super(noiseChunkGenerator, heightLimitView);
-+    public CarvingContext(NoiseBasedChunkGenerator noiseChunkGenerator, RegistryAccess registryManager, LevelHeightAccessor heightLimitView, NoiseChunk chunkNoiseSampler, RandomState noiseConfig, SurfaceRules.RuleSource materialRule, @javax.annotation.Nullable net.minecraft.world.level.Level level) { // Paper
-+        super(noiseChunkGenerator, heightLimitView, level); // Paper
++    public CarvingContext(NoiseBasedChunkGenerator noiseChunkGenerator, RegistryAccess registryManager, LevelHeightAccessor heightLimitView, NoiseChunk chunkNoiseSampler, RandomState noiseConfig, SurfaceRules.RuleSource materialRule, @javax.annotation.Nullable net.minecraft.world.level.Level level) { // Paper - Flat bedrock generator settings
++        super(noiseChunkGenerator, heightLimitView, level); // Paper - Flat bedrock generator settings
          this.registryAccess = registryManager;
          this.noiseChunk = chunkNoiseSampler;
          this.randomState = noiseConfig;
@@ -191,7 +191,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public PlacementContext(WorldGenLevel world, ChunkGenerator generator, Optional<PlacedFeature> placedFeature) {
 -        super(generator, world);
-+        super(generator, world, world.getLevel()); // Paper
++        super(generator, world, world.getLevel()); // Paper - Flat bedrock generator settings
          this.level = world;
          this.generator = generator;
          this.topFeature = placedFeature;

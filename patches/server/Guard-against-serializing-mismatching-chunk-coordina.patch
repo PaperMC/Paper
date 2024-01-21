@@ -24,7 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return new ChunkPos(chunkData.getInt("xPos"), chunkData.getInt("zPos"));
 +        }
 +    }
-+    // Paper end
++    // Paper end - guard against serializing mismatching coordinates
      // Paper start
      public static final class InProgressChunkHolder {
  
@@ -33,7 +33,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static InProgressChunkHolder loadChunk(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt, boolean distinguish) {
          // Paper end
 -        ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos"));
-+        ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - diff on change, see ChunkSerializer#getChunkCoordinate
++        ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
  
          if (!Objects.equals(chunkPos, chunkcoordintpair1)) {
              ChunkSerializer.LOGGER.error("Chunk file at {} is in the wrong location; relocating. (Expected {}, got {})", new Object[]{chunkPos, chunkPos, chunkcoordintpair1});
@@ -45,13 +45,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      // Paper start - async chunk io
      public void write(ChunkPos chunkPos, CompoundTag nbt) throws IOException {
-+        // Paper start
++        // Paper start - guard against serializing mismatching coordinates
 +        if (nbt != null && !chunkPos.equals(ChunkSerializer.getChunkCoordinate(nbt))) {
 +            String world = (this instanceof net.minecraft.server.level.ChunkMap) ? ((net.minecraft.server.level.ChunkMap)this).level.getWorld().getName() : null;
 +            throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + chunkPos.toString()
 +                + " but compound says coordinate is " + ChunkSerializer.getChunkCoordinate(nbt).toString() + (world == null ? " for an unknown world" : (" for world: " + world)));
 +        }
-+        // Paper end
++        // Paper end - guard against serializing mismatching coordinates
          this.regionFileCache.write(chunkPos, nbt);
          // Paper end - Async chunk loading
          if (this.legacyStructureHandler != null) {

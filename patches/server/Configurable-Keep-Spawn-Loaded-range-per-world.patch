@@ -13,43 +13,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      // CraftBukkit start
      public void prepareLevels(ChunkProgressListener worldloadlistener, ServerLevel worldserver) {
-+        ServerChunkCache chunkproviderserver = worldserver.getChunkSource(); // Paper
++        ServerChunkCache chunkproviderserver = worldserver.getChunkSource(); // Paper - Configurable Keep Spawn Loaded range per world
          // WorldServer worldserver = this.overworld();
          this.forceTicks = true;
          // CraftBukkit end
-+        if (worldserver.getWorld().getKeepSpawnInMemory()) { // Paper
++        if (worldserver.getWorld().getKeepSpawnInMemory()) { // Paper - Configurable Keep Spawn Loaded range per world
  
          MinecraftServer.LOGGER.info("Preparing start region for dimension {}", worldserver.dimension().location());
          BlockPos blockposition = worldserver.getSharedSpawnPos();
  
          worldloadlistener.updateSpawnPos(new ChunkPos(blockposition));
 -        ServerChunkCache chunkproviderserver = worldserver.getChunkSource();
-+        //ChunkProviderServer chunkproviderserver = worldserver.getChunkProvider(); // Paper - move up
++        //ChunkProviderServer chunkproviderserver = worldserver.getChunkProvider(); // Paper - Configurable Keep Spawn Loaded range per world; move up
  
          this.nextTickTimeNanos = Util.getNanos();
 -        // CraftBukkit start
 -        if (worldserver.getWorld().getKeepSpawnInMemory()) {
 -            chunkproviderserver.addRegionTicket(TicketType.START, new ChunkPos(blockposition), 11, Unit.INSTANCE);
--
--            while (chunkproviderserver.getTickingGenerated() != 441) {
--                // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
--                this.executeModerately();
--            }
--        }
-+        // Paper start - configurable spawn reason
++        // Paper start - Configurable Keep Spawn Loaded range per world
 +        int radiusBlocks = worldserver.paperConfig().spawn.keepSpawnLoadedRange * 16;
 +        int radiusChunks = radiusBlocks / 16 + ((radiusBlocks & 15) != 0 ? 1 : 0);
 +        int totalChunks = ((radiusChunks) * 2 + 1);
 +        totalChunks *= totalChunks;
 +        worldloadlistener.setChunkRadius(radiusBlocks / 16);
-+
+ 
+-            while (chunkproviderserver.getTickingGenerated() != 441) {
+-                // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
+-                this.executeModerately();
+-            }
+-        }
 +        worldserver.addTicketsForSpawn(radiusBlocks, blockposition);
-+        // Paper end
++        // Paper end - Configurable Keep Spawn Loaded range per world
  
          // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
          this.executeModerately();
          // Iterator iterator = this.levels.values().iterator();
-+        }
++        } // Paper - Configurable Keep Spawn Loaded range per world
  
          if (true) {
              ServerLevel worldserver1 = worldserver;
@@ -58,7 +57,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.executeModerately();
          // CraftBukkit end
 -        worldloadlistener.stop();
-+        if (worldserver.getWorld().getKeepSpawnInMemory()) worldloadlistener.stop(); // Paper
++        if (worldserver.getWorld().getKeepSpawnInMemory()) worldloadlistener.stop(); // Paper - Configurable Keep Spawn Loaded range per world
          // CraftBukkit start
          // this.updateMobSpawningFlags();
          worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
@@ -70,7 +69,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return ((MapIndex) this.getServer().overworld().getDataStorage().computeIfAbsent(MapIndex.factory(), "idcounts")).getFreeAuxValueForMap();
      }
  
-+    // Paper start - helper function for configurable spawn radius
++    // Paper start - Configurable Keep Spawn Loaded range per world
 +    public void addTicketsForSpawn(int radiusInBlocks, BlockPos spawn) {
 +        // In order to respect vanilla behavior, which is ensuring everything but the spawn border can tick, we add tickets
 +        // with level 31 for the non-border spawn chunks
@@ -135,11 +134,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            chunkproviderserver.removeRegionTicket(TicketType.START, new ChunkPos(spawn.offset(-radiusInBlocks, 0, z)), 1, Unit.INSTANCE); // level 32
 +        }
 +    }
-+    // Paper end
++    // Paper end - Configurable Keep Spawn Loaded range per world
 +
      public void setDefaultSpawnPos(BlockPos pos, float angle) {
 -        ChunkPos chunkcoordintpair = new ChunkPos(new BlockPos(this.levelData.getXSpawn(), 0, this.levelData.getZSpawn()));
-+        // Paper - configurable spawn radius
++        // Paper start - Configurable Keep Spawn Loaded range per world
 +        BlockPos prevSpawn = this.getSharedSpawnPos();
 +        //ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
  
@@ -163,7 +162,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      void stop();
 +
-+    void setChunkRadius(int radius); // Paper - allow changing chunk radius
++    void setChunkRadius(int radius); // Paper - Configurable Keep Spawn Loaded range per world
  }
 diff --git a/src/main/java/net/minecraft/server/level/progress/LoggerChunkProgressListener.java b/src/main/java/net/minecraft/server/level/progress/LoggerChunkProgressListener.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -180,13 +179,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private long nextTickTime = Long.MAX_VALUE;
  
      public LoggerChunkProgressListener(int radius) {
-+        // Paper start - Allow changing radius later for configurable spawn patch
++        // Paper start - Configurable Keep Spawn Loaded range per world
 +        this.setChunkRadius(radius); // Move to method
 +    }
 +
 +    @Override
 +    public void setChunkRadius(int radius) {
-+        // Paper end
++        // Paper end - Configurable Keep Spawn Loaded range per world
          int i = radius * 2 + 1;
          this.maxCount = i * i;
      }
