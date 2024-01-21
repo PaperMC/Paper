@@ -7,27 +7,27 @@ Prevents pathfinding from spamming failures for things such as
 arrow attacks.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-index 68edd488087a6ec1e65797cfbd4118bd0efbab50..b37415d45dda8e658c8995a4519e552dc378bb41 100644
+index 68edd488087a6ec1e65797cfbd4118bd0efbab50..a9922074b6aa6a9898615385bb11d2a758662970 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 @@ -192,9 +192,29 @@ public abstract class PathNavigation {
          return this.moveTo(this.createPath(x, y, z, 1), speed);
      }
  
-+    // Paper start - optimise pathfinding
++    // Paper start - Perf: Optimise pathfinding
 +    private int lastFailure = 0;
 +    private int pathfindFailures = 0;
-+    // Paper end
++    // Paper end - Perf: Optimise pathfinding
 +
      public boolean moveTo(Entity entity, double speed) {
-+        // Paper start - Pathfinding optimizations
++        // Paper start - Perf: Optimise pathfinding
 +        if (this.pathfindFailures > 10 && this.path == null && net.minecraft.server.MinecraftServer.currentTick < this.lastFailure + 40) {
 +            return false;
 +        }
-+        // Paper end
++        // Paper end - Perf: Optimise pathfinding
          Path path = this.createPath(entity, 1);
 -        return path != null && this.moveTo(path, speed);
-+        // Paper start - Pathfinding optimizations
++        // Paper start - Perf: Optimise pathfinding
 +        if (path != null && this.moveTo(path, speed)) {
 +            this.lastFailure = 0;
 +            this.pathfindFailures = 0;
@@ -37,7 +37,7 @@ index 68edd488087a6ec1e65797cfbd4118bd0efbab50..b37415d45dda8e658c8995a4519e552d
 +            this.lastFailure = net.minecraft.server.MinecraftServer.currentTick;
 +            return false;
 +        }
-+        // Paper end
++        // Paper end - Perf: Optimise pathfinding
      }
  
      public boolean moveTo(@Nullable Path path, double speed) {

@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 25 Apr 2020 06:46:35 -0400
-Subject: [PATCH] Fix numerous item duplication issues and teleport issues
+Subject: [PATCH] Fix item duplication and teleport issues
 
 This notably fixes the newest "Donkey Dupe", but also fixes a lot
 of dupe bugs in general around nether portals and entity world transfer
@@ -16,7 +16,7 @@ So even if something NEW comes up, it would be impossible to drop the
 same item twice because the source was destroyed.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b2dc3729a8312179d219bd93a755729c86f4dece..88632cf1baea828f6442ac37b8c13a3356445fe3 100644
+index b2dc3729a8312179d219bd93a755729c86f4dece..d13759736cf802cae56e68c11f09f15e1e08d09c 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2467,11 +2467,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
@@ -38,12 +38,12 @@ index b2dc3729a8312179d219bd93a755729c86f4dece..88632cf1baea828f6442ac37b8c13a33
      @Nullable
      public Entity teleportTo(ServerLevel worldserver, Vec3 location) {
          // CraftBukkit end
-+        // Paper start - fix bad state entities causing dupes
++        // Paper start - Fix item duplication and teleport issues
 +        if (!this.isAlive() || !this.valid) {
 +            LOGGER.warn("Illegal Entity Teleport " + this + " to " + worldserver + ":" + location, new Throwable());
 +            return null;
 +        }
-+        // Paper end
++        // Paper end - Fix item duplication and teleport issues
          if (this.level() instanceof ServerLevel && !this.isRemoved()) {
              this.level().getProfiler().push("changeDimension");
              // CraftBukkit start
@@ -51,11 +51,11 @@ index b2dc3729a8312179d219bd93a755729c86f4dece..88632cf1baea828f6442ac37b8c13a33
                  // CraftBukkit end
  
                  this.level().getProfiler().popPush("reloading");
-+                // Paper start - Change lead drop timing to prevent dupe
++                // Paper start - Fix item duplication and teleport issues
 +                if (this instanceof Mob) {
 +                    ((Mob) this).dropLeash(true, true); // Paper drop lead
 +                }
-+                // Paper end
++                // Paper end - Fix item duplication and teleport issues
                  Entity entity = this.getType().create(worldserver);
  
                  if (entity != null) {
@@ -75,12 +75,12 @@ index b2dc3729a8312179d219bd93a755729c86f4dece..88632cf1baea828f6442ac37b8c13a33
  
      public boolean canChangeDimensions() {
 -        return !this.isPassenger() && !this.isVehicle();
-+        return !this.isPassenger() && !this.isVehicle() && isAlive() && valid; // Paper
++        return !this.isPassenger() && !this.isVehicle() && isAlive() && valid; // Paper - Fix item duplication and teleport issues
      }
  
      public float getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState, float max) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index a4b1066bbb36cce7505e5e6dc033b0266ce85974..2fa60d96da53ca954dc1421745fafaeb2e806ed0 100644
+index d3bb5a6ee350043e7f5c173b9496c1d71b3957b1..0af0b62a4bd9b3c027a5a608b81831864d54fd11 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -1705,9 +1705,9 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -90,7 +90,7 @@ index a4b1066bbb36cce7505e5e6dc033b0266ce85974..2fa60d96da53ca954dc1421745fafaeb
 -                    if (this.deathScore >= 0 && entityliving != null) {
 -                        entityliving.awardKillScore(this, this.deathScore, damageSource);
 -                    }
-+                    // if (this.deathScore >= 0 && entityliving != null) { // Paper moved to be run earlier in #dropAllDeathLoot before destroying the drop items in CraftEventFactory#callEntityDeathEvent
++                    // if (this.deathScore >= 0 && entityliving != null) { // Paper - Fix item duplication and teleport issues; moved to be run earlier in #dropAllDeathLoot before destroying the drop items in CraftEventFactory#callEntityDeathEvent
 +                    //     entityliving.awardKillScore(this, this.deathScore, damageSource);
 +                    // }
                      // Paper start - clear equipment if event is not cancelled

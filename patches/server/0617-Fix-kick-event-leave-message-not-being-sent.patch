@@ -5,19 +5,19 @@ Subject: [PATCH] Fix kick event leave message not being sent
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index eabab52143ff490c4ec646628a9dc96cf15efb72..d848119476e5ba254ce86873f1d997d0fe3da876 100644
+index 61d439af863603c669c45f38045dbad9068f285a..ade79a794a7485e0141a430d62236daf1e566b21 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -273,7 +273,6 @@ public class ServerPlayer extends Player {
      public boolean joining = true;
      public boolean sentListPacket = false;
-     public boolean supressTrackerForLogin = false; // Paper
+     public boolean supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
 -    public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
      // CraftBukkit end
      public boolean isRealPlayer; // Paper
      public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 761dd36bcf0318e28613d852f95566879d835912..5d0500ee2740977c6b6eb89ed51e29b5a2e66760 100644
+index 3049377685ee4fe75f0c4b68eab39a916ac20785..f5f2d65d2e02b0d79352585d9d4ef588ab59dce7 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -77,6 +77,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -50,7 +50,7 @@ index 761dd36bcf0318e28613d852f95566879d835912..5d0500ee2740977c6b6eb89ed51e29b5
          MinecraftServer minecraftserver = this.server;
          Connection networkmanager = this.connection;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index c477c6c47d6b707fcee671152bfb516eeea2cebd..8fb479bcf55f71857404d9b34eef6cd26cf0babf 100644
+index 5dfebe60caa47af3bab4a667ca5d0b6438367161..fe8ba3890d5b21273aca68777de56d7f7f644c0d 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1882,6 +1882,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -96,7 +96,7 @@ index c477c6c47d6b707fcee671152bfb516eeea2cebd..8fb479bcf55f71857404d9b34eef6cd2
              this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(quitMessage), false);
              // Paper end
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 3e88b648cf4fcc19598fb50ca5651af1a52a0a84..60e60166485bc87a5ff9919f9c1603dc4eaeecc9 100644
+index 0f04b29ff000c0b0f0692eecf26675f5520d9e07..3f8f7d7db41b73d0d449b653d3ba55a097c00566 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -570,6 +570,11 @@ public abstract class PlayerList {

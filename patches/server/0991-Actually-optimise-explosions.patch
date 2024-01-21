@@ -34,7 +34,7 @@ The results indicate that this logic is 5 times faster than Vanilla
 and 2.3 times faster than Lithium.
 
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index d8a57d38d263e1d402327c7df21641b0f1ba0668..1fa02130dcb65b3109fde0cb612b538b1c4cd4cb 100644
+index 10f17478a148060ad2724bb5c79868cea3047ded..1fa02130dcb65b3109fde0cb612b538b1c4cd4cb 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
 @@ -111,6 +111,271 @@ public class Explosion {
@@ -370,7 +370,7 @@ index d8a57d38d263e1d402327c7df21641b0f1ba0668..1fa02130dcb65b3109fde0cb612b538b
                          for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
 -                            BlockPos blockposition = BlockPos.containing(d4, d5, d6);
 -                            BlockState iblockdata = this.level.getBlockState(blockposition);
--                            if (!iblockdata.isDestroyable()) continue; // Paper
+-                            if (!iblockdata.isDestroyable()) continue; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
 -                            FluidState fluid = iblockdata.getFluidState(); // Paper
 +                            // Paper start - optimise explosions
 +                            final int blockX = Mth.floor(d4);
@@ -403,11 +403,10 @@ index d8a57d38d263e1d402327c7df21641b0f1ba0668..1fa02130dcb65b3109fde0cb612b538b
 -                            if (optional.isPresent()) {
 -                                f -= ((Float) optional.get() + 0.3F) * 0.3F;
 -                            }
--
--                            if (f > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, blockposition, iblockdata, f)) {
 +                            if (!iblockdata.isDestroyable()) continue; // Paper
 +                            // Paper - optimise explosions
-+
+ 
+-                            if (f > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, blockposition, iblockdata, f)) {
 +                            f -= cachedBlock.resistance; // Paper - optimise explosions
 +
 +                            if (f > 0.0F && cachedBlock.shouldExplode == null) { // Paper - optimise explosions

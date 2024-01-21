@@ -10,19 +10,19 @@ When not per player it will use the Vanilla mechanic of one delay per
 world and the world age for the start day.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 26410f43c7bbb368d9ef7206d3b9759f86afba4b..4c17ed82554311d2a3c9eab7bf58c79044f71664 100644
+index 26410f43c7bbb368d9ef7206d3b9759f86afba4b..e6d9b3ddfaf60fce5e6232bd39c5b6307fa6aa7c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -249,6 +249,7 @@ public class ServerPlayer extends Player {
      public boolean wonGame;
      private int containerUpdateDelay; // Paper
      public long loginTime; // Paper
-+    public int patrolSpawnDelay; // Paper - per player patrol spawns
++    public int patrolSpawnDelay; // Paper - Pillager patrol spawn settings and per player options
      // Paper start - cancellable death event
      public boolean queueHealthUpdatePacket = false;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java
-index e5918fa3be107ac3a2fc8831fd78733a7506730a..a908652f1ebb426d265ef614746f70cd1e538268 100644
+index e5918fa3be107ac3a2fc8831fd78733a7506730a..60a301b4a21be91bb3c2b84728467a693017e28f 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java
 @@ -25,7 +25,7 @@ public class PatrolSpawner implements CustomSpawner {
@@ -30,7 +30,7 @@ index e5918fa3be107ac3a2fc8831fd78733a7506730a..a908652f1ebb426d265ef614746f70cd
      @Override
      public int tick(ServerLevel world, boolean spawnMonsters, boolean spawnAnimals) {
 -        if (world.paperConfig().entities.behavior.pillagerPatrols.disable) return 0; // Paper
-+        if (world.paperConfig().entities.behavior.pillagerPatrols.disable || world.paperConfig().entities.behavior.pillagerPatrols.spawnChance == 0) return 0; // Paper
++        if (world.paperConfig().entities.behavior.pillagerPatrols.disable || world.paperConfig().entities.behavior.pillagerPatrols.spawnChance == 0) return 0; // Paper - Pillager patrol spawn settings and per player options
          if (!spawnMonsters) {
              return 0;
          } else if (!world.getGameRules().getBoolean(GameRules.RULE_DO_PATROL_SPAWNING)) {
@@ -40,7 +40,7 @@ index e5918fa3be107ac3a2fc8831fd78733a7506730a..a908652f1ebb426d265ef614746f70cd
  
 -            --this.nextTick;
 -            if (this.nextTick > 0) {
-+            // Paper start - Patrol settings
++            // Paper start - Pillager patrol spawn settings and per player options
 +            // Random player selection moved up for per player spawning and configuration
 +            int j = world.players().size();
 +            if (j < 1) {
@@ -82,7 +82,7 @@ index e5918fa3be107ac3a2fc8831fd78733a7506730a..a908652f1ebb426d265ef614746f70cd
 -                    if (randomsource.nextInt(5) != 0) {
 +                if (days >= world.paperConfig().entities.behavior.pillagerPatrols.start.day && world.isDay()) {
 +                    if (randomsource.nextDouble() >= world.paperConfig().entities.behavior.pillagerPatrols.spawnChance) {
-+                        // Paper end
++                        // Paper end - Pillager patrol spawn settings and per player options
                          return 0;
                      } else {
 -                        int j = world.players().size();
