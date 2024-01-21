@@ -37,7 +37,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              MutableComponent ichatmutablecomponent = Component.literal(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
  
 -            if (Commands.LOGGER.isDebugEnabled()) {
-+            if (commandlistenerwrapper.getServer().isDebugging() || Commands.LOGGER.isDebugEnabled()) { // Paper
++            if (commandlistenerwrapper.getServer().isDebugging() || Commands.LOGGER.isDebugEnabled()) { // Paper - Debugging
                  Commands.LOGGER.error("Command exception: /{}", s, exception);
                  StackTraceElement[] astacktraceelement = exception.getStackTrace();
  
@@ -49,7 +49,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit start
      private boolean hasStopped = false;
      public volatile boolean hasFullyShutdown = false; // Paper
-+    private boolean hasLoggedStop = false; // Paper
++    private boolean hasLoggedStop = false; // Paper - Debugging
      private final Object stopLock = new Object();
      public final boolean hasStopped() {
          synchronized (this.stopLock) {
@@ -57,7 +57,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (this.hasStopped) return;
              this.hasStopped = true;
          }
-+        if (!hasLoggedStop && isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper
++        if (!hasLoggedStop && isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
          // Paper start - kill main thread, and kill it hard
          shutdownThread = Thread.currentThread();
          org.spigotmc.WatchdogThread.doStop(); // Paper
@@ -65,8 +65,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
      public void safeShutdown(boolean waitForShutdown, boolean isRestarting) {
          this.isRestarting = isRestarting;
-+        this.hasLoggedStop = true; // Paper
-+        if (isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper
++        this.hasLoggedStop = true; // Paper - Debugging
++        if (isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
          // Paper end
          this.running = false;
          if (waitForShutdown) {
@@ -78,11 +78,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.connection.resumeInboundAfterProtocolChange();
          } catch (Exception exception) {
              ServerConfigurationPacketListenerImpl.LOGGER.error("Couldn't place player in world", exception);
-+            // Paper start
++            // Paper start - Debugging
 +            if (MinecraftServer.getServer().isDebugging()) {
 +                exception.printStackTrace();
 +            }
-+            // Paper end
++            // Paper end - Debugging
              this.connection.send(new ClientboundDisconnectPacket(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA));
              this.connection.disconnect(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA);
          }
@@ -94,7 +94,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  plugin.getDescription().getFullName(),
                  "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
              ));
-+            if (console.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running"); // Paper
++            if (console.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running"); // Paper - Debugging
          }
          io.papermc.paper.plugin.PluginInitializerManager.reload(this.console); // Paper
          this.loadPlugins();

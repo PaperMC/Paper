@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 19 Apr 2020 00:05:46 -0400
-Subject: [PATCH] Fix Longstanding Broken behavior of PlayerJoinEvent
+Subject: [PATCH] Fire PlayerJoinEvent when Player is actually ready
 
 For years, plugin developers have had to delay many things they do
 inside of the PlayerJoinEvent by 1 tick to make it actually work.
@@ -35,13 +35,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 + ": " + entity  + (this.entityMap.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""), new Throwable());
              return;
          }
-+        if (entity instanceof ServerPlayer && ((ServerPlayer) entity).supressTrackerForLogin) return; // Delay adding to tracker until after list packets
-         // Paper end
+         // Paper end - ignore and warn about illegal addEntity calls instead of crashing server
++        if (entity instanceof ServerPlayer && ((ServerPlayer) entity).supressTrackerForLogin) return; // Paper - Fire PlayerJoinEvent when Player is actually ready; Delay adding to tracker until after list packets
          if (!(entity instanceof EnderDragonPart)) {
              EntityType<?> entitytypes = entity.getType();
+             int i = entitytypes.clientTrackingRange() * 16;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
@@ -50,7 +50,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public double maxHealthCache;
      public boolean joining = true;
      public boolean sentListPacket = false;
-+    public boolean supressTrackerForLogin = false; // Paper
++    public boolean supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
      public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
      // CraftBukkit end
      public boolean isRealPlayer; // Paper
@@ -62,12 +62,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.playersByUUID.put(player.getUUID(), player);
          // this.broadcastAll(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(entityplayer))); // CraftBukkit - replaced with loop below
  
-+        // Paper start - correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
++        // Paper start - Fire PlayerJoinEvent when Player is actually ready; correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
 +        player.supressTrackerForLogin = true;
 +        worldserver1.addNewPlayer(player);
 +        this.server.getCustomBossEvents().onPlayerConnect(player); // see commented out section below worldserver.addPlayerJoin(entityplayer);
 +        mountSavedVehicle(player, worldserver1, nbttagcompound);
-+        // Paper end
++        // Paper end - Fire PlayerJoinEvent when Player is actually ready
          // CraftBukkit start
          CraftPlayer bukkitPlayer = player.getBukkitEntity();
  
@@ -75,8 +75,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(entityplayer1)));
          }
          player.sentListPacket = true;
-+        player.supressTrackerForLogin = false; // Paper
-+        ((ServerLevel)player.level()).getChunkSource().chunkMap.addEntity(player); // Paper - track entity now
++        player.supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
++        ((ServerLevel)player.level()).getChunkSource().chunkMap.addEntity(player); // Paper - Fire PlayerJoinEvent when Player is actually ready; track entity now
          // CraftBukkit end
  
          player.getEntityData().refresh(player); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
@@ -84,11 +84,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              playerconnection.send(new ClientboundUpdateMobEffectPacket(player.getId(), mobeffect));
          }
  
-+        // Paper start - move vehicle into method so it can be called above - short circuit around that code
++        // Paper start - Fire PlayerJoinEvent when Player is actually ready; move vehicle into method so it can be called above - short circuit around that code
 +        onPlayerJoinFinish(player, worldserver1, s1);
 +    }
 +    private void mountSavedVehicle(ServerPlayer player, ServerLevel worldserver1, CompoundTag nbttagcompound) {
-+        // Paper end
++        // Paper end - Fire PlayerJoinEvent when Player is actually ready
          if (nbttagcompound != null && nbttagcompound.contains("RootVehicle", 10)) {
              CompoundTag nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
              // CraftBukkit start
@@ -96,10 +96,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
-+        // Paper start
++        // Paper start - Fire PlayerJoinEvent when Player is actually ready
 +    }
 +    public void onPlayerJoinFinish(ServerPlayer player, ServerLevel worldserver1, String s1) {
-+        // Paper end
++        // Paper end - Fire PlayerJoinEvent when Player is actually ready
          player.initInventoryMenu();
          // CraftBukkit - Moved from above, added world
          // Paper start - Add to collideRule team if needed
