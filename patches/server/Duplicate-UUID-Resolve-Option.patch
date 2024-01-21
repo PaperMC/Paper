@@ -32,29 +32,6 @@ But for those who are ok with leaving this inconsistent behavior, you may use WA
 
 It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
 
-diff --git a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
-+++ b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
-@@ -0,0 +0,0 @@ public final class ChunkSystem {
-     }
- 
-     public static void onEntityPreAdd(final ServerLevel level, final Entity entity) {
--
-+        // Paper start - duplicate uuid resolving
-+        if (net.minecraft.server.level.ChunkMap.checkDupeUUID(level, entity)) {
-+            return;
-+        }
-+        if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level().paperConfig().entities.spawning.duplicateUuid.mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.NOTHING) {
-+            if (((Entity) entity).addedToWorldStack != null) {
-+                ((Entity) entity).addedToWorldStack.printStackTrace();
-+            }
-+            net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((Entity) entity).printStackTrace();
-+        }
-+        // Paper end - duplicate uuid resolving
-     }
- 
-     public static void onChunkHolderCreate(final ServerLevel level, final ChunkHolder holder) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -90,24 +67,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            && Objects.equals(other.getEncodeId(), entity.getEncodeId())
 +            && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < level.paperConfig().entities.spawning.duplicateUuid.safeRegenDeleteRange
 +        ) {
-+            if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + " because it was near the duplicate and likely an actual duplicate. See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
 +            entity.discard();
 +            return true;
 +        }
-+        if (other != null && !other.isRemoved()) {
++        if (!other.isRemoved()) {
 +            switch (mode) {
 +                case SAFE_REGEN: {
 +                    entity.setUUID(java.util.UUID.randomUUID());
-+                    if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", regenerated UUID for " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
 +                    break;
 +                }
 +                case DELETE: {
-+                    if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
 +                    entity.discard();
 +                    return true;
 +                }
 +                default:
-+                    if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", doing nothing to " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
 +                    break;
 +            }
 +        }
