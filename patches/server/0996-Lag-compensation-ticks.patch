@@ -8,7 +8,7 @@ Areas affected by lag comepnsation:
  - Eating food items
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ffb87573b1c5df4e6f4d36d0331738da221e0f38..947190e48a05f1212c85a507e52a7f56618efaf6 100644
+index 5caa39b529c6c0798d91e8e8468b40988f6fb987..09cf38a5d98fee1b73116d671c765ce17eb306d3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -311,6 +311,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -30,13 +30,13 @@ index ffb87573b1c5df4e6f4d36d0331738da221e0f38..947190e48a05f1212c85a507e52a7f56
              net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
              worldserver.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index f66857ee0cdb3b110a0c3afedbc1c70bb3357a81..24145582ceb89406deb3d7fc3dfbe473c3d85229 100644
+index 9d65f0558c7c4db75ed6337dc241c01746933315..3cef73da0ac4cbf8104fa5dff8321f605287a580 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -570,6 +570,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
          return player != null && player.level() == this ? player : null;
      }
-     // Paper end
+     // Paper end - optimise getPlayerByUUID
 +    // Paper start - lag compensation
 +    private long lagCompensationTick = net.minecraft.server.MinecraftServer.SERVER_INIT;
 +
@@ -52,7 +52,7 @@ index f66857ee0cdb3b110a0c3afedbc1c70bb3357a81..24145582ceb89406deb3d7fc3dfbe473
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 27d22a6aef3f71179ea102062f1338cce5d46fea..52aadf7336c1486ccf0d192e27b742f9e63cfe9b 100644
+index 96dd68d55dbcb4f6bf3f3096802e48ca50ab766e..b8c0f11a29ebc738a935d78e7a1e19914d43b533 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -124,7 +124,7 @@ public class ServerPlayerGameMode {
@@ -65,7 +65,7 @@ index 27d22a6aef3f71179ea102062f1338cce5d46fea..52aadf7336c1486ccf0d192e27b742f9
  
          if (this.hasDelayedDestroy) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 768f1cb6b9a5f234be02f07a7ba84156e629fa03..5b2169737f831ba57ce7925cbe9a82c3cd712974 100644
+index a09ad0cdbc9f3eb2ac77836076292822991b3d08..3d8efaaeea5cf7582c23cbb48beecf8eaf98a03e 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3819,6 +3819,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -95,7 +95,7 @@ index 768f1cb6b9a5f234be02f07a7ba84156e629fa03..5b2169737f831ba57ce7925cbe9a82c3
  
 @@ -3885,7 +3894,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
-         if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper use override flag
+         if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper - Prevent consuming the wrong itemstack
              this.useItem = itemstack;
 -            this.useItemRemaining = itemstack.getUseDuration();
 +            // Paper start - lag compensate eating

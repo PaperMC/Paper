@@ -7,19 +7,19 @@ bypass the need to get a player chunk, then get the either,
 then unwrap it...
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 24d9a2c37db4bbf2585b33d06f5ea57eb2adf356..4039bd5a80bd2305082d21c0fe826f76d8beb4c4 100644
+index 488f7e2f1ab0312673983d9079b4d7d99eebe611..70f15e3af9e954483ab116500f84a9ee17f67ce4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -268,6 +268,12 @@ public class ServerChunkCache extends ChunkSource {
                  return this.getChunk(x, z, leastStatus, create);
              }, this.mainThreadProcessor).join();
          } else {
-+            // Paper start - optimise for loaded chunks
++            // Paper start - Perf: Optimise getChunkAt calls for loaded chunks
 +            LevelChunk ifLoaded = this.getChunkAtIfLoadedMainThread(x, z);
 +            if (ifLoaded != null) {
 +                return ifLoaded;
 +            }
-+            // Paper end
++            // Paper end - Perf: Optimise getChunkAt calls for loaded chunks
              ProfilerFiller gameprofilerfiller = this.level.getProfiler();
  
              gameprofilerfiller.incrementCounter("getChunk");
@@ -60,7 +60,7 @@ index 24d9a2c37db4bbf2585b33d06f5ea57eb2adf356..4039bd5a80bd2305082d21c0fe826f76
 -                    return null;
 -                }
 -            }
-+            return this.getChunkAtIfLoadedMainThread(chunkX, chunkZ); // Paper - optimise for loaded chunks
++            return this.getChunkAtIfLoadedMainThread(chunkX, chunkZ); // Paper - Perf: Optimise getChunkAt calls for loaded chunks
          }
      }
  

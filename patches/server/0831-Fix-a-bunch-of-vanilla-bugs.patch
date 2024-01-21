@@ -113,12 +113,12 @@ index 6cd6d69a20e95e344fc18ab67dc300824537a59b..2e2a7c2cf3081187da817479a9da3eb1
              }
          }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 534493aaddced9200e1618d5eabf2b176a1f35b6..a58c47b16254262ec705a8f986ef42c71503770d 100644
+index b303603178a9de5f14bede9e601f80cfb44ecc91..bf78917f1e356dc3b7d7bcedffab282978a35917 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -898,7 +898,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
-     // Paper end
+     // Paper end - Cache chunk status on disk
  
 -    boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) {
 +    public boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) { // Paper - public
@@ -126,7 +126,7 @@ index 534493aaddced9200e1618d5eabf2b176a1f35b6..a58c47b16254262ec705a8f986ef42c7
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 82a71a150c555dd4dfe0ce03a3addba53fda5387..9ef3445aadf98d205a60803f459d07c4ac820ba9 100644
+index 43d14fac84b932c0a5a94dd6b01c22c1a289b8c2..f594998de4ff40b56d039bc48721f6b53f0a1ec0 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1032,7 +1032,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -139,7 +139,7 @@ index 82a71a150c555dd4dfe0ce03a3addba53fda5387..9ef3445aadf98d205a60803f459d07c4
  
              if (!list.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index d27793e21f9352896a96d5ccfdd0281b0b102a03..6cf989b4827b78d25bcb0ad4b683b6b1569e12dd 100644
+index aad7e1d9e17a0daa8697c13d1ef8cf7331cdf001..142094dcdfd9ba1c4cb77107d17f4c6b28888e7e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -468,14 +468,14 @@ public class ServerPlayer extends Player {
@@ -160,7 +160,7 @@ index d27793e21f9352896a96d5ccfdd0281b0b102a03..6cf989b4827b78d25bcb0ad4b683b6b1
              while (!world.noCollision(this, this.getBoundingBox(), true) && this.getY() < (double) (world.getMaxBuildHeight() - 1)) { // Paper - make sure this loads chunks, we default to NOT loading now
                  this.setPos(this.getX(), this.getY() + 1.0D, this.getZ());
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index c14ab35c4336c025c242e8a350ac4b8d1b1d5c78..15f6bd2e61c02392e8383dc93d734990c8c7edca 100644
+index aad371a281486631151388ee2348ffaa2a465bc5..8b339ad425d4021b859126d763adf393cb0e86c5 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -92,7 +92,7 @@ public class ServerPlayerGameMode {
@@ -173,7 +173,7 @@ index c14ab35c4336c025c242e8a350ac4b8d1b1d5c78..15f6bd2e61c02392e8383dc93d734990
              this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
              this.level.updateSleepingPlayerList();
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 92b88e82e9a49a0e967a7e694f1d2f4ade8adbf1..fbf388fe93383daf5e87e54a8a413a2239bfdc69 100644
+index b1f13c4d8de125a56b76bc85ccced039ac3c4785..b8213713b54e0bfaa0ddca41ec76f6840c0e1d20 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -711,8 +711,10 @@ public abstract class PlayerList {
@@ -298,7 +298,7 @@ index 110dd5418b0512a2f27f0c4d5a5f1812356a6a12..5d247ac38fe8a61603b3d934f3000bcd
              }
  
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-index 7a990fb47f39da00026d3005d5bb11d3abd14026..ea5fffa7e045d854ce9522f00246e3746f40f028 100644
+index 56cc6ecf7f95687db7c7c062b4ee979bfe49844b..94dd97662ba07689fbfa16ef5c7d99fe12ce83de 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 @@ -252,7 +252,13 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
@@ -474,7 +474,7 @@ index 0813e7510c43ed6916e83635f2be6d39ce2feb5b..137ee0271f1d7adbf3c463b96e9c4627
      }
  }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-index d3e2fd7fcfeec133a7baa0007c979c9e379c2f10..1ef558bdd27e9b64413e64f0fa9c68a35f43c39d 100644
+index 83a5417d14e89c3e582e400543fe41f129bbbf3b..5ea2cad4031d69f0204e3094d9ac5d127ef2438c 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 @@ -291,7 +291,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name

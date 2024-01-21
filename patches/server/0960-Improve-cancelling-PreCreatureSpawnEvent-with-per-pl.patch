@@ -6,7 +6,7 @@ Subject: [PATCH] Improve cancelling PreCreatureSpawnEvent with per player mob
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 8c5364e6adecc01f4fa9dcd0b4fd18e81324d1a9..34edd2032abb9e444d7b67672dc72335216dbe82 100644
+index 2ef28c2506bb4490c04be35e71e0ebd17a2bee7c..198e1d360b2d76a2ec8bdcc3b1dc121a0d8430d4 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -386,8 +386,26 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -35,10 +35,10 @@ index 8c5364e6adecc01f4fa9dcd0b4fd18e81324d1a9..34edd2032abb9e444d7b67672dc72335
 -        return entityPlayer.mobCounts[mobCategory.ordinal()];
 +        return entityPlayer.mobCounts[mobCategory.ordinal()] + entityPlayer.mobBackoffCounts[mobCategory.ordinal()]; // Paper - per player mob count backoff
      }
-     // Paper end
+     // Paper end - Optional per player mob spawns
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 1483007b79e18107e41037c279e048f04f666d1d..5152979bf81345fc365e7b16028c7d970d2f5856 100644
+index 32129fdd5b2542a0acb828fb843fa4e44533946c..dfecd5531862109cd89cfd8a041a8beef70c1a6a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -539,7 +539,17 @@ public class ServerChunkCache extends ChunkSource {
@@ -61,19 +61,19 @@ index 1483007b79e18107e41037c279e048f04f666d1d..5152979bf81345fc365e7b16028c7d97
                      spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
                  } else {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 3abcb4470bbf8f83204532ff5f3f5e152866a9f0..e32a2ea53f61410f0470bdccf1e479af1a571469 100644
+index 1ff728159ba77145e14944a2fb453eab061ad01a..706af62b06c36d4bcc3fa1fea1dbf5dad0d53b54 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -260,6 +260,7 @@ public class ServerPlayer extends Player {
      public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
      public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper
-     // Paper end - mob spawning rework
+     // Paper end - Optional per player mob spawns
 +    public final int[] mobBackoffCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper - per player mob count backoff
  
      // CraftBukkit start
      public String displayName;
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 48cc5623973713e07d95639e5359fc15e59785cc..46d743db099e69e10f5534aafdd7aa5eda67dec9 100644
+index 6fbd136f4bbfa34ef88a7743c63a542ed0cc2c02..2d95450d664a60d11fdc962b0c85a9db7eb3363e 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -277,6 +277,11 @@ public final class NaturalSpawner {
@@ -86,5 +86,5 @@ index 48cc5623973713e07d95639e5359fc15e59785cc..46d743db099e69e10f5534aafdd7aa5e
 +                                    }
 +                                    // Paper end - per player mob count backoff
                                      if (doSpawning == PreSpawnStatus.ABORT) {
-                                         return j; // Paper
+                                         return j; // Paper - Optional per player mob spawns
                                      }

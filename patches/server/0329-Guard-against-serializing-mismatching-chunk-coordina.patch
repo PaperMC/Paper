@@ -6,7 +6,7 @@ Subject: [PATCH] Guard against serializing mismatching chunk coordinate
 Should help if something dumb happens
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 97cdd8cd7749185230471f34f7d1ce3abcd0fd11..982fb3ef071d6a66f16744717e8e146bef6d9e8c 100644
+index 97cdd8cd7749185230471f34f7d1ce3abcd0fd11..7862caa0f787634cec14af81fe1f39803a43f115 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -94,6 +94,18 @@ public class ChunkSerializer {
@@ -24,7 +24,7 @@ index 97cdd8cd7749185230471f34f7d1ce3abcd0fd11..982fb3ef071d6a66f16744717e8e146b
 +            return new ChunkPos(chunkData.getInt("xPos"), chunkData.getInt("zPos"));
 +        }
 +    }
-+    // Paper end
++    // Paper end - guard against serializing mismatching coordinates
      // Paper start
      public static final class InProgressChunkHolder {
  
@@ -33,25 +33,25 @@ index 97cdd8cd7749185230471f34f7d1ce3abcd0fd11..982fb3ef071d6a66f16744717e8e146b
      public static InProgressChunkHolder loadChunk(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt, boolean distinguish) {
          // Paper end
 -        ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos"));
-+        ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - diff on change, see ChunkSerializer#getChunkCoordinate
++        ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
  
          if (!Objects.equals(chunkPos, chunkcoordintpair1)) {
              ChunkSerializer.LOGGER.error("Chunk file at {} is in the wrong location; relocating. (Expected {}, got {})", new Object[]{chunkPos, chunkPos, chunkcoordintpair1});
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-index b4e7c9b317d532d4915932f8f79dfebf2b63ff16..e4b3a70ff9f906a10f2ba3c07642193ca3269db7 100644
+index b4e7c9b317d532d4915932f8f79dfebf2b63ff16..af8a8e85742497e8dac7a59a3cd5938e09580e45 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 @@ -178,6 +178,13 @@ public class ChunkStorage implements AutoCloseable {
  
      // Paper start - async chunk io
      public void write(ChunkPos chunkPos, CompoundTag nbt) throws IOException {
-+        // Paper start
++        // Paper start - guard against serializing mismatching coordinates
 +        if (nbt != null && !chunkPos.equals(ChunkSerializer.getChunkCoordinate(nbt))) {
 +            String world = (this instanceof net.minecraft.server.level.ChunkMap) ? ((net.minecraft.server.level.ChunkMap)this).level.getWorld().getName() : null;
 +            throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + chunkPos.toString()
 +                + " but compound says coordinate is " + ChunkSerializer.getChunkCoordinate(nbt).toString() + (world == null ? " for an unknown world" : (" for world: " + world)));
 +        }
-+        // Paper end
++        // Paper end - guard against serializing mismatching coordinates
          this.regionFileCache.write(chunkPos, nbt);
          // Paper end - Async chunk loading
          if (this.legacyStructureHandler != null) {
