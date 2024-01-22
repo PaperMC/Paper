@@ -37,7 +37,7 @@ index 114f4017c4133042178c57d424f10079163835dd..aa52b271bd556a29f774fde375b713d0
      private static final int LINEAR_LOOKUP_THRESHOLD = 8;
      public static final long NANOS_PER_MILLI = 1000000L;
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 09de1ca3802e97442bc090db0cc87fd833ad3a9f..9c500642eb2b59bf9aabd6b5d563e5fb15603056 100644
+index 64f7c3180a745a62bb5d71a42668cc67b5d56c3a..bbd8cf8b9f51cb5ca881a54df2e6d6227c0bfd6c 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 @@ -169,7 +169,7 @@ public class GameProfileCache {
@@ -45,12 +45,12 @@ index 09de1ca3802e97442bc090db0cc87fd833ad3a9f..9c500642eb2b59bf9aabd6b5d563e5fb
                  CompletableFuture<Optional<GameProfile>> completablefuture1 = CompletableFuture.supplyAsync(() -> {
                      return this.get(username);
 -                }, Util.backgroundExecutor()).whenCompleteAsync((optional, throwable) -> {
-+                }, Util.PROFILE_EXECUTOR).whenCompleteAsync((optional, throwable) -> { // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
++                }, Util.PROFILE_EXECUTOR).whenCompleteAsync((optional, throwable) -> { // Paper - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
                      this.requests.remove(username);
                  }, this.executor);
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
-index bffc770105800ba78c6d9bfb56ad9ad425f19910..92b770d10f34596ce52392a0db1ccd825108730b 100644
+index bffc770105800ba78c6d9bfb56ad9ad425f19910..d0b3a836de9830a4da534bedd9f94a16a82ef9c6 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 @@ -80,7 +80,7 @@ public class SkullBlockEntity extends BlockEntity {
@@ -58,12 +58,12 @@ index bffc770105800ba78c6d9bfb56ad9ad425f19910..92b770d10f34596ce52392a0db1ccd82
                  return Optional.empty();
              }
 -        }, Util.backgroundExecutor());
-+        }, Util.PROFILE_EXECUTOR); // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
++        }, Util.PROFILE_EXECUTOR); // Paper - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
-index 358af0121ce3d87a9f51da2bae0699034c1560b4..91e913f8652584ffab44c44d10c0e0c47707e261 100644
+index 358af0121ce3d87a9f51da2bae0699034c1560b4..edd340c66ea8cec1c76ba29f1deab14c4784a7e5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 +++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 @@ -122,7 +122,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
@@ -71,7 +71,7 @@ index 358af0121ce3d87a9f51da2bae0699034c1560b4..91e913f8652584ffab44c44d10c0e0c4
      @Override
      public CompletableFuture<PlayerProfile> update() {
 -        return CompletableFuture.supplyAsync(this::getUpdatedProfile, Util.backgroundExecutor());
-+        return CompletableFuture.supplyAsync(this::getUpdatedProfile, Util.PROFILE_EXECUTOR); // Paper - not a good idea to use BLOCKING OPERATIONS on the worldgen executor
++        return CompletableFuture.supplyAsync(this::getUpdatedProfile, Util.PROFILE_EXECUTOR); // Paper - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
      }
  
      private CraftPlayerProfile getUpdatedProfile() {

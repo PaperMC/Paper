@@ -5,7 +5,7 @@ Subject: [PATCH] Add EntityZapEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index 22f7318711041bfc2847d519933c46b9fd523d01..505e0031f2783192f1146b1b00249e7891c4f1ef 100644
+index 22f7318711041bfc2847d519933c46b9fd523d01..4034b8e7503f611dc9be121d8da2020ae7155b8c 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
 @@ -851,10 +851,17 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
@@ -13,22 +13,22 @@ index 22f7318711041bfc2847d519933c46b9fd523d01..505e0031f2783192f1146b1b00249e78
      public void thunderHit(ServerLevel world, LightningBolt lightning) {
          if (world.getDifficulty() != Difficulty.PEACEFUL) {
 -            Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning);
-+            // Paper - move log down, event can cancel
++            // Paper - Add EntityZapEvent; move log down, event can cancel
              Witch entitywitch = (Witch) EntityType.WITCH.create(world);
  
              if (entitywitch != null) {
-+                // Paper start
++                // Paper start - Add EntityZapEvent
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightning, entitywitch).isCancelled()) {
 +                    return;
 +                }
 +                if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Move down
-+                // Paper end
++                // Paper end - Add EntityZapEvent
 +
                  entitywitch.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
                  entitywitch.finalizeSpawn(world, world.getCurrentDifficultyAt(entitywitch.blockPosition()), MobSpawnType.CONVERSION, (SpawnGroupData) null, (CompoundTag) null);
                  entitywitch.setNoAi(this.isNoAi());
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 54c4a45d5f67c7ed6ce751b4985d9e920cf62008..6436da99daa22ace3cdee794d0dab09894c1d92c 100644
+index a0dc52c805a82e267b66502a480cf76bc82a20d4..18cd6963863d030e3c360f5e00e8786f28ee04b9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -1265,6 +1265,14 @@ public class CraftEventFactory {

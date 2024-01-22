@@ -6,19 +6,19 @@ Subject: [PATCH] Faster redstone torch rapid clock removal
 Only resize the the redstone torch list once, since resizing arrays / lists is costly
 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 9bb380e7c8973b4728b5d4aad663af9e477dda0c..48d3da58820c1d9259bc023ddd74e9632b3f62d1 100644
+index cd3a99585a471981b9fa1f614ddddfce570ee0e7..244c28cd52a177e798153bc6151f0fb0e5c51841 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -176,6 +176,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
      public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
-+    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
++    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
  
      public CraftWorld getWorld() {
          return this.world;
 diff --git a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
-index 68da47c3ec59518a4bbeb03c196ef0e7c6b5d049..6c49962e8f9e2a5fca50b33f3e3fff76fa36f907 100644
+index 68da47c3ec59518a4bbeb03c196ef0e7c6b5d049..1ec5f1e984b428b125f919576686c92538f34c8b 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
 @@ -24,7 +24,7 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
@@ -26,7 +26,7 @@ index 68da47c3ec59518a4bbeb03c196ef0e7c6b5d049..6c49962e8f9e2a5fca50b33f3e3fff76
      public static final MapCodec<RedstoneTorchBlock> CODEC = simpleCodec(RedstoneTorchBlock::new);
      public static final BooleanProperty LIT = BlockStateProperties.LIT;
 -    private static final Map<BlockGetter, List<RedstoneTorchBlock.Toggle>> RECENT_TOGGLES = new WeakHashMap();
-+    // Paper - Move the mapped list to World
++    // Paper - Faster redstone torch rapid clock removal; Move the mapped list to World
      public static final int RECENT_TOGGLE_TIMER = 60;
      public static final int MAX_RECENT_TOGGLES = 8;
      public static final int RESTART_DELAY = 160;
@@ -38,7 +38,7 @@ index 68da47c3ec59518a4bbeb03c196ef0e7c6b5d049..6c49962e8f9e2a5fca50b33f3e3fff76
 -
 -        while (list != null && !list.isEmpty() && world.getGameTime() - ((RedstoneTorchBlock.Toggle) list.get(0)).when > 60L) {
 -            list.remove(0);
-+        // Paper start
++        // Paper start - Faster redstone torch rapid clock removal
 +        java.util.ArrayDeque<RedstoneTorchBlock.Toggle> redstoneUpdateInfos = world.redstoneUpdateInfos;
 +        if (redstoneUpdateInfos != null) {
 +            RedstoneTorchBlock.Toggle curr;
@@ -46,7 +46,7 @@ index 68da47c3ec59518a4bbeb03c196ef0e7c6b5d049..6c49962e8f9e2a5fca50b33f3e3fff76
 +                redstoneUpdateInfos.poll();
 +            }
          }
-+        // Paper end
++        // Paper end - Faster redstone torch rapid clock removal
  
          // CraftBukkit start
          org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
@@ -57,7 +57,7 @@ index 68da47c3ec59518a4bbeb03c196ef0e7c6b5d049..6c49962e8f9e2a5fca50b33f3e3fff76
 -        List<RedstoneTorchBlock.Toggle> list = (List) RedstoneTorchBlock.RECENT_TOGGLES.computeIfAbsent(world, (iblockaccess) -> {
 -            return Lists.newArrayList();
 -        });
-+        // Paper start
++        // Paper start - Faster redstone torch rapid clock removal
 +        java.util.ArrayDeque<RedstoneTorchBlock.Toggle> list = world.redstoneUpdateInfos;
 +        if (list == null) {
 +            list = world.redstoneUpdateInfos = new java.util.ArrayDeque<>();

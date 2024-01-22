@@ -21,10 +21,10 @@ index 4f3c82f1b5ae24d5f70318fa96fae2a58ce7fd9f..45236a077d798d6a257a2e982b589011
  
                  return true;
 diff --git a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
-index 59bad6c92cc421dd05c7315e2ab694a669433ab4..b49e48fa6dd37b5eddb45877be90018ec9d23b0e 100644
+index 59bad6c92cc421dd05c7315e2ab694a669433ab4..ae70ad9d6c02fcb5631a3c45db283b29844bbb0d 100644
 --- a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
 +++ b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
-@@ -39,13 +39,67 @@ public class ExperienceOrb extends Entity {
+@@ -39,9 +39,63 @@ public class ExperienceOrb extends Entity {
      public int value;
      private int count;
      private Player followingPlayer;
@@ -35,11 +35,11 @@ index 59bad6c92cc421dd05c7315e2ab694a669433ab4..b49e48fa6dd37b5eddb45877be90018e
 +    public java.util.UUID triggerEntityId;
 +    public org.bukkit.entity.ExperienceOrb.SpawnReason spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
 +
-+    private void loadPaperNBT(CompoundTag nbttagcompound) {
-+        if (!nbttagcompound.contains("Paper.ExpData", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
++    private void loadPaperNBT(CompoundTag tag) {
++        if (!tag.contains("Paper.ExpData", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
 +            return;
 +        }
-+        CompoundTag comp = nbttagcompound.getCompound("Paper.ExpData");
++        CompoundTag comp = tag.getCompound("Paper.ExpData");
 +        if (comp.hasUUID("source")) {
 +            this.sourceEntityId = comp.getUUID("source");
 +        }
@@ -55,7 +55,7 @@ index 59bad6c92cc421dd05c7315e2ab694a669433ab4..b49e48fa6dd37b5eddb45877be90018e
 +            }
 +        }
 +    }
-+    private void savePaperNBT(CompoundTag nbttagcompound) {
++    private void savePaperNBT(CompoundTag tag) {
 +        CompoundTag comp = new CompoundTag();
 +        if (this.sourceEntityId != null) {
 +            comp.putUUID("source", this.sourceEntityId);
@@ -66,7 +66,7 @@ index 59bad6c92cc421dd05c7315e2ab694a669433ab4..b49e48fa6dd37b5eddb45877be90018e
 +        if (this.spawnReason != null && this.spawnReason != org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN) {
 +            comp.putString("reason", this.spawnReason.name());
 +        }
-+        nbttagcompound.put("Paper.ExpData", comp);
++        tag.put("Paper.ExpData", comp);
 +    }
  
 +    @io.papermc.paper.annotation.DoNotUse
@@ -75,25 +75,19 @@ index 59bad6c92cc421dd05c7315e2ab694a669433ab4..b49e48fa6dd37b5eddb45877be90018e
 +        this(world, x, y, z, amount, null, null);
 +    }
 +
-+    public ExperienceOrb(Level world, double d0, double d1, double d2, int i, @javax.annotation.Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @javax.annotation.Nullable Entity triggerId) {
-+        this(world, d0, d1, d2, i, reason, triggerId, null);
++    public ExperienceOrb(Level world, double x, double y, double z, int amount, @javax.annotation.Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @javax.annotation.Nullable Entity triggerId) {
++        this(world, x, y, z, amount, reason, triggerId, null);
 +    }
 +
-+    public ExperienceOrb(Level world, double d0, double d1, double d2, int i, @javax.annotation.Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @javax.annotation.Nullable Entity triggerId, @javax.annotation.Nullable Entity sourceId) {
++    public ExperienceOrb(Level world, double x, double y, double z, int amount, @javax.annotation.Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @javax.annotation.Nullable Entity triggerId, @javax.annotation.Nullable Entity sourceId) {
          this(EntityType.EXPERIENCE_ORB, world);
--        this.setPos(x, y, z);
 +        this.sourceEntityId = sourceId != null ? sourceId.getUUID() : null;
 +        this.triggerEntityId = triggerId != null ? triggerId.getUUID() : null;
 +        this.spawnReason = reason != null ? reason : org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
 +        // Paper end
-+        this.setPos(d0, d1, d2);
+         this.setPos(x, y, z);
          this.setYRot((float) (this.random.nextDouble() * 360.0D));
          this.setDeltaMovement((this.random.nextDouble() * 0.20000000298023224D - 0.10000000149011612D) * 2.0D, this.random.nextDouble() * 0.2D * 2.0D, (this.random.nextDouble() * 0.20000000298023224D - 0.10000000149011612D) * 2.0D);
--        this.value = amount;
-+        this.value = i;
-     }
- 
-     public ExperienceOrb(EntityType<? extends ExperienceOrb> type, Level world) {
 @@ -160,12 +214,20 @@ public class ExperienceOrb extends Entity {
      }
  
@@ -227,7 +221,7 @@ index 2471800014d1661c2f422e5a24f0f3b00fa838f2..f5ce6423b8146cc741023e15004fe981
  
              if (this.dragonFight != null) {
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index 505e0031f2783192f1146b1b00249e7891c4f1ef..a0a313fa5e7e4e1973c020d0262e34381a19dea7 100644
+index 4034b8e7503f611dc9be121d8da2020ae7155b8c..f0d5e45d0d6ac51106379d20690d34a032a24c39 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
 @@ -638,7 +638,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler

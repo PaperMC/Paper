@@ -368,22 +368,22 @@ index cc658a61065d5c0021a4b88fa58b40211b94f8ec..da11266a0a23f446196e6facf2c358cf
          return false;
      }
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index d870fbec236a3660f12e0f45cf9431067b18468b..caeead6c6082855f1651ee28263cc9f60423ca0c 100644
+index 187b2cf175ba5cea94158d29b53993dc5a7c5b94..9db7fc8c053aa9e929fa6dddf70290a8f7ad5273 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 @@ -63,10 +63,12 @@ public class ServerConnectionListener {
      final List<Connection> connections = Collections.synchronizedList(Lists.newArrayList());
-     // Paper start - prevent blocking on adding a new network manager while the server is ticking
+     // Paper start - prevent blocking on adding a new connection while the server is ticking
      private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +    private static final boolean disableFlushConsolidation = Boolean.getBoolean("Paper.disableFlushConsolidate"); // Paper - Optimize network
      private final void addPending() {
-         Connection manager = null;
-         while ((manager = pending.poll()) != null) {
-             connections.add(manager);
-+            manager.isPending = false; // Paper - Optimize network
+         Connection connection;
+         while ((connection = pending.poll()) != null) {
+             connections.add(connection);
++            connection.isPending = false; // Paper - Optimize network
          }
      }
-     // Paper end
+     // Paper end - prevent blocking on adding a new connection while the server is ticking
 @@ -103,6 +105,7 @@ public class ServerConnectionListener {
                          ;
                      }
