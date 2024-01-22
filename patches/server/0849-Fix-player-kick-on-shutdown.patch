@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Denery <dorofeevij@gmail.com>
+Date: Sun, 6 Nov 2022 02:02:46 +0300
+Subject: [PATCH] Fix player kick on shutdown
+
+Fix preemptive player kick on a server shutdown.
+If you update minecraft version / upstream and something is changed in this method make sure that a server doesn't disconnect a player preemptively,
+also check if all packets are ignored during the shutdown process.
+See net.minecraft.network.Connection#channelRead0(ChannelHandlerContext, Packet) and net.minecraft.util.thread.BlockableEventLoop#executeIfPossible(Runnable)
+
+diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+index 7de24c39b460e43d27839b3821e67213508ece81..454d0187ff8370a0d99cca051ee0a8c50b39cfb7 100644
+--- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
++++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+@@ -26,7 +26,7 @@ public class PacketUtils {
+ 
+     public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
+         if (!engine.isSameThread()) {
+-            engine.executeIfPossible(() -> {
++            engine.execute(() -> { // Paper - Fix preemptive player kick on a server shutdown
+                 if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerCommonPacketListenerImpl && ((ServerCommonPacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
+                 if (listener.shouldHandleMessage(packet)) {
+                     co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
