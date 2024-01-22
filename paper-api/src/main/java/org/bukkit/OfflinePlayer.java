@@ -171,9 +171,23 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * they have not slept in one or their current bed spawn is invalid.
      *
      * @return Bed Spawn Location if bed exists, otherwise null.
+     *
+     * @see #getRespawnLocation()
+     * @deprecated Misleading name. This method also returns the location of
+     * respawn anchors.
      */
     @Nullable
+    @Deprecated
     public Location getBedSpawnLocation();
+
+    /**
+     * Gets the Location where the player will spawn at, null if they
+     * don't have a valid respawn point.
+     *
+     * @return respawn location if exists, otherwise null.
+     */
+    @Nullable
+    public Location getRespawnLocation();
 
     /**
      * Increments the given statistic for this player.

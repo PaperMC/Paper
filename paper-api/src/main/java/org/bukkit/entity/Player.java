@@ -370,17 +370,44 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * they have not slept in one or their current bed spawn is invalid.
      *
      * @return Bed Spawn Location if bed exists, otherwise null.
+     *
+     * @see #getRespawnLocation()
+     * @deprecated Misleading name. This method also returns the location of
+     * respawn anchors.
      */
     @Nullable
     @Override
+    @Deprecated
     public Location getBedSpawnLocation();
+
+    /**
+     * Gets the Location where the player will spawn at, null if they
+     * don't have a valid respawn point.
+     *
+     * @return respawn location if exists, otherwise null.
+     */
+    @Nullable
+    @Override
+    public Location getRespawnLocation();
 
     /**
      * Sets the Location where the player will spawn at their bed.
      *
      * @param location where to set the respawn location
+     *
+     * @see #setRespawnLocation(Location)
+     * @deprecated Misleading name. This method sets the player's respawn
+     * location more generally and is not limited to beds.
      */
+    @Deprecated
     public void setBedSpawnLocation(@Nullable Location location);
+
+    /**
+     * Sets the Location where the player will respawn.
+     *
+     * @param location where to set the respawn location
+     */
+    public void setRespawnLocation(@Nullable Location location);
 
     /**
      * Sets the Location where the player will spawn at their bed.
@@ -388,8 +415,22 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param location where to set the respawn location
      * @param force whether to forcefully set the respawn location even if a
      *     valid bed is not present
+     *
+     * @see #setRespawnLocation(Location, boolean)
+     * @deprecated Misleading name. This method sets the player's respawn
+     * location more generally and is not limited to beds.
      */
+    @Deprecated
     public void setBedSpawnLocation(@Nullable Location location, boolean force);
+
+    /**
+     * Sets the Location where the player will respawn.
+     *
+     * @param location where to set the respawn location
+     * @param force whether to forcefully set the respawn location even if a
+     *     valid respawn point is not present
+     */
+    public void setRespawnLocation(@Nullable Location location, boolean force);
 
     /**
      * Play a note for the player at a location. <br>
