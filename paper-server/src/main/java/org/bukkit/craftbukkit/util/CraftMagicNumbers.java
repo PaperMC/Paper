@@ -635,6 +635,19 @@ public final class CraftMagicNumbers implements UnsafeValues {
         if (statistic.getType() != org.bukkit.Statistic.Type.UNTYPED) return "minecraft.custom:minecraft." + statistic.getKey().getKey();
         return org.bukkit.craftbukkit.CraftStatistic.getNMSStatistic(statistic).getName();
     }
+
+    @Override
+    public java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(final ItemStack itemStack, final io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.Player player) {
+        Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
+        net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
+        if (tooltipContext.isCreative()) {
+            flag = flag.asCreative();
+        }
+        final java.util.List<net.minecraft.network.chat.Component> lines = CraftItemStack.asNMSCopy(itemStack).getTooltipLines(
+            net.minecraft.world.item.Item.TooltipContext.of(player == null ? net.minecraft.server.MinecraftServer.getServer().registryAccess() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
+            player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
+        return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
+    }
     // Paper end
 
     // Paper start - spawn egg color visibility
