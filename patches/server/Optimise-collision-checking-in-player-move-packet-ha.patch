@@ -116,20 +116,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              if (this.awaitingPositionFromClient != null) {
                                  return; // ... thanks Mojang for letting move calls teleport across dimensions.
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                             boolean flag2 = false;
- 
-                             if (!this.player.isChangingDimension() && d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.isSleeping() && !this.player.gameMode.isCreative() && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) { // Spigot
--                                flag2 = true;
-+                                flag2 = true; // Paper - diff on change, this should be moved wrongly
-                                 ServerGamePacketListenerImpl.LOGGER.warn("{} moved wrongly!", this.player.getName().getString());
+                                 }
                              }
  
--                            if (!this.player.noPhysics && !this.player.isSleeping() && (flag2 && worldserver.noCollision(this.player, axisalignedbb) || this.isPlayerCollidingWithAnythingNew(worldserver, axisalignedbb, d0, d1, d2))) {
+-                            boolean teleportBack = !this.player.noPhysics && !this.player.isSleeping() && (movedWrongly && worldserver.noCollision(this.player, axisalignedbb) || this.isPlayerCollidingWithAnythingNew(worldserver, axisalignedbb, d0, d1, d2));
 +                            // Paper start - optimise out extra getCubes
++                            boolean teleportBack = !this.player.noPhysics && !this.player.isSleeping() && movedWrongly;
 +                            this.player.absMoveTo(d0, d1, d2, f, f1); // prevent desync by tping to the set position, dropped for unknown reasons by mojang
-+                            // Original for reference:
-+                            // boolean teleportBack = flag2 && worldserver.getCubes(this.player, axisalignedbb) || (didCollide && this.a((IWorldReader) worldserver, axisalignedbb));
-+                            boolean teleportBack = flag2; // violating this is always a fail
 +                            if (!this.player.noPhysics && !this.player.isSleeping() && !teleportBack) {
 +                                AABB newBox = this.player.getBoundingBox();
 +                                if (didCollide || !axisalignedbb.equals(newBox)) {
@@ -137,10 +130,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                                    teleportBack = this.hasNewCollision(worldserver, this.player, axisalignedbb, newBox);
 +                                } // else: no collision at all detected, why do we care?
 +                            }
-+                            if (!this.player.noPhysics && !this.player.isSleeping() && teleportBack) { // Paper end - optimise out extra getCubes
-                                 this.internalTeleport(d3, d4, d5, f, f1, Collections.emptySet()); // CraftBukkit - SPIGOT-1807: Don't call teleport event, when the client thinks the player is falling, because the chunks are not loaded on the client yet.
-                                 this.player.doCheckFallDamage(this.player.getX() - d3, this.player.getY() - d4, this.player.getZ() - d5, packet.isOnGround());
-                             } else {
++                            // Paper end - optimise out extra getCubes
+                             if (teleportBack) {
+                                 io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
+                                     toX, toY, toZ, toYaw, toPitch, false);
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
      }

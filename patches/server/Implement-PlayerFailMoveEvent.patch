@@ -57,44 +57,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                                  }
                              }
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                             boolean flag2 = false;
+ 
+                             d8 = d2 - this.player.getZ();
+                             d10 = d6 * d6 + d7 * d7 + d8 * d8;
+-                            boolean flag2 = false;
++                            boolean movedWrongly = false; // Paper - Add fail move event; rename
  
                              if (!this.player.isChangingDimension() && d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.isSleeping() && !this.player.gameMode.isCreative() && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) { // Spigot
+-                                flag2 = true;
 +                                // Paper start - Add fail move event
 +                                io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_WRONGLY,
 +                                    toX, toY, toZ, toYaw, toPitch, true);
 +                                if (!event.isAllowed()) {
-                                 flag2 = true; // Paper - diff on change, this should be moved wrongly
++                                    movedWrongly = true;
 +                                    if (event.getLogWarning())
                                  ServerGamePacketListenerImpl.LOGGER.warn("{} moved wrongly!", this.player.getName().getString());
 +                                }
+                             }
+ 
+-                            if (!this.player.noPhysics && !this.player.isSleeping() && (flag2 && worldserver.noCollision(this.player, axisalignedbb) || this.isPlayerCollidingWithAnythingNew(worldserver, axisalignedbb, d0, d1, d2))) {
++                            boolean teleportBack = !this.player.noPhysics && !this.player.isSleeping() && (movedWrongly && worldserver.noCollision(this.player, axisalignedbb) || this.isPlayerCollidingWithAnythingNew(worldserver, axisalignedbb, d0, d1, d2));
++                            if (teleportBack) {
++                                io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
++                                    toX, toY, toZ, toYaw, toPitch, false);
++                                if (event.isAllowed()) {
++                                    teleportBack = false;
++                                }
++                            }
++                            if (teleportBack) {
 +                                // Paper end - Add fail move event
-                             }
+                                 this.internalTeleport(d3, d4, d5, f, f1, Collections.emptySet()); // CraftBukkit - SPIGOT-1807: Don't call teleport event, when the client thinks the player is falling, because the chunks are not loaded on the client yet.
+                                 this.player.doCheckFallDamage(this.player.getX() - d3, this.player.getY() - d4, this.player.getZ() - d5, packet.isOnGround());
+                             } else {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
-                             // Paper start - optimise out extra getCubes
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                                 if (didCollide || !axisalignedbb.equals(newBox)) {
-                                     // note: only call after setLocation, or else getBoundingBox is wrong
-                                     teleportBack = this.hasNewCollision(worldserver, this.player, axisalignedbb, newBox);
-+                                    // Paper start - Add fail move event
-+                                    if (teleportBack) {
-+                                        io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
-+                                            toX, toY, toZ, toYaw, toPitch, false);
-+                                        if (event.isAllowed()) {
-+                                            teleportBack = false;
-+                                        }
-+                                    }
-+                                    // Paper end - Add fail move event
-                                 } // else: no collision at all detected, why do we care?
-                             }
-                             if (!this.player.noPhysics && !this.player.isSleeping() && teleportBack) { // Paper end - optimise out extra getCubes
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-         }
+         InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
- 
++
 +    // Paper start - Add fail move event
 +    private io.papermc.paper.event.player.PlayerFailMoveEvent fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason failReason,
-+               double toX, double toY, double toZ, float toYaw, float toPitch, boolean logWarning) {
++                                                                           double toX, double toY, double toZ, float toYaw, float toPitch, boolean logWarning) {
 +        Player player = this.getCraftPlayer();
 +        Location from = new Location(player.getWorld(), this.lastPosX, this.lastPosY, this.lastPosZ, this.lastYaw, this.lastPitch);
 +        Location to = new Location(player.getWorld(), toX, toY, toZ, toYaw, toPitch);
@@ -104,6 +106,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return event;
 +    }
 +    // Paper end - Add fail move event
-     // Paper start - optimise out extra getCubes
-     private boolean hasNewCollision(final ServerLevel world, final Entity entity, final AABB oldBox, final AABB newBox) {
-         final List<AABB> collisionsBB = new java.util.ArrayList<>();
+ }

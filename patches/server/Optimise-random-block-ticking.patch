@@ -392,50 +392,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            a() {}
 -
 -            public void accept(BlockState iblockdata, int i) {
--                FluidState fluid = iblockdata.getFluidState();
--
--                if (!iblockdata.isAir()) {
--                    this.nonEmptyBlockCount += i;
--                    if (iblockdata.isRandomlyTicking()) {
--                        this.tickingBlockCount += i;
--                    }
 +        // Paper start - unfuck this
 +        this.tickingList.clear();
 +        this.nonEmptyBlockCount = 0;
 +        this.tickingBlockCount = 0;
 +        this.tickingFluidCount = 0;
-+        this.states.forEachLocation((BlockState iblockdata, int i) -> {
-+            FluidState fluid = iblockdata.getFluidState();
-+
-+            if (!iblockdata.isAir()) {
-+                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1);
-+                if (iblockdata.isRandomlyTicking()) {
-+                    this.tickingBlockCount = (short)(this.tickingBlockCount + 1);
-+                    this.tickingList.add(i, iblockdata);
-                 }
-+            }
++        // Don't run this on clearly empty sections
++        if (this.maybeHas((BlockState state) -> !state.isAir() || !state.getFluidState().isEmpty())) {
++            this.states.forEachLocation((BlockState iblockdata, int i) -> {
+                 FluidState fluid = iblockdata.getFluidState();
  
--                if (!fluid.isEmpty()) {
+                 if (!iblockdata.isAir()) {
 -                    this.nonEmptyBlockCount += i;
--                    if (fluid.isRandomlyTicking()) {
--                        this.tickingFluidCount += i;
--                    }
-+            if (!fluid.isEmpty()) {
-+                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1);
-+                if (fluid.isRandomlyTicking()) {
-+                    this.tickingFluidCount = (short) (this.tickingFluidCount + 1);
++                    this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1);
+                     if (iblockdata.isRandomlyTicking()) {
+-                        this.tickingBlockCount += i;
++                        this.tickingBlockCount = (short)(this.tickingBlockCount + 1);
++                        this.tickingList.add(i, iblockdata);
+                     }
                  }
--
-             }
--        }
  
+                 if (!fluid.isEmpty()) {
+-                    this.nonEmptyBlockCount += i;
++                    this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1);
+                     if (fluid.isRandomlyTicking()) {
+-                        this.tickingFluidCount += i;
++                        this.tickingFluidCount = (short) (this.tickingFluidCount + 1);
+                     }
+                 }
+ 
+-            }
++            });
+         }
+-
 -        a a0 = new a();
 -
 -        this.states.count(a0);
 -        this.nonEmptyBlockCount = (short) a0.nonEmptyBlockCount;
 -        this.tickingBlockCount = (short) a0.tickingBlockCount;
 -        this.tickingFluidCount = (short) a0.tickingFluidCount;
-+        });
 +        // Paper end
      }
  
