@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
      public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
-+    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
++    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
  
      public CraftWorld getWorld() {
          return this.world;
@@ -26,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final MapCodec<RedstoneTorchBlock> CODEC = simpleCodec(RedstoneTorchBlock::new);
      public static final BooleanProperty LIT = BlockStateProperties.LIT;
 -    private static final Map<BlockGetter, List<RedstoneTorchBlock.Toggle>> RECENT_TOGGLES = new WeakHashMap();
-+    // Paper - Move the mapped list to World
++    // Paper - Faster redstone torch rapid clock removal; Move the mapped list to World
      public static final int RECENT_TOGGLE_TIMER = 60;
      public static final int MAX_RECENT_TOGGLES = 8;
      public static final int RESTART_DELAY = 160;
@@ -38,7 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -        while (list != null && !list.isEmpty() && world.getGameTime() - ((RedstoneTorchBlock.Toggle) list.get(0)).when > 60L) {
 -            list.remove(0);
-+        // Paper start
++        // Paper start - Faster redstone torch rapid clock removal
 +        java.util.ArrayDeque<RedstoneTorchBlock.Toggle> redstoneUpdateInfos = world.redstoneUpdateInfos;
 +        if (redstoneUpdateInfos != null) {
 +            RedstoneTorchBlock.Toggle curr;
@@ -46,7 +46,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                redstoneUpdateInfos.poll();
 +            }
          }
-+        // Paper end
++        // Paper end - Faster redstone torch rapid clock removal
  
          // CraftBukkit start
          org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
@@ -57,7 +57,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        List<RedstoneTorchBlock.Toggle> list = (List) RedstoneTorchBlock.RECENT_TOGGLES.computeIfAbsent(world, (iblockaccess) -> {
 -            return Lists.newArrayList();
 -        });
-+        // Paper start
++        // Paper start - Faster redstone torch rapid clock removal
 +        java.util.ArrayDeque<RedstoneTorchBlock.Toggle> list = world.redstoneUpdateInfos;
 +        if (list == null) {
 +            list = world.redstoneUpdateInfos = new java.util.ArrayDeque<>();

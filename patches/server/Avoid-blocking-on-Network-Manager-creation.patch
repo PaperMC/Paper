@@ -13,15 +13,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public volatile boolean running;
      private final List<ChannelFuture> channels = Collections.synchronizedList(Lists.newArrayList());
      final List<Connection> connections = Collections.synchronizedList(Lists.newArrayList());
-+    // Paper start - prevent blocking on adding a new network manager while the server is ticking
++    // Paper start - prevent blocking on adding a new connection while the server is ticking
 +    private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +    private final void addPending() {
-+        Connection manager = null;
-+        while ((manager = pending.poll()) != null) {
-+            connections.add(manager);
++        Connection connection;
++        while ((connection = pending.poll()) != null) {
++            connections.add(connection);
 +        }
 +    }
-+    // Paper end
++    // Paper end - prevent blocking on adding a new connection while the server is ticking
  
      public ServerConnectionListener(MinecraftServer server) {
          this.server = server;
@@ -31,7 +31,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -                    ServerConnectionListener.this.connections.add(object);
 +                    //ServerConnectionListener.this.connections.add(object); // Paper
-+                    pending.add(object); // Paper
++                    pending.add(object); // Paper - prevent blocking on adding a new connection while the server is ticking
                      ((Connection) object).configurePacketHandler(channelpipeline);
                      ((Connection) object).setListenerForServerboundHandshake(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
                  }
@@ -39,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          synchronized (this.connections) {
              // Spigot Start
-+            this.addPending(); // Paper
++            this.addPending(); // Paper - prevent blocking on adding a new connection while the server is ticking
              // This prevents players from 'gaming' the server, and strategically relogging to increase their position in the tick order
              if ( org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0 )
              {
