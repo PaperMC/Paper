@@ -1,0 +1,153 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Mon, 22 Jan 2024 13:27:18 +0100
+Subject: [PATCH] ItemStack Tooltip API
+
+
+diff --git a/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContext.java b/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContext.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c965e9c98b083ce712f5d16bc081cb45c11a4d6b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContext.java
+@@ -0,0 +1,86 @@
++package io.papermc.paper.inventory.tooltip;
++
++import org.bukkit.entity.Player;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Context for computing itemstack tooltips via
++ * {@link org.bukkit.inventory.ItemStack#computeTooltipLines(TooltipContext, Player)}
++ */
++public interface TooltipContext {
++
++    /**
++     * Creates a new context with the given advanced and creative
++     * mode settings.
++     *
++     * @param advanced whether the context is for advanced tooltips
++     * @param creative whether the context is for the creative inventory
++     * @return a new context
++     */
++    @Contract("_, _ -> new")
++    static @NotNull TooltipContext create(final boolean advanced, final boolean creative) {
++        return new TooltipContextImpl(advanced, creative);
++    }
++
++    /**
++     * Creates a new context that is neither advanced nor creative
++     * mode settings.
++     *
++     * @return a new context
++     */
++    @Contract("-> new")
++    static @NotNull TooltipContext create() {
++        return new TooltipContextImpl(false, false);
++    }
++
++    /**
++     * Returns whether the context is for the creative
++     * mode inventory.
++     * <p>
++     * Creative tooltips are shown by default when a player is
++     * in the creative inventory.
++     * <p>
++     * <b>Disclaimer:</b>
++     * <p>
++     * Be aware that this can change based on the Minecraft version used.
++     * We do not guarantee that all the values will always be present.
++     *
++     * @return true if for creative mode inventory
++     */
++    boolean isCreative();
++
++    /**
++     * Returns whether the context is for advanced
++     * tooltips.
++     * <p>
++     * Advanced tooltips are shown by default
++     * when a player has {@code F3+H} enabled.
++     * <p>
++     * <b>Disclaimer:</b>
++     * <p>
++     * Be aware that this can change based on the Minecraft version used.
++     * We do not guarantee that all the values will always be present.
++     *
++     * @return true if for advanced tooltips
++     */
++    boolean isAdvanced();
++
++    /**
++     * Returns a new context with {@link #isCreative()}
++     * set to true.
++     *
++     * @return a new context
++     */
++    @Contract("-> new")
++    @NotNull TooltipContext asCreative();
++
++    /**
++     * Returns a new context with {@link #isAdvanced()}
++     * set to true.
++     *
++     * @return a new context
++     */
++    @Contract("-> new")
++    @NotNull TooltipContext asAdvanced();
++}
+diff --git a/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContextImpl.java b/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContextImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1d9bed6691f581529c53b577b26f1d0f902ccb0d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContextImpl.java
+@@ -0,0 +1,16 @@
++package io.papermc.paper.inventory.tooltip;
++
++import org.jetbrains.annotations.NotNull;
++
++record TooltipContextImpl(boolean isCreative, boolean isAdvanced) implements TooltipContext {
++
++    @Override
++    public @NotNull TooltipContext asCreative() {
++        return new TooltipContextImpl(true, this.isAdvanced);
++    }
++
++    @Override
++    public @NotNull TooltipContext asAdvanced() {
++        return new TooltipContextImpl(this.isCreative, true);
++    }
++}
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 890c07cfc2e64a52752e96d518578b5eb1afbd19..c6222fe754dee53f269944c7578dde8106377f20 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -281,4 +281,6 @@ public interface UnsafeValues {
+     @org.jetbrains.annotations.ApiStatus.Internal
+     io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck);
+     // Paper end - lifecycle event API
++
++    @NotNull java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, @Nullable org.bukkit.entity.Player player); // Paper - expose itemstack tooltip lines
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 7adf54c561d64e6337af8a2d86f6b574b083edb5..d4b895cab69fc5aff268ed10154236e0680a2214 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -1016,4 +1016,17 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         return type.isAir() || amount <= 0;
+     }
+     // Paper end
++    // Paper start - expose itemstack tooltip lines
++    /**
++     * Computes the tooltip lines for this stack.
++     *
++     * @param tooltipContext the tooltip context
++     * @param player a player for player-specific tooltip lines
++     * @return an immutable list of components (can be empty)
++     */
++    @SuppressWarnings("deprecation") // abusing unsafe as a bridge
++    public @NotNull @org.jetbrains.annotations.Unmodifiable List<net.kyori.adventure.text.Component> computeTooltipLines(final @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final @Nullable org.bukkit.entity.Player player) {
++        return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
++    }
++    // Paper end - expose itemstack tooltip lines
+ }
