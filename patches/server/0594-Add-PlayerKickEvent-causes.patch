@@ -48,7 +48,7 @@ index 96814e626a95e4e3c2f4df1a0339d37bb02f2e61..ba12919c3f9aec34a9e64993b143ae92
  
          public boolean shouldDisconnect() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 748a5d8add76d4533fae2647c6e2439f518ac211..bd176eb76afec5873e6f903ef66b0e6df3e6a02f 100644
+index 2a000635c18878377b2f434929e460e809b02cc4..6f2fcf39835d8a8b7408a39a511a2a9ee1e31248 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -2236,7 +2236,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -100,7 +100,7 @@ index b9560b4ae5c0867396006119c5dadd7f3b47f78b..f3e32da770f379d46c65a0ba5a100b5f
                          return Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason);
                      }, true);
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 825b8f541fe3f5e4cb53f465232c19398b8e66ab..3049377685ee4fe75f0c4b68eab39a916ac20785 100644
+index 7c17c3d4f4f5ebc42186fcc98008bda062715e55..01b6c3b67d6078e9877729a955ec51f0313e5a90 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -95,7 +95,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -110,7 +110,7 @@ index 825b8f541fe3f5e4cb53f465232c19398b8e66ab..3049377685ee4fe75f0c4b68eab39a91
 -                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
 +                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
              });
-             // Paper endg
+             // Paper endg - This needs to be handled on the main thread for plugins
          }
 @@ -131,7 +131,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                  }
@@ -209,7 +209,7 @@ index 825b8f541fe3f5e4cb53f465232c19398b8e66ab..3049377685ee4fe75f0c4b68eab39a91
          if (this.cserver.getServer().isRunning()) {
              this.cserver.getPluginManager().callEvent(event);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index f97d5e0703d9ccb01f0614e4a410b1c9e2785388..846a9595857d5e6faa0b9dbc566b52d41efaa9ed 100644
+index 489b7f80d4a6db2240b87e0a8af428a2ff08afe5..cc4463ed0112b8f987f75d1389c7be43fb81a8f7 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -342,7 +342,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -258,11 +258,11 @@ index f97d5e0703d9ccb01f0614e4a410b1c9e2785388..846a9595857d5e6faa0b9dbc566b52d4
              }
  
 @@ -722,7 +722,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-         // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - run this async
+         // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
          // CraftBukkit start
          if (this.chatSpamTickCount.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamLimit && !this.server.getPlayerList().isOp(this.player.getGameProfile())) { // Paper - configurable tab spam limits
--            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]))); // Paper
-+            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - kick event cause
+-            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"))); // Paper - AsyncTabCompleteEvent
++            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - AsyncTabCompleteEvent & kick event cause
              return;
          }
          // Paper start

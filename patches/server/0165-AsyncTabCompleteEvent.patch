@@ -16,25 +16,25 @@ Also adds isCommand and getLocation to the sync TabCompleteEvent
 Co-authored-by: Aikar <aikar@aikar.co>
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 95df25f6c3ce3e945bca95bc5b5ab0c0863d94c1..9c0440a6e3768ca6300e128da7f1b11a96f10f91 100644
+index f422b6ffcd590788085486778293aaabc141d392..243e111392aca01c94aee052673d0a91008524de 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -688,12 +688,16 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      }
  
-+    // Paper start
++    // Paper start - AsyncTabCompleteEvent
 +    private static final java.util.concurrent.ExecutorService TAB_COMPLETE_EXECUTOR = java.util.concurrent.Executors.newFixedThreadPool(4,
 +        new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Tab Complete Thread - #%d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build());
-+    // Paper end
++    // Paper end - AsyncTabCompleteEvent
      @Override
      public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
 -        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
-+        // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - run this async
++        // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
          // CraftBukkit start
          if (this.chatSpamTickCount.addAndGet(1) > 500 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
 -            this.disconnect(Component.translatable("disconnect.spam"));
-+            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]))); // Paper
++            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"))); // Paper - AsyncTabCompleteEvent
              return;
          }
          // Paper start
@@ -42,7 +42,7 @@ index 95df25f6c3ce3e945bca95bc5b5ab0c0863d94c1..9c0440a6e3768ca6300e128da7f1b11a
          }
          // Paper end
          // CraftBukkit end
-+        // Paper start - async tab completion
++        // Paper start - AsyncTabCompleteEvent
 +        TAB_COMPLETE_EXECUTOR.execute(() -> {
          StringReader stringreader = new StringReader(packet.getCommand());
  
@@ -86,12 +86,12 @@ index 95df25f6c3ce3e945bca95bc5b5ab0c0863d94c1..9c0440a6e3768ca6300e128da7f1b11a
 +                player.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), builder.buildFuture().join()));
 +            }
          });
-+        // Paper end - async tab completion
++        // Paper end - AsyncTabCompleteEvent
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 11080e6dd4ae30e20a724cb62750f1bbd63323e8..d921903070fd03abf1db15d805caf5d6bda971a0 100644
+index b56bfa447a15d56bf24c1bb4c05f74584cf37ad3..9bc095ccb142e83e419a7f88591bf1219d09bacb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2227,7 +2227,7 @@ public final class CraftServer implements Server {
@@ -99,7 +99,7 @@ index 11080e6dd4ae30e20a724cb62750f1bbd63323e8..d921903070fd03abf1db15d805caf5d6
          }
  
 -        TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers);
-+        TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers, message.startsWith("/") || forceCommand, pos != null ? io.papermc.paper.util.MCUtil.toLocation(((CraftWorld) player.getWorld()).getHandle(), BlockPos.containing(pos)) : null); // Paper
++        TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers, message.startsWith("/") || forceCommand, pos != null ? io.papermc.paper.util.MCUtil.toLocation(((CraftWorld) player.getWorld()).getHandle(), BlockPos.containing(pos)) : null); // Paper - AsyncTabCompleteEvent
          this.getPluginManager().callEvent(tabEvent);
  
          return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();

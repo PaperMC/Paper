@@ -15,7 +15,7 @@ also adding some additional logging in order to help work out what is causing
 random disconnections for clients.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 1135da391523c464447198ce5e3743b8bd9d66e8..910b9a2918ec58ecb9fff77cca36abb48c7db7dd 100644
+index 7947a1d2e5f66c29dc11f9966233604adae71a86..0fcedb954c20d9777d27d896e29cea7f6eebffd3 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -84,14 +84,18 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -23,7 +23,7 @@ index 1135da391523c464447198ce5e3743b8bd9d66e8..910b9a2918ec58ecb9fff77cca36abb4
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
 -        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // CraftBukkit
-+        //PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // CraftBukkit // Paper - This shouldn't be on the main thread
++        //PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // CraftBukkit // Paper - handle ServerboundKeepAlivePacket async
          if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
              int i = (int) (Util.getMillis() - this.keepAliveTime);
  
@@ -35,7 +35,7 @@ index 1135da391523c464447198ce5e3743b8bd9d66e8..910b9a2918ec58ecb9fff77cca36abb4
 +            server.submit(() -> {
 +                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
 +            });
-+            // Paper endg
++            // Paper endg - This needs to be handled on the main thread for plugins
          }
  
      }
