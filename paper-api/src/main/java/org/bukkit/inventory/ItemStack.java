@@ -1124,4 +1124,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return type.isAir() || amount <= 0;
     }
     // Paper end
+    // Paper start - expose itemstack tooltip lines
+    /**
+     * Computes the tooltip lines for this stack.
+     * <p>
+     * <b>Disclaimer:</b>
+     * Tooltip contents are not guaranteed to be consistent across different
+     * Minecraft versions.
+     *
+     * @param tooltipContext the tooltip context
+     * @param player a player for player-specific tooltip lines
+     * @return an immutable list of components (can be empty)
+     */
+    @SuppressWarnings("deprecation") // abusing unsafe as a bridge
+    public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<net.kyori.adventure.text.Component> computeTooltipLines(final @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final @Nullable org.bukkit.entity.Player player) {
+        return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
+    }
+    // Paper end - expose itemstack tooltip lines
 }
