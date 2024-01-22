@@ -23,18 +23,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
-+    // Paper start
++    // Paper start - AsyncTabCompleteEvent
 +    private static final java.util.concurrent.ExecutorService TAB_COMPLETE_EXECUTOR = java.util.concurrent.Executors.newFixedThreadPool(4,
 +        new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Tab Complete Thread - #%d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build());
-+    // Paper end
++    // Paper end - AsyncTabCompleteEvent
      @Override
      public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
 -        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
-+        // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - run this async
++        // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
          // CraftBukkit start
          if (this.chatSpamTickCount.addAndGet(1) > 500 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
 -            this.disconnect(Component.translatable("disconnect.spam"));
-+            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]))); // Paper
++            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"))); // Paper - AsyncTabCompleteEvent
              return;
          }
          // Paper start
@@ -42,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          // Paper end
          // CraftBukkit end
-+        // Paper start - async tab completion
++        // Paper start - AsyncTabCompleteEvent
 +        TAB_COMPLETE_EXECUTOR.execute(() -> {
          StringReader stringreader = new StringReader(packet.getCommand());
  
@@ -86,7 +86,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                player.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), builder.buildFuture().join()));
 +            }
          });
-+        // Paper end - async tab completion
++        // Paper end - AsyncTabCompleteEvent
      }
  
      @Override
@@ -99,7 +99,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 -        TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers);
-+        TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers, message.startsWith("/") || forceCommand, pos != null ? io.papermc.paper.util.MCUtil.toLocation(((CraftWorld) player.getWorld()).getHandle(), BlockPos.containing(pos)) : null); // Paper
++        TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers, message.startsWith("/") || forceCommand, pos != null ? io.papermc.paper.util.MCUtil.toLocation(((CraftWorld) player.getWorld()).getHandle(), BlockPos.containing(pos)) : null); // Paper - AsyncTabCompleteEvent
          this.getPluginManager().callEvent(tabEvent);
  
          return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
