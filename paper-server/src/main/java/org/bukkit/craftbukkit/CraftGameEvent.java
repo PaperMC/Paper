@@ -1,31 +1,20 @@
 package org.bukkit.craftbukkit;
 
-import com.google.common.base.Preconditions;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.GameEvent;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftGameEvent extends GameEvent {
+public class CraftGameEvent extends GameEvent implements Handleable<net.minecraft.world.level.gameevent.GameEvent> {
 
     public static GameEvent minecraftToBukkit(net.minecraft.world.level.gameevent.GameEvent minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        IRegistry<net.minecraft.world.level.gameevent.GameEvent> registry = CraftRegistry.getMinecraftRegistry(Registries.GAME_EVENT);
-        GameEvent bukkit = Registry.GAME_EVENT.get(CraftNamespacedKey.fromMinecraft(registry.getKey(minecraft)));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.GAME_EVENT, Registry.GAME_EVENT);
     }
 
     public static net.minecraft.world.level.gameevent.GameEvent bukkitToMinecraft(GameEvent bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        return ((CraftGameEvent) bukkit).getHandle();
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     private final NamespacedKey key;
@@ -36,6 +25,7 @@ public class CraftGameEvent extends GameEvent {
         this.handle = handle;
     }
 
+    @Override
     public net.minecraft.world.level.gameevent.GameEvent getHandle() {
         return handle;
     }

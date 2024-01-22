@@ -1,19 +1,25 @@
 package org.bukkit.craftbukkit.potion;
 
-import com.google.common.base.Preconditions;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffectList;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftPotionEffectType extends PotionEffectType {
+public class CraftPotionEffectType extends PotionEffectType implements Handleable<MobEffectList> {
+
+    public static PotionEffectType minecraftToBukkit(MobEffectList minecraft) {
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.MOB_EFFECT, Registry.EFFECT);
+    }
+
+    public static MobEffectList bukkitToMinecraft(PotionEffectType bukkit) {
+        return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
 
     private final NamespacedKey key;
     private final MobEffectList handle;
@@ -25,6 +31,7 @@ public class CraftPotionEffectType extends PotionEffectType {
         this.id = CraftRegistry.getMinecraftRegistry(Registries.MOB_EFFECT).getId(handle) + 1;
     }
 
+    @Override
     public MobEffectList getHandle() {
         return handle;
     }
@@ -122,22 +129,5 @@ public class CraftPotionEffectType extends PotionEffectType {
     @Override
     public String toString() {
         return "CraftPotionEffectType[" + getKey() + "]";
-    }
-
-    public static PotionEffectType minecraftToBukkit(MobEffectList minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        IRegistry<MobEffectList> registry = CraftRegistry.getMinecraftRegistry(Registries.MOB_EFFECT);
-        PotionEffectType bukkit = Registry.EFFECT.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
-    }
-
-    public static MobEffectList bukkitToMinecraft(PotionEffectType bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        return ((CraftPotionEffectType) bukkit).getHandle();
     }
 }

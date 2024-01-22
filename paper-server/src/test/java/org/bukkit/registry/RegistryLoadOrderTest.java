@@ -1,4 +1,4 @@
-package org.bukkit;
+package org.bukkit.registry;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.mojang.serialization.Lifecycle;
@@ -9,6 +9,9 @@ import net.minecraft.core.IRegistry;
 import net.minecraft.core.RegistryMaterials;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.resources.ResourceKey;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.support.AbstractTestingBase;
 import org.jetbrains.annotations.NotNull;

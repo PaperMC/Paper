@@ -1,4 +1,4 @@
-package org.bukkit;
+package org.bukkit.registry;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.Lists;
@@ -6,6 +6,9 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.BeforeAll;

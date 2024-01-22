@@ -23,6 +23,7 @@ import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
@@ -48,6 +49,47 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return getMinecraftRegistry().registryOrThrow(key);
     }
 
+    /**
+     * Usage note: Only use this method to delegate the conversion methods from the individual Craft classes to here.
+     * Do not use it in other parts of CraftBukkit, use the methods in the respective Craft classes instead.
+     *
+     * @param minecraft the minecraft representation
+     * @param registryKey the registry key of the minecraft registry to use
+     * @param bukkitRegistry the bukkit registry to use
+     * @return the bukkit representation of the minecraft value
+     */
+    public static <B extends Keyed, M> B minecraftToBukkit(M minecraft, ResourceKey<IRegistry<M>> registryKey, Registry<B> bukkitRegistry) {
+        Preconditions.checkArgument(minecraft != null);
+
+        IRegistry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
+        B bukkit = bukkitRegistry.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft)
+                .orElseThrow(() -> new IllegalStateException(String.format("Cannot convert '%s' to bukkit representation, since it is not registered.", minecraft))).location()));
+
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit;
+    }
+
+    /**
+     * Usage note: Only use this method to delegate the conversion methods from the individual Craft classes to here.
+     * Do not use it in other parts of CraftBukkit, use the methods in the respective Craft classes instead.
+     *
+     * @param bukkit the bukkit representation
+     * @return the minecraft representation of the bukkit value
+     */
+    public static <B extends Keyed, M> M bukkitToMinecraft(B bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        return ((Handleable<M>) bukkit).getHandle();
+    }
+
+    /**
+     * Note: Newly added registries should also be added to RegistriesArgumentProvider in the test package
+     *
+     * @param bukkitClass the bukkit class of the registry
+     * @param registryHolder the minecraft registry holder
+     * @return the bukkit registry of the provided class
+     */
     public static <B extends Keyed> Registry<?> createRegistry(Class<B> bukkitClass, IRegistryCustom registryHolder) {
         if (bukkitClass == Enchantment.class) {
             return new CraftRegistry<>(Enchantment.class, registryHolder.registryOrThrow(Registries.ENCHANTMENT), CraftEnchantment::new);

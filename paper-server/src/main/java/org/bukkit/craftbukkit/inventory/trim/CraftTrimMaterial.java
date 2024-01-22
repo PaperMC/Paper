@@ -1,10 +1,22 @@
 package org.bukkit.craftbukkit.inventory.trim;
 
+import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftTrimMaterial implements TrimMaterial {
+public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft.world.item.armortrim.TrimMaterial> {
+
+    public static TrimMaterial minecraftToBukkit(net.minecraft.world.item.armortrim.TrimMaterial minecraft) {
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_MATERIAL, Registry.TRIM_MATERIAL);
+    }
+
+    public static net.minecraft.world.item.armortrim.TrimMaterial bukkitToMinecraft(TrimMaterial bukkit) {
+        return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
 
     private final NamespacedKey key;
     private final net.minecraft.world.item.armortrim.TrimMaterial handle;
@@ -15,12 +27,13 @@ public class CraftTrimMaterial implements TrimMaterial {
     }
 
     @Override
+    public net.minecraft.world.item.armortrim.TrimMaterial getHandle() {
+        return handle;
+    }
+
+    @Override
     @NotNull
     public NamespacedKey getKey() {
         return key;
-    }
-
-    public net.minecraft.world.item.armortrim.TrimMaterial getHandle() {
-        return handle;
     }
 }

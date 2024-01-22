@@ -1,4 +1,4 @@
-package org.bukkit;
+package org.bukkit.registry;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Field;
@@ -9,6 +9,9 @@ import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.resources.ResourceKey;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
