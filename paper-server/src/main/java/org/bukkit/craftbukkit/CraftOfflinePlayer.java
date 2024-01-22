@@ -297,6 +297,11 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public Location getBedSpawnLocation() {
+        return getRespawnLocation();
+    }
+
+    @Override
+    public Location getRespawnLocation() {
         NBTTagCompound data = getData();
         if (data == null) return null;
 
