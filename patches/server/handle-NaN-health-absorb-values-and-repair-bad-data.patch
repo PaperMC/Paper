@@ -13,13 +13,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void readAdditionalSaveData(CompoundTag nbt) {
 -        this.internalSetAbsorptionAmount(nbt.getFloat("AbsorptionAmount"));
-+        // Paper start - jvm keeps optimizing the setter
++        // Paper start - Check for NaN
 +        float absorptionAmount = nbt.getFloat("AbsorptionAmount");
 +        if (Float.isNaN(absorptionAmount)) {
 +            absorptionAmount = 0;
 +        }
 +        this.internalSetAbsorptionAmount(absorptionAmount);
-+        // Paper end
++        // Paper end - Check for NaN
          if (nbt.contains("Attributes", 9) && this.level() != null && !this.level().isClientSide) {
              this.getAttributes().load(nbt.getList("Attributes", 10));
          }
@@ -27,10 +27,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void setHealth(float health) {
-+        // Paper start
++        // Paper start - Check for NaN
 +        if (Float.isNaN(health)) { health = getMaxHealth(); if (this.valid) {
 +            System.err.println("[NAN-HEALTH] " + getScoreboardName() + " had NaN health set");
-+        } } // Paper end
++        } } // Paper end - Check for NaN
          // CraftBukkit start - Handle scaled health
          if (this instanceof ServerPlayer) {
              org.bukkit.craftbukkit.entity.CraftPlayer player = ((ServerPlayer) this).getBukkitEntity();
@@ -39,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public final void setAbsorptionAmount(float absorptionAmount) {
 -        this.internalSetAbsorptionAmount(Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()));
-+        this.internalSetAbsorptionAmount(!Float.isNaN(absorptionAmount) ? Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()) : 0.0F); // Paper
++        this.internalSetAbsorptionAmount(!Float.isNaN(absorptionAmount) ? Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()) : 0.0F); // Paper - Check for NaN
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
@@ -51,7 +51,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void setRealHealth(double health) {
-+        if (Double.isNaN(health)) {return;} // Paper
++        if (Double.isNaN(health)) {return;} // Paper - Check for NaN
          this.health = health;
      }
  

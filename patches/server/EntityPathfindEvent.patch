@@ -14,7 +14,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public Path createPath(Entity entity, int distance) {
 -        return this.createPath(entity.blockPosition(), distance);
-+        return this.createPath(entity.blockPosition(), entity, distance); // Paper - Forward target entity
++        return this.createPath(entity.blockPosition(), entity, distance); // Paper - EntityPathfindEvent
      }
  
      @Override
@@ -27,7 +27,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 -    public Path createPath(BlockPos target, int distance) {
-+    public Path createPath(BlockPos target, @javax.annotation.Nullable Entity entity, int distance) { // Paper
++    public Path createPath(BlockPos target, @javax.annotation.Nullable Entity entity, int distance) { // Paper - EntityPathfindEvent
          LevelChunk levelChunk = this.level.getChunkSource().getChunkNow(SectionPos.blockToSectionCoord(target.getX()), SectionPos.blockToSectionCoord(target.getZ()));
          if (levelChunk == null) {
              return null;
@@ -36,7 +36,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  if (blockPos.getY() > this.level.getMinBuildHeight()) {
 -                    return super.createPath(blockPos.above(), distance);
-+                    return super.createPath(blockPos.above(), entity, distance); // Paper
++                    return super.createPath(blockPos.above(), entity, distance); // Paper - EntityPathfindEvent
                  }
  
                  while(blockPos.getY() < this.level.getMaxBuildHeight() && levelChunk.getBlockState(blockPos).isAir()) {
@@ -45,14 +45,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (!levelChunk.getBlockState(target).isSolid()) {
 -                return super.createPath(target, distance);
-+                return super.createPath(target, entity, distance); // Paper
++                return super.createPath(target, entity, distance); // Paper - EntityPathfindEvent
              } else {
                  BlockPos blockPos2;
                  for(blockPos2 = target.above(); blockPos2.getY() < this.level.getMaxBuildHeight() && levelChunk.getBlockState(blockPos2).isSolid(); blockPos2 = blockPos2.above()) {
                  }
  
 -                return super.createPath(blockPos2, distance);
-+                return super.createPath(blockPos2, entity, distance); // Paper
++                return super.createPath(blockPos2, entity, distance); // Paper - EntityPathfindEvent
              }
          }
      }
@@ -60,7 +60,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public Path createPath(Entity entity, int distance) {
 -        return this.createPath(entity.blockPosition(), distance);
-+        return this.createPath(entity.blockPosition(), entity, distance); // Paper - Forward target entity
++        return this.createPath(entity.blockPosition(), entity, distance); // Paper - EntityPathfindEvent
      }
  
      private int getSurfaceY() {
@@ -73,13 +73,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
      public Path createPath(BlockPos target, int distance) {
 -        return this.createPath(ImmutableSet.of(target), 8, false, distance);
-+        // Paper start - add target entity parameter
++        // Paper start - EntityPathfindEvent
 +        return this.createPath(target, null, distance);
 +    }
 +    @Nullable
 +    public Path createPath(BlockPos target, @Nullable Entity entity, int distance) {
 +        return this.createPath(ImmutableSet.of(target), entity, 8, false, distance);
-+        // Paper end
++        // Paper end - EntityPathfindEvent
      }
  
      @Nullable
@@ -88,7 +88,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
      public Path createPath(Entity entity, int distance) {
 -        return this.createPath(ImmutableSet.of(entity.blockPosition()), 16, true, distance);
-+        return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, distance); // Paper
++        return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, distance); // Paper - EntityPathfindEvent
      }
  
      @Nullable
@@ -96,6 +96,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Nullable
      protected Path createPath(Set<BlockPos> positions, int range, boolean useHeadPos, int distance, float followRange) {
++        // Paper start - EntityPathfindEvent
 +        return this.createPath(positions, null, range, useHeadPos, distance, followRange);
 +    }
 +
@@ -105,7 +106,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Nullable protected Path createPath(Set<BlockPos> positions, @Nullable Entity target, int range, boolean useHeadPos, int distance, float followRange) {
-+        // Paper end
++        // Paper end - EntityPathfindEvent
          if (positions.isEmpty()) {
              return null;
          } else if (this.mob.getY() < (double)this.level.getMinBuildHeight()) {
@@ -113,7 +114,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
              return this.path;
          } else {
-+            // Paper start - Pathfind event
++            // Paper start - EntityPathfindEvent
 +            boolean copiedSet = false;
 +            for (BlockPos possibleTarget : positions) {
 +                if (!new com.destroystokyo.paper.event.entity.EntityPathfindEvent(this.mob.getBukkitEntity(),
@@ -129,7 +130,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +                }
 +            }
-+            // Paper end
++            // Paper end - EntityPathfindEvent
              this.level.getProfiler().push("pathfind");
              BlockPos blockPos = useHeadPos ? this.mob.blockPosition().above() : this.mob.blockPosition();
              int i = (int)(followRange + (float)range);
@@ -142,10 +143,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 -    public Path createPath(BlockPos target, int distance) {
-+    public Path createPath(BlockPos target, @Nullable Entity entity, int distance) { // Paper
++    public Path createPath(BlockPos target, @Nullable Entity entity, int distance) { // Paper - EntityPathfindEvent
          this.pathToPosition = target;
 -        return super.createPath(target, distance);
-+        return super.createPath(target, entity, distance); // Paper
++        return super.createPath(target, entity, distance); // Paper - EntityPathfindEvent
      }
  
      @Override
