@@ -5,31 +5,31 @@ Subject: [PATCH] Add EntityMoveEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6268b8ffe365c45406df7f40fcbc0567cc5d1db4..e048caafe645e33764a26154b5150c5c5de5b1ad 100644
+index 1aa73c3934c754fb9a4e09e8ac9c7f96d608ceb5..849161e11d547445d9bd10ac54bcd994a62aab06 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1529,6 +1529,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
-             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
 +            worldserver.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
  
              this.profiler.push(() -> {
                  return worldserver + " " + worldserver.dimension().location();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index fdf85454fc55de4d966442d32ee004e7e66b0ed7..4b1ddc849efaaba6fe35e46d7a979e6c65f0dbd2 100644
+index 30a71abd6dab3967d7206583ece6c496f5ff61df..be76b852ced7ac9cd3c2d3469d6120cc504e9700 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -221,6 +221,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
      public final LevelStorageSource.LevelStorageAccess convertable;
      public final UUID uuid;
-     public boolean hasPhysicsEvent = true; // Paper
+     public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
  
-     @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+     public LevelChunk getChunkIfLoaded(int x, int z) {
          return this.chunkSource.getChunk(x, z, false);
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index cf57c977d64a76d29a4f9a4811d55a17cc51e368..a2ed9d38f66004d8e7affd5d8e6277076ea04b3d 100644
+index 71aaa67177cb782e3ee20d57b73a4f6904b39cf1..6db503e99166cae9efdc25d2eae66956e6cf9699 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3361,6 +3361,20 @@ public abstract class LivingEntity extends Entity implements Attackable {

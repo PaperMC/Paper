@@ -11,7 +11,7 @@ After: http://i.imgur.com/nJ46crB.png
 Optimize redundant converting of static fields into an unsigned long each call by precomputing it in ctor
 
 diff --git a/src/main/java/net/minecraft/util/SimpleBitStorage.java b/src/main/java/net/minecraft/util/SimpleBitStorage.java
-index f677cc252d5510a2365e73dc42bd266e56115e83..2b3fd62dca2d1475075b5dcde56cea85b749cb44 100644
+index f677cc252d5510a2365e73dc42bd266e56115e83..18d8f3114831310c5f10da43d4333849d4eb6cae 100644
 --- a/src/main/java/net/minecraft/util/SimpleBitStorage.java
 +++ b/src/main/java/net/minecraft/util/SimpleBitStorage.java
 @@ -11,8 +11,8 @@ public class SimpleBitStorage implements BitStorage {
@@ -20,8 +20,8 @@ index f677cc252d5510a2365e73dc42bd266e56115e83..2b3fd62dca2d1475075b5dcde56cea85
      private final int valuesPerLong;
 -    private final int divideMul;
 -    private final int divideAdd;
-+    private final int divideMul; private final long divideMulUnsigned; // Paper - referenced in b(int) with 2 Integer.toUnsignedLong calls
-+    private final int divideAdd; private final long divideAddUnsigned; // Paper
++    private final int divideMul; private final long divideMulUnsigned; // Paper - Perf: Optimize SimpleBitStorage; referenced in b(int) with 2 Integer.toUnsignedLong calls
++    private final int divideAdd; private final long divideAddUnsigned; // Paper - Perf: Optimize SimpleBitStorage
      private final int divideShift;
  
      public SimpleBitStorage(int elementBits, int size, int[] data) {
@@ -31,8 +31,8 @@ index f677cc252d5510a2365e73dc42bd266e56115e83..2b3fd62dca2d1475075b5dcde56cea85
          int i = 3 * (this.valuesPerLong - 1);
 -        this.divideMul = MAGIC[i + 0];
 -        this.divideAdd = MAGIC[i + 1];
-+        this.divideMul = MAGIC[i + 0]; this.divideMulUnsigned = Integer.toUnsignedLong(this.divideMul); // Paper
-+        this.divideAdd = MAGIC[i + 1]; this.divideAddUnsigned = Integer.toUnsignedLong(this.divideAdd); // Paper
++        this.divideMul = MAGIC[i + 0]; this.divideMulUnsigned = Integer.toUnsignedLong(this.divideMul); // Paper - Perf: Optimize SimpleBitStorage
++        this.divideAdd = MAGIC[i + 1]; this.divideAddUnsigned = Integer.toUnsignedLong(this.divideAdd); // Paper - Perf: Optimize SimpleBitStorage
          this.divideShift = MAGIC[i + 2];
          int j = (size + this.valuesPerLong - 1) / this.valuesPerLong;
          if (data != null) {
@@ -43,18 +43,18 @@ index f677cc252d5510a2365e73dc42bd266e56115e83..2b3fd62dca2d1475075b5dcde56cea85
 -        long l = Integer.toUnsignedLong(this.divideMul);
 -        long m = Integer.toUnsignedLong(this.divideAdd);
 -        return (int)((long)index * l + m >> 32 >> this.divideShift);
-+        //long l = Integer.toUnsignedLong(this.divideMul); // Paper
-+        //long m = Integer.toUnsignedLong(this.divideAdd); // Paper
-+        return (int) ((long) index * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper
++        //long l = Integer.toUnsignedLong(this.divideMul); // Paper - Perf: Optimize SimpleBitStorage
++        //long m = Integer.toUnsignedLong(this.divideAdd); // Paper - Perf: Optimize SimpleBitStorage
++        return (int) ((long) index * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper - Perf: Optimize SimpleBitStorage
      }
  
      @Override
 -    public int getAndSet(int index, int value) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, this.mask, (long)value);
-+    public final int getAndSet(int index, int value) { // Paper - make final for inline
-+        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper
-+        //Validate.inclusiveBetween(0L, this.mask, (long)value); // Paper
++    public final int getAndSet(int index, int value) { // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, this.mask, (long)value); // Paper - Perf: Optimize SimpleBitStorage
          int i = this.cellIndex(index);
          long l = this.data[i];
          int j = (index - i * this.valuesPerLong) * this.bits;
@@ -65,9 +65,9 @@ index f677cc252d5510a2365e73dc42bd266e56115e83..2b3fd62dca2d1475075b5dcde56cea85
 -    public void set(int index, int value) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, this.mask, (long)value);
-+    public final void set(int index, int value) { // Paper - make final for inline
-+        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper
-+        //Validate.inclusiveBetween(0L, this.mask, (long)value); // Paper
++    public final void set(int index, int value) { // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, this.mask, (long)value); // Paper - Perf: Optimize SimpleBitStorage
          int i = this.cellIndex(index);
          long l = this.data[i];
          int j = (index - i * this.valuesPerLong) * this.bits;
@@ -77,13 +77,13 @@ index f677cc252d5510a2365e73dc42bd266e56115e83..2b3fd62dca2d1475075b5dcde56cea85
      @Override
 -    public int get(int index) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
-+    public final int get(int index) { // Paper - make final for inline
-+        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
++    public final int get(int index) { // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); - Perf: Optimize SimpleBitStorage
          int i = this.cellIndex(index);
          long l = this.data[i];
          int j = (index - i * this.valuesPerLong) * this.bits;
 diff --git a/src/main/java/net/minecraft/util/ZeroBitStorage.java b/src/main/java/net/minecraft/util/ZeroBitStorage.java
-index 0710c72441c832a93275f3f9bd9dd7643dc0f229..f0f764f36fb92c64ab2dc8a0a50c3f48321c3c9a 100644
+index 0710c72441c832a93275f3f9bd9dd7643dc0f229..b7a3f15dc1ed9e9322a86921052984c7cbd3262a 100644
 --- a/src/main/java/net/minecraft/util/ZeroBitStorage.java
 +++ b/src/main/java/net/minecraft/util/ZeroBitStorage.java
 @@ -13,21 +13,21 @@ public class ZeroBitStorage implements BitStorage {
@@ -93,9 +93,9 @@ index 0710c72441c832a93275f3f9bd9dd7643dc0f229..f0f764f36fb92c64ab2dc8a0a50c3f48
 -    public int getAndSet(int index, int value) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, 0L, (long)value);
-+    public final int getAndSet(int index, int value) { // Paper - make final for inline
-+        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper
-+        //Validate.inclusiveBetween(0L, 0L, (long)value); // Paper
++    public final int getAndSet(int index, int value) { // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, 0L, (long)value); // Paper - Perf: Optimize SimpleBitStorage
          return 0;
      }
  
@@ -103,16 +103,16 @@ index 0710c72441c832a93275f3f9bd9dd7643dc0f229..f0f764f36fb92c64ab2dc8a0a50c3f48
 -    public void set(int index, int value) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, 0L, (long)value);
-+    public final void set(int index, int value) { // Paper - make final for inline
-+        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper
-+        //Validate.inclusiveBetween(0L, 0L, (long)value); // Paper
++    public final void set(int index, int value) { // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, 0L, (long)value); // Paper - Perf: Optimize SimpleBitStorage
      }
  
      @Override
 -    public int get(int index) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
-+    public final int get(int index) { // Paper - make final for inline
-+        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper
++    public final int get(int index) { // Paper - Perf: Optimize SimpleBitStorage
++        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper - Perf: Optimize SimpleBitStorage
          return 0;
      }
  

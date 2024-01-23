@@ -49,7 +49,7 @@ index 0000000000000000000000000000000000000000..f699ce18ca044f813e194ef2786b7ea8
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
-index 8d06e8d286da2573e40794adab695ff77e5afd86..78b11d6fd74fb0714a8013fdc78d096643c4f83c 100644
+index 8d06e8d286da2573e40794adab695ff77e5afd86..b3c6e76105ee26a79a84a203935530f859460652 100644
 --- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
 +++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
 @@ -1,5 +1,6 @@
@@ -63,7 +63,7 @@ index 8d06e8d286da2573e40794adab695ff77e5afd86..78b11d6fd74fb0714a8013fdc78d0966
                              root = NbtIo.readCompressed(new java.io.FileInputStream(file5), NbtAccounter.unlimitedHeap());
                          } catch (Exception exception) {
                              exception.printStackTrace();
-+                            ServerInternalException.reportInternalException(exception); // Paper
++                            ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                          }
  
                          if (root != null) {
@@ -71,24 +71,24 @@ index 8d06e8d286da2573e40794adab695ff77e5afd86..78b11d6fd74fb0714a8013fdc78d0966
                                  NbtIo.writeCompressed(root, new java.io.FileOutputStream(file2));
                              } catch (Exception exception) {
                                  exception.printStackTrace();
-+                                ServerInternalException.reportInternalException(exception); // Paper
++                                ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                              }
                         }
                          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java b/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java
-index c6fb4c33d7ea52b88d8fc0d90748cbab7387c565..fed09b886f4fa0006d160e5f2abb00dfee45434d 100644
+index c6fb4c33d7ea52b88d8fc0d90748cbab7387c565..2b5b2869589991be37a4f128faabbff50e661470 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java
 @@ -118,6 +118,7 @@ public class VillageSiege implements CustomSpawner {
                  entityzombie.finalizeSpawn(world, world.getCurrentDifficultyAt(entityzombie.blockPosition()), MobSpawnType.EVENT, (SpawnGroupData) null, (CompoundTag) null);
              } catch (Exception exception) {
                  VillageSiege.LOGGER.warn("Failed to create zombie for village siege at {}", vec3d, exception);
-+                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
++                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                  return;
              }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 8be40065d6f0d53d5a264464fc4be208c7bad3a9..9a39bf50668340a77bbfd45218c03d9c00a6ce1e 100644
+index 1b5eb2685c43804e5e4014ff1b70f52652be67f5..0032914a53154d11e2d36267771fd2da6d2f1d05 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -1,5 +1,10 @@
@@ -106,19 +106,19 @@ index 8be40065d6f0d53d5a264464fc4be208c7bad3a9..9a39bf50668340a77bbfd45218c03d9c
              // Paper start - Prevent tile entity and entity crashes
              final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
              MinecraftServer.LOGGER.error(msg, throwable);
-+            getCraftServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable)));
++            getCraftServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
              entity.discard();
              // Paper end
          }
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 5d65baba605dd83e5f74d526aeda36d8ede8c014..92e76dd39dc3575e9466031dd799080a98ad8b8d 100644
+index 5d65baba605dd83e5f74d526aeda36d8ede8c014..604766a286d00bb4b40c20482376fe80651beabe 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -291,6 +291,7 @@ public final class NaturalSpawner {
              NaturalSpawner.LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(type));
          } catch (Exception exception) {
              NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
-+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
          }
  
          return null;
@@ -126,12 +126,12 @@ index 5d65baba605dd83e5f74d526aeda36d8ede8c014..92e76dd39dc3575e9466031dd799080a
                                      entity = biomesettingsmobs_c.type.create(world.getLevel());
                                  } catch (Exception exception) {
                                      NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
-+                                    com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
++                                    com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                                      continue;
                                  }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index db3ee1f1d8429d3d646623877adc9f6920b7764f..b589b67471367f37e6d1f4737122914a649c01b3 100644
+index db3ee1f1d8429d3d646623877adc9f6920b7764f..7208b7b916ff179e8dbe9925fb246e3652b4f9c2 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -1,6 +1,7 @@
@@ -150,7 +150,7 @@ index db3ee1f1d8429d3d646623877adc9f6920b7764f..b589b67471367f37e6d1f4737122914a
 -                + " (" + this.getBlockState(blockposition) + ") where there was no entity tile!");
 -            System.out.println("Chunk coordinates: " + (this.chunkPos.x * 16) + "," + (this.chunkPos.z * 16));
 -            new Exception().printStackTrace();
-+            // Paper start
++            // Paper start - ServerExceptionEvent
 +            ServerInternalException e = new ServerInternalException(
 +                "Attempted to place a tile entity (" + blockEntity + ") at " + blockEntity.getBlockPos().getX() + ","
 +                    + blockEntity.getBlockPos().getY() + "," + blockEntity.getBlockPos().getZ()
@@ -159,7 +159,7 @@ index db3ee1f1d8429d3d646623877adc9f6920b7764f..b589b67471367f37e6d1f4737122914a
 +                    "\nWorld: " + level.getLevel().dimension().location());
 +            e.printStackTrace();
 +            ServerInternalException.reportInternalException(e);
-+            // Paper end
++            // Paper end - ServerExceptionEvent
              // CraftBukkit end
          }
      }
@@ -167,19 +167,19 @@ index db3ee1f1d8429d3d646623877adc9f6920b7764f..b589b67471367f37e6d1f4737122914a
                          // Paper start - Prevent tile entity and entity crashes
                          final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
                          net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
-+                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new ServerInternalException(msg, throwable)));
++                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
                          LevelChunk.this.removeBlockEntity(this.getPos());
                          // Paper end
                          // Spigot start
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 5103081e8469dd5a393595eae00c6f6c9d0a5028..ab9681ba3a86212e0e23a9af8788eec1dbee36ab 100644
+index 5103081e8469dd5a393595eae00c6f6c9d0a5028..9623a7bac79af37016ba5a5b37d4ef0b3dcb7312 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -275,6 +275,7 @@ public class RegionFile implements AutoCloseable {
                      return true;
                  }
              } catch (IOException ioexception) {
-+                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(ioexception); // Paper
++                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(ioexception); // Paper - ServerExceptionEvent
                  return false;
              }
          }
@@ -187,7 +187,7 @@ index 5103081e8469dd5a393595eae00c6f6c9d0a5028..ab9681ba3a86212e0e23a9af8788eec1
              ((java.nio.Buffer) buf).position(5); // CraftBukkit - decompile error
              filechannel.write(buf);
          } catch (Throwable throwable) {
-+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable); // Paper
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable); // Paper - ServerExceptionEvent
              if (filechannel != null) {
                  try {
                      filechannel.close();

@@ -5,7 +5,7 @@ Subject: [PATCH] handle NaN health/absorb values and repair bad data
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 497cd74cd6efc4ad3679fd1a7489ebd194030835..52c895bf50d722c81ab08c5f53c2bc1212ab5ef3 100644
+index 537ddaec422399dfa926936501d35bdc48b0baa3..966059931fa4b6c06dd5269be09db8cf9ca0bd51 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -793,7 +793,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -13,13 +13,13 @@ index 497cd74cd6efc4ad3679fd1a7489ebd194030835..52c895bf50d722c81ab08c5f53c2bc12
      @Override
      public void readAdditionalSaveData(CompoundTag nbt) {
 -        this.internalSetAbsorptionAmount(nbt.getFloat("AbsorptionAmount"));
-+        // Paper start - jvm keeps optimizing the setter
++        // Paper start - Check for NaN
 +        float absorptionAmount = nbt.getFloat("AbsorptionAmount");
 +        if (Float.isNaN(absorptionAmount)) {
 +            absorptionAmount = 0;
 +        }
 +        this.internalSetAbsorptionAmount(absorptionAmount);
-+        // Paper end
++        // Paper end - Check for NaN
          if (nbt.contains("Attributes", 9) && this.level() != null && !this.level().isClientSide) {
              this.getAttributes().load(nbt.getList("Attributes", 10));
          }
@@ -27,10 +27,10 @@ index 497cd74cd6efc4ad3679fd1a7489ebd194030835..52c895bf50d722c81ab08c5f53c2bc12
      }
  
      public void setHealth(float health) {
-+        // Paper start
++        // Paper start - Check for NaN
 +        if (Float.isNaN(health)) { health = getMaxHealth(); if (this.valid) {
 +            System.err.println("[NAN-HEALTH] " + getScoreboardName() + " had NaN health set");
-+        } } // Paper end
++        } } // Paper end - Check for NaN
          // CraftBukkit start - Handle scaled health
          if (this instanceof ServerPlayer) {
              org.bukkit.craftbukkit.entity.CraftPlayer player = ((ServerPlayer) this).getBukkitEntity();
@@ -39,19 +39,19 @@ index 497cd74cd6efc4ad3679fd1a7489ebd194030835..52c895bf50d722c81ab08c5f53c2bc12
  
      public final void setAbsorptionAmount(float absorptionAmount) {
 -        this.internalSetAbsorptionAmount(Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()));
-+        this.internalSetAbsorptionAmount(!Float.isNaN(absorptionAmount) ? Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()) : 0.0F); // Paper
++        this.internalSetAbsorptionAmount(!Float.isNaN(absorptionAmount) ? Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()) : 0.0F); // Paper - Check for NaN
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index babd5dd5a83682d2bc36f988f008e788257b4157..a40d4d486ed674aae6ff319879c2ca2b2e4ce2cb 100644
+index 1d48824c4cfd99ced6a70284aa3b7bce46af81fa..b15df5f55dc12c358df74df500f210976eaba048 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -2232,6 +2232,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
  
      public void setRealHealth(double health) {
-+        if (Double.isNaN(health)) {return;} // Paper
++        if (Double.isNaN(health)) {return;} // Paper - Check for NaN
          this.health = health;
      }
  

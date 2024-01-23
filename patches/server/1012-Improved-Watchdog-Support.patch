@@ -71,7 +71,7 @@ index 6f2452de76e8f5fcc1367066e0e753740764eb98..e047dee632022abfe05865d1e71838be
              cause = cause.getCause();
          }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6ee3eb03967f020d96e4770b71ae39df3e69a79c..69b3d89a352fe5cfd51e2e566c9fa4dfbd765263 100644
+index b703a21df8f27a987f74f99ceff476ec75f647d0..e2e37b75475c7c243245ca3ff78d29c51ff0ad39 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -297,7 +297,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -122,7 +122,7 @@ index 6ee3eb03967f020d96e4770b71ae39df3e69a79c..69b3d89a352fe5cfd51e2e566c9fa4df
          if (this.metricsRecorder.isRecording()) {
              this.cancelRecordingMetrics();
 @@ -997,7 +1014,21 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.getProfileCache().save(false); // Paper
+             this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
          }
          // Spigot end
 +        // Paper start - move final shutdown items here
@@ -266,10 +266,10 @@ index 9e0c5bb92fb45cab7d78c5ad631c64170d48729f..6de6dad36203479677a29ad61e21bc36
      }
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index f168c9bb2fa3ca5b3168fb4c420a77e5bba6185b..947cb3b24d6e379b080f3de8cd4ea60e0ca457e4 100644
+index 1c56b7cd0cfc8cdc0ccfc7ce79cd3e23bef1b334..c423bf30173d2bf6cd3b202de6d490d45c41bf72 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -613,7 +613,7 @@ public abstract class PlayerList {
+@@ -612,7 +612,7 @@ public abstract class PlayerList {
          this.cserver.getPluginManager().callEvent(playerQuitEvent);
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
@@ -277,7 +277,7 @@ index f168c9bb2fa3ca5b3168fb4c420a77e5bba6185b..947cb3b24d6e379b080f3de8cd4ea60e
 +        if (server.isSameThread()) entityplayer.doTick(); // SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
          // CraftBukkit end
  
-         // Paper start - Remove from collideRule team if needed
+         // Paper start - Configurable player collision; Remove from collideRule team if needed
 diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 index f5829ae484d93b547a5437b85a9621346384a11b..83701fbfaa56a232593ee8f11a3afb8941238bfa 100644
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
@@ -291,7 +291,7 @@ index f5829ae484d93b547a5437b85a9621346384a11b..83701fbfaa56a232593ee8f11a3afb89
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 25ed0f62058fa531d8bf9cf1e8fb99651ee46a67..1e78a00ab36362ff7650410ed2af1a822613de4f 100644
+index 7116e2b98a8c6cc026fd9ea8c5f2c00764906a8c..8a3a526f7dbce1090d39232dd310d91cc54efc44 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -940,6 +940,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -303,7 +303,7 @@ index 25ed0f62058fa531d8bf9cf1e8fb99651ee46a67..1e78a00ab36362ff7650410ed2af1a82
              final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
              MinecraftServer.LOGGER.error(msg, throwable);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 9e01a22df54492d9c8e9f9defd84014dc109514b..d85ed706703e50f76df8db414827ccd41a5985d9 100644
+index 6e1006675339551ca499a57a8f8553020f16a4fa..6daa7fc7bf08e5f915da4a728a96d2e7a3abd14d 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -1176,6 +1176,7 @@ public class LevelChunk extends ChunkAccess {
