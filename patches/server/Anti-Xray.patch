@@ -1021,8 +1021,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 @@ -0,0 +0,0 @@ public class ClientboundLevelChunkPacketData {
-     }
-     // Paper end - Handle oversized block entities in chunks
+     private final byte[] buffer;
+     private final List<ClientboundLevelChunkPacketData.BlockEntityInfo> blockEntitiesData;
  
 -    public ClientboundLevelChunkPacketData(LevelChunk chunk) {
 +    // Paper start - Anti-Xray - Add chunk packet info
@@ -1046,8 +1046,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), chunk, chunkPacketInfo);
 +        // Paper end
          this.blockEntitiesData = Lists.newArrayList();
-         int totalTileEntities = 0; // Paper - Handle oversized block entities in chunks
  
+         for(Map.Entry<BlockPos, BlockEntity> entry2 : chunk.getBlockEntities().entrySet()) {
 @@ -0,0 +0,0 @@ public class ClientboundLevelChunkPacketData {
          return byteBuf;
      }
@@ -1154,6 +1154,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Paper start - PlayerChunkLoadEvent
          if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
              new io.papermc.paper.event.packet.PlayerChunkLoadEvent(new org.bukkit.craftbukkit.CraftChunk(chunk), handler.getPlayer().getBukkitEntity()).callEvent();
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+                 .getHolderOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
+             player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket(
+                 new net.minecraft.world.level.chunk.EmptyLevelChunk(worldserver1, player.chunkPosition(), plains),
+-                worldserver1.getLightEngine(), (java.util.BitSet)null, (java.util.BitSet) null)
++                worldserver1.getLightEngine(), (java.util.BitSet)null, (java.util.BitSet) null, true)
+             );
+         }
+         // Paper end - Send empty chunk
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
