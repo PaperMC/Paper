@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 28 Jun 2020 03:59:10 -0400
+Subject: [PATCH] Fix Per World Difficulty / Remembering Difficulty
+
+Fixes per world difficulty with /difficulty command and also
+makes it so that the server keeps the last difficulty used instead
+of restoring the server.properties every single load.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index b9dbedd118a9287f659d2e785c3a582e817e4e36..e824ac0c487ab42c68cbf1a6f7c24d4b689809c3 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -825,7 +825,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         if (worldserver.getWorld().getKeepSpawnInMemory()) worldloadlistener.stop(); // Paper - Configurable Keep Spawn Loaded range per world
+         // CraftBukkit start
+         // this.updateMobSpawningFlags();
+-        worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
++        worldserver.setSpawnSettings(worldserver.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals()); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
+ 
+         this.forceTicks = false;
+         // CraftBukkit end
+@@ -1759,11 +1759,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+     }
+ 
+-    public void setDifficulty(Difficulty difficulty, boolean forceUpdate) {
+-        if (forceUpdate || !this.worldData.isDifficultyLocked()) {
+-            this.worldData.setDifficulty(this.worldData.isHardcore() ? Difficulty.HARD : difficulty);
+-            this.updateMobSpawningFlags();
+-            this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
++    // Paper start - per level difficulty
++    public void setDifficulty(ServerLevel level, Difficulty difficulty, boolean forceUpdate) {
++        PrimaryLevelData worldData = level.serverLevelData;
++        if (forceUpdate || !worldData.isDifficultyLocked()) {
++            worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : difficulty);
++            level.setSpawnSettings(worldData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals());
++            // this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
++            // Paper end - per level difficulty
+         }
+     }
+ 
+@@ -1777,7 +1780,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
+ 
+-            worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
++            worldserver.setSpawnSettings(worldserver.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals()); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/commands/DifficultyCommand.java b/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
+index 997a96a21440ae72696d68f8031ece4ba487d3ef..3d8584929cee000ae7df10c5bd94f35820e70294 100644
+--- a/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
++++ b/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
+@@ -49,7 +49,7 @@ public class DifficultyCommand {
+         if (worldServer.getDifficulty() == difficulty) { // CraftBukkit
+             throw DifficultyCommand.ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
+         } else {
+-            worldServer.serverLevelData.setDifficulty(difficulty); // CraftBukkit
++            minecraftserver.setDifficulty(worldServer, difficulty, true); // Paper - per level difficulty; don't skip other difficulty-changing logic (fix upstream's fix)
+             source.sendSuccess(() -> {
+                 return Component.translatable("commands.difficulty.success", difficulty.getDisplayName());
+             }, true);
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 249944e48d3e07cc5dd412f58f39a3abdbe446b1..5ecf65315b42cd07dcd69a10c445b1f0576f03c5 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -325,7 +325,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     public void forceDifficulty() {
+-        this.setDifficulty(this.getProperties().difficulty, true);
++        // this.setDifficulty(this.getProperties().difficulty, true); // Paper - per level difficulty; Don't overwrite level.dat's difficulty, keep current
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 5c9a6fe2f2d67ff4e27c691ebc97e7a50d62fc22..4ce4a620e07ed30a28716adc4076fc5efbcf9b62 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1205,7 +1205,7 @@ public class ServerPlayer extends Player {
+                 this.isChangingDimension = true; // CraftBukkit - Set teleport invulnerability only if player changing worlds
+ 
+                 this.connection.send(new ClientboundRespawnPacket(this.createCommonSpawnInfo(worldserver), (byte) 3));
+-                this.connection.send(new ClientboundChangeDifficultyPacket(this.level().getDifficulty(), this.level().getLevelData().isDifficultyLocked()));
++                this.connection.send(new ClientboundChangeDifficultyPacket(worldserver.getDifficulty(), this.level().getLevelData().isDifficultyLocked())); // Paper - per level difficulty
+                 PlayerList playerlist = this.server.getPlayerList();
+ 
+                 playerlist.sendPlayerPermissionLevel(this);
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 2502b8145da151a63dc769c4e717d53d651203c3..2f8715e200b9b8ae4c4b70ddd7cdc3368a109939 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3176,7 +3176,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
+-            this.server.setDifficulty(packet.getDifficulty(), false);
++            // this.server.setDifficulty(packet.getDifficulty(), false); // Paper - per level difficulty; don't allow clients to change this
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 41935f3b0d4e8b7bc18d308de964db537afe863b..8bc0f2a7a4a5af73a4a0b693b91c6bbbf7c6e2d1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -955,8 +955,8 @@ public final class CraftServer implements Server {
+         org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
+         this.console.paperConfigurations.reloadConfigs(this.console);
+         for (ServerLevel world : this.console.getAllLevels()) {
+-            world.serverLevelData.setDifficulty(config.difficulty);
+-            world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
++            // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
++            world.setSpawnSettings(world.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && config.spawnMonsters, config.spawnAnimals); // Paper - per level difficulty (from MinecraftServer#setDifficulty(ServerLevel, Difficulty, boolean))
+ 
+             for (SpawnCategory spawnCategory : SpawnCategory.values()) {
+                 if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index f72409e92cbf00c5665037bf4916ddbd352d66d5..e8b06b5952e5cc63f82d7a0542bf931bd4b45d65 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1111,7 +1111,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public void setDifficulty(Difficulty difficulty) {
+-        this.getHandle().serverLevelData.setDifficulty(net.minecraft.world.Difficulty.byId(difficulty.getValue()));
++        this.getHandle().getServer().setDifficulty(this.getHandle(), net.minecraft.world.Difficulty.byId(difficulty.getValue()), true); // Paper - per level difficulty; don't skip other difficulty-changing logic
+     }
+ 
+     @Override

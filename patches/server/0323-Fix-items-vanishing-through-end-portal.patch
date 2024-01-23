@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AJMFactsheets <AJMFactsheets@gmail.com>
+Date: Wed, 22 Jan 2020 19:52:28 -0600
+Subject: [PATCH] Fix items vanishing through end portal
+
+If the Paper configuration option "keep-spawn-loaded" is set to false,
+items entering the overworld from the end will spawn at Y = 0.
+
+This is due to logic in the getHighestBlockYAt method in World.java
+only searching the heightmap if the chunk is loaded.
+
+Quickly loading the exact world spawn chunk before searching the
+heightmap resolves the issue without having to load all spawn chunks.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 7abdfeacec4787819e2e66d3b8a322b750d203f7..72b8c527a06f260322430dd274cfae5582cd972b 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3399,6 +3399,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+             if (flag1) {
+                 blockposition1 = ServerLevel.END_SPAWN_POINT;
+             } else {
++                destination.getChunkAt(destination.getSharedSpawnPos()); // Paper - Ensure spawn chunk is always loaded before calculating Y coordinate
+                 blockposition1 = destination.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, destination.getSharedSpawnPos());
+             }
+             // CraftBukkit start

@@ -1,0 +1,108 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: egg82 <phantom_zero@ymail.com>
+Date: Tue, 7 Aug 2018 01:24:23 -0600
+Subject: [PATCH] Use ConcurrentHashMap in JsonList
+
+This is specifically aimed at fixing #471
+
+Using a ConcurrentHashMap because thread safety
+The performance benefit of Map over ConcurrentMap is negligabe at best in this scenaio, as most operations will be get and not add or remove
+Even without considering the use-case the benefits are still negligable
+
+Original ideas for the system included an expiration policy and/or handler
+The simpler solution was to use a computeIfPresent in the get method
+This will simultaneously have an O(1) lookup time and automatically expire any values
+Since the get method (nor other similar methods) don't seem to have a critical need to flush the map to disk at any of these points further processing is simply wasteful
+Meaning the original function expired values unrelated to the current value without actually having any explicit need to
+
+The h method was heavily modified to be much more efficient in its processing
+Also instead of being called on every get, it's now called just before a save
+This will eliminate stale values being flushed to disk
+
+Modified isEmpty to use the isEmpty() method instead of the slightly confusing size() < 1
+The point of this is readability, but does have a side-benefit of a small microptimization
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 5517f873e709b6f3b9206f0ad0212a9524f2c691..e927448d7df9a99bf1d5184557ed57b8c32a2773 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -634,7 +634,7 @@ public abstract class PlayerList {
+         } else if (!this.isWhiteListed(gameprofile, event)) { // Paper - ProfileWhitelistVerifyEvent
+             //ichatmutablecomponent = Component.translatable("multiplayer.disconnect.not_whitelisted"); // Paper
+             //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure - moved to isWhitelisted
+-        } else if (this.getIpBans().isBanned(socketaddress) && !this.getIpBans().get(socketaddress).hasExpired()) {
++        } else if (this.getIpBans().isBanned(socketaddress) && getIpBans().get(socketaddress) != null && !this.getIpBans().get(socketaddress).hasExpired()) { // Paper - fix NPE with temp ip bans
+             IpBanListEntry ipbanentry = this.ipBans.get(socketaddress);
+ 
+             ichatmutablecomponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipbanentry.getReason());
+diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
+index 4d6f5e627d386f9ca2d7653b0f485c82a13557f5..35f973cc2c0989256fa21abaf0327c2f36dbe4c9 100644
+--- a/src/main/java/net/minecraft/server/players/StoredUserList.java
++++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
+@@ -31,7 +31,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
+     private final File file;
+-    private final Map<String, V> map = Maps.newHashMap();
++    private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - Use ConcurrentHashMap in JsonList
+ 
+     public StoredUserList(File file) {
+         this.file = file;
+@@ -54,8 +54,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+ 
+     @Nullable
+     public V get(K key) {
+-        this.removeExpired();
+-        return (V) this.map.get(this.getKeyForUser(key)); // CraftBukkit - fix decompile error
++        // Paper start - Use ConcurrentHashMap in JsonList
++        return (V) this.map.computeIfPresent(this.getKeyForUser(key), (k, v) -> {
++            return v.hasExpired() ? null : v;
++        });
++        // Paper end - Use ConcurrentHashMap in JsonList
+     }
+ 
+     public void remove(K key) {
+@@ -78,7 +81,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+     }
+ 
+     public boolean isEmpty() {
+-        return this.map.size() < 1;
++        return this.map.isEmpty(); // Paper - Use ConcurrentHashMap in JsonList
+     }
+ 
+     protected String getKeyForUser(K profile) {
+@@ -90,25 +93,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+     }
+ 
+     private void removeExpired() {
+-        List<K> list = Lists.newArrayList();
+-        Iterator iterator = this.map.values().iterator();
+-
+-        while (iterator.hasNext()) {
+-            V v0 = (V) iterator.next(); // CraftBukkit - decompile error
+-
+-            if (v0.hasExpired()) {
+-                list.add(v0.getUser());
+-            }
+-        }
+-
+-        iterator = list.iterator();
+-
+-        while (iterator.hasNext()) {
+-            K k0 = (K) iterator.next(); // CraftBukkit - decompile error
+-
+-            this.map.remove(this.getKeyForUser(k0));
+-        }
+-
++        this.map.values().removeIf(StoredUserEntry::hasExpired); // Paper - Use ConcurrentHashMap in JsonList
+     }
+ 
+     protected abstract StoredUserEntry<K> createEntry(JsonObject json);
+@@ -118,6 +103,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+     }
+ 
+     public void save() throws IOException {
++        this.removeExpired(); // Paper - remove expired values before saving
+         JsonArray jsonarray = new JsonArray();
+         Stream<JsonObject> stream = this.map.values().stream().map((jsonlistentry) -> { // CraftBukkit - decompile error
+             JsonObject jsonobject = new JsonObject();

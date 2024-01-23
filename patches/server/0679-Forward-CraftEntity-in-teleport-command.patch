@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 4 Dec 2021 17:04:47 -0800
+Subject: [PATCH] Forward CraftEntity in teleport command
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 1b9b3e8b2a85c6e921ec665c95061f2d3e3f678d..d07e8305939e9bcf19578de8e7996f98af2a89ba 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3299,6 +3299,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     }
+ 
+     public void restoreFrom(Entity original) {
++        // Paper start - Forward CraftEntity in teleport command
++        CraftEntity bukkitEntity = original.bukkitEntity;
++        if (bukkitEntity != null) {
++            bukkitEntity.setHandle(this);
++            this.bukkitEntity = bukkitEntity;
++        }
++        // Paper end - Forward CraftEntity in teleport command
+         CompoundTag nbttagcompound = original.saveWithoutId(new CompoundTag());
+ 
+         nbttagcompound.remove("Dimension");
+@@ -3389,10 +3396,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+                         }
+                     }
+                     // CraftBukkit end
+-                    // CraftBukkit start - Forward the CraftEntity to the new entity
+-                    this.getBukkitEntity().setHandle(entity);
+-                    entity.bukkitEntity = this.getBukkitEntity();
+-                    // CraftBukkit end
++                    // // CraftBukkit start - Forward the CraftEntity to the new entity // Paper - Forward CraftEntity in teleport command; moved to Entity#restoreFrom
++                    // this.getBukkitEntity().setHandle(entity);
++                    // entity.bukkitEntity = this.getBukkitEntity();
++                    // // CraftBukkit end
+                 }
+ 
+                 this.removeAfterChangingDimensions();

@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 24 Aug 2018 11:50:26 -0500
+Subject: [PATCH] Add More Creeper API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+index d08ccf5eb52e5975b161f5f7bcbdd385eb8318c9..6a91960f93e624a4b975c1cf76698eb45ceda838 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+@@ -132,7 +132,7 @@ public class Creeper extends Monster implements PowerableMob {
+         }
+ 
+         if (nbt.getBoolean("ignited")) {
+-            this.ignite();
++            this.entityData.set(Creeper.DATA_IS_IGNITED, true); // Paper - set directly to avoid firing event
+         }
+ 
+     }
+@@ -315,7 +315,18 @@ public class Creeper extends Monster implements PowerableMob {
+     }
+ 
+     public void ignite() {
+-        this.entityData.set(Creeper.DATA_IS_IGNITED, true);
++        // Paper start - CreeperIgniteEvent
++        setIgnited(true);
++    }
++
++    public void setIgnited(boolean ignited) {
++        if (isIgnited() != ignited) {
++            com.destroystokyo.paper.event.entity.CreeperIgniteEvent event = new com.destroystokyo.paper.event.entity.CreeperIgniteEvent((org.bukkit.entity.Creeper) getBukkitEntity(), ignited);
++            if (event.callEvent()) {
++                this.entityData.set(Creeper.DATA_IS_IGNITED, event.isIgnited());
++            }
++        }
++        // Paper end - CreeperIgniteEvent
+     }
+ 
+     public boolean canDropMobsSkull() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
+index 127e65c5780c6727fde1ea3e597b116a475a666a..4191845bfe05d8691e50143c42090566522f7e74 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
+@@ -88,4 +88,16 @@ public class CraftCreeper extends CraftMonster implements Creeper {
+     public String toString() {
+         return "CraftCreeper";
+     }
++
++    // Paper start
++    @Override
++    public void setIgnited(boolean ignited) {
++        getHandle().setIgnited(ignited);
++    }
++
++    @Override
++    public boolean isIgnited() {
++        return getHandle().isIgnited();
++    }
++    // Paper end
+ }

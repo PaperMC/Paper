@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 1 Jan 2022 05:19:37 -0800
+Subject: [PATCH] Validate usernames
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index d4658328eeecb1c9e3e25eec14dea07e9e2a8b74..ebda34825bbd10145a81d54c345e31c2a4fb5de4 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -63,6 +63,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     public GameProfile authenticatedProfile; // Paper - public
+     private final String serverId;
+     private ServerPlayer player; // CraftBukkit
++    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
+ 
+     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
+         this.state = ServerLoginPacketListenerImpl.State.HELLO;
+@@ -137,7 +138,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     @Override
+     public void handleHello(ServerboundHelloPacket packet) {
+         Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
+-        Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]); // Paper - config username validation
+         this.requestedUsername = packet.name();
+         GameProfile gameprofile = this.server.getSingleplayerProfile();
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index a4d2ddbb9cee1682fc5d91e90d2fd0b74a47aa3c..e67bcde933d8d64ca1d9d18b938f118994bf222b 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -678,7 +678,7 @@ public abstract class PlayerList {
+ 
+         for (int i = 0; i < this.players.size(); ++i) {
+             entityplayer = (ServerPlayer) this.players.get(i);
+-            if (entityplayer.getUUID().equals(uuid)) {
++            if (entityplayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && entityplayer.getGameProfile().getName().equalsIgnoreCase(gameprofile.getName()))) { // Paper - validate usernames
+                 list.add(entityplayer);
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 712249fa1c1ce9af0dd07e8705bf944ac57842b5..ff070dbb6c9fa525b484e4eb9ef58caad9f0f016 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -2332,9 +2332,23 @@ public abstract class Player extends LivingEntity {
+     }
+ 
+     public static boolean isValidUsername(String name) {
+-        return name.length() > 16 ? false : name.chars().filter((i) -> {
+-            return i <= 32 || i >= 127;
+-        }).findAny().isEmpty();
++        // Paper start - username validation overriding
++        if (name == null || name.isEmpty() || name.length() > 16) {
++            return false;
++        }
++
++        for (int i = 0, len = name.length(); i < len; ++i) {
++            char c = name.charAt(i);
++
++            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_' || c == '.')) {
++                continue;
++            }
++
++            return false;
++        }
++
++        return true;
++        // Paper end - username validation overriding
+     }
+ 
+     public static float getPickRange(boolean creative) {

@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 19 Dec 2021 09:13:41 -0800
+Subject: [PATCH] Only write chunk data to disk if it serializes without
+ throwing
+
+This ensures at least a valid version of the chunk exists
+on disk, even if outdated
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+index f3d169436ce05f1c56599cfe15a56671b7d13516..4d5ab1771129114ef1e4745c43a4fd1813df2e30 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -430,6 +430,7 @@ public class RegionFile implements AutoCloseable {
+ 
+     }
+ 
++    public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - don't write garbage data to disk if writing serialization fails
+     private class ChunkBuffer extends ByteArrayOutputStream {
+ 
+         private final ChunkPos pos;
+@@ -443,6 +444,23 @@ public class RegionFile implements AutoCloseable {
+             super.write(RegionFile.this.version.getId());
+             this.pos = chunkcoordintpair;
+         }
++        // Paper start - don't write garbage data to disk if writing serialization fails
++        @Override
++        public void write(final int b) {
++            if (this.count > MAX_CHUNK_SIZE) {
++                throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + this.count);
++            }
++            super.write(b);
++        }
++
++        @Override
++        public void write(final byte[] b, final int off, final int len) {
++            if (this.count + len > MAX_CHUNK_SIZE) {
++                throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + (this.count + len));
++            }
++            super.write(b, off, len);
++        }
++        // Paper end - don't write garbage data to disk if writing serialization fails
+ 
+         public void close() throws IOException {
+             ByteBuffer bytebuffer = ByteBuffer.wrap(this.buf, 0, this.count);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+index eeccc924dbba6f860245611eb943c9219471f670..c3bf911a76373dcd1c345a3091adefb0e550fd18 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -241,10 +241,17 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+             try {
+                 NbtIo.write(nbt, (DataOutput) dataoutputstream);
++                // Paper start - don't write garbage data to disk if writing serialization fails
++                dataoutputstream.close(); // Only write if successful
++            } catch (final RegionFileSizeException e) {
++                attempts = 5; // Don't retry
++                regionfile.clear(pos);
++                throw e;
++                // Paper end - don't write garbage data to disk if writing serialization fails
+             } catch (Throwable throwable) {
+                 if (dataoutputstream != null) {
+                     try {
+-                        dataoutputstream.close();
++                        //dataoutputstream.close(); // Paper - don't write garbage data to disk if writing serialization fails
+                     } catch (Throwable throwable1) {
+                         throwable.addSuppressed(throwable1);
+                     }
+@@ -252,10 +259,7 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+                 throw throwable;
+             }
+-
+-            if (dataoutputstream != null) {
+-                dataoutputstream.close();
+-            }
++            // Paper - don't write garbage data to disk if writing serialization fails; move into try block to only write if successfully serialized
+         }
+         // Paper start - Chunk save reattempt
+         return;
+@@ -301,4 +305,13 @@ public class RegionFileStorage implements AutoCloseable {
+         }
+ 
+     }
++
++    // Paper start - don't write garbage data to disk if writing serialization fails
++    public static final class RegionFileSizeException extends RuntimeException {
++
++        public RegionFileSizeException(String message) {
++            super(message);
++        }
++    }
++    // Paper end - don't write garbage data to disk if writing serialization fails
+ }

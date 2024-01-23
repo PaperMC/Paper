@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 3 Aug 2018 00:04:54 -0400
+Subject: [PATCH] Fix NBT type issues
+
+Addresses two issues:
+- MC-135506: Experience should save as Integers
+- Allay duplication cooldown is saved and exposed as a long, but loaded as an int
+
+diff --git a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
+index 0f55715f2d97ab09746a51f9d39134b513778fdd..36d5d1736bf826f3abc756277de431c94cabb744 100644
+--- a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
++++ b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
+@@ -295,7 +295,7 @@ public class ExperienceOrb extends Entity {
+     public void addAdditionalSaveData(CompoundTag nbt) {
+         nbt.putShort("Health", (short) this.health);
+         nbt.putShort("Age", (short) this.age);
+-        nbt.putShort("Value", (short) this.value);
++        nbt.putInt("Value", this.value); // Paper - save as Integer
+         nbt.putInt("Count", this.count);
+         this.savePaperNBT(nbt); // Paper
+     }
+@@ -304,7 +304,7 @@ public class ExperienceOrb extends Entity {
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         this.health = nbt.getShort("Health");
+         this.age = nbt.getShort("Age");
+-        this.value = nbt.getShort("Value");
++        this.value = nbt.getInt("Value"); // Paper - load as Integer
+         this.count = Math.max(nbt.getInt("Count"), 1);
+         this.loadPaperNBT(nbt); // Paper
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
+index 41621adf597d76cad0a7098ac0da8ceb29b43ed7..5ad5f22e5aa26445e5eb229958e7bf356bdd460e 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
++++ b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
+@@ -509,7 +509,7 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
+             });
+         }
+ 
+-        this.duplicationCooldown = (long) nbt.getInt("DuplicationCooldown");
++        this.duplicationCooldown = nbt.getLong("DuplicationCooldown"); // Paper - Load as long
+         this.entityData.set(Allay.DATA_CAN_DUPLICATE, nbt.getBoolean("CanDuplicate"));
+     }
+ 
