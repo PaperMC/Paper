@@ -1,0 +1,296 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 26 Mar 2020 21:59:32 -0700
+Subject: [PATCH] Detail more information in watchdog dumps
+
+- Dump position, world, velocity, and uuid for currently ticking entities
+- Dump player name, player uuid, position, and world for packet handling
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 3a4d03a936bbbbb54cb3d63b57ad9c3490f98c83..b189aeb8646b5385c7cca0c4babfcb071a642220 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -586,7 +586,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
+                 || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
+                 || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
++            // Paper start - detailed watchdog information
++            net.minecraft.network.protocol.PacketUtils.packetProcessing.push(this.packetListener);
++            try { // Paper end - detailed watchdog information
+             tickablepacketlistener.tick();
++            } finally { // Paper start - detailed watchdog information
++                net.minecraft.network.protocol.PacketUtils.packetProcessing.pop();
++            } // Paper end - detailed watchdog information
+             }
+             // Paper end - Buffer joins to world
+         }
+diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+index 454d0187ff8370a0d99cca051ee0a8c50b39cfb7..3e2d5dcd62775b6ed7c0ce0ba51a71b635b1d644 100644
+--- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
++++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+@@ -18,6 +18,24 @@ public class PacketUtils {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+ 
++    // Paper start - detailed watchdog information
++    public static final java.util.concurrent.ConcurrentLinkedDeque<PacketListener> packetProcessing = new java.util.concurrent.ConcurrentLinkedDeque<>();
++    static final java.util.concurrent.atomic.AtomicLong totalMainThreadPacketsProcessed = new java.util.concurrent.atomic.AtomicLong();
++
++    public static long getTotalProcessedPackets() {
++        return totalMainThreadPacketsProcessed.get();
++    }
++
++    public static java.util.List<PacketListener> getCurrentPacketProcessors() {
++        java.util.List<PacketListener> ret = new java.util.ArrayList<>(4);
++        for (PacketListener listener : packetProcessing) {
++            ret.add(listener);
++        }
++
++        return ret;
++    }
++    // Paper end - detailed watchdog information
++
+     public PacketUtils() {}
+ 
+     public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, ServerLevel world) throws RunningOnDifferentThreadException {
+@@ -27,6 +45,8 @@ public class PacketUtils {
+     public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
+         if (!engine.isSameThread()) {
+             engine.execute(() -> { // Paper - Fix preemptive player kick on a server shutdown
++                packetProcessing.push(listener); // Paper - detailed watchdog information
++                try { // Paper - detailed watchdog information
+                 if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerCommonPacketListenerImpl && ((ServerCommonPacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
+                 if (listener.shouldHandleMessage(packet)) {
+                     co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
+@@ -64,6 +84,12 @@ public class PacketUtils {
+                 } else {
+                     PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
+                 }
++                // Paper start - detailed watchdog information
++                } finally {
++                    totalMainThreadPacketsProcessed.getAndIncrement();
++                    packetProcessing.pop();
++                }
++                // Paper end - detailed watchdog information
+ 
+             });
+             throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 6ced436bda5beaa107ad333d35f39efe366f0595..38c57ad6f028db325bb78fd849e9150af2d6d2ca 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1239,7 +1239,26 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+     }
+ 
++    // Paper start - log detailed entity tick information
++    // TODO replace with varhandle
++    static final java.util.concurrent.atomic.AtomicReference<Entity> currentlyTickingEntity = new java.util.concurrent.atomic.AtomicReference<>();
++
++    public static List<Entity> getCurrentlyTickingEntities() {
++        Entity ticking = currentlyTickingEntity.get();
++        List<Entity> ret = java.util.Arrays.asList(ticking == null ? new Entity[0] : new Entity[] { ticking });
++
++        return ret;
++    }
++    // Paper end - log detailed entity tick information
++
+     public void tickNonPassenger(Entity entity) {
++        // Paper start - log detailed entity tick information
++        io.papermc.paper.util.TickThread.ensureTickThread("Cannot tick an entity off-main");
++        try {
++            if (currentlyTickingEntity.get() == null) {
++                currentlyTickingEntity.lazySet(entity);
++            }
++            // Paper end - log detailed entity tick information
+         ++TimingHistory.entityTicks; // Paper - timings
+         // Spigot start
+         co.aikar.timings.Timing timer; // Paper
+@@ -1279,7 +1298,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             this.tickPassenger(entity, entity1);
+         }
+         // } finally { timer.stopTiming(); } // Paper - timings - move up
+-
++        // Paper start - log detailed entity tick information
++        } finally {
++            if (currentlyTickingEntity.get() == entity) {
++                currentlyTickingEntity.lazySet(null);
++            }
++        }
++        // Paper end - log detailed entity tick information
+     }
+ 
+     private void tickPassenger(Entity vehicle, Entity passenger) {
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 9af161903792ebaa0209acd7212bb525ed6e5263..10b0e37ddab7c664cd50c39ca3586f5aebfc5706 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1051,8 +1051,43 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+         return this.onGround;
+     }
+ 
++    // Paper start - detailed watchdog information
++    public final Object posLock = new Object(); // Paper - log detailed entity tick information
++
++    private Vec3 moveVector;
++    private double moveStartX;
++    private double moveStartY;
++    private double moveStartZ;
++
++    public final Vec3 getMoveVector() {
++        return this.moveVector;
++    }
++
++    public final double getMoveStartX() {
++        return this.moveStartX;
++    }
++
++    public final double getMoveStartY() {
++        return this.moveStartY;
++    }
++
++    public final double getMoveStartZ() {
++        return this.moveStartZ;
++    }
++    // Paper end - detailed watchdog information
++
+     public void move(MoverType movementType, Vec3 movement) {
+         final Vec3 originalMovement = movement; // Paper - Expose pre-collision velocity
++        // Paper start - detailed watchdog information
++        io.papermc.paper.util.TickThread.ensureTickThread("Cannot move an entity off-main");
++        synchronized (this.posLock) {
++            this.moveStartX = this.getX();
++            this.moveStartY = this.getY();
++            this.moveStartZ = this.getZ();
++            this.moveVector = movement;
++        }
++        try {
++        // Paper end - detailed watchdog information
+         if (this.noPhysics) {
+             this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
+         } else {
+@@ -1222,6 +1257,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+                 this.level().getProfiler().pop();
+             }
+         }
++        // Paper start - detailed watchdog information
++        } finally {
++            synchronized (this.posLock) { // Paper
++                this.moveVector = null;
++            } // Paper
++        }
++        // Paper end - detailed watchdog information
+     }
+ 
+     private boolean isStateClimbable(BlockState state) {
+@@ -4366,7 +4408,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     }
+ 
+     public void setDeltaMovement(Vec3 velocity) {
++        synchronized (this.posLock) { // Paper
+         this.deltaMovement = velocity;
++        } // Paper
+     }
+ 
+     public void addDeltaMovement(Vec3 velocity) {
+@@ -4469,7 +4513,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+         }
+         // Paper end - Fix MC-4
+         if (this.position.x != x || this.position.y != y || this.position.z != z) {
++            synchronized (this.posLock) { // Paper
+             this.position = new Vec3(x, y, z);
++            } // Paper
+             int i = Mth.floor(x);
+             int j = Mth.floor(y);
+             int k = Mth.floor(z);
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index dca163ff5436f1007383c8261cac1ac7c0613f23..40dcdf6885e99b26283a9ea2bd4d4bf6ec358e71 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -22,6 +22,78 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+     private volatile long lastTick;
+     private volatile boolean stopping;
+ 
++    // Paper start - log detailed tick information
++    private void dumpEntity(net.minecraft.world.entity.Entity entity) {
++        Logger log = Bukkit.getServer().getLogger();
++        double posX, posY, posZ;
++        net.minecraft.world.phys.Vec3 mot;
++        double moveStartX, moveStartY, moveStartZ;
++        net.minecraft.world.phys.Vec3 moveVec;
++        synchronized (entity.posLock) {
++            posX = entity.getX();
++            posY = entity.getY();
++            posZ = entity.getZ();
++            mot = entity.getDeltaMovement();
++            moveStartX = entity.getMoveStartX();
++            moveStartY = entity.getMoveStartY();
++            moveStartZ = entity.getMoveStartZ();
++            moveVec = entity.getMoveVector();
++        }
++
++        String entityType = net.minecraft.world.entity.EntityType.getKey(entity.getType()).toString();
++        java.util.UUID entityUUID = entity.getUUID();
++        net.minecraft.world.level.Level world = entity.level();
++
++        log.log(Level.SEVERE, "Ticking entity: " + entityType + ", entity class: " + entity.getClass().getName());
++        log.log(Level.SEVERE, "Entity status: removed: " + entity.isRemoved() + ", valid: " + entity.valid + ", alive: " + entity.isAlive() + ", is passenger: " + entity.isPassenger());
++        log.log(Level.SEVERE, "Entity UUID: " + entityUUID);
++        log.log(Level.SEVERE, "Position: world: '" + (world == null ? "unknown world?" : world.getWorld().getName()) + "' at location (" + posX + ", " + posY + ", " + posZ + ")");
++        log.log(Level.SEVERE, "Velocity: " + (mot == null ? "unknown velocity" : mot.toString()) + " (in blocks per tick)");
++        log.log(Level.SEVERE, "Entity AABB: " + entity.getBoundingBox());
++        if (moveVec != null) {
++            log.log(Level.SEVERE, "Move call information: ");
++            log.log(Level.SEVERE, "Start position: (" + moveStartX + ", " + moveStartY + ", " + moveStartZ + ")");
++            log.log(Level.SEVERE, "Move vector: " + moveVec.toString());
++        }
++    }
++
++    private void dumpTickingInfo() {
++        Logger log = Bukkit.getServer().getLogger();
++
++        // ticking entities
++        for (net.minecraft.world.entity.Entity entity : net.minecraft.server.level.ServerLevel.getCurrentlyTickingEntities()) {
++            this.dumpEntity(entity);
++            net.minecraft.world.entity.Entity vehicle = entity.getVehicle();
++            if (vehicle != null) {
++                log.log(Level.SEVERE, "Detailing vehicle for above entity:");
++                this.dumpEntity(vehicle);
++            }
++        }
++
++        // packet processors
++        for (net.minecraft.network.PacketListener packetListener : net.minecraft.network.protocol.PacketUtils.getCurrentPacketProcessors()) {
++            if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl) {
++                net.minecraft.server.level.ServerPlayer player = ((net.minecraft.server.network.ServerGamePacketListenerImpl)packetListener).player;
++                long totalPackets = net.minecraft.network.protocol.PacketUtils.getTotalProcessedPackets();
++                if (player == null) {
++                    log.log(Level.SEVERE, "Handling packet for player connection or ticking player connection (null player): " + packetListener);
++                    log.log(Level.SEVERE, "Total packets processed on the main thread for all players: " + totalPackets);
++                } else {
++                    this.dumpEntity(player);
++                    net.minecraft.world.entity.Entity vehicle = player.getVehicle();
++                    if (vehicle != null) {
++                        log.log(Level.SEVERE, "Detailing vehicle for above entity:");
++                        this.dumpEntity(vehicle);
++                    }
++                    log.log(Level.SEVERE, "Total packets processed on the main thread for all players: " + totalPackets);
++                }
++            } else {
++                log.log(Level.SEVERE, "Handling packet for connection: " + packetListener);
++            }
++        }
++    }
++    // Paper end - log detailed tick information
++
+     private WatchdogThread(long timeoutTime, boolean restart)
+     {
+         super( "Paper Watchdog Thread" );
+@@ -120,6 +192,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+                 log.log( Level.SEVERE, "------------------------------" );
+                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
+                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(isLongTimeout); // Paper // Paper - rewrite chunk system
++                this.dumpTickingInfo(); // Paper - log detailed tick information
+                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
+                 log.log( Level.SEVERE, "------------------------------" );
+                 //
