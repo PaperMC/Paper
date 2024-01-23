@@ -84,8 +84,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot start
      public static final int TPS = 20;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
      public static long currentTickLong = 0L; // Paper - track current tick as a long
+     public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
  
 +    public volatile Thread shutdownThread; // Paper
 +    public volatile boolean abnormalExit = false; // Paper
@@ -94,17 +94,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          AtomicReference<S> atomicreference = new AtomicReference();
          Thread thread = new io.papermc.paper.util.TickThread(() -> { // Paper - rewrite chunk system
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
- 
      // CraftBukkit start
      private boolean hasStopped = false;
+     private boolean hasLoggedStop = false; // Paper - Debugging
 +    public volatile boolean hasFullyShutdown = false; // Paper
      private final Object stopLock = new Object();
      public final boolean hasStopped() {
          synchronized (this.stopLock) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             if (this.hasStopped) return;
              this.hasStopped = true;
          }
+         if (!hasLoggedStop && isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
 +        // Paper start - kill main thread, and kill it hard
 +        shutdownThread = Thread.currentThread();
 +        org.spigotmc.WatchdogThread.doStop(); // Paper
@@ -137,6 +137,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
 +        } catch (Exception e) {
 +        }
++        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
 +        this.onServerExit();
 +        // Paper end - move final shutdown items here
      }
@@ -195,7 +196,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  } catch (Exception ignored) {
                  }
                  // CraftBukkit end
+-                io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
 -                this.onServerExit();
++                //io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
 +                //this.onServerExit(); // Paper - moved into stop
              }
  
@@ -214,9 +217,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
- 
              this.worldData.setDataConfiguration(worlddataconfiguration);
              this.resources.managers.updateRegistryTags(this.registryAccess());
+             net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper - Custom Potion Mixes
 -            this.getPlayerList().saveAll();
 +            // Paper start
 +            if (Thread.currentThread() != this.serverThread) {
@@ -241,7 +244,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s);
 +            //DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s); // Paper moved to after init
              if (dedicatedserverproperties.announcePlayerAchievements != null) {
-                 ((GameRules.BooleanValue) this.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)).set(dedicatedserverproperties.announcePlayerAchievements, this);
+                 ((GameRules.BooleanValue) this.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)).set(dedicatedserverproperties.announcePlayerAchievements, null); // Paper - Pass ServerLevel for gamerule callbacks
              }
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
@@ -398,6 +401,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            tryPreloadClass(net.minecraft.world.level.lighting.LayerLightEventListener.DummyLightLayerEventListener.class.getName());
 +            tryPreloadClass(net.minecraft.world.level.lighting.LayerLightEventListener.class.getName());
 +            tryPreloadClass(net.minecraft.util.ExceptionCollector.class.getName());
++            tryPreloadClass(io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.PlayerChunkLoaderData.class.getName());
 +            // Paper end
 +        }
 +    }
