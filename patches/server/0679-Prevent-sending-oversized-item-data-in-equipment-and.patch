@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Wed, 1 Dec 2021 12:36:25 +0100
+Subject: [PATCH] Prevent sending oversized item data in equipment and metadata
+
+
+diff --git a/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java b/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
+index f9e15908143f4453c2a5817b412e8a13554553f0..06498788c169133bd563c5a87192b71802c4d4df 100644
+--- a/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
++++ b/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
+@@ -42,7 +42,7 @@ public class EntityDataSerializers {
+     public static final EntityDataSerializer<ItemStack> ITEM_STACK = new EntityDataSerializer<ItemStack>() {
+         @Override
+         public void write(FriendlyByteBuf buf, ItemStack value) {
+-            buf.writeItem(value);
++            buf.writeItem(net.minecraft.world.entity.LivingEntity.sanitizeItemStack(value, true)); // Paper - prevent oversized data
+         }
+ 
+         @Override
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index e0802f1cb73a80b08482832c2b269ac8485d5c1a..945a0317e9e49a159a1f42882a0a267a2141e86d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -335,7 +335,10 @@ public class ServerEntity {
+                 ItemStack itemstack = ((LivingEntity) this.entity).getItemBySlot(enumitemslot);
+ 
+                 if (!itemstack.isEmpty()) {
+-                    list.add(Pair.of(enumitemslot, itemstack.copy()));
++                    // Paper start - prevent oversized data
++                    final ItemStack sanitized = LivingEntity.sanitizeItemStack(itemstack.copy(), false);
++                    list.add(Pair.of(enumitemslot, sanitized));
++                    // Paper end - prevent oversized data
+                 }
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index d6159b34c366d47a4eefd007032687a8d2557978..140cf1fd4a9850e28c7fa0f0abef6122564474dc 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3187,7 +3187,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         equipmentChanges.forEach((enumitemslot, itemstack) -> {
+             ItemStack itemstack1 = itemstack.copy();
+ 
+-            list.add(Pair.of(enumitemslot, itemstack1));
++            // Paper start - prevent oversized data
++            ItemStack toSend = sanitizeItemStack(itemstack1, true);
++            list.add(Pair.of(enumitemslot, toSend));
++            // Paper end - prevent oversized data
+             switch (enumitemslot.getType()) {
+                 case HAND:
+                     this.setLastHandItem(enumitemslot, itemstack1);
+@@ -3200,6 +3203,34 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         ((ServerLevel) this.level()).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list));
+     }
+ 
++    // Paper start - prevent oversized data
++    public static ItemStack sanitizeItemStack(final ItemStack itemStack, final boolean copyItemStack) {
++        if (itemStack.isEmpty() || !itemStack.hasTag()) {
++            return itemStack;
++        }
++
++        final ItemStack copy = copyItemStack ? itemStack.copy() : itemStack;
++        final CompoundTag tag = copy.getTag();
++        if (copy.is(Items.BUNDLE) && tag.get("Items") instanceof ListTag oldItems && !oldItems.isEmpty()) {
++            // Bundles change their texture based on their fullness.
++            org.bukkit.inventory.meta.BundleMeta bundleMeta = (org.bukkit.inventory.meta.BundleMeta) copy.asBukkitMirror().getItemMeta();
++            int sizeUsed = 0;
++            for (org.bukkit.inventory.ItemStack item : bundleMeta.getItems()) {
++                int scale = 64 / item.getMaxStackSize();
++                sizeUsed += scale * item.getAmount();
++            }
++            // Now we add a single fake item that uses the same amount of slots as all other items.
++            ListTag items = new ListTag();
++            items.add(new ItemStack(Items.PAPER, sizeUsed).save(new CompoundTag()));
++            tag.put("Items", items);
++        }
++        if (tag.get("BlockEntityTag") instanceof CompoundTag blockEntityTag) {
++            blockEntityTag.remove("Items");
++        }
++        return copy;
++    }
++    // Paper end - prevent oversized data
++
+     private ItemStack getLastArmorItem(EquipmentSlot slot) {
+         return (ItemStack) this.lastArmorItemStacks.get(slot.getIndex());
+     }

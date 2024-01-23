@@ -1,0 +1,681 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sun, 20 Jun 2021 18:19:09 -0700
+Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
+ etc.
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index eaaf9a9779f57ee048245899750bf7a1599b716f..450f7c03bdcc109938ba9b66328bdbb2c96c03c9 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -35,6 +35,7 @@ dependencies {
+     implementation("org.ow2.asm:asm-commons:9.5")
+     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
+     implementation("commons-lang:commons-lang:2.6")
++    implementation("net.fabricmc:mapping-io:0.5.0") // Paper - needed to read mappings for stacktrace deobfuscation
+     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
+     runtimeOnly("com.mysql:mysql-connector-j:8.2.0")
+     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
+@@ -124,6 +125,18 @@ tasks.check {
+ }
+ // Paper end
+ 
++// Paper start - include reobf mappings in jar for stacktrace deobfuscation
++val includeMappings = tasks.register<io.papermc.paperweight.tasks.IncludeMappings>("includeMappings") {
++    inputJar.set(tasks.fixJarForReobf.flatMap { it.outputJar })
++    mappings.set(tasks.reobfJar.flatMap { it.mappingsFile })
++    mappingsDest.set("META-INF/mappings/reobf.tiny")
++}
++
++tasks.reobfJar {
++    inputJar.set(includeMappings.flatMap { it.outputJar })
++}
++// Paper end - include reobf mappings in jar for stacktrace deobfuscation
++
+ tasks.test {
+     exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
+     useJUnitPlatform()
+diff --git a/src/log4jPlugins/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java b/src/log4jPlugins/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..66b6011ee3684695b2ab9292961c80bf2a420ee9
+--- /dev/null
++++ b/src/log4jPlugins/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
+@@ -0,0 +1,66 @@
++package io.papermc.paper.logging;
++
++import java.lang.invoke.MethodHandle;
++import java.lang.invoke.MethodHandles;
++import java.lang.invoke.VarHandle;
++import org.apache.logging.log4j.core.Core;
++import org.apache.logging.log4j.core.LogEvent;
++import org.apache.logging.log4j.core.appender.rewrite.RewritePolicy;
++import org.apache.logging.log4j.core.config.plugins.Plugin;
++import org.apache.logging.log4j.core.config.plugins.PluginFactory;
++import org.apache.logging.log4j.core.impl.Log4jLogEvent;
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++@Plugin(
++    name = "StacktraceDeobfuscatingRewritePolicy",
++    category = Core.CATEGORY_NAME,
++    elementType = "rewritePolicy",
++    printObject = true
++)
++public final class StacktraceDeobfuscatingRewritePolicy implements RewritePolicy {
++    private static final MethodHandle DEOBFUSCATE_THROWABLE;
++
++    static {
++        try {
++            final Class<?> cls = Class.forName("io.papermc.paper.util.StacktraceDeobfuscator");
++            final MethodHandles.Lookup lookup = MethodHandles.lookup();
++            final VarHandle instanceHandle = lookup.findStaticVarHandle(cls, "INSTANCE", cls);
++            final Object deobfuscator = instanceHandle.get();
++            DEOBFUSCATE_THROWABLE = lookup
++                .unreflect(cls.getDeclaredMethod("deobfuscateThrowable", Throwable.class))
++                .bindTo(deobfuscator);
++        } catch (final ReflectiveOperationException ex) {
++            throw new IllegalStateException(ex);
++        }
++    }
++
++    private StacktraceDeobfuscatingRewritePolicy() {
++    }
++
++    @Override
++    public @NonNull LogEvent rewrite(final @NonNull LogEvent rewrite) {
++        final Throwable thrown = rewrite.getThrown();
++        if (thrown != null) {
++            deobfuscateThrowable(thrown);
++            return new Log4jLogEvent.Builder(rewrite)
++                .setThrownProxy(null)
++                .build();
++        }
++        return rewrite;
++    }
++
++    private static void deobfuscateThrowable(final Throwable thrown) {
++        try {
++            DEOBFUSCATE_THROWABLE.invoke(thrown);
++        } catch (final Error e) {
++            throw e;
++        } catch (final Throwable e) {
++            throw new RuntimeException(e);
++        }
++    }
++
++    @PluginFactory
++    public static @NonNull StacktraceDeobfuscatingRewritePolicy createPolicy() {
++        return new StacktraceDeobfuscatingRewritePolicy();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+index 0bb4aaa546939b67a5d22865190f30478a9337c1..d3e619655382e50e9ac9323ed942502d85c9599c 100644
+--- a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
++++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+@@ -91,7 +91,7 @@ public class SyncLoadFinder {
+ 
+                 final JsonArray traces = new JsonArray();
+ 
+-                for (StackTraceElement element : pair.getFirst().stacktrace) {
++                for (StackTraceElement element : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(pair.getFirst().stacktrace)) {
+                     traces.add(String.valueOf(element));
+                 }
+ 
+diff --git a/src/main/java/io/papermc/paper/util/ObfHelper.java b/src/main/java/io/papermc/paper/util/ObfHelper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e8ff684d8bd994c64ff34f20e1e0601b678244c1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/ObfHelper.java
+@@ -0,0 +1,147 @@
++package io.papermc.paper.util;
++
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.InputStreamReader;
++import java.nio.charset.StandardCharsets;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.Map;
++import java.util.Objects;
++import java.util.Set;
++import java.util.function.Function;
++import java.util.stream.Collectors;
++import net.fabricmc.mappingio.MappingReader;
++import net.fabricmc.mappingio.format.MappingFormat;
++import net.fabricmc.mappingio.tree.MappingTree;
++import net.fabricmc.mappingio.tree.MemoryMappingTree;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public enum ObfHelper {
++    INSTANCE;
++
++    public static final String MOJANG_PLUS_YARN_NAMESPACE = "mojang+yarn";
++    public static final String SPIGOT_NAMESPACE = "spigot";
++
++    private final @Nullable Map<String, ClassMapping> mappingsByObfName;
++    private final @Nullable Map<String, ClassMapping> mappingsByMojangName;
++
++    ObfHelper() {
++        final @Nullable Set<ClassMapping> maps = loadMappingsIfPresent();
++        if (maps != null) {
++            this.mappingsByObfName = maps.stream().collect(Collectors.toUnmodifiableMap(ClassMapping::obfName, map -> map));
++            this.mappingsByMojangName = maps.stream().collect(Collectors.toUnmodifiableMap(ClassMapping::mojangName, map -> map));
++        } else {
++            this.mappingsByObfName = null;
++            this.mappingsByMojangName = null;
++        }
++    }
++
++    public @Nullable Map<String, ClassMapping> mappingsByObfName() {
++        return this.mappingsByObfName;
++    }
++
++    public @Nullable Map<String, ClassMapping> mappingsByMojangName() {
++        return this.mappingsByMojangName;
++    }
++
++    /**
++     * Attempts to get the obf name for a given class by its Mojang name. Will
++     * return the input string if mappings are not present.
++     *
++     * @param fullyQualifiedMojangName fully qualified class name (dotted)
++     * @return mapped or original fully qualified (dotted) class name
++     */
++    public String reobfClassName(final String fullyQualifiedMojangName) {
++        if (this.mappingsByMojangName == null) {
++            return fullyQualifiedMojangName;
++        }
++
++        final ClassMapping map = this.mappingsByMojangName.get(fullyQualifiedMojangName);
++        if (map == null) {
++            return fullyQualifiedMojangName;
++        }
++
++        return map.obfName();
++    }
++
++    /**
++     * Attempts to get the Mojang name for a given class by its obf name. Will
++     * return the input string if mappings are not present.
++     *
++     * @param fullyQualifiedObfName fully qualified class name (dotted)
++     * @return mapped or original fully qualified (dotted) class name
++     */
++    public String deobfClassName(final String fullyQualifiedObfName) {
++        if (this.mappingsByObfName == null) {
++            return fullyQualifiedObfName;
++        }
++
++        final ClassMapping map = this.mappingsByObfName.get(fullyQualifiedObfName);
++        if (map == null) {
++            return fullyQualifiedObfName;
++        }
++
++        return map.mojangName();
++    }
++
++    private static @Nullable Set<ClassMapping> loadMappingsIfPresent() {
++        try (final @Nullable InputStream mappingsInputStream = ObfHelper.class.getClassLoader().getResourceAsStream("META-INF/mappings/reobf.tiny")) {
++            if (mappingsInputStream == null) {
++                return null;
++            }
++            final MemoryMappingTree tree = new MemoryMappingTree();
++            MappingReader.read(new InputStreamReader(mappingsInputStream, StandardCharsets.UTF_8), MappingFormat.TINY_2_FILE, tree);
++            final Set<ClassMapping> classes = new HashSet<>();
++
++            final StringPool pool = new StringPool();
++            for (final MappingTree.ClassMapping cls : tree.getClasses()) {
++                final Map<String, String> methods = new HashMap<>();
++
++                for (final MappingTree.MethodMapping methodMapping : cls.getMethods()) {
++                    methods.put(
++                        pool.string(methodKey(
++                            Objects.requireNonNull(methodMapping.getName(SPIGOT_NAMESPACE)),
++                            Objects.requireNonNull(methodMapping.getDesc(SPIGOT_NAMESPACE))
++                        )),
++                        pool.string(Objects.requireNonNull(methodMapping.getName(MOJANG_PLUS_YARN_NAMESPACE)))
++                    );
++                }
++
++                final ClassMapping map = new ClassMapping(
++                    Objects.requireNonNull(cls.getName(SPIGOT_NAMESPACE)).replace('/', '.'),
++                    Objects.requireNonNull(cls.getName(MOJANG_PLUS_YARN_NAMESPACE)).replace('/', '.'),
++                    Map.copyOf(methods)
++                );
++                classes.add(map);
++            }
++
++            return Set.copyOf(classes);
++        } catch (final IOException ex) {
++            System.err.println("Failed to load mappings for stacktrace deobfuscation.");
++            ex.printStackTrace();
++            return null;
++        }
++    }
++
++    public static String methodKey(final String obfName, final String obfDescriptor) {
++        return obfName + obfDescriptor;
++    }
++
++    private static final class StringPool {
++        private final Map<String, String> pool = new HashMap<>();
++
++        public String string(final String string) {
++            return this.pool.computeIfAbsent(string, Function.identity());
++        }
++    }
++
++    public record ClassMapping(
++        String obfName,
++        String mojangName,
++        Map<String, String> methodsByObf
++    ) {}
++}
+diff --git a/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb910d4abf91488fa7cf1f5d47e0ee916c47f512
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
+@@ -0,0 +1,163 @@
++package io.papermc.paper.util;
++
++import io.papermc.paper.configuration.GlobalConfiguration;
++import it.unimi.dsi.fastutil.ints.IntArrayList;
++import it.unimi.dsi.fastutil.ints.IntList;
++import java.io.IOException;
++import java.io.InputStream;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.LinkedHashMap;
++import java.util.Map;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.ClassVisitor;
++import org.objectweb.asm.Label;
++import org.objectweb.asm.MethodVisitor;
++import org.objectweb.asm.Opcodes;
++
++@DefaultQualifier(NonNull.class)
++public enum StacktraceDeobfuscator {
++    INSTANCE;
++
++    private final Map<Class<?>, Map<String, IntList>> lineMapCache = Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
++        @Override
++        protected boolean removeEldestEntry(final Map.Entry<Class<?>, Map<String, IntList>> eldest) {
++            return this.size() > 127;
++        }
++    });
++
++    public void deobfuscateThrowable(final Throwable throwable) {
++        if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
++            return;
++        }
++
++        throwable.setStackTrace(this.deobfuscateStacktrace(throwable.getStackTrace()));
++        final Throwable cause = throwable.getCause();
++        if (cause != null) {
++            this.deobfuscateThrowable(cause);
++        }
++        for (final Throwable suppressed : throwable.getSuppressed()) {
++            this.deobfuscateThrowable(suppressed);
++        }
++    }
++
++    public StackTraceElement[] deobfuscateStacktrace(final StackTraceElement[] traceElements) {
++        if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
++            return traceElements;
++        }
++
++        final @Nullable Map<String, ObfHelper.ClassMapping> mappings = ObfHelper.INSTANCE.mappingsByObfName();
++        if (mappings == null || traceElements.length == 0) {
++            return traceElements;
++        }
++        final StackTraceElement[] result = new StackTraceElement[traceElements.length];
++        for (int i = 0; i < traceElements.length; i++) {
++            final StackTraceElement element = traceElements[i];
++
++            final String className = element.getClassName();
++            final String methodName = element.getMethodName();
++
++            final ObfHelper.ClassMapping classMapping = mappings.get(className);
++            if (classMapping == null) {
++                result[i] = element;
++                continue;
++            }
++
++            final Class<?> clazz;
++            try {
++                clazz = Class.forName(className);
++            } catch (final ClassNotFoundException ex) {
++                throw new RuntimeException(ex);
++            }
++            final @Nullable String methodKey = this.determineMethodForLine(clazz, element.getLineNumber());
++            final @Nullable String mappedMethodName = methodKey == null ? null : classMapping.methodsByObf().get(methodKey);
++
++            result[i] = new StackTraceElement(
++                element.getClassLoaderName(),
++                element.getModuleName(),
++                element.getModuleVersion(),
++                classMapping.mojangName(),
++                mappedMethodName != null ? mappedMethodName : methodName,
++                sourceFileName(classMapping.mojangName()),
++                element.getLineNumber()
++            );
++        }
++        return result;
++    }
++
++    private @Nullable String determineMethodForLine(final Class<?> clazz, final int lineNumber) {
++        final Map<String, IntList> lineMap = this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscator::buildLineMap);
++        for (final var entry : lineMap.entrySet()) {
++            final String methodKey = entry.getKey();
++            final IntList lines = entry.getValue();
++            for (int i = 0, linesSize = lines.size(); i < linesSize; i++) {
++                final int num = lines.getInt(i);
++                if (num == lineNumber) {
++                    return methodKey;
++                }
++            }
++        }
++        return null;
++    }
++
++    private static String sourceFileName(final String fullClassName) {
++        final int dot = fullClassName.lastIndexOf('.');
++        final String className = dot == -1
++            ? fullClassName
++            : fullClassName.substring(dot + 1);
++        final String rootClassName = className.split("\\$")[0];
++        return rootClassName + ".java";
++    }
++
++    private static Map<String, IntList> buildLineMap(final Class<?> key) {
++        final Map<String, IntList> lineMap = new HashMap<>();
++        final class LineCollectingMethodVisitor extends MethodVisitor {
++            private final IntList lines = new IntArrayList();
++            private final String name;
++            private final String descriptor;
++
++            LineCollectingMethodVisitor(String name, String descriptor) {
++                super(Opcodes.ASM9);
++                this.name = name;
++                this.descriptor = descriptor;
++            }
++
++            @Override
++            public void visitLineNumber(int line, Label start) {
++                super.visitLineNumber(line, start);
++                this.lines.add(line);
++            }
++
++            @Override
++            public void visitEnd() {
++                super.visitEnd();
++                lineMap.put(ObfHelper.methodKey(this.name, this.descriptor), this.lines);
++            }
++        }
++        final ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9) {
++            @Override
++            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
++                return new LineCollectingMethodVisitor(name, descriptor);
++            }
++        };
++        try {
++            final @Nullable InputStream inputStream = StacktraceDeobfuscator.class.getClassLoader()
++                .getResourceAsStream(key.getName().replace('.', '/') + ".class");
++            if (inputStream == null) {
++                throw new IllegalStateException("Could not find class file: " + key.getName());
++            }
++            final byte[] classData;
++            try (inputStream) {
++                classData = inputStream.readAllBytes();
++            }
++            final ClassReader reader = new ClassReader(classData);
++            reader.accept(classVisitor, 0);
++        } catch (final IOException ex) {
++            throw new RuntimeException(ex);
++        }
++        return lineMap;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/TraceUtil.java b/src/main/java/io/papermc/paper/util/TraceUtil.java
+index 2d5494d2813b773e60ddba6790b750a9a08f21f8..0b210bdf7c1f5962afbd44195af6f84f625635e3 100644
+--- a/src/main/java/io/papermc/paper/util/TraceUtil.java
++++ b/src/main/java/io/papermc/paper/util/TraceUtil.java
+@@ -6,13 +6,20 @@ public final class TraceUtil {
+ 
+     public static void dumpTraceForThread(Thread thread, String reason) {
+         Bukkit.getLogger().warning(thread.getName() + ": " + reason);
+-        StackTraceElement[] trace = thread.getStackTrace();
++        StackTraceElement[] trace = StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace());
+         for (StackTraceElement traceElement : trace) {
+             Bukkit.getLogger().warning("\tat " + traceElement);
+         }
+     }
+ 
+     public static void dumpTraceForThread(String reason) {
+-        new Throwable(reason).printStackTrace();
++        final Throwable throwable = new Throwable(reason);
++        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(throwable);
++        throwable.printStackTrace();
++    }
++
++    public static void printStackTrace(Throwable thr) {
++        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
++        thr.printStackTrace();
+     }
+ }
+diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
+index a9a0248b1bd1ac454064e977b61f9b7d80962ff8..6f2452de76e8f5fcc1367066e0e753740764eb98 100644
+--- a/src/main/java/net/minecraft/CrashReport.java
++++ b/src/main/java/net/minecraft/CrashReport.java
+@@ -34,6 +34,7 @@ public class CrashReport {
+     private final SystemReport systemReport = new SystemReport();
+ 
+     public CrashReport(String message, Throwable cause) {
++        io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(cause); // Paper
+         this.title = message;
+         this.exception = cause;
+         this.systemReport.setDetail("CraftBukkit Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/CrashReportCategory.java b/src/main/java/net/minecraft/CrashReportCategory.java
+index 52eb3176437113f9a0ff85d10ce5c2415e1b5570..b54ddd0ba0b001fbcb1838a838ca4890df936f1b 100644
+--- a/src/main/java/net/minecraft/CrashReportCategory.java
++++ b/src/main/java/net/minecraft/CrashReportCategory.java
+@@ -104,6 +104,7 @@ public class CrashReportCategory {
+         } else {
+             this.stackTrace = new StackTraceElement[stackTraceElements.length - 3 - ignoredCallCount];
+             System.arraycopy(stackTraceElements, 3 + ignoredCallCount, this.stackTrace, 0, this.stackTrace.length);
++            this.stackTrace = io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(this.stackTrace); // Paper
+             return this.stackTrace.length;
+         }
+     }
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 128debf837da32d27ba37184162e7b3bfb463812..6cfb814ecaf12161ec2e2545560453d7dd41e2da 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -75,13 +75,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     public static final AttributeKey<ConnectionProtocol.CodecData<?>> ATTRIBUTE_SERVERBOUND_PROTOCOL = AttributeKey.valueOf("serverbound_protocol");
+     public static final AttributeKey<ConnectionProtocol.CodecData<?>> ATTRIBUTE_CLIENTBOUND_PROTOCOL = AttributeKey.valueOf("clientbound_protocol");
+     public static final Supplier<NioEventLoopGroup> NETWORK_WORKER_GROUP = Suppliers.memoize(() -> {
+-        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).build());
++        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
+     });
+     public static final Supplier<EpollEventLoopGroup> NETWORK_EPOLL_WORKER_GROUP = Suppliers.memoize(() -> {
+-        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).build());
++        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
+     });
+     public static final Supplier<DefaultEventLoopGroup> LOCAL_WORKER_GROUP = Suppliers.memoize(() -> {
+-        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).build());
++        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
+     });
+     private final PacketFlow receiving;
+     private final Queue<WrappedConsumer> pendingActions = Queues.newConcurrentLinkedQueue();
+@@ -211,7 +211,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+             }
+         }
+-        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) throwable.printStackTrace(); // Spigot
++        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) io.papermc.paper.util.TraceUtil.printStackTrace(throwable); // Spigot // Paper
+     }
+ 
+     protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
+diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
+index 61f05f34ca33837c643f2915e753ec3935a38314..85b8be8ffac0fb40e9cae0528271ed41473811c8 100644
+--- a/src/main/java/net/minecraft/network/PacketEncoder.java
++++ b/src/main/java/net/minecraft/network/PacketEncoder.java
+@@ -47,7 +47,14 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+ 
+                     JvmProfiler.INSTANCE.onPacketSent(codecData.protocol(), i, channelHandlerContext.channel().remoteAddress(), k);
+                 } catch (Throwable var13) {
+-                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", i, packet.isSkippable(), var13); // Paper - Give proper error message
++                    // Paper start - Give proper error message
++                    String packetName = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(packet.getClass().getName());
++                    if (packetName.contains(".")) {
++                        packetName = packetName.substring(packetName.lastIndexOf(".") + 1);
++                    }
++
++                    LOGGER.error("Packet encoding of packet {} (ID: {}) threw (skippable? {})", packetName, i, packet.isSkippable(), var13);
++                    // Paper end
+                     if (packet.isSkippable()) {
+                         throw new SkipPacketException(var13);
+                     }
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 3779e02083fb41e93248aed27a9214be88167e5a..1d8f8b1910f50e90d60bb2a924d49f3fd3518fd6 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -194,6 +194,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
+         org.spigotmc.SpigotConfig.registerCommands();
+         // Spigot end
++        io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // Paper - load mappings for stacktrace deobf and etc.
+         // Paper start - initialize global and world-defaults configuration
+         this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
+         this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
+diff --git a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+index d130f843975236018df4fa2ccc3ca6aaca7a06b8..76f31845fe50200d09e5ab6a6c08da00444414ad 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+@@ -133,7 +133,7 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
+             ServerConfigurationPacketListenerImpl.LOGGER.error("Couldn't place player in world", exception);
+             // Paper start - Debugging
+             if (MinecraftServer.getServer().isDebugging()) {
+-                exception.printStackTrace();
++                io.papermc.paper.util.TraceUtil.printStackTrace(exception);
+             }
+             // Paper end - Debugging
+             this.connection.send(new ClientboundDisconnectPacket(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA));
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index 9db7fc8c053aa9e929fa6dddf70290a8f7ad5273..dfa07c9ede9d748a05ee47826bdbcf7390ec8219 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -52,10 +52,10 @@ public class ServerConnectionListener {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public static final Supplier<NioEventLoopGroup> SERVER_EVENT_GROUP = Suppliers.memoize(() -> {
+-        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).build());
++        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
+     });
+     public static final Supplier<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = Suppliers.memoize(() -> {
+-        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).build());
++        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
+     });
+     final MinecraftServer server;
+     public volatile boolean running;
+diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+index 14bd0b94ece3f826f822b4900c7250ebdc27d937..59eb65e207ff0206b0dfad6f2dcffe785f61f8ff 100644
+--- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
++++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+@@ -358,7 +358,7 @@ public class OldUsersConverter {
+                         try {
+                             root = NbtIo.readCompressed(new java.io.FileInputStream(file5), NbtAccounter.unlimitedHeap());
+                         } catch (Exception exception) {
+-                            exception.printStackTrace();
++                            io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
+                             ServerInternalException.reportInternalException(exception); // Paper
+                         }
+ 
+@@ -372,7 +372,7 @@ public class OldUsersConverter {
+                             try {
+                                 NbtIo.writeCompressed(root, new java.io.FileOutputStream(file2));
+                             } catch (Exception exception) {
+-                                exception.printStackTrace();
++                                io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
+                                 ServerInternalException.reportInternalException(exception); // Paper
+                             }
+                        }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 796aa86e12cf9062b3467a3678c895af5ad626fe..9e01a22df54492d9c8e9f9defd84014dc109514b 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -599,7 +599,7 @@ public class LevelChunk extends ChunkAccess {
+                     + " (" + getBlockState(blockposition) + ") where there was no entity tile!\n" +
+                     "Chunk coordinates: " + (this.chunkPos.x * 16) + "," + (this.chunkPos.z * 16) +
+                     "\nWorld: " + level.getLevel().dimension().location());
+-            e.printStackTrace();
++            io.papermc.paper.util.TraceUtil.printStackTrace(e);
+             ServerInternalException.reportInternalException(e);
+             // Paper end
+             // CraftBukkit end
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
+index 3c1992e212a6d6f1db4d5b807b38d71913619fc0..9c1aff17aabd062640e3f451a2ef8c50a7c62f10 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
+@@ -40,9 +40,9 @@ public class CraftAsyncScheduler extends CraftScheduler {
+ 
+     private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+             4, Integer.MAX_VALUE,30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+-            new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").build());
++            new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
+     private final Executor management = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+-            .setNameFormat("Craft Async Scheduler Management Thread").build());
++            .setNameFormat("Craft Async Scheduler Management Thread").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
+     private final List<CraftTask> temp = new ArrayList<>();
+ 
+     CraftAsyncScheduler() {
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index 230d55820778e84c1c8aa2b013ae0e5e35568ea1..a15749bcfb2b36a31801cb1a26b7181ce304e0ee 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -102,7 +102,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+                     log.log( Level.SEVERE, "During the run of the server, a plugin set an excessive velocity on an entity" );
+                     log.log( Level.SEVERE, "This may be the cause of the issue, or it may be entirely unrelated" );
+                     log.log( Level.SEVERE, org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getMessage());
+-                    for ( StackTraceElement stack : org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getStackTrace() )
++                    for ( StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getStackTrace()) ) // Paper
+                     {
+                         log.log( Level.SEVERE, "\t\t" + stack );
+                     }
+@@ -174,7 +174,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+         }
+         log.log( Level.SEVERE, "\tStack:" );
+         //
+-        for ( StackTraceElement stack : thread.getStackTrace() )
++        for ( StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace()) ) // Paper
+         {
+             log.log( Level.SEVERE, "\t\t" + stack );
+         }
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index ea4e2161c0bd43884055cc6b8d70b2139f70e720..4e2ca9162450c1f54b7ab95a63c1bad8efe81a06 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -30,10 +30,14 @@
+             <DefaultRolloverStrategy max="1000"/>
+         </RollingRandomAccessFile>
+         <Async name="Async">
++            <AppenderRef ref="rewrite"/>
++        </Async>
++        <Rewrite name="rewrite">
++            <StacktraceDeobfuscatingRewritePolicy />
+             <AppenderRef ref="File"/>
+             <AppenderRef ref="TerminalConsole" level="info"/>
+             <AppenderRef ref="ServerGuiConsole" level="info"/>
+-        </Async>
++        </Rewrite>
+     </Appenders>
+     <Loggers>
+         <Root level="info">

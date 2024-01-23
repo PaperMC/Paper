@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Sat, 22 Aug 2020 23:36:21 +0200
+Subject: [PATCH] Fix SpawnChangeEvent not firing for all use-cases
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index cdd766ccf85df7d0c17d36c544a5346dc46b4f22..5089fe44bdd1d20b6b54ef26e8107c5c75ff3ea2 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2014,9 +2014,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     public void setDefaultSpawnPos(BlockPos pos, float angle) {
+         // Paper start - Configurable Keep Spawn Loaded range per world
+         BlockPos prevSpawn = this.getSharedSpawnPos();
++        Location prevSpawnLoc = this.getWorld().getSpawnLocation(); // Paper - Call SpawnChangeEvent
+         //ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
+ 
+         this.levelData.setSpawn(pos, angle);
++        new org.bukkit.event.world.SpawnChangeEvent(this.getWorld(), prevSpawnLoc).callEvent(); // Paper - Call SpawnChangeEvent
+         if (this.keepSpawnInMemory) {
+             // if this keepSpawnInMemory is false a plugin has already removed our tickets, do not re-add
+             this.removeTicketsForSpawn(this.paperConfig().spawn.keepSpawnLoadedRange * 16, prevSpawn);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index b91205b8459cfc78fce4b98e04ae4517eef22e20..705c1b2bba2b60b260c59a6953151f34cdfc8960 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -262,12 +262,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public boolean setSpawnLocation(int x, int y, int z, float angle) {
+         try {
+-            Location previousLocation = this.getSpawnLocation();
+-            this.world.levelData.setSpawn(new BlockPos(x, y, z), angle);
++            // Location previousLocation = this.getSpawnLocation(); // Paper - Call SpawnChangeEvent; moved to nms.ServerLevel
++            this.world.setDefaultSpawnPos(new BlockPos(x, y, z), angle); // Paper - use ServerLevel#setDefaultSpawnPos
+ 
++            // Paper start - Call SpawnChangeEvent; move to nms.ServerLevel
+             // Notify anyone who's listening.
+-            SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
+-            this.server.getPluginManager().callEvent(event);
++            // SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
++            // server.getPluginManager().callEvent(event);
++            // Paper end - Call SpawnChangeEvent
+ 
+             return true;
+         } catch (Exception e) {

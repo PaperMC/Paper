@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheMolkaPL <themolkapl@gmail.com>
+Date: Sun, 21 Jun 2020 17:21:46 +0200
+Subject: [PATCH] Fix interact event not being called sometimes
+
+* Call PlayerInteractEvent when left-clicking on a block in adventure
+  mode.
+* Call PlayerInteractEvent when left-clicking an Entity that is out of
+  range in adventure/survival (entity reach is 3.0).
+
+Co-authored-by: Moulberry <james.jenour@protonmail.com>
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 3756ea70ae32005eb5d6b8285b1b1c1273c553f0..c169c44321c8bd6ea562f99f6c8a5a5f5be79425 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1760,7 +1760,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                 MutableComponent ichatmutablecomponent = Component.translatable("build.tooHigh", i - 1).withStyle(ChatFormatting.RED);
+ 
+                                 this.player.sendSystemMessage(ichatmutablecomponent, true);
+-                            } else if (enuminteractionresult.shouldSwing()) {
++                            } else if (enuminteractionresult.shouldSwing() && !this.player.gameMode.interactResult) { // Paper - Call interact event
+                                 this.player.swing(enumhand, true);
+                             }
+                         }
+@@ -2306,13 +2306,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         double d3 = this.player.gameMode.getGameModeForPlayer() == GameType.CREATIVE ? 5.0D : 4.5D;
+         // SPIGOT-5607: Only call interact event if no block or entity is being clicked. Use bukkit ray trace method, because it handles blocks and entities at the same time
+         // SPIGOT-7429: Make sure to call PlayerInteractEvent for spectators and non-pickable entities
+-        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.1, entity -> {
++        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.0, entity -> { // Paper - Call interact event; change raySize from 0.1 to 0.0
+             Entity handle = ((CraftEntity) entity).getHandle();
+             return entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity) && !handle.isSpectator() && handle.isPickable() && !handle.isPassengerOfSameVehicle(this.player);
+         });
+         if (result == null) {
+             CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
+-        }
++        } else { // Paper start - Call interact event
++            GameType gameType = this.player.gameMode.getGameModeForPlayer();
++            if (gameType == GameType.ADVENTURE && result.getHitBlock() != null) {
++                CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, ((org.bukkit.craftbukkit.block.CraftBlock) result.getHitBlock()).getPosition(), org.bukkit.craftbukkit.block.CraftBlock.blockFaceToNotch(result.getHitBlockFace()), this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
++            } else if (gameType != GameType.CREATIVE && result.getHitEntity() != null && origin.toVector().distanceSquared(result.getHitPosition()) > 3.0D * 3.0D) {
++                CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
++            }
++        } // Paper end - Call interact event
+ 
+         // Arm swing animation
+         PlayerAnimationEvent event = new PlayerAnimationEvent(this.getCraftPlayer(), (packet.getHand() == InteractionHand.MAIN_HAND) ? PlayerAnimationType.ARM_SWING : PlayerAnimationType.OFF_ARM_SWING);

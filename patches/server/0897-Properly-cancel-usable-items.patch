@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Tue, 23 May 2023 22:33:36 -0400
+Subject: [PATCH] Properly cancel usable items
+
+This fixes the bug causing cancelling PlayerInteractEvent to cause items to continue to be used despite being cancelled on the server.
+
+For example, items being consumed but never finishing, shields being put up, etc.
+The underlying issue of this is that the client modifies their synced data values, and so we have to (forcibly) resend
+them in order for the client to reset their using item state.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 521fc5fd6b66c7095c729dd4aaf49bbc443f0200..93ae151375608b6bbaa5e68a7384a04dc30a9502 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -557,6 +557,7 @@ public class ServerPlayerGameMode {
+             }
+             // Paper end - extend Player Interact cancellation
+             player.getBukkitEntity().updateInventory(); // SPIGOT-2867
++            this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
+             enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
+             MenuProvider itileinventory = iblockdata.getMenuProvider(world, blockposition);
+@@ -600,6 +601,11 @@ public class ServerPlayerGameMode {
+ 
+                 return enuminteractionresult1;
+             }
++            // Paper start - Properly cancel usable items; Cancel only if cancelled + if the interact result is different from default response
++            else if (this.interactResult && this.interactResult != cancelledItem) {
++                this.player.resyncUsingItem(this.player);
++            }
++            // Paper end - Properly cancel usable items
+         }
+         return enuminteractionresult;
+         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index d2916743981c6632957ab8bed5ae7a2334c5646b..33bdfb66f36cce5e89be1a0de8b5a3346dbfa1e3 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1876,6 +1876,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             }
+ 
+             if (cancelled) {
++                this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
+                 this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
+                 return;
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 5e796702aca0024044b445e1dca05794e439fa44..825e586af663b363645586470b53e92e38774bce 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3813,6 +3813,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         return ((Byte) this.entityData.get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+     }
+ 
++    // Paper start - Properly cancel usable items
++    public void resyncUsingItem(ServerPlayer serverPlayer) {
++        this.getEntityData().resendPossiblyDesyncedDataValues(java.util.List.of(DATA_LIVING_ENTITY_FLAGS), serverPlayer);
++    }
++    // Paper end - Properly cancel usable items
+     private void updatingUsingItem() {
+         if (this.isUsingItem()) {
+             if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
