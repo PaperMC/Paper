@@ -36,7 +36,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Nullable
 +    public CompoundTag readConvertChunkSync(ChunkPos pos) throws IOException {
 +        CompoundTag nbttagcompound = this.readSync(pos);
-+        // Paper start - Cache chunk status on disk
 +        if (nbttagcompound == null) {
 +            return null;
 +        }
@@ -49,10 +48,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.updateChunkStatusOnDisk(pos, nbttagcompound);
 +
 +        return nbttagcompound;
-+        // Paper end
 +    }
 +
-+    // Paper start - chunk status cache "api"
 +    public ChunkStatus getChunkStatusOnDiskIfCached(ChunkPos chunkPos) {
 +        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFileIfLoaded(chunkPos);
 +
@@ -89,7 +86,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - Cache chunk status on disk
 +
-     boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) {
+     public boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) { // Paper - public
          // Spigot start
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
@@ -125,7 +122,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - Cache chunk status
 +
      public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
-         this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync);
+         this(file, directory, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
      }
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
          return this.getOffset(pos) != 0;
@@ -153,8 +150,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);
 +                regionfile.setStatus(pos.x, pos.z, ChunkSerializer.getStatus(nbt)); // Paper - Cache chunk status
                  regionfile.setOversized(pos.x, pos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
-             } catch (Throwable throwable) {
-                 if (dataoutputstream != null) {
+                 // Paper start - don't write garbage data to disk if writing serialization fails
+                 dataoutputstream.close(); // Only write if successful
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
@@ -186,35 +183,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-     @Override
      public boolean loadChunk(int x, int z, boolean generate) {
          org.spigotmc.AsyncCatcher.catchOp("chunk load"); // Spigot
+         warnUnsafeChunk("loading a faraway chunk", x, z); // Paper
 -        ChunkAccess chunk = this.world.getChunkSource().getChunk(x, z, generate || isChunkGenerated(x, z) ? ChunkStatus.FULL : ChunkStatus.EMPTY, true); // Paper
-+        // Paper start - Optimize this method
-+        ChunkPos chunkPos = new ChunkPos(x, z);
- 
+-
 -        // If generate = false, but the chunk already exists, we will get this back.
 -        if (chunk instanceof ImposterProtoChunk) {
 -            // We then cycle through again to get the full chunk immediately, rather than after the ticket addition
 -            chunk = this.world.getChunkSource().getChunk(x, z, ChunkStatus.FULL, true);
 -        }
+-
+-        if (chunk instanceof net.minecraft.world.level.chunk.LevelChunk) {
+-            this.world.getChunkSource().addRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 0, Unit.INSTANCE); // Paper
++        // Paper start - Optimize this method
++        ChunkPos chunkPos = new ChunkPos(x, z);
++        ChunkAccess immediate = world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
++        if (immediate != null) {
++            // Plugins should use plugin tickets instead of this method to keep a chunk perpetually loaded
+             return true;
+         }
+ 
+-        return false;
 +        if (!generate) {
-+            ChunkAccess immediate = world.getChunkSource().getChunkAtImmediately(x, z);
-+            if (immediate == null) {
-+                immediate = world.getChunkSource().chunkMap.getUnloadingChunk(x, z);
-+            }
++            immediate = world.getChunkSource().chunkMap.getUnloadingChunk(x, z);
 +            if (immediate != null) {
 +                if (!(immediate instanceof ImposterProtoChunk) && !(immediate instanceof net.minecraft.world.level.chunk.LevelChunk)) {
 +                    return false; // not full status
 +                }
-+                world.getChunkSource().addRegionTicket(TicketType.PLUGIN, chunkPos, 1, Unit.INSTANCE);
++                world.getChunkSource().addRegionTicket(TicketType.PLUGIN, chunkPos, 0, Unit.INSTANCE); // Paper
 +                world.getChunk(x, z); // make sure we're at ticket level 32 or lower
 +                return true;
 +            }
- 
--        if (chunk instanceof net.minecraft.world.level.chunk.LevelChunk) {
--            this.world.getChunkSource().addRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 1, Unit.INSTANCE);
--            return true;
 +            net.minecraft.world.level.chunk.storage.RegionFile file;
 +            try {
 +                file = world.getChunkSource().chunkMap.regionFileCache.getRegionFile(chunkPos, false);
@@ -234,10 +234,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            // fall through to load
 +            // we do this so we do not re-read the chunk data on disk
-         }
- 
--        return false;
-+        world.getChunkSource().addRegionTicket(TicketType.PLUGIN, chunkPos, 1, Unit.INSTANCE);
++        }
++        world.getChunkSource().addRegionTicket(TicketType.PLUGIN, chunkPos, 0, Unit.INSTANCE); // Paper
 +        world.getChunkSource().getChunk(x, z, ChunkStatus.FULL, true);
 +        return true;
 +        // Paper end - Optimize this method

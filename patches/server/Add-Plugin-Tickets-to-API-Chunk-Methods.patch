@@ -85,37 +85,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          return true;
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-         org.spigotmc.AsyncCatcher.catchOp("chunk load"); // Spigot
-         // Paper start - Optimize this method
-         ChunkPos chunkPos = new ChunkPos(x, z);
-+        ChunkAccess immediate = world.getChunkSource().getChunkAtIfLoadedImmediately(x, z); // Paper
-+        if (immediate != null) return true; // Paper
- 
-         if (!generate) {
--            ChunkAccess immediate = world.getChunkSource().getChunkAtImmediately(x, z);
-+
-+            //IChunkAccess immediate = world.getChunkProvider().getChunkAtImmediately(x, z); // Paper
-             if (immediate == null) {
-                 immediate = world.getChunkSource().chunkMap.getUnloadingChunk(x, z);
-             }
-@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-                 if (!(immediate instanceof ImposterProtoChunk) && !(immediate instanceof net.minecraft.world.level.chunk.LevelChunk)) {
-                     return false; // not full status
-                 }
--                world.getChunkSource().addRegionTicket(TicketType.PLUGIN, chunkPos, 1, Unit.INSTANCE);
-+                world.getChunkSource().addRegionTicket(TicketType.PLUGIN, chunkPos, 0, Unit.INSTANCE); // Paper
-                 world.getChunk(x, z); // make sure we're at ticket level 32 or lower
-                 return true;
-             }
-@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-             // we do this so we do not re-read the chunk data on disk
          }
  
--        world.getChunkSource().addRegionTicket(TicketType.PLUGIN, chunkPos, 1, Unit.INSTANCE);
-+        world.getChunkSource().addRegionTicket(TicketType.PLUGIN, chunkPos, 0, Unit.INSTANCE); // Paper
-         world.getChunkSource().getChunk(x, z, ChunkStatus.FULL, true);
-         return true;
-         // Paper end - Optimize this method
+         if (chunk instanceof net.minecraft.world.level.chunk.LevelChunk) {
+-            this.world.getChunkSource().addRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 1, Unit.INSTANCE);
++            this.world.getChunkSource().addRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 0, Unit.INSTANCE); // Paper
+             return true;
+         }
+ 
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          io.papermc.paper.chunk.system.ChunkSystem.scheduleChunkLoad(this.getHandle(), x, z, gen, ChunkStatus.FULL, true, priority, (c) -> {
              net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {

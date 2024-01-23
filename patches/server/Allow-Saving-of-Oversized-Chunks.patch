@@ -55,7 +55,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final Path regionFile; // Paper
  
      public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
-         this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync);
+         this(file, directory, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
  
      public RegionFile(Path file, Path directory, RegionFileVersion outputChunkStreamVersion, boolean dsync) throws IOException {
@@ -66,9 +66,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.version = outputChunkStreamVersion;
          if (!Files.isDirectory(directory, new LinkOption[0])) {
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
- 
      }
  
+     public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - don't write garbage data to disk if writing serialization fails
 +    // Paper start
 +    private final byte[] oversized = new byte[1024];
 +    private int oversizedCount;
@@ -206,6 +206,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              try {
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);
 +                regionfile.setOversized(pos.x, pos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
-             } catch (Throwable throwable) {
-                 if (dataoutputstream != null) {
-                     try {
+                 // Paper start - don't write garbage data to disk if writing serialization fails
+                 dataoutputstream.close(); // Only write if successful
+             } catch (final RegionFileSizeException e) {

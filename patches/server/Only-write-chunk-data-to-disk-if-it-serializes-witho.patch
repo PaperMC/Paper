@@ -12,19 +12,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-         }
  
      }
-+
+ 
 +    public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - don't write garbage data to disk if writing serialization fails
-+
-     // Paper end
      private class ChunkBuffer extends ByteArrayOutputStream {
  
+         private final ChunkPos pos;
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+             super.write(RegionFile.this.version.getId());
              this.pos = chunkcoordintpair;
          }
- 
 +        // Paper start - don't write garbage data to disk if writing serialization fails
 +        @Override
 +        public void write(final int b) {
@@ -42,21 +40,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            super.write(b, off, len);
 +        }
 +        // Paper end - don't write garbage data to disk if writing serialization fails
-+
+ 
          public void close() throws IOException {
              ByteBuffer bytebuffer = ByteBuffer.wrap(this.buf, 0, this.count);
- 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+             try {
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);
-                 regionfile.setStatus(pos.x, pos.z, ChunkSerializer.getStatus(nbt)); // Paper - Cache chunk status
-                 regionfile.setOversized(pos.x, pos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
-+                dataoutputstream.close(); // Paper - only write if successful
 +                // Paper start - don't write garbage data to disk if writing serialization fails
-+            } catch (RegionFileSizeException e) {
++                dataoutputstream.close(); // Only write if successful
++            } catch (final RegionFileSizeException e) {
 +                attempts = 5; // Don't retry
 +                regionfile.clear(pos);
 +                throw e;

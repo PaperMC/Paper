@@ -30,11 +30,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
-             Vec3 vec3d = new Vec3(this.getX(), this.getEyeY(), this.getZ());
              Vec3 vec3d1 = new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
  
--            return vec3d1.distanceTo(vec3d) > 128.0D ? false : this.level().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
-+            return vec3d1.distanceTo(vec3d) > 128.0D ? false : this.level().clipDirect(vec3d, vec3d1, net.minecraft.world.phys.shapes.CollisionContext.of(this)) == HitResult.Type.MISS; // Paper
+             // Paper - diff on change - used in CraftLivingEntity#hasLineOfSight(Location) and CraftWorld#lineOfSightExists
+-            return vec3d1.distanceToSqr(vec3d) > 128.0D * 128.0D ? false : this.level().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS; // Paper - Perf: Use distance squared
++            return vec3d1.distanceToSqr(vec3d) > 128.0D * 128.0D ? false : this.level().clipDirect(vec3d, vec3d1, net.minecraft.world.phys.shapes.CollisionContext.of(this)) == HitResult.Type.MISS; // Paper - Perf: Use distance squared & strip raytracing
          }
      }
  
@@ -58,10 +58,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return hitResult == null ? null : hitResult.getType();
 +    }
 +    // Paper end
-+
      // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
      default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition) {
-             BlockState iblockdata = this.getBlockState(blockposition);
+         // Paper start - Add predicate for blocks when raytracing
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
