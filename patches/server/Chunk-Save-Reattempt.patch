@@ -23,10 +23,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
-         }
-         // Paper end - rewrite chunk system
-         try { // Paper
-+        int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper - Chunk save reattempt
+ 
+     protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
+         RegionFile regionfile = this.getRegionFile(pos, false); // CraftBukkit
++        // Paper start - Chunk save reattempt
++        int attempts = 0;
++        Exception lastException = null;
++        while (attempts++ < 5) {
++            try {
++        // Paper end - Chunk save reattempt
  
          if (nbt == null) {
              regionfile.clear(pos);
@@ -35,17 +40,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
 +        // Paper start - Chunk save reattempt
-+        return;
-+        } catch (Exception ex)  {
-+            laste = ex;
-+        }
++                return;
++            } catch (Exception ex)  {
++                lastException = ex;
++            }
 +        }
  
-+        if (laste != null) {
-+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(laste);
-+            net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk " + pos, laste);
++        if (lastException != null) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(lastException);
++            net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk {}", pos, lastException);
 +        }
 +        // Paper end - Chunk save reattempt
-         } finally { // Paper start
-             regionfile.fileLock.unlock();
-         } // Paper end
+     }
+ 
+     public void close() throws IOException {

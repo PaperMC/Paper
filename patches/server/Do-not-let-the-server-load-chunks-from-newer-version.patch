@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
-         InProgressChunkHolder holder = loadChunk(world, poiStorage, chunkPos, nbt, true);
+         InProgressChunkHolder holder = readInProgressChunkHolder(world, poiStorage, chunkPos, nbt);
          return holder.protoChunk;
      }
 +    // Paper start - Do not let the server load chunks from newer versions
@@ -21,15 +21,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
 +    // Paper end - Do not let the server load chunks from newer versions
  
-     public static InProgressChunkHolder loadChunk(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt, boolean distinguish) {
+     public static InProgressChunkHolder readInProgressChunkHolder(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
+         // Paper end - rewrite chunk system
 +        // Paper start - Do not let the server load chunks from newer versions
 +        if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
-+            int dataVersion = nbt.getInt("DataVersion");
++            final int dataVersion = nbt.getInt("DataVersion");
 +            if (!JUST_CORRUPT_IT && dataVersion > CURRENT_DATA_VERSION) {
 +                new RuntimeException("Server attempted to load chunk saved with newer version of minecraft! " + dataVersion + " > " + CURRENT_DATA_VERSION).printStackTrace();
 +                System.exit(1);
 +            }
 +        }
-         // Paper end
++        // Paper end - Do not let the server load chunks from newer versions
          ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
  
+         if (!Objects.equals(chunkPos, chunkcoordintpair1)) {
