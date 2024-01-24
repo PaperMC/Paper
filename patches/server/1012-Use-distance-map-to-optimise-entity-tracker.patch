@@ -6,7 +6,7 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 Use the distance map to find candidate players for tracking.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index e69e68ae3be2760c079338793f33c27f59ebf7cf..c68a14b5b738acabc949cab48b9551cc54e98047 100644
+index 9037ba5197eed9d8e616fb65369f6b1a5ea9562c..7e5a8789e06a5ea1d2657ea8ee5c0460da92aaeb 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -146,6 +146,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -124,7 +124,7 @@ index e69e68ae3be2760c079338793f33c27f59ebf7cf..c68a14b5b738acabc949cab48b9551cc
      }
  
      // Paper start
-@@ -939,17 +1019,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -933,17 +1013,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void move(ServerPlayer player) {
@@ -143,7 +143,7 @@ index e69e68ae3be2760c079338793f33c27f59ebf7cf..c68a14b5b738acabc949cab48b9551cc
  
          SectionPos sectionposition = player.getLastSectionPos();
          SectionPos sectionposition1 = SectionPos.of((EntityAccess) player);
-@@ -1026,7 +1096,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1020,7 +1090,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                      entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
                      this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
@@ -152,7 +152,7 @@ index e69e68ae3be2760c079338793f33c27f59ebf7cf..c68a14b5b738acabc949cab48b9551cc
                      if (entity instanceof ServerPlayer) {
                          ServerPlayer entityplayer = (ServerPlayer) entity;
  
-@@ -1070,9 +1140,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1064,9 +1134,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          entity.tracker = null; // Paper - We're no longer tracked
      }
  
@@ -192,7 +192,7 @@ index e69e68ae3be2760c079338793f33c27f59ebf7cf..c68a14b5b738acabc949cab48b9551cc
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
          ObjectIterator objectiterator = this.entityMap.values().iterator();
-@@ -1222,6 +1320,42 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1216,6 +1314,42 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.lastSectionPos = SectionPos.of((EntityAccess) entity);
          }
  
@@ -236,7 +236,7 @@ index e69e68ae3be2760c079338793f33c27f59ebf7cf..c68a14b5b738acabc949cab48b9551cc
              return object instanceof ChunkMap.TrackedEntity ? ((ChunkMap.TrackedEntity) object).entity.getId() == this.entity.getId() : false;
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 8ba686f9982b44eab7dea965e737d8a564cc55cd..d3c7288e33b125eae88fb017f2e746b47c038f8f 100644
+index 0fc522f27afb8a0ded061392d011ff67294b16b3..c206adff916594ec573459d193cc7f3eda4b4957 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -56,6 +56,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
@@ -287,7 +287,7 @@ index 8ba686f9982b44eab7dea965e737d8a564cc55cd..d3c7288e33b125eae88fb017f2e746b4
          return this.yRot;
      }
 diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
-index 172d231adecf043f9f06b7f5e0365ae82327998d..ed8378ad022c375b0d18172aeccf65cb026d9d68 100644
+index bb06f89a29f30144e7e2113e088a503db006a83c..e4425b242fe73d1fd2bd10c313aa16925432329f 100644
 --- a/src/main/java/org/spigotmc/TrackingRange.java
 +++ b/src/main/java/org/spigotmc/TrackingRange.java
 @@ -55,4 +55,48 @@ public class TrackingRange

@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 58da8abd1603359bb9f2772a6420b55108e22ceb..4e1011dca1081a5246981fabb93f142442dcc92c 100644
+index 709698179e8da694c447221f0449e33ebd9b3c9f..23d2264dfc4f763a7198eb543e7f86a5a5aa85c3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -292,7 +292,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -141,25 +141,22 @@ index 58da8abd1603359bb9f2772a6420b55108e22ceb..4e1011dca1081a5246981fabb93f1424
                  this.startMetricsRecordingTick();
                  this.profiler.push("tick");
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ff9948589c93d4cf5d5b0beda42a0bb105f89539..9d00c98ddfa1b9c04e6d587dcdf779822f35964a 100644
+index afb4fa8fa124ed0154762962a3fe59164e968c7c..25f41119bcc19bab7cd2fdb044147b3f78a8ef1c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2969,6 +2969,15 @@ public final class CraftServer implements Server {
-         return this.getServer().tickTimes5s.getAverage();
+@@ -3026,7 +3026,11 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public double[] getTPS() {
+-        return new double[]{0, 0, 0}; // TODO
++        return new double[] {
++            net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
++            net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
++            net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
++        };
      }
  
-+    @Override
-+    public double[] getTPS() {
-+        return new double[] {
-+                net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
-+                net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
-+                net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
-+        };
-+    }
-+
-     // Spigot start
-     private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
-     {
+     // Paper start - adventure sounds
 diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 index d9ec48be0fdd2bfea938aa29e36b0f6ffa839ab2..9eb2823cc8f83bad2626fc77578b0162d9ed5782 100644
 --- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
