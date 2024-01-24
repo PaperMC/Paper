@@ -17,10 +17,10 @@ Async catch modifications to critical entity state
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index fa6783305aae385723d6bdb83166e147b8ebcfe9..27bcfe893db83bb369186ccf1d48f28e9d2cae82 100644
+index b04460f710ed24ab94011e9d6b79953338d5b7e0..8c82679ced26d540f708c566796ab7ed96faee65 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1570,6 +1570,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1563,6 +1563,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      }
  
      public void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> set) { // Paper
@@ -166,10 +166,10 @@ index bbbf6dd8e566ecdca8794e3b03765fe7e426a2bd..66ab901956ca394c251c420338643d39
                  PersistentEntitySectionManager.LOGGER.warn("Entity {} wasn't found in section {} (destroying due to {})", new Object[]{this.entity, SectionPos.of(this.currentSectionKey), reason});
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e03bd6419d4c28a329286edc5267b725de554105..57b27317f28901df1bb3c10bf462d319d0c7b7c3 100644
+index 938b3147040a43601f425b056dc4a83ccf2564be..605c04d10b47b71787b7f3369d4fdfbb98327c1d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1753,6 +1753,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1724,6 +1724,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
@@ -177,7 +177,7 @@ index e03bd6419d4c28a329286edc5267b725de554105..57b27317f28901df1bb3c10bf462d319
          if (loc == null || sound == null || category == null) return;
  
          double x = loc.getX();
-@@ -1764,6 +1765,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1735,6 +1736,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
@@ -185,7 +185,7 @@ index e03bd6419d4c28a329286edc5267b725de554105..57b27317f28901df1bb3c10bf462d319
          if (loc == null || sound == null || category == null) return;
  
          double x = loc.getX();
-@@ -1796,6 +1798,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1767,6 +1769,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void playSound(Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
@@ -193,7 +193,7 @@ index e03bd6419d4c28a329286edc5267b725de554105..57b27317f28901df1bb3c10bf462d319
          if (!(entity instanceof CraftEntity craftEntity) || entity.getWorld() != this || sound == null || category == null) return;
  
          ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(CraftSound.bukkitToMinecraftHolder(sound), net.minecraft.sounds.SoundSource.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
-@@ -1807,6 +1810,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1778,6 +1781,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
@@ -214,12 +214,12 @@ index 711f4ca8ee42a14e40af86d93a9685b4b9a2ba99..269664d3894835e5bafc39e65ee5245a
          return true;
      }
 diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
-index 05e94702e42b8f5c35d2a112c486d57948a3acba..d678ca116f9b81ab9d7d99a698e0ce066c132f34 100644
+index 78669fa035b7537ff7e533cf32aaf2995625424f..e8e3cc48cf1c58bd8151d1f28df28781859cd0e3 100644
 --- a/src/main/java/org/spigotmc/AsyncCatcher.java
 +++ b/src/main/java/org/spigotmc/AsyncCatcher.java
 @@ -11,6 +11,7 @@ public class AsyncCatcher
      {
-         if ( !io.papermc.paper.util.TickThread.isTickThread() ) // Paper // Paper - rewrite chunk system
+         if ( (AsyncCatcher.enabled || io.papermc.paper.util.TickThread.STRICT_THREAD_CHECKS) && Thread.currentThread() != MinecraftServer.getServer().serverThread ) // Paper
          {
 +            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable()); // Paper
              throw new IllegalStateException( "Asynchronous " + reason + "!" );

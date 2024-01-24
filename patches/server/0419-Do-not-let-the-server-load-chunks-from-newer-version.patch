@@ -9,20 +9,24 @@ the game, immediately stop the server to prevent data corruption.
 You can override this functionality at your own peril.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index c1ca83446bb4ccc7c1cb0f5e071850ce15657a69..00e60bba33fe3e100070bb3ded55e5253a8db138 100644
+index b4ea37dfa90f0c19914ecd32ddedde586d9d5f78..7ca4790d564846c1ab9560e349005eea8aef35b8 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -121,9 +121,22 @@ public class ChunkSerializer {
-         InProgressChunkHolder holder = readInProgressChunkHolder(world, poiStorage, chunkPos, nbt);
-         return holder.protoChunk;
-     }
+@@ -91,6 +91,10 @@ public class ChunkSerializer {
+     private static final String SKYLIGHT_STATE_TAG = "starlight.skylight_state";
+     private static final String STARLIGHT_VERSION_TAG = "starlight.light_version";
+     // Paper end - replace light engine impl
 +    // Paper start - Do not let the server load chunks from newer versions
 +    private static final int CURRENT_DATA_VERSION = net.minecraft.SharedConstants.getCurrentVersion().getDataVersion().getVersion();
 +    private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
 +    // Paper end - Do not let the server load chunks from newer versions
  
-     public static InProgressChunkHolder readInProgressChunkHolder(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
-         // Paper end - rewrite chunk system
+     public ChunkSerializer() {}
+ 
+@@ -107,6 +111,15 @@ public class ChunkSerializer {
+     }
+     // Paper end - guard against serializing mismatching coordinates
+     public static ProtoChunk read(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
 +        // Paper start - Do not let the server load chunks from newer versions
 +        if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
 +            final int dataVersion = nbt.getInt("DataVersion");

@@ -5,24 +5,24 @@ Subject: [PATCH] Player Chunk Load/Unload Events
 
 
 diff --git a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
-index 5de5209e04d631bd6a50e28e8d3abebf148252c1..43e3c99eafaed42161664e31827dfd0abb127ad2 100644
+index c509a1318bcef38fd4927e38b6ee9846853e2d15..13209267c26f46492a92e820889a9be0bd2287a0 100644
 --- a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
 +++ b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
-@@ -46,6 +46,11 @@ public class PlayerChunkSender {
-     public static void dropChunkStatic(ServerPlayer player, ChunkPos pos) {
-         player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(pos.toLong()).removePlayer(player);
-         player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
-+        // Paper start - PlayerChunkUnloadEvent
-+        if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
-+            new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(player.getBukkitEntity().getWorld().getChunkAt(pos.longKey), player.getBukkitEntity()).callEvent();
-+        }
-+        // Paper end - PlayerChunkUnloadEvent
-     }
-     // Paper end - rewrite player chunk loader
+@@ -45,6 +45,11 @@ public class PlayerChunkSender {
+     public void dropChunk(ServerPlayer player, ChunkPos pos) {
+         if (!this.pendingChunks.remove(pos.toLong()) && player.isAlive()) {
+             player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
++            // Paper start - PlayerChunkUnloadEvent
++            if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(player.getBukkitEntity().getWorld().getChunkAt(pos.longKey), player.getBukkitEntity()).callEvent();
++            }
++            // Paper end - PlayerChunkUnloadEvent
+         }
  
-@@ -86,6 +91,11 @@ public class PlayerChunkSender {
-     public static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) { // Paper - rewrite chunk loader - public
-         handler.player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(chunk.getPos().toLong()).addPlayer(handler.player);
+     }
+@@ -77,6 +82,11 @@ public class PlayerChunkSender {
+ 
+     private static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) {
          handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), (BitSet)null, (BitSet)null));
 +        // Paper start - PlayerChunkLoadEvent
 +        if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {

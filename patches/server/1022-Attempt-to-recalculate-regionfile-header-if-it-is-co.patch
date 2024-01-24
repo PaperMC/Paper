@@ -10,7 +10,7 @@ hoping that at least then we don't swap chunks, and maybe recover
 them all.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index d25b24eb03d9b2d92c159ac4d0f8039784af1748..2a179e83f847e76a6a57f55aedcc324f987bd398 100644
+index 4bef691ad22b6638847aebb471a3c28522c7a461..ccbdb68e3bcf5f609e96ddd6e5ccfb27abb4d1f5 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -70,6 +70,18 @@ import net.minecraft.world.ticks.ProtoChunkTicks;
@@ -42,18 +42,18 @@ index d25b24eb03d9b2d92c159ac4d0f8039784af1748..2a179e83f847e76a6a57f55aedcc324f
          nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(chunk.getStatus()).toString());
          BlendingData blendingdata = chunk.getBlendingData();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-index 0334924169de23f8b4f4e3b9b773d5e501e76a32..9be8dc63fc01ae6d43d9f22fbfce25c4e2af247b 100644
+index 6d1c8110af0508210aaaae6eef1c59b75e02bf76..08e1df6a2f262c1e20f0ec107bba4a6cc955797e 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-@@ -41,7 +41,7 @@ public class ChunkStorage implements AutoCloseable {
+@@ -38,7 +38,7 @@ public class ChunkStorage implements AutoCloseable {
+ 
+     public ChunkStorage(Path directory, DataFixer dataFixer, boolean dsync) {
          this.fixerUpper = dataFixer;
-         // Paper start - async chunk io
-         // remove IO worker
--        this.regionFileCache = new RegionFileStorage(directory, dsync); // Paper - nuke IOWorker
-+        this.regionFileCache = new RegionFileStorage(directory, dsync, true); // Paper - nuke IOWorker // Paper - Attempt to recalculate regionfile header if it is corrupt
-         // Paper end - async chunk io
+-        this.regionFileCache = new RegionFileStorage(directory, dsync); // Paper - rewrite chunk system; async chunk IO
++        this.regionFileCache = new RegionFileStorage(directory, dsync, true); // Paper - rewrite chunk system; async chunk IO & Attempt to recalculate regionfile header if it is corrupt
      }
  
+     public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java
 index c8298a597818227de33a4afce4698ec0666cf758..6762b0f71ea9e369bb77103b7f1938983cb77a44 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java
@@ -685,7 +685,7 @@ index 92ba75254f6ffca40abd5485dbb4789de59edebd..6cf83502a954cce9c562ec036bfeddb4
          return bytebuffer;
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 0d4ca8629707ba5cee10ee94b330404291cd2c30..1e97e2696c953e87a7bbde4a0016bdf55ded5241 100644
+index 42d37bee3a459adcd46408596ccf93abbcff51fe..fe312b1aef579cb4bf81bdd967cf72ff880d7505 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -24,6 +24,7 @@ public class RegionFileStorage implements AutoCloseable {

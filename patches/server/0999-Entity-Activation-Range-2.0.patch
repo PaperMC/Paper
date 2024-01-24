@@ -111,7 +111,7 @@ index 5f3502b148588a76079c1d9f55e4203f6de56406..4357d45305cdf82659fcc0df9fa42b1a
          } else {
              passenger.stopRiding();
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 58d40a00ea91da905cbca13428029275c667abba..dbe4a41b8121d4e8ae8cf12c4a73d8148030c48e 100644
+index f83d16fbd7ddaa71578e3de0b35438e699c6fa22..bcd6201818a2a5ca6656e031e1e3321c9a637420 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -411,6 +411,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
@@ -339,7 +339,7 @@ index b149e8bcac034bb3fc118a9adcb0de45e18ed5e9..fc35cfc9d045f3e5b6a50af1d0ba83b6
 +
  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index eebe293a9307d4fd55b30ae1e88453a4546bafaf..84761bacda56c7288f22e122560f24f4e25f3bf3 100644
+index 6163a682f12d75fa2658ecd0de33ee56dbc5771b..9b574d4aa1faf5814942641c48afe503d6f83bc4 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -162,6 +162,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -371,7 +371,7 @@ index b1061db1d9b3bfde61d5016e10556c4320095827..c71690dbc3dc52803945f1608f0ee3ba
                              }
                          }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index dfbcddadea4a89c4cfc879105cfacae6dde742a9..fafc8b84d6b6368c70b8eedfdb4c3a9deace9c26 100644
+index 90df7e83d9166c22a56a31db22d843768229b9ab..c39894e824334f1dc52e0466cf9d84f7e219be70 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -1,33 +1,43 @@
@@ -525,7 +525,7 @@ index dfbcddadea4a89c4cfc879105cfacae6dde742a9..fafc8b84d6b6368c70b8eedfdb4c3a9d
          maxRange = Math.min( ( world.spigotConfig.simulationDistance << 4 ) - 8, maxRange );
  
          for ( Player player : world.players() )
-@@ -130,11 +199,17 @@ public class ActivationRange
+@@ -130,13 +199,30 @@ public class ActivationRange
                  continue;
              }
  
@@ -546,9 +546,23 @@ index dfbcddadea4a89c4cfc879105cfacae6dde742a9..fafc8b84d6b6368c70b8eedfdb4c3a9d
 +            ActivationType.VILLAGER.boundingBox = player.getBoundingBox().inflate( villagerActivationRange, worldHeight, villagerActivationRange );
 +            // Paper end
  
-             // Paper start
-             java.util.List<Entity> entities = world.getEntities((Entity)null, ActivationRange.maxBB, null);
-@@ -181,60 +256,118 @@ public class ActivationRange
+-            world.getEntities().get(ActivationRange.maxBB, ActivationRange::activateEntity);
++            // Paper start
++            java.util.List<Entity> entities = world.getEntities((Entity)null, ActivationRange.maxBB, null);
++            boolean tickMarkers = world.paperConfig().entities.markers.tick; // Paper - Configurable marker ticking
++            for (Entity entity : entities) {
++                // Paper start - Configurable marker ticking
++                if (!tickMarkers && entity instanceof net.minecraft.world.entity.Marker) {
++                    continue;
++                }
++                // Paper end - Configurable marker ticking
++                ActivationRange.activateEntity(entity);
++            }
++            // Paper end
+         }
+         MinecraftTimings.entityActivationCheckTimer.stopTiming();
+     }
+@@ -169,60 +255,118 @@ public class ActivationRange
       * @param entity
       * @return
       */
@@ -621,7 +635,8 @@ index dfbcddadea4a89c4cfc879105cfacae6dde742a9..fafc8b84d6b6368c70b8eedfdb4c3a9d
 +                ) {
 +                    return 20;
 +                }
-+            }
+             }
+-            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
 +            if ( entity instanceof Villager ) {
 +                Brain<Villager> behaviorController = ((Villager) entity).getBrain();
 +
@@ -638,8 +653,7 @@ index dfbcddadea4a89c4cfc879105cfacae6dde742a9..fafc8b84d6b6368c70b8eedfdb4c3a9d
 +                        return config.villagersWorkImmunityFor;
 +                    }
 +                }
-             }
--            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
++            }
 +            if ( entity instanceof Llama && ( (Llama) entity ).inCaravan() )
              {
 -                return true;
@@ -684,7 +698,7 @@ index dfbcddadea4a89c4cfc879105cfacae6dde742a9..fafc8b84d6b6368c70b8eedfdb4c3a9d
      }
  
      /**
-@@ -249,8 +382,19 @@ public class ActivationRange
+@@ -237,8 +381,19 @@ public class ActivationRange
          if ( entity instanceof FireworkRocketEntity ) {
              return true;
          }
@@ -705,7 +719,7 @@ index dfbcddadea4a89c4cfc879105cfacae6dde742a9..fafc8b84d6b6368c70b8eedfdb4c3a9d
  
          // Should this entity tick?
          if ( !isActive )
-@@ -258,15 +402,19 @@ public class ActivationRange
+@@ -246,15 +401,19 @@ public class ActivationRange
              if ( ( MinecraftServer.currentTick - entity.activatedTick - 1 ) % 20 == 0 )
              {
                  // Check immunities every 20 ticks.
