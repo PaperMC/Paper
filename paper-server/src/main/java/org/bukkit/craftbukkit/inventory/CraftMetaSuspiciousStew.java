@@ -20,8 +20,8 @@ import org.bukkit.potion.PotionEffectType;
 @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 public class CraftMetaSuspiciousStew extends CraftMetaItem implements SuspiciousStewMeta {
 
-    static final ItemMetaKey DURATION = new ItemMetaKey("EffectDuration", "duration");
-    static final ItemMetaKey EFFECTS = new ItemMetaKey("Effects", "effects");
+    static final ItemMetaKey DURATION = new ItemMetaKey("duration", "duration");
+    static final ItemMetaKey EFFECTS = new ItemMetaKey("effects", "effects");
     static final ItemMetaKey ID = new ItemMetaKey("id", "id");
 
     private List<PotionEffect> customEffects;
