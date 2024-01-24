@@ -3,7 +3,7 @@ import sys
 
 # Use inside of server patch dir
 # py ../../scripts/moveback.py ''
-patch_target = 998 # TODO: Update this
+patch_target = 100 # TODO: Update this
 
 
 def increment_number(filename):
