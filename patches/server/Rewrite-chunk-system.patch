@@ -15286,14 +15286,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
 @@ -0,0 +0,0 @@ public final class PaperCommand extends Command {
-         commands.put(Set.of("version"), new VersionCommand());
-         commands.put(Set.of("dumpplugins"), new DumpPluginsCommand());
          commands.put(Set.of("fixlight"), new FixLightCommand());
--        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
-+        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand()); //
+         commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
          commands.put(Set.of("dumpitem"), new DumpItemCommand());
++        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
  
          return commands.entrySet().stream()
+             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -22154,23 +22153,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (nbt == null && regionfile == null) {
 +            return;
 +        }
++        try { // Try finally to unlock the region file
 +        // Paper end - rewrite chunk system
          // Paper start - Chunk save reattempt
          int attempts = 0;
          Exception lastException = null;
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
-                 return;
-             } catch (Exception ex)  {
-                 lastException = ex;
-+                // Paper start - rewrite chunk system
-+            } finally {
-+                regionfile.fileLock.unlock();
-+                // Paper end - rewrite chunk system
-             }
+             net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk {}", pos, lastException);
          }
- 
-@@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
          // Paper end - Chunk save reattempt
++        // Paper start - rewrite chunk system
++        } finally {
++            regionfile.fileLock.unlock();
++        }
++        // Paper end - rewrite chunk system
      }
  
 -    public void close() throws IOException {
