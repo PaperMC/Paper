@@ -15286,9 +15286,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
 @@ -0,0 +0,0 @@ public final class PaperCommand extends Command {
-         commands.put(Set.of("fixlight"), new FixLightCommand());
          commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
          commands.put(Set.of("dumpitem"), new DumpItemCommand());
+         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
 +        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
  
          return commands.entrySet().stream()
@@ -20130,8 +20130,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
-     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
-     public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
+     public @Nullable String clientBrandName = null; // Paper - Brand support
+     public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
  
 +    // Paper start - replace player chunk loader
 +    private final java.util.concurrent.atomic.AtomicReference<io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances> viewDistances = new java.util.concurrent.atomic.AtomicReference<>(new io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances(-1, -1, -1));
@@ -20455,23 +20455,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
 +++ b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
 @@ -0,0 +0,0 @@ public class PlayerChunkSender {
-         this.pendingChunks.add(chunk.getPos().toLong());
-     }
  
-+    // Paper start - rewrite player chunk loader
-+    public static void dropChunkStatic(ServerPlayer player, ChunkPos pos) {
-+        player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(pos.toLong()).removePlayer(player);
-+        player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
-+    }
-+    // Paper end - rewrite player chunk loader
-+
      public void dropChunk(ServerPlayer player, ChunkPos pos) {
          if (!this.pendingChunks.remove(pos.toLong()) && player.isAlive()) {
--            player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
-+           dropChunkStatic(player, pos); // Paper - rewrite player chunk loader - move into own method
-         }
- 
++            // Paper start - rewrite player chunk loader
++           dropChunkStatic(player, pos);
++        }
++    }
++    public static void dropChunkStatic(ServerPlayer player, ChunkPos pos) {
++            player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(pos.toLong()).removePlayer(player);
+             player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
+             // Paper start - PlayerChunkUnloadEvent
+             if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
+                 new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(player.getBukkitEntity().getWorld().getChunkAt(pos.longKey), player.getBukkitEntity()).callEvent();
+             }
+             // Paper end - PlayerChunkUnloadEvent
+-        }
+-
      }
++    // Paper end - rewrite player chunk loader
  
      public void sendNextChunks(ServerPlayer player) {
 +        if (true) return; // Paper - rewrite player chunk loader
@@ -20486,8 +20488,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) { // Paper - rewrite chunk loader - public
 +        handler.player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(chunk.getPos().toLong()).addPlayer(handler.player);
          handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), (BitSet)null, (BitSet)null));
-         ChunkPos chunkPos = chunk.getPos();
-         DebugPackets.sendPoiPacketsForChunk(world, chunkPos);
+         // Paper start - PlayerChunkLoadEvent
+         if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
 @@ -0,0 +0,0 @@ public class PlayerChunkSender {
      }
  
@@ -20501,19 +20503,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-             server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"))); // Paper - AsyncTabCompleteEvent
              return;
          }
-+        // Paper start
-+        String str = packet.getCommand(); int index = -1;
-+        if (str.length() > 64 && ((index = str.indexOf(' ')) == -1 || index >= 64)) {
-+            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"))); // Paper
+         // Paper end - Don't suggest if tab-complete is disabled
++        // Paper start - rewrite chunk system
++        int index;
++        if (packet.getCommand().length() > 64 && ((index = packet.getCommand().indexOf(' ')) == -1 || index >= 64)) {
++            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM));
 +            return;
 +        }
-+        // Paper end
-         // CraftBukkit end
++        // Paper end - rewrite chunk system
          // Paper start - AsyncTabCompleteEvent
          TAB_COMPLETE_EXECUTOR.execute(() -> {
+         StringReader stringreader = new StringReader(packet.getCommand());
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -20750,15 +20752,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public boolean hasAnyPlayerPassengers() {
 +        // copied from below
 +        if (this.passengers.isEmpty()) { return false; }
-+        return this.getIndirectPassengersStream().anyMatch((entity) -> {
-+            return entity instanceof Player;
-+        });
++        return this.getIndirectPassengersStream().anyMatch((entity) -> entity instanceof Player);
 +    }
 +    // Paper end - rewrite chunk system
-+
      public boolean hasExactlyOnePlayerPassenger() {
+         if (this.passengers.isEmpty()) { return false; } // Paper - Optimize indirect passenger iteration
          return this.countPlayerPassengers() == 1;
-     }
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              return;
          }
@@ -20769,9 +20768,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return;
 +        }
 +        // Paper end - rewrite chunk system
-         if (this.position.x != x || this.position.y != y || this.position.z != z) {
-             this.position = new Vec3(x, y, z);
-             int i = Mth.floor(x);
+         // Paper start - Fix MC-4
+         if (this instanceof ItemEntity) {
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.fixEntityPositionDesync) {
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
      @Override
@@ -21542,6 +21541,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
      public static ProtoChunk read(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
+         // Paper start - Do not let the server load chunks from newer versions
+         if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
+@@ -0,0 +0,0 @@ public class ChunkSerializer {
+             }
+         }
+         // Paper end - Do not let the server load chunks from newer versions
 +        InProgressChunkHolder holder = readInProgressChunkHolder(world, poiStorage, chunkPos, nbt);
 +        return holder.protoChunk;
 +    }
@@ -21686,37 +21691,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static final int LAST_MONOLYTH_STRUCTURE_DATA_VERSION = 1493;
 -    private final IOWorker worker;
-+    // Paper - nuke IO worker
++    // Paper start - rewrite chunk system; async chunk IO
++    private final Object persistentDataLock = new Object();
++    public final RegionFileStorage regionFileCache;
++    // Paper end - rewrite chunk system
      protected final DataFixer fixerUpper;
      @Nullable
      private volatile LegacyStructureDataHandler legacyStructureHandler;
-+    // Paper start - async chunk loading
-+    private final Object persistentDataLock = new Object(); // Paper
-+    public final RegionFileStorage regionFileCache;
-+    // Paper end - async chunk loading
  
      public ChunkStorage(Path directory, DataFixer dataFixer, boolean dsync) {
          this.fixerUpper = dataFixer;
 -        this.worker = new IOWorker(directory, dsync, "chunk");
-+        // Paper start - async chunk io
-+        // remove IO worker
-+        this.regionFileCache = new RegionFileStorage(directory, dsync); // Paper - nuke IOWorker
-+        // Paper end - async chunk io
++        this.regionFileCache = new RegionFileStorage(directory, dsync); // Paper - rewrite chunk system; async chunk IO
      }
  
      public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
 -        return this.worker.isOldChunkAround(chunkPos, checkRadius);
-+        return true; // Paper - (for now, old unoptimised behavior) TODO implement later? the chunk status that blender uses SHOULD already have this radius loaded, no need to go back for it...
++        return true; // Paper - rewrite chunk system; (for now, unoptimised behavior) TODO implement later? the chunk status that blender uses SHOULD already have this radius loaded, no need to go back later for it...
      }
  
      // CraftBukkit start
-     private boolean check(ServerChunkCache cps, int x, int z) {
+@@ -0,0 +0,0 @@ public class ChunkStorage implements AutoCloseable {
+         if (true) return true; // Paper - Perf: this isn't even needed anymore, light is purged updating to 1.14+, why are we holding up the conversion process reading chunk data off disk - return true, we need to set light populated to true so the converter recognizes the chunk as being "full"
          ChunkPos pos = new ChunkPos(x, z);
          if (cps != null) {
 -            com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread");
 -            if (cps.hasChunk(x, z)) {
-+            //com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread"); // Paper - this function is now MT-Safe
-+            if (cps.getChunkAtIfCachedImmediately(x, z) != null) { // Paper - isLoaded is a ticket level check, not a chunk loaded check!
++            // Paper start - rewrite chunk system; async chunk IO
++            if (cps.getChunkAtIfCachedImmediately(x, z) != null) { // isLoaded is a ticket level check, not a chunk loaded check!
++                // Paper end - rewrite chunk system
                  return true;
              }
          }
@@ -22684,11 +22687,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-         this.console.addLevel(internal);
  
+         internal.keepSpawnInMemory = creator.keepSpawnLoaded().toBooleanOrElse(internal.getWorld().getKeepSpawnInMemory()); // Paper
          this.getServer().prepareLevels(internal.getChunkSource().chunkMap.progressListener, internal);
 -        internal.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
-+        //internal.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API // Paper - rewrite chunk system
  
          this.pluginManager.callEvent(new WorldLoadEvent(internal.getWorld()));
          return internal.getWorld();
@@ -22966,25 +22968,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public <T> void getEntitiesByClass(Class<? extends T> clazz, Entity except, AABB box, List<? super T> into, Predicate<? super T> predicate) {}
 +    // Paper end
  }
-diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/spigotmc/ActivationRange.java
-+++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -0,0 +0,0 @@ public class ActivationRange
-             ActivationType.ANIMAL.boundingBox = player.getBoundingBox().inflate( animalActivationRange, 256, animalActivationRange );
-             ActivationType.MONSTER.boundingBox = player.getBoundingBox().inflate( monsterActivationRange, 256, monsterActivationRange );
- 
--            world.getEntities().get(ActivationRange.maxBB, ActivationRange::activateEntity);
-+            // Paper start
-+            java.util.List<Entity> entities = world.getEntities((Entity)null, ActivationRange.maxBB, null);
-+            for (int i = 0; i < entities.size(); i++) {
-+                Entity entity = entities.get(i);
-+                ActivationRange.activateEntity(entity);
-+            }
-+            // Paper end
-         }
-         MinecraftTimings.entityActivationCheckTimer.stopTiming();
-     }
 diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/AsyncCatcher.java
@@ -22994,10 +22977,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static void catchOp(String reason)
      {
 -        if ( (AsyncCatcher.enabled || io.papermc.paper.util.TickThread.STRICT_THREAD_CHECKS) && Thread.currentThread() != MinecraftServer.getServer().serverThread ) // Paper
-+        if ( !io.papermc.paper.util.TickThread.isTickThread() ) // Paper // Paper - rewrite chunk system
++        if (!(io.papermc.paper.util.TickThread.isTickThread())) // Paper
          {
+             MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable()); // Paper
              throw new IllegalStateException( "Asynchronous " + reason + "!" );
-         }
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java

@@ -546,8 +546,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            ActivationType.VILLAGER.boundingBox = player.getBoundingBox().inflate( villagerActivationRange, worldHeight, villagerActivationRange );
 +            // Paper end
  
-             // Paper start
-             java.util.List<Entity> entities = world.getEntities((Entity)null, ActivationRange.maxBB, null);
+-            world.getEntities().get(ActivationRange.maxBB, ActivationRange::activateEntity);
++            // Paper start
++            java.util.List<Entity> entities = world.getEntities((Entity)null, ActivationRange.maxBB, null);
++            boolean tickMarkers = world.paperConfig().entities.markers.tick; // Paper - Configurable marker ticking
++            for (Entity entity : entities) {
++                // Paper start - Configurable marker ticking
++                if (!tickMarkers && entity instanceof net.minecraft.world.entity.Marker) {
++                    continue;
++                }
++                // Paper end - Configurable marker ticking
++                ActivationRange.activateEntity(entity);
++            }
++            // Paper end
+         }
+         MinecraftTimings.entityActivationCheckTimer.stopTiming();
+     }
 @@ -0,0 +0,0 @@ public class ActivationRange
       * @param entity
       * @return
@@ -621,7 +635,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                ) {
 +                    return 20;
 +                }
-+            }
+             }
+-            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
 +            if ( entity instanceof Villager ) {
 +                Brain<Villager> behaviorController = ((Villager) entity).getBrain();
 +
@@ -638,8 +653,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        return config.villagersWorkImmunityFor;
 +                    }
 +                }
-             }
--            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
++            }
 +            if ( entity instanceof Llama && ( (Llama) entity ).inCaravan() )
              {
 -                return true;
