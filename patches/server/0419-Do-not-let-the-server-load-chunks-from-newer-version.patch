@@ -9,11 +9,11 @@ the game, immediately stop the server to prevent data corruption.
 You can override this functionality at your own peril.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 7862caa0f787634cec14af81fe1f39803a43f115..1650541abeedce04ddeddfed15411b64a01be452 100644
+index c1ca83446bb4ccc7c1cb0f5e071850ce15657a69..00e60bba33fe3e100070bb3ded55e5253a8db138 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -124,8 +124,20 @@ public class ChunkSerializer {
-         InProgressChunkHolder holder = loadChunk(world, poiStorage, chunkPos, nbt, true);
+@@ -121,9 +121,22 @@ public class ChunkSerializer {
+         InProgressChunkHolder holder = readInProgressChunkHolder(world, poiStorage, chunkPos, nbt);
          return holder.protoChunk;
      }
 +    // Paper start - Do not let the server load chunks from newer versions
@@ -21,15 +21,17 @@ index 7862caa0f787634cec14af81fe1f39803a43f115..1650541abeedce04ddeddfed15411b64
 +    private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
 +    // Paper end - Do not let the server load chunks from newer versions
  
-     public static InProgressChunkHolder loadChunk(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt, boolean distinguish) {
+     public static InProgressChunkHolder readInProgressChunkHolder(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
+         // Paper end - rewrite chunk system
 +        // Paper start - Do not let the server load chunks from newer versions
 +        if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
-+            int dataVersion = nbt.getInt("DataVersion");
++            final int dataVersion = nbt.getInt("DataVersion");
 +            if (!JUST_CORRUPT_IT && dataVersion > CURRENT_DATA_VERSION) {
 +                new RuntimeException("Server attempted to load chunk saved with newer version of minecraft! " + dataVersion + " > " + CURRENT_DATA_VERSION).printStackTrace();
 +                System.exit(1);
 +            }
 +        }
-         // Paper end
++        // Paper end - Do not let the server load chunks from newer versions
          ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
  
+         if (!Objects.equals(chunkPos, chunkcoordintpair1)) {

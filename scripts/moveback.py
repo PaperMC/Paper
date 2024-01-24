@@ -2,8 +2,8 @@ import os
 import sys
 
 # Use inside of server patch dir
-# py ../../scripts/moveback.py ''
-patch_target = 100 # TODO: Update this
+# py ../../scripts/moveback.py 'Rewrite chunk system'
+patch_target = 400 # TODO: Update this
 
 
 def increment_number(filename):

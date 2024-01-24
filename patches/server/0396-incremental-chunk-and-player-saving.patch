@@ -5,10 +5,10 @@ Subject: [PATCH] incremental chunk and player saving
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0e3e68ec5cd568c9fc89555597c167acb6563cee..ca005f3c60e58a2ac3e391c9107023e982f33ffe 100644
+index f3afc22e3c4fc792fa4ed5c3ee18d76cd1cd6e85..f03a2995c2eb080ec4db0d6c3aa261a463c08579 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -897,7 +897,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -887,7 +887,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          try {
              this.isSaving = true;
@@ -17,7 +17,7 @@ index 0e3e68ec5cd568c9fc89555597c167acb6563cee..ca005f3c60e58a2ac3e391c9107023e9
              flag3 = this.saveAllChunks(suppressLogs, flush, force);
          } finally {
              this.isSaving = false;
-@@ -1312,16 +1312,28 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1318,16 +1318,28 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
          --this.ticksUntilAutosave;
@@ -56,10 +56,10 @@ index 0e3e68ec5cd568c9fc89555597c167acb6563cee..ca005f3c60e58a2ac3e391c9107023e9
          // Paper start - move executeAll() into full server tick timing
          try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 5bea335653d3cd45354dc67b160a6bf5ce907f41..35f463e5237d12e42f7a8b8c177af3236d2e7986 100644
+index 6bb0b24e8bc5cd031d192dd0b61a3afd248c62e4..1ab9472a4619204ee633e7e91de5f08cf56a1291 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -450,6 +450,15 @@ public class ServerChunkCache extends ChunkSource {
+@@ -600,6 +600,15 @@ public class ServerChunkCache extends ChunkSource {
          } // Paper - Timings
      }
  
@@ -76,10 +76,10 @@ index 5bea335653d3cd45354dc67b160a6bf5ce907f41..35f463e5237d12e42f7a8b8c177af323
      public void close() throws IOException {
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index faf704d805a1af037d0e8d4dd60a942a43e5b054..90fae050445fbebe44ec5ef77fdcac65b48f1f9d 100644
+index ecc716ce94f40ab8f85e5f57fecad68c08d4e85e..baafe984f2e015e20e57841b5009861cb0a02525 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1283,6 +1283,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1046,6 +1046,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
          return !this.server.isUnderSpawnProtection(this, pos, player) && this.getWorldBorder().isWithinBounds(pos);
      }
  
@@ -115,10 +115,10 @@ index faf704d805a1af037d0e8d4dd60a942a43e5b054..90fae050445fbebe44ec5ef77fdcac65
 +    // Paper end - Incremental chunk and player saving
 +
      public void save(@Nullable ProgressListener progressListener, boolean flush, boolean savingDisabled) {
-         // Paper start - rewrite chunk system - add close param
-         this.save(progressListener, flush, savingDisabled, false);
+         ServerChunkCache chunkproviderserver = this.getChunkSource();
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 3a0335609310a5997b0625e31ed3192f5f4865ec..c449b40c2252829c5f5fa0978b3f9a41336d6318 100644
+index ab92c2c0ff5ebb395670c23fe0e3a8122b215874..c4e0fa6c24f9df0d99508ea7d6a9ed974f14835e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -190,6 +190,7 @@ import org.bukkit.inventory.MainHand;
@@ -130,7 +130,7 @@ index 3a0335609310a5997b0625e31ed3192f5f4865ec..c449b40c2252829c5f5fa0978b3f9a41
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      private static final int FLY_STAT_RECORDING_SPEED = 25;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 5657999a85b9b9dfb48a51170d5fa3d9c37263ad..172d7c3df8f9aab24d49b2ff12e3cdf5f40727f9 100644
+index 54aba3118157f72491cb8c3d5fb5c63750ea6878..a35dda4010c6db1a8e1efb7951ac8732d9a1e16e 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -551,6 +551,7 @@ public abstract class PlayerList {

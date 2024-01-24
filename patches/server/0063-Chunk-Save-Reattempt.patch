@@ -6,10 +6,10 @@ Subject: [PATCH] Chunk Save Reattempt
 We commonly have "Stream Closed" errors on chunk saving, so this code should re-try to save the chunk in the event of failure and hopefully prevent rollbacks.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 9623a7bac79af37016ba5a5b37d4ef0b3dcb7312..f3d169436ce05f1c56599cfe15a56671b7d13516 100644
+index 66994aa135037919219e0bbcabe7de9f6f2c9dcd..140d6e455c1729f6e31e95facba5520b75ad838c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -275,7 +275,7 @@ public class RegionFile implements AutoCloseable {
+@@ -274,7 +274,7 @@ public class RegionFile implements AutoCloseable {
                      return true;
                  }
              } catch (IOException ioexception) {
@@ -19,33 +19,38 @@ index 9623a7bac79af37016ba5a5b37d4ef0b3dcb7312..f3d169436ce05f1c56599cfe15a56671
              }
          }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 2b6ba2e30c9a4682d6deb2ab750d6923ad8469e4..fa592d5db10dbd4824de74658655ef61230ed431 100644
+index 1988063a0cac0350ae3b3388b8f2a0c95b8b259f..a7bf0ce6eefa60ba61975afb8885fc1857fb7959 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -209,6 +209,7 @@ public class RegionFileStorage implements AutoCloseable {
-         }
-         // Paper end - rewrite chunk system
-         try { // Paper
-+        int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper - Chunk save reattempt
+@@ -132,6 +132,12 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+     protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
+         RegionFile regionfile = this.getRegionFile(pos, false); // CraftBukkit
++        // Paper start - Chunk save reattempt
++        int attempts = 0;
++        Exception lastException = null;
++        while (attempts++ < 5) {
++            try {
++        // Paper end - Chunk save reattempt
  
          if (nbt == null) {
              regionfile.clear(pos);
-@@ -233,7 +234,18 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -156,7 +162,18 @@ public class RegionFileStorage implements AutoCloseable {
                  dataoutputstream.close();
              }
          }
 +        // Paper start - Chunk save reattempt
-+        return;
-+        } catch (Exception ex)  {
-+            laste = ex;
-+        }
++                return;
++            } catch (Exception ex)  {
++                lastException = ex;
++            }
 +        }
  
-+        if (laste != null) {
-+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(laste);
-+            net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk " + pos, laste);
++        if (lastException != null) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(lastException);
++            net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk {}", pos, lastException);
 +        }
 +        // Paper end - Chunk save reattempt
-         } finally { // Paper start
-             regionfile.fileLock.unlock();
-         } // Paper end
+     }
+ 
+     public void close() throws IOException {

@@ -194,14 +194,14 @@ index 0000000000000000000000000000000000000000..0bb4aaa546939b67a5d22865190f3047
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index ae51993e0de706cb62c96795ca9de7663893a5bf..5bfa245a621a0bf7ef60cd01f4c04576b770384e 100644
+index 830978f3409888302ab857161628cee5869efa8f..ae51993e0de706cb62c96795ca9de7663893a5bf 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -40,6 +40,7 @@ public final class PaperCommand extends Command {
+@@ -39,6 +39,7 @@ public final class PaperCommand extends Command {
+         commands.put(Set.of("version"), new VersionCommand());
          commands.put(Set.of("dumpplugins"), new DumpPluginsCommand());
          commands.put(Set.of("fixlight"), new FixLightCommand());
-         commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
-+        commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
++        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
  
          return commands.entrySet().stream()
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
@@ -300,23 +300,23 @@ index 0000000000000000000000000000000000000000..95d6022c9cfb2e36ec5a71be6e343540
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 250f9821d400628c9431b07d1c02c379120e815a..5bea335653d3cd45354dc67b160a6bf5ce907f41 100644
+index 32a26eac53cfd4fb69ba117908acc82894deb1a0..6bb0b24e8bc5cd031d192dd0b61a3afd248c62e4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -292,6 +292,7 @@ public class ServerChunkCache extends ChunkSource {
-                 // Paper start - async chunk io/loading
-                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, x1, z1); // Paper - rewrite chunk system
-                 // Paper end
-+                com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x1, z1); // Paper - Add debug for sync chunk loads
+@@ -424,6 +424,7 @@ public class ServerChunkCache extends ChunkSource {
+ 
+             Objects.requireNonNull(completablefuture);
+             if (!completablefuture.isDone()) { // Paper
++                com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x, z); // Paper - Add debug for sync chunk loads
                  this.level.timings.syncChunkLoad.startTiming(); // Paper
              chunkproviderserver_b.managedBlock(completablefuture::isDone);
-                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.popChunkWait(); // Paper - async chunk debug  // Paper - rewrite chunk system
+                 this.level.timings.syncChunkLoad.stopTiming(); // Paper
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index c93269e0a6026870c13083cee0f86334c5c3fdb1..8a7032d909452cec6c4b3e99b02fb00df5cea324 100644
+index 989cd53db579408f89c3425d808e0a611194e896..dd7071404555548c7f102737456f8773860b597b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -649,6 +649,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         this.entityLookup = new io.papermc.paper.chunk.system.entity.EntityLookup(this, new EntityCallbacks()); // Paper - rewrite chunk system
+@@ -415,6 +415,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
      }
  
 +    // Paper start
