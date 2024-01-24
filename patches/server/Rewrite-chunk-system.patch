@@ -923,23 +923,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static final class LightQueue {
-diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/co/aikar/timings/TimingsExport.java
-+++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +0,0 @@ public class TimingsExport extends Thread {
-                 pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
-                     return pair(rule, world.getWorld().getGameRuleValue(rule));
-                 })),
--                pair("ticking-distance", world.getChunkSource().chunkMap.getEffectiveViewDistance())
-+                // Paper start - replace chunk loader system
-+                pair("ticking-distance", world.getWorld().getSimulationDistance()),
-+                pair("no-ticking-distance", world.getWorld().getViewDistance()),
-+                pair("sending-distance", world.getWorld().getSendViewDistance())
-+                // Paper end - replace chunk loader system
-             ));
-         }));
- 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
@@ -2166,7 +2149,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -        };
 -
--        final ChunkHolder holder = level.chunkSource.chunkMap.getUpdatingChunkIfPresent(CoordinateUtils.getChunkKey(chunkX, chunkZ));
+-        final ChunkHolder holder = level.chunkSource.chunkMap.updatingChunkMap.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
 -
 -        if (holder == null || holder.getTicketLevel() > minLevel) {
 -            loadCallback.accept(null);
@@ -2195,7 +2178,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static void scheduleTickingState(final ServerLevel level, final int chunkX, final int chunkZ,
                                              final FullChunkStatus toStatus, final boolean addTicket,
                                              final PrioritisedExecutor.Priority priority, final Consumer<LevelChunk> onComplete) {
--        if (toStatus == ChunkHolder.FullChunkStatus.INACCESSIBLE) {
+-        // This method goes unused until the chunk system rewrite
+-        if (toStatus == FullChunkStatus.INACCESSIBLE) {
 -            throw new IllegalArgumentException("Cannot wait for INACCESSIBLE status");
 -        }
 -
@@ -2234,7 +2218,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -        };
 -
--        final ChunkHolder holder = level.chunkSource.chunkMap.getUpdatingChunkIfPresent(CoordinateUtils.getChunkKey(chunkX, chunkZ));
+-        final ChunkHolder holder = level.chunkSource.chunkMap.updatingChunkMap.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
 -
 -        if (holder == null || holder.getTicketLevel() > minLevel) {
 -            loadCallback.accept(null);
@@ -2243,11 +2227,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -        final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> tickingState;
 -        switch (toStatus) {
--            case BORDER: {
+-            case FULL: {
 -                tickingState = holder.getFullChunkFuture();
 -                break;
 -            }
--            case TICKING: {
+-            case BLOCK_TICKING: {
 -                tickingState = holder.getTickingChunkFuture();
 -                break;
 -            }
@@ -2340,20 +2324,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static int getLoadViewDistance(final ServerPlayer player) {
--        final ServerLevel level = player.getLevel();
+-        final ServerLevel level = player.serverLevel();
 -        if (level == null) {
--            return Bukkit.getViewDistance() + 1;
+-            return Bukkit.getViewDistance();
 -        }
--        return level.chunkSource.chunkMap.getEffectiveViewDistance() + 1;
+-        return level.chunkSource.chunkMap.getPlayerViewDistance(player);
 +        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getLoadViewDistance(player);
      }
  
      public static int getTickViewDistance(final ServerPlayer player) {
--        final ServerLevel level = player.getLevel();
+-        final ServerLevel level = player.serverLevel();
 -        if (level == null) {
 -            return Bukkit.getSimulationDistance();
 -        }
--        return level.chunkSource.chunkMap.distanceManager.getSimulationDistance();
+-        return level.chunkSource.chunkMap.distanceManager.simulationDistance;
 +        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPITickViewDistance(player);
      }
  
@@ -15286,9 +15270,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
 @@ -0,0 +0,0 @@ public final class PaperCommand extends Command {
-         commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
          commands.put(Set.of("dumpitem"), new DumpItemCommand());
          commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
+         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
 +        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
  
          return commands.entrySet().stream()
@@ -15636,6 +15620,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public UnsupportedSettings unsupportedSettings;
  
      public class UnsupportedSettings extends ConfigurationPart {
+@@ -0,0 +0,0 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+         @PostProcess
+         private void postProcess() {
+-            //io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.init(this);
++            io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.init(this);
+         }
+     }
+ 
 diff --git a/src/main/java/io/papermc/paper/threadedregions/TickRegions.java b/src/main/java/io/papermc/paper/threadedregions/TickRegions.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -15989,10 +15982,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static boolean isTickThreadFor(final ServerLevel world, final int chunkX, final int chunkZ) {
--        return Bukkit.isPrimaryThread();
-+        return isTickThread();
-+    }
-+
+         return isTickThread();
+     }
+ 
 +    public static boolean isTickThreadFor(final ServerLevel world, final AABB aabb) {
 +        return isTickThread();
 +    }
@@ -16009,15 +16001,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return isTickThread();
 +    }
 +
-+    public static boolean isTickThreadFor(final ServerLevel world, final int chunkX, final int chunkZ, final int radius) {
-+        return isTickThread();
+     public static boolean isTickThreadFor(final ServerLevel world, final int chunkX, final int chunkZ, final int radius) {
+         return isTickThread();
      }
- 
-     public static boolean isTickThreadFor(final Entity entity) {
--        return Bukkit.isPrimaryThread();
-+        return isTickThread();
-     }
- }
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -16795,6 +16781,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit start
          if (isOversleep) return canOversleep(); // Paper - because of our changes, this logic is broken
          return this.forceTicks || this.runningTask() || Util.getNanos() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTimeNanos : this.nextTickTimeNanos);
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Paper start - Folia scheduler API
+         ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
+         getAllLevels().forEach(level -> {
+-            for (final Entity entity : level.getEntities().getAll()) {
++            for (final Entity entity : level.getEntityLookup().getAllCopy()) { // Paper - rewrite chunk system
+                 if (entity.isRemoved()) {
+                     continue;
+                 }
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // CraftBukkit start
      @Override
@@ -17715,16 +17710,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public String getChunkDebugData(ChunkPos chunkPos) {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
- 
-     // Paper start
-     public final int getEffectiveViewDistance() {
--        // TODO this needs to be checked on update
--        // Mojang currently sets it to +1 of the configured view distance. So subtract one to get the one we really want.
--        //TODO check if +0 is correct now
--        return this.viewDistance;
-+        return this.serverViewDistance;
      }
-     // Paper end
  
      private CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> getChunkRangeFuture(ChunkHolder centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus) {
 -        if (margin == 0) {
@@ -18391,8 +18377,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +    // Paper end - replace player loader system
  
--    protected void setServerViewDistance(int watchDistance) {
-+    public void setServerViewDistance(int watchDistance) { // Paper - replace player loader system
+     public void setServerViewDistance(int watchDistance) { // Paper - public
          int j = Mth.clamp(watchDistance, 2, 32);
  
          if (j != this.serverViewDistance) {
@@ -18410,7 +18395,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
-     int getPlayerViewDistance(ServerPlayer player) {
+     public int getPlayerViewDistance(ServerPlayer player) { // Paper - public
 -        return Mth.clamp(player.requestedViewDistance(), 2, this.serverViewDistance);
 +        return io.papermc.paper.chunk.system.ChunkSystem.getSendViewDistance(player); // Paper - per player view distance
      }
@@ -18639,7 +18624,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper - rewrite player chunk loader
      }
  
-     private class ChunkDistanceManager extends DistanceManager {
+     public class ChunkDistanceManager extends DistanceManager { // Paper - public
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
          @Override
@@ -18960,19 +18945,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.chunkMap.setServerViewDistance(viewDistance); // Paper - route to player chunk manager
      }
  
-     // Paper start
-     public int getSimulationDistance() {
--        return this.simulationDistance;
-+        return this.chunkMap.level.playerChunkLoader.getAPITickDistance();
-     }
-     // Paper end
- 
-     public void updateSimulationDistance(int simulationDistance) {
+-    public void updateSimulationDistance(int simulationDistance) {
 -        if (simulationDistance != this.simulationDistance) {
 -            this.simulationDistance = simulationDistance;
 -            this.tickingTicketsTracker.replacePlayerTicketsLevel(this.getPlayerTicketLevel());
 -        }
--
++    // Paper start
++    public int getSimulationDistance() {
++        return this.chunkMap.level.playerChunkLoader.getAPITickDistance();
++    }
++    // Paper end
+ 
++    public void updateSimulationDistance(int simulationDistance) {
 +        this.chunkMap.level.playerChunkLoader.setTickDistance(simulationDistance); // Paper - route to player chunk manager
      }
  
@@ -18988,7 +18972,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private void dumpTickets(String path) {
 -        try {
 -            FileOutputStream fileoutputstream = new FileOutputStream(new File(path));
--
++    // Paper - rewrite chunk system
+ 
 -            try {
 -                ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().iterator();
 -
@@ -19019,8 +19004,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }
 -
 -    }
-+    // Paper - rewrite chunk system
- 
+-
 -    @VisibleForTesting
 -    TickingTracker tickingTracker() {
 -        return this.tickingTicketsTracker;
@@ -19115,150 +19099,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-         return (LevelChunk)this.getChunk(x, z, ChunkStatus.FULL, true);
-     }
- 
--    long chunkFutureAwaitCounter; // Paper - private -> package private
--
--    public void getEntityTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
--        io.papermc.paper.chunk.system.ChunkSystem.scheduleTickingState(
--            this.level, x, z, FullChunkStatus.ENTITY_TICKING, true,
--            ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL, onLoad
--        );
--    }
--
--    public void getTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
--        io.papermc.paper.chunk.system.ChunkSystem.scheduleTickingState(
--            this.level, x, z, FullChunkStatus.BLOCK_TICKING, true,
--            ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL, onLoad
--        );
--    }
--
--    public void getFullChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
--        io.papermc.paper.chunk.system.ChunkSystem.scheduleTickingState(
--            this.level, x, z, FullChunkStatus.FULL, true,
--            ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL, onLoad
--        );
--    }
--
--    void chunkLoadAccept(int chunkX, int chunkZ, ChunkAccess chunk, java.util.function.Consumer<ChunkAccess> consumer) {
--        try {
--            consumer.accept(chunk);
--        } catch (Throwable throwable) {
--            if (throwable instanceof ThreadDeath) {
--                throw (ThreadDeath)throwable;
--            }
--            LOGGER.error("Load callback for chunk " + chunkX + "," + chunkZ + " in world '" + this.level.getWorld().getName() + "' threw an exception", throwable);
--        }
--    }
--
--    void getChunkAtAsynchronously(int chunkX, int chunkZ, int ticketLevel,
--                                  java.util.function.Consumer<ChunkAccess> consumer) {
--        if (ticketLevel <= 33) {
--            this.getFullChunkAsync(chunkX, chunkZ, (java.util.function.Consumer)consumer);
--            return;
--        }
--
--        io.papermc.paper.chunk.system.ChunkSystem.scheduleChunkLoad(
--            this.level, chunkX, chunkZ, ChunkHolder.getStatus(ticketLevel), true,
--            ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL, consumer
--        );
--    }
--
--
--    public final void getChunkAtAsynchronously(int chunkX, int chunkZ, ChunkStatus status, boolean gen, boolean allowSubTicketLevel, java.util.function.Consumer<ChunkAccess> onLoad) {
--        // try to fire sync
--        int chunkStatusTicketLevel = 33 + ChunkStatus.getDistance(status);
--        ChunkHolder playerChunk = this.chunkMap.getUpdatingChunkIfPresent(io.papermc.paper.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
--        if (playerChunk != null) {
--            ChunkStatus holderStatus = playerChunk.getChunkHolderStatus();
--            ChunkAccess immediate = playerChunk.getAvailableChunkNow();
--            if (immediate != null) {
--                if (allowSubTicketLevel ? immediate.getStatus().isOrAfter(status) : (playerChunk.getTicketLevel() <= chunkStatusTicketLevel && holderStatus != null && holderStatus.isOrAfter(status))) {
--                    this.chunkLoadAccept(chunkX, chunkZ, immediate, onLoad);
--                    return;
--                } else {
--                    if (gen || (!allowSubTicketLevel && immediate.getStatus().isOrAfter(status))) {
--                        this.getChunkAtAsynchronously(chunkX, chunkZ, chunkStatusTicketLevel, onLoad);
--                        return;
--                    } else {
--                        this.chunkLoadAccept(chunkX, chunkZ, null, onLoad);
--                        return;
--                    }
--                }
--            }
--        }
--
--        // need to fire async
--
--        if (gen && !allowSubTicketLevel) {
--            this.getChunkAtAsynchronously(chunkX, chunkZ, chunkStatusTicketLevel, onLoad);
--            return;
--        }
--
--        this.getChunkAtAsynchronously(chunkX, chunkZ, io.papermc.paper.util.MCUtil.getTicketLevelFor(ChunkStatus.EMPTY), (ChunkAccess chunk) -> {
--            if (chunk == null) {
--                throw new IllegalStateException("Chunk cannot be null");
--            }
--
--            if (!chunk.getStatus().isOrAfter(status)) {
--                if (gen) {
--                    this.getChunkAtAsynchronously(chunkX, chunkZ, chunkStatusTicketLevel, onLoad);
--                    return;
--                } else {
--                    ServerChunkCache.this.chunkLoadAccept(chunkX, chunkZ, null, onLoad);
--                    return;
--                }
--            } else {
--                if (allowSubTicketLevel) {
--                    ServerChunkCache.this.chunkLoadAccept(chunkX, chunkZ, chunk, onLoad);
--                    return;
--                } else {
--                    this.getChunkAtAsynchronously(chunkX, chunkZ, chunkStatusTicketLevel, onLoad);
--                    return;
--                }
--            }
--        });
--    }
-+    final java.util.concurrent.atomic.AtomicLong chunkFutureAwaitCounter = new java.util.concurrent.atomic.AtomicLong(); // Paper - private -> package private
+     public final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<LevelChunk> entityTickingChunks = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(4096, 0.75f, 4096, 0.15, true);
+     final com.destroystokyo.paper.util.concurrent.WeakSeqLock loadedChunkMapSeqLock = new com.destroystokyo.paper.util.concurrent.WeakSeqLock();
+     final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<LevelChunk> loadedChunkMap = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>(8192, 0.5f);
+-    long chunkFutureAwaitCounter;
++    final java.util.concurrent.atomic.AtomicLong chunkFutureAwaitCounter = new java.util.concurrent.atomic.AtomicLong(); // Paper - chunk system rewrite
+     private final LevelChunk[] lastLoadedChunks = new LevelChunk[4 * 4];
      // Paper end
  
-     // Paper start
-@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-         return holder.getLastAvailable();
-     }
- 
--    // this will try to avoid chunk neighbours for lighting
--    public final ChunkAccess getFullStatusChunkAt(int chunkX, int chunkZ) {
--        LevelChunk ifLoaded = this.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
--        if (ifLoaded != null) {
--            return ifLoaded;
--        }
--
--        ChunkAccess empty = this.getChunk(chunkX, chunkZ, ChunkStatus.EMPTY, true);
--        if (empty != null && empty.getStatus().isOrAfter(ChunkStatus.FULL)) {
--            return empty;
--        }
--        return this.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true);
--    }
--
--    public final ChunkAccess getFullStatusChunkAtIfLoaded(int chunkX, int chunkZ) {
--        LevelChunk ifLoaded = this.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
--        if (ifLoaded != null) {
--            return ifLoaded;
--        }
--
--        ChunkAccess ret = this.getChunkAtImmediately(chunkX, chunkZ);
--        if (ret != null && ret.getStatus().isOrAfter(ChunkStatus.FULL)) {
--            return ret;
--        } else {
--            return null;
--        }
--    }
--
-     public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
-         this.distanceManager.addTicket(ticketType, chunkPos, ticketLevel, identifier);
-     }
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
      public LevelChunk getChunkAtIfLoadedImmediately(int x, int z) {
          long k = ChunkPos.asLong(x, z);
@@ -19442,7 +19290,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
      }
  
-     boolean runDistanceManagerUpdates() {
+     public boolean runDistanceManagerUpdates() { // Paper - public
 -        boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
 -        boolean flag1 = this.chunkMap.promoteChunkMap();
 -
@@ -19601,7 +19449,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                                      ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority priority,
 +                                      java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
          List<net.minecraft.world.level.chunk.ChunkAccess> ret = new java.util.ArrayList<>();
--        IntArrayList ticketLevels = new IntArrayList();
+-        it.unimi.dsi.fastutil.ints.IntArrayList ticketLevels = new it.unimi.dsi.fastutil.ints.IntArrayList();
 -
 -        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
 -        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
@@ -19938,7 +19786,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      protected void tickTime() {
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
-     // Paper end - Incremental chunk and player saving
+     }
  
      public void save(@Nullable ProgressListener progressListener, boolean flush, boolean savingDisabled) {
 +        // Paper start - rewrite chunk system - add close param
@@ -20782,9 +20630,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return;
 +        }
 +        // Paper end - rewrite chunk system
+         final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
              this.removalReason = reason;
-         }
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              this.stopRiding();
          }
@@ -20792,8 +20640,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        this.getPassengers().forEach(Entity::stopRiding);
 +        if (reason != RemovalReason.UNLOADED_TO_CHUNK) this.getPassengers().forEach(Entity::stopRiding); // Paper - chunk system - don't adjust passenger state when unloading, it's just not safe (and messes with our logic in entity chunk unload)
          this.levelCallback.onRemove(reason);
-     }
- 
+         // Paper start - Folia schedulers
+         if (!(this instanceof ServerPlayer) && reason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
      @Override
@@ -21182,9 +21030,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Nullable
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         return range <= 0 ? 64.0 * 64.0 : range * range; // 64 is taken from default in ServerLevel#levelEvent
+         }
      }
-     // Paper end - respect global sound events gamerule
+     // Paper end - notify observers even if grow failed
 +    // Paper start
 +    //protected final io.papermc.paper.world.EntitySliceManager entitySliceManager; // Paper - rewrite chunk system
 +
@@ -21981,7 +21829,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
  
      public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
-         this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync);
+         this(file, directory, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
          return (byteCount + 4096 - 1) / 4096;
      }
@@ -22787,102 +22635,75 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int getSimulationDistance() {
 -        return this.world.getChunkSource().chunkMap.getDistanceManager().simulationDistance;
 +        return this.getHandle().playerChunkLoader.getAPITickDistance(); // Paper - replace player chunk loader
-+    }
-+    // Paper start - view distance api
-+    @Override
-+    public void setViewDistance(int viewDistance) {
-+        if (viewDistance < 2 || viewDistance > 32) {
-+            throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
-+        }
-+        net.minecraft.server.level.ChunkMap chunkMap = getHandle().getChunkSource().chunkMap;
-+        chunkMap.setServerViewDistance(viewDistance);
-+    }
-+
-+    @Override
-+    public void setSimulationDistance(int simulationDistance) {
+     }
+ 
+     public BlockMetadataStore getBlockMetadata() {
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public void setSimulationDistance(final int simulationDistance) {
+-        throw new UnsupportedOperationException("Not implemented yet");
 +        if (simulationDistance < 2 || simulationDistance > 32) {
 +            throw new IllegalArgumentException("Simulation distance " + simulationDistance + " is out of range of [2, 32]");
 +        }
-+        net.minecraft.server.level.ChunkMap chunkMap = getHandle().getChunkSource().chunkMap;
-+        chunkMap.setTickViewDistance(simulationDistance);
-+    }
-+
-+    @Override
-+    public int getNoTickViewDistance() {
-+        return this.getViewDistance();
-+    }
-+
-+    @Override
-+    public void setNoTickViewDistance(int viewDistance) {
-+        this.setViewDistance(viewDistance);
-+    }
-+
-+    @Override
-+    public int getSendViewDistance() {
++        this.getHandle().chunkSource.chunkMap.setTickViewDistance(simulationDistance);
+     }
+ 
+     @Override
+     public int getSendViewDistance() {
+-        return this.getViewDistance();
 +        return this.getHandle().playerChunkLoader.getAPISendViewDistance(); // Paper - replace player chunk loader
-+    }
-+
-+    @Override
-+    public void setSendViewDistance(int viewDistance) {
+     }
+ 
+     @Override
+     public void setSendViewDistance(final int viewDistance) {
+-        throw new UnsupportedOperationException("Not implemented yet");
 +        this.getHandle().chunkSource.chunkMap.setSendViewDistance(viewDistance); // Paper - replace player chunk loader
      }
-+    // Paper end - view distance api
  
-     public BlockMetadataStore getBlockMetadata() {
-         return this.blockMetadata;
+     // Paper start - implement pointers
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         this.firstPlayed = System.currentTimeMillis();
+ 
+     @Override
+     public int getViewDistance() {
+-        return io.papermc.paper.chunk.system.ChunkSystem.getLoadViewDistance(this.getHandle());
++        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPIViewDistance(this);
      }
  
-+    // Paper start - implement view distances
-+    @Override
-+    public int getViewDistance() {
-+        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPIViewDistance(this);
-+    }
-+
-+    @Override
-+    public void setViewDistance(int viewDistance) {
+     @Override
+     public void setViewDistance(final int viewDistance) {
+-        throw new UnsupportedOperationException("Not implemented yet");
 +        this.getHandle().setLoadViewDistance(viewDistance < 0 ? viewDistance : viewDistance + 1);
-+    }
-+
-+    @Override
-+    public int getSimulationDistance() {
-+        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPITickViewDistance(this);
-+    }
-+
-+    @Override
-+    public void setSimulationDistance(int simulationDistance) {
-+        this.getHandle().setTickViewDistance(simulationDistance);
-+    }
-+
-+    @Override
-+    public int getNoTickViewDistance() {
-+        return this.getViewDistance();
-+    }
-+
-+    @Override
-+    public void setNoTickViewDistance(int viewDistance) {
-+        this.setViewDistance(viewDistance);
-+    }
-+
-+    @Override
-+    public int getSendViewDistance() {
-+        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPISendViewDistance(this);
-+    }
-+
-+    @Override
-+    public void setSendViewDistance(int viewDistance) {
-+        this.getHandle().setSendViewDistance(viewDistance);
-+    }
-+    // Paper end - implement view distances
-+
-     public GameProfile getProfile() {
-         return this.getHandle().getGameProfile();
      }
+ 
+     @Override
+     public int getSimulationDistance() {
+-        return io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(this.getHandle());
++        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPITickViewDistance(this);
+     }
+ 
+     @Override
+     public void setSimulationDistance(final int simulationDistance) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        this.getHandle().setTickViewDistance(simulationDistance);
+     }
+ 
+     @Override
+     public int getSendViewDistance() {
+-        return io.papermc.paper.chunk.system.ChunkSystem.getSendViewDistance(this.getHandle());
++        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPISendViewDistance(this);
+     }
+ 
+     @Override
+     public void setSendViewDistance(final int viewDistance) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        this.getHandle().setSendViewDistance(viewDistance);
+     }
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
@@ -22948,10 +22769,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 @@ -0,0 +0,0 @@ public class DummyGeneratorAccess implements WorldGenLevel {
-     public boolean destroyBlock(BlockPos pos, boolean drop, Entity breakingEntity, int maxUpdateDepth) {
-         return false; // SPIGOT-6515
-     }
-+
+     @Override
+     public void scheduleTick(BlockPos pos, Fluid fluid, int delay, net.minecraft.world.ticks.TickPriority priority) {}
+     // Paper end - add more methods
 +    // Paper start
 +    @Override
 +    public List<Entity> getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {

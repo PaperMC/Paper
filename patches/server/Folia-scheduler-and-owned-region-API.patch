@@ -1158,7 +1158,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - Folia scheduler API
 +        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
 +        getAllLevels().forEach(level -> {
-+            for (final Entity entity : level.getEntityLookup().getAllCopy()) {
++            for (final Entity entity : level.getEntities().getAll()) {
 +                if (entity.isRemoved()) {
 +                    continue;
 +                }
@@ -1214,16 +1214,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public CommandSender getBukkitSender(CommandSourceStack wrapper) {
          return this.getBukkitEntity();
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
-             return;
-         }
-         // Paper end - rewrite chunk system
-+        final boolean alreadyRemoved = this.removalReason != null;
+ 
+     @Override
+     public final void setRemoved(Entity.RemovalReason reason) {
++        final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
              this.removalReason = reason;
          }
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
-         if (reason != RemovalReason.UNLOADED_TO_CHUNK) this.getPassengers().forEach(Entity::stopRiding); // Paper - chunk system - don't adjust passenger state when unloading, it's just not safe (and messes with our logic in entity chunk unload)
+         this.getPassengers().forEach(Entity::stopRiding);
          this.levelCallback.onRemove(reason);
 +        // Paper start - Folia schedulers
 +        if (!(this instanceof ServerPlayer) && reason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
