@@ -15282,18 +15282,17 @@ index 0000000000000000000000000000000000000000..f7b0e2564ac4bd2db1d2b2bdc230c9f5
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index cfa2c49c554e73a44ed52b5e659c17100e14a6ac..b333809320ebfb7a5c4367cb621510f213a69479 100644
+index a27c90ea7af63b0d42f202ed1a7dab6e42daed9f..8ff2bcfa05641a022aceff66f2356744caa594da 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -39,7 +39,7 @@ public final class PaperCommand extends Command {
-         commands.put(Set.of("version"), new VersionCommand());
-         commands.put(Set.of("dumpplugins"), new DumpPluginsCommand());
+@@ -41,6 +41,7 @@ public final class PaperCommand extends Command {
          commands.put(Set.of("fixlight"), new FixLightCommand());
--        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
-+        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand()); //
+         commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
          commands.put(Set.of("dumpitem"), new DumpItemCommand());
++        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
  
          return commands.entrySet().stream()
+             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..962d3cae6340fc11607b59355e291629618f289c
@@ -22013,7 +22012,7 @@ index 140d6e455c1729f6e31e95facba5520b75ad838c..f3d169436ce05f1c56599cfe15a56671
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 50f8e12c964a7a0f388568e4df512ddffdda4a64..f54663cdd00064cc3130a27f93e1ea815dc617de 100644
+index b5b7b73048eaadfe58961631427da7574d42f5e8..bebcda728952bc0a644b401cd8e003761681e441 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -25,30 +25,98 @@ public class RegionFileStorage implements AutoCloseable {
@@ -22144,7 +22143,7 @@ index 50f8e12c964a7a0f388568e4df512ddffdda4a64..f54663cdd00064cc3130a27f93e1ea81
      }
  
      public void scanChunk(ChunkPos chunkPos, StreamTagVisitor scanner) throws IOException {
-@@ -131,7 +203,12 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -131,7 +203,13 @@ public class RegionFileStorage implements AutoCloseable {
      }
  
      protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
@@ -22154,23 +22153,20 @@ index 50f8e12c964a7a0f388568e4df512ddffdda4a64..f54663cdd00064cc3130a27f93e1ea81
 +        if (nbt == null && regionfile == null) {
 +            return;
 +        }
++        try { // Try finally to unlock the region file
 +        // Paper end - rewrite chunk system
          // Paper start - Chunk save reattempt
          int attempts = 0;
          Exception lastException = null;
-@@ -166,6 +243,10 @@ public class RegionFileStorage implements AutoCloseable {
-                 return;
-             } catch (Exception ex)  {
-                 lastException = ex;
-+                // Paper start - rewrite chunk system
-+            } finally {
-+                regionfile.fileLock.unlock();
-+                // Paper end - rewrite chunk system
-             }
+@@ -173,9 +251,14 @@ public class RegionFileStorage implements AutoCloseable {
+             net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk {}", pos, lastException);
          }
- 
-@@ -176,7 +257,7 @@ public class RegionFileStorage implements AutoCloseable {
          // Paper end - Chunk save reattempt
++        // Paper start - rewrite chunk system
++        } finally {
++            regionfile.fileLock.unlock();
++        }
++        // Paper end - rewrite chunk system
      }
  
 -    public void close() throws IOException {
@@ -22178,7 +22174,7 @@ index 50f8e12c964a7a0f388568e4df512ddffdda4a64..f54663cdd00064cc3130a27f93e1ea81
          ExceptionCollector<IOException> exceptionsuppressor = new ExceptionCollector<>();
          ObjectIterator objectiterator = this.regionCache.values().iterator();
  
-@@ -193,7 +274,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -192,7 +275,7 @@ public class RegionFileStorage implements AutoCloseable {
          exceptionsuppressor.throwIfPresent();
      }
  
@@ -23003,7 +22999,7 @@ index 78669fa035b7537ff7e533cf32aaf2995625424f..05e94702e42b8f5c35d2a112c486d579
              throw new IllegalStateException( "Asynchronous " + reason + "!" );
          }
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 9994d8b26ffaff538f39cc72f2137fcabb973d87..de0ad206e8603a7d5b5d5ec3e87d5cab47714eb8 100644
+index b1ac7338fa632611ea8332044b09070f78f8f5f1..a284d3b8526a743ba4389ec5b44d80af6d0e5a5f 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -8,7 +8,7 @@ import java.util.logging.Logger;
