@@ -6,7 +6,7 @@ Subject: [PATCH] Configurable top of nether void damage
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 37eab94ce7e4ba01c2c8a5fb15ef1f6ef314ccc9..16fa26878fc7bcf5d22d779ce7b37a59582ba033 100644
+index 3afb2a7b02e10976eca5bcd9cf9f29223326a1cd..47dc48fcf1e0d3a717479ce2738bfb79961bbed3 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -722,7 +722,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
@@ -18,12 +18,12 @@ index 37eab94ce7e4ba01c2c8a5fb15ef1f6ef314ccc9..16fa26878fc7bcf5d22d779ce7b37a59
 +        if (this.getY() < (double) (this.level.getMinBuildHeight() - 64) || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
 +            && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> this.getY() >= v)
 +            && (!(this instanceof Player player) || !player.getAbilities().invulnerable))) {
-+            // Paper end
++            // Paper end - Configurable nether ceiling damage
              this.onBelowWorld();
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
-index 02e3322ec41108fe9275510e2daa833d180353dc..0762bb248b3bd43a06e89aa1893a6189f0e13866 100644
+index 02e3322ec41108fe9275510e2daa833d180353dc..550b7bc694d861c084769265f6c49c4d44033296 100644
 --- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 +++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 @@ -55,7 +55,7 @@ public class PortalForcer {
@@ -31,7 +31,7 @@ index 02e3322ec41108fe9275510e2daa833d180353dc..0762bb248b3bd43a06e89aa1893a6189
              return holder.is(PoiTypes.NETHER_PORTAL);
          }, blockposition, i, PoiManager.Occupancy.ANY).filter((villageplacerecord) -> {
 -            return worldborder.isWithinBounds(villageplacerecord.getPos());
-+            return worldborder.isWithinBounds(villageplacerecord.getPos()) && !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> villageplacerecord.getPos().getY() >= v)); // Paper - don't teleport into void damage
++            return worldborder.isWithinBounds(villageplacerecord.getPos()) && !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> villageplacerecord.getPos().getY() >= v)); // Paper - Configurable nether ceiling damage
          }).sorted(Comparator.comparingDouble((PoiRecord villageplacerecord) -> { // CraftBukkit - decompile error
              return villageplacerecord.getPos().distSqr(blockposition);
          }).thenComparingInt((villageplacerecord) -> {
@@ -39,11 +39,11 @@ index 02e3322ec41108fe9275510e2daa833d180353dc..0762bb248b3bd43a06e89aa1893a6189
          BlockPos blockposition2 = null;
          WorldBorder worldborder = this.level.getWorldBorder();
          int i = Math.min(this.level.getMaxBuildHeight(), this.level.getMinBuildHeight() + this.level.getLogicalHeight()) - 1;
-+        // Paper start - if ceiling void damage is enabled, make sure the max height doesn't exceed the void damage height
++        // Paper start - Configurable nether ceiling damage; make sure the max height doesn't exceed the void damage height
 +        if (this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.enabled()) {
 +            i = Math.min(i, this.level.paperConfig().environment.netherCeilingVoidDamageHeight.intValue() - 1);
 +        }
-+        // Paper end
++        // Paper end - Configurable nether ceiling damage
          BlockPos.MutableBlockPos blockposition_mutableblockposition = blockposition.mutable();
          Iterator iterator = BlockPos.spiralAround(blockposition, createRadius, Direction.EAST, Direction.SOUTH).iterator(); // CraftBukkit
  

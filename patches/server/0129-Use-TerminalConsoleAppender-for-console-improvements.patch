@@ -250,7 +250,7 @@ index 8323f135d6bf2e1f12525e05094ffa3f2420e7e1..a143ea1e58464a3122fbd8ccafe417bd
      }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 5ab790ed036215d8b09f63f4f13a32a4af07e1c6..fae34d85f6c3a81f29fa625c78090895d3af31cc 100644
+index 1aed25e485a45c6bf77f0baebc1a7745f441af5b..1e1c6f8b22da3e51d001db11392f3ea8d3d3573d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -155,7 +155,7 @@ import org.slf4j.Logger;
@@ -262,16 +262,15 @@ index 5ab790ed036215d8b09f63f4f13a32a4af07e1c6..fae34d85f6c3a81f29fa625c78090895
  import joptsimple.OptionSet;
  import net.minecraft.nbt.NbtException;
  import net.minecraft.nbt.ReportedNbtException;
-@@ -284,7 +284,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -284,7 +284,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public org.bukkit.craftbukkit.CraftServer server;
      public OptionSet options;
      public org.bukkit.command.ConsoleCommandSender console;
 -    public ConsoleReader reader;
-+    //public ConsoleReader reader; // Paper
-     public static int currentTick = 0; // Paper - Further improve tick loop
+     public static int currentTick = (int) (System.currentTimeMillis() / 50);
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
-@@ -370,7 +370,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -370,7 +369,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.options = options;
          this.worldLoader = worldLoader;
          this.vanillaCommandDispatcher = worldstem.dataPackResources().commands; // CraftBukkit
@@ -281,7 +280,7 @@ index 5ab790ed036215d8b09f63f4f13a32a4af07e1c6..fae34d85f6c3a81f29fa625c78090895
          if (System.console() == null && System.getProperty("jline.terminal") == null) {
              System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
              Main.useJline = false;
-@@ -391,6 +393,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -391,6 +392,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  MinecraftServer.LOGGER.warn((String) null, ex);
              }
          }
@@ -290,7 +289,7 @@ index 5ab790ed036215d8b09f63f4f13a32a4af07e1c6..fae34d85f6c3a81f29fa625c78090895
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
          // CraftBukkit end
          this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
-@@ -1172,7 +1176,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1113,7 +1116,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  org.spigotmc.WatchdogThread.doStop(); // Spigot
                  // CraftBukkit start - Restore terminal to original settings
                  try {
@@ -299,7 +298,7 @@ index 5ab790ed036215d8b09f63f4f13a32a4af07e1c6..fae34d85f6c3a81f29fa625c78090895
                  } catch (Exception ignored) {
                  }
                  // CraftBukkit end
-@@ -1675,7 +1679,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1616,7 +1619,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
      public void sendSystemMessage(Component message) {
@@ -387,7 +386,7 @@ index b38496b2a4d10c7f51667fca2a19129ac7db0016..466ca062eaeb9108c59f308a8212cbaf
  
          this.bans = new UserBanList(PlayerList.USERBANLIST_FILE);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 5189806a847f27e125cab3a5395e30c9d076aa4e..cc00ace00dc1050d644312a0289221a5c664170d 100644
+index e5c3ee4c53dd1c09e35f1d1a47f4467a6a06ae71..44cb33b24fa9d9b8ed42e0fab5b8bd8a3f6ff8ea 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -42,7 +42,7 @@ import java.util.logging.Level;
@@ -414,7 +413,7 @@ index 5189806a847f27e125cab3a5395e30c9d076aa4e..cc00ace00dc1050d644312a0289221a5
      @Override
      public PluginCommand getPluginCommand(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index faf58b6263f45a3b36014eaf628c2dac23a0ccde..09164f4c446d3e80708f1bcb9da333821ee5733d 100644
+index 4fb377d967d13ed920ea1246e84b3b94cda25be6..659b32d49016a23475f3bbda1548a78101b468ce 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -13,7 +13,6 @@ import java.util.logging.Logger;
@@ -453,12 +452,11 @@ index faf58b6263f45a3b36014eaf628c2dac23a0ccde..09164f4c446d3e80708f1bcb9da33382
                  }
  
                  if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
-@@ -267,7 +277,7 @@ public class Main {
-                     System.out.println("Unable to read system info");
+@@ -268,6 +278,7 @@ public class Main {
                  }
-                 // Paper end
--
-+                System.setProperty( "library.jansi.version", "Paper" ); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
+                 // Paper end - Log Java and OS versioning to help with debugging plugin issues
+ 
++                System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
                  System.out.println("Loading libraries, please wait...");
                  net.minecraft.server.Main.main(options);
              } catch (Throwable t) {

@@ -5,23 +5,23 @@ Subject: [PATCH] Player affects spawning API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index 3126e8cab3c40e3af47f4c8925e1c6a9523309ba..170fbb1d80947b9b21c2106497baae5c37bcdc0c 100644
+index 3126e8cab3c40e3af47f4c8925e1c6a9523309ba..3207166061bf9c4d7bf3f38e5a9f7aff23ccd5c1 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 @@ -30,6 +30,11 @@ public final class EntitySelector {
      public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = EntitySelector.NO_SPECTATORS.and(Entity::canBeCollidedWith);
  
      private EntitySelector() {}
-+    // Paper start
++    // Paper start - Affects Spawning API
 +    public static final Predicate<Entity> PLAYER_AFFECTS_SPAWNING = (entity) -> {
 +        return !entity.isSpectator() && entity.isAlive() && entity instanceof Player player && player.affectsSpawning;
 +    };
-+    // Paper end
++    // Paper end - Affects Spawning API
  
      public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
          double d4 = max * max;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 007a5c9a6dc70ca6a215fdeb3fe77f8a8ee46818..3d054cfa5050f4b75eab4a18035655c1bfd9290b 100644
+index 7cbb74f4bc7b63af86b7b2c52783fb20c7739258..3fcd93f6d5a7553b032b44e7e919838ad2120dc9 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -849,7 +849,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
@@ -29,7 +29,7 @@ index 007a5c9a6dc70ca6a215fdeb3fe77f8a8ee46818..3d054cfa5050f4b75eab4a18035655c1
              this.discard();
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
 -            Player entityhuman = this.level().getNearestPlayer(this, -1.0D);
-+            Player entityhuman = this.level().findNearbyPlayer(this, -1.0D, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper
++            Player entityhuman = this.level().findNearbyPlayer(this, -1.0D, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
  
              if (entityhuman != null) {
                  double d0 = entityhuman.distanceToSqr((Entity) this);
@@ -60,7 +60,7 @@ index 96181e8925aef7f3d0a2010305caf1f6d9bcfcc9..6f452605e9dc9ebd9980eae9fdeea344
              return false;
          }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
-index 38403a5bb8569f105056d61ca444d6b3a19becd2..2aec8e2f45fe6ba56d84e5a51a6e30d36505df42 100644
+index a779d32f87b59f347408974e402fad22fdc47f09..15ccde8ee8bac1f70c6047464595aff6db073646 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
 @@ -326,7 +326,7 @@ public class Zombie extends Monster {
@@ -73,16 +73,14 @@ index 38403a5bb8569f105056d61ca444d6b3a19becd2..2aec8e2f45fe6ba56d84e5a51a6e30d3
                              entityzombie.finalizeSpawn(worldserver, this.level().getCurrentDifficultyAt(entityzombie.blockPosition()), MobSpawnType.REINFORCEMENT, (SpawnGroupData) null, (CompoundTag) null);
                              worldserver.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index eed6481bc88ed15a5e3fe7056b545ab44ed81983..86d187cadb73dbe0757f9417c4549e358ff303ca 100644
+index eed6481bc88ed15a5e3fe7056b545ab44ed81983..f8d3e195c094ff200c0a7bd8cd4829ef36d328da 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -179,6 +179,9 @@ public abstract class Player extends LivingEntity {
+@@ -179,6 +179,7 @@ public abstract class Player extends LivingEntity {
      @Nullable
      public FishingHook fishing;
      protected float hurtDir;
-+    // Paper start
-+    public boolean affectsSpawning = true;
-+    // Paper end
++    public boolean affectsSpawning = true; // Paper - Affects Spawning API
  
      // CraftBukkit start
      public boolean fauxSleeping;
@@ -100,18 +98,18 @@ index d156f7e3430685947d2b4c30aa867e8002ca70ad..e888cf862662ae6baa6d0de8188aa74a
  
      public void clientTick(Level world, BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index 2ec2b1d9d987c7f31c685aec3d3c87f42758c94b..36d793b492d9776ee36f8285b5bab09e6463cdce 100644
+index 2ec2b1d9d987c7f31c685aec3d3c87f42758c94b..1872de0804862be1986b4eb2e6cfe28f952fdde6 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
 @@ -82,6 +82,11 @@ public interface EntityGetter {
          }
      }
  
-+    // Paper start
++    // Paper start - Affects Spawning API
 +    default @Nullable Player findNearbyPlayer(Entity entity, double maxDistance, @Nullable Predicate<Entity> predicate) {
 +        return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), maxDistance, predicate);
 +    }
-+    // Paper end
++    // Paper end - Affects Spawning API
      @Nullable
      default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
          double d = -1.0D;
@@ -119,7 +117,7 @@ index 2ec2b1d9d987c7f31c685aec3d3c87f42758c94b..36d793b492d9776ee36f8285b5bab09e
          return this.getNearestPlayer(x, y, z, maxDistance, predicate);
      }
  
-+    // Paper start
++    // Paper start - Affects Spawning API
 +    default boolean hasNearbyAlivePlayerThatAffectsSpawning(double x, double y, double z, double range) {
 +        for (Player player : this.players()) {
 +            if (EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects spawning" check
@@ -131,7 +129,7 @@ index 2ec2b1d9d987c7f31c685aec3d3c87f42758c94b..36d793b492d9776ee36f8285b5bab09e
 +        }
 +        return false;
 +    }
-+    // Paper end
++    // Paper end - Affects Spawning API
 +
      default boolean hasNearbyAlivePlayer(double x, double y, double z, double range) {
          for(Player player : this.players()) {
