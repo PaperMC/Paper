@@ -16,9 +16,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public org.bukkit.craftbukkit.CraftServer server;
      public OptionSet options;
      public org.bukkit.command.ConsoleCommandSender console;
-     public ConsoleReader reader;
 -    public static int currentTick = (int) (System.currentTimeMillis() / 50);
 +    public static int currentTick = 0; // Paper - Further improve tick loop
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
@@ -92,8 +92,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static volatile RuntimeException chunkSystemCrash; // Paper - rewrite chunk system
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
- 
-             // Spigot start
+             org.spigotmc.WatchdogThread.tick(); // Paper
+             org.spigotmc.WatchdogThread.hasStarted = true; // Paper
              Arrays.fill( this.recentTps, 20 );
 -            long tickSection = Util.getMillis(), tickCount = 1;
 +            long tickSection = Util.getNanos(), curTime, tickCount = 1; // Paper
@@ -145,10 +145,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-         return CraftMagicNumbers.INSTANCE;
+         return this.getServer().tickTimes5s.getAverage();
      }
  
-+    // Paper - Add getTPS API - Further improve tick loop
 +    @Override
 +    public double[] getTPS() {
 +        return new double[] {
@@ -157,7 +156,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
 +        };
 +    }
-+    // Paper end
 +
      // Spigot start
      private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
