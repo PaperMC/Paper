@@ -7,7 +7,6 @@ See https://github.com/PaperMC/Starlight
 
 == AT ==
 public net.minecraft.server.level.ChunkHolder broadcast(Lnet/minecraft/network/protocol/Packet;Z)V
-public net.minecraft.world.level.chunk.LevelChunkSection states
 
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/light/BlockStarLightEngine.java b/src/main/java/ca/spottedleaf/starlight/common/light/BlockStarLightEngine.java
 new file mode 100644
@@ -4351,9 +4350,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
 @@ -0,0 +0,0 @@ public final class PaperCommand extends Command {
-         commands.put(Set.of("reload"), new ReloadCommand());
-         commands.put(Set.of("version"), new VersionCommand());
-         commands.put(Set.of("dumpplugins"), new DumpPluginsCommand());
+         commands.put(Set.of("dumpitem"), new DumpItemCommand());
+         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
+         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
 +        commands.put(Set.of("fixlight"), new FixLightCommand());
  
          return commands.entrySet().stream()
@@ -4892,8 +4891,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.replaceable = blockbase_info.replaceable;
 +            this.conditionallyFullOpaque = this.canOcclude & this.useShapeForLightOcclusion; // Paper
          }
- 
-         private boolean calculateSolid() {
+         // Paper start - Perf: impl cached craft block data, lazy load to fix issue with loading at the wrong time
+         private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.shapeExceedsCube;
          }
@@ -5200,9 +5199,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
-     public static final String BLOCK_LIGHT_TAG = "BlockLight";
-     public static final String SKY_LIGHT_TAG = "SkyLight";
- 
+     private static final int CURRENT_DATA_VERSION = net.minecraft.SharedConstants.getCurrentVersion().getDataVersion().getVersion();
+     private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
+     // Paper end - Do not let the server load chunks from newer versions
 +    // Paper start - replace light engine impl
 +    private static final int STARLIGHT_LIGHT_VERSION = 9;
 +
@@ -5213,7 +5212,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      public ChunkSerializer() {}
  
-     public static ProtoChunk read(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
+     // Paper start - guard against serializing mismatching coordinates
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
          }
  
@@ -5403,3 +5402,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static ChunkStatus.ChunkType getChunkTypeFromTag(@Nullable CompoundTag nbt) {
          return nbt != null ? ChunkStatus.byName(nbt.getString("Status")).getChunkType() : ChunkStatus.ChunkType.PROTOCHUNK;
      }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+             }
+         }
+ 
+-        for (final ChunkPos pos : chunksToRelight) {
+-            final ChunkAccess chunk = serverChunkCache.getChunk(pos.x, pos.z, false);
+-            if (chunk != null) {
+-                serverChunkCache.getLightEngine().lightChunk(chunk, false);
+-            }
+-        }
++        serverChunkCache.getLightEngine().relight(chunksToRelight, pos -> {}, relit -> {}); // Paper - Starlight
+ 
+         return true;
+         // Paper end - implement regenerate chunk method
