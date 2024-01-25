@@ -15266,13 +15266,13 @@ index 0000000000000000000000000000000000000000..f7b0e2564ac4bd2db1d2b2bdc230c9f5
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index a6793f227fa90a37260cf0b9d5e9b6f1f47ff920..596ef21a05a5c9311adcd8799239b1532d9bb747 100644
+index e47fb2aa5e885162cae5cbfc9f33ff7864bf538e..b68b37274f22c2a89d723aec4d1c6be813eef73c 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
 @@ -43,6 +43,7 @@ public final class PaperCommand extends Command {
-         commands.put(Set.of("dumpitem"), new DumpItemCommand());
          commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
          commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
+         commands.put(Set.of("fixlight"), new FixLightCommand());
 +        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
  
          return commands.entrySet().stream()
@@ -16642,10 +16642,10 @@ index deb2d8c22a1c5724d0ac8571f4ea54711988dc4b..72d013d06705b08ed696e3d3b6d631d6
                  DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, worldLoader.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataFixers.getDataFixer(), services, LoggerChunkProgressListener::new);
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce800a94811d 100644
+index 7d637094afecc2a838f9cc5cc837f8bf63cfd5aa..b27cdfd527d9234b51eba7bb642968fa886d460e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -310,7 +310,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -311,7 +311,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
@@ -16654,7 +16654,7 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
              ((MinecraftServer) atomicreference.get()).runServer();
          }, "Server thread");
  
-@@ -642,7 +642,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -643,7 +643,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.forceDifficulty();
          for (ServerLevel worldserver : this.getAllLevels()) {
              this.prepareLevels(worldserver.getChunkSource().chunkMap.progressListener, worldserver);
@@ -16663,7 +16663,7 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
              this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
          }
  
-@@ -855,6 +855,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -856,6 +856,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public abstract boolean shouldRconBroadcast();
  
      public boolean saveAllChunks(boolean suppressLogs, boolean flush, boolean force) {
@@ -16676,7 +16676,7 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
          boolean flag3 = false;
  
          for (Iterator iterator = this.getAllLevels().iterator(); iterator.hasNext(); flag3 = true) {
-@@ -863,8 +869,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -864,8 +870,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              if (!suppressLogs) {
                  MinecraftServer.LOGGER.info("Saving chunks for level '{}'/{}", worldserver, worldserver.dimension().location());
              }
@@ -16691,7 +16691,7 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
          }
  
          // CraftBukkit start - moved to WorldServer.save
-@@ -883,7 +893,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -884,7 +894,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              while (iterator1.hasNext()) {
                  ServerLevel worldserver2 = (ServerLevel) iterator1.next();
  
@@ -16700,7 +16700,7 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
              }
  
              MinecraftServer.LOGGER.info("ThreadedAnvilChunkStorage: All dimensions are saved");
-@@ -964,36 +974,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -965,36 +975,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              }
          }
  
@@ -16738,7 +16738,7 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
  
          this.isSaving = false;
          this.resources.close();
-@@ -1012,7 +993,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1013,7 +994,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
          }
          // Spigot end
@@ -16747,8 +16747,8 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
      }
  
      public String getLocalIp() {
-@@ -1054,6 +1035,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     }
+@@ -1106,6 +1087,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     // Paper end
      // Spigot End
  
 +    public static volatile RuntimeException chunkSystemCrash; // Paper - rewrite chunk system
@@ -16756,9 +16756,9 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -1069,6 +1052,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             Arrays.fill( this.recentTps, 20 );
-             long tickSection = Util.getMillis(), tickCount = 1;
+@@ -1124,6 +1107,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             long currentTime;
+             // Paper end - further improve server tick loop
              while (this.running) {
 +                // Paper start - rewrite chunk system
 +                // guarantee that nothing can stop the server from halting if it can at least still tick
@@ -16769,7 +16769,7 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
                  long i;
  
                  if (!this.isPaused() && this.tickRateManager.isSprinting() && this.tickRateManager.checkShouldSprintThisTick()) {
-@@ -1194,6 +1183,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1257,6 +1246,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      private boolean haveTime() {
@@ -16781,7 +16781,7 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
          // CraftBukkit start
          if (isOversleep) return canOversleep(); // Paper - because of our changes, this logic is broken
          return this.forceTicks || this.runningTask() || Util.getNanos() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTimeNanos : this.nextTickTimeNanos);
-@@ -1437,7 +1431,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1500,7 +1494,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper start - Folia scheduler API
          ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
          getAllLevels().forEach(level -> {
@@ -16790,7 +16790,7 @@ index 469e108c844880b1a95e5aa9f0f8f12375cc314a..5e9b079b815b775a77bec2d70cf9ce80
                  if (entity.isRemoved()) {
                      continue;
                  }
-@@ -2457,7 +2451,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2520,7 +2514,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // CraftBukkit start
      @Override
      public boolean isSameThread() {
@@ -21370,7 +21370,7 @@ index 73e682bb3ef3b2e450ec8c594b5365c7a340615e..6a5756bd333d9b221e7770842e5114d2
  
      public void setFullStatus(Supplier<FullChunkStatus> levelTypeProvider) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 94e9919da2ba5a36afa5b7f97af888cb113bb14b..5aff6454b5b1c7834adca8f1234ec4848aa3709c 100644
+index 7e416ad09959a08931c207f62d97af4ee868c039..5d50f1bcba507975b8942529104c0ccd5e08c252 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -110,6 +110,17 @@ public class ChunkSerializer {
@@ -22531,7 +22531,7 @@ index 1eff5e4800ad3b628a42113fb3ba67458e56a40d..d4e0ef75dd12709a0dcf9193821c30b8
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index b23cc5371cb8fc2cfaba70c73cd9d4b0accb3283..b63a0770e80f16848861a4747586ad22b9f9520b 100644
+index 28529732f23fefc8f642a44b95779f9e1cc2bb64..cbe6e8dae17b30905a28167449f1799b66d403c1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1384,7 +1384,6 @@ public final class CraftServer implements Server {
@@ -22561,10 +22561,10 @@ index b23cc5371cb8fc2cfaba70c73cd9d4b0accb3283..b63a0770e80f16848861a4747586ad22
  
      // Paper start - Adventure
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index a8131d68c7b8f762be6ee39e3a4f7f3edb978fe9..65b2902c65011223b344d64179d9dd3594abfa68 100644
+index 5cc2deb8f170452c7049743068bf281f67687db9..84ec87b889d0d450293310e18c34aef505a8147b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -499,10 +499,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -501,10 +501,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
          if (playerChunk == null) return false;
  
@@ -22582,7 +22582,7 @@ index a8131d68c7b8f762be6ee39e3a4f7f3edb978fe9..65b2902c65011223b344d64179d9dd35
  
                  ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null);
                  for (ServerPlayer player : playersInRange) {
-@@ -510,8 +514,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -512,8 +516,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
                      player.connection.send(refreshPacket);
                  }
@@ -22592,7 +22592,7 @@ index a8131d68c7b8f762be6ee39e3a4f7f3edb978fe9..65b2902c65011223b344d64179d9dd35
  
          return true;
      }
-@@ -590,20 +593,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -592,20 +595,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public Collection<Plugin> getPluginChunkTickets(int x, int z) {
          DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
@@ -22614,7 +22614,7 @@ index a8131d68c7b8f762be6ee39e3a4f7f3edb978fe9..65b2902c65011223b344d64179d9dd35
      }
  
      @Override
-@@ -611,7 +601,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -613,7 +603,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          Map<Plugin, ImmutableList.Builder<Chunk>> ret = new HashMap<>();
          DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
  
@@ -22623,7 +22623,7 @@ index a8131d68c7b8f762be6ee39e3a4f7f3edb978fe9..65b2902c65011223b344d64179d9dd35
              long chunkKey = chunkTickets.getLongKey();
              SortedArraySet<Ticket<?>> tickets = chunkTickets.getValue();
  
-@@ -1273,12 +1263,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1275,12 +1265,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public int getViewDistance() {
@@ -22638,7 +22638,7 @@ index a8131d68c7b8f762be6ee39e3a4f7f3edb978fe9..65b2902c65011223b344d64179d9dd35
      }
  
      public BlockMetadataStore getBlockMetadata() {
-@@ -2420,17 +2410,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2422,17 +2412,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setSimulationDistance(final int simulationDistance) {

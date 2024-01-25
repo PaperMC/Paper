@@ -6,7 +6,7 @@ Subject: [PATCH] Implement regenerateChunk
 Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 146dce90630325437ea57b0c496f6ac5e9fefc7a..1ae13f0a320160210bd830f990f44de1eef3d5da 100644
+index 391f546e44080293fd94ff240d7809e3f471bb14..ef942e75ed1aefbc9175f99113cdfeada58e8a50 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -144,6 +144,7 @@ import org.jetbrains.annotations.NotNull;
@@ -17,7 +17,7 @@ index 146dce90630325437ea57b0c496f6ac5e9fefc7a..1ae13f0a320160210bd830f990f44de1
  
      private final ServerLevel world;
      private WorldBorder worldBorder;
-@@ -414,27 +415,61 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -414,27 +415,68 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean regenerateChunk(int x, int z) {
          org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
@@ -25,10 +25,6 @@ index 146dce90630325437ea57b0c496f6ac5e9fefc7a..1ae13f0a320160210bd830f990f44de1
 -        /*
 -        if (!unloadChunk0(x, z, false)) {
 -            return false;
--        }
--
--        final long chunkKey = ChunkCoordIntPair.pair(x, z);
--        world.getChunkProvider().unloadQueue.remove(chunkKey);
 +        // Paper start - implement regenerateChunk method
 +        final ServerLevel serverLevel = this.world;
 +        final net.minecraft.server.level.ServerChunkCache serverChunkCache = serverLevel.getChunkSource();
@@ -53,11 +49,7 @@ index 146dce90630325437ea57b0c496f6ac5e9fefc7a..1ae13f0a320160210bd830f990f44de1
 +                    list.add(chunkAccess);
 +                }
 +            }
- 
--        net.minecraft.server.Chunk chunk = world.getChunkProvider().generateChunk(x, z);
--        PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
--        if (playerChunk != null) {
--            playerChunk.chunk = chunk;
++
 +            final java.util.concurrent.CompletableFuture<com.mojang.datafixers.util.Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = chunkStatus.generate(
 +                Runnable::run,
 +                serverLevel,
@@ -75,21 +67,34 @@ index 146dce90630325437ea57b0c496f6ac5e9fefc7a..1ae13f0a320160210bd830f990f44de1
 +            }
          }
  
--        if (chunk != null) {
--            refreshChunk(x, z);
+-        final long chunkKey = ChunkCoordIntPair.pair(x, z);
+-        world.getChunkProvider().unloadQueue.remove(chunkKey);
 +        for (final BlockPos blockPos : BlockPos.betweenClosed(chunkPos.getMinBlockX(), serverLevel.getMinBuildHeight(), chunkPos.getMinBlockZ(), chunkPos.getMaxBlockX(), serverLevel.getMaxBuildHeight() - 1, chunkPos.getMaxBlockZ())) {
 +            serverChunkCache.blockChanged(blockPos);
-         }
++        }
  
--        return chunk != null;
--        */
+-        net.minecraft.server.Chunk chunk = world.getChunkProvider().generateChunk(x, z);
+-        PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
+-        if (playerChunk != null) {
+-            playerChunk.chunk = chunk;
 +        final Set<ChunkPos> chunksToRelight = new HashSet<>(9);
 +        for (int chunkX = chunkPos.x - 1; chunkX <= chunkPos.x + 1 ; chunkX++) {
 +            for (int chunkZ = chunkPos.z - 1; chunkZ <= chunkPos.z + 1 ; chunkZ++) {
 +                chunksToRelight.add(new ChunkPos(chunkX, chunkZ));
 +            }
-+        }
-+        serverChunkCache.getLightEngine().relight(chunksToRelight, pos -> {}, relit -> {});
+         }
+ 
+-        if (chunk != null) {
+-            refreshChunk(x, z);
++        for (final ChunkPos pos : chunksToRelight) {
++            final ChunkAccess chunk = serverChunkCache.getChunk(pos.x, pos.z, false);
++            if (chunk != null) {
++                serverChunkCache.getLightEngine().lightChunk(chunk, false);
++            }
+         }
+ 
+-        return chunk != null;
+-        */
 +        return true;
 +        // Paper end - implement regenerate chunk method
      }

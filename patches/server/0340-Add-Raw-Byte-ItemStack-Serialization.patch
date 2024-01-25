@@ -6,10 +6,10 @@ Subject: [PATCH] Add Raw Byte ItemStack Serialization
 Serializes using NBT which is safer for server data migrations than bukkits format.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index e31ead0d99203a018757cb2e765b5d28dd373eef..2ff5d2c357a4832e2624ef53fb0110d61fddc6fc 100644
+index e31ead0d99203a018757cb2e765b5d28dd373eef..41fb303191783ad9e531331dc8468f95139432b9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -458,6 +458,52 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -458,6 +458,53 @@ public final class CraftMagicNumbers implements UnsafeValues {
      public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
          return new com.destroystokyo.paper.PaperVersionFetcher();
      }
@@ -28,8 +28,9 @@ index e31ead0d99203a018757cb2e765b5d28dd373eef..2ff5d2c357a4832e2624ef53fb0110d6
 +        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 +
 +        CompoundTag compound = deserializeNbtFromBytes(data);
-+        int dataVersion = compound.getInt("DataVersion");
-+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of(ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ITEM_STACK, compound, dataVersion, getDataVersion())));
++        final int dataVersion = compound.getInt("DataVersion");
++        compound = (CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(NbtOps.INSTANCE, compound), dataVersion, this.getDataVersion()).getValue();
++        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of(compound));
 +    }
 +
 +    private byte[] serializeNbtToBytes(CompoundTag compound) {

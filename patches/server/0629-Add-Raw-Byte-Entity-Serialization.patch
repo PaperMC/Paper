@@ -47,11 +47,11 @@ index a6492b6a9f66d8bcda8928fadf0a5920ff7f0dab..71845027ba1b755ead76cf75d011547d
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index df57a3be211017e2ba7bd28571adaea59d0be969..fd1ec07ada04de98d0a4f1ca4c93ec53771f88d7 100644
+index 35bc0c3bfda51e3eec2ee1fc68d207ddba4239ef..34c19a422de27cd6aa08159186a0180215c0837d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -483,6 +483,29 @@ public final class CraftMagicNumbers implements UnsafeValues {
-         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of(ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ITEM_STACK, compound, dataVersion, getDataVersion())));
+@@ -484,6 +484,32 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of(compound));
      }
  
 +    @Override
@@ -71,8 +71,11 @@ index df57a3be211017e2ba7bd28571adaea59d0be969..fd1ec07ada04de98d0a4f1ca4c93ec53
 +
 +        CompoundTag compound = deserializeNbtFromBytes(data);
 +        int dataVersion = compound.getInt("DataVersion");
-+        compound = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY, compound, dataVersion, getDataVersion());
-+        if (!preserveUUID) compound.remove("UUID"); // Generate a new UUID so we don't have to worry about deserializing the same entity twice
++        compound = (CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ENTITY, new Dynamic<>(NbtOps.INSTANCE, compound), dataVersion, this.getDataVersion()).getValue();
++        if (!preserveUUID) {
++            // Generate a new UUID so we don't have to worry about deserializing the same entity twice
++            compound.remove("UUID");
++        }
 +        return net.minecraft.world.entity.EntityType.create(compound, ((org.bukkit.craftbukkit.CraftWorld) world).getHandle())
 +            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
 +    }
