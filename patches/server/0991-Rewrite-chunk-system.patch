@@ -961,1121 +961,6 @@ index 2f0d9b953802dee821cfde82d22b0567cce8ee91..22687667ec69a954261e55e59261286a
      }
  
      public static Timing getTickList(ServerLevel worldserver, String timingsType) {
-diff --git a/src/main/java/com/destroystokyo/paper/io/IOUtil.java b/src/main/java/com/destroystokyo/paper/io/IOUtil.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..e064f96c90afd1a4890060baa055cfd0469b6a6f
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/io/IOUtil.java
-@@ -0,0 +1,63 @@
-+package com.destroystokyo.paper.io;
-+
-+import org.bukkit.Bukkit;
-+
-+@Deprecated(forRemoval = true)
-+public final class IOUtil {
-+
-+    /* Copied from concrete or concurrentutil */
-+
-+    public static long getCoordinateKey(final int x, final int z) {
-+        return ((long)z << 32) | (x & 0xFFFFFFFFL);
-+    }
-+
-+    public static int getCoordinateX(final long key) {
-+        return (int)key;
-+    }
-+
-+    public static int getCoordinateZ(final long key) {
-+        return (int)(key >>> 32);
-+    }
-+
-+    public static int getRegionCoordinate(final int chunkCoordinate) {
-+        return chunkCoordinate >> 5;
-+    }
-+
-+    public static int getChunkInRegion(final int chunkCoordinate) {
-+        return chunkCoordinate & 31;
-+    }
-+
-+    public static String genericToString(final Object object) {
-+        return object == null ? "null" : object.getClass().getName() + ":" + object.toString();
-+    }
-+
-+    public static <T> T notNull(final T obj) {
-+        if (obj == null) {
-+            throw new NullPointerException();
-+        }
-+        return obj;
-+    }
-+
-+    public static <T> T notNull(final T obj, final String msgIfNull) {
-+        if (obj == null) {
-+            throw new NullPointerException(msgIfNull);
-+        }
-+        return obj;
-+    }
-+
-+    public static void arrayBounds(final int off, final int len, final int arrayLength, final String msgPrefix) {
-+        if (off < 0 || len < 0 || (arrayLength - off) < len) {
-+            throw new ArrayIndexOutOfBoundsException(msgPrefix + ": off: " + off + ", len: " + len + ", array length: " + arrayLength);
-+        }
-+    }
-+
-+    public static int getPriorityForCurrentThread() {
-+        return Bukkit.isPrimaryThread() ? PrioritizedTaskQueue.HIGHEST_PRIORITY : PrioritizedTaskQueue.NORMAL_PRIORITY;
-+    }
-+
-+    @SuppressWarnings("unchecked")
-+    public static <T extends Throwable> void rethrow(final Throwable throwable) throws T {
-+        throw (T)throwable;
-+    }
-+
-+}
-diff --git a/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..f2c27e0ac65be4b75c1d86ef6fd45fdb538d96ac
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
-@@ -0,0 +1,474 @@
-+package com.destroystokyo.paper.io;
-+
-+import com.mojang.logging.LogUtils;
-+import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.world.level.ChunkPos;
-+import net.minecraft.world.level.chunk.storage.RegionFile;
-+import org.slf4j.Logger;
-+
-+import java.io.IOException;
-+import java.util.concurrent.CompletableFuture;
-+import java.util.concurrent.ConcurrentHashMap;
-+import java.util.concurrent.atomic.AtomicLong;
-+import java.util.function.Consumer;
-+import java.util.function.Function;
-+
-+/**
-+ * Prioritized singleton thread responsible for all chunk IO that occurs in a minecraft server.
-+ *
-+ * <p>
-+ *    Singleton access: {@link Holder#INSTANCE}
-+ * </p>
-+ *
-+ * <p>
-+ *     All functions provided are MT-Safe, however certain ordering constraints are (but not enforced):
-+ *     <li>
-+ *         Chunk saves may not occur for unloaded chunks.
-+ *     </li>
-+ *     <li>
-+ *         Tasks must be scheduled on the main thread.
-+ *     </li>
-+ * </p>
-+ *
-+ * @see Holder#INSTANCE
-+ * @see #scheduleSave(ServerLevel, int, int, CompoundTag, CompoundTag, int)
-+ * @see #loadChunkDataAsync(ServerLevel, int, int, int, Consumer, boolean, boolean, boolean)
-+ * @deprecated
-+ */
-+@Deprecated(forRemoval = true)
-+public final class PaperFileIOThread extends QueueExecutorThread {
-+
-+    public static final Logger LOGGER = LogUtils.getLogger();
-+    public static final CompoundTag FAILURE_VALUE = new CompoundTag();
-+
-+    public static final class Holder {
-+
-+        public static final PaperFileIOThread INSTANCE = new PaperFileIOThread();
-+
-+        static {
-+             // Paper - fail hard on usage
-+        }
-+    }
-+
-+    private final AtomicLong writeCounter = new AtomicLong();
-+
-+    private PaperFileIOThread() {
-+        super(new PrioritizedTaskQueue<>(), (int)(1.0e6)); // 1.0ms spinwait time
-+        this.setName("Paper RegionFile IO Thread");
-+        this.setPriority(Thread.NORM_PRIORITY - 1); // we keep priority close to normal because threads can wait on us
-+        this.setUncaughtExceptionHandler((final Thread unused, final Throwable thr) -> {
-+            LOGGER.error("Uncaught exception thrown from IO thread, report this!", thr);
-+        });
-+    }
-+
-+    /* run() is implemented by superclass */
-+
-+    /*
-+     *
-+     * IO thread will perform reads before writes
-+     *
-+     * How reads/writes are scheduled:
-+     *
-+     * If read in progress while scheduling write, ignore read and schedule write
-+     * If read in progress while scheduling read (no write in progress), chain the read task
-+     *
-+     *
-+     * If write in progress while scheduling read, use the pending write data and ret immediately
-+     * If write in progress while scheduling write (ignore read in progress), overwrite the write in progress data
-+     *
-+     * This allows the reads and writes to act as if they occur synchronously to the thread scheduling them, however
-+     * it fails to properly propagate write failures. When writes fail the data is kept so future reads will actually
-+     * read the failed write data. This should hopefully act as a way to prevent data loss for spurious fails for writing data.
-+     *
-+     */
-+
-+    /**
-+     * Attempts to bump the priority of all IO tasks for the given chunk coordinates. This has no effect if no tasks are queued.
-+     * @param world Chunk's world
-+     * @param chunkX Chunk's x coordinate
-+     * @param chunkZ Chunk's z coordinate
-+     * @param priority Priority level to try to bump to
-+     */
-+    public void bumpPriority(final ServerLevel world, final int chunkX, final int chunkZ, final int priority) {
-+        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
-+    }
-+
-+    public CompoundTag getPendingWrite(final ServerLevel world, final int chunkX, final int chunkZ, final boolean poiData) {
-+        // Paper start - rewrite chunk system
-+        return io.papermc.paper.chunk.system.io.RegionFileIOThread.getPendingWrite(
-+            world, chunkX, chunkZ, poiData ? io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA :
-+                io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA
-+            );
-+        // Paper end - rewrite chunk system
-+    }
-+
-+    /**
-+     * Sets the priority of all IO tasks for the given chunk coordinates. This has no effect if no tasks are queued.
-+     * @param world Chunk's world
-+     * @param chunkX Chunk's x coordinate
-+     * @param chunkZ Chunk's z coordinate
-+     * @param priority Priority level to set to
-+     */
-+    public void setPriority(final ServerLevel world, final int chunkX, final int chunkZ, final int priority) {
-+        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
-+    }
-+
-+    /**
-+     * Schedules the chunk data to be written asynchronously.
-+     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     This function presumes a chunk load for the coordinates is not called during this function (anytime after is OK). This means
-+     *     saves must be scheduled before a chunk is unloaded.
-+     * </li>
-+     * <li>
-+     *     Writes may be called concurrently, although only the "later" write will go through.
-+     * </li>
-+     * @param world Chunk's world
-+     * @param chunkX Chunk's x coordinate
-+     * @param chunkZ Chunk's z coordinate
-+     * @param poiData Chunk point of interest data. If {@code null}, then no poi data is saved.
-+     * @param chunkData Chunk data. If {@code null}, then no chunk data is saved.
-+     * @param priority Priority level for this task. See {@link PrioritizedTaskQueue}
-+     * @throws IllegalArgumentException If both {@code poiData} and {@code chunkData} are {@code null}.
-+     * @throws IllegalStateException If the file io thread has shutdown.
-+     */
-+    public void scheduleSave(final ServerLevel world, final int chunkX, final int chunkZ,
-+                             final CompoundTag poiData, final CompoundTag chunkData,
-+                             final int priority) throws IllegalArgumentException {
-+        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
-+    }
-+
-+    private void scheduleWrite(final ChunkDataController dataController, final ServerLevel world,
-+                               final int chunkX, final int chunkZ, final CompoundTag data, final int priority, final long writeCounter) {
-+        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
-+    }
-+
-+    /**
-+     * Same as {@link #loadChunkDataAsync(ServerLevel, int, int, int, Consumer, boolean, boolean, boolean)}, except this function returns
-+     * a {@link CompletableFuture} which is potentially completed <b>ASYNCHRONOUSLY ON THE FILE IO THREAD</b> when the load task
-+     * has completed.
-+     * <p>
-+     *     Note that if the chunk fails to load the returned future is completed with {@code null}.
-+     * </p>
-+     */
-+    public CompletableFuture<ChunkData> loadChunkDataAsyncFuture(final ServerLevel world, final int chunkX, final int chunkZ,
-+                                                                 final int priority, final boolean readPoiData, final boolean readChunkData,
-+                                                                 final boolean intendingToBlock) {
-+        final CompletableFuture<ChunkData> future = new CompletableFuture<>();
-+        this.loadChunkDataAsync(world, chunkX, chunkZ, priority, future::complete, readPoiData, readChunkData, intendingToBlock);
-+        return future;
-+    }
-+
-+    /**
-+     * Schedules a load to be executed asynchronously.
-+     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     If a chunk fails to load, the {@code onComplete} parameter is completed with {@code null}.
-+     * </li>
-+     * <li>
-+     *     It is possible for the {@code onComplete} parameter to be given {@link ChunkData} containing data
-+     *     this call did not request.
-+     * </li>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
-+     * @param world Chunk's world
-+     * @param chunkX Chunk's x coordinate
-+     * @param chunkZ Chunk's z coordinate
-+     * @param priority Priority level for this task. See {@link PrioritizedTaskQueue}
-+     * @param onComplete Consumer to execute once this task has completed
-+     * @param readPoiData Whether to read point of interest data. If {@code false}, the {@code NBTTagCompound} will be {@code null}.
-+     * @param readChunkData Whether to read chunk data. If {@code false}, the {@code NBTTagCompound} will be {@code null}.
-+     * @return The {@link PrioritizedTaskQueue.PrioritizedTask} associated with this task. Note that this task does not support
-+     *                                                          cancellation.
-+     */
-+    public void loadChunkDataAsync(final ServerLevel world, final int chunkX, final int chunkZ,
-+                                   final int priority, final Consumer<ChunkData> onComplete,
-+                                   final boolean readPoiData, final boolean readChunkData,
-+                                   final boolean intendingToBlock) {
-+        if (!PrioritizedTaskQueue.validPriority(priority)) {
-+            throw new IllegalArgumentException("Invalid priority: " + priority);
-+        }
-+
-+        if (!(readPoiData | readChunkData)) {
-+            throw new IllegalArgumentException("Must read chunk data or poi data");
-+        }
-+
-+        final ChunkData complete = new ChunkData();
-+        // Paper start - rewrite chunk system
-+        final java.util.List<io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType> types = new java.util.ArrayList<>();
-+        if (readPoiData) {
-+            types.add(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA);
-+        }
-+        if (readChunkData) {
-+            types.add(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA);
-+        }
-+        final ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority newPriority;
-+        switch (priority) {
-+            case PrioritizedTaskQueue.HIGHEST_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.BLOCKING;
-+            case PrioritizedTaskQueue.HIGHER_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHEST;
-+            case PrioritizedTaskQueue.HIGH_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGH;
-+            case PrioritizedTaskQueue.NORMAL_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL;
-+            case PrioritizedTaskQueue.LOW_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.LOW;
-+            case PrioritizedTaskQueue.LOWEST_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.IDLE;
-+            default -> throw new IllegalStateException("Legacy priority " + priority + " should be valid");
-+        }
-+        final Consumer<io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileData> transformComplete = (io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileData data) -> {
-+            if (readPoiData) {
-+                if (data.getThrowable(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA) != null) {
-+                    complete.poiData = FAILURE_VALUE;
-+                } else {
-+                    complete.poiData = data.getData(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA);
-+                }
-+            }
-+
-+            if (readChunkData) {
-+                if (data.getThrowable(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA) != null) {
-+                    complete.chunkData = FAILURE_VALUE;
-+                } else {
-+                    complete.chunkData = data.getData(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA);
-+                }
-+            }
-+
-+            onComplete.accept(complete);
-+        };
-+        io.papermc.paper.chunk.system.io.RegionFileIOThread.loadChunkData(world, chunkX, chunkZ, transformComplete, intendingToBlock, newPriority, types.toArray(new io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType[0]));
-+        // Paper end - rewrite chunk system
-+
-+    }
-+
-+    // Note: the onComplete may be called asynchronously or synchronously here.
-+    private void scheduleRead(final ChunkDataController dataController, final ServerLevel world,
-+                              final int chunkX, final int chunkZ, final Consumer<CompoundTag> onComplete, final int priority,
-+                              final boolean intendingToBlock) {
-+        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
-+    }
-+
-+    /**
-+     * Same as {@link #loadChunkDataAsync(ServerLevel, int, int, int, Consumer, boolean, boolean, boolean)}, except this function returns
-+     * the {@link ChunkData} associated with the specified chunk when the task is complete.
-+     * @return The chunk data, or {@code null} if the chunk failed to load.
-+     */
-+    public ChunkData loadChunkData(final ServerLevel world, final int chunkX, final int chunkZ, final int priority,
-+                                   final boolean readPoiData, final boolean readChunkData) {
-+        return this.loadChunkDataAsyncFuture(world, chunkX, chunkZ, priority, readPoiData, readChunkData, true).join();
-+    }
-+
-+    /**
-+     * Schedules the given task at the specified priority to be executed on the IO thread.
-+     * <p>
-+     *     Internal api. Do not use.
-+     * </p>
-+     */
-+    public void runTask(final int priority, final Runnable runnable) {
-+        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
-+    }
-+
-+    static final class GeneralTask extends PrioritizedTaskQueue.PrioritizedTask implements Runnable {
-+
-+        private final Runnable run;
-+
-+        public GeneralTask(final int priority, final Runnable run) {
-+            super(priority);
-+            this.run = IOUtil.notNull(run, "Task may not be null");
-+        }
-+
-+        @Override
-+        public void run() {
-+            try {
-+                this.run.run();
-+            } catch (final Throwable throwable) {
-+                if (throwable instanceof ThreadDeath) {
-+                    throw (ThreadDeath)throwable;
-+                }
-+                LOGGER.error("Failed to execute general task on IO thread " + IOUtil.genericToString(this.run), throwable);
-+            }
-+        }
-+    }
-+
-+    public static final class ChunkData {
-+
-+        public CompoundTag poiData;
-+        public CompoundTag chunkData;
-+
-+        public ChunkData() {}
-+
-+        public ChunkData(final CompoundTag poiData, final CompoundTag chunkData) {
-+            this.poiData = poiData;
-+            this.chunkData = chunkData;
-+        }
-+    }
-+
-+    public static abstract class ChunkDataController {
-+
-+        // ConcurrentHashMap synchronizes per chain, so reduce the chance of task's hashes colliding.
-+        public final ConcurrentHashMap<Long, ChunkDataTask> tasks = new ConcurrentHashMap<>(64, 0.5f);
-+
-+        public abstract void writeData(final int x, final int z, final CompoundTag compound) throws IOException;
-+        public abstract CompoundTag readData(final int x, final int z) throws IOException;
-+
-+        public abstract <T> T computeForRegionFile(final int chunkX, final int chunkZ, final Function<RegionFile, T> function);
-+        public abstract <T> T computeForRegionFileIfLoaded(final int chunkX, final int chunkZ, final Function<RegionFile, T> function);
-+
-+        public static final class InProgressWrite {
-+            public long writeCounter;
-+            public CompoundTag data;
-+        }
-+
-+        public static final class InProgressRead {
-+            public final CompletableFuture<CompoundTag> readFuture = new CompletableFuture<>();
-+        }
-+    }
-+
-+    public static final class ChunkDataTask extends PrioritizedTaskQueue.PrioritizedTask implements Runnable {
-+
-+        public ChunkDataController.InProgressWrite inProgressWrite;
-+        public ChunkDataController.InProgressRead inProgressRead;
-+
-+        private final ServerLevel world;
-+        private final int x;
-+        private final int z;
-+        private final ChunkDataController taskController;
-+
-+        public ChunkDataTask(final int priority, final ServerLevel world, final int x, final int z, final ChunkDataController taskController) {
-+            super(priority);
-+            this.world = world;
-+            this.x = x;
-+            this.z = z;
-+            this.taskController = taskController;
-+        }
-+
-+        @Override
-+        public String toString() {
-+            return "Task for world: '" + this.world.getWorld().getName() + "' at " + this.x + "," + this.z +
-+                " poi: " + (this.taskController == null) + ", hash: " + this.hashCode(); // Paper - TODO rewrite chunk system
-+        }
-+
-+        /*
-+         *
-+         * IO thread will perform reads before writes
-+         *
-+         * How reads/writes are scheduled:
-+         *
-+         * If read in progress while scheduling write, ignore read and schedule write
-+         * If read in progress while scheduling read (no write in progress), chain the read task
-+         *
-+         *
-+         * If write in progress while scheduling read, use the pending write data and ret immediately
-+         * If write in progress while scheduling write (ignore read in progress), overwrite the write in progress data
-+         *
-+         * This allows the reads and writes to act as if they occur synchronously to the thread scheduling them, however
-+         * it fails to properly propagate write failures
-+         *
-+         */
-+
-+        void reschedule(final int priority) {
-+            // priority is checked before this stage // TODO what
-+            this.queue.lazySet(null);
-+            this.priority.lazySet(priority);
-+            PaperFileIOThread.Holder.INSTANCE.queueTask(this);
-+        }
-+
-+        @Override
-+        public void run() {
-+            if (true) throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
-+            ChunkDataController.InProgressRead read = this.inProgressRead;
-+            if (read != null) {
-+                CompoundTag compound = PaperFileIOThread.FAILURE_VALUE;
-+                try {
-+                    compound = this.taskController.readData(this.x, this.z);
-+                } catch (final Throwable thr) {
-+                    if (thr instanceof ThreadDeath) {
-+                        throw (ThreadDeath)thr;
-+                    }
-+                    LOGGER.error("Failed to read chunk data for task: " + this.toString(), thr);
-+                    // fall through to complete with null data
-+                }
-+                read.readFuture.complete(compound);
-+            }
-+
-+            final Long chunkKey = Long.valueOf(IOUtil.getCoordinateKey(this.x, this.z));
-+
-+            ChunkDataController.InProgressWrite write = this.inProgressWrite;
-+
-+            if (write == null) {
-+                // IntelliJ warns this is invalid, however it does not consider that writes to the task map & the inProgress field can occur concurrently.
-+                ChunkDataTask inMap = this.taskController.tasks.compute(chunkKey, (final Long keyInMap, final ChunkDataTask valueInMap) -> {
-+                    if (valueInMap == null) {
-+                        throw new IllegalStateException("Write completed concurrently, expected this task: " + ChunkDataTask.this.toString() + ", report this!");
-+                    }
-+                    if (valueInMap != ChunkDataTask.this) {
-+                        throw new IllegalStateException("Chunk task mismatch, expected this task: " + ChunkDataTask.this.toString() + ", got: " + valueInMap.toString() + ", report this!");
-+                    }
-+                    return valueInMap.inProgressWrite == null ? null : valueInMap;
-+                });
-+
-+                if (inMap == null) {
-+                    return; // set the task value to null, indicating we're done
-+                }
-+
-+                // not null, which means there was a concurrent write
-+                write = this.inProgressWrite;
-+            }
-+
-+            for (;;) {
-+                final long writeCounter;
-+                final CompoundTag data;
-+
-+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-+                synchronized (write) {
-+                    writeCounter = write.writeCounter;
-+                    data = write.data;
-+                }
-+
-+                boolean failedWrite = false;
-+
-+                try {
-+                    this.taskController.writeData(this.x, this.z, data);
-+                } catch (final Throwable thr) {
-+                    if (thr instanceof ThreadDeath) {
-+                        throw (ThreadDeath)thr;
-+                    }
-+                    LOGGER.error("Failed to write chunk data for task: " + this.toString(), thr);
-+                    failedWrite = true;
-+                }
-+
-+                boolean finalFailWrite = failedWrite;
-+
-+                ChunkDataTask inMap = this.taskController.tasks.compute(chunkKey, (final Long keyInMap, final ChunkDataTask valueInMap) -> {
-+                    if (valueInMap == null) {
-+                        throw new IllegalStateException("Write completed concurrently, expected this task: " + ChunkDataTask.this.toString() + ", report this!");
-+                    }
-+                    if (valueInMap != ChunkDataTask.this) {
-+                        throw new IllegalStateException("Chunk task mismatch, expected this task: " + ChunkDataTask.this.toString() + ", got: " + valueInMap.toString() + ", report this!");
-+                    }
-+                    if (valueInMap.inProgressWrite.writeCounter == writeCounter) {
-+                        if (finalFailWrite) {
-+                            valueInMap.inProgressWrite.writeCounter = -1L;
-+                        }
-+
-+                        return null;
-+                    }
-+                    return valueInMap;
-+                    // Hack end
-+                });
-+
-+                if (inMap == null) {
-+                    // write counter matched, so we wrote the most up-to-date pending data, we're done here
-+                    // or we failed to write and successfully set the write counter to -1
-+                    return; // we're done here
-+                }
-+
-+                // fetch & write new data
-+                continue;
-+            }
-+        }
-+    }
-+}
-diff --git a/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..7844a3515430472bd829ff246396bceb0797de1b
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
-@@ -0,0 +1,299 @@
-+package com.destroystokyo.paper.io;
-+
-+import java.util.concurrent.ConcurrentLinkedQueue;
-+import java.util.concurrent.atomic.AtomicBoolean;
-+import java.util.concurrent.atomic.AtomicInteger;
-+import java.util.concurrent.atomic.AtomicReference;
-+
-+@Deprecated(forRemoval = true)
-+public class PrioritizedTaskQueue<T extends PrioritizedTaskQueue.PrioritizedTask> {
-+
-+    // lower numbers are a higher priority (except < 0)
-+    // higher priorities are always executed before lower priorities
-+
-+    /**
-+     * Priority value indicating the task has completed or is being completed.
-+     */
-+    public static final int COMPLETING_PRIORITY   = -1;
-+
-+    /**
-+     * Highest priority, should only be used for main thread tasks or tasks that are blocking the main thread.
-+     */
-+    public static final int HIGHEST_PRIORITY      = 0;
-+
-+    /**
-+     * Should be only used in an IO task so that chunk loads do not wait on other IO tasks.
-+     * This only exists because IO tasks are scheduled before chunk load tasks to decrease IO waiting times.
-+     */
-+    public static final int HIGHER_PRIORITY       = 1;
-+
-+    /**
-+     * Should be used for scheduling chunk loads/generation that would increase response times to users.
-+     */
-+    public static final int HIGH_PRIORITY         = 2;
-+
-+    /**
-+     * Default priority.
-+     */
-+    public static final int NORMAL_PRIORITY       = 3;
-+
-+    /**
-+     * Use for tasks not at all critical and can potentially be delayed.
-+     */
-+    public static final int LOW_PRIORITY          = 4;
-+
-+    /**
-+     * Use for tasks that should "eventually" execute.
-+     */
-+    public static final int LOWEST_PRIORITY       = 5;
-+
-+    private static final int TOTAL_PRIORITIES     = 6;
-+
-+    final ConcurrentLinkedQueue<T>[] queues = (ConcurrentLinkedQueue<T>[])new ConcurrentLinkedQueue[TOTAL_PRIORITIES];
-+
-+    private final AtomicBoolean shutdown = new AtomicBoolean();
-+
-+    {
-+        for (int i = 0; i < TOTAL_PRIORITIES; ++i) {
-+            this.queues[i] = new ConcurrentLinkedQueue<>();
-+        }
-+    }
-+
-+    /**
-+     * Returns whether the specified priority is valid
-+     */
-+    public static boolean validPriority(final int priority) {
-+        return priority >= 0 && priority < TOTAL_PRIORITIES;
-+    }
-+
-+    /**
-+     * Queues a task.
-+     * @throws IllegalStateException If the task has already been queued. Use {@link PrioritizedTask#raisePriority(int)} to
-+     *                               raise a task's priority.
-+     *                               This can also be thrown if the queue has shutdown.
-+     */
-+    public void add(final T task) throws IllegalStateException {
-+        int priority = task.getPriority();
-+        if (priority != COMPLETING_PRIORITY) {
-+            task.setQueue(this);
-+            this.queues[priority].add(task);
-+        }
-+        if (this.shutdown.get()) {
-+            // note: we're not actually sure at this point if our task will go through
-+            throw new IllegalStateException("Queue has shutdown, refusing to execute task " + IOUtil.genericToString(task));
-+        }
-+    }
-+
-+    /**
-+     * Polls the highest priority task currently available. {@code null} if none.
-+     */
-+    public T poll() {
-+        T task;
-+        for (int i = 0; i < TOTAL_PRIORITIES; ++i) {
-+            final ConcurrentLinkedQueue<T> queue = this.queues[i];
-+
-+            while ((task = queue.poll()) != null) {
-+                final int prevPriority = task.tryComplete(i);
-+                if (prevPriority != COMPLETING_PRIORITY && prevPriority <= i) {
-+                    // if the prev priority was greater-than or equal to our current priority
-+                    return task;
-+                }
-+            }
-+        }
-+
-+        return null;
-+    }
-+
-+    /**
-+     * Polls the highest priority task currently available. {@code null} if none.
-+     */
-+    public T poll(final int lowestPriority) {
-+        T task;
-+        final int max = Math.min(LOWEST_PRIORITY, lowestPriority);
-+        for (int i = 0; i <= max; ++i) {
-+            final ConcurrentLinkedQueue<T> queue = this.queues[i];
-+
-+            while ((task = queue.poll()) != null) {
-+                final int prevPriority = task.tryComplete(i);
-+                if (prevPriority != COMPLETING_PRIORITY && prevPriority <= i) {
-+                    // if the prev priority was greater-than or equal to our current priority
-+                    return task;
-+                }
-+            }
-+        }
-+
-+        return null;
-+    }
-+
-+    /**
-+     * Returns whether this queue may have tasks queued.
-+     * <p>
-+     * This operation is not atomic, but is MT-Safe.
-+     * </p>
-+     * @return {@code true} if tasks may be queued, {@code false} otherwise
-+     */
-+    public boolean hasTasks() {
-+        for (int i = 0; i < TOTAL_PRIORITIES; ++i) {
-+            final ConcurrentLinkedQueue<T> queue = this.queues[i];
-+
-+            if (queue.peek() != null) {
-+                return true;
-+            }
-+        }
-+        return false;
-+    }
-+
-+    /**
-+     * Prevent further additions to this queue. Attempts to add after this call has completed (potentially during) will
-+     * result in {@link IllegalStateException} being thrown.
-+     * <p>
-+     *     This operation is atomic with respect to other shutdown calls
-+     * </p>
-+     * <p>
-+     *     After this call has completed, regardless of return value, this queue will be shutdown.
-+     * </p>
-+     * @return {@code true} if the queue was shutdown, {@code false} if it has shut down already
-+     */
-+    public boolean shutdown() {
-+        return this.shutdown.getAndSet(false);
-+    }
-+
-+    public abstract static class PrioritizedTask {
-+
-+        protected final AtomicReference<PrioritizedTaskQueue> queue = new AtomicReference<>();
-+
-+        protected final AtomicInteger priority;
-+
-+        protected PrioritizedTask() {
-+            this(PrioritizedTaskQueue.NORMAL_PRIORITY);
-+        }
-+
-+        protected PrioritizedTask(final int priority) {
-+            if (!PrioritizedTaskQueue.validPriority(priority)) {
-+                throw new IllegalArgumentException("Invalid priority " + priority);
-+            }
-+            this.priority = new AtomicInteger(priority);
-+        }
-+
-+        /**
-+         * Returns the current priority. Note that {@link PrioritizedTaskQueue#COMPLETING_PRIORITY} will be returned
-+         * if this task is completing or has completed.
-+         */
-+        public final int getPriority() {
-+            return this.priority.get();
-+        }
-+
-+        /**
-+         * Returns whether this task is scheduled to execute, or has been already executed.
-+         */
-+        public boolean isScheduled() {
-+            return this.queue.get() != null;
-+        }
-+
-+        final int tryComplete(final int minPriority) {
-+            for (int curr = this.getPriorityVolatile();;) {
-+                if (curr == COMPLETING_PRIORITY) {
-+                    return COMPLETING_PRIORITY;
-+                }
-+                if (curr > minPriority) {
-+                    // curr is lower priority
-+                    return curr;
-+                }
-+
-+                if (curr == (curr = this.compareAndExchangePriorityVolatile(curr, COMPLETING_PRIORITY))) {
-+                    return curr;
-+                }
-+                continue;
-+            }
-+        }
-+
-+        /**
-+         * Forces this task to be completed.
-+         * @return {@code true} if the task was cancelled, {@code false} if the task has already completed or is being completed.
-+         */
-+        public boolean cancel() {
-+            return this.exchangePriorityVolatile(PrioritizedTaskQueue.COMPLETING_PRIORITY) != PrioritizedTaskQueue.COMPLETING_PRIORITY;
-+        }
-+
-+        /**
-+         * Attempts to raise the priority to the priority level specified.
-+         * @param priority Priority specified
-+         * @return {@code true} if successful, {@code false} otherwise.
-+         */
-+        public boolean raisePriority(final int priority) {
-+            if (!PrioritizedTaskQueue.validPriority(priority)) {
-+                throw new IllegalArgumentException("Invalid priority");
-+            }
-+
-+            for (int curr = this.getPriorityVolatile();;) {
-+                if (curr == COMPLETING_PRIORITY) {
-+                    return false;
-+                }
-+                if (priority >= curr) {
-+                    return true;
-+                }
-+
-+                if (curr == (curr = this.compareAndExchangePriorityVolatile(curr, priority))) {
-+                    PrioritizedTaskQueue queue = this.queue.get();
-+                    if (queue != null) {
-+                        //noinspection unchecked
-+                        queue.queues[priority].add(this); // silently fail on shutdown
-+                    }
-+                    return true;
-+                }
-+                continue;
-+            }
-+        }
-+
-+        /**
-+         * Attempts to set this task's priority level to the level specified.
-+         * @param priority Specified priority level.
-+         * @return {@code true} if successful, {@code false} if this task is completing or has completed.
-+         */
-+        public boolean updatePriority(final int priority) {
-+            if (!PrioritizedTaskQueue.validPriority(priority)) {
-+                throw new IllegalArgumentException("Invalid priority");
-+            }
-+
-+            for (int curr = this.getPriorityVolatile();;) {
-+                if (curr == COMPLETING_PRIORITY) {
-+                    return false;
-+                }
-+                if (curr == priority) {
-+                    return true;
-+                }
-+
-+                if (curr == (curr = this.compareAndExchangePriorityVolatile(curr, priority))) {
-+                    PrioritizedTaskQueue queue = this.queue.get();
-+                    if (queue != null) {
-+                        //noinspection unchecked
-+                        queue.queues[priority].add(this); // silently fail on shutdown
-+                    }
-+                    return true;
-+                }
-+                continue;
-+            }
-+        }
-+
-+        void setQueue(final PrioritizedTaskQueue queue) {
-+            this.queue.set(queue);
-+        }
-+
-+        /* priority */
-+
-+        protected final int getPriorityVolatile() {
-+            return this.priority.get();
-+        }
-+
-+        protected final int compareAndExchangePriorityVolatile(final int expect, final int update) {
-+            if (this.priority.compareAndSet(expect, update)) {
-+                return expect;
-+            }
-+            return this.priority.get();
-+        }
-+
-+        protected final int exchangePriorityVolatile(final int value) {
-+            return this.priority.getAndSet(value);
-+        }
-+    }
-+}
-diff --git a/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..99f49b5625cf51d6c97640553cf5c420bb6fdd36
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
-@@ -0,0 +1,255 @@
-+package com.destroystokyo.paper.io;
-+
-+import com.mojang.logging.LogUtils;
-+import org.slf4j.Logger;
-+
-+import java.util.concurrent.ConcurrentLinkedQueue;
-+import java.util.concurrent.atomic.AtomicBoolean;
-+import java.util.concurrent.locks.LockSupport;
-+
-+@Deprecated(forRemoval = true)
-+public class QueueExecutorThread<T extends PrioritizedTaskQueue.PrioritizedTask & Runnable> extends Thread {
-+
-+    private static final Logger LOGGER = LogUtils.getLogger();
-+
-+    protected final PrioritizedTaskQueue<T> queue;
-+    protected final long spinWaitTime;
-+
-+    protected volatile boolean closed;
-+
-+    protected final AtomicBoolean parked = new AtomicBoolean();
-+
-+    protected volatile ConcurrentLinkedQueue<Thread> flushQueue = new ConcurrentLinkedQueue<>();
-+    protected volatile long flushCycles;
-+
-+    protected int lowestPriorityToPoll = PrioritizedTaskQueue.LOWEST_PRIORITY;
-+
-+    public int getLowestPriorityToPoll() {
-+        return this.lowestPriorityToPoll;
-+    }
-+
-+    public void setLowestPriorityToPoll(final int lowestPriorityToPoll) {
-+        if (this.isAlive()) {
-+            throw new IllegalStateException("Cannot set after starting");
-+        }
-+        this.lowestPriorityToPoll = lowestPriorityToPoll;
-+    }
-+
-+    public QueueExecutorThread(final PrioritizedTaskQueue<T> queue) {
-+        this(queue, (int)(1.e6)); // 1.0ms
-+    }
-+
-+    public QueueExecutorThread(final PrioritizedTaskQueue<T> queue, final long spinWaitTime) { // in ms
-+        this.queue = queue;
-+        this.spinWaitTime = spinWaitTime;
-+    }
-+
-+    @Override
-+    public void run() {
-+        final long spinWaitTime = this.spinWaitTime;
-+        main_loop:
-+        for (;;) {
-+            this.pollTasks(true);
-+
-+            // spinwait
-+
-+            final long start = System.nanoTime();
-+
-+            for (;;) {
-+                // If we are interrpted for any reason, park() will always return immediately. Clear so that we don't needlessly use cpu in such an event.
-+                Thread.interrupted();
-+                LockSupport.parkNanos("Spinwaiting on tasks", 1000L); // 1us
-+
-+                if (this.pollTasks(true)) {
-+                    // restart loop, found tasks
-+                    continue main_loop;
-+                }
-+
-+                if (this.handleClose()) {
-+                    return; // we're done
-+                }
-+
-+                if ((System.nanoTime() - start) >= spinWaitTime) {
-+                    break;
-+                }
-+            }
-+
-+            if (this.handleClose()) {
-+                return;
-+            }
-+
-+            this.parked.set(true);
-+
-+            // We need to parse here to avoid a race condition where a thread queues a task before we set parked to true
-+            // (i.e it will not notify us)
-+            if (this.pollTasks(true)) {
-+                this.parked.set(false);
-+                continue;
-+            }
-+
-+            if (this.handleClose()) {
-+                return;
-+            }
-+
-+            // we don't need to check parked before sleeping, but we do need to check parked in a do-while loop
-+            // LockSupport.park() can fail for any reason
-+            do {
-+                Thread.interrupted();
-+                LockSupport.park("Waiting on tasks");
-+            } while (this.parked.get());
-+        }
-+    }
-+
-+    protected boolean handleClose() {
-+        if (this.closed) {
-+            this.pollTasks(true); // this ensures we've emptied the queue
-+            this.handleFlushThreads(true);
-+            return true;
-+        }
-+        return false;
-+    }
-+
-+    protected boolean pollTasks(boolean flushTasks) {
-+        Runnable task;
-+        boolean ret = false;
-+
-+        while ((task = this.queue.poll(this.lowestPriorityToPoll)) != null) {
-+            ret = true;
-+            try {
-+                task.run();
-+            } catch (final Throwable throwable) {
-+                if (throwable instanceof ThreadDeath) {
-+                    throw (ThreadDeath)throwable;
-+                }
-+                LOGGER.error("Exception thrown from prioritized runnable task in thread '" + this.getName() + "': " + IOUtil.genericToString(task), throwable);
-+            }
-+        }
-+
-+        if (flushTasks) {
-+            this.handleFlushThreads(false);
-+        }
-+
-+        return ret;
-+    }
-+
-+    protected void handleFlushThreads(final boolean shutdown) {
-+        Thread parking;
-+        ConcurrentLinkedQueue<Thread> flushQueue = this.flushQueue;
-+        do {
-+            ++flushCycles; // may be plain read opaque write
-+            while ((parking = flushQueue.poll()) != null) {
-+                LockSupport.unpark(parking);
-+            }
-+        } while (this.pollTasks(false));
-+
-+        if (shutdown) {
-+            this.flushQueue = null;
-+
-+            // defend against a race condition where a flush thread double-checks right before we set to null
-+            while ((parking = flushQueue.poll()) != null) {
-+                LockSupport.unpark(parking);
-+            }
-+        }
-+    }
-+
-+    /**
-+     * Notify's this thread that a task has been added to its queue
-+     * @return {@code true} if this thread was waiting for tasks, {@code false} if it is executing tasks
-+     */
-+    public boolean notifyTasks() {
-+        if (this.parked.get() && this.parked.getAndSet(false)) {
-+            LockSupport.unpark(this);
-+            return true;
-+        }
-+        return false;
-+    }
-+
-+    protected void queueTask(final T task) {
-+        this.queue.add(task);
-+        this.notifyTasks();
-+    }
-+
-+    /**
-+     * Waits until this thread's queue is empty.
-+     *
-+     * @throws IllegalStateException If the current thread is {@code this} thread.
-+     */
-+    public void flush() {
-+        final Thread currentThread = Thread.currentThread();
-+
-+        if (currentThread == this) {
-+            // avoid deadlock
-+            throw new IllegalStateException("Cannot flush the queue executor thread while on the queue executor thread");
-+        }
-+
-+        // order is important
-+
-+        int successes = 0;
-+        long lastCycle = -1L;
-+
-+        do {
-+            final ConcurrentLinkedQueue<Thread> flushQueue = this.flushQueue;
-+            if (flushQueue == null) {
-+                return;
-+            }
-+
-+            flushQueue.add(currentThread);
-+
-+            // double check flush queue
-+            if (this.flushQueue == null) {
-+                return;
-+            }
-+
-+            final long currentCycle = this.flushCycles; // may be opaque read
-+
-+            if (currentCycle == lastCycle) {
-+                Thread.yield();
-+                continue;
-+            }
-+
-+            // force response
-+            this.parked.set(false);
-+            LockSupport.unpark(this);
-+
-+            LockSupport.park("flushing queue executor thread");
-+
-+            // returns whether there are tasks queued, does not return whether there are tasks executing
-+            // this is why we cycle twice twice through flush (we know a pollTask call is made after a flush cycle)
-+            // we really only need to guarantee that the tasks this thread has queued has gone through, and can leave
-+            // tasks queued concurrently that are unsychronized with this thread as undefined behavior
-+            if (this.queue.hasTasks()) {
-+                successes = 0;
-+            } else {
-+                ++successes;
-+            }
-+
-+        } while (successes != 2);
-+
-+    }
-+
-+    /**
-+     * Closes this queue executor's queue and optionally waits for it to empty.
-+     * <p>
-+     *     If wait is {@code true}, then the queue will be empty by the time this call completes.
-+     * </p>
-+     * <p>
-+     *     This function is MT-Safe.
-+     * </p>
-+     * @param wait If this call is to wait until the queue is empty
-+     * @param killQueue Whether to shutdown this thread's queue
-+     * @return whether this thread shut down the queue
-+     */
-+    public boolean close(final boolean wait, final boolean killQueue) {
-+        boolean ret = !killQueue ? false : this.queue.shutdown();
-+        this.closed = true;
-+
-+        // force thread to respond to the shutdown
-+        this.parked.set(false);
-+        LockSupport.unpark(this);
-+
-+        if (wait) {
-+            this.flush();
-+        }
-+        return ret;
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
 index 05bddc0697faa8d9d9955d89d76930c84ef7df0d..cbeaadaecf816070b3a37938c8e683180939afc4 100644
 --- a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
@@ -4466,10 +3351,10 @@ index 0000000000000000000000000000000000000000..15ee41452992714108efe53b708b5a4e
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251e848f909
+index 0000000000000000000000000000000000000000..2934f0cf0ef09c84739312b00186c2ef0019a165
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
-@@ -0,0 +1,1338 @@
+@@ -0,0 +1,1343 @@
 +package io.papermc.paper.chunk.system.io;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -4502,15 +3387,16 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +/**
 + * Prioritised RegionFile I/O executor, responsible for all RegionFile access.
 + * <p>
-+ *     All functions provided are MT-Safe, however certain ordering constraints are recommended:
++ * All functions provided are MT-Safe, however certain ordering constraints are recommended:
++ * <ul>
 + *     <li>
 + *         Chunk saves may not occur for unloaded chunks.
 + *     </li>
 + *     <li>
 + *         Tasks must be scheduled on the chunk scheduler thread.
 + *     </li>
-+ *     By following these constraints, no chunk data loss should occur with the exception of underlying I/O problems.
-+ * </p>
++ * </ul>
++ * By following these constraints, no chunk data loss should occur with the exception of underlying I/O problems.
 + */
 +public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
 +
@@ -4529,16 +3415,12 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +    protected static final RegionFileType[] CACHED_REGIONFILE_TYPES = RegionFileType.values();
 +
 +    private ChunkDataController getControllerFor(final ServerLevel world, final RegionFileType type) {
-+        switch (type) {
-+            case CHUNK_DATA:
-+                return world.chunkDataControllerNew;
-+            case POI_DATA:
-+                return world.poiDataControllerNew;
-+            case ENTITY_DATA:
-+                return world.entityDataControllerNew;
-+            default:
-+                throw new IllegalStateException("Unknown controller type " + type);
-+        }
++        return switch (type) {
++            case CHUNK_DATA -> world.chunkDataControllerNew;
++            case POI_DATA -> world.poiDataControllerNew;
++            case ENTITY_DATA -> world.entityDataControllerNew;
++            default -> throw new IllegalStateException("Unknown controller type " + type);
++        };
 +    }
 +
 +    /**
@@ -4759,7 +3641,7 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +    }
 +
 +    /**
-+     * Returns the current {@code CompoundTag} pending for write for the specified chunk & regionfile type.
++     * Returns the current {@code CompoundTag} pending for write for the specified chunk and regionfile type.
 +     * Note that this does not copy the result, so do not modify the result returned.
 +     *
 +     * @param world Specified world.
@@ -4968,15 +3850,16 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +    /**
 +     * Schedules the chunk data to be written asynchronously.
 +     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     This function presumes a chunk load for the coordinates is not called during this function (anytime after is OK). This means
-+     *     saves must be scheduled before a chunk is unloaded.
-+     * </li>
-+     * <li>
++     * Impl notes:
++     * <ul>
++     *     <li>
++     *         This function presumes a chunk load for the coordinates is not called during this function (anytime after is OK). This means
++     *         saves must be scheduled before a chunk is unloaded.
++     *     </li>
++     *     <li>
 +     *     Writes may be called concurrently, although only the "later" write will go through.
-+     * </li>
++     *     </li>
++     * </ul>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -4994,15 +3877,16 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +    /**
 +     * Schedules the chunk data to be written asynchronously.
 +     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     This function presumes a chunk load for the coordinates is not called during this function (anytime after is OK). This means
-+     *     saves must be scheduled before a chunk is unloaded.
-+     * </li>
-+     * <li>
-+     *     Writes may be called concurrently, although only the "later" write will go through.
-+     * </li>
++     * Impl notes:
++     * <ul>
++     *     <li>
++     *         This function presumes a chunk load for the coordinates is not called during this function (anytime after is OK). This means
++     *         saves must be scheduled before a chunk is unloaded.
++     *     </li>
++     *     <li>
++     *         Writes may be called concurrently, although only the "later" write will go through.
++     *     </li>
++     * </ul>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -5054,13 +3938,14 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +     * {@code onComplete}. This is a bulk load operation, see {@link #loadDataAsync(ServerLevel, int, int, RegionFileType, BiConsumer, boolean)}
 +     * for single load.
 +     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
++     * Impl notes:
++     * <ul>
++     *     <li>
++     *         The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
++     *         be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
++     *         data is undefined behaviour, and can cause deadlock.
++     *     </li>
++     * </ul>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -5086,13 +3971,14 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +     * {@code onComplete}. This is a bulk load operation, see {@link #loadDataAsync(ServerLevel, int, int, RegionFileType, BiConsumer, boolean, Priority)}
 +     * for single load.
 +     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
++     * Impl notes:
++     * <ul>
++     *     <li>
++     *         The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
++     *         be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
++     *         data is undefined behaviour, and can cause deadlock.
++     *     </li>
++     * </ul>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -5120,13 +4006,14 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +     * then call {@code onComplete}. This is a bulk load operation, see {@link #loadDataAsync(ServerLevel, int, int, RegionFileType, BiConsumer, boolean)}
 +     * for single load.
 +     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
++     * Impl notes:
++     * <ul>
++     *     <li>
++     *         The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
++     *         be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
++     *         data is undefined behaviour, and can cause deadlock.
++     *     </li>
++     * </ul>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -5154,13 +4041,14 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +     * then call {@code onComplete}. This is a bulk load operation, see {@link #loadDataAsync(ServerLevel, int, int, RegionFileType, BiConsumer, boolean, Priority)}
 +     * for single load.
 +     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
++     * Impl notes:
++     * <ul>
++     *     <li>
++     *         The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
++     *         be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
++     *         data is undefined behaviour, and can cause deadlock.
++     *     </li>
++     * </ul>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -5217,13 +4105,14 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +     * Schedules a load to be executed asynchronously. This task will load the specified regionfile type, and then call
 +     * {@code onComplete}.
 +     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
++     * Impl notes:
++     * <ul>
++     *     <li>
++     *         The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
++     *         be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
++     *         data is undefined behaviour, and can cause deadlock.
++     *     </li>
++     * </ul>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -5249,13 +4138,14 @@ index 0000000000000000000000000000000000000000..8a11e10b01fa012b2f98b1c193c53251
 +     * Schedules a load to be executed asynchronously. This task will load the specified regionfile type, and then call
 +     * {@code onComplete}.
 +     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
++     * Impl notes:
++     * <ul>
++     *     <li>
++     *         The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
++     *         be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
++     *         data is undefined behaviour, and can cause deadlock.
++     *     </li>
++     * </ul>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -15720,7 +14610,7 @@ index cea9c098ade00ee87b8efc8164ab72f5279758f0..197224e31175252d8438a8df585bbb65
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
-index ff8a983e23bcf73ec3f7dd98c48640183647ad4d..200ed770b57e1a9240abf0473968d4b85cbefe3c 100644
+index 8235d23dc9778b9444288d58ffdb5d515df56bf9..1ccf71be865af4d3c5ab8f4323a228a947e0bf3f 100644
 --- a/src/main/java/io/papermc/paper/util/MCUtil.java
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
 @@ -6,17 +6,30 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -15766,7 +14656,7 @@ index ff8a983e23bcf73ec3f7dd98c48640183647ad4d..200ed770b57e1a9240abf0473968d4b8
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.ExecutionException;
  import java.util.concurrent.LinkedBlockingQueue;
-@@ -534,6 +550,100 @@ public final class MCUtil {
+@@ -533,6 +549,100 @@ public final class MCUtil {
          }
      }
  
@@ -16642,7 +15532,7 @@ index deb2d8c22a1c5724d0ac8571f4ea54711988dc4b..72d013d06705b08ed696e3d3b6d631d6
                  DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, worldLoader.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataFixers.getDataFixer(), services, LoggerChunkProgressListener::new);
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7d637094afecc2a838f9cc5cc837f8bf63cfd5aa..b27cdfd527d9234b51eba7bb642968fa886d460e 100644
+index 7d637094afecc2a838f9cc5cc837f8bf63cfd5aa..365b11eb92e76cda975a5989a556abcf4c8fdaa4 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -311,7 +311,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -16738,16 +15628,15 @@ index 7d637094afecc2a838f9cc5cc837f8bf63cfd5aa..b27cdfd527d9234b51eba7bb642968fa
  
          this.isSaving = false;
          this.resources.close();
-@@ -1013,7 +994,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
+@@ -1014,6 +995,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          // Spigot end
--
-+        io.papermc.paper.chunk.system.io.RegionFileIOThread.close(true); // Paper // Paper - rewrite chunk system
+ 
++        io.papermc.paper.chunk.system.io.RegionFileIOThread.close(true); // Paper - rewrite chunk system
      }
  
      public String getLocalIp() {
-@@ -1106,6 +1087,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1106,6 +1088,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // Paper end
      // Spigot End
  
@@ -16756,7 +15645,7 @@ index 7d637094afecc2a838f9cc5cc837f8bf63cfd5aa..b27cdfd527d9234b51eba7bb642968fa
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -1124,6 +1107,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1124,6 +1108,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              long currentTime;
              // Paper end - further improve server tick loop
              while (this.running) {
@@ -16769,7 +15658,7 @@ index 7d637094afecc2a838f9cc5cc837f8bf63cfd5aa..b27cdfd527d9234b51eba7bb642968fa
                  long i;
  
                  if (!this.isPaused() && this.tickRateManager.isSprinting() && this.tickRateManager.checkShouldSprintThisTick()) {
-@@ -1257,6 +1246,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1257,6 +1247,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      private boolean haveTime() {
@@ -16781,7 +15670,7 @@ index 7d637094afecc2a838f9cc5cc837f8bf63cfd5aa..b27cdfd527d9234b51eba7bb642968fa
          // CraftBukkit start
          if (isOversleep) return canOversleep(); // Paper - because of our changes, this logic is broken
          return this.forceTicks || this.runningTask() || Util.getNanos() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTimeNanos : this.nextTickTimeNanos);
-@@ -1500,7 +1494,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1500,7 +1495,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper start - Folia scheduler API
          ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
          getAllLevels().forEach(level -> {
@@ -16790,7 +15679,7 @@ index 7d637094afecc2a838f9cc5cc837f8bf63cfd5aa..b27cdfd527d9234b51eba7bb642968fa
                  if (entity.isRemoved()) {
                      continue;
                  }
-@@ -2520,7 +2514,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2520,7 +2515,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // CraftBukkit start
      @Override
      public boolean isSameThread() {
