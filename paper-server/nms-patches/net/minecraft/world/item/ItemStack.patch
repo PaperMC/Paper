@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -81,6 +81,43 @@
+@@ -81,6 +81,44 @@
  import net.minecraft.world.level.block.state.pattern.ShapeDetectorBlock;
  import org.slf4j.Logger;
  
@@ -30,6 +30,7 @@
 +import org.bukkit.Location;
 +import org.bukkit.TreeType;
 +import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.block.CapturedBlockState;
 +import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -44,7 +45,7 @@
  public final class ItemStack {
  
      public static final Codec<ItemStack> CODEC = RecordCodecBuilder.create((instance) -> {
-@@ -175,7 +212,18 @@
+@@ -175,7 +213,18 @@
          this.item = null;
      }
  
@@ -64,7 +65,7 @@
          this.item = (Item) BuiltInRegistries.ITEM.get(new MinecraftKey(nbttagcompound.getString("id")));
          this.count = nbttagcompound.getByte("Count");
          if (nbttagcompound.contains("tag", 10)) {
-@@ -189,6 +237,11 @@
+@@ -189,6 +238,11 @@
  
      }
  
@@ -76,7 +77,7 @@
      public static ItemStack of(NBTTagCompound nbttagcompound) {
          try {
              return new ItemStack(nbttagcompound);
-@@ -266,11 +319,190 @@
+@@ -266,11 +320,191 @@
              return EnumInteractionResult.PASS;
          } else {
              Item item = this.getItem();
@@ -128,7 +129,8 @@
 +                        this.setCount(newCount);
 +                    }
 +                    for (CraftBlockState blockstate : blocks) {
-+                        world.setBlock(blockstate.getPosition(),blockstate.getHandle(), blockstate.getFlag()); // SPIGOT-7248 - manual update to avoid physics where appropriate
++                        // SPIGOT-7572 - Move fix for SPIGOT-7248 to CapturedBlockState, to allow bees in bee nest
++                        CapturedBlockState.setBlockState(blockstate);
 +                    }
 +                    entityhuman.awardStat(StatisticList.ITEM_USED.get(item)); // SPIGOT-7236 - award stat
 +                }
@@ -269,7 +271,7 @@
  
              return enuminteractionresult;
          }
-@@ -351,6 +583,21 @@
+@@ -351,6 +585,21 @@
                  }
  
                  i -= k;
@@ -291,7 +293,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -372,6 +619,11 @@
+@@ -372,6 +621,11 @@
                  if (this.hurt(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -303,7 +305,7 @@
  
                      this.shrink(1);
                      if (t0 instanceof EntityHuman) {
-@@ -524,6 +776,17 @@
+@@ -524,6 +778,17 @@
          return this.tag;
      }
  
@@ -321,7 +323,7 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -948,6 +1211,13 @@
+@@ -948,6 +1213,13 @@
          nbttaglist.add(nbttagcompound);
      }
  
