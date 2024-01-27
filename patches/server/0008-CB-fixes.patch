@@ -87,17 +87,15 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/ja
 index 5f12fce84e0ec001dc43523753883a098434fcb6..d6a1b9bbf9737ed884ecf4af31e1521f46807405 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2454,7 +2454,13 @@ public final class CraftServer implements Server {
+@@ -2454,7 +2454,11 @@ public final class CraftServer implements Server {
          Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
  
          LootDataManager registry = this.getServer().getLootData();
 -        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
 +        // Paper start - honor method contract
 +        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
-+        if (registry.getLootTable(lootTableKey) == net.minecraft.world.level.storage.loot.LootTable.EMPTY) {
-+            return null;
-+        }
-+        return new CraftLootTable(key, registry.getLootTable(lootTableKey));
++        final Optional<net.minecraft.world.level.storage.loot.LootTable> table = registry.getElementOptional(net.minecraft.world.level.storage.loot.LootDataType.TABLE, lootTableKey);
++        return table.map(lootTable -> new CraftLootTable(key, lootTable)).orElse(null);
 +        // Paper end
      }
  
