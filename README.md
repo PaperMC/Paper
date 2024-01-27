@@ -8,7 +8,7 @@ The most widely used, high-performance Minecraft server that aims to fix gamepla
 
 
 **Support and Project Discussion:**
-- [Our forums](https://forums.papermc.io/), [Discord](https://discord.gg/papermc), or [IRC](https://webchat.esper.net/?channels=paper)
+- [Our forums](https://forums.papermc.io/) or [Discord](https://discord.gg/papermc)
 
 How To (Server Admins)
 ------
