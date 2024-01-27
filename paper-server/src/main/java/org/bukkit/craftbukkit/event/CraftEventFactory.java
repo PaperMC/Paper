@@ -177,6 +177,8 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityEnterLoveModeEvent;
 import org.bukkit.event.entity.EntityExhaustionEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
+import org.bukkit.event.entity.EntityKnockbackEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
@@ -1881,6 +1883,20 @@ public class CraftEventFactory {
 
     public static ExplosionPrimeEvent callExplosionPrimeEvent(Entity nmsEntity, float size, boolean fire) {
         ExplosionPrimeEvent event = new ExplosionPrimeEvent(nmsEntity.getBukkitEntity(), size, fire);
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static EntityKnockbackEvent callEntityKnockbackEvent(CraftLivingEntity entity, Entity attacker, EntityKnockbackEvent.KnockbackCause cause, double force, Vec3D raw, double x, double y, double z) {
+        Vector bukkitRaw = new Vector(-raw.x, raw.y, -raw.z); // Due to how the knockback calculation works, we need to invert x and z.
+
+        EntityKnockbackEvent event;
+        if (attacker != null) {
+            event = new EntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), cause, force, new Vector(-raw.x, raw.y, -raw.z), new Vector(x, y, z));
+        } else {
+            event = new EntityKnockbackEvent(entity, cause, force, new Vector(-raw.x, raw.y, -raw.z), new Vector(x, y, z));
+        }
+
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
