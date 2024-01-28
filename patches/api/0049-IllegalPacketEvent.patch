@@ -9,16 +9,16 @@ Lets plugins change the kick message and if it should kick or not.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/IllegalPacketEvent.java b/src/main/java/com/destroystokyo/paper/event/player/IllegalPacketEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8d8e9b16f2a6707d2af7567c7682dfc5db51a737
+index 0000000000000000000000000000000000000000..8dc5971ba441395f7bc13568c5ee88ca34837e95
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/IllegalPacketEvent.java
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,67 @@
 +package com.destroystokyo.paper.event.player;
 +
-+import org.bukkit.Bukkit;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -27,20 +27,24 @@ index 0000000000000000000000000000000000000000..8d8e9b16f2a6707d2af7567c7682dfc5
 + */
 +@Deprecated
 +public class IllegalPacketEvent extends PlayerEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    @Nullable private final String type;
-+    @Nullable private final String ex;
++    @Nullable private final String exceptionMessage;
 +    @Nullable private String kickMessage;
 +    private boolean shouldKick = true;
 +
++    @ApiStatus.Internal
 +    public IllegalPacketEvent(@NotNull Player player, @Nullable String type, @Nullable String kickMessage, @NotNull Exception e) {
 +        super(player);
 +        this.type = type;
 +        this.kickMessage = kickMessage;
-+        this.ex = e.getMessage();
++        this.exceptionMessage = e.getMessage();
 +    }
 +
 +    public boolean isShouldKick() {
-+        return shouldKick;
++        return this.shouldKick;
 +    }
 +
 +    public void setShouldKick(boolean shouldKick) {
@@ -49,7 +53,7 @@ index 0000000000000000000000000000000000000000..8d8e9b16f2a6707d2af7567c7682dfc5
 +
 +    @Nullable
 +    public String getKickMessage() {
-+        return kickMessage;
++        return this.kickMessage;
 +    }
 +
 +    public void setKickMessage(@Nullable String kickMessage) {
@@ -58,32 +62,21 @@ index 0000000000000000000000000000000000000000..8d8e9b16f2a6707d2af7567c7682dfc5
 +
 +    @Nullable
 +    public String getType() {
-+        return type;
++        return this.type;
 +    }
 +
 +    @Nullable
 +    public String getExceptionMessage() {
-+        return ex;
++        return this.exceptionMessage;
 +    }
-+
-+    private static final HandlerList handlers = new HandlerList();
 +
 +    @NotNull
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    public static void process(@NotNull Player player, @Nullable String type, @Nullable String kickMessage, @NotNull Exception exception) {
-+        IllegalPacketEvent event = new IllegalPacketEvent(player, type, kickMessage, exception);
-+        event.callEvent();
-+        if (event.shouldKick) {
-+            player.kickPlayer(kickMessage);
-+        }
-+        Bukkit.getLogger().severe(player.getName() + "/" + type + ": " + exception.getMessage());
++        return HANDLER_LIST;
 +    }
 +}

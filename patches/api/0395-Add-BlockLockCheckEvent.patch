@@ -23,33 +23,31 @@ index 0000000000000000000000000000000000000000..f309961e0e96b6baacc4fe6d80dabd6c
 +}
 diff --git a/src/main/java/io/papermc/paper/event/block/BlockLockCheckEvent.java b/src/main/java/io/papermc/paper/event/block/BlockLockCheckEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d27efe0e32
+index 0000000000000000000000000000000000000000..4c335212f6a5ad4a304c3c0f66ffd7e0974c0572
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/block/BlockLockCheckEvent.java
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,186 @@
 +package io.papermc.paper.event.block;
 +
 +import com.google.common.base.Preconditions;
 +import io.papermc.paper.block.LockableTileState;
 +import net.kyori.adventure.sound.Sound;
 +import net.kyori.adventure.text.Component;
-+import org.bukkit.Nameable;
 +import org.bukkit.block.Block;
-+import org.bukkit.block.BlockState;
-+import org.bukkit.block.Lockable;
-+import org.bukkit.block.TileState;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.block.BlockEvent;
 +import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +import java.util.Objects;
 +
 +/**
-+ * Called when the server tries to check the lock on a lockable tile entity.
-+ * @see #setResult(Result) to change behavior
++ * Called when the server tries to check the lock on a lockable block entity.
++ * <br>
++ * See {@link #setResult(Result)} to change behavior
 + */
 +public class BlockLockCheckEvent extends BlockEvent {
 +
@@ -57,11 +55,12 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +
 +    private final LockableTileState state;
 +    private final Player player;
-+    private ItemStack itemStack;
-+    private Result result = Result.DEFAULT;
 +    private Component lockedMessage;
 +    private Sound lockedSound;
++    private ItemStack itemStack;
++    private Result result = Result.DEFAULT;
 +
++    @ApiStatus.Internal
 +    public BlockLockCheckEvent(final @NotNull Block block, final @NotNull LockableTileState state, final @NotNull Player player, final @NotNull Component lockedMessage, final @NotNull Sound lockedSound) {
 +        super(block);
 +        this.state = state;
@@ -71,7 +70,7 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +    }
 +
 +    /**
-+     * Gets the snapshot {@link LockableTileState} of the tile entity
++     * Gets the snapshot {@link LockableTileState} of the block entity
 +     * whose lock is being checked.
 +     *
 +     * @return the snapshot block state.
@@ -105,11 +104,11 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +    /**
 +     * Sets the itemstack that will be used as the key item.
 +     *
-+     * @param stack the stack to use as a key (or null to fall back to the player's main hand item)
++     * @param stack the stack to use as a key
 +     * @see #resetKeyItem() to clear a custom key item
 +     */
 +    public void setKeyItem(@NotNull ItemStack stack) {
-+        Preconditions.checkNotNull(stack, "stack is null");
++        Preconditions.checkArgument(stack != null, "stack cannot be null");
 +        this.itemStack = stack;
 +    }
 +
@@ -123,7 +122,7 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +    /**
 +     * Checks if a custom key stack has been set.
 +     *
-+     * @return true if a custom key itemstack has been set
++     * @return {@code true} if a custom key itemstack has been set
 +     */
 +    public boolean isUsingCustomKeyItemStack() {
 +        return this.itemStack != null;
@@ -140,11 +139,11 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +    }
 +
 +    /**
-+     * Gets the result of this event. {@link org.bukkit.event.Event.Result#DEFAULT} is the default
-+     * allowing the vanilla logic to check the lock of this block. Set to {@link org.bukkit.event.Event.Result#ALLOW}
-+     * or {@link org.bukkit.event.Event.Result#DENY} to override that behavior.
++     * Gets the result of this event. {@link Result#DEFAULT} is the default
++     * allowing the vanilla logic to check the lock of this block. Set to {@link Result#ALLOW}
++     * or {@link Result#DENY} to override that behavior.
 +     * <p>
-+     * Setting this to {@link org.bukkit.event.Event.Result#ALLOW} bypasses the spectator check.
++     * Setting this to {@link Result#ALLOW} bypasses the spectator check.
 +     *
 +     * @param result the result of this event
 +     */
@@ -153,11 +152,11 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +    }
 +
 +    /**
-+     * Shorthand method to set the {@link #getResult()} to {@link org.bukkit.event.Event.Result#DENY},
++     * Shorthand method to set the {@link #getResult()} to {@link Result#DENY},
 +     * the locked message and locked sound.
 +     *
-+     * @param lockedMessage the message to show if locked (or null for none)
-+     * @param lockedSound the sound to play if locked (or null for none)
++     * @param lockedMessage the message to show if locked (or {@code null} for none)
++     * @param lockedSound the sound to play if locked (or {@code null} for none)
 +     */
 +    public void denyWithMessageAndSound(@Nullable Component lockedMessage, @Nullable Sound lockedSound) {
 +        this.result = Result.DENY;
@@ -169,7 +168,7 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +     * Gets the locked message that will be sent if the
 +     * player cannot open the block.
 +     *
-+     * @return the locked message (or null if none)
++     * @return the locked message (or {@code null} if none)
 +     */
 +    public @Nullable Component getLockedMessage() {
 +        return this.lockedMessage;
@@ -179,7 +178,7 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +     * Sets the locked message that will be sent if the
 +     * player cannot open the block.
 +     *
-+     * @param lockedMessage the locked message (or null for none)
++     * @param lockedMessage the locked message (or {@code null} for none)
 +     */
 +    public void setLockedMessage(@Nullable Component lockedMessage) {
 +        this.lockedMessage = lockedMessage;
@@ -189,7 +188,7 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +     * Gets the locked sound that will play if the
 +     * player cannot open the block.
 +     *
-+     * @return the locked sound (or null if none)
++     * @return the locked sound (or {@code null} if none)
 +     */
 +    public @Nullable Sound getLockedSound() {
 +        return this.lockedSound;
@@ -199,7 +198,7 @@ index 0000000000000000000000000000000000000000..d298ebecaa6e0a4cdc273e326d1976d2
 +     * Sets the locked sound that will play if the
 +     * player cannot open the block.
 +     *
-+     * @param lockedSound the locked sound (or null for none)
++     * @param lockedSound the locked sound (or {@code null} for none)
 +     */
 +    public void setLockedSound(@Nullable Sound lockedSound) {
 +        this.lockedSound = lockedSound;

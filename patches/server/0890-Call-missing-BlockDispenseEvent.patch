@@ -50,20 +50,20 @@ index b83af374a33a66a6ceeca119b961eea883bba41c..175b965c92b8b8be9c671e1ee478afa9
                              for (int k = 0; k < 5; ++k) {
                                  worldserver.sendParticles(ParticleTypes.SPLASH, (double) blockposition.getX() + worldserver.random.nextDouble(), (double) (blockposition.getY() + 1), (double) blockposition.getZ() + worldserver.random.nextDouble(), 1, 0.0D, 0.0D, 0.0D, 1.0D);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 8081fe1a1855b6c00bfa3914380ba045ed872292..84e527cf6db14b1fe23a1b169c3bf5609c535e06 100644
+index 598ff7a93fa9cf3c2971c082d1019dbc23bafa2d..34c4acecab9eb9e1d23e390747b348645eedfca8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -2098,6 +2098,32 @@ public class CraftEventFactory {
+@@ -2130,6 +2130,32 @@ public class CraftEventFactory {
      }
      // Paper end
  
 +    // Paper start - Call missing BlockDispenseEvent
 +    @Nullable
 +    public static ItemStack handleBlockDispenseEvent(net.minecraft.core.dispenser.BlockSource pointer, BlockPos to, ItemStack itemStack, net.minecraft.core.dispenser.DispenseItemBehavior instance) {
-+        org.bukkit.block.Block bukkitBlock = pointer.level().getWorld().getBlockAt(pointer.pos().getX(), pointer.pos().getY(), pointer.pos().getZ());
++        org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemStack.copyWithCount(1));
 +
-+        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(to.getX(), to.getY(), to.getZ()));
++        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
 +        if (!net.minecraft.world.level.block.DispenserBlock.eventFired) {
 +            if (!event.callEvent()) {
 +                return itemStack;
@@ -73,9 +73,9 @@ index 8081fe1a1855b6c00bfa3914380ba045ed872292..84e527cf6db14b1fe23a1b169c3bf560
 +        if (!event.getItem().equals(craftItem)) {
 +            // Chain to handler for new item
 +            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-+            net.minecraft.core.dispenser.DispenseItemBehavior idispensebehavior = net.minecraft.world.level.block.DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
-+            if (idispensebehavior != net.minecraft.core.dispenser.DispenseItemBehavior.NOOP && idispensebehavior != instance) {
-+                idispensebehavior.dispense(pointer, eventStack);
++            net.minecraft.core.dispenser.DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
++            if (itemBehavior != net.minecraft.core.dispenser.DispenseItemBehavior.NOOP && itemBehavior != instance) {
++                itemBehavior.dispense(pointer, eventStack);
 +                return itemStack;
 +            }
 +        }
@@ -85,4 +85,4 @@ index 8081fe1a1855b6c00bfa3914380ba045ed872292..84e527cf6db14b1fe23a1b169c3bf560
 +
      // Paper start - add EntityFertilizeEggEvent
      /**
-      * Calls the io.papermc.paper.event.entity.EntityFertilizeEggEvent.
+      * Calls the {@link io.papermc.paper.event.entity.EntityFertilizeEggEvent}.

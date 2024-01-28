@@ -6,7 +6,7 @@ Subject: [PATCH] Add PlayerStonecutterRecipeSelectEvent
 Co-Authored-By: MiniDigger <admin@benndorf.dev>
 
 diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
-index e40d9dbdbe5359c38af6d764d01c9be422654aaa..4924993fab57bcf72a5d75cc2f7e6bed4f9f511c 100644
+index e40d9dbdbe5359c38af6d764d01c9be422654aaa..1a5d8debc053b24e5856de916f1d248b36f645ba 100644
 --- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
 @@ -63,7 +63,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
@@ -18,7 +18,7 @@ index e40d9dbdbe5359c38af6d764d01c9be422654aaa..4924993fab57bcf72a5d75cc2f7e6bed
          this.recipes = Lists.newArrayList();
          this.input = ItemStack.EMPTY;
          this.slotUpdateListener = () -> {
-@@ -161,7 +161,29 @@ public class StonecutterMenu extends AbstractContainerMenu {
+@@ -161,7 +161,30 @@ public class StonecutterMenu extends AbstractContainerMenu {
      @Override
      public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
          if (this.isValidRecipeIndex(id)) {
@@ -30,20 +30,21 @@ index e40d9dbdbe5359c38af6d764d01c9be422654aaa..4924993fab57bcf72a5d75cc2f7e6bed
 +            if (this.isValidRecipeIndex(id)) {
 +                io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent event = new io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent((Player) player.getBukkitEntity(), (org.bukkit.inventory.StonecutterInventory) getBukkitView().getTopInventory(), (org.bukkit.inventory.StonecuttingRecipe) this.getRecipes().get(id).toBukkitRecipe());
 +                if (!event.callEvent()) {
-+                    ((Player) player.getBukkitEntity()).updateInventory();
++                    player.containerMenu.sendAllDataToRemote();
 +                    return false;
 +                }
-+                int newRecipeIndex;
-+                if (!this.getRecipes().get(recipeIndex).id().equals(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) { // If the recipe did NOT stay the same
-+                    for (newRecipeIndex = 0; newRecipeIndex < this.getRecipes().size(); newRecipeIndex++) {
-+                        if (this.getRecipes().get(newRecipeIndex).id().equals(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) {
++
++                net.minecraft.resources.ResourceLocation key = org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey());
++                if (!this.getRecipes().get(recipeIndex).id().equals(key)) { // If the recipe did NOT stay the same
++                    for (int newRecipeIndex = 0; newRecipeIndex < this.getRecipes().size(); newRecipeIndex++) {
++                        if (this.getRecipes().get(newRecipeIndex).id().equals(key)) {
 +                            recipeIndex = newRecipeIndex;
 +                            break;
 +                        }
 +                    }
 +                }
 +            }
-+            ((Player) player.getBukkitEntity()).updateInventory();
++            player.containerMenu.sendAllDataToRemote();
 +            this.selectedRecipeIndex.set(recipeIndex); // set new index, so that listeners can read it
 +            // Paper end - Add PlayerStonecutterRecipeSelectEvent
              this.setupResultSlot();

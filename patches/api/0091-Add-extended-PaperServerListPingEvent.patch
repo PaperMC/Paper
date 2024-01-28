@@ -8,10 +8,10 @@ and allows full control of the response sent to the client.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96ec5b3b9dc
+index 0000000000000000000000000000000000000000..0bb6fdbdd05ae6a8fb413e0f6b8d84302d697267
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
-@@ -0,0 +1,334 @@
+@@ -0,0 +1,338 @@
 +package com.destroystokyo.paper.event.server;
 +
 +import static java.util.Objects.requireNonNull;
@@ -30,6 +30,7 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +import java.util.NoSuchElementException;
 +import java.util.UUID;
 +
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -56,6 +57,7 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +    private Object[] players;
 +
 +    @Deprecated
++    @ApiStatus.Internal
 +    public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull String motd, int numPlayers, int maxPlayers,
 +            @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
 +        super("", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
@@ -66,6 +68,7 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +        setServerIcon(favicon);
 +    }
 +
++    @ApiStatus.Internal
 +    public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull net.kyori.adventure.text.Component motd, int numPlayers, int maxPlayers,
 +                                    @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
 +        super("", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
@@ -103,9 +106,9 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +
 +    /**
 +     * Sets the number of players displayed in the server list.
-+     *
-+     * <p>Note that this won't have any effect if {@link #shouldHidePlayers()}
-+     * is enabled.</p>
++     * <p>
++     * Note that this won't have any effect if {@link #shouldHidePlayers()}
++     * is enabled.
 +     *
 +     * @param numPlayers The number of online players
 +     */
@@ -118,9 +121,9 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +
 +    /**
 +     * {@inheritDoc}
-+     *
-+     * <p>Returns {@code -1} if players are hidden using
-+     * {@link #shouldHidePlayers()}.</p>
++     * <p>
++     * Returns {@code -1} if players are hidden using
++     * {@link #shouldHidePlayers()}.
 +     */
 +    @Override
 +    public int getMaxPlayers() {
@@ -135,23 +138,23 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +     * Returns whether all player related information is hidden in the server
 +     * list. This will cause {@link #getNumPlayers()}, {@link #getMaxPlayers()}
 +     * and {@link #getPlayerSample()} to be skipped in the response.
-+     *
-+     * <p>The Vanilla Minecraft client will display the player count as {@code ???}
-+     * when this option is enabled.</p>
++     * <p>
++     * The Vanilla Minecraft client will display the player count as {@code ???}
++     * when this option is enabled.
 +     *
 +     * @return {@code true} if the player count is hidden
 +     */
 +    public boolean shouldHidePlayers() {
-+        return hidePlayers;
++        return this.hidePlayers;
 +    }
 +
 +    /**
 +     * Sets whether all player related information is hidden in the server
 +     * list. This will cause {@link #getNumPlayers()}, {@link #getMaxPlayers()}
 +     * and {@link #getPlayerSample()} to be skipped in the response.
-+     *
-+     * <p>The Vanilla Minecraft client will display the player count as {@code ???}
-+     * when this option is enabled.</p>
++     * <p>
++     * The Vanilla Minecraft client will display the player count as {@code ???}
++     * when this option is enabled.
 +     *
 +     * @param hidePlayers {@code true} if the player count should be hidden
 +     */
@@ -162,9 +165,9 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +    /**
 +     * Returns a mutable list of {@link PlayerProfile} that will be displayed
 +     * as online players on the client.
-+     *
-+     * <p>The Vanilla Minecraft client will display them when hovering the
-+     * player count with the mouse.</p>
++     * <p>
++     * The Vanilla Minecraft client will display them when hovering the
++     * player count with the mouse.
 +     *
 +     * @return The mutable player sample list
 +     */
@@ -180,7 +183,7 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +     */
 +    @NotNull
 +    public String getVersion() {
-+        return version;
++        return this.version;
 +    }
 +
 +    /**
@@ -200,7 +203,7 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +     * has not finished initialization yet
 +     */
 +    public int getProtocolVersion() {
-+        return protocolVersion;
++        return this.protocolVersion;
 +    }
 +
 +    /**
@@ -240,9 +243,9 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +
 +    /**
 +     * {@inheritDoc}
-+     *
-+     * <p>Cancelling this event will cause the connection to be closed immediately,
-+     * without sending a response to the client.</p>
++     * <p>
++     * Cancelling this event will cause the connection to be closed immediately,
++     * without sending a response to the client.
 +     */
 +    @Override
 +    public boolean isCancelled() {
@@ -251,9 +254,9 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +
 +    /**
 +     * {@inheritDoc}
-+     *
-+     * <p>Cancelling this event will cause the connection to be closed immediately,
-+     * without sending a response to the client.</p>
++     * <p>
++     * Cancelling this event will cause the connection to be closed immediately,
++     * without sending a response to the client.
 +     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
@@ -262,10 +265,10 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +
 +    /**
 +     * {@inheritDoc}
-+     *
-+     * <p><b>Note:</b> For compatibility reasons, this method will return all
++     * <p>
++     * <b>Note:</b> For compatibility reasons, this method will return all
 +     * online players, not just the ones referenced in {@link #getPlayerSample()}.
-+     * Removing a player will:</p>
++     * Removing a player will:
 +     *
 +     * <ul>
 +     *     <li>Decrement the online player count (if and only if) the player
@@ -294,6 +297,7 @@ index 0000000000000000000000000000000000000000..e886ac04c0c14ae5dfb87212e262b96e
 +        return (Player) player;
 +    }
 +
++    @ApiStatus.Internal
 +    private final class PlayerIterator implements Iterator<Player> {
 +
 +        private int next;

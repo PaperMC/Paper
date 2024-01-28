@@ -94,55 +94,54 @@ index 9c2fe69ced7a46bbd8b0fbe10fa67d0a39b0f375..e40d9dbdbe5359c38af6d764d01c9be4
  
      private void setupRecipeList(Container input, ItemStack stack) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 64236f5f126998157bb7bbae40ed0cd1550281e5..8ac093866aec59b4e031b953d4c3c3af66733812 100644
+index 4dddda15446857caa628d01c496aa1398b436894..58a1c1f48655b7403379bcd46945f4b16f73d790 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1714,26 +1714,53 @@ public class CraftEventFactory {
+@@ -1715,6 +1715,12 @@ public class CraftEventFactory {
+     }
+ 
+     public static PrepareAnvilEvent callPrepareAnvilEvent(InventoryView view, ItemStack item) {
++        // Paper start - Add PrepareResultEvent
++        if (true) {
++            view.getTopInventory().setItem(net.minecraft.world.inventory.AnvilMenu.RESULT_SLOT, CraftItemStack.asCraftMirror(item));
++            return null; // verify nothing uses return - disable event: handled below in PrepareResult
++        }
++        // Paper end - Add PrepareResultEvent
+         PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item).clone());
+         event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
+         event.getInventory().setItem(2, event.getResult());
+@@ -1722,6 +1728,12 @@ public class CraftEventFactory {
+     }
+ 
+     public static PrepareGrindstoneEvent callPrepareGrindstoneEvent(InventoryView view, ItemStack item) {
++        // Paper start - Add PrepareResultEvent
++        if (true) {
++            view.getTopInventory().setItem(net.minecraft.world.inventory.GrindstoneMenu.RESULT_SLOT, CraftItemStack.asCraftMirror(item));
++            return null; // verify nothing uses return - disable event: handled below in PrepareResult
++        }
++        // Paper end - Add PrepareResultEvent
+         PrepareGrindstoneEvent event = new PrepareGrindstoneEvent(view, CraftItemStack.asCraftMirror(item).clone());
+         event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
+         event.getInventory().setItem(2, event.getResult());
+@@ -1729,12 +1741,39 @@ public class CraftEventFactory {
+     }
+ 
+     public static PrepareSmithingEvent callPrepareSmithingEvent(InventoryView view, ItemStack item) {
++        // Paper start - Add PrepareResultEvent
++        if (true) {
++            view.getTopInventory().setItem(net.minecraft.world.inventory.SmithingMenu.RESULT_SLOT, CraftItemStack.asCraftMirror(item));
++            return null; // verify nothing uses return - disable event: handled below in PrepareResult
++        }
++        // Paper end - Add PrepareResultEvent
+         PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item).clone());
+         event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
+         event.getInventory().setResult(event.getResult());
          return event;
      }
  
--    public static PrepareAnvilEvent callPrepareAnvilEvent(InventoryView view, ItemStack item) {
--        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item).clone());
--        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
-+    // Paper start - Add PrepareResultEvent; disable this method, handled below
-+    public static void callPrepareAnvilEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
-+        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
-+        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // Paper - disable event
-         event.getInventory().setItem(2, event.getResult());
--        return event;
-+        //return event;
-     }
-+    // Paper end - Add PrepareResultEvent
- 
--    public static PrepareGrindstoneEvent callPrepareGrindstoneEvent(InventoryView view, ItemStack item) {
--        PrepareGrindstoneEvent event = new PrepareGrindstoneEvent(view, CraftItemStack.asCraftMirror(item).clone());
--        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
-+    // Paper start - Add PrepareResultEvent; disable this method, handled below
-+    public static void callPrepareGrindstoneEvent(InventoryView view, ItemStack item) {
-+        PrepareGrindstoneEvent event = new PrepareGrindstoneEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
-+        // event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // Paper - disable event
-         event.getInventory().setItem(2, event.getResult());
--        return event;
-+        // return event;
-     }
-+    // Paper end - Add PrepareResultEvent
- 
--    public static PrepareSmithingEvent callPrepareSmithingEvent(InventoryView view, ItemStack item) {
--        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item).clone());
--        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
-+    // Paper start - Add PrepareResultEvent; disable this method, handled in callPrepareResultEvent
-+    public static void callPrepareSmithingEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
-+        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
-+        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // Paper - disable event
-         event.getInventory().setResult(event.getResult());
--        return event;
-+        //return event; // Paper
-+    }
-+    // Paper end - Add PrepareResultEvent
-+
 +    // Paper start - Add PrepareResultEvent
 +    public static void callPrepareResultEvent(AbstractContainerMenu container, int resultSlot) {
-+        com.destroystokyo.paper.event.inventory.PrepareResultEvent event;
++        final com.destroystokyo.paper.event.inventory.PrepareResultEvent event;
 +        InventoryView view = container.getBukkitView();
 +        org.bukkit.inventory.ItemStack origItem = view.getTopInventory().getItem(resultSlot);
 +        CraftItemStack result = origItem != null ? CraftItemStack.asCraftCopy(origItem) : null;
@@ -158,8 +157,9 @@ index 64236f5f126998157bb7bbae40ed0cd1550281e5..8ac093866aec59b4e031b953d4c3c3af
 +        event.callEvent();
 +        event.getInventory().setItem(resultSlot, event.getResult());
 +        container.broadcastChanges();;
-     }
++    }
 +    // Paper end - Add PrepareResultEvent
- 
++
      /**
       * Mob spawner event.
+      */

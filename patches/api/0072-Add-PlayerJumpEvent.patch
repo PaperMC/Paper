@@ -6,7 +6,7 @@ Subject: [PATCH] Add PlayerJumpEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerJumpEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerJumpEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..289a0d784a3c74caf8a7231b4dd166096b1849a1
+index 0000000000000000000000000000000000000000..d3c319298d360967b853cf0168c0a1833f094779
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerJumpEvent.java
 @@ -0,0 +1,106 @@
@@ -18,21 +18,27 @@ index 0000000000000000000000000000000000000000..289a0d784a3c74caf8a7231b4dd16609
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.event.player.PlayerMoveEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Called when the server detects the player is jumping.
 + * <p>
 + * Added to avoid the overhead and special case logic that many plugins use
-+ * when checking for jumps via PlayerMoveEvent, this event is fired whenever
++ * when checking for jumps via {@link PlayerMoveEvent}, this event is fired whenever
 + * the server detects that the player is jumping.
 + */
 +public class PlayerJumpEvent extends PlayerEvent implements Cancellable {
-+    private static final HandlerList handlers = new HandlerList();
-+    private boolean cancel = false;
-+    @NotNull private Location from;
-+    @NotNull private Location to;
 +
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull private final Location to;
++    @NotNull private Location from;
++
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public PlayerJumpEvent(@NotNull final Player player, @NotNull final Location from, @NotNull final Location to) {
 +        super(player);
 +        this.from = from;
@@ -40,31 +46,29 @@ index 0000000000000000000000000000000000000000..289a0d784a3c74caf8a7231b4dd16609
 +    }
 +
 +    /**
-+     * Gets the cancellation state of this event. A cancelled event will not
-+     * be executed in the server, but will still pass to other plugins
++     * {@inheritDoc}
 +     * <p>
 +     * If a jump event is cancelled, the player will be moved or
-+     * teleported back to the Location as defined by getFrom(). This will not
++     * teleported back to the Location as defined by {@link #getFrom()}. This will not
 +     * fire an event
 +     *
-+     * @return true if this event is cancelled
++     * @return {@code true} if this event is cancelled
 +     */
 +    public boolean isCancelled() {
-+        return cancel;
++        return this.cancelled;
 +    }
 +
 +    /**
-+     * Sets the cancellation state of this event. A cancelled event will not
-+     * be executed in the server, but will still pass to other plugins
++     * {@inheritDoc}
 +     * <p>
 +     * If a jump event is cancelled, the player will be moved or
-+     * teleported back to the Location as defined by getFrom(). This will not
++     * teleported back to the Location as defined by {@link #getFrom()}. This will not
 +     * fire an event
 +     *
-+     * @param cancel true if you wish to cancel this event
++     * @param cancel {@code true} if you wish to cancel this event
 +     */
 +    public void setCancelled(boolean cancel) {
-+        this.cancel = cancel;
++        this.cancelled = cancel;
 +    }
 +
 +    /**
@@ -74,7 +78,7 @@ index 0000000000000000000000000000000000000000..289a0d784a3c74caf8a7231b4dd16609
 +     */
 +    @NotNull
 +    public Location getFrom() {
-+        return from;
++        return this.from;
 +    }
 +
 +    /**
@@ -83,13 +87,14 @@ index 0000000000000000000000000000000000000000..289a0d784a3c74caf8a7231b4dd16609
 +     * @param from New location to mark as the players previous location
 +     */
 +    public void setFrom(@NotNull Location from) {
-+        validateLocation(from);
++        Preconditions.checkArgument(from != null, "Cannot use null from location!");
++        Preconditions.checkArgument(from.getWorld() != null, "Cannot use from location with null world!");
 +        this.from = from;
 +    }
 +
 +    /**
 +     * Gets the location this player jumped to
-+     *
++     * <p>
 +     * This information is based on what the client sends, it typically
 +     * has little relation to the arc of the jump at any given point.
 +     *
@@ -97,22 +102,17 @@ index 0000000000000000000000000000000000000000..289a0d784a3c74caf8a7231b4dd16609
 +     */
 +    @NotNull
 +    public Location getTo() {
-+        return to;
-+    }
-+
-+    private void validateLocation(Location loc) {
-+        Preconditions.checkArgument(loc != null, "Cannot use null location!");
-+        Preconditions.checkArgument(loc.getWorld() != null, "Cannot use location with null world!");
++        return this.to;
 +    }
 +
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}

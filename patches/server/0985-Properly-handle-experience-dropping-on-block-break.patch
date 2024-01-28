@@ -7,10 +7,10 @@ This causes spawnAfterBreak to spawn xp by default, removing the need to manuall
 For classes that use custom xp amounts, they can drop the resources with disabling
 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 5d675d4a5380c3a67e5a320cdb7bffe8a823d855..aa5437860c0471dcc0e6b01cb97e1cbadb752fab 100644
+index cd19005d3f239a27a4ce764588c8df0b229035bf..d5290c97babfa9415bd52deb14610821f0fa2575 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -630,7 +630,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -625,7 +625,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              if (drop) {
                  BlockEntity tileentity = iblockdata.hasBlockEntity() ? this.getBlockEntity(pos) : null;
  
@@ -21,23 +21,23 @@ index 5d675d4a5380c3a67e5a320cdb7bffe8a823d855..aa5437860c0471dcc0e6b01cb97e1cba
  
              boolean flag1 = this.setBlock(pos, fluid.createLegacyBlock(), 3, maxUpdateDepth);
 diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
-index 660ede322b4f4ccad241820d8ffd4540ebb18fbc..63217d3db86b467f3358730eb8b9b3c941558bab 100644
+index c4bf01177b2dfcc88f6992dc85de216d448a79f8..6896d46fce2e466ebee23ac2dc00312ec1beefdb 100644
 --- a/src/main/java/net/minecraft/world/level/block/Block.java
 +++ b/src/main/java/net/minecraft/world/level/block/Block.java
-@@ -320,23 +320,31 @@ public class Block extends BlockBehaviour implements ItemLike {
-             for (net.minecraft.world.item.ItemStack drop : net.minecraft.world.level.block.Block.getDrops(state, world.getMinecraftWorld(), pos, blockEntity)) {
+@@ -321,23 +321,31 @@ public class Block extends BlockBehaviour implements ItemLike {
+             for (ItemStack drop : Block.getDrops(state, serverLevel, pos, blockEntity)) {
                  items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(drop));
              }
 +            Block block = state.getBlock(); // Paper - Properly handle xp dropping
-             io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), org.bukkit.craftbukkit.block.CraftBlock.at(world, source), items);
-+            event.setExpToDrop(block.getExpDrop(state, (ServerLevel) world, pos, net.minecraft.world.item.ItemStack.EMPTY, true)); // Paper - Properly handle xp dropping
+             io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, pos), org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, source), items);
++            event.setExpToDrop(block.getExpDrop(state, serverLevel, pos, net.minecraft.world.item.ItemStack.EMPTY, true)); // Paper - Properly handle xp dropping
              event.callEvent();
-             for (var drop : event.getDrops()) {
-                 popResource(world.getMinecraftWorld(), pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
+             for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
+                 popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
              }
--            state.spawnAfterBreak(world.getMinecraftWorld(), pos, ItemStack.EMPTY, true);
-+            state.spawnAfterBreak(world.getMinecraftWorld(), pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
-+            block.popExperience((ServerLevel) world, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
+-            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++            block.popExperience(serverLevel, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
          }
          return true;
      }
@@ -58,7 +58,7 @@ index 660ede322b4f4ccad241820d8ffd4540ebb18fbc..63217d3db86b467f3358730eb8b9b3c9
          }
  
      }
-@@ -420,7 +428,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+@@ -421,7 +429,7 @@ public class Block extends BlockBehaviour implements ItemLike {
          player.awardStat(Stats.BLOCK_MINED.get(this));
          player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
          if (includeDrops) { // Paper - fix drops not preventing stats/food exhaustion
@@ -68,7 +68,7 @@ index 660ede322b4f4ccad241820d8ffd4540ebb18fbc..63217d3db86b467f3358730eb8b9b3c9
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index ab174986ad558916427a70f59c6907f17b0d01df..20de3aeb4991dcfd0bbf813075a4c76e277b7598 100644
+index e57e3a26b0fb856e1ab693df5783fe8b9bee9719..64300077fce6eb28b6bddd42b3467eaa4c80c9f5 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -1183,6 +1183,7 @@ public abstract class BlockBehaviour implements FeatureElement {

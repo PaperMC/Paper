@@ -12,7 +12,7 @@ This can replace many uses of BlockPhysicsEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/block/BlockDestroyEvent.java b/src/main/java/com/destroystokyo/paper/event/block/BlockDestroyEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..278f26bed374fe79ff3cd135a76f019bd21906e4
+index 0000000000000000000000000000000000000000..d0421a4cbcb672cc06b40ad41fc06a67f6d2dbbb
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/block/BlockDestroyEvent.java
 @@ -0,0 +1,123 @@
@@ -30,23 +30,22 @@ index 0000000000000000000000000000000000000000..278f26bed374fe79ff3cd135a76f019b
 + * Fired anytime the server intends to 'destroy' a block through some triggering reason.
 + * This does not fire anytime a block is set to air, but only with more direct triggers such
 + * as physics updates, pistons, Entities changing blocks, commands set to "Destroy".
-+ *
++ * <p>
 + * This event is associated with the game playing a sound effect at the block in question, when
 + * something can be described as "intend to destroy what is there",
-+ *
++ * <p>
 + * Events such as leaves decaying, pistons retracting (where the block is moving), does NOT fire this event.
-+ *
 + */
 +public class BlockDestroyEvent extends BlockExpEvent implements Cancellable {
 +
-+    private static final HandlerList handlers = new HandlerList();
++    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    @NotNull private final BlockData newState;
 +    private boolean willDrop;
 +    private boolean playEffect = true;
 +    private BlockData effectBlock;
 +
-+    private boolean cancelled = false;
++    private boolean cancelled;
 +
 +    @ApiStatus.Internal
 +    public BlockDestroyEvent(@NotNull Block block, @NotNull BlockData newState, @NotNull BlockData effectBlock, int xp, boolean willDrop) {
@@ -58,6 +57,7 @@ index 0000000000000000000000000000000000000000..278f26bed374fe79ff3cd135a76f019b
 +
 +    /**
 +     * Get the effect that will be played when the block is broken.
++     *
 +     * @return block break effect
 +     */
 +    @NotNull
@@ -67,7 +67,7 @@ index 0000000000000000000000000000000000000000..278f26bed374fe79ff3cd135a76f019b
 +
 +    /**
 +     * Sets the effect that will be played when the block is broken.
-+     * Note: {@link BlockDestroyEvent#playEffect()} must be true in order for this effect to be
++     * Note: {@link BlockDestroyEvent#playEffect()} must be {@code true} in order for this effect to be
 +     * played.
 +     *
 +     * @param effectBlock block effect
@@ -81,7 +81,7 @@ index 0000000000000000000000000000000000000000..278f26bed374fe79ff3cd135a76f019b
 +     */
 +    @NotNull
 +    public BlockData getNewState() {
-+        return newState;
++        return this.newState;
 +    }
 +
 +    /**
@@ -117,25 +117,25 @@ index 0000000000000000000000000000000000000000..278f26bed374fe79ff3cd135a76f019b
 +     */
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    /**
 +     * If the event is cancelled, the block will remain in its previous state.
-+     * @param cancel true if you wish to cancel this event
 +     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++        this.cancelled = cancel;
 +    }
 +
 +    @NotNull
++    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}

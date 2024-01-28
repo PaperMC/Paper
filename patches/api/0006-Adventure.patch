@@ -206,10 +206,10 @@ index 0000000000000000000000000000000000000000..2ad76b1751ba707f7ae0d283aa1cbaf6
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ed8e885f226b02b9875b23ae2294a9056d2e8b29
+index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803a7017a28
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,127 @@
 +package io.papermc.paper.event.player;
 +
 +import io.papermc.paper.chat.ChatRenderer;
@@ -231,12 +231,14 @@ index 0000000000000000000000000000000000000000..ed8e885f226b02b9875b23ae2294a905
 + */
 +@ApiStatus.NonExtendable
 +public abstract class AbstractChatEvent extends PlayerEvent implements Cancellable {
++
 +    private final Set<Audience> viewers;
 +    private final Component originalMessage;
 +    private final SignedMessage signedMessage;
 +    private ChatRenderer renderer;
 +    private Component message;
-+    private boolean cancelled = false;
++
++    private boolean cancelled;
 +
 +    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
 +        super(player, async);
@@ -331,8 +333,8 @@ index 0000000000000000000000000000000000000000..ed8e885f226b02b9875b23ae2294a905
 +    }
 +
 +    @Override
-+    public final void setCancelled(final boolean cancelled) {
-+        this.cancelled = cancelled;
++    public final void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
@@ -371,16 +373,17 @@ index 0000000000000000000000000000000000000000..feece00981ebf932e64760e7a10a04ad
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..667bfa6afc35f8a8f475431171ee474af4e10afd
+index 0000000000000000000000000000000000000000..9e1eb774d841e2c7ffa8bef688d832bdffaa0944
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,120 @@
 +package io.papermc.paper.event.player;
 +
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.AsyncPlayerChatPreviewEvent;
 +import org.bukkit.event.server.ServerEvent;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
@@ -393,7 +396,8 @@ index 0000000000000000000000000000000000000000..667bfa6afc35f8a8f475431171ee474a
 + * message here, and use the chat events for modifying receivers and later the chat type. If you
 + * want to keep the message as "signed" for the clients who get it, be sure to include the entire
 + * original message somewhere in the final message.
-+ * @see AsyncChatCommandDecorateEvent for the decoration of messages sent via commands
++ * <br>
++ * See {@link AsyncChatCommandDecorateEvent} for the decoration of messages sent via commands
 + */
 +@ApiStatus.Experimental
 +public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
@@ -403,6 +407,7 @@ index 0000000000000000000000000000000000000000..667bfa6afc35f8a8f475431171ee474a
 +    private final Player player;
 +    private final Component originalMessage;
 +    private Component result;
++
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
@@ -419,7 +424,7 @@ index 0000000000000000000000000000000000000000..667bfa6afc35f8a8f475431171ee474a
 +     * Certain commands request decorations without a player context
 +     * which is why this is possibly null.
 +     *
-+     * @return the player or null
++     * @return the player or {@code null}
 +     */
 +    public @Nullable Player player() {
 +        return this.player;
@@ -437,7 +442,7 @@ index 0000000000000000000000000000000000000000..667bfa6afc35f8a8f475431171ee474a
 +    /**
 +     * Gets the decoration result. This may already be different from
 +     * {@link #originalMessage()} if some other listener to this event
-+     * <b>OR</b> the legacy preview event ({@link org.bukkit.event.player.AsyncPlayerChatPreviewEvent}
++     * <b>OR</b> the legacy preview event ({@link AsyncPlayerChatPreviewEvent})
 +     * changed the result.
 +     *
 +     * @return the result
@@ -458,10 +463,10 @@ index 0000000000000000000000000000000000000000..667bfa6afc35f8a8f475431171ee474a
 +    /**
 +     * If this decorating is part of a preview request/response.
 +     *
-+     * @return true if part of previewing
++     * @return {@code true} if part of previewing
 +     * @deprecated chat preview was removed in 1.19.3
 +     */
-+    @Deprecated(forRemoval = true)
++    @Deprecated(forRemoval = true, since = "1.19.3")
 +    @ApiStatus.ScheduledForRemoval(inVersion = "1.21")
 +    @Contract(value = "-> false", pure = true)
 +    public boolean isPreview() {
@@ -494,10 +499,10 @@ index 0000000000000000000000000000000000000000..667bfa6afc35f8a8f475431171ee474a
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4d2eddba7dc88ba23b241ac7849114a30af968d3
+index 0000000000000000000000000000000000000000..4adae8b8a8640ffbd6a86b0908ca21fded737b88
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.event.player;
 +
 +import java.util.Set;
@@ -524,11 +529,9 @@ index 0000000000000000000000000000000000000000..4d2eddba7dc88ba23b241ac7849114a3
 + * appropriately.
 + */
 +public final class AsyncChatEvent extends AbstractChatEvent {
-+    private static final HandlerList HANDLERS = new HandlerList();
 +
-+    /**
-+     * @param viewers A mutable set of viewers
-+     */
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    @ApiStatus.Internal
 +    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
 +        super(async, player, viewers, renderer, message, originalMessage, signedMessage);
@@ -537,20 +540,20 @@ index 0000000000000000000000000000000000000000..4d2eddba7dc88ba23b241ac7849114a3
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/ChatEvent.java b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..af025704e978dc0b11be277ab4646da77eb3a60b
+index 0000000000000000000000000000000000000000..7411f58f9f36beaadcc47c2264a4af313956ee03
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,41 @@
 +package io.papermc.paper.event.player;
 +
 +import java.util.Set;
@@ -567,16 +570,15 @@ index 0000000000000000000000000000000000000000..af025704e978dc0b11be277ab4646da7
 +/**
 + * An event fired when a {@link Player} sends a chat message to the server.
 + *
-+ * @deprecated Listening to this event forces chat to wait for the main thread, delaying chat messages. It is recommended to use {@link AsyncChatEvent} instead, wherever possible.
++ * @deprecated Listening to this event forces chat to wait for the main thread, delaying chat messages.
++ * It is recommended to use {@link AsyncChatEvent} instead, wherever possible.
 + */
 +@Deprecated
 +@Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
 +public final class ChatEvent extends AbstractChatEvent {
-+    private static final HandlerList HANDLERS = new HandlerList();
 +
-+    /**
-+     * @param viewers A mutable set of viewers
-+     */
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    @ApiStatus.Internal
 +    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
 +        super(false, player, viewers, renderer, message, originalMessage, signedMessage);
@@ -585,12 +587,12 @@ index 0000000000000000000000000000000000000000..af025704e978dc0b11be277ab4646da7
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java

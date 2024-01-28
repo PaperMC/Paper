@@ -6,10 +6,10 @@ Subject: [PATCH] EntityMoveEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/entity/EntityMoveEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityMoveEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc663897f62b
+index 0000000000000000000000000000000000000000..46990a220f70b04218b14aec1e9efbd46c2ad77c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/entity/EntityMoveEvent.java
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,150 @@
 +package io.papermc.paper.event.entity;
 +
 +import com.google.common.base.Preconditions;
@@ -19,6 +19,7 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
 +import org.bukkit.event.player.PlayerMoveEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -27,11 +28,15 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 + * Does not fire for players; use {@link PlayerMoveEvent} for player movement.
 + */
 +public class EntityMoveEvent extends EntityEvent implements Cancellable {
-+    private static final HandlerList handlers = new HandlerList();
-+    private boolean canceled;
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    private Location from;
 +    private Location to;
 +
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public EntityMoveEvent(@NotNull LivingEntity entity, @NotNull Location from, @NotNull Location to) {
 +        super(entity);
 +        this.from = from;
@@ -41,15 +46,7 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 +    @Override
 +    @NotNull
 +    public LivingEntity getEntity() {
-+        return (LivingEntity) entity;
-+    }
-+
-+    public boolean isCancelled() {
-+        return canceled;
-+    }
-+
-+    public void setCancelled(boolean cancel) {
-+        canceled = cancel;
++        return (LivingEntity) super.getEntity();
 +    }
 +
 +    /**
@@ -59,7 +56,7 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 +     */
 +    @NotNull
 +    public Location getFrom() {
-+        return from;
++        return this.from;
 +    }
 +
 +    /**
@@ -79,7 +76,7 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 +     */
 +    @NotNull
 +    public Location getTo() {
-+        return to;
++        return this.to;
 +    }
 +
 +    /**
@@ -98,7 +95,7 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 +     * @return whether the entity has changed position or not
 +     */
 +    public boolean hasChangedPosition() {
-+        return hasExplicitlyChangedPosition() || !from.getWorld().equals(to.getWorld());
++        return hasExplicitlyChangedPosition() || !this.from.getWorld().equals(this.to.getWorld());
 +    }
 +
 +    /**
@@ -107,7 +104,7 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 +     * @return whether the entity has changed position or not
 +     */
 +    public boolean hasExplicitlyChangedPosition() {
-+        return from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
++        return this.from.getX() != this.to.getX() || this.from.getY() != this.to.getY() || this.from.getZ() != this.to.getZ();
 +    }
 +
 +    /**
@@ -125,7 +122,7 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 +     * @return whether the entity has moved to a new block or not
 +     */
 +    public boolean hasExplicitlyChangedBlock() {
-+        return from.getBlockX() != to.getBlockX() || from.getBlockY() != to.getBlockY() || from.getBlockZ() != to.getBlockZ();
++        return this.from.getBlockX() != this.to.getBlockX() || this.from.getBlockY() != this.to.getBlockY() || this.from.getBlockZ() != this.to.getBlockZ();
 +    }
 +
 +    /**
@@ -134,7 +131,7 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 +     * @return whether the entity has changed orientation or not
 +     */
 +    public boolean hasChangedOrientation() {
-+        return from.getPitch() != to.getPitch() || from.getYaw() != to.getYaw();
++        return this.from.getPitch() != this.to.getPitch() || this.from.getYaw() != this.to.getYaw();
 +    }
 +
 +    private void validateLocation(@NotNull Location loc) {
@@ -143,13 +140,23 @@ index 0000000000000000000000000000000000000000..245d56ba7e8e37e3555b606f5e85fc66
 +    }
 +
 +    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
 +    @NotNull
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}

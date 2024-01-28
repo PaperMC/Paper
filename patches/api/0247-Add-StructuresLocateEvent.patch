@@ -7,10 +7,10 @@ Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..679677cf6a889ee23822b728b882e741c500df81
+index 0000000000000000000000000000000000000000..1ac3369455972aeb1ade5dc023d1f818cd3535fa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java
-@@ -0,0 +1,158 @@
+@@ -0,0 +1,163 @@
 +package io.papermc.paper.event.world;
 +
 +import org.bukkit.Location;
@@ -32,18 +32,23 @@ index 0000000000000000000000000000000000000000..679677cf6a889ee23822b728b882e741
 + *     <li>An Explorer/Treasure Map is activated.</li>
 + *     <li>{@link World#locateNearestStructure(Location, StructureType, int, boolean)} is invoked.</li>
 + * </ul>
++ *
 + * @deprecated no longer used, see {@link StructuresLocateEvent}
 + */
 +@Deprecated(forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.21")
 +public class StructureLocateEvent extends WorldEvent implements Cancellable {
-+    private static final HandlerList handlers = new HandlerList();
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    private final Location origin;
 +    private Location result = null;
 +    private StructureType type;
 +    private int radius;
 +    private boolean findUnexplored;
-+    private boolean cancelled = false;
 +
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public StructureLocateEvent(@NotNull World world, @NotNull Location origin, @NotNull StructureType structureType, int radius, boolean findUnexplored) {
 +        super(world);
 +        this.origin = origin;
@@ -52,29 +57,18 @@ index 0000000000000000000000000000000000000000..679677cf6a889ee23822b728b882e741
 +        this.findUnexplored = findUnexplored;
 +    }
 +
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    @Override
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
 +    /**
 +     * Gets the location set as the structure location, if it was defined.
 +     * <p>
 +     * Returns {@code null} if it has not been set by {@link StructureLocateEvent#setResult(Location)}.
 +     * Since this event fires <i>before</i> the search is done, the actual location is unknown at this point.
 +     *
-+     * @return The result location, if it has been set. null if it has not.
++     * @return The result location, if it has been set. {@code null} if it has not.
 +     * @see World#locateNearestStructure(Location, StructureType, int, boolean)
 +     */
 +    @Nullable
 +    public Location getResult() {
-+        return result;
++        return this.result;
 +    }
 +
 +    /**
@@ -93,7 +87,7 @@ index 0000000000000000000000000000000000000000..679677cf6a889ee23822b728b882e741
 +     */
 +    @NotNull
 +    public StructureType getType() {
-+        return type;
++        return this.type;
 +    }
 +
 +    /**
@@ -112,7 +106,7 @@ index 0000000000000000000000000000000000000000..679677cf6a889ee23822b728b882e741
 +     */
 +    @NotNull
 +    public Location getOrigin() {
-+        return origin;
++        return this.origin;
 +    }
 +
 +    /**
@@ -123,7 +117,7 @@ index 0000000000000000000000000000000000000000..679677cf6a889ee23822b728b882e741
 +     * @return the search radius.
 +     */
 +    public int getRadius() {
-+        return radius;
++        return this.radius;
 +    }
 +
 +    /**
@@ -145,7 +139,7 @@ index 0000000000000000000000000000000000000000..679677cf6a889ee23822b728b882e741
 +     * @return Whether to search for only unexplored structures.
 +     */
 +    public boolean shouldFindUnexplored() {
-+        return findUnexplored;
++        return this.findUnexplored;
 +    }
 +
 +    /**
@@ -161,20 +155,31 @@ index 0000000000000000000000000000000000000000..679677cf6a889ee23822b728b882e741
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    @Override
 +    public void setCancelled(boolean cancel) {
 +        this.cancelled = cancel;
 +    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4342b162f69b6509503e9772ddd2c5ac6659545a
+index 0000000000000000000000000000000000000000..be86894561ff808d911e123b09bda72c9ed09185
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
-@@ -0,0 +1,210 @@
+@@ -0,0 +1,213 @@
 +package io.papermc.paper.event.world;
 +
 +import io.papermc.paper.math.Position;
@@ -190,6 +195,7 @@ index 0000000000000000000000000000000000000000..4342b162f69b6509503e9772ddd2c5ac
 +import org.bukkit.event.world.WorldEvent;
 +import org.bukkit.generator.structure.Structure;
 +import org.bukkit.generator.structure.StructureType;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +import org.jetbrains.annotations.UnmodifiableView;
@@ -217,8 +223,10 @@ index 0000000000000000000000000000000000000000..4342b162f69b6509503e9772ddd2c5ac
 +    private List<ConfiguredStructure> legacy$structures;
 +    private int radius;
 +    private boolean findUnexplored;
++
 +    private boolean cancelled;
 +
++    @ApiStatus.Internal
 +    public StructuresLocateEvent(@NotNull World world, @NotNull Location origin, @NotNull List<Structure> structures, int radius, boolean findUnexplored) {
 +        super(world);
 +        this.origin = origin;
@@ -242,8 +250,8 @@ index 0000000000000000000000000000000000000000..4342b162f69b6509503e9772ddd2c5ac
 +     * Returns {@code null} if it has not been set by {@link StructuresLocateEvent#setResult(Result)}.
 +     * Since this event fires <i>before</i> the search is done, the actual result is unknown at this point.
 +     *
-+     * @return The result location and structure, if it has been set. null if it has not.
-+     * @see World#locateNearestStructure(Location, org.bukkit.generator.structure.StructureType, int, boolean)
++     * @return The result location and structure, if it has been set. {@code null} if it has not.
++     * @see World#locateNearestStructure(Location, StructureType, int, boolean)
 +     */
 +    public @Nullable Result getResult() {
 +        return this.result;

@@ -6,32 +6,34 @@ Subject: [PATCH] Add EntityFertilizeEggEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/entity/EntityFertilizeEggEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityFertilizeEggEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..adc596cae5e4a6e52c51eba16b5aa37410d30e5c
+index 0000000000000000000000000000000000000000..35d54650c53bc64dd7c440240ad2f2b9b87d7ae8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/entity/EntityFertilizeEggEvent.java
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,139 @@
 +package io.papermc.paper.event.entity;
 +
-+import com.google.common.base.Preconditions;
++import org.bukkit.Material;
 +import org.bukkit.entity.LivingEntity;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityBreedEvent;
 +import org.bukkit.event.entity.EntityEvent;
 +import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Called when two entities mate and the mating process results in a fertilization.
-+ * Fertilization differs from normal breeding, as represented by the {@link org.bukkit.event.entity.EntityBreedEvent}, as
++ * Fertilization differs from normal breeding, as represented by the {@link EntityBreedEvent}, as
 + * it does not result in the immediate creation of the child entity in the world.
 + * <p>
 + * An example of this would be:
 + * <ul>
-+ * <li>A frog being marked as "is_pregnant" and laying {@link org.bukkit.Material#FROGSPAWN} later.</li>
-+ * <li>Sniffers producing the {@link org.bukkit.Material#SNIFFER_EGG} item, which needs to be placed before it can begin to hatch.</li>
-+ * <li>A turtle being marked with "HasEgg" and laying a {@link org.bukkit.Material#TURTLE_EGG} later.</li>
++ * <li>A frog being marked as "is_pregnant" and laying {@link Material#FROGSPAWN} later.</li>
++ * <li>Sniffers producing the {@link Material#SNIFFER_EGG} item, which needs to be placed before it can begin to hatch.</li>
++ * <li>A turtle being marked with "HasEgg" and laying a {@link Material#TURTLE_EGG} later.</li>
 + * </ul>
 + *
 + * The event hence only exposes the two parent entities in the fertilization process and cannot provide the child entity, as it will only exist at a later point in time.
@@ -46,14 +48,11 @@ index 0000000000000000000000000000000000000000..adc596cae5e4a6e52c51eba16b5aa374
 +    private final ItemStack bredWith;
 +    private int experience;
 +
-+    private boolean cancel;
++    private boolean cancelled;
 +
++    @ApiStatus.Internal
 +    public EntityFertilizeEggEvent(@NotNull LivingEntity mother, @NotNull LivingEntity father, @Nullable Player breeder, @Nullable ItemStack bredWith, int experience) {
 +        super(mother);
-+        Preconditions.checkArgument(mother != null, "Cannot have null mother");
-+        Preconditions.checkArgument(father != null, "Cannot have null father");
-+
-+        // Breeder can be null in the case of spontaneous conception
 +        this.mother = mother;
 +        this.father = father;
 +        this.breeder = breeder;
@@ -64,7 +63,7 @@ index 0000000000000000000000000000000000000000..adc596cae5e4a6e52c51eba16b5aa374
 +    @NotNull
 +    @Override
 +    public LivingEntity getEntity() {
-+        return (LivingEntity) entity;
++        return (LivingEntity) super.getEntity();
 +    }
 +
 +    /**
@@ -75,7 +74,7 @@ index 0000000000000000000000000000000000000000..adc596cae5e4a6e52c51eba16b5aa374
 +     */
 +    @NotNull
 +    public LivingEntity getMother() {
-+        return mother;
++        return this.mother;
 +    }
 +
 +    /**
@@ -86,28 +85,28 @@ index 0000000000000000000000000000000000000000..adc596cae5e4a6e52c51eba16b5aa374
 +     */
 +    @NotNull
 +    public LivingEntity getFather() {
-+        return father;
++        return this.father;
 +    }
 +
 +    /**
-+     * Gets the Entity responsible for fertilization. Breeder is null for spontaneous
++     * Gets the Entity responsible for fertilization. Breeder is {@code null} for spontaneous
 +     * conception.
 +     *
-+     * @return The Entity who initiated breeding.
++     * @return The Entity who initiated fertilization.
 +     */
 +    @Nullable
 +    public Player getBreeder() {
-+        return breeder;
++        return this.breeder;
 +    }
 +
 +    /**
 +     * The ItemStack that was used to initiate fertilization, if present.
 +     *
-+     * @return ItemStack used to initiate breeding.
++     * @return ItemStack used to initiate fertilization.
 +     */
 +    @Nullable
 +    public ItemStack getBredWith() {
-+        return bredWith;
++        return this.bredWith;
 +    }
 +
 +    /**
@@ -116,7 +115,7 @@ index 0000000000000000000000000000000000000000..adc596cae5e4a6e52c51eba16b5aa374
 +     * @return experience amount
 +     */
 +    public int getExperience() {
-+        return experience;
++        return this.experience;
 +    }
 +
 +    /**
@@ -131,12 +130,12 @@ index 0000000000000000000000000000000000000000..adc596cae5e4a6e52c51eba16b5aa374
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancel;
++        return this.cancelled;
 +    }
 +
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        this.cancel = cancel;
++        this.cancelled = cancel;
 +    }
 +
 +    @NotNull

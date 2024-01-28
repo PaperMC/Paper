@@ -5,10 +5,10 @@ Subject: [PATCH] Add PlayerLoomPatternSelectEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
-index a98157f600837898dd8ef12671c4bb713e30f30c..b8440f2cd7ca46c243407ae1ba8f8c7adab4ecd4 100644
+index a98157f600837898dd8ef12671c4bb713e30f30c..e8c755dc71d9818f025eb25224122b19c5f9e15b 100644
 --- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
-@@ -173,8 +173,35 @@ public class LoomMenu extends AbstractContainerMenu {
+@@ -173,8 +173,36 @@ public class LoomMenu extends AbstractContainerMenu {
      @Override
      public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
          if (id >= 0 && id < this.selectablePatterns.size()) {
@@ -18,7 +18,7 @@ index a98157f600837898dd8ef12671c4bb713e30f30c..b8440f2cd7ca46c243407ae1ba8f8c7a
 +            int selectablePatternIndex = id;
 +            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.block.banner.PatternType.getByIdentifier(this.selectablePatterns.get(selectablePatternIndex).value().getHashname()));
 +            if (!event.callEvent()) {
-+                ((Player) player.getBukkitEntity()).updateInventory();
++                player.containerMenu.sendAllDataToRemote();
 +                return false;
 +            }
 +            Holder<BannerPattern> selectedPattern = null;
@@ -33,13 +33,14 @@ index a98157f600837898dd8ef12671c4bb713e30f30c..b8440f2cd7ca46c243407ae1ba8f8c7a
 +            if (selectedPattern == null) {
 +                for (BannerPattern pattern : BuiltInRegistries.BANNER_PATTERN) {
 +                    if (event.getPatternType().getIdentifier().equals(pattern.getHashname())) {
-+                        selectedPattern = BuiltInRegistries.BANNER_PATTERN.getHolder(BuiltInRegistries.BANNER_PATTERN.getId(pattern)).orElseThrow();
++                        selectedPattern = BuiltInRegistries.BANNER_PATTERN.wrapAsHolder(pattern);
 +                        break;
 +                    }
 +                }
 +                selectablePatternIndex = -1;
 +            }
-+            ((Player) player.getBukkitEntity()).updateInventory();
++
++            player.containerMenu.sendAllDataToRemote();
 +            this.selectedBannerPatternIndex.set(selectablePatternIndex);
 +            this.setupResultSlot(java.util.Objects.requireNonNull(selectedPattern, "selectedPattern was null, this is unexpected"));
 +            // Paper end - Add PlayerLoomPatternSelectEvent

@@ -5,13 +5,13 @@ Subject: [PATCH] Add EntityMoveEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4fd56dc6f1a9dc15b639d6aeba29e678354ee7f8..37c4245a30ee6a5f786364aa46dee832396ba4fd 100644
+index 06b7816bafa3ac1093b796ca6e7bb3462df8bfec..3f061e1135bac08e6ea1530407ff2667904339a5 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1526,6 +1526,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
-             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
+             worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
 +            worldserver.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
  
              this.profiler.push(() -> {
@@ -29,7 +29,7 @@ index b93976abbc98c1beffe4b464735c9b5a71cb45a4..f75722633789155af38184982ce6459a
      public LevelChunk getChunkIfLoaded(int x, int z) {
          return this.chunkSource.getChunk(x, z, false);
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 95ee76c0e96318866a7b21355c9617c2ca79776e..bcd1a608796065eb705363bdc246151b68553c0e 100644
+index 6150f5c17ba80cb7acd5b114d9dec79e6008e89a..fced5d9a6d60bd673f44c0754725831b8510b95a 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3361,6 +3361,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -40,7 +40,7 @@ index 95ee76c0e96318866a7b21355c9617c2ca79776e..bcd1a608796065eb705363bdc246151b
 +        if (((ServerLevel) this.level()).hasEntityMoveEvent && !(this instanceof net.minecraft.world.entity.player.Player)) {
 +            if (this.xo != this.getX() || this.yo != this.getY() || this.zo != this.getZ() || this.yRotO != this.getYRot() || this.xRotO != this.getXRot()) {
 +                Location from = new Location(this.level().getWorld(), this.xo, this.yo, this.zo, this.yRotO, this.xRotO);
-+                Location to = new Location (this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
++                Location to = new Location(this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
 +                io.papermc.paper.event.entity.EntityMoveEvent event = new io.papermc.paper.event.entity.EntityMoveEvent(this.getBukkitLivingEntity(), from, to.clone());
 +                if (!event.callEvent()) {
 +                    this.absMoveTo(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch());

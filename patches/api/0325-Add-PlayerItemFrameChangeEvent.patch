@@ -6,19 +6,19 @@ Subject: [PATCH] Add PlayerItemFrameChangeEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/player/PlayerItemFrameChangeEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerItemFrameChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..451fb94a5802755c255e04aebb40f178bbfbf996
+index 0000000000000000000000000000000000000000..7bd61b66db42ecc8c9a3a16f563552414488079e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/PlayerItemFrameChangeEvent.java
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,104 @@
 +package io.papermc.paper.event.player;
 +
-+import org.bukkit.Material;
 +import org.bukkit.entity.ItemFrame;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -27,12 +27,15 @@ index 0000000000000000000000000000000000000000..451fb94a5802755c255e04aebb40f178
 + */
 +public class PlayerItemFrameChangeEvent extends PlayerEvent implements Cancellable {
 +
-+    private static final HandlerList HANDLERS = new HandlerList();
-+    private boolean cancelled;
-+    private final ItemFrame itemFrame;
-+    private ItemStack itemStack;
-+    private final ItemFrameChangeAction action;
++    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
++    private final ItemFrame itemFrame;
++    private final ItemFrameChangeAction action;
++    private ItemStack itemStack;
++
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public PlayerItemFrameChangeEvent(@NotNull Player player, @NotNull ItemFrame itemFrame,
 +                                      @NotNull ItemStack itemStack, @NotNull ItemFrameChangeAction action) {
 +        super(player);
@@ -43,46 +46,50 @@ index 0000000000000000000000000000000000000000..451fb94a5802755c255e04aebb40f178
 +
 +    /**
 +     * Gets the {@link ItemFrame} involved in this event.
++     *
 +     * @return the {@link ItemFrame}
 +     */
 +    @NotNull
 +    public ItemFrame getItemFrame() {
-+        return itemFrame;
++        return this.itemFrame;
 +    }
 +
 +    /**
 +     * Gets the {@link ItemStack} involved in this event.
 +     * This is the item being added, rotated, or removed from the {@link ItemFrame}.
-+     * <p>If this method returns air, then the resulting item in the ItemFrame will be empty.</p>
++     * <p>
++     * If this method returns air, then the resulting item in the ItemFrame will be empty.
++     *
 +     * @return the {@link ItemStack} being added, rotated, or removed
 +     */
 +    @NotNull
 +    public ItemStack getItemStack() {
-+        return itemStack;
++        return this.itemStack;
 +    }
 +
 +    /**
 +     * Sets the {@link ItemStack} that this {@link ItemFrame} holds.
-+     * If null is provided, the ItemStack will become air and the result in the ItemFrame will be empty.
++     * If {@code null} is provided, the ItemStack will become air and the result in the ItemFrame will be empty.
++     *
 +     * @param itemStack {@link ItemFrame} item
 +     */
 +    public void setItemStack(@Nullable ItemStack itemStack) {
-+        this.itemStack = itemStack == null ? new ItemStack(Material.AIR) : itemStack;
++        this.itemStack = itemStack == null ? ItemStack.empty() : itemStack;
 +    }
 +
 +    /**
 +     * Gets the action that was performed on this {@link ItemFrame}.
-+     * @see ItemFrameChangeAction
++     *
 +     * @return action performed on the item frame in this event
 +     */
 +    @NotNull
 +    public ItemFrameChangeAction getAction() {
-+        return action;
++        return this.action;
 +    }
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    @Override
@@ -93,12 +100,12 @@ index 0000000000000000000000000000000000000000..451fb94a5802755c255e04aebb40f178
 +    @Override
 +    @NotNull
 +    public HandlerList getHandlers() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +
 +    public enum ItemFrameChangeAction {
