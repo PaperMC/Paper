@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 2stinkysocks <zmehall@gmail.com>
+Date: Mon, 29 Jan 2024 02:36:33 -0700
+Subject: [PATCH] Add player kill credit to beds/respawn anchors
+
+
+diff --git a/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java b/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java
+index 7dcbb75170296c1dd1d784a032bf369602328b29..d16dc2bfffa50368053c866ba7aa512a9fc77480 100644
+--- a/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java
+@@ -21,6 +21,7 @@ public class BlockExplodeEvent extends BlockEvent implements Cancellable {
+     private final List<Block> blocks;
+     private float yield;
+     private final org.bukkit.block.BlockState explodedBlockState; // Paper
++    private final org.bukkit.entity.LivingEntity igniter;
+ 
+     @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+     public BlockExplodeEvent(@NotNull final Block what, @NotNull final List<Block> blocks, final float yield) {
+@@ -28,15 +29,22 @@ public class BlockExplodeEvent extends BlockEvent implements Cancellable {
+         this(what, blocks, yield, null);
+     }
+     @org.jetbrains.annotations.ApiStatus.Internal
+-    public BlockExplodeEvent(@NotNull final Block what, @NotNull final List<Block> blocks, final float yield, @org.jetbrains.annotations.Nullable org.bukkit.block.BlockState explodedBlockState) {
++    public BlockExplodeEvent(@NotNull final Block what, @NotNull final List<Block> blocks, final float yield, @org.jetbrains.annotations.Nullable org.bukkit.block.BlockState explodedBlockState, org.bukkit.entity.LivingEntity igniter) { // Paper - add player kill credit
+         // Paper end
+         super(what);
+         this.blocks = blocks;
+         this.yield = yield;
+         this.cancel = false;
+         this.explodedBlockState = explodedBlockState; // Paper
++        this.igniter = igniter;
+     }
+ 
++    // Paper start - add player kill credit
++    public BlockExplodeEvent(@NotNull final Block what, @NotNull final List<Block> blocks, final float yield, @org.jetbrains.annotations.Nullable org.bukkit.block.BlockState explodedBlockState) {
++        this(what, blocks, yield, explodedBlockState, null);
++    }
++    // Paper end - add player kill credit
++
+     @Override
+     public boolean isCancelled() {
+         return cancel;
+@@ -92,6 +100,17 @@ public class BlockExplodeEvent extends BlockEvent implements Cancellable {
+         this.yield = yield;
+     }
+ 
++    // Paper start - add player kill credit
++    /**
++     * Returns the {@link org.bukkit.entity.LivingEntity} that ignited the block
++     *
++     * @return The {@link org.bukkit.entity.LivingEntity} who ignited the block
++     */
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.LivingEntity getIgniter() {
++        return this.igniter;
++    }
++    // Paper end - add player kill credit
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
