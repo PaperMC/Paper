@@ -8,7 +8,7 @@ Fixes SPIGOT-6221: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-6
 Fix splash events cancellation that still show particles/sound
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index b87077c47a0131c5f4ca085b6b32e657043a9e1a..bb116b0c75a311d0dc65c032a7727598890ef942 100644
+index b87077c47a0131c5f4ca085b6b32e657043a9e1a..77235314f4ccc28255b98f2bb52f553fe93313f3 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 @@ -105,56 +105,77 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
@@ -19,7 +19,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..bb116b0c75a311d0dc65c032a7727598
  
              if (flag) {
 -                this.applyWater();
-+                showParticles = this.applyWater(); // Paper - Fix potions splash events
++                showParticles = this.applyWater(hitResult); // Paper - Fix potions splash events
              } else if (true || !list.isEmpty()) { // CraftBukkit - Call event even if no effects to apply
                  if (this.isLingering()) {
 -                    this.makeAreaOfEffectCloud(itemstack, potionregistry, hitResult); // CraftBukkit - Pass MovingObjectPosition
@@ -41,7 +41,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..bb116b0c75a311d0dc65c032a7727598
  
 -    private void applyWater() {
 +    private static final Predicate<net.minecraft.world.entity.LivingEntity> APPLY_WATER_GET_ENTITIES_PREDICATE = ThrownPotion.WATER_SENSITIVE_OR_ON_FIRE.or(Axolotl.class::isInstance); // Paper - Fix potions splash events
-+    private boolean applyWater() { // Paper - Fix potions splash events
++    private boolean applyWater(@Nullable HitResult hitResult) { // Paper - Fix potions splash events
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
 -        List<net.minecraft.world.entity.LivingEntity> list = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.WATER_SENSITIVE_OR_ON_FIRE);
 +        // Paper start - Fix potions splash events
@@ -78,10 +78,10 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..bb116b0c75a311d0dc65c032a7727598
 -            Axolotl axolotl = (Axolotl) iterator1.next();
 -
 -            axolotl.rehydrate();
-+        io.papermc.paper.event.entity.WaterBottleSplashEvent event = new io.papermc.paper.event.entity.WaterBottleSplashEvent(
-+            (org.bukkit.entity.ThrownPotion) this.getBukkitEntity(), affected, rehydrate, extinguish
++        io.papermc.paper.event.entity.WaterBottleSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callWaterBottleSplashEvent(
++            this, hitResult, affected, rehydrate, extinguish
 +        );
-+        if (event.callEvent()) {
++        if (!event.isCancelled()) {
 +            for (LivingEntity affectedEntity : event.getToDamage()) {
 +                ((CraftLivingEntity) affectedEntity).getHandle().hurt(this.damageSources().indirectMagic(this, this.getOwner()), 1.0F);
 +            }
@@ -153,3 +153,40 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..bb116b0c75a311d0dc65c032a7727598
      }
  
      public boolean isLingering() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 64d27612d21d44950ba12be69aa6bfa339fef39c..833011c1f1746e000adc72ab092295fd4fab2ab8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -874,6 +874,32 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
++    // Paper start - Fix potions splash events
++    public static io.papermc.paper.event.entity.WaterBottleSplashEvent callWaterBottleSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult hitResult, Map<LivingEntity, Double> affectedEntities, java.util.Set<LivingEntity> rehydrate, java.util.Set<LivingEntity> extinguish) {
++        ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
++
++        Block hitBlock = null;
++        BlockFace hitFace = null;
++        org.bukkit.entity.Entity hitEntity = null;
++
++        if (hitResult != null) {
++            if (hitResult.getType() == HitResult.Type.BLOCK) {
++                BlockHitResult blockHitResult = (BlockHitResult) hitResult;
++                hitBlock = CraftBlock.at(potion.level(), blockHitResult.getBlockPos());
++                hitFace = CraftBlock.notchToBlockFace(blockHitResult.getDirection());
++            } else if (hitResult.getType() == HitResult.Type.ENTITY) {
++                hitEntity = ((EntityHitResult) hitResult).getEntity().getBukkitEntity();
++            }
++        }
++
++        io.papermc.paper.event.entity.WaterBottleSplashEvent event = new io.papermc.paper.event.entity.WaterBottleSplashEvent(
++            thrownPotion, hitEntity, hitBlock, hitFace, affectedEntities, rehydrate, extinguish
++        );
++        event.callEvent();
++        return event;
++    }
++    // Paper end - Fix potions splash events
++
+     /**
+      * BlockFadeEvent
+      */
