@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 2stinkysocks <zmehall@gmail.com>
+Date: Mon, 29 Jan 2024 00:30:34 -0700
+Subject: [PATCH] Add player kill credit to beds/respawn anchors
+
+
+diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSource.java b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
+index fc6903b20a6e084729306fc960a6fc80e094f76c..f6f1920d2fe3676b71fad187dfc488aa1689ed9f 100644
+--- a/src/main/java/net/minecraft/world/damagesource/DamageSource.java
++++ b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
+@@ -81,6 +81,15 @@ public class DamageSource {
+         this(type, (Entity) null, (Entity) null, position);
+     }
+ 
++    // Paper start - add player kill credit
++    public DamageSource(Holder<DamageType> type, Vec3 position, @Nullable Entity attacker) {
++        this.type = type;
++        this.causingEntity = attacker;
++        this.directEntity = null;
++        this.damageSourcePosition = position;
++    }
++    // Paper end - add player kill credit
++
+     public DamageSource(Holder<DamageType> type, @Nullable Entity attacker) {
+         this(type, attacker, attacker);
+     }
+diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSources.java b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
+index f339475185645f7be30963e4f980ce81a6f7e536..b41235c47f1e03c25983cb25ff032248609c5bf7 100644
+--- a/src/main/java/net/minecraft/world/damagesource/DamageSources.java
++++ b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
+@@ -253,8 +253,14 @@ public class DamageSources {
+         return this.badRespawnPointExplosion(position, null);
+     }
+ 
++    // Paper start - add player kill credit
+     public DamageSource badRespawnPointExplosion(Vec3 position, @Nullable org.bukkit.block.BlockState explodedBlockState) {
+-        DamageSource source = new DamageSource(this.damageTypes.getHolderOrThrow(DamageTypes.BAD_RESPAWN_POINT), position);
++        return this.badRespawnPointExplosion(position, null, explodedBlockState);
++    }
++
++    public DamageSource badRespawnPointExplosion(Vec3 position, @Nullable Player player, @Nullable org.bukkit.block.BlockState explodedBlockState) {
++        DamageSource source = new DamageSource(this.damageTypes.getHolderOrThrow(DamageTypes.BAD_RESPAWN_POINT), position, player);
++        // Paper end - add player kill credit
+         source.explodedBlockState = explodedBlockState;
+         return source;
+         // Paper end - add exploded state
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 28ef910885dbd48965fba6f08cec412697b1b7f0..ae567cf14afdd8a566e621ae582bd77c355d5c37 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -549,7 +549,7 @@ public class Explosion {
+         int i1 = Mth.floor(this.y + (double) f2 + 1.0D);
+         int j1 = Mth.floor(this.z - (double) f2 - 1.0D);
+         int k1 = Mth.floor(this.z + (double) f2 + 1.0D);
+-        List<Entity> list = this.level.getEntities(this.source, new AABB((double) i, (double) l, (double) j1, (double) j, (double) i1, (double) k1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities
++        List<Entity> list = this.level.getEntities(this.damageSource.is(net.minecraft.world.damagesource.DamageTypes.BAD_RESPAWN_POINT) ? null : this.source, new AABB((double) i, (double) l, (double) j1, (double) j, (double) i1, (double) k1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities, add player kill credit
+         Vec3 vec3d = new Vec3(this.x, this.y, this.z);
+         Iterator iterator = list.iterator();
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/BedBlock.java b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+index 8677dc684bd2e0bb3cf5f77b659ce02b79627e76..9b6242049e654c2c485baa22a0c01154997b82fe 100644
+--- a/src/main/java/net/minecraft/world/level/block/BedBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+@@ -106,7 +106,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+ 
+                 Vec3 vec3d = pos.getCenter();
+ 
+-                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // Paper - add exploded state
++                world.explode(player, world.damageSources().badRespawnPointExplosion(vec3d, player, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // Paper - add exploded state, add player kill credit
+                 return InteractionResult.SUCCESS;
+             } else if ((Boolean) state.getValue(BedBlock.OCCUPIED)) {
+                 if (!BedBlock.canSetSpawn(world)) return this.explodeBed(state, world, pos); // Paper - check explode first
+diff --git a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
+index 088262f306755a9cb785c7a0cf0a9c66ed0965a8..ef1b454ad825702251e097f118eb3589f33d18eb 100644
+--- a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
+@@ -78,7 +78,7 @@ public class RespawnAnchorBlock extends Block {
+             return InteractionResult.PASS;
+         } else if (!RespawnAnchorBlock.canSetSpawn(world)) {
+             if (!world.isClientSide) {
+-                this.explode(state, world, pos);
++                this.explode(state, world, pos, player); // Paper - add player kill credit
+             }
+ 
+             return InteractionResult.sidedSuccess(world.isClientSide);
+@@ -130,7 +130,7 @@ public class RespawnAnchorBlock extends Block {
+         }
+     }
+ 
+-    private void explode(BlockState state, Level world, final BlockPos explodedPos) {
++    private void explode(BlockState state, Level world, final BlockPos explodedPos, Player player) { // Paper - add player kill credit
+         final org.bukkit.block.BlockState explodedBlockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(explodedPos, state, null); // Paper - add exploded state
+         world.removeBlock(explodedPos, false);
+         Stream<Direction> stream = Direction.Plane.HORIZONTAL.stream(); // CraftBukkit - decompile error
+@@ -148,7 +148,7 @@ public class RespawnAnchorBlock extends Block {
+         };
+         Vec3 vec3d = explodedPos.getCenter();
+ 
+-        world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), explosiondamagecalculator, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // Paper - add exploded state
++        world.explode(player, world.damageSources().badRespawnPointExplosion(vec3d, player, explodedBlockState), explosiondamagecalculator, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // Paper - add exploded state, add player kill credit
+     }
+ 
+     public static boolean canSetSpawn(Level world) {
