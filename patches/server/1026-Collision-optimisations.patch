@@ -40,6 +40,8 @@ This patch also includes optimisations for raytracing,
 which mostly boil down to removing indirection caused by the
 interface BlockGetter which allows chunk caching.
 
+Fix collision in edge case
+
 diff --git a/src/main/java/io/papermc/paper/util/CachedLists.java b/src/main/java/io/papermc/paper/util/CachedLists.java
 index be668387f65a633c6ac497fca632a4767a1bf3a2..e08f4e39db4ee3fed62e37364d17dcc5c5683504 100644
 --- a/src/main/java/io/papermc/paper/util/CachedLists.java
@@ -105,10 +107,10 @@ index be668387f65a633c6ac497fca632a4767a1bf3a2..e08f4e39db4ee3fed62e37364d17dcc5
  }
 diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9c11328a3d2711b56b098ef7147c324f90adfac7
+index 0000000000000000000000000000000000000000..803b2bd428601762f87fb811bb61b813c052178d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
-@@ -0,0 +1,1858 @@
+@@ -0,0 +1,1876 @@
 +package io.papermc.paper.util;
 +
 +import io.papermc.paper.util.collisions.CachedShapeData;
@@ -197,17 +199,23 @@ index 0000000000000000000000000000000000000000..9c11328a3d2711b56b098ef7147c324f
 +               (box.minZ - maxZ) < -COLLISION_EPSILON && (box.maxZ - minZ) > COLLISION_EPSILON;
 +    }
 +
-+    public static boolean voxelShapeIntersectWithOutEpsilon(final AABB box, final double minX, final double minY, final double minZ,
-+                                              final double maxX, final double maxY, final double maxZ) {
-+        return  box.minX < maxX && box.maxX > minX &&
-+                box.minY < maxY && box.maxY > minY &&
-+                box.minZ < maxZ && box.maxZ > minZ;
-+    }
-+
 +    public static boolean voxelShapeIntersect(final AABB box1, final AABB box2) {
 +        return (box1.minX - box2.maxX) < -COLLISION_EPSILON && (box1.maxX - box2.minX) > COLLISION_EPSILON &&
 +               (box1.minY - box2.maxY) < -COLLISION_EPSILON && (box1.maxY - box2.minY) > COLLISION_EPSILON &&
 +               (box1.minZ - box2.maxZ) < -COLLISION_EPSILON && (box1.maxZ - box2.minZ) > COLLISION_EPSILON;
++    }
++
++    public static boolean voxelShapeIntersectWithOutEpsilon(final AABB box, final double minX, final double minY, final double minZ,
++                                                               final double maxX, final double maxY, final double maxZ) {
++        return box.minX < maxX && box.maxX > minX &&
++               box.minY < maxY && box.maxY > minY &&
++               box.minZ < maxZ && box.maxZ > minZ;
++    }
++
++    public static boolean voxelShapeIntersectWithOutEpsilon(final AABB box1, final AABB box2) {
++        return  box1.minX < box2.maxX && box1.maxX > box2.minX &&
++                box1.minY < box2.maxY && box1.maxY > box2.minY &&
++                box1.minZ < box2.maxZ && box1.maxZ > box2.minZ;
 +    }
 +
 +    // assume !isEmpty(target) && abs(source_move) >= COLLISION_EPSILON
@@ -1805,16 +1813,28 @@ index 0000000000000000000000000000000000000000..9c11328a3d2711b56b098ef7147c324f
 +                                if (edgeCount == 0 || ((edgeCount != 1 || blockData.hasLargeCollisionShape()) && (edgeCount != 2 || blockData.getBlock() == Blocks.MOVING_PISTON))) {
 +                                    VoxelShape blockCollision = blockData.getConstantCollisionShape();
 +
++
++
 +                                    if (blockCollision == null) {
 +                                        mutablePos.set(blockX, blockY, blockZ);
 +                                        blockCollision = blockData.getCollisionShape(world, mutablePos, collisionShape);
 +                                    }
 +
++
++
 +                                    AABB singleAABB = blockCollision.getSingleAABBRepresentation();
 +                                    if (singleAABB != null) {
 +                                        singleAABB = singleAABB.move((double)blockX, (double)blockY, (double)blockZ);
-+                                        if (!voxelShapeIntersect(aabb, singleAABB)) {
-+                                            continue;
++                                        //Paper Check if the collision is block shaped. Mojang treats blocks differently
++                                        if(blockCollision == Shapes.block()){
++                                            //Paper "Block" shaped blocks don't use Epsilon when checking if it's within the collision region
++                                            if(!voxelShapeIntersectWithOutEpsilon(aabb,singleAABB)) {
++                                                continue;
++                                            }
++                                        }else{
++                                            if (!voxelShapeIntersect(aabb, singleAABB)) {
++                                                continue;
++                                            }
 +                                        }
 +
 +                                        if (predicate != null) {
@@ -2473,16 +2493,40 @@ index ffa4f34d964fbcc53e2dfe11677832db21a6eb93..7618364e5373fe17cfe45a5a4ee9ab25
  
      }
 diff --git a/src/main/java/net/minecraft/world/level/BlockCollisions.java b/src/main/java/net/minecraft/world/level/BlockCollisions.java
-index a3eaf80b020c3bbc0306c5d17659ee661dfd275b..db81f41c8fce0bd7aad0f4bf6b7f339cd1411fed 100644
+index a3eaf80b020c3bbc0306c5d17659ee661dfd275b..2e8ebfeb088b8660082c48575e8379d79e37a0f7 100644
 --- a/src/main/java/net/minecraft/world/level/BlockCollisions.java
 +++ b/src/main/java/net/minecraft/world/level/BlockCollisions.java
-@@ -105,7 +105,8 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
+@@ -3,11 +3,13 @@ package net.minecraft.world.level;
+ import com.google.common.collect.AbstractIterator;
+ import java.util.function.BiFunction;
+ import javax.annotation.Nullable;
++import io.papermc.paper.util.CollisionUtil;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Cursor3D;
+ import net.minecraft.core.SectionPos;
+ import net.minecraft.util.Mth;
+ import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.item.PrimedTnt;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.phys.AABB;
+@@ -104,8 +106,17 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
+                 }
  
                  VoxelShape voxelShape = blockState.getCollisionShape(this.collisionGetter, this.pos, this.context);
-                 if (voxelShape == Shapes.block()) {
+-                if (voxelShape == Shapes.block()) {
 -                    if (!this.box.intersects((double)i, (double)j, (double)k, (double)i + 1.0D, (double)j + 1.0D, (double)k + 1.0D)) {
++
++                if(source instanceof PrimedTnt){
++                    System.out.println(voxelShape.shape);
++
++                }
++
++                if (voxelShape.shape == Shapes.block().shape) {
++
++
 +                    // Paper - Vanilla does not use Epsilons for this Intersection check, doing so causes issues in some cases
-+                    if (!box.intersects ((double)i, (double)j, (double)k, (double)i + 1.0D, (double)j + 1.0D, (double)k + 1.0D)) { // Paper - keep vanilla behavior for voxelshape intersection - See comment in CollisionUtil
++                    if (!CollisionUtil.voxelShapeIntersectWithOutEpsilon (box,(double)i, (double)j, (double)k, (double)i + 1.0D, (double)j + 1.0D, (double)k + 1.0D)) { // Paper - keep vanilla behavior for voxelshape intersection - See comment in CollisionUtil
                          continue;
                      }
  
