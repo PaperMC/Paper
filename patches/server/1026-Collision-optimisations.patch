@@ -105,10 +105,10 @@ index be668387f65a633c6ac497fca632a4767a1bf3a2..e08f4e39db4ee3fed62e37364d17dcc5
  }
 diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ee0331a6bc40cdde08d926fd8eb1dc642630c2e5
+index 0000000000000000000000000000000000000000..9c11328a3d2711b56b098ef7147c324f90adfac7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
-@@ -0,0 +1,1851 @@
+@@ -0,0 +1,1858 @@
 +package io.papermc.paper.util;
 +
 +import io.papermc.paper.util.collisions.CachedShapeData;
@@ -195,6 +195,13 @@ index 0000000000000000000000000000000000000000..ee0331a6bc40cdde08d926fd8eb1dc64
 +        return (box.minX - maxX) < -COLLISION_EPSILON && (box.maxX - minX) > COLLISION_EPSILON &&
 +               (box.minY - maxY) < -COLLISION_EPSILON && (box.maxY - minY) > COLLISION_EPSILON &&
 +               (box.minZ - maxZ) < -COLLISION_EPSILON && (box.maxZ - minZ) > COLLISION_EPSILON;
++    }
++
++    public static boolean voxelShapeIntersectWithOutEpsilon(final AABB box, final double minX, final double minY, final double minZ,
++                                              final double maxX, final double maxY, final double maxZ) {
++        return  box.minX < maxX && box.maxX > minX &&
++                box.minY < maxY && box.maxY > minY &&
++                box.minZ < maxZ && box.maxZ > minZ;
 +    }
 +
 +    public static boolean voxelShapeIntersect(final AABB box1, final AABB box2) {
@@ -2466,15 +2473,16 @@ index ffa4f34d964fbcc53e2dfe11677832db21a6eb93..7618364e5373fe17cfe45a5a4ee9ab25
  
      }
 diff --git a/src/main/java/net/minecraft/world/level/BlockCollisions.java b/src/main/java/net/minecraft/world/level/BlockCollisions.java
-index a3eaf80b020c3bbc0306c5d17659ee661dfd275b..1b6f72932fbdd567a1534bcf15e8a610b00f974d 100644
+index a3eaf80b020c3bbc0306c5d17659ee661dfd275b..db81f41c8fce0bd7aad0f4bf6b7f339cd1411fed 100644
 --- a/src/main/java/net/minecraft/world/level/BlockCollisions.java
 +++ b/src/main/java/net/minecraft/world/level/BlockCollisions.java
-@@ -105,7 +105,7 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
+@@ -105,7 +105,8 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
  
                  VoxelShape voxelShape = blockState.getCollisionShape(this.collisionGetter, this.pos, this.context);
                  if (voxelShape == Shapes.block()) {
 -                    if (!this.box.intersects((double)i, (double)j, (double)k, (double)i + 1.0D, (double)j + 1.0D, (double)k + 1.0D)) {
-+                    if (!io.papermc.paper.util.CollisionUtil.voxelShapeIntersect(this.box, (double)i, (double)j, (double)k, (double)i + 1.0D, (double)j + 1.0D, (double)k + 1.0D)) { // Paper - keep vanilla behavior for voxelshape intersection - See comment in CollisionUtil
++                    // Paper - Vanilla does not use Epsilons for this Intersection check, doing so causes issues in some cases
++                    if (!box.intersects ((double)i, (double)j, (double)k, (double)i + 1.0D, (double)j + 1.0D, (double)k + 1.0D)) { // Paper - keep vanilla behavior for voxelshape intersection - See comment in CollisionUtil
                          continue;
                      }
  
