@@ -183,6 +183,7 @@ import org.bukkit.craftbukkit.metadata.EntityMetadataStore;
 import org.bukkit.craftbukkit.metadata.PlayerMetadataStore;
 import org.bukkit.craftbukkit.metadata.WorldMetadataStore;
 import org.bukkit.craftbukkit.packs.CraftDataPackManager;
+import org.bukkit.craftbukkit.packs.CraftResourcePack;
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
@@ -237,6 +238,7 @@ import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapView;
 import org.bukkit.packs.DataPackManager;
+import org.bukkit.packs.ResourcePack;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.Plugin;
@@ -710,6 +712,11 @@ public final class CraftServer implements Server {
     @Override
     public ServerTickManager getServerTickManager() {
         return this.serverTickManager;
+    }
+
+    @Override
+    public ResourcePack getServerResourcePack() {
+        return this.getServer().getServerResourcePack().map(CraftResourcePack::new).orElse(null);
     }
 
     @Override

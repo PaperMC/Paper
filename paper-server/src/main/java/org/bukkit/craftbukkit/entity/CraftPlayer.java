@@ -1734,15 +1734,29 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setResourcePack(UUID id, String url, byte[] hash, String prompt, boolean force) {
+        Preconditions.checkArgument(id != null, "Resource pack ID cannot be null");
         Preconditions.checkArgument(url != null, "Resource pack URL cannot be null");
 
+        String hashStr = "";
         if (hash != null) {
             Preconditions.checkArgument(hash.length == 20, "Resource pack hash should be 20 bytes long but was %s", hash.length);
-
-            getHandle().connection.send(new ClientboundResourcePackPushPacket(id, url, BaseEncoding.base16().lowerCase().encode(hash), force, CraftChatMessage.fromStringOrNull(prompt, true)));
-        } else {
-            getHandle().connection.send(new ClientboundResourcePackPushPacket(id, url, "", force, CraftChatMessage.fromStringOrNull(prompt, true)));
+            hashStr = BaseEncoding.base16().lowerCase().encode(hash);
         }
+
+        this.handlePushResourcePack(new ClientboundResourcePackPushPacket(id, url, hashStr, force, CraftChatMessage.fromStringOrNull(prompt, true)), true);
+    }
+
+    @Override
+    public void addResourcePack(UUID id, String url, byte[] hash, String prompt, boolean force) {
+        Preconditions.checkArgument(url != null, "Resource pack URL cannot be null");
+
+        String hashStr = "";
+        if (hash != null) {
+            Preconditions.checkArgument(hash.length == 20, "Resource pack hash should be 20 bytes long but was %s", hash.length);
+            hashStr = BaseEncoding.base16().lowerCase().encode(hash);
+        }
+
+        this.handlePushResourcePack(new ClientboundResourcePackPushPacket(id, url, hashStr, force, CraftChatMessage.fromStringOrNull(prompt, true)), false);
     }
 
     @Override
@@ -1756,6 +1770,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void removeResourcePacks() {
         if (getHandle().connection == null) return;
         getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
+    }
+
+    private void handlePushResourcePack(ClientboundResourcePackPushPacket resourcePackPushPacket, boolean resetBeforePush) {
+        if (getHandle().connection == null) return;
+
+        if (resetBeforePush) {
+            this.removeResourcePacks();
+        }
+        getHandle().connection.send(resourcePackPushPacket);
     }
 
     public void addChannel(String channel) {
