@@ -117,6 +117,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LightningStrike;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.entity.SpectralArrow;
@@ -144,6 +145,7 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftWorld extends CraftRegionAccessor implements World {
     public static final int CUSTOM_DIMENSION_OFFSET = 10;
@@ -730,6 +732,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public List<BlockPopulator> getPopulators() {
         return populators;
+    }
+
+    @NotNull
+    @Override
+    public <T extends LivingEntity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException {
+        Preconditions.checkArgument(spawnReason != null, "Spawn reason cannot be null");
+        return spawn(location, clazz, function, spawnReason, randomizeData);
     }
 
     @Override
