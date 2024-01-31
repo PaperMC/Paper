@@ -44,6 +44,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapView;
 import org.bukkit.packs.DataPackManager;
+import org.bukkit.packs.ResourcePack;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
@@ -246,6 +247,14 @@ public interface Server extends PluginMessageRecipient {
      */
     @NotNull
     public ServerTickManager getServerTickManager();
+
+    /**
+     * Gets the resource pack configured to be sent to clients by the server.
+     *
+     * @return the resource pack
+     */
+    @Nullable
+    public ResourcePack getServerResourcePack();
 
     /**
      * Gets the server resource pack uri, or empty string if not specified.

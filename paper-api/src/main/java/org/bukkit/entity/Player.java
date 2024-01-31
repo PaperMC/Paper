@@ -1611,6 +1611,52 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void setResourcePack(@NotNull UUID id, @NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
 
     /**
+     * Request that the player's client download and include another resource pack.
+     * <p>
+     * The player's client will download the new resource pack asynchronously
+     * in the background, and will automatically add to it once the
+     * download is complete. If the client has downloaded and cached a
+     * resource pack with the same hash in the past it will not download but
+     * directly apply the cached pack. If the hash is null and the client has
+     * downloaded and cached the same resource pack in the past, it will
+     * perform a file size check against the response content to determine if
+     * the resource pack has changed and needs to be downloaded again. When
+     * this request is sent for the very first time from a given server, the
+     * client will first display a confirmation GUI to the player before
+     * proceeding with the download.
+     * <p>
+     * Notes:
+     * <ul>
+     * <li>Players can disable server resources on their client, in which
+     *     case this method will have no affect on them. Use the
+     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
+     *     the player loaded the pack!
+     * <li>To remove a resource pack you can use
+     *     {@link #removeResourcePack(UUID)} or {@link #removeResourcePacks()}.
+     * <li>The request is sent with empty string as the hash when the hash is
+     *     not provided. This might result in newer versions not loading the
+     *     pack correctly.
+     * </ul>
+     *
+     * @param id Unique resource pack ID.
+     * @param url The URL from which the client will download the resource
+     *     pack. The string must contain only US-ASCII characters and should
+     *     be encoded as per RFC 1738.
+     * @param hash The sha1 hash sum of the resource pack file which is used
+     *     to apply a cached version of the pack directly without downloading
+     *     if it is available. Hast to be 20 bytes long!
+     * @param prompt The optional custom prompt message to be shown to client.
+     * @param force If true, the client will be disconnected from the server
+     *     when it declines to use the resource pack.
+     * @throws IllegalArgumentException Thrown if the URL is null.
+     * @throws IllegalArgumentException Thrown if the URL is too long. The
+     *     length restriction is an implementation specific arbitrary value.
+     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
+     *     long.
+     */
+    public void addResourcePack(@NotNull UUID id, @NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+
+    /**
      * Request that the player's client remove a resource pack sent by the
      * server.
      *
