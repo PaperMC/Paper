@@ -5,10 +5,10 @@ Subject: [PATCH] Limit recipe packets
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 93c708ad4f16cc6fc8334c36b1131235bc6e2925..52ad9ec75333ba6aac38ae3874b26435a1f896d4 100644
+index d9811d50ee24a41991ad67a10805c3701b002824..97525a4ee491f8954825ee3039da861ba6101d66 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -258,6 +258,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -257,6 +257,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      // CraftBukkit start - multithreaded fields
      private final AtomicInteger chatSpamTickCount = new AtomicInteger();
      private final java.util.concurrent.atomic.AtomicInteger tabSpamLimiter = new java.util.concurrent.atomic.AtomicInteger(); // Paper - configurable tab spam limits
@@ -16,7 +16,7 @@ index 93c708ad4f16cc6fc8334c36b1131235bc6e2925..52ad9ec75333ba6aac38ae3874b26435
      // CraftBukkit end
      private int dropSpamTickCount;
      private double firstGoodX;
-@@ -377,6 +378,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -376,6 +377,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // CraftBukkit start
          for (int spam; (spam = this.chatSpamTickCount.get()) > 0 && !this.chatSpamTickCount.compareAndSet(spam, spam - 1); ) ;
          if (tabSpamLimiter.get() > 0) tabSpamLimiter.getAndDecrement(); // Paper - configurable tab spam limits
@@ -24,14 +24,14 @@ index 93c708ad4f16cc6fc8334c36b1131235bc6e2925..52ad9ec75333ba6aac38ae3874b26435
          /* Use thread-safe field access instead
          if (this.chatSpamTickCount > 0) {
              --this.chatSpamTickCount;
-@@ -2978,6 +2980,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2966,6 +2968,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void handlePlaceRecipe(ServerboundPlaceRecipePacket packet) {
 +        // Paper start - auto recipe limit
 +        if (!org.bukkit.Bukkit.isPrimaryThread()) {
 +            if (this.recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
-+                this.server.scheduleOnMain(() -> this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam", new Object[0])));
++                this.server.scheduleOnMain(() -> this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam")));
 +                return;
 +            }
 +        }

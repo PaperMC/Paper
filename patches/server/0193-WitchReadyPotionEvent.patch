@@ -5,7 +5,7 @@ Subject: [PATCH] WitchReadyPotionEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Witch.java b/src/main/java/net/minecraft/world/entity/monster/Witch.java
-index 96a87db9f8976d3f1ff09beb9598db31fff72d5b..f45b46e30e1ad0516c5b380e476bc7dacb91391a 100644
+index 96a87db9f8976d3f1ff09beb9598db31fff72d5b..25a1edf64602a13c07779e58b167a8471019588e 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Witch.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Witch.java
 @@ -160,7 +160,11 @@ public class Witch extends Raider implements RangedAttackMob {
@@ -15,9 +15,28 @@ index 96a87db9f8976d3f1ff09beb9598db31fff72d5b..f45b46e30e1ad0516c5b380e476bc7da
 -                    this.setItemSlot(EquipmentSlot.MAINHAND, PotionUtils.setPotion(new ItemStack(Items.POTION), potionregistry));
 +                    // Paper start
 +                    ItemStack potion = PotionUtils.setPotion(new ItemStack(Items.POTION), potionregistry);
-+                    org.bukkit.inventory.ItemStack bukkitStack = com.destroystokyo.paper.event.entity.WitchReadyPotionEvent.process((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potion));
-+                    this.setItemSlot(EquipmentSlot.MAINHAND, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(bukkitStack));
++                    potion = org.bukkit.craftbukkit.event.CraftEventFactory.handleWitchReadyPotionEvent(this, potion);
++                    this.setItemSlot(EquipmentSlot.MAINHAND, potion);
 +                    // Paper end
                      this.usingTime = this.getMainHandItem().getUseDuration();
                      this.setUsingItem(true);
                      if (!this.isSilent()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 5bc9b40dd3bbb2e743205adec77cad402564dabf..6e37cb0200f56182030962d981694ab5b126be0d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1935,4 +1935,14 @@ public class CraftEventFactory {
+         ).callEvent();
+     }
+     // Paper end - PlayerUseUnknownEntityEvent
++
++    // Paper start - WitchReadyPotionEvent
++    public static ItemStack handleWitchReadyPotionEvent(net.minecraft.world.entity.monster.Witch witch, @Nullable ItemStack potion) {
++        com.destroystokyo.paper.event.entity.WitchReadyPotionEvent event = new com.destroystokyo.paper.event.entity.WitchReadyPotionEvent((org.bukkit.entity.Witch) witch.getBukkitEntity(), CraftItemStack.asCraftMirror(potion));
++        if (!event.callEvent() || event.getPotion() == null) {
++            return ItemStack.EMPTY;
++        }
++        return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
++    }
++    // Paper end - WitchReadyPotionEvent
+ }

@@ -5,7 +5,7 @@ Subject: [PATCH] Add EntityFertilizeEggEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-index 6bbcdd34fb89ea5774e825de8f9a588552716fc2..1a2a4dcb3cfa2690f2aa936a6c176319d807bd74 100644
+index 6bbcdd34fb89ea5774e825de8f9a588552716fc2..379990c0ea9d10fd3c627ffff2198cb554780eb0 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
 @@ -445,6 +445,10 @@ public class Turtle extends Animal {
@@ -24,7 +24,7 @@ index 6bbcdd34fb89ea5774e825de8f9a588552716fc2..1a2a4dcb3cfa2690f2aa936a6c176319
  
              if (this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
 -                this.level.addFreshEntity(new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), randomsource.nextInt(7) + 1, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer)); // Paper;
-+                if(event.getExperience() > 0) this.level.addFreshEntity(new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), event.getExperience(), org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer)); // Paper - Add EntityFertilizeEggEvent event
++                if (event.getExperience() > 0) this.level.addFreshEntity(new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), event.getExperience(), org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer)); // Paper - Add EntityFertilizeEggEvent event
              }
  
          }
@@ -69,30 +69,29 @@ index 0e85e3ab58d848b119212fa7d2eb4f92d3efe29b..0a5b953bd8c0c7f181da4090b950e9e6
          this.playSound(SoundEvents.SNIFFER_EGG_PLOP, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 0.5F);
          } // Paper - Call EntityDropItemEvent
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index d55c52e6a89ddd469fdd648fbe5d0f44a60b0892..8925e85ebbdbca9b9c8527c5494e190b989d1291 100644
+index 25003a2e2fcf729effe79fbc0fcda0476cc5fb61..e28f6ea159bdae063d8a54856e6a374174e275cf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -2092,4 +2092,29 @@ public class CraftEventFactory {
+@@ -2124,4 +2124,28 @@ public class CraftEventFactory {
          return event.callEvent();
      }
      // Paper end
 +
 +    // Paper start - add EntityFertilizeEggEvent
 +    /**
-+     * Calls the io.papermc.paper.event.entity.EntityFertilizeEggEvent.
++     * Calls the {@link io.papermc.paper.event.entity.EntityFertilizeEggEvent}.
 +     * If the event is cancelled, this method also resets the love on both the {@code breeding} and {@code other} entity.
 +     *
 +     * @param breeding the entity on which #spawnChildFromBreeding was called.
 +     * @param other    the partner of the entity.
 +     * @return the event after it was called. The instance may be used to retrieve the experience of the event.
 +     */
-+    public static io.papermc.paper.event.entity.EntityFertilizeEggEvent callEntityFertilizeEggEvent(net.minecraft.world.entity.animal.Animal breeding,
-+                                                                                                    net.minecraft.world.entity.animal.Animal other) {
-+        net.minecraft.server.level.ServerPlayer serverPlayer = breeding.getLoveCause();
++    public static io.papermc.paper.event.entity.EntityFertilizeEggEvent callEntityFertilizeEggEvent(Animal breeding, Animal other) {
++        ServerPlayer serverPlayer = breeding.getLoveCause();
 +        if (serverPlayer == null) serverPlayer = other.getLoveCause();
 +        final int experience = breeding.getRandom().nextInt(7) + 1; // From Animal#spawnChildFromBreeding(ServerLevel, Animal)
 +
-+        final io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.EntityFertilizeEggEvent((org.bukkit.entity.LivingEntity) breeding.getBukkitEntity(), (org.bukkit.entity.LivingEntity) other.getBukkitEntity(), serverPlayer == null ? null : serverPlayer.getBukkitEntity(), breeding.breedItem == null ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(breeding.breedItem).clone(), experience);
++        final io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.EntityFertilizeEggEvent((LivingEntity) breeding.getBukkitEntity(), (LivingEntity) other.getBukkitEntity(), serverPlayer == null ? null : serverPlayer.getBukkitEntity(), breeding.breedItem == null ? null : CraftItemStack.asCraftMirror(breeding.breedItem).clone(), experience);
 +        if (!event.callEvent()) {
 +            breeding.resetLove();
 +            other.resetLove(); // stop the pathfinding to avoid infinite loop

@@ -13,36 +13,40 @@ event being about villager trades.
 
 diff --git a/src/main/java/io/papermc/paper/event/player/PlayerPurchaseEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerPurchaseEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c5648055c5e815474bf1e564a5c192ff5c0624fb
+index 0000000000000000000000000000000000000000..61c62877c38e27eacc20aa43ef02dc43e9b50bfc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/PlayerPurchaseEvent.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,109 @@
 +package io.papermc.paper.event.player;
 +
-+import java.util.Objects;
++import com.google.common.base.Preconditions;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.inventory.MerchantRecipe;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Called when a player trades with a standalone merchant GUI.
 + */
 +public class PlayerPurchaseEvent extends PlayerEvent implements Cancellable {
-+    private static final HandlerList handlers = new HandlerList();
-+    private boolean cancelled;
 +
-+    private boolean increaseTradeUses;
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    private boolean rewardExp;
++    private boolean increaseTradeUses;
 +    private MerchantRecipe trade;
 +
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public PlayerPurchaseEvent(@NotNull Player player,
 +                               @NotNull MerchantRecipe trade,
 +                               boolean rewardExp,
 +                               boolean increaseTradeUses) {
-+        super(Objects.requireNonNull(player, "Player cannot be null!"));
++        super(player);
 +        setTrade(trade);
 +        this.rewardExp = rewardExp;
 +        this.increaseTradeUses = increaseTradeUses;
@@ -50,6 +54,7 @@ index 0000000000000000000000000000000000000000..c5648055c5e815474bf1e564a5c192ff
 +
 +    /**
 +     * Gets the associated trade with this event
++     *
 +     * @return the trade
 +     */
 +    @NotNull
@@ -59,10 +64,12 @@ index 0000000000000000000000000000000000000000..c5648055c5e815474bf1e564a5c192ff
 +
 +    /**
 +     * Sets the trade. This is then used to determine the next prices
++     *
 +     * @param trade the trade to use
 +     */
 +    public void setTrade(@NotNull MerchantRecipe trade) {
-+        this.trade = Objects.requireNonNull(trade, "Trade cannot be null!");
++        Preconditions.checkArgument(trade != null, "Trade cannot be null!");
++        this.trade = trade;
 +    }
 +
 +    /**
@@ -74,6 +81,7 @@ index 0000000000000000000000000000000000000000..c5648055c5e815474bf1e564a5c192ff
 +
 +    /**
 +     * Sets whether the trade will try to reward exp
++     *
 +     * @param rewardExp try to reward exp
 +     */
 +    public void setRewardExp(boolean rewardExp) {
@@ -81,37 +89,26 @@ index 0000000000000000000000000000000000000000..c5648055c5e815474bf1e564a5c192ff
 +    }
 +
 +    /**
-+     * @return whether or not the trade will count as a use of the trade
++     * @return whether the trade will count as a use of the trade
 +     */
 +    public boolean willIncreaseTradeUses() {
 +        return this.increaseTradeUses;
 +    }
 +
 +    /**
-+     * Sets whether or not the trade will count as a use
-+     * @param increaseTradeUses true to count/false to not count
++     * Sets whether the trade will count as a use
++     *
++     * @param increaseTradeUses {@code true} to count, {@code false} otherwise
 +     */
 +    public void setIncreaseTradeUses(boolean increaseTradeUses) {
 +        this.increaseTradeUses = increaseTradeUses;
 +    }
 +
-+    /**
-+     * Gets the cancellation state of this event. A cancelled event will not
-+     * be executed in the server, but will still pass to other plugins
-+     *
-+     * @return true if this event is cancelled
-+     */
 +    @Override
 +    public boolean isCancelled() {
 +        return this.cancelled;
 +    }
 +
-+    /**
-+     * Sets the cancellation state of this event. A cancelled event will not
-+     * be executed in the server, but will still pass to other plugins.
-+     *
-+     * @param cancel true if you wish to cancel this event
-+     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
 +        this.cancelled = cancel;
@@ -120,26 +117,27 @@ index 0000000000000000000000000000000000000000..c5648055c5e815474bf1e564a5c192ff
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
 new file mode 100755
-index 0000000000000000000000000000000000000000..a41fc186746b87f76347dfcc1f80d0969398322b
+index 0000000000000000000000000000000000000000..559d1a3c783e6c726f48d1c88b2ff8c0888890ac
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.event.player;
 +
 +import org.bukkit.entity.AbstractVillager;
 +import org.bukkit.entity.Player;
 +import org.bukkit.inventory.MerchantRecipe;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -149,6 +147,7 @@ index 0000000000000000000000000000000000000000..a41fc186746b87f76347dfcc1f80d096
 +
 +    private final AbstractVillager villager;
 +
++    @ApiStatus.Internal
 +    public PlayerTradeEvent(@NotNull Player player, @NotNull AbstractVillager villager, @NotNull MerchantRecipe trade, boolean rewardExp, boolean increaseTradeUses) {
 +        super(player, trade, rewardExp, increaseTradeUses);
 +        this.villager = villager;
@@ -156,6 +155,7 @@ index 0000000000000000000000000000000000000000..a41fc186746b87f76347dfcc1f80d096
 +
 +    /**
 +     * Gets the Villager or Wandering trader associated with this event
++     *
 +     * @return the villager or wandering trader
 +     */
 +    @NotNull

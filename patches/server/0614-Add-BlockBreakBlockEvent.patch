@@ -5,33 +5,34 @@ Subject: [PATCH] Add BlockBreakBlockEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
-index 89a62fbeeb78c864938a1cea84178478c6dc1b34..9120b4a70dbf84f19480b952658414e16d2c23c1 100644
+index 89a62fbeeb78c864938a1cea84178478c6dc1b34..57d92c1785586dfab2b3934733d8ba253e042e2e 100644
 --- a/src/main/java/net/minecraft/world/level/block/Block.java
 +++ b/src/main/java/net/minecraft/world/level/block/Block.java
-@@ -313,6 +313,23 @@ public class Block extends BlockBehaviour implements ItemLike {
-         }
+@@ -314,6 +314,24 @@ public class Block extends BlockBehaviour implements ItemLike {
  
      }
+ 
 +    // Paper start - Add BlockBreakBlockEvent
-+    public static boolean dropResources(BlockState state, LevelAccessor world, BlockPos pos, @Nullable BlockEntity blockEntity, BlockPos source) {
-+        if (world instanceof ServerLevel) {
-+            List<org.bukkit.inventory.ItemStack> items = com.google.common.collect.Lists.newArrayList();
-+            for (net.minecraft.world.item.ItemStack drop : net.minecraft.world.level.block.Block.getDrops(state, world.getMinecraftWorld(), pos, blockEntity)) {
++    public static boolean dropResources(BlockState state, LevelAccessor levelAccessor, BlockPos pos, @Nullable BlockEntity blockEntity, BlockPos source) {
++        if (levelAccessor instanceof ServerLevel serverLevel) {
++            List<org.bukkit.inventory.ItemStack> items = new java.util.ArrayList<>();
++            for (ItemStack drop : Block.getDrops(state, serverLevel, pos, blockEntity)) {
 +                items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(drop));
 +            }
-+            io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), org.bukkit.craftbukkit.block.CraftBlock.at(world, source), items);
++            io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, pos), org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, source), items);
 +            event.callEvent();
-+            for (var drop : event.getDrops()) {
-+                popResource(world.getMinecraftWorld(), pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
++            for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
++                popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
 +            }
-+            state.spawnAfterBreak(world.getMinecraftWorld(), pos, ItemStack.EMPTY, true);
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
 +        }
 +        return true;
 +    }
 +    // Paper end - Add BlockBreakBlockEvent
- 
++
      public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool) {
          if (world instanceof ServerLevel) {
+             Block.getDrops(state, (ServerLevel) world, pos, blockEntity, entity, tool).forEach((itemstack1) -> {
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 index 3ae61e7b50bfc440c597f88843f92903f8a66801..0dbdcd443fe8a299119ea5ba3acb1a0412856184 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java

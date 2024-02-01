@@ -8,7 +8,7 @@ Areas affected by lag comepnsation:
  - Eating food items
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index a7fb5d121a9fd59d5a3951075e975533721cb87f..90ae7e8c81f6a9ede8aeaeec3bf784023522cefc 100644
+index f12bf36a247a47b8d831536a4fefd2a2ce424494..d06185566b447c432d4dc2e3ba04d121bcdbc71b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -311,6 +311,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -19,14 +19,14 @@ index a7fb5d121a9fd59d5a3951075e975533721cb87f..90ae7e8c81f6a9ede8aeaeec3bf78402
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1690,6 +1691,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; move down
-         while (iterator.hasNext()) {
-             ServerLevel worldserver = (ServerLevel) iterator.next();
-+            worldserver.updateLagCompensationTick(); // Paper - lag compensation
-             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
-             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
+@@ -1693,6 +1694,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
              worldserver.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
+             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
++            worldserver.updateLagCompensationTick(); // Paper - lag compensation
+ 
+             this.profiler.push(() -> {
+                 return worldserver + " " + worldserver.dimension().location();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index ab2e84f85da7931e133ad5f0d2686cd1738f6ea1..5bbfb1af24e13a9e6a02ad8c36bb504a17f06398 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -50,7 +50,7 @@ index ab2e84f85da7931e133ad5f0d2686cd1738f6ea1..5bbfb1af24e13a9e6a02ad8c36bb504a
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 83e017efd15d0ecaffc327f02d6d5330c8ed6937..cfd4ac06a9af6bf3fac293110482e1df690e075e 100644
+index ef3048a4748113538a0ee0af5b526b2cd51d5c29..a7b217ddbcbf92513bd38101fdfca2075505e267 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -124,7 +124,7 @@ public class ServerPlayerGameMode {
@@ -63,7 +63,7 @@ index 83e017efd15d0ecaffc327f02d6d5330c8ed6937..cfd4ac06a9af6bf3fac293110482e1df
  
          if (this.hasDelayedDestroy) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index a4217f984148b12960c74ad2ef7cee761f305030..6071451339080bbdd98fb634791a56988984c8bc 100644
+index 3c517a82ac15a96f6be449a2422d5c9e894091a5..b9a7b9049b21eb81175168ec75f2446328a2c039 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3827,6 +3827,10 @@ public abstract class LivingEntity extends Entity implements Attackable {

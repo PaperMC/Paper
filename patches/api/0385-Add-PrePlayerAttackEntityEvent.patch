@@ -6,10 +6,10 @@ Subject: [PATCH] Add PrePlayerAttackEntityEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/player/PrePlayerAttackEntityEvent.java b/src/main/java/io/papermc/paper/event/player/PrePlayerAttackEntityEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d49999ea597ef247bbf2298e6bf5600bfe003c3e
+index 0000000000000000000000000000000000000000..148f46f4572a778f090b461808b53cf9cad10e11
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/PrePlayerAttackEntityEvent.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,93 @@
 +package io.papermc.paper.event.player;
 +
 +import org.bukkit.entity.Entity;
@@ -17,18 +17,19 @@ index 0000000000000000000000000000000000000000..d49999ea597ef247bbf2298e6bf5600b
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Called when the player tries to attack an entity.
-+ *
++ * <p>
 + * This occurs before any of the damage logic, so cancelling this event
 + * will prevent any sort of sounds from being played when attacking.
-+ *
++ * <p>
 + * This event will fire as cancelled for certain entities, with {@link PrePlayerAttackEntityEvent#willAttack()} being false
 + * to indicate that this entity will not actually be attacked.
 + * <p>
-+ * Note: there may be other factors (invulnerability, etc) that will prevent this entity from being attacked that this event will not cover
++ * Note: there may be other factors (invulnerability, etc.) that will prevent this entity from being attacked that this event will not cover
 + */
 +public class PrePlayerAttackEntityEvent extends PlayerEvent implements Cancellable {
 +
@@ -36,11 +37,13 @@ index 0000000000000000000000000000000000000000..d49999ea597ef247bbf2298e6bf5600b
 +
 +    @NotNull
 +    private final Entity attacked;
-+    private boolean cancelled;
 +    private final boolean willAttack;
 +
-+    public PrePlayerAttackEntityEvent(@NotNull Player who, @NotNull Entity attacked, boolean willAttack) {
-+        super(who);
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public PrePlayerAttackEntityEvent(@NotNull Player player, @NotNull Entity attacked, boolean willAttack) {
++        super(player);
 +        this.attacked = attacked;
 +        this.willAttack = willAttack;
 +        this.cancelled = !willAttack;
@@ -48,6 +51,7 @@ index 0000000000000000000000000000000000000000..d49999ea597ef247bbf2298e6bf5600b
 +
 +    /**
 +     * Gets the entity that was attacked in this event.
++     *
 +     * @return entity that was attacked
 +     */
 +    @NotNull
@@ -57,14 +61,35 @@ index 0000000000000000000000000000000000000000..d49999ea597ef247bbf2298e6bf5600b
 +
 +    /**
 +     * Gets if this entity will be attacked normally.
-+     * Entities like falling sand will return false because
++     * Entities like falling sand will return {@code false} because
 +     * their entity type does not allow them to be attacked.
 +     * <p>
-+     * Note: there may be other factors (invulnerability, etc) that will prevent this entity from being attacked that this event will not cover
++     * Note: there may be other factors (invulnerability, etc.) that will prevent this entity from being attacked that this event will not cover
++     *
 +     * @return if the entity will actually be attacked
 +     */
 +    public boolean willAttack() {
 +        return this.willAttack;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * Sets if this attack should be cancelled, note if {@link PrePlayerAttackEntityEvent#willAttack()} returns false
++     * this event will always be cancelled.
++     *
++     * @param cancel {@code true} if you wish to cancel this event
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        if (!this.willAttack) {
++            return;
++        }
++
++        this.cancelled = cancel;
 +    }
 +
 +    @NotNull
@@ -76,24 +101,5 @@ index 0000000000000000000000000000000000000000..d49999ea597ef247bbf2298e6bf5600b
 +    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
-+    }
-+
-+    @Override
-+    public boolean isCancelled() {
-+        return this.cancelled;
-+    }
-+
-+    /**
-+     * Sets if this attack should be cancelled, note if {@link PrePlayerAttackEntityEvent#willAttack()} returns false
-+     * this event will always be cancelled.
-+     * @param cancel true if you wish to cancel this event
-+     */
-+    @Override
-+    public void setCancelled(boolean cancel) {
-+        if (!this.willAttack) {
-+            return;
-+        }
-+
-+        this.cancelled = cancel;
 +    }
 +}

@@ -6,10 +6,10 @@ Subject: [PATCH] Add whitelist events
 
 diff --git a/src/main/java/io/papermc/paper/event/server/WhitelistStateUpdateEvent.java b/src/main/java/io/papermc/paper/event/server/WhitelistStateUpdateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..34bcdc9a3c3426e17c1905dc3dbad762c0fe3f41
+index 0000000000000000000000000000000000000000..2f4273d694278517e2613f0da5e89c73ccc8779f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/server/WhitelistStateUpdateEvent.java
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,87 @@
 +package io.papermc.paper.event.server;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
@@ -18,6 +18,7 @@ index 0000000000000000000000000000000000000000..34bcdc9a3c3426e17c1905dc3dbad762
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -26,12 +27,15 @@ index 0000000000000000000000000000000000000000..34bcdc9a3c3426e17c1905dc3dbad762
 +public class WhitelistStateUpdateEvent extends Event implements Cancellable {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
-+    private boolean cancel = false;
++
 +    @NotNull private final PlayerProfile playerProfile;
 +    @NotNull private final WhitelistStatus status;
 +
-+    public WhitelistStateUpdateEvent(@NotNull PlayerProfile who, @NotNull WhitelistStatus status) {
-+        this.playerProfile = who;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public WhitelistStateUpdateEvent(@NotNull PlayerProfile playerProfile, @NotNull WhitelistStatus status) {
++        this.playerProfile = playerProfile;
 +        this.status = status;
 +    }
 +
@@ -42,7 +46,7 @@ index 0000000000000000000000000000000000000000..34bcdc9a3c3426e17c1905dc3dbad762
 +     */
 +    @NotNull
 +    public OfflinePlayer getPlayer() {
-+        return Bukkit.getOfflinePlayer(playerProfile.getId());
++        return Bukkit.getOfflinePlayer(this.playerProfile.getId());
 +    }
 +
 +    /**
@@ -52,7 +56,7 @@ index 0000000000000000000000000000000000000000..34bcdc9a3c3426e17c1905dc3dbad762
 +     */
 +    @NotNull
 +    public PlayerProfile getPlayerProfile() {
-+        return playerProfile;
++        return this.playerProfile;
 +    }
 +
 +    /**
@@ -62,17 +66,17 @@ index 0000000000000000000000000000000000000000..34bcdc9a3c3426e17c1905dc3dbad762
 +     */
 +    @NotNull
 +    public WhitelistStatus getStatus() {
-+        return status;
++        return this.status;
 +    }
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancel;
++        return this.cancelled;
 +    }
 +
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        this.cancel = cancel;
++        this.cancelled = cancel;
 +    }
 +
 +    @NotNull

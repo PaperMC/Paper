@@ -8,26 +8,28 @@ Co-authored-by: aerulion <aerulion@gmail.com>
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..42fdf7a5bfab99a61ff2fbf562f2872ac360bef2
+index 0000000000000000000000000000000000000000..e0ba692c9b107f2b042a9c06549185e1c4777e27
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,48 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
 +import org.bukkit.entity.Entity;
 +import org.bukkit.entity.LivingEntity;
 +import org.bukkit.util.Vector;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Fired when an Entity is knocked back by the hit of another Entity. The acceleration
 + * vector can be modified. If this event is cancelled, the entity is not knocked back.
-+ *
 + */
 +public class EntityKnockbackByEntityEvent extends EntityPushedByEntityAttackEvent {
++
 +    private final float knockbackStrength;
 +
++    @ApiStatus.Internal
 +    public EntityKnockbackByEntityEvent(@NotNull LivingEntity entity, @NotNull Entity hitBy, float knockbackStrength, @NotNull Vector acceleration) {
 +        super(entity, hitBy, acceleration);
 +        this.knockbackStrength = knockbackStrength;
@@ -46,7 +48,7 @@ index 0000000000000000000000000000000000000000..42fdf7a5bfab99a61ff2fbf562f2872a
 +     * @return the original knockback strength.
 +     */
 +    public float getKnockbackStrength() {
-+        return knockbackStrength;
++        return this.knockbackStrength;
 +    }
 +
 +    /**
@@ -60,10 +62,10 @@ index 0000000000000000000000000000000000000000..42fdf7a5bfab99a61ff2fbf562f2872a
 +}
 diff --git a/src/main/java/io/papermc/paper/event/entity/EntityPushedByEntityAttackEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityPushedByEntityAttackEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c15401cd206eb9e1a7a8b7154aba0247e2da1e19
+index 0000000000000000000000000000000000000000..70d6e72d4dc0c040c8bccf7acc383e84db472514
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/entity/EntityPushedByEntityAttackEvent.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.event.entity;
 +
 +import org.bukkit.entity.Entity;
@@ -71,6 +73,7 @@ index 0000000000000000000000000000000000000000..c15401cd206eb9e1a7a8b7154aba0247
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
 +import org.bukkit.util.Vector;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -82,36 +85,18 @@ index 0000000000000000000000000000000000000000..c15401cd206eb9e1a7a8b7154aba0247
 + */
 +public class EntityPushedByEntityAttackEvent extends EntityEvent implements Cancellable {
 +
-+    private static final HandlerList handlers = new HandlerList();
++    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    private final @NotNull Entity pushedBy;
 +    private final @NotNull Vector acceleration;
-+    private boolean cancelled = false;
 +
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public EntityPushedByEntityAttackEvent(@NotNull Entity entity, @NotNull Entity pushedBy, @NotNull Vector acceleration) {
 +        super(entity);
 +        this.pushedBy = pushedBy;
 +        this.acceleration = acceleration;
-+    }
-+
-+    @NotNull
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    @Override
-+    public boolean isCancelled() {
-+        return cancelled;
-+    }
-+
-+    @Override
-+    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
 +    }
 +
 +    /**
@@ -121,7 +106,7 @@ index 0000000000000000000000000000000000000000..c15401cd206eb9e1a7a8b7154aba0247
 +     */
 +    @NotNull
 +    public Entity getPushedBy() {
-+        return pushedBy;
++        return this.pushedBy;
 +    }
 +
 +    /**
@@ -131,6 +116,27 @@ index 0000000000000000000000000000000000000000..c15401cd206eb9e1a7a8b7154aba0247
 +     */
 +    @NotNull
 +    public Vector getAcceleration() {
-+        return acceleration;
++        return this.acceleration;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}

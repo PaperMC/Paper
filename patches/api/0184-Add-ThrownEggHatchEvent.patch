@@ -8,16 +8,18 @@ Adds a new event similar to PlayerEggThrowEvent, but without the Player requirem
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/ThrownEggHatchEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/ThrownEggHatchEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..085d77dde83d6ed13eb83f23cf3e51d380187c9c
+index 0000000000000000000000000000000000000000..092bab9be36acc0f04c7ea5b3510879169a0a125
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/ThrownEggHatchEvent.java
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,120 @@
 +package com.destroystokyo.paper.event.entity;
 +
++import com.google.common.base.Preconditions;
 +import org.bukkit.entity.Egg;
 +import org.bukkit.entity.EntityType;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -26,12 +28,15 @@ index 0000000000000000000000000000000000000000..085d77dde83d6ed13eb83f23cf3e51d3
 + * This event fires for all thrown eggs that may hatch, players, dispensers, etc.
 + */
 +public class ThrownEggHatchEvent extends Event {
-+    private static final HandlerList handlers = new HandlerList();
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    private final Egg egg;
 +    private boolean hatching;
-+    private EntityType hatchType;
 +    private byte numHatches;
++    private EntityType hatchType;
 +
++    @ApiStatus.Internal
 +    public ThrownEggHatchEvent(@NotNull final Egg egg, final boolean hatching, final byte numHatches, @NotNull final EntityType hatchingType) {
 +        this.egg = egg;
 +        this.hatching = hatching;
@@ -46,7 +51,7 @@ index 0000000000000000000000000000000000000000..085d77dde83d6ed13eb83f23cf3e51d3
 +     */
 +    @NotNull
 +    public Egg getEgg() {
-+        return egg;
++        return this.egg;
 +    }
 +
 +    /**
@@ -56,13 +61,13 @@ index 0000000000000000000000000000000000000000..085d77dde83d6ed13eb83f23cf3e51d3
 +     * @return boolean Whether the egg is going to hatch or not
 +     */
 +    public boolean isHatching() {
-+        return hatching;
++        return this.hatching;
 +    }
 +
 +    /**
 +     * Sets whether the egg will hatch or not.
 +     *
-+     * @param hatching true if you want the egg to hatch, false if you want it
++     * @param hatching {@code true} if you want the egg to hatch, {@code false} if you want it
 +     *     not to
 +     */
 +    public void setHatching(boolean hatching) {
@@ -70,13 +75,13 @@ index 0000000000000000000000000000000000000000..085d77dde83d6ed13eb83f23cf3e51d3
 +    }
 +
 +    /**
-+     * Get the type of the mob being hatched (EntityType.CHICKEN by default)
++     * Get the type of the mob being hatched ({@link EntityType#CHICKEN} by default)
 +     *
 +     * @return The type of the mob being hatched by the egg
 +     */
 +    @NotNull
 +    public EntityType getHatchingType() {
-+        return hatchType;
++        return this.hatchType;
 +    }
 +
 +    /**
@@ -85,7 +90,7 @@ index 0000000000000000000000000000000000000000..085d77dde83d6ed13eb83f23cf3e51d3
 +     * @param hatchType The type of the mob being hatched by the egg
 +     */
 +    public void setHatchingType(@NotNull EntityType hatchType) {
-+        if (!hatchType.isSpawnable()) throw new IllegalArgumentException("Can't spawn that entity type from an egg!");
++        Preconditions.checkArgument(hatchType.isSpawnable(), "Can't spawn that entity type from an egg!");
 +        this.hatchType = hatchType;
 +    }
 +
@@ -93,22 +98,22 @@ index 0000000000000000000000000000000000000000..085d77dde83d6ed13eb83f23cf3e51d3
 +     * Get the number of mob hatches from the egg. By default the number will
 +     * be the number the server would've done
 +     * <ul>
-+     * <li>7/8 chance of being 0
-+     * <li>31/256 ~= 1/8 chance to be 1
-+     * <li>1/256 chance to be 4
++     *  <li>7/8 chance of being 0
++     *  <li>31/256 ~= 1/8 chance to be 1
++     *  <li>1/256 chance to be 4
 +     * </ul>
 +     *
 +     * @return The number of mobs going to be hatched by the egg
 +     */
 +    public byte getNumHatches() {
-+        return numHatches;
++        return this.numHatches;
 +    }
 +
 +    /**
 +     * Change the number of mobs coming out of the hatched egg
 +     * <p>
-+     * The boolean hatching will override this number. Ie. If hatching =
-+     * false, this number will not matter
++     * The boolean hatching will override this number. I.e. If hatching is
++     * {@code false}, this number will not matter
 +     *
 +     * @param numHatches The number of mobs coming out of the egg
 +     */
@@ -119,11 +124,11 @@ index 0000000000000000000000000000000000000000..085d77dde83d6ed13eb83f23cf3e51d3
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}

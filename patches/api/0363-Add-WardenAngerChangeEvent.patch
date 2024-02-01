@@ -8,12 +8,13 @@ another entity.
 
 diff --git a/src/main/java/io/papermc/paper/event/entity/WardenAngerChangeEvent.java b/src/main/java/io/papermc/paper/event/entity/WardenAngerChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6da98b535c9ba57942faa62e1172a62b84ab0b6a
+index 0000000000000000000000000000000000000000..7f738c1116feae8e8571488d516fab2ab6c0244e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/entity/WardenAngerChangeEvent.java
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,108 @@
 +package io.papermc.paper.event.entity;
 +
++import com.google.common.base.Preconditions;
 +import org.bukkit.entity.Entity;
 +import org.bukkit.entity.Warden;
 +import org.bukkit.event.Cancellable;
@@ -21,6 +22,7 @@ index 0000000000000000000000000000000000000000..6da98b535c9ba57942faa62e1172a62b
 +import org.bukkit.event.entity.EntityEvent;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Range;
 +
 +/**
 + * Called when a Warden's anger level has changed due to another entity.
@@ -31,10 +33,11 @@ index 0000000000000000000000000000000000000000..6da98b535c9ba57942faa62e1172a62b
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    private boolean cancelled;
 +    private final Entity target;
 +    private final int oldAnger;
 +    private int newAnger;
++
++    private boolean cancelled;
 +
 +    @ApiStatus.Internal
 +    public WardenAngerChangeEvent(@NotNull final Warden warden, @NotNull final Entity target, final int oldAnger, final int newAnger) {
@@ -51,7 +54,7 @@ index 0000000000000000000000000000000000000000..6da98b535c9ba57942faa62e1172a62b
 +     */
 +    @NotNull
 +    public Entity getTarget() {
-+        return target;
++        return this.target;
 +    }
 +
 +    /**
@@ -60,8 +63,9 @@ index 0000000000000000000000000000000000000000..6da98b535c9ba57942faa62e1172a62b
 +     * @return old anger level
 +     * @see Warden#getAnger(Entity)
 +     */
++    @Range(from = 0, to = 150)
 +    public int getOldAnger() {
-+        return oldAnger;
++        return this.oldAnger;
 +    }
 +
 +    /**
@@ -70,8 +74,9 @@ index 0000000000000000000000000000000000000000..6da98b535c9ba57942faa62e1172a62b
 +     * @return new anger level
 +     * @see Warden#getAnger(Entity)
 +     */
++    @Range(from = 0, to = 150)
 +    public int getNewAnger() {
-+        return newAnger;
++        return this.newAnger;
 +    }
 +
 +    /**
@@ -83,27 +88,25 @@ index 0000000000000000000000000000000000000000..6da98b535c9ba57942faa62e1172a62b
 +     * @see Warden#setAnger(Entity, int)
 +     * @throws IllegalArgumentException if newAnger is greater than 150
 +     */
-+    public void setNewAnger(int newAnger) {
-+        if (newAnger > 150)
-+            throw new IllegalArgumentException("newAnger must not be greater than 150");
-+
++    public void setNewAnger(@Range(from = 0, to = 150) int newAnger) {
++        Preconditions.checkArgument(newAnger <= 150, "newAnger must not be greater than 150");
 +        this.newAnger = newAnger;
 +    }
 +
 +    @NotNull
 +    @Override
 +    public Warden getEntity() {
-+        return (Warden) entity;
++        return (Warden) super.getEntity();
 +    }
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    @Override
-+    public void setCancelled(boolean cancelled) {
-+        this.cancelled = cancelled;
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
 +    }
 +
 +    @NotNull

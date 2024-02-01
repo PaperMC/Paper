@@ -7,20 +7,18 @@ Subject: [PATCH] Add more Witch API
 public net.minecraft.world.entity.monster.Witch usingTime
 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Witch.java b/src/main/java/net/minecraft/world/entity/monster/Witch.java
-index f45b46e30e1ad0516c5b380e476bc7dacb91391a..02386e7eabc6669296ce35158fa35a3c88c6b563 100644
+index 25a1edf64602a13c07779e58b167a8471019588e..f9ffc5f4cbfdcf5c7351a883d2e5c26492175283 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Witch.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Witch.java
-@@ -160,21 +160,10 @@ public class Witch extends Raider implements RangedAttackMob {
+@@ -160,21 +160,7 @@ public class Witch extends Raider implements RangedAttackMob {
                  }
  
                  if (potionregistry != null) {
 -                    // Paper start
-                     ItemStack potion = PotionUtils.setPotion(new ItemStack(Items.POTION), potionregistry);
--                    org.bukkit.inventory.ItemStack bukkitStack = com.destroystokyo.paper.event.entity.WitchReadyPotionEvent.process((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potion));
--                    this.setItemSlot(EquipmentSlot.MAINHAND, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(bukkitStack));
-+                    // Paper start - logic moved into setDrinkingPotion, copy exact impl into the method and then comment out
-+                    this.setDrinkingPotion(potion);
-                     // Paper end
+-                    ItemStack potion = PotionUtils.setPotion(new ItemStack(Items.POTION), potionregistry);
+-                    potion = org.bukkit.craftbukkit.event.CraftEventFactory.handleWitchReadyPotionEvent(this, potion);
+-                    this.setItemSlot(EquipmentSlot.MAINHAND, potion);
+-                    // Paper end
 -                    this.usingTime = this.getMainHandItem().getUseDuration();
 -                    this.setUsingItem(true);
 -                    if (!this.isSilent()) {
@@ -31,18 +29,18 @@ index f45b46e30e1ad0516c5b380e476bc7dacb91391a..02386e7eabc6669296ce35158fa35a3c
 -
 -                    attributemodifiable.removeModifier(Witch.SPEED_MODIFIER_DRINKING.getId());
 -                    attributemodifiable.addTransientModifier(Witch.SPEED_MODIFIER_DRINKING);
++                    this.setDrinkingPotion(PotionUtils.setPotion(new ItemStack(Items.POTION), potionregistry)); // Paper - logic moved into setDrinkingPotion, copy exact impl into the method and then comment out
                  }
              }
  
-@@ -186,6 +175,24 @@ public class Witch extends Raider implements RangedAttackMob {
+@@ -186,6 +172,23 @@ public class Witch extends Raider implements RangedAttackMob {
          super.aiStep();
      }
  
 +    // Paper start - moved to its own method
 +    public void setDrinkingPotion(ItemStack potion) {
-+        org.bukkit.inventory.ItemStack bukkitStack = com.destroystokyo.paper.event.entity.WitchReadyPotionEvent.process((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potion));
-+        this.setItemSlot(EquipmentSlot.MAINHAND, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(bukkitStack));
-+        // Paper end
++        potion = org.bukkit.craftbukkit.event.CraftEventFactory.handleWitchReadyPotionEvent(this, potion);
++        this.setItemSlot(EquipmentSlot.MAINHAND, potion);
 +        this.usingTime = this.getMainHandItem().getUseDuration();
 +        this.setUsingItem(true);
 +        if (!this.isSilent()) {

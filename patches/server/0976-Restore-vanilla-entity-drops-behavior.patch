@@ -50,7 +50,7 @@ index 6147ffdcb83a9d013a05facd75453d6500064fe7..ecf463139bb6567103d81ae26cfff53d
          if (entityitem == null) {
              return null;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 5fec06e12ede63496f75ccf43f52b16301d11eb0..4575e3e8a21e47d39fd3639163e804ec9dc452a6 100644
+index 9e1d0e46e94cc72705af5e1d01de6bb7bea40107..86013d6eda6708b38c2013a242ced07eea7a3f01 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2476,6 +2476,25 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
@@ -66,7 +66,7 @@ index 5fec06e12ede63496f75ccf43f52b16301d11eb0..4575e3e8a21e47d39fd3639163e804ec
 +        }
 +
 +        public void runConsumer(final org.bukkit.World fallbackWorld, final Location fallbackLoc) {
-+            if (this.dropConsumer == null || org.bukkit.craftbukkit.util.CraftMagicNumbers.getItem(this.stack.getType()) != this.item) {
++            if (this.dropConsumer == null || org.bukkit.craftbukkit.inventory.CraftItemType.bukkitToMinecraft(this.stack.getType()) != this.item) {
 +                fallbackWorld.dropItem(fallbackLoc, this.stack);
 +            } else {
 +                this.dropConsumer.accept(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(this.stack));
@@ -104,10 +104,10 @@ index 5fec06e12ede63496f75ccf43f52b16301d11eb0..4575e3e8a21e47d39fd3639163e804ec
              return this.spawnAtLocation(entityitem);
          }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index be0fa9a9e91c87234b0cd7b63c4e7dba8629ebe5..d3d958b58934bcb513ffef474a9de58c61e654a2 100644
+index 1d1fe8e8c23fc177960fb78d2e38ea9846fc3938..1b1bb94138c0f5ce197ec4cab251cdc9991c8fc7 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -254,7 +254,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -253,7 +253,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
      // CraftBukkit start
      public int expToDrop;
      public boolean forceDrops;
@@ -165,10 +165,10 @@ index e3412f9dd86dddd241bea8f6dcaeed77a7e67f08..6dfcc296ff7e59ecbebc5446973fabc9
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 3865e6c7af0203ff9a366571a276b8af43b97c7c..93f79e5c7244fc155364a35a75a62d42f2d1ee27 100644
+index 469f7b1b26e8c69c6cb89a5bed01dae65aa9ba2d..c39cb1bd6304b765f439fbd9022e26e9554105e0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -937,17 +937,21 @@ public class CraftEventFactory {
+@@ -937,17 +937,23 @@ public class CraftEventFactory {
      }
  
      public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim) {
@@ -182,10 +182,12 @@ index 3865e6c7af0203ff9a366571a276b8af43b97c7c..93f79e5c7244fc155364a35a75a62d42
          return CraftEventFactory.callEntityDeathEvent(victim, drops, com.google.common.util.concurrent.Runnables.doNothing());
      }
 -    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops, Runnable lootCheck) {
-+    private static java.util.function.Function<org.bukkit.inventory.ItemStack, Entity.DefaultDrop> FROM_FUNCTION = stack -> {
++
++    private static final java.util.function.Function<org.bukkit.inventory.ItemStack, Entity.DefaultDrop> FROM_FUNCTION = stack -> {
 +        if (stack == null) return null;
 +        return new Entity.DefaultDrop(CraftItemType.bukkitToMinecraft(stack.getType()), stack, null);
 +    };
++
 +    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<Entity.DefaultDrop> drops, Runnable lootCheck) { // Paper
          // Paper end
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
@@ -194,14 +196,14 @@ index 3865e6c7af0203ff9a366571a276b8af43b97c7c..93f79e5c7244fc155364a35a75a62d42
          populateFields(victim, event); // Paper - make cancellable
          CraftWorld world = (CraftWorld) entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
-@@ -961,19 +965,23 @@ public class CraftEventFactory {
+@@ -961,19 +967,23 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          lootCheck.run(); // Paper - advancement triggers before destroying items
  
 -        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
 +        // Paper start - Restore vanilla drops behavior
 +        for (Entity.DefaultDrop drop : drops) {
-+            if (drop == null) continue;;
++            if (drop == null) continue;
 +            final org.bukkit.inventory.ItemStack stack = drop.stack();
 +            // Paper end - Restore vanilla drops behavior
              if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
@@ -222,7 +224,7 @@ index 3865e6c7af0203ff9a366571a276b8af43b97c7c..93f79e5c7244fc155364a35a75a62d42
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
          populateFields(victim, event); // Paper - make cancellable
-@@ -992,10 +1000,14 @@ public class CraftEventFactory {
+@@ -992,10 +1002,14 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          victim.newExp = event.getNewExp();
  

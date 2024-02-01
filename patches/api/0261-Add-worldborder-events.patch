@@ -6,16 +6,17 @@ Subject: [PATCH] Add worldborder events
 
 diff --git a/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeEvent.java b/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..126fe50b519a8d7cd158f799058cb235f9c4cbdb
+index 0000000000000000000000000000000000000000..02ac479840c137ca5afcec149ef884e5a5d62928
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeEvent.java
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,117 @@
 +package io.papermc.paper.event.world.border;
 +
 +import org.bukkit.World;
 +import org.bukkit.WorldBorder;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -31,6 +32,7 @@ index 0000000000000000000000000000000000000000..126fe50b519a8d7cd158f799058cb235
 +    private long duration;
 +    private boolean cancelled;
 +
++    @ApiStatus.Internal
 +    public WorldBorderBoundsChangeEvent(@NotNull World world, @NotNull WorldBorder worldBorder, @NotNull Type type, double oldSize, double newSize, long duration) {
 +        super(world, worldBorder);
 +        this.type = type;
@@ -46,7 +48,7 @@ index 0000000000000000000000000000000000000000..126fe50b519a8d7cd158f799058cb235
 +     */
 +    @NotNull
 +    public Type getType() {
-+        return type;
++        return this.type;
 +    }
 +
 +    /**
@@ -55,7 +57,7 @@ index 0000000000000000000000000000000000000000..126fe50b519a8d7cd158f799058cb235
 +     * @return the old size
 +     */
 +    public double getOldSize() {
-+        return oldSize;
++        return this.oldSize;
 +    }
 +
 +    /**
@@ -64,7 +66,7 @@ index 0000000000000000000000000000000000000000..126fe50b519a8d7cd158f799058cb235
 +     * @return the new size
 +     */
 +    public double getNewSize() {
-+        return newSize;
++        return this.newSize;
 +    }
 +
 +    /**
@@ -73,8 +75,7 @@ index 0000000000000000000000000000000000000000..126fe50b519a8d7cd158f799058cb235
 +     * @param newSize the new size
 +     */
 +    public void setNewSize(double newSize) {
-+        // PAIL: TODO: Magic Values
-+        this.newSize = Math.min(6.0E7D, Math.max(1.0D, newSize));
++        this.newSize = Math.min(this.worldBorder.getMaxSize(), Math.max(1.0D, newSize));
 +    }
 +
 +    /**
@@ -83,7 +84,7 @@ index 0000000000000000000000000000000000000000..126fe50b519a8d7cd158f799058cb235
 +     * @return the time in milliseconds for the change
 +     */
 +    public long getDuration() {
-+        return duration;
++        return this.duration;
 +    }
 +
 +    /**
@@ -95,12 +96,14 @@ index 0000000000000000000000000000000000000000..126fe50b519a8d7cd158f799058cb235
 +    public void setDuration(long duration) {
 +        // PAIL: TODO: Magic Values
 +        this.duration = Math.min(9223372036854775L, Math.max(0L, duration));
-+        if (duration >= 0 && type == Type.INSTANT_MOVE) type = Type.STARTED_MOVE;
++        if (duration >= 0 && this.type == Type.INSTANT_MOVE) {
++            this.type = Type.STARTED_MOVE;
++        }
 +    }
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    @Override
@@ -126,15 +129,16 @@ index 0000000000000000000000000000000000000000..126fe50b519a8d7cd158f799058cb235
 +}
 diff --git a/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeFinishEvent.java b/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeFinishEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..60eabed056ee9b9cdd6f5d13307b9be38705330f
+index 0000000000000000000000000000000000000000..a44964593b7f78c5086dc4928e75ad892e624671
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeFinishEvent.java
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,67 @@
 +package io.papermc.paper.event.world.border;
 +
 +import org.bukkit.World;
 +import org.bukkit.WorldBorder;
 +import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -148,6 +152,7 @@ index 0000000000000000000000000000000000000000..60eabed056ee9b9cdd6f5d13307b9be3
 +    private final double newSize;
 +    private final double duration;
 +
++    @ApiStatus.Internal
 +    public WorldBorderBoundsChangeFinishEvent(@NotNull World world, @NotNull WorldBorder worldBorder, double oldSize, double newSize, double duration) {
 +        super(world, worldBorder);
 +        this.oldSize = oldSize;
@@ -161,7 +166,7 @@ index 0000000000000000000000000000000000000000..60eabed056ee9b9cdd6f5d13307b9be3
 +     * @return the old size
 +     */
 +    public double getOldSize() {
-+        return oldSize;
++        return this.oldSize;
 +    }
 +
 +    /**
@@ -170,18 +175,18 @@ index 0000000000000000000000000000000000000000..60eabed056ee9b9cdd6f5d13307b9be3
 +     * @return the new size
 +     */
 +    public double getNewSize() {
-+        return newSize;
++        return this.newSize;
 +    }
 +
 +    /**
 +     * Gets the duration this worldborder took to make the change.
 +     * <p>
-+     * Can be 0 if handlers for {@link io.papermc.paper.event.world.border.WorldBorderCenterChangeEvent} set the duration to 0.
++     * Can be 0 if handlers for {@link WorldBorderCenterChangeEvent} set the duration to 0.
 +     *
 +     * @return the duration of the transition
 +     */
 +    public double getDuration() {
-+        return duration;
++        return this.duration;
 +    }
 +
 +    @NotNull
@@ -197,10 +202,10 @@ index 0000000000000000000000000000000000000000..60eabed056ee9b9cdd6f5d13307b9be3
 +}
 diff --git a/src/main/java/io/papermc/paper/event/world/border/WorldBorderCenterChangeEvent.java b/src/main/java/io/papermc/paper/event/world/border/WorldBorderCenterChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4a10c773a8d05a596066e63306dead74c1363fd7
+index 0000000000000000000000000000000000000000..a90f67e902c6ae35b2399e6f72a3ff8a5c15d05a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/border/WorldBorderCenterChangeEvent.java
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,79 @@
 +package io.papermc.paper.event.world.border;
 +
 +import org.bukkit.Location;
@@ -208,7 +213,7 @@ index 0000000000000000000000000000000000000000..4a10c773a8d05a596066e63306dead74
 +import org.bukkit.WorldBorder;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
-+import org.bukkit.event.world.WorldEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -220,8 +225,10 @@ index 0000000000000000000000000000000000000000..4a10c773a8d05a596066e63306dead74
 +
 +    private final Location oldCenter;
 +    private Location newCenter;
++
 +    private boolean cancelled;
 +
++    @ApiStatus.Internal
 +    public WorldBorderCenterChangeEvent(@NotNull World world, @NotNull WorldBorder worldBorder, @NotNull Location oldCenter, @NotNull Location newCenter) {
 +        super(world, worldBorder);
 +        this.oldCenter = oldCenter;
@@ -235,7 +242,7 @@ index 0000000000000000000000000000000000000000..4a10c773a8d05a596066e63306dead74
 +     */
 +    @NotNull
 +    public Location getOldCenter() {
-+        return oldCenter;
++        return this.oldCenter;
 +    }
 +
 +    /**
@@ -245,7 +252,7 @@ index 0000000000000000000000000000000000000000..4a10c773a8d05a596066e63306dead74
 +     */
 +    @NotNull
 +    public Location getNewCenter() {
-+        return newCenter;
++        return this.newCenter;
 +    }
 +
 +    /**
@@ -259,7 +266,7 @@ index 0000000000000000000000000000000000000000..4a10c773a8d05a596066e63306dead74
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    @Override
@@ -280,29 +287,30 @@ index 0000000000000000000000000000000000000000..4a10c773a8d05a596066e63306dead74
 +}
 diff --git a/src/main/java/io/papermc/paper/event/world/border/WorldBorderEvent.java b/src/main/java/io/papermc/paper/event/world/border/WorldBorderEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..67bd469d3680c9554ce6c1d5493826a252682835
+index 0000000000000000000000000000000000000000..adb244f9be35c43ff99dbc3a771e1fdfb21da68c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/border/WorldBorderEvent.java
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,23 @@
 +package io.papermc.paper.event.world.border;
 +
 +import org.bukkit.World;
 +import org.bukkit.WorldBorder;
-+import org.bukkit.event.Cancellable;
 +import org.bukkit.event.world.WorldEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +public abstract class WorldBorderEvent extends WorldEvent {
 +
-+    private final WorldBorder worldBorder;
++    protected final WorldBorder worldBorder;
 +
-+    public WorldBorderEvent(@NotNull World world, @NotNull WorldBorder worldBorder) {
++    @ApiStatus.Internal
++    protected WorldBorderEvent(@NotNull World world, @NotNull WorldBorder worldBorder) {
 +        super(world);
 +        this.worldBorder = worldBorder;
 +    }
 +
 +    @NotNull
 +    public WorldBorder getWorldBorder() {
-+        return worldBorder;
++        return this.worldBorder;
 +    }
 +}

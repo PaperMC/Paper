@@ -8,10 +8,10 @@ profiles that had to be looked up.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8df37c07cd55ddf110d1dd68183d7b697f7a6756
+index 0000000000000000000000000000000000000000..2ad2782aafe76f8b10565c0f0419d6b9c665b267
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,48 @@
 +package com.destroystokyo.paper.event.profile;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
@@ -19,21 +19,23 @@ index 0000000000000000000000000000000000000000..8df37c07cd55ddf110d1dd68183d7b69
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Allows a plugin to be notified anytime AFTER a Profile has been looked up from the Mojang API
 + * This is an opportunity to view the response and potentially cache things.
-+ *
++ * <p>
 + * No guarantees are made about thread execution context for this event. If you need to know, check
-+ * event.isAsync()
++ * {@link Event#isAsynchronous()}
 + */
 +public class LookupProfileEvent extends Event {
 +
-+    private static final HandlerList handlers = new HandlerList();
++    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    @NotNull private final PlayerProfile profile;
 +
++    @ApiStatus.Internal
 +    public LookupProfileEvent(@NotNull PlayerProfile profile) {
 +        super(!Bukkit.isPrimaryThread());
 +        this.profile = profile;
@@ -44,31 +46,29 @@ index 0000000000000000000000000000000000000000..8df37c07cd55ddf110d1dd68183d7b69
 +     */
 +    @NotNull
 +    public PlayerProfile getPlayerProfile() {
-+        return profile;
++        return this.profile;
 +    }
 +
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4dcf6242c9acc62d030a94f67b78729ed29f8c85
+index 0000000000000000000000000000000000000000..3f73ec52f9b581001bef3a19a5f1533dfa474356
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,112 @@
 +package com.destroystokyo.paper.event.profile;
 +
-+import com.destroystokyo.paper.profile.PlayerProfile;
 +import com.destroystokyo.paper.profile.ProfileProperty;
-+import com.google.common.collect.ArrayListMultimap;
 +import org.bukkit.Bukkit;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
@@ -76,26 +76,30 @@ index 0000000000000000000000000000000000000000..4dcf6242c9acc62d030a94f67b78729e
 +import java.util.HashSet;
 +import java.util.Set;
 +import java.util.UUID;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Allows a plugin to intercept a Profile Lookup for a Profile by name
-+ *
++ * <p>
 + * At the point of event fire, the UUID and properties are unset.
-+ *
++ * <p>
 + * If a plugin sets the UUID, and optionally the properties, the API call to look up the profile may be skipped.
-+ *
++ * <p>
 + * No guarantees are made about thread execution context for this event. If you need to know, check
-+ * event.isAsync()
++ * {@link Event#isAsynchronous()}
 + */
 +public class PreLookupProfileEvent extends Event {
 +
-+    private static final HandlerList handlers = new HandlerList();
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    @NotNull private final String name;
++
 +    private UUID uuid;
 +    @NotNull private Set<ProfileProperty> properties = new HashSet<>();
 +
++    @ApiStatus.Internal
 +    public PreLookupProfileEvent(@NotNull String name) {
 +        super(!Bukkit.isPrimaryThread());
 +        this.name = name;
@@ -106,11 +110,11 @@ index 0000000000000000000000000000000000000000..4dcf6242c9acc62d030a94f67b78729e
 +     */
 +    @NotNull
 +    public String getName() {
-+        return name;
++        return this.name;
 +    }
 +
 +    /**
-+     * If this value is left null by the completion of the event call, then the server will
++     * If this value is left {@code null} by the completion of the event call, then the server will
 +     * trigger a call to the Mojang API to look up the UUID (Network Request), and subsequently, fire a
 +     * {@link LookupProfileEvent}
 +     *
@@ -118,22 +122,22 @@ index 0000000000000000000000000000000000000000..4dcf6242c9acc62d030a94f67b78729e
 +     */
 +    @Nullable
 +    public UUID getUUID() {
-+        return uuid;
++        return this.uuid;
 +    }
 +
 +    /**
 +     * Sets the UUID for this player name. This will skip the initial API call to find the players UUID.
-+     *
++     * <p>
 +     * However, if Profile Properties are needed by the server, you must also set them or else an API call might still be made.
 +     *
-+     * @param uuid the UUID to set for the profile or null to reset
++     * @param uuid the UUID to set for the profile or {@code null} to reset
 +     */
 +    public void setUUID(@Nullable UUID uuid) {
 +        this.uuid = uuid;
 +    }
 +
 +    /**
-+     * @return The currently pending prepopulated properties.
++     * @return The currently pending pre-populated properties.
 +     * Any property in this Set will be automatically prefilled on this Profile
 +     */
 +    @NotNull
@@ -142,8 +146,9 @@ index 0000000000000000000000000000000000000000..4dcf6242c9acc62d030a94f67b78729e
 +    }
 +
 +    /**
-+     * Clears any existing prepopulated properties and uses the supplied properties
++     * Clears any existing pre-populated properties and uses the supplied properties
 +     * Any property in this Set will be automatically prefilled on this Profile
++     *
 +     * @param properties The properties to add
 +     */
 +    public void setProfileProperties(@NotNull Set<ProfileProperty> properties) {
@@ -152,8 +157,9 @@ index 0000000000000000000000000000000000000000..4dcf6242c9acc62d030a94f67b78729e
 +    }
 +
 +    /**
-+     * Adds any properties currently missing to the prepopulated properties set, replacing any that already were set.
++     * Adds any properties currently missing to the pre-populated properties set, replacing any that already were set.
 +     * Any property in this Set will be automatically prefilled on this Profile
++     *
 +     * @param properties The properties to add
 +     */
 +    public void addProfileProperties(@NotNull Set<ProfileProperty> properties) {
@@ -163,12 +169,12 @@ index 0000000000000000000000000000000000000000..4dcf6242c9acc62d030a94f67b78729e
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +}
