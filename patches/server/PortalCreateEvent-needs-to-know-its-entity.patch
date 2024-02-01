@@ -22,84 +22,58 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
 @@ -0,0 +0,0 @@ public abstract class BaseFireBlock extends Block {
-         super.entityInside(state, world, pos, entity);
-     }
  
-+    // Paper start - ItemActionContext param
-+    @Override public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) { this.onPlace(state, world, pos, oldState, notify, null); }
      @Override
--    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
--        if (!oldState.is(state.getBlock())) {
-+    public void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, net.minecraft.world.item.context.UseOnContext itemActionContext) {
-+        // Paper end - ItemActionContext param
-+        if (!iblockdata1.is(iblockdata.getBlock())) {
+     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
++        // Paper start - UseOnContext param
++        this.onPlace(state, world, pos, oldState, notify, null);
++    }
++
++    @Override
++    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
++        // Paper end - UseOnContext param
+         if (!oldState.is(state.getBlock())) {
              if (BaseFireBlock.inPortalDimension(world)) {
--                Optional<PortalShape> optional = PortalShape.findEmptyPortalShape(world, pos, Direction.Axis.X);
-+                Optional<PortalShape> optional = PortalShape.findEmptyPortalShape(world, blockposition, Direction.Axis.X);
+                 Optional<PortalShape> optional = PortalShape.findEmptyPortalShape(world, pos, Direction.Axis.X);
  
                  if (optional.isPresent()) {
 -                    ((PortalShape) optional.get()).createPortalBlocks();
-+                    ((PortalShape) optional.get()).createPortalBlocks(itemActionContext); // Paper - pass ItemActionContext param
++                    ((PortalShape) optional.get()).createPortalBlocks(context); // Paper - pass context param
                      return;
                  }
              }
- 
--            if (!state.canSurvive(world, pos)) {
--                this.fireExtinguished(world, pos); // CraftBukkit - fuel block broke
-+            if (!iblockdata.canSurvive(world, blockposition)) {
-+                fireExtinguished(world, blockposition); // CraftBukkit - fuel block broke
-             }
- 
-         }
 diff --git a/src/main/java/net/minecraft/world/level/block/FireBlock.java b/src/main/java/net/minecraft/world/level/block/FireBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/FireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/FireBlock.java
-@@ -0,0 +0,0 @@ import net.minecraft.server.level.ServerLevel;
- import net.minecraft.tags.BiomeTags;
- import net.minecraft.util.RandomSource;
- import net.minecraft.world.item.context.BlockPlaceContext;
-+import net.minecraft.world.item.context.UseOnContext;
- import net.minecraft.world.level.BlockGetter;
- import net.minecraft.world.level.GameRules;
- import net.minecraft.world.level.Level;
 @@ -0,0 +0,0 @@ public class FireBlock extends BaseFireBlock {
      }
  
      @Override
 -    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
 -        super.onPlace(state, world, pos, oldState, notify);
--        world.scheduleTick(pos, (Block) this, FireBlock.getFireTickDelay(world.random));
-+    // Paper start - ItemActionContext param
-+    public void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, UseOnContext itemActionContext) {
-+        super.onPlace(iblockdata, world, blockposition, iblockdata1, flag, itemActionContext);
-+        // Paper end - ItemActionContext param
-+        world.scheduleTick(blockposition, this, getFireTickDelay(world.random));
++    // Paper start - UseOnContext param
++    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
++        super.onPlace(state, world, pos, oldState, notify, context);
++        // Paper end - UseOnContext param
+         world.scheduleTick(pos, (Block) this, FireBlock.getFireTickDelay(world.random));
      }
  
-     private static int getFireTickDelay(RandomSource random) {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.item.DyeColor;
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.item.context.BlockPlaceContext;
-+import net.minecraft.world.item.context.UseOnContext;
- import net.minecraft.world.level.BlockGetter;
- import net.minecraft.world.level.EmptyBlockGetter;
- import net.minecraft.world.level.Explosion;
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
          DebugPackets.sendNeighborsUpdatePacket(world, pos);
      }
  
-+    // Paper start - add ItemActionContext param
++    // Paper start - UseOnContext param
 +    @Deprecated
-+    public void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, UseOnContext itemActionContext) {
-+        this.onPlace(iblockdata, world, blockposition, iblockdata1, flag);
++    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
++        this.onPlace(state, world, pos, oldState, notify);
 +    }
-+    // Paper end - ItemActionContext param
++    // Paper end - UseOnContext param
++
      /** @deprecated */
      @Deprecated
      public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
@@ -107,23 +81,18 @@ diff --git a/src/main/java/net/minecraft/world/level/portal/PortalShape.java b/s
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/portal/PortalShape.java
 +++ b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
-@@ -0,0 +0,0 @@ import net.minecraft.tags.BlockTags;
- import net.minecraft.util.Mth;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.EntityDimensions;
-+import net.minecraft.world.item.context.UseOnContext;
- import net.minecraft.world.level.LevelAccessor;
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.block.NetherPortalBlock;
 @@ -0,0 +0,0 @@ public class PortalShape {
      }
  
      // CraftBukkit start - return boolean
--    public boolean createPortalBlocks() {
-+    // Paper start - ItemActionContext param
-+    @Deprecated public boolean createPortalBlocks() { return this.createPortalBlocks(null); }
-+    public boolean createPortalBlocks(UseOnContext itemActionContext) {
-+        // Paper end - ItemActionContext param
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
+     public boolean createPortalBlocks() {
++        // Paper start - UseOnContext param
++        return this.createPortalBlocks(null);
++    }
++
++    public boolean createPortalBlocks(net.minecraft.world.item.context.UseOnContext useOnContext) {
++        // Paper end - UseOnContext param
          org.bukkit.World bworld = this.level.getMinecraftWorld().getWorld();
  
          // Copy below for loop
@@ -132,7 +101,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          });
  
 -        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) this.blocks.getList(), bworld, null, PortalCreateEvent.CreateReason.FIRE);
-+        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blocks.getList(), bworld, itemActionContext == null || itemActionContext.getPlayer() == null ? null : itemActionContext.getPlayer().getBukkitEntity(), PortalCreateEvent.CreateReason.FIRE); // Paper - pass entity param
++        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blocks.getList(), bworld, useOnContext == null || useOnContext.getPlayer() == null ? null : useOnContext.getPlayer().getBukkitEntity(), PortalCreateEvent.CreateReason.FIRE); // Paper - pass entity param
          this.level.getMinecraftWorld().getServer().server.getPluginManager().callEvent(event);
  
          if (event.isCancelled()) {

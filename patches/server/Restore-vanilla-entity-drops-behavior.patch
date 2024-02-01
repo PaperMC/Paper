@@ -66,7 +66,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        public void runConsumer(final org.bukkit.World fallbackWorld, final Location fallbackLoc) {
-+            if (this.dropConsumer == null || org.bukkit.craftbukkit.util.CraftMagicNumbers.getItem(this.stack.getType()) != this.item) {
++            if (this.dropConsumer == null || org.bukkit.craftbukkit.inventory.CraftItemType.bukkitToMinecraft(this.stack.getType()) != this.item) {
 +                fallbackWorld.dropItem(fallbackLoc, this.stack);
 +            } else {
 +                this.dropConsumer.accept(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(this.stack));
@@ -182,10 +182,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return CraftEventFactory.callEntityDeathEvent(victim, drops, com.google.common.util.concurrent.Runnables.doNothing());
      }
 -    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops, Runnable lootCheck) {
-+    private static java.util.function.Function<org.bukkit.inventory.ItemStack, Entity.DefaultDrop> FROM_FUNCTION = stack -> {
++
++    private static final java.util.function.Function<org.bukkit.inventory.ItemStack, Entity.DefaultDrop> FROM_FUNCTION = stack -> {
 +        if (stack == null) return null;
 +        return new Entity.DefaultDrop(CraftItemType.bukkitToMinecraft(stack.getType()), stack, null);
 +    };
++
 +    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<Entity.DefaultDrop> drops, Runnable lootCheck) { // Paper
          // Paper end
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
@@ -201,7 +203,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
 +        // Paper start - Restore vanilla drops behavior
 +        for (Entity.DefaultDrop drop : drops) {
-+            if (drop == null) continue;;
++            if (drop == null) continue;
 +            final org.bukkit.inventory.ItemStack stack = drop.stack();
 +            // Paper end - Restore vanilla drops behavior
              if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;

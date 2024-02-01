@@ -15,23 +15,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            NeighborUpdater.executeUpdate(world, blockState, blockPos, this.sourceBlock, this.sourcePos, false);
 +            // Paper start - Call BlockPhysicsEvent
 +            try {
-+                boolean cancelled = false;
-+                org.bukkit.craftbukkit.CraftWorld cworld = world.getWorld();
-+                if (cworld != null) {
-+                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(
-+                        org.bukkit.craftbukkit.block.CraftBlock.at(world, blockPos),
-+                        org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(blockState),
-+                        org.bukkit.craftbukkit.block.CraftBlock.at(world, sourcePos));
++                org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(
++                    org.bukkit.craftbukkit.block.CraftBlock.at(world, blockPos),
++                    org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(blockState),
++                    org.bukkit.craftbukkit.block.CraftBlock.at(world, this.sourcePos));
 +
-+                    if (!event.callEvent()) {
-+                        cancelled = true;
-+                    }
-+                }
-+                if (!cancelled) { // continue to check for adjacent block (increase idx)
++                if (event.callEvent()) { // continue to check for adjacent block (increase idx)
 +                    NeighborUpdater.executeUpdate(world, blockState, blockPos, this.sourceBlock, this.sourcePos, false);
 +                }
 +            } catch (StackOverflowError ex) {
-+                world.lastPhysicsProblem = new BlockPos(blockPos);
++                world.lastPhysicsProblem = blockPos;
 +            }
 +            // Paper end - Call BlockPhysicsEvent
              if (this.idx < NeighborUpdater.UPDATE_ORDER.length && NeighborUpdater.UPDATE_ORDER[this.idx] == this.skipDirection) {

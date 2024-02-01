@@ -25,19 +25,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/Block.java
 +++ b/src/main/java/net/minecraft/world/level/block/Block.java
 @@ -0,0 +0,0 @@ public class Block extends BlockBehaviour implements ItemLike {
-             for (net.minecraft.world.item.ItemStack drop : net.minecraft.world.level.block.Block.getDrops(state, world.getMinecraftWorld(), pos, blockEntity)) {
+             for (ItemStack drop : Block.getDrops(state, serverLevel, pos, blockEntity)) {
                  items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(drop));
              }
 +            Block block = state.getBlock(); // Paper - Properly handle xp dropping
-             io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), org.bukkit.craftbukkit.block.CraftBlock.at(world, source), items);
-+            event.setExpToDrop(block.getExpDrop(state, (ServerLevel) world, pos, net.minecraft.world.item.ItemStack.EMPTY, true)); // Paper - Properly handle xp dropping
+             io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, pos), org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, source), items);
++            event.setExpToDrop(block.getExpDrop(state, serverLevel, pos, net.minecraft.world.item.ItemStack.EMPTY, true)); // Paper - Properly handle xp dropping
              event.callEvent();
-             for (var drop : event.getDrops()) {
-                 popResource(world.getMinecraftWorld(), pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
+             for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
+                 popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
              }
--            state.spawnAfterBreak(world.getMinecraftWorld(), pos, ItemStack.EMPTY, true);
-+            state.spawnAfterBreak(world.getMinecraftWorld(), pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
-+            block.popExperience((ServerLevel) world, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
+-            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++            block.popExperience(serverLevel, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
          }
          return true;
      }
