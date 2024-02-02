@@ -3769,10 +3769,10 @@ index 0000000000000000000000000000000000000000..92a69677f21b2c1c035119d8e5a6af63
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a2a5ab966f7ae118470a8d74cbe1e55cc301c1bb
+index 0000000000000000000000000000000000000000..0f8fa69577f09030fe96df6fa37e88ed38134a2e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -0,0 +1,304 @@
+@@ -0,0 +1,303 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.google.common.base.Preconditions;
@@ -3822,7 +3822,6 @@ index 0000000000000000000000000000000000000000..a2a5ab966f7ae118470a8d74cbe1e55c
 +class PaperPluginInstanceManager {
 +
 +    private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("File '%s'"::formatted);
-+    private static final DirectoryProviderSource DIRECTORY_PROVIDER_SOURCE = new DirectoryProviderSource();
 +
 +    private final List<Plugin> plugins = new ArrayList<>();
 +    private final Map<String, Plugin> lookupNames = new HashMap<>();
@@ -3904,8 +3903,8 @@ index 0000000000000000000000000000000000000000..a2a5ab966f7ae118470a8d74cbe1e55c
 +
 +        RuntimePluginEntrypointHandler<MultiRuntimePluginProviderStorage> runtimePluginEntrypointHandler = new RuntimePluginEntrypointHandler<>(new MultiRuntimePluginProviderStorage(this.dependencyTree));
 +        try {
-+            directory = DIRECTORY_PROVIDER_SOURCE.prepareContext(directory);
-+            DIRECTORY_PROVIDER_SOURCE.registerProviders(runtimePluginEntrypointHandler, directory);
++            List<Path> files = DirectoryProviderSource.INSTANCE.prepareContext(directory);
++            DirectoryProviderSource.INSTANCE.registerProviders(runtimePluginEntrypointHandler, files);
 +            runtimePluginEntrypointHandler.enter(Entrypoint.PLUGIN);
 +        } catch (Exception e) {
 +            // This should never happen, any errors that occur in this provider should instead be logged.
@@ -5480,64 +5479,63 @@ index 0000000000000000000000000000000000000000..49a087381307eab263f7dad43aaa2598
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..162c8ce2cb5e5863ea88c1bfbe90ab45288b50e4
+index 0000000000000000000000000000000000000000..f30fcf60b64150e381c7b813016aa9ddf6f2c4e4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,66 @@
 +package io.papermc.paper.plugin.provider.source;
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.entrypoint.EntrypointHandler;
 +import java.io.IOException;
-+import java.util.function.Consumer;
-+import org.slf4j.Logger;
-+
 +import java.nio.file.FileVisitOption;
 +import java.nio.file.Files;
 +import java.nio.file.Path;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Consumer;
++import org.slf4j.Logger;
 +
 +/**
 + * Loads all plugin providers in the given directory.
 + */
-+public class DirectoryProviderSource extends FileProviderSource {
++public class DirectoryProviderSource implements ProviderSource<Path, List<Path>> {
 +
 +    public static final DirectoryProviderSource INSTANCE = new DirectoryProviderSource();
++    private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("Directory '%s'"::formatted);
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
-+    public DirectoryProviderSource() {
-+        super("Directory '%s'"::formatted);
-+    }
-+
 +    @Override
-+    public Path prepareContext(Path context) throws IOException {
++    public List<Path> prepareContext(Path context) throws IOException {
 +        // Symlink happy, create file if missing.
 +        if (!Files.isDirectory(context)) {
 +            Files.createDirectories(context);
 +        }
 +
++        final List<Path> files = new ArrayList<>();
 +        this.walkFiles(context, path -> {
 +            try {
-+                super.prepareContext(path);
++                files.add(FILE_PROVIDER_SOURCE.prepareContext(path));
 +            } catch (IllegalArgumentException ignored) {
 +                // Ignore illegal argument exceptions from jar checking
 +            } catch (IOException e) {
-+                throw new RuntimeException(e);
++                LOGGER.error("Error preparing plugin context: " + e.getMessage(), e);
 +            }
 +        });
-+        return context;
++        return files;
 +    }
 +
 +    @Override
-+    public void registerProviders(EntrypointHandler entrypointHandler, Path context) throws IOException {
-+        this.walkFiles(context, path -> {
++    public void registerProviders(EntrypointHandler entrypointHandler, List<Path> context) {
++        for (Path path : context) {
 +            try {
-+                super.registerProviders(entrypointHandler, path);
++                FILE_PROVIDER_SOURCE.registerProviders(entrypointHandler, path);
 +            } catch (IllegalArgumentException ignored) {
 +                // Ignore illegal argument exceptions from jar checking
 +            } catch (Exception e) {
 +                LOGGER.error("Error loading plugin: " + e.getMessage(), e);
 +            }
-+        });
++        }
 +    }
 +
 +    private void walkFiles(Path context, Consumer<Path> consumer) throws IOException {
@@ -5553,7 +5551,7 @@ index 0000000000000000000000000000000000000000..162c8ce2cb5e5863ea88c1bfbe90ab45
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2df0a287b716d86c5224221afb95ff8ba95ae14c
+index 0000000000000000000000000000000000000000..d33762ce5977636320e324dde4aab37075865d8d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
 @@ -0,0 +1,163 @@
@@ -5580,7 +5578,7 @@ index 0000000000000000000000000000000000000000..2df0a287b716d86c5224221afb95ff8b
 +/**
 + * Loads a plugin provider at the given plugin jar file path.
 + */
-+public class FileProviderSource implements ProviderSource<Path> {
++public class FileProviderSource implements ProviderSource<Path, Path> {
 +
 +    private final Function<Path, String> contextChecker;
 +
@@ -5722,15 +5720,16 @@ index 0000000000000000000000000000000000000000..2df0a287b716d86c5224221afb95ff8b
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/PluginFlagProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/PluginFlagProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ec048ec424e2926f76419fdc0b9610ad06b2e98
+index 0000000000000000000000000000000000000000..ac55ae0e30119556f01e2e36c20fc63a111fae5f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/PluginFlagProviderSource.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,43 @@
 +package io.papermc.paper.plugin.provider.source;
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.entrypoint.EntrypointHandler;
 +import java.nio.file.Path;
++import java.util.ArrayList;
 +import org.slf4j.Logger;
 +
 +import java.util.List;
@@ -5738,22 +5737,30 @@ index 0000000000000000000000000000000000000000..9ec048ec424e2926f76419fdc0b9610a
 +/**
 + * Registers providers at the provided files in the add-plugin argument.
 + */
-+public class PluginFlagProviderSource implements ProviderSource<List<Path>> {
++public class PluginFlagProviderSource implements ProviderSource<List<Path>, List<Path>> {
 +
 +    public static final PluginFlagProviderSource INSTANCE = new PluginFlagProviderSource();
++    private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("File '%s' specified through 'add-plugin' argument"::formatted);
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
-+    private final FileProviderSource providerSource = new FileProviderSource("File '%s' specified through 'add-plugin' argument"::formatted);
 +
 +    @Override
 +    public List<Path> prepareContext(List<Path> context) {
-+        return context;
++        final List<Path> files = new ArrayList<>();
++        for (Path path : context) {
++            try {
++                files.add(FILE_PROVIDER_SOURCE.prepareContext(path));
++            } catch (Exception e) {
++                LOGGER.error("Error preparing plugin context: " + e.getMessage(), e);
++            }
++        }
++        return files;
 +    }
 +
 +    @Override
 +    public void registerProviders(EntrypointHandler entrypointHandler, List<Path> context) {
 +        for (Path path : context) {
 +            try {
-+                this.providerSource.registerProviders(entrypointHandler, path);
++                FILE_PROVIDER_SOURCE.registerProviders(entrypointHandler, path);
 +            } catch (Exception e) {
 +                LOGGER.error("Error loading plugin: " + e.getMessage(), e);
 +            }
@@ -5762,10 +5769,10 @@ index 0000000000000000000000000000000000000000..9ec048ec424e2926f76419fdc0b9610a
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/ProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/ProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..81b199ea16f86d508dfa32956c56be91bfb5d308
+index 0000000000000000000000000000000000000000..6b09813c75fad02fe9b8deb0bf86ad0b148fa770
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/ProviderSource.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.plugin.provider.source;
 +
 +import io.papermc.paper.plugin.entrypoint.EntrypointHandler;
@@ -5775,13 +5782,28 @@ index 0000000000000000000000000000000000000000..81b199ea16f86d508dfa32956c56be91
 + * A provider source is responsible for giving PluginTypes an EntrypointHandler for
 + * registering providers at.
 + *
++ * @param <I> input context
 + * @param <C> context
 + */
-+public interface ProviderSource<C> {
++public interface ProviderSource<I, C> {
 +
-+    C prepareContext(C context) throws IOException;
++    /**
++     * Prepares the context for use in {@link #registerProviders(EntrypointHandler, Object)}.
++     *
++     * @param context the context to prepare
++     * @return the prepared context, ready for use in {@link #registerProviders(EntrypointHandler, Object)}
++     * @throws IOException if an error occurs while preparing the context
++     */
++    C prepareContext(I context) throws IOException;
 +
-+    void registerProviders(EntrypointHandler entrypointHandler, C context) throws Throwable;
++    /**
++     * Uses the prepared context to register providers at the given entrypoint handler.
++     *
++     * @param entrypointHandler the entrypoint handler to register providers at
++     * @param context           the context to register providers at
++     * @throws Exception if an error occurs while registering providers
++     */
++    void registerProviders(EntrypointHandler entrypointHandler, C context) throws Exception;
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/PluginFileType.java b/src/main/java/io/papermc/paper/plugin/provider/type/PluginFileType.java
 new file mode 100644
@@ -6980,7 +7002,7 @@ index 0000000000000000000000000000000000000000..c1114675137e862ac9682b635bfdbfbc
 +package io.papermc.paper.plugin.storage;
 diff --git a/src/main/java/io/papermc/paper/plugin/util/EntrypointUtil.java b/src/main/java/io/papermc/paper/plugin/util/EntrypointUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3b19a94117d55c2b73efda704ee504a72bec94d1
+index 0000000000000000000000000000000000000000..01c88a23755618b98c1a1cdeb8e404e79401940b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/util/EntrypointUtil.java
 @@ -0,0 +1,20 @@
@@ -6995,9 +7017,9 @@ index 0000000000000000000000000000000000000000..3b19a94117d55c2b73efda704ee504a7
 +
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
-+    public static <C> void registerProvidersFromSource(ProviderSource<C> source, C context) {
++    public static <I, C> void registerProvidersFromSource(ProviderSource<I, C> source, I contextInput) {
 +        try {
-+            context = source.prepareContext(context);
++            C context = source.prepareContext(contextInput);
 +            source.registerProviders(LaunchEntryPointHandler.INSTANCE, context);
 +        } catch (Throwable e) {
 +            LOGGER.error(e.getMessage(), e);
