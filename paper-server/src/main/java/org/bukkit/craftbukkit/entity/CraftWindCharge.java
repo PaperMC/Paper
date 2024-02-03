@@ -11,6 +11,7 @@ public class CraftWindCharge extends CraftFireball implements WindCharge {
     @Override
     public void explode() {
         this.getHandle().explode();
+        this.getHandle().discard(); // SPIGOT-7577 - explode doesn't discard the entity, this happens only in tick and onHitBlock
     }
 
     @Override
