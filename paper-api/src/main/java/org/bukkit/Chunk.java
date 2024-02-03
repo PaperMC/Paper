@@ -6,6 +6,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.generator.structure.GeneratedStructure;
+import org.bukkit.generator.structure.Structure;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -262,6 +264,26 @@ public interface Chunk extends PersistentDataHolder {
      */
     @NotNull
     LoadLevel getLoadLevel();
+
+    /**
+     * Gets all generated structures that intersect this chunk. <br>
+     * If no structures are present an empty collection will be returned.
+     *
+     * @return a collection of placed structures in this chunk
+     */
+    @NotNull
+    Collection<GeneratedStructure> getStructures();
+
+    /**
+     * Gets all generated structures of a given {@link Structure} that intersect
+     * this chunk. <br>
+     * If no structures are present an empty collection will be returned.
+     *
+     * @param structure the structure to find
+     * @return a collection of placed structures in this chunk
+     */
+    @NotNull
+    Collection<GeneratedStructure> getStructures(@NotNull Structure structure);
 
     /**
      * An enum to specify the load level of a chunk.

@@ -26,6 +26,7 @@ import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
+import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemStack;
@@ -2868,6 +2869,33 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @NotNull
     public Set<FeatureFlag> getFeatureFlags();
+
+    /**
+     * Gets all generated structures that intersect the chunk at the given
+     * coordinates. <br>
+     * If no structures are present an empty collection will be returned.
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return a collection of placed structures in the chunk at the given
+     * coordinates
+     */
+    @NotNull
+    public Collection<GeneratedStructure> getStructures(int x, int z);
+
+    /**
+     * Gets all generated structures of a given {@link Structure} that intersect
+     * the chunk at the given coordinates. <br>
+     * If no structures are present an empty collection will be returned.
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @param structure the structure to find
+     * @return a collection of placed structures in the chunk at the given
+     * coordinates
+     */
+    @NotNull
+    public Collection<GeneratedStructure> getStructures(int x, int z, @NotNull Structure structure);
 
     /**
      * Represents various map environment types that a world may be
