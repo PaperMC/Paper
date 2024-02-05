@@ -15506,19 +15506,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
-@@ -0,0 +0,0 @@ public class ServerboundCommandSuggestionPacket implements Packet<ServerGamePack
- 
-     public ServerboundCommandSuggestionPacket(FriendlyByteBuf buf) {
-         this.id = buf.readVarInt();
--        this.command = buf.readUtf(32500);
-+        this.command = buf.readUtf(2048);
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Main.java
@@ -19235,24 +19222,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          --this.unacknowledgedBatches;
          this.desiredChunksPerTick = Double.isNaN((double)desiredBatchSize) ? 0.01F : Mth.clamp(desiredBatchSize, 0.01F, 64.0F);
          if (this.unacknowledgedBatches == 0) {
-diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-             return;
-         }
-         // Paper end - Don't suggest if tab-complete is disabled
-+        // Paper start - rewrite chunk system
-+        int index;
-+        if (packet.getCommand().length() > 64 && ((index = packet.getCommand().indexOf(' ')) == -1 || index >= 64)) {
-+            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM));
-+            return;
-+        }
-+        // Paper end - rewrite chunk system
-         // Paper start - AsyncTabCompleteEvent
-         TAB_COMPLETE_EXECUTOR.execute(() -> {
-         StringReader stringreader = new StringReader(packet.getCommand());
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
