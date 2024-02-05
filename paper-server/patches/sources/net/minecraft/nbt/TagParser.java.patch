@@ -1,6 +1,46 @@
 --- a/net/minecraft/nbt/TagParser.java
 +++ b/net/minecraft/nbt/TagParser.java
-@@ -253,11 +253,11 @@
+@@ -49,6 +49,7 @@
+     }, CompoundTag::toString);
+     public static final Codec<CompoundTag> LENIENT_CODEC = Codec.withAlternative(AS_CODEC, CompoundTag.CODEC);
+     private final StringReader reader;
++    private int depth; // Paper
+ 
+     public static CompoundTag parseTag(String string) throws CommandSyntaxException {
+         return new TagParser(new StringReader(string)).readSingleStruct();
+@@ -159,6 +160,7 @@
+ 
+     public CompoundTag readStruct() throws CommandSyntaxException {
+         this.expect('{');
++        this.increaseDepth(); // Paper
+         CompoundTag compoundTag = new CompoundTag();
+         this.reader.skipWhitespace();
+ 
+@@ -182,6 +184,7 @@
+         }
+ 
+         this.expect('}');
++        this.depth--; // Paper
+         return compoundTag;
+     }
+ 
+@@ -191,6 +194,7 @@
+         if (!this.reader.canRead()) {
+             throw ERROR_EXPECTED_VALUE.createWithContext(this.reader);
+         } else {
++            this.increaseDepth(); // Paper
+             ListTag listTag = new ListTag();
+             TagType<?> tagType = null;
+ 
+@@ -216,6 +220,7 @@
+             }
+ 
+             this.expect(']');
++            this.depth--; // Paper
+             return listTag;
+         }
+     }
+@@ -253,11 +258,11 @@
              }
  
              if (typeReader == ByteTag.TYPE) {
@@ -15,3 +55,15 @@
              }
  
              if (!this.hasElementSeparator()) {
+@@ -288,4 +293,11 @@
+         this.reader.skipWhitespace();
+         this.reader.expect(c);
+     }
++
++    private void increaseDepth() throws CommandSyntaxException {
++        this.depth++;
++        if (this.depth > 512) {
++            throw new io.papermc.paper.brigadier.TagParseCommandSyntaxException("NBT tag is too complex, depth > 512");
++        }
++    }
+ }

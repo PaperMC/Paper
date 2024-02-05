@@ -1,0 +1,45 @@
+--- a/net/minecraft/network/chat/contents/TranslatableContents.java
++++ b/net/minecraft/network/chat/contents/TranslatableContents.java
+@@ -181,6 +181,15 @@
+ 
+     @Override
+     public <T> Optional<T> visit(FormattedText.ContentConsumer<T> visitor) {
++        // Paper start - Count visited parts
++        try {
++            return this.visit(new TranslatableContentConsumer<>(visitor));
++        } catch (IllegalArgumentException ignored) {
++            return visitor.accept("...");
++        }
++    }
++    private <T> Optional<T> visit(TranslatableContentConsumer<T> visitor) {
++        // Paper end - Count visited parts
+         this.decompose();
+ 
+         for (FormattedText formattedText : this.decomposedParts) {
+@@ -191,7 +200,26 @@
+         }
+ 
+         return Optional.empty();
++    }
++    // Paper start - Count visited parts
++    private static final class TranslatableContentConsumer<T> implements FormattedText.ContentConsumer<T> {
++        private static final IllegalArgumentException EX = new IllegalArgumentException("Too long");
++        private final FormattedText.ContentConsumer<T> visitor;
++        private int visited;
++
++        private TranslatableContentConsumer(FormattedText.ContentConsumer<T> visitor) {
++            this.visitor = visitor;
++        }
++
++        @Override
++        public Optional<T> accept(final String asString) {
++            if (visited++ > 32) {
++                throw EX;
++            }
++            return this.visitor.accept(asString);
++        }
+     }
++    // Paper end - Count visited parts
+ 
+     @Override
+     public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {

@@ -1,6 +1,34 @@
 --- a/net/minecraft/network/chat/ComponentUtils.java
 +++ b/net/minecraft/network/chat/ComponentUtils.java
-@@ -41,6 +41,11 @@
+@@ -33,14 +33,39 @@
+         }
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse // Paper - validate separators - right now this method is only used for separator evaluation. Error on build if this changes to re-evaluate.
+     public static Optional<MutableComponent> updateForEntity(@Nullable CommandSourceStack source, Optional<Component> text, @Nullable Entity sender, int depth) throws CommandSyntaxException {
+         return text.isPresent() ? Optional.of(updateForEntity(source, text.get(), sender, depth)) : Optional.empty();
+     }
+ 
++    // Paper start - validate separator
++    public static Optional<MutableComponent> updateSeparatorForEntity(@Nullable CommandSourceStack source, Optional<Component> text, @Nullable Entity sender, int depth) throws CommandSyntaxException {
++        if (text.isEmpty() || !isValidSelector(text.get())) return Optional.empty();
++        return Optional.of(updateForEntity(source, text.get(), sender, depth));
++    }
++    public static boolean isValidSelector(final Component component) {
++        final ComponentContents contents = component.getContents();
++
++        if (contents instanceof net.minecraft.network.chat.contents.NbtContents || contents instanceof net.minecraft.network.chat.contents.SelectorContents) return false;
++        if (contents instanceof final net.minecraft.network.chat.contents.TranslatableContents translatableContents) {
++            for (final Object arg : translatableContents.getArgs()) {
++                if (arg instanceof final Component argumentAsComponent && !isValidSelector(argumentAsComponent)) return false;
++            }
++        }
++
++        return true;
++    }
++    // Paper end - validate separator
++
+     public static MutableComponent updateForEntity(@Nullable CommandSourceStack source, Component text, @Nullable Entity sender, int depth) throws CommandSyntaxException {
          if (depth > 100) {
              return text.copy();
          } else {
