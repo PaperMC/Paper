@@ -131,39 +131,41 @@ index af7cb518a32a4d550eae833fdd5bb17fd4058717..40ff3090fb17fb0f01a9b52639fb783e
  
              if (commandnode2.canUse(source)) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 06120b7da7f830f4bb36e5c1ec71201e344a1182..f68822bf363a1805678d8b19a0d6ffc0386337c8 100644
+index 2a49c02ad4baccc1fe3b0b69da0e584b7efec3ee..eb62f5f1a0dc0f7cd49d54af7f4899e94afc95ee 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -732,8 +732,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                         ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
- 
-                         this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
--                            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
--                            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
-+                            // Paper start - Brigadier API
-+                            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, command);
-+                            suggestEvent.setCancelled(suggestions.isEmpty());
-+                            if (!suggestEvent.callEvent()) return;
-+                            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
-+                            // Paper end - Brigadier API
-                         });
-                     });
+@@ -746,7 +746,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                     builder.suggest(completion.suggestion(), PaperAdventure.asVanilla(completion.tooltip()));
                  }
-@@ -748,7 +752,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                         builder.suggest(completion.suggestion(), PaperAdventure.asVanilla(completion.tooltip()));
-                     }
-                 });
--                player.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), builder.buildFuture().join()));
-+                // Paper start - Brigadier API
-+                com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
-+                com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, command);
-+                suggestEvent.setCancelled(suggestions.isEmpty());
-+                if (!suggestEvent.callEvent()) return;
-+                this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
-+                // Paper end - Brigadier API
              }
+-            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), builder.buildFuture().join()));
++            // Paper start - Brigadier API
++            com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
++            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.getCommand());
++            suggestEvent.setCancelled(suggestions.isEmpty());
++            if (suggestEvent.callEvent()) {
++                this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
++            }
++            // Paper end - Brigadier API
+         }
+     }
+ 
+@@ -755,8 +762,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
+ 
+         this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
+-            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
+-            this.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
++            // Paper start - Brigadier API
++            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.getCommand());
++            suggestEvent.setCancelled(suggestions.isEmpty());
++            if (suggestEvent.callEvent()) {
++                this.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
++            }
++            // Paper end - Brigadier API
          });
-         // Paper end - AsyncTabCompleteEvent
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
 index 83d81b9371902b0302d13e53b31c15fac4e67966..d113e54a30db16e2ad955170df6030d15de530d6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java

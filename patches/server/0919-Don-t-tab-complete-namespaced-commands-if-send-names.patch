@@ -11,18 +11,18 @@ This patch prevents server from sending namespaced commands when player
 requests tab-complete only commands.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index c4c9b3061aa79b8ab8e5b1f68780f4910a657b1d..5cb6984475eb89ed2a822d7a9e485bed47d6431b 100644
+index e19c05504151885ca18496b50dcf6091d94078c0..10965bdd67dd1357d47f12cd96c204372aefd2d9 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -762,6 +762,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                         ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
+@@ -792,6 +792,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
  
-                         this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
-+                            // Paper start - Don't tab-complete namespaced commands if send-namespaced is false
-+                            if (!org.spigotmc.SpigotConfig.sendNamespaced && suggestions.getRange().getStart() <= 1) {
-+                                suggestions.getList().removeIf(suggestion -> suggestion.getText().contains(":"));
-+                            }
-+                            // Paper end - Don't tab-complete namespaced commands if send-namespaced is false
-                             // Paper start - Brigadier API
-                             com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, command);
-                             suggestEvent.setCancelled(suggestions.isEmpty());
+         this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
++            // Paper start - Don't tab-complete namespaced commands if send-namespaced is false
++            if (!org.spigotmc.SpigotConfig.sendNamespaced && suggestions.getRange().getStart() <= 1) {
++                suggestions.getList().removeIf(suggestion -> suggestion.getText().contains(":"));
++            }
++            // Paper end - Don't tab-complete namespaced commands if send-namespaced is false
+             // Paper start - Brigadier API
+             com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.getCommand());
+             suggestEvent.setCancelled(suggestions.isEmpty());
