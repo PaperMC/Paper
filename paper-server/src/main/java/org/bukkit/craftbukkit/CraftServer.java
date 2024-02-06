@@ -686,6 +686,11 @@ public final class CraftServer implements Server {
         return this.getServer().isNetherEnabled();
     }
 
+    @Override
+    public boolean isLoggingIPs() {
+        return this.getServer().logIPs();
+    }
+
     public boolean getWarnOnOverload() {
         return this.configuration.getBoolean("settings.warn-on-overload");
     }
