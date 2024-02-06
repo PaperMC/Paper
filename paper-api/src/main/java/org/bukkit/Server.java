@@ -217,6 +217,13 @@ public interface Server extends PluginMessageRecipient {
     public boolean getAllowNether();
 
     /**
+     * Gets whether the server is logging the IP addresses of players.
+     *
+     * @return whether the server is logging the IP addresses of players
+     */
+    public boolean isLoggingIPs();
+
+    /**
      * Gets a list of packs to be enabled.
      *
      * @return a list of packs names

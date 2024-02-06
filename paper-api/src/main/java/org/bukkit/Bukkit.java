@@ -261,6 +261,15 @@ public final class Bukkit {
         return server.getAllowNether();
     }
 
+    /**
+     * Gets whether the server is logging the IP addresses of players.
+     *
+     * @return whether the server is logging the IP addresses of players
+     */
+    public static boolean isLoggingIPs() {
+        return server.isLoggingIPs();
+    }
+
     @NotNull
     public static List<String> getInitialEnabledPacks() {
         return server.getInitialEnabledPacks();
