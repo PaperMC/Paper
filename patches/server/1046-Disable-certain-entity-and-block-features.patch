@@ -1,0 +1,514 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Novalescent <minecraft2013@cox.net>
+Date: Mon, 5 Feb 2024 15:46:33 -0500
+Subject: [PATCH] Disable certain entity and block features
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index 586e3e92ccc275446df6dbbff9bf010a37a9aa8f..12237c461b912eae9f770ae90e506484baae0c54 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -252,9 +252,9 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+     @Override
+     public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) { // Paper - Fix silent equipment change
+         super.setItemSlot(slot, stack, silent); // Paper - Fix silent equipment change
+-        if (!this.level().isClientSide) {
+-            this.reassessWeaponGoal();
+-        }
++        // if (!this.level().isClientSide) {
++        //     this.reassessWeaponGoal();
++        // }
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+index f33c03e81b7ff643741f56eea055e6af260de618..6240ac71c816d85a5120500e0dfdf5e716f76173 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+@@ -410,29 +410,30 @@ public class EnderMan extends Monster implements NeutralMob {
+         if (this.isInvulnerableTo(source)) {
+             return false;
+         } else {
+-            boolean flag = source.getDirectEntity() instanceof ThrownPotion;
+-            boolean flag1;
+-
+-            if (!source.is(DamageTypeTags.IS_PROJECTILE) && !flag) {
+-                flag1 = super.hurt(source, amount);
+-                if (!this.level().isClientSide() && !(source.getEntity() instanceof LivingEntity) && this.random.nextInt(10) != 0) {
+-                    this.teleport();
+-                }
+-
+-                return flag1;
+-            } else {
+-                flag1 = flag && this.hurtWithCleanWater(source, (ThrownPotion) source.getDirectEntity(), amount);
+-
+-                if (this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent
+-                for (int i = 0; i < 64; ++i) {
+-                    if (this.teleport()) {
+-                        return true;
+-                    }
+-                }
+-                } // Paper - EndermanEscapeEvent
+-
+-                return flag1;
+-            }
++            return super.hurt(source, amount);
++            // boolean flag = source.getDirectEntity() instanceof ThrownPotion;
++            // boolean flag1;
++            //
++            // if (!source.is(DamageTypeTags.IS_PROJECTILE) && !flag) {
++            //     flag1 = super.hurt(source, amount);
++            //     if (!this.level().isClientSide() && !(source.getEntity() instanceof LivingEntity) && this.random.nextInt(10) != 0) {
++            //         this.teleport();
++            //     }
++            //
++            //     return flag1;
++            // } else {
++            //     flag1 = flag && this.hurtWithCleanWater(source, (ThrownPotion) source.getDirectEntity(), amount);
++            //
++            //     if (this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent
++            //     for (int i = 0; i < 64; ++i) {
++            //         if (this.teleport()) {
++            //             return true;
++            //         }
++            //     }
++            //     } // Paper - EndermanEscapeEvent
++            //
++            //     return flag1;
++            // }
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Spider.java b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+index 7618364e5373fe17cfe45a5a4ee9ab25e591581c..a51ed03fc1b7e21012e1f38e7bb7bccff8d24ab5 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Spider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+@@ -85,9 +85,10 @@ public class Spider extends Monster {
+     @Override
+     public void tick() {
+         super.tick();
+-        if (!this.level().isClientSide) {
+-            this.setClimbing(this.horizontalCollision && (this.level().paperConfig().entities.behavior.allowSpiderWorldBorderClimbing || !io.papermc.paper.util.CollisionUtil.isCollidingWithBorder(this.level().getWorldBorder(), this.getBoundingBox().inflate(io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON)))); // Paper - Add config option for spider worldborder climbing & Inflate by +EPSILON as collision will just barely place us outside border
+-        }
++        // Disable climbing
++        // if (!this.level().isClientSide) {
++        //     this.setClimbing(this.horizontalCollision && (this.level().paperConfig().entities.behavior.allowSpiderWorldBorderClimbing || !io.papermc.paper.util.CollisionUtil.isCollidingWithBorder(this.level().getWorldBorder(), this.getBoundingBox().inflate(io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON)))); // Paper - Add config option for spider worldborder climbing & Inflate by +EPSILON as collision will just barely place us outside border
++        // }
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index d14eab0d83d629a4522bf3f7d789d2853eb84f06..1c6f141360ece5a502a7de9a1c836f53257185af 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -282,7 +282,7 @@ public abstract class AbstractArrow extends Projectile {
+                     this.level().addParticle(ParticleTypes.BUBBLE, d4 - d1 * 0.25D, d5 - d2 * 0.25D, d6 - d3 * 0.25D, d1, d2, d3);
+                 }
+ 
+-                f = this.getWaterInertia();
++                // f = this.getWaterInertia();
+             }
+ 
+             this.setDeltaMovement(vec3d.scale((double) f));
+diff --git a/src/main/java/net/minecraft/world/level/block/CactusBlock.java b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+index 232a3a0332d8d2c1ec625f3f2155316c69d95153..a1437b3058fe42206c2822018b366e970619b9d8 100644
+--- a/src/main/java/net/minecraft/world/level/block/CactusBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+@@ -52,31 +52,31 @@ public class CactusBlock extends Block {
+ 
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        BlockPos blockposition1 = pos.above();
+-
+-        if (world.isEmptyBlock(blockposition1)) {
+-            int i;
+-
+-            for (i = 1; world.getBlockState(pos.below(i)).is((Block) this); ++i) {
+-                ;
+-            }
+-
+-            if (i < world.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable cactus/bamboo/reed growth height
+-                int j = (Integer) state.getValue(CactusBlock.AGE);
+-
+-                int modifier = world.spigotConfig.cactusModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+-                if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    CraftEventFactory.handleBlockGrowEvent(world, blockposition1, this.defaultBlockState()); // CraftBukkit
+-                    BlockState iblockdata1 = (BlockState) state.setValue(CactusBlock.AGE, 0);
+-
+-                    world.setBlock(pos, iblockdata1, 4);
+-                    world.neighborChanged(iblockdata1, blockposition1, this, pos, false);
+-                } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    world.setBlock(pos, (BlockState) state.setValue(CactusBlock.AGE, j + 1), 4);
+-                }
+-
+-            }
+-        }
++        // BlockPos blockposition1 = pos.above();
++        //
++        // if (world.isEmptyBlock(blockposition1)) {
++        //     int i;
++        //
++        //     for (i = 1; world.getBlockState(pos.below(i)).is((Block) this); ++i) {
++        //         ;
++        //     }
++        //
++        //     if (i < world.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable cactus/bamboo/reed growth height
++        //         int j = (Integer) state.getValue(CactusBlock.AGE);
++        //
++        //         int modifier = world.spigotConfig.cactusModifier; // Spigot - SPIGOT-7159: Better modifier resolution
++        //         if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        //             CraftEventFactory.handleBlockGrowEvent(world, blockposition1, this.defaultBlockState()); // CraftBukkit
++        //             BlockState iblockdata1 = (BlockState) state.setValue(CactusBlock.AGE, 0);
++        //
++        //             world.setBlock(pos, iblockdata1, 4);
++        //             world.neighborChanged(iblockdata1, blockposition1, this, pos, false);
++        //         } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        //             world.setBlock(pos, (BlockState) state.setValue(CactusBlock.AGE, j + 1), 4);
++        //         }
++        //
++        //     }
++        // }
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/block/CropBlock.java b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+index 5b96d1ae4bd8546311e986bc312b1f85883a67f4..3636191dcbe355ce997c792c6437d307c9cccf95 100644
+--- a/src/main/java/net/minecraft/world/level/block/CropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+@@ -77,34 +77,34 @@ public class CropBlock extends BushBlock implements BonemealableBlock {
+ 
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (world.getRawBrightness(pos, 0) >= 9) {
+-            int i = this.getAge(state);
+-
+-            if (i < this.getMaxAge()) {
+-                float f = CropBlock.getGrowthSpeed(this, world, pos);
+-
+-                // Spigot start
+-                int modifier;
+-                if (this == Blocks.BEETROOTS) {
+-                    modifier = world.spigotConfig.beetrootModifier;
+-                } else if (this == Blocks.CARROTS) {
+-                    modifier = world.spigotConfig.carrotModifier;
+-                } else if (this == Blocks.POTATOES) {
+-                    modifier = world.spigotConfig.potatoModifier;
+-                // Paper start - Fix Spigot growth modifiers
+-                } else if (this == Blocks.TORCHFLOWER_CROP) {
+-                    modifier = world.spigotConfig.torchFlowerModifier;
+-                // Paper end - Fix Spigot growth modifiers
+-                } else {
+-                    modifier = world.spigotConfig.wheatModifier;
+-                }
+-
+-                if (random.nextFloat() < (modifier / (100.0f * (Math.floor((25.0F / f) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    // Spigot end
+-                    CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(i + 1), 2); // CraftBukkit
+-                }
+-            }
+-        }
++        // if (world.getRawBrightness(pos, 0) >= 9) {
++        //     int i = this.getAge(state);
++        //
++        //     if (i < this.getMaxAge()) {
++        //         float f = CropBlock.getGrowthSpeed(this, world, pos);
++        //
++        //         // Spigot start
++        //         int modifier;
++        //         if (this == Blocks.BEETROOTS) {
++        //             modifier = world.spigotConfig.beetrootModifier;
++        //         } else if (this == Blocks.CARROTS) {
++        //             modifier = world.spigotConfig.carrotModifier;
++        //         } else if (this == Blocks.POTATOES) {
++        //             modifier = world.spigotConfig.potatoModifier;
++        //         // Paper start - Fix Spigot growth modifiers
++        //         } else if (this == Blocks.TORCHFLOWER_CROP) {
++        //             modifier = world.spigotConfig.torchFlowerModifier;
++        //         // Paper end - Fix Spigot growth modifiers
++        //         } else {
++        //             modifier = world.spigotConfig.wheatModifier;
++        //         }
++        //
++        //         if (random.nextFloat() < (modifier / (100.0f * (Math.floor((25.0F / f) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        //             // Spigot end
++        //             CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(i + 1), 2); // CraftBukkit
++        //         }
++        //     }
++        // }
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/FallingBlock.java b/src/main/java/net/minecraft/world/level/block/FallingBlock.java
+index 1079a99d6a6c9fba36414a863e1454bb2a7f298a..8069a6f1c30764dcfa70ac50d674ca5adcdda9b4 100644
+--- a/src/main/java/net/minecraft/world/level/block/FallingBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FallingBlock.java
+@@ -26,21 +26,21 @@ public abstract class FallingBlock extends Block implements Fallable {
+ 
+     @Override
+     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+-        world.scheduleTick(pos, this, this.getDelayAfterPlace());
++        // world.scheduleTick(pos, this, this.getDelayAfterPlace());
+     }
+ 
+     @Override
+     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
+-        world.scheduleTick(pos, this, this.getDelayAfterPlace());
++        // world.scheduleTick(pos, this, this.getDelayAfterPlace());
+         return super.updateShape(state, direction, neighborState, world, pos, neighborPos);
+     }
+ 
+     @Override
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (isFree(world.getBlockState(pos.below())) && pos.getY() >= world.getMinBuildHeight()) {
+-            FallingBlockEntity fallingBlockEntity = FallingBlockEntity.fall(world, pos, state);
+-            this.falling(fallingBlockEntity);
+-        }
++        // if (isFree(world.getBlockState(pos.below())) && pos.getY() >= world.getMinBuildHeight()) {
++        //     FallingBlockEntity fallingBlockEntity = FallingBlockEntity.fall(world, pos, state);
++        //     this.falling(fallingBlockEntity);
++        // }
+     }
+ 
+     protected void falling(FallingBlockEntity entity) {
+diff --git a/src/main/java/net/minecraft/world/level/block/FarmBlock.java b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+index 6e4c852c93f2418ea69e485ed3a10cbe3a6e3bd2..9c970cfbfef3518bfbe4f1a364b093e04bc0f99d 100644
+--- a/src/main/java/net/minecraft/world/level/block/FarmBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+@@ -91,19 +91,19 @@ public class FarmBlock extends Block {
+ 
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        int i = (Integer) state.getValue(FarmBlock.MOISTURE);
+-        if (i > 0 && world.paperConfig().tickRates.wetFarmland != 1 && (world.paperConfig().tickRates.wetFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.wetFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
+-        if (i == 0 && world.paperConfig().tickRates.dryFarmland != 1 && (world.paperConfig().tickRates.dryFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.dryFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
+-
+-        if (!FarmBlock.isNearWater(world, pos) && !world.isRainingAt(pos.above())) {
+-            if (i > 0) {
+-                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, pos, (BlockState) state.setValue(FarmBlock.MOISTURE, i - 1), 2); // CraftBukkit
+-            } else if (!FarmBlock.shouldMaintainFarmland(world, pos)) {
+-                FarmBlock.turnToDirt((Entity) null, state, world, pos);
+-            }
+-        } else if (i < 7) {
+-            org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, pos, (BlockState) state.setValue(FarmBlock.MOISTURE, 7), 2); // CraftBukkit
+-        }
++        // int i = (Integer) state.getValue(FarmBlock.MOISTURE);
++        // if (i > 0 && world.paperConfig().tickRates.wetFarmland != 1 && (world.paperConfig().tickRates.wetFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.wetFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
++        // if (i == 0 && world.paperConfig().tickRates.dryFarmland != 1 && (world.paperConfig().tickRates.dryFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.dryFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
++        //
++        // if (!FarmBlock.isNearWater(world, pos) && !world.isRainingAt(pos.above())) {
++        //     if (i > 0) {
++        //         org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, pos, (BlockState) state.setValue(FarmBlock.MOISTURE, i - 1), 2); // CraftBukkit
++        //     } else if (!FarmBlock.shouldMaintainFarmland(world, pos)) {
++        //         FarmBlock.turnToDirt((Entity) null, state, world, pos);
++        //     }
++        // } else if (i < 7) {
++        //     org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, pos, (BlockState) state.setValue(FarmBlock.MOISTURE, 7), 2); // CraftBukkit
++        // }
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/LeavesBlock.java b/src/main/java/net/minecraft/world/level/block/LeavesBlock.java
+index 415db10a16759ae93bb6302d5d5be4a6dcebe16a..5944eb0b7c2f1de9e11ccda3afa816bf2b7a6d46 100644
+--- a/src/main/java/net/minecraft/world/level/block/LeavesBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LeavesBlock.java
+@@ -52,7 +52,7 @@ public class LeavesBlock extends Block implements SimpleWaterloggedBlock {
+ 
+     @Override
+     public boolean isRandomlyTicking(BlockState state) {
+-        return (Integer) state.getValue(LeavesBlock.DISTANCE) == 7 && !(Boolean) state.getValue(LeavesBlock.PERSISTENT);
++        return true;
+     }
+ 
+     @Override
+@@ -78,7 +78,7 @@ public class LeavesBlock extends Block implements SimpleWaterloggedBlock {
+ 
+     @Override
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        world.setBlock(pos, LeavesBlock.updateDistance(state, world, pos), 3);
++        // world.setBlock(pos, LeavesBlock.updateDistance(state, world, pos), 3);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/block/NetherWartBlock.java b/src/main/java/net/minecraft/world/level/block/NetherWartBlock.java
+index 0fc333f240d6918e841a9221be42973839408802..c3a91b345f858e16062f98a00f2d584ea9010f27 100644
+--- a/src/main/java/net/minecraft/world/level/block/NetherWartBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/NetherWartBlock.java
+@@ -50,12 +50,12 @@ public class NetherWartBlock extends BushBlock {
+ 
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        int i = (Integer) state.getValue(NetherWartBlock.AGE);
+-
+-        if (i < 3 && random.nextFloat() < (world.spigotConfig.wartModifier / (100.0f * 10))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-            state = (BlockState) state.setValue(NetherWartBlock.AGE, i + 1);
+-            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state, 2); // CraftBukkit
+-        }
++        // int i = (Integer) state.getValue(NetherWartBlock.AGE);
++        //
++        // if (i < 3 && random.nextFloat() < (world.spigotConfig.wartModifier / (100.0f * 10))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        //     state = (BlockState) state.setValue(NetherWartBlock.AGE, i + 1);
++        //     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state, 2); // CraftBukkit
++        // }
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+index 836c86104ed4f0d375330c9123af5d502efefa4d..19729dc4426b4fe4a9860a4f9fb8184e8583bcfe 100644
+--- a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+@@ -54,9 +54,9 @@ public class SaplingBlock extends BushBlock implements BonemealableBlock {
+ 
+     @Override
+     public void randomTick(net.minecraft.world.level.block.state.BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (world.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextFloat() < (world.spigotConfig.saplingModifier / (100.0f * 7))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-            this.advanceTree(world, pos, state, random);
+-        }
++        // if (world.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextFloat() < (world.spigotConfig.saplingModifier / (100.0f * 7))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        //     this.advanceTree(world, pos, state, random);
++        // }
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+index 04957d461d0e968d443737068aaeec1d0bce78b2..9478d809ea3a6ca2e1639d1e2697b808dc30ee5b 100644
+--- a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+@@ -52,25 +52,25 @@ public class SugarCaneBlock extends Block {
+ 
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (world.isEmptyBlock(pos.above())) {
+-            int i;
+-
+-            for (i = 1; world.getBlockState(pos.below(i)).is((Block) this); ++i) {
+-                ;
+-            }
+-
+-            if (i < world.paperConfig().maxGrowthHeight.reeds) { // Paper - Configurable cactus/bamboo/reed growth heigh
+-                int j = (Integer) state.getValue(SugarCaneBlock.AGE);
+-
+-                int modifier = world.spigotConfig.caneModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+-                if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos.above(), this.defaultBlockState()); // CraftBukkit
+-                    world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, 0), 4);
+-                } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, j + 1), 4);
+-                }
+-            }
+-        }
++        // if (world.isEmptyBlock(pos.above())) {
++        //     int i;
++        //
++        //     for (i = 1; world.getBlockState(pos.below(i)).is((Block) this); ++i) {
++        //         ;
++        //     }
++        //
++        //     if (i < world.paperConfig().maxGrowthHeight.reeds) { // Paper - Configurable cactus/bamboo/reed growth heigh
++        //         int j = (Integer) state.getValue(SugarCaneBlock.AGE);
++        //
++        //         int modifier = world.spigotConfig.caneModifier; // Spigot - SPIGOT-7159: Better modifier resolution
++        //         if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        //             org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos.above(), this.defaultBlockState()); // CraftBukkit
++        //             world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, 0), 4);
++        //         } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        //             world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, j + 1), 4);
++        //         }
++        //     }
++        // }
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java b/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java
+index b4646e26965e0f1f26c5019e7c6a13fdf22bdb47..352b531c01244a5923b75635fe980147cf5156ff 100644
+--- a/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java
+@@ -112,41 +112,41 @@ public class TurtleEggBlock extends Block {
+ 
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (this.shouldUpdateHatchLevel(world) && TurtleEggBlock.onSand(world, pos)) {
+-            int i = (Integer) state.getValue(TurtleEggBlock.HATCH);
+-
+-            if (i < 2) {
+-                // CraftBukkit start - Call BlockGrowEvent
+-                if (!CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(TurtleEggBlock.HATCH, i + 1), 2)) {
+-                    return;
+-                }
+-                // CraftBukkit end
+-                world.playSound((Player) null, pos, SoundEvents.TURTLE_EGG_CRACK, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+-                // worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockTurtleEgg.HATCH, i + 1), 2); // CraftBukkit - handled above
+-                world.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
+-            } else {
+-                // CraftBukkit start - Call BlockFadeEvent
+-                if (CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) {
+-                    return;
+-                }
+-                // CraftBukkit end
+-                world.playSound((Player) null, pos, SoundEvents.TURTLE_EGG_HATCH, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+-                world.removeBlock(pos, false);
+-                world.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(state));
+-
+-                for (int j = 0; j < (Integer) state.getValue(TurtleEggBlock.EGGS); ++j) {
+-                    world.levelEvent(2001, pos, Block.getId(state));
+-                    Turtle entityturtle = (Turtle) EntityType.TURTLE.create(world);
+-
+-                    if (entityturtle != null) {
+-                        entityturtle.setAge(-24000);
+-                        entityturtle.setHomePos(pos);
+-                        entityturtle.moveTo((double) pos.getX() + 0.3D + (double) j * 0.2D, (double) pos.getY(), (double) pos.getZ() + 0.3D, 0.0F, 0.0F);
+-                        world.addFreshEntity(entityturtle, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit
+-                    }
+-                }
+-            }
+-        }
++        // if (this.shouldUpdateHatchLevel(world) && TurtleEggBlock.onSand(world, pos)) {
++        //     int i = (Integer) state.getValue(TurtleEggBlock.HATCH);
++        //
++        //     if (i < 2) {
++        //         // CraftBukkit start - Call BlockGrowEvent
++        //         if (!CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(TurtleEggBlock.HATCH, i + 1), 2)) {
++        //             return;
++        //         }
++        //         // CraftBukkit end
++        //         world.playSound((Player) null, pos, SoundEvents.TURTLE_EGG_CRACK, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
++        //         // worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockTurtleEgg.HATCH, i + 1), 2); // CraftBukkit - handled above
++        //         world.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
++        //     } else {
++        //         // CraftBukkit start - Call BlockFadeEvent
++        //         if (CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) {
++        //             return;
++        //         }
++        //         // CraftBukkit end
++        //         world.playSound((Player) null, pos, SoundEvents.TURTLE_EGG_HATCH, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
++        //         world.removeBlock(pos, false);
++        //         world.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(state));
++        //
++        //         for (int j = 0; j < (Integer) state.getValue(TurtleEggBlock.EGGS); ++j) {
++        //             world.levelEvent(2001, pos, Block.getId(state));
++        //             Turtle entityturtle = (Turtle) EntityType.TURTLE.create(world);
++        //
++        //             if (entityturtle != null) {
++        //                 entityturtle.setAge(-24000);
++        //                 entityturtle.setHomePos(pos);
++        //                 entityturtle.moveTo((double) pos.getX() + 0.3D + (double) j * 0.2D, (double) pos.getY(), (double) pos.getZ() + 0.3D, 0.0F, 0.0F);
++        //                 world.addFreshEntity(entityturtle, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit
++        //             }
++        //         }
++        //     }
++        // }
+ 
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+index 955b0abd4019fc45df84719eee6bf413e59d941a..7a1c12b9644aff9d8911e9ba5bcc222ec7222d3c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+@@ -113,7 +113,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
+         // SPIGOT-5603 - Avoid IllegalArgumentException in LootTableInfo#build()
+         LootContextParamSet.Builder nmsBuilder = new LootContextParamSet.Builder();
+         for (LootContextParam<?> param : this.getHandle().getParamSet().getRequired()) {
+-            nmsBuilder.required(param);
++            nmsBuilder.optional(param);
+         }
+         for (LootContextParam<?> param : this.getHandle().getParamSet().getAllowed()) {
+             if (!this.getHandle().getParamSet().getRequired().contains(param)) {

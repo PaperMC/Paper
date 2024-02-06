@@ -1,0 +1,164 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Novalescent <minecraft2013@cox.net>
+Date: Mon, 5 Feb 2024 18:53:35 -0500
+Subject: [PATCH] Add Collision Borders and Falling Leaves
+
+
+diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
+index ee0331a6bc40cdde08d926fd8eb1dc642630c2e5..1008c4c945635a1ca2f9a0d448fcbc207954eff4 100644
+--- a/src/main/java/io/papermc/paper/util/CollisionUtil.java
++++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
+@@ -1577,7 +1577,7 @@ public final class CollisionUtil {
+         boolean ret = false;
+ 
+         if ((collisionFlags & COLLISION_FLAG_CHECK_BORDER) != 0) {
+-            final WorldBorder worldBorder = world.getWorldBorder();
++            final WorldBorder worldBorder = entity != null && entity.getCollisionBorder() != null ? entity.getCollisionBorder() : world.getWorldBorder();
+             if (CollisionUtil.isCollidingWithBorder(worldBorder, aabb) && entity != null && worldBorder.isInsideCloseToBorder(entity, aabb)) {
+                 if (checkOnly) {
+                     return true;
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 9ee1e3da1cb16291ff3e37829e25227a6b97a177..27d94bf0682a14e29bd6ee13caab3c7b6c3d0ca0 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -424,6 +424,17 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+     public boolean fixedPose = false; // Paper - Expand Pose API
+ 
++    @Nullable
++    private WorldBorder collisionBorder;
++
++    public @Nullable WorldBorder getCollisionBorder() {
++        return collisionBorder;
++    }
++
++    public void setCollisionBorder(@Nullable WorldBorder border) {
++        collisionBorder = border;
++    }
++
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+         this.originWorld = location.getWorld().getUID();
+diff --git a/src/main/java/net/minecraft/world/level/block/LeavesBlock.java b/src/main/java/net/minecraft/world/level/block/LeavesBlock.java
+index 5944eb0b7c2f1de9e11ccda3afa816bf2b7a6d46..881c9c06f6d1d9b2aaebea7bcf57d1a0632c1dd2 100644
+--- a/src/main/java/net/minecraft/world/level/block/LeavesBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LeavesBlock.java
+@@ -1,9 +1,11 @@
+ package net.minecraft.world.level.block;
+ 
++import com.destroystokyo.paper.event.block.BlockFallingParticleEvent;
+ import com.mojang.serialization.MapCodec;
+ import java.util.OptionalInt;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.core.particles.BlockParticleOption;
+ import net.minecraft.core.particles.ParticleTypes;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.tags.BlockTags;
+@@ -24,6 +26,8 @@ import net.minecraft.world.level.material.FluidState;
+ import net.minecraft.world.level.material.Fluids;
+ import net.minecraft.world.phys.shapes.Shapes;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++import org.bukkit.Location;
++import org.bukkit.Particle;
+ import org.bukkit.event.block.LeavesDecayEvent; // CraftBukkit
+ 
+ public class LeavesBlock extends Block implements SimpleWaterloggedBlock {
+@@ -57,17 +61,20 @@ public class LeavesBlock extends Block implements SimpleWaterloggedBlock {
+ 
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (this.decaying(state)) {
+-            // CraftBukkit start
+-            LeavesDecayEvent event = new LeavesDecayEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++
++        BlockPos blockPos = pos.below();
++        if (FallingBlock.isFree(world.getBlockState(blockPos))) {
++            double d = (double) pos.getX() + random.nextDouble();
++            double e = (double) pos.getY() - 0.05D;
++            double f = (double) pos.getZ() + random.nextDouble();
++
++            BlockFallingParticleEvent event = new BlockFallingParticleEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()),
++                Particle.FALLING_DUST, new Location(world.getWorld(), d, e, f));
+             world.getCraftServer().getPluginManager().callEvent(event);
+ 
+-            if (event.isCancelled() || world.getBlockState(pos).getBlock() != this) {
+-                return;
++            if (!event.isCancelled()) {
++                world.addParticle(new BlockParticleOption(ParticleTypes.FALLING_DUST, state), d, e, f, 0.0D, 0.0D, 0.0D);
+             }
+-            // CraftBukkit end
+-            dropResources(state, world, pos);
+-            world.removeBlock(pos, false);
+         }
+ 
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 8698104e3eb98e2cc5da5de87a8f538860c1d91d..ddf72b926e5fd3c975958bb457811e8ed58a97be 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.event.entity.EntityPreTeleportEvent;
+ import com.google.common.base.Function;
+ import com.google.common.base.Preconditions;
+ import com.google.common.base.Predicates;
+@@ -25,6 +26,7 @@ import org.bukkit.Location;
+ import org.bukkit.Server;
+ import org.bukkit.Sound;
+ import org.bukkit.World;
++import org.bukkit.WorldBorder;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.block.PistonMoveReaction;
+ import org.bukkit.craftbukkit.CraftServer;
+@@ -56,6 +58,7 @@ import org.bukkit.util.NumberConversions;
+ import org.bukkit.util.Vector;
+ 
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
++import javax.annotation.Nullable;
+ 
+ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     private static PermissibleBase perm;
+@@ -71,6 +74,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this);
+     private final io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler apiScheduler = new io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler(this);
+ 
++    private WorldBorder collisionBorder;
++
+     @Override
+     public final io.papermc.paper.threadedregions.scheduler.EntityScheduler getScheduler() {
+         return this.apiScheduler;
+@@ -236,6 +241,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         // Paper end
+         Preconditions.checkArgument(location != null, "location cannot be null");
+         location.checkFinite();
++
++        EntityPreTeleportEvent preTeleportEvent = new EntityPreTeleportEvent(entity.getBukkitEntity(),
++            entity.getBukkitEntity().getLocation(), location);
++        preTeleportEvent.callEvent();
++
+         // Paper start - Teleport passenger API
+         Set<io.papermc.paper.entity.TeleportFlag> flagSet = Set.of(flags);
+         boolean dismount = !flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
+@@ -1227,4 +1237,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return this.getHandle().getScoreboardName();
+     }
+     // Paper end - entity scoreboard name
++
++    public void setCollisionBorder(@Nullable WorldBorder border) {
++        net.minecraft.world.level.border.WorldBorder handleBorder = null;
++        if (border != null) {
++            handleBorder = new net.minecraft.world.level.border.WorldBorder();
++            handleBorder.setCenter(border.getCenter().getX(), border.getCenter().getZ());
++            handleBorder.setSize(border.getSize());
++        }
++
++        this.entity.setCollisionBorder(handleBorder);
++        collisionBorder = border;
++    }
++
++    public @Nullable WorldBorder getCollisionBorder() {
++        return collisionBorder;
++    }
+ }
