@@ -1,0 +1,200 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tran Nguyen Ngoc Quang <3d7777456@gmail.com>
+Date: Thu, 8 Feb 2024 04:44:10 +0700
+Subject: [PATCH] Async StoredUserList saving
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index d06185566b447c432d4dc2e3ba04d121bcdbc71b..4c460a5605b282b6ace7216128d1d6b231404d8e 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -979,6 +979,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.isSaving = true;
+         if (this.playerList != null) {
+             MinecraftServer.LOGGER.info("Saving players");
++            this.playerList.shutdownUserListExecutor(); // Paper - async StoredUserList saving
+             this.playerList.saveAll();
+             this.playerList.removeAll(this.isRestarting); // Paper
+             try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
+index 1c9cf5e1c4ee05724ffcdbd77a19bca1ab2be4d3..f3151e7117a73d8b19b89f001720cb9d9ab7adf4 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
+@@ -61,7 +61,7 @@ public class DedicatedPlayerList extends PlayerList {
+ 
+     private void saveIpBanList() {
+         try {
+-            this.getIpBans().save();
++            this.getIpBans().save(false); // Paper - async StoredUserList saving
+         } catch (IOException var2) {
+             LOGGER.warn("Failed to save ip banlist: ", (Throwable)var2);
+         }
+@@ -70,7 +70,7 @@ public class DedicatedPlayerList extends PlayerList {
+ 
+     private void saveUserBanList() {
+         try {
+-            this.getBans().save();
++            this.getBans().save(false); // Paper - async StoredUserList saving
+         } catch (IOException var2) {
+             LOGGER.warn("Failed to save user banlist: ", (Throwable)var2);
+         }
+@@ -106,7 +106,7 @@ public class DedicatedPlayerList extends PlayerList {
+ 
+     private void saveOps() {
+         try {
+-            this.getOps().save();
++            this.getOps().save(false); // Paper - async StoredUserList saving
+         } catch (Exception var2) {
+             LOGGER.warn("Failed to save operators list: ", (Throwable)var2);
+         }
+@@ -124,7 +124,7 @@ public class DedicatedPlayerList extends PlayerList {
+ 
+     private void saveWhiteList() {
+         try {
+-            this.getWhiteList().save();
++            this.getWhiteList().save(false); // Paper - async StoredUserList saving
+         } catch (Exception var2) {
+             LOGGER.warn("Failed to save white-list: ", (Throwable)var2);
+         }
+diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+index 45d4638d568ea2aee805aa1b0542533019e5870d..bc23bfc009657d5816d2dca0ee7889abe97b7bd7 100644
+--- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
++++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+@@ -124,7 +124,7 @@ public class OldUsersConverter {
+                 };
+ 
+                 OldUsersConverter.lookupPlayers(server, map.keySet(), profilelookupcallback);
+-                gameprofilebanlist.save();
++                gameprofilebanlist.save(false); // Paper - async StoredUserList saving
+                 OldUsersConverter.renameOldFile(OldUsersConverter.OLD_USERBANLIST);
+                 return true;
+             } catch (IOException ioexception1) {
+@@ -168,7 +168,7 @@ public class OldUsersConverter {
+                     ipbanlist.add(new IpBanListEntry(s, date, s1, date1, s2));
+                 }
+ 
+-                ipbanlist.save();
++                ipbanlist.save(false); // Paper - async StoredUserList saving
+                 OldUsersConverter.renameOldFile(OldUsersConverter.OLD_IPBANLIST);
+                 return true;
+             } catch (IOException ioexception1) {
+@@ -209,7 +209,7 @@ public class OldUsersConverter {
+                 };
+ 
+                 OldUsersConverter.lookupPlayers(server, list, profilelookupcallback);
+-                oplist.save();
++                oplist.save(false); // Paper - async StoredUserList saving
+                 OldUsersConverter.renameOldFile(OldUsersConverter.OLD_OPLIST);
+                 return true;
+             } catch (IOException ioexception1) {
+@@ -253,7 +253,7 @@ public class OldUsersConverter {
+                 };
+ 
+                 OldUsersConverter.lookupPlayers(server, list, profilelookupcallback);
+-                whitelist.save();
++                whitelist.save(false); // Paper - async StoredUserList saving
+                 OldUsersConverter.renameOldFile(OldUsersConverter.OLD_WHITELIST);
+                 return true;
+             } catch (IOException ioexception1) {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 91feb12732564c90656da487664dbc12e55397fc..6e03808ea6b10695b071f66e5db659ea8bda8e92 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1333,6 +1333,11 @@ public abstract class PlayerList {
+ 
+         return list;
+     }
++    // Paper start - async StoredUserList saving
++    public void shutdownUserListExecutor() {
++        StoredUserList.shutdownExecutor();
++    }
++    // Paper end
+ 
+     public int getViewDistance() {
+         return this.viewDistance;
+diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
+index 35f973cc2c0989256fa21abaf0327c2f36dbe4c9..331bf177d4989f905c08c78d61c575447b716ec4 100644
+--- a/src/main/java/net/minecraft/server/players/StoredUserList.java
++++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
+@@ -32,6 +32,13 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+     private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
+     private final File file;
+     private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - Use ConcurrentHashMap in JsonList
++    // Paper start - async StoredUserList saving
++    private static final java.util.concurrent.ExecutorService SAVE_EXECUTOR = java.util.concurrent.Executors.newSingleThreadExecutor(
++        new com.google.common.util.concurrent.ThreadFactoryBuilder()
++            .setNameFormat("Async StoredUserList Saving - %1$d")
++            .build()
++    );
++    // Paper end
+ 
+     public StoredUserList(File file) {
+         this.file = file;
+@@ -45,7 +52,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+         this.map.put(this.getKeyForUser(entry.getUser()), entry);
+ 
+         try {
+-            this.save();
++            this.save(true); // Paper - async StoredUserList saving
+         } catch (IOException ioexception) {
+             StoredUserList.LOGGER.warn("Could not save the list after adding a user.", ioexception);
+         }
+@@ -65,7 +72,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+         this.map.remove(this.getKeyForUser(key));
+ 
+         try {
+-            this.save();
++            this.save(true); // Paper - async StoredUserList saving
+         } catch (IOException ioexception) {
+             StoredUserList.LOGGER.warn("Could not save the list after removing a user.", ioexception);
+         }
+@@ -102,8 +109,22 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+         return this.map.values();
+     }
+ 
+-    public void save() throws IOException {
++    // Paper start - async StoredUserList saving
++    static void shutdownExecutor() {
++        final java.util.concurrent.ExecutorService executor = StoredUserList.SAVE_EXECUTOR;
++
++        executor.shutdown();
++        try {
++            executor.awaitTermination(30L, java.util.concurrent.TimeUnit.SECONDS);
++        } catch (java.lang.InterruptedException ex) {
++            executor.shutdownNow();
++            Thread.currentThread().interrupt();
++        }
++    }
++    public void save(boolean async) throws IOException {
++    // Paper end
+         this.removeExpired(); // Paper - remove expired values before saving
++        Runnable save = () -> { // Paper - async StoredUserList saving
+         JsonArray jsonarray = new JsonArray();
+         Stream<JsonObject> stream = this.map.values().stream().map((jsonlistentry) -> { // CraftBukkit - decompile error
+             JsonObject jsonobject = new JsonObject();
+@@ -114,6 +135,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+ 
+         Objects.requireNonNull(jsonarray);
+         stream.forEach(jsonarray::add);
++        try { // Paper - async StoredUserList saving
+         BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8);
+ 
+         try {
+@@ -133,6 +155,17 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+         if (bufferedwriter != null) {
+             bufferedwriter.close();
+         }
++        // Paper start - async StoredUserList saving
++        } catch (IOException ex) {
++            LOGGER.error("Something went wrong while saving StoredUserList {}", this.file.getName(), ex);
++        }
++        };
++        if (async) {
++            StoredUserList.SAVE_EXECUTOR.execute(save);
++        } else {
++            save.run();
++        }
++        // Paper end
+ 
+     }
+ 
