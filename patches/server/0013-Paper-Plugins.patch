@@ -3,6 +3,7 @@ From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 Date: Wed, 6 Jul 2022 23:00:31 -0400
 Subject: [PATCH] Paper Plugins
 
+Co-authored-by: Micah Rao <micah.s.rao@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
 index 8ccc59473bac983ced6b9e4a57e0ec4ebd2b0f32..6d06b772ffb9d47d6a717462a4b2b494544e80ae 100644
@@ -5551,10 +5552,10 @@ index 0000000000000000000000000000000000000000..f30fcf60b64150e381c7b813016aa9dd
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d33762ce5977636320e324dde4aab37075865d8d
+index 0000000000000000000000000000000000000000..5b58df8df7efca0f67e3a14dd71051dfd7a26079
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
-@@ -0,0 +1,163 @@
+@@ -0,0 +1,171 @@
 +package io.papermc.paper.plugin.provider.source;
 +
 +import io.papermc.paper.plugin.PluginInitializerManager;
@@ -5617,7 +5618,15 @@ index 0000000000000000000000000000000000000000..d33762ce5977636320e324dde4aab370
 +        JarFile file = new JarFile(context.toFile(), true, JarFile.OPEN_READ, JarFile.runtimeVersion());
 +        PluginFileType<?, ?> type = PluginFileType.guessType(file);
 +        if (type == null) {
-+            throw new IllegalArgumentException(source + " does not contain a " + String.join(" or ", PluginFileType.getConfigTypes()) + "! Could not determine plugin type, cannot load a plugin from it!");
++            // Throw IAE wrapped in RE to prevent callers from considering this a "invalid parameter" as caller ignores IAE.
++            // TODO: This needs some heavy rework, using illegal argument exception to signal an actual failure is less than ideal.
++            if (file.getEntry("META-INF/versions.list") != null) {
++                throw new RuntimeException(new IllegalArgumentException(context + " appears to be a server jar! Server jars do not belong in the plugin folder."));
++            }
++
++            throw new RuntimeException(
++                new IllegalArgumentException(source + " does not contain a " + String.join(" or ", PluginFileType.getConfigTypes()) + "! Could not determine plugin type, cannot load a plugin from it!")
++            );
 +        }
 +
 +        type.register(entrypointHandler, file, context);
