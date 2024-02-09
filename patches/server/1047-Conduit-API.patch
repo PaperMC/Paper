@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sat, 27 Jan 2024 20:46:40 +0100
+Subject: [PATCH] Conduit API
+
+== AT ==
+public net.minecraft.world.level.block.entity.ConduitBlockEntity effectBlocks
+public net.minecraft.world.level.block.entity.ConduitBlockEntity destroyTarget
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+index 1f493708b01ede8d54f9eb8243695fe70e7af3a1..58f2619fab37a1e2d2093ca89f66f3a8bb47d192 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+@@ -191,7 +191,7 @@ public class ConduitBlockEntity extends BlockEntity {
+ 
+     private static void applyEffects(Level world, BlockPos pos, List<BlockPos> activatingBlocks) {
+         int i = activatingBlocks.size();
+-        int j = i / 7 * 16;
++        int j = i / 7 * 16; // Paper - Conduit API; diff on change
+         int k = pos.getX();
+         int l = pos.getY();
+         int i1 = pos.getZ();
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java b/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
+index 29bcac10a7edf53015941e4c28c4f2d9a5a3db56..f0b0348e105fb27c829ec29e638433c57bfd5f64 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
+@@ -18,4 +18,23 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
+     public CraftConduit copy() {
+         return new CraftConduit(this);
+     }
++
++    // Paper start - Conduit API
++    @Override
++    public boolean isActive() {
++        requirePlaced();
++        return this.getTileEntity().isActive();
++    }
++
++    @Override
++    public int getRange() {
++        requirePlaced();
++        return this.getTileEntity().effectBlocks.size() / 7 * 16;
++    }
++
++    @Override
++    public org.bukkit.entity.LivingEntity getTarget() {
++        return this.getTileEntity().destroyTarget == null ? null : this.getTileEntity().destroyTarget.getBukkitLivingEntity();
++    }
++    // Paper end - Conduit API
+ }
