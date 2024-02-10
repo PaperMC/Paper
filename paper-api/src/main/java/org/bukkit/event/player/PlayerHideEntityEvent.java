@@ -3,7 +3,6 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,9 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * This event is called regardless of if the entity was within tracking range.
  *
  * @see Player#hideEntity(org.bukkit.plugin.Plugin, org.bukkit.entity.Entity)
- * @apiNote draft API
  */
-@ApiStatus.Experimental
 public class PlayerHideEntityEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();

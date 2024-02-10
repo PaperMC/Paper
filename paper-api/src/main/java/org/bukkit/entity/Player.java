@@ -1271,9 +1271,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param plugin Plugin that wants to hide the entity
      * @param entity Entity to hide
-     * @apiNote draft API
      */
-    @ApiStatus.Experimental
     public void hideEntity(@NotNull Plugin plugin, @NotNull Entity entity);
 
     /**
@@ -1283,9 +1281,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param plugin Plugin that wants to show the entity
      * @param entity Entity to show
-     * @apiNote draft API
      */
-    @ApiStatus.Experimental
     public void showEntity(@NotNull Plugin plugin, @NotNull Entity entity);
 
     /**
@@ -1294,9 +1290,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param entity Entity to check
      * @return True if the provided entity is not being hidden from this
      *     player
-     * @apiNote draft API
      */
-    @ApiStatus.Experimental
     public boolean canSee(@NotNull Entity entity);
 
     /**

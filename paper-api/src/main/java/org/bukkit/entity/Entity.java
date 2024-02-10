@@ -534,9 +534,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * will need to be called before the entity is visible to a given player.
      *
      * @param visible default visibility status
-     * @apiNote draft API
      */
-    @ApiStatus.Experimental
     public void setVisibleByDefault(boolean visible);
 
     /**
@@ -547,9 +545,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * will need to be called before the entity is visible to a given player.
      *
      * @return default visibility status
-     * @apiNote draft API
      */
-    @ApiStatus.Experimental
     public boolean isVisibleByDefault();
 
     /**
@@ -563,7 +559,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return the players tracking this entity, or an empty set if none
      */
     @NotNull
-    @ApiStatus.Experimental
     Set<Player> getTrackedBy();
 
     /**
