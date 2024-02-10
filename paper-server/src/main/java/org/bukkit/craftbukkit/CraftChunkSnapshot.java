@@ -119,6 +119,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
 
     @Override
     public final int getBlockSkyLight(int x, int y, int z) {
+        Preconditions.checkState(this.skylight != null, "ChunkSnapshot created without light data. Please call getSnapshot with includeLightData=true"); // Paper - Add getChunkSnapshot includeLightData parameter
         this.validateChunkCoordinates(x, y, z);
 
         int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
@@ -127,6 +128,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
 
     @Override
     public final int getBlockEmittedLight(int x, int y, int z) {
+        Preconditions.checkState(this.emitlight != null, "ChunkSnapshot created without light data. Please call getSnapshot with includeLightData=true"); // Paper - Add getChunkSnapshot includeLightData parameter
         this.validateChunkCoordinates(x, y, z);
 
         int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
