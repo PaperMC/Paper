@@ -14,6 +14,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.boss.KeyedBossBar;
+import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.EntityType;
@@ -207,6 +208,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     @ApiStatus.Experimental
     Registry<TrimPattern> TRIM_PATTERN = Bukkit.getRegistry(TrimPattern.class);
+    /**
+     * Damage types.
+     *
+     * @see DamageType
+     */
+    @ApiStatus.Experimental
+    Registry<DamageType> DAMAGE_TYPE = Objects.requireNonNull(Bukkit.getRegistry(DamageType.class), "No registry present for DamageType. This is a bug.");
     /**
      * Villager profession.
      *

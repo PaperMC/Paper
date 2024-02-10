@@ -1,6 +1,9 @@
 package org.bukkit.entity;
 
 import org.bukkit.attribute.Attribute;
+import org.bukkit.damage.DamageSource;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -15,13 +18,23 @@ public interface Damageable extends Entity {
     void damage(double amount);
 
     /**
-     * Deals the given amount of damage to this entity, from a specified
-     * entity.
+     * Deals the given amount of damage to this entity from a specified
+     * {@link Entity}.
      *
-     * @param amount Amount of damage to deal
-     * @param source Entity which to attribute this damage from
+     * @param amount amount of damage to deal
+     * @param source entity to which the damage should be attributed
      */
     void damage(double amount, @Nullable Entity source);
+
+    /**
+     * Deals the given amount of damage to this entity from a specified
+     * {@link DamageSource}.
+     *
+     * @param amount amount of damage to deal
+     * @param damageSource source to which the damage should be attributed
+     */
+    @ApiStatus.Experimental
+    void damage(double amount, @NotNull DamageSource damageSource);
 
     /**
      * Gets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is dead.

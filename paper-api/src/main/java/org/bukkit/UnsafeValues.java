@@ -5,6 +5,9 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.damage.DamageEffect;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
@@ -13,6 +16,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,4 +104,18 @@ public interface UnsafeValues {
      * @return an internal potion data
      */
     PotionType.InternalPotionData getInternalPotionData(NamespacedKey key);
+
+    @ApiStatus.Internal
+    @Nullable
+    DamageEffect getDamageEffect(@NotNull String key);
+
+    /**
+     * Create a new {@link DamageSource.Builder}.
+     *
+     * @param damageType the {@link DamageType} to use
+     * @return a {@link DamageSource.Builder}
+     */
+    @ApiStatus.Internal
+    @NotNull
+    DamageSource.Builder createDamageSourceBuilder(@NotNull DamageType damageType);
 }
