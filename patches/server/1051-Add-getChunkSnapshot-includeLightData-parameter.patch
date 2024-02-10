@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Sat, 10 Feb 2024 10:03:48 +0100
+Subject: [PATCH] Add getChunkSnapshot includeLightData parameter
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index fd702027e62eb38d51fb7c46ef268e9bb94e1e92..21d4f3686d5fb7799b4a19b9f6b1941b527e52cc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -281,12 +281,21 @@ public class CraftChunk implements Chunk {
+ 
+     @Override
+     public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain) {
++        // Paper start - Add getChunkSnapshot includeLightData parameter
++        return getChunkSnapshot(includeMaxBlockY, includeBiome, includeBiomeTempRain, true);
++    }
++
++    @Override
++    public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain, boolean includeLightData) {
++        // Paper end - Add getChunkSnapshot includeLightData parameter
+         ChunkAccess chunk = this.getHandle(ChunkStatus.FULL);
+ 
+         LevelChunkSection[] cs = chunk.getSections();
+         PalettedContainer[] sectionBlockIDs = new PalettedContainer[cs.length];
+-        byte[][] sectionSkyLights = new byte[cs.length][];
+-        byte[][] sectionEmitLights = new byte[cs.length][];
++        // Paper start - Add getChunkSnapshot includeLightData parameter
++        byte[][] sectionSkyLights = includeLightData ? new byte[cs.length][] : null;
++        byte[][] sectionEmitLights = includeLightData ? new byte[cs.length][] : null;
++        // Paper end - Add getChunkSnapshot includeLightData parameter
+         boolean[] sectionEmpty = new boolean[cs.length];
+         PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
+ 
+@@ -303,6 +312,7 @@ public class CraftChunk implements Chunk {
+             }
+             // Paper end - Fix ChunkSnapshot#isSectionEmpty(int)
+ 
++            if (includeLightData) { // Paper - Add getChunkSnapshot includeLightData parameter
+             LevelLightEngine lightengine = this.worldServer.getLightEngine();
+             DataLayer skyLightArray = lightengine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
+             if (skyLightArray == null) {
+@@ -318,6 +328,7 @@ public class CraftChunk implements Chunk {
+                 sectionEmitLights[i] = new byte[2048];
+                 System.arraycopy(emitLightArray.getData(), 0, sectionEmitLights[i], 0, 2048);
+             }
++            } // Paper - Add getChunkSnapshot includeLightData parameter
+ 
+             if (biome != null) {
+                 biome[i] = ((PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>) cs[i].getBiomes()).copy(); // Paper - Perf: use copy instead of round tripping with codecs
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java b/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
+index 85029f1acfdbb411d9ebdf95838d6db3898f4e58..0756b5adb3039997feadeb94afb10b596abd9424 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
+@@ -118,6 +118,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
+ 
+     @Override
+     public final int getBlockSkyLight(int x, int y, int z) {
++        Preconditions.checkState(this.skylight != null, "ChunkSnapshot created without light data. Please call getSnapshot with includeLightData=true"); // Paper - Add getChunkSnapshot includeLightData parameter
+         this.validateChunkCoordinates(x, y, z);
+ 
+         int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
+@@ -126,6 +127,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
+ 
+     @Override
+     public final int getBlockEmittedLight(int x, int y, int z) {
++        Preconditions.checkState(this.emitlight != null, "ChunkSnapshot created without light data. Please call getSnapshot with includeLightData=true"); // Paper - Add getChunkSnapshot includeLightData parameter
+         this.validateChunkCoordinates(x, y, z);
+ 
+         int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
