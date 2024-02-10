@@ -2272,6 +2272,21 @@ public final class CraftServer implements Server {
         };
     }
 
+    // Paper start - add BanListType (which has a generic)
+    @SuppressWarnings("unchecked")
+    @Override
+    public <B extends BanList<E>, E> B getBanList(final io.papermc.paper.ban.BanListType<B> type) {
+        Preconditions.checkArgument(type != null, "BanList.BanType cannot be null");
+       if (type == io.papermc.paper.ban.BanListType.IP) {
+           return (B) new CraftIpBanList(this.playerList.getIpBans());
+       } else if (type == io.papermc.paper.ban.BanListType.PROFILE) {
+          return (B) new CraftProfileBanList(this.playerList.getBans());
+       } else {
+           throw new IllegalArgumentException("Unknown BanListType: " + type);
+       }
+    }
+    // Paper end - add BanListType (which has a generic)
+
     @Override
     public void setWhitelist(boolean value) {
         this.playerList.setUsingWhiteList(value);
