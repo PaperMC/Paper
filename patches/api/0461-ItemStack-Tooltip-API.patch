@@ -6,10 +6,10 @@ Subject: [PATCH] ItemStack Tooltip API
 
 diff --git a/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContext.java b/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContext.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c965e9c98b083ce712f5d16bc081cb45c11a4d6b
+index 0000000000000000000000000000000000000000..39ac768b3c5148544cb1aaf2c817e661f6856f64
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContext.java
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,75 @@
 +package io.papermc.paper.inventory.tooltip;
 +
 +import org.bukkit.entity.Player;
@@ -36,8 +36,7 @@ index 0000000000000000000000000000000000000000..c965e9c98b083ce712f5d16bc081cb45
 +    }
 +
 +    /**
-+     * Creates a new context that is neither advanced nor creative
-+     * mode settings.
++     * Creates a new context that is neither advanced nor creative.
 +     *
 +     * @return a new context
 +     */
@@ -47,45 +46,26 @@ index 0000000000000000000000000000000000000000..c965e9c98b083ce712f5d16bc081cb45
 +    }
 +
 +    /**
-+     * Returns whether the context is for the creative
-+     * mode inventory.
-+     * <p>
-+     * Creative tooltips are shown by default when a player is
-+     * in the creative inventory.
-+     * <p>
-+     * <b>Disclaimer:</b>
-+     * <p>
-+     * Be aware that this can change based on the Minecraft version used.
-+     * We do not guarantee that all the values will always be present.
-+     *
-+     * @return true if for creative mode inventory
-+     */
-+    boolean isCreative();
-+
-+    /**
 +     * Returns whether the context is for advanced
 +     * tooltips.
 +     * <p>
 +     * Advanced tooltips are shown by default
 +     * when a player has {@code F3+H} enabled.
-+     * <p>
-+     * <b>Disclaimer:</b>
-+     * <p>
-+     * Be aware that this can change based on the Minecraft version used.
-+     * We do not guarantee that all the values will always be present.
 +     *
 +     * @return true if for advanced tooltips
 +     */
 +    boolean isAdvanced();
 +
 +    /**
-+     * Returns a new context with {@link #isCreative()}
-+     * set to true.
++     * Returns whether the context is for the creative
++     * mode inventory.
++     * <p>
++     * Creative tooltips are shown by default when a player is
++     * in the creative inventory.
 +     *
-+     * @return a new context
++     * @return true if for creative mode inventory
 +     */
-+    @Contract("-> new")
-+    @NotNull TooltipContext asCreative();
++    boolean isCreative();
 +
 +    /**
 +     * Returns a new context with {@link #isAdvanced()}
@@ -95,6 +75,15 @@ index 0000000000000000000000000000000000000000..c965e9c98b083ce712f5d16bc081cb45
 +     */
 +    @Contract("-> new")
 +    @NotNull TooltipContext asAdvanced();
++
++    /**
++     * Returns a new context with {@link #isCreative()}
++     * set to true.
++     *
++     * @return a new context
++     */
++    @Contract("-> new")
++    @NotNull TooltipContext asCreative();
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContextImpl.java b/src/main/java/io/papermc/paper/inventory/tooltip/TooltipContextImpl.java
 new file mode 100644
@@ -130,16 +119,20 @@ index 890c07cfc2e64a52752e96d518578b5eb1afbd19..c6222fe754dee53f269944c7578dde81
 +    @NotNull java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, @Nullable org.bukkit.entity.Player player); // Paper - expose itemstack tooltip lines
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 7adf54c561d64e6337af8a2d86f6b574b083edb5..d4b895cab69fc5aff268ed10154236e0680a2214 100644
+index 7adf54c561d64e6337af8a2d86f6b574b083edb5..245a730a54c4b241a9a67eccceefafd2763bd238 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -1016,4 +1016,17 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1016,4 +1016,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return type.isAir() || amount <= 0;
      }
      // Paper end
 +    // Paper start - expose itemstack tooltip lines
 +    /**
 +     * Computes the tooltip lines for this stack.
++     * <p>
++     * <b>Disclaimer:</b>
++     * Tooltip contents are not guaranteed to be consistent across different
++     * Minecraft versions.
 +     *
 +     * @param tooltipContext the tooltip context
 +     * @param player a player for player-specific tooltip lines
