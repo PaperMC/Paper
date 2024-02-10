@@ -234,10 +234,31 @@ index 9e0555b1e98bba6a9305c3996c69347e47d73204..bd70046b4fef307b6b8b626a65f0b4a3
      // CraftBukkit start
      public int getExpReward() {
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 4ae0f36276592e37aeb5f881b713efa76d086f8e..c4b05c7e339a2ec01ee3f5e4dec0b3493788d8d2 100644
+index 4ae0f36276592e37aeb5f881b713efa76d086f8e..236b10b86cdf6e0a723d8c9f199dde9cc983198e 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -1075,7 +1075,13 @@ public abstract class Mob extends LivingEntity implements Targeting {
+@@ -1057,6 +1057,12 @@ public abstract class Mob extends LivingEntity implements Targeting {
+ 
+     }
+ 
++    // Paper start
++    protected boolean shouldSkipLoot(EquipmentSlot slot) { // method to avoid to fallback into the global mob loot logic (i.e fox)
++        return false;
++    }
++    // Paper end
++
+     @Override
+     protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
+         super.dropCustomDeathLoot(source, lootingMultiplier, allowDrops);
+@@ -1065,6 +1071,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
+ 
+         for (int k = 0; k < j; ++k) {
+             EquipmentSlot enumitemslot = aenumitemslot[k];
++            if (this.shouldSkipLoot(enumitemslot)) continue; // Paper
+             ItemStack itemstack = this.getItemBySlot(enumitemslot);
+             float f = this.getEquipmentDropChance(enumitemslot);
+             boolean flag1 = f > 1.0F;
+@@ -1075,7 +1082,13 @@ public abstract class Mob extends LivingEntity implements Targeting {
                  }
  
                  this.spawnAtLocation(itemstack);
@@ -252,18 +273,32 @@ index 4ae0f36276592e37aeb5f881b713efa76d086f8e..c4b05c7e339a2ec01ee3f5e4dec0b349
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Fox.java b/src/main/java/net/minecraft/world/entity/animal/Fox.java
-index 8670d8b2a08e96df787a91f36c48df8b345080dc..6124209f50300eeaab45b66c2f1a5b2944119450 100644
+index 8670d8b2a08e96df787a91f36c48df8b345080dc..950e4b476a03fb5c26351a3b4d1578975a0b0ea8 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Fox.java
-@@ -712,15 +712,25 @@ public class Fox extends Animal implements VariantHolder<Fox.Type> {
+@@ -711,16 +711,38 @@ public class Fox extends Animal implements VariantHolder<Fox.Type> {
+         return this.getTrustedUUIDs().contains(uuid);
      }
  
++    // Paper start - handle the bitten item separately like vanilla
      @Override
 -    protected void dropAllDeathLoot(DamageSource source) {
--        ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
++    protected boolean shouldSkipLoot(EquipmentSlot slot) {
++        return slot == EquipmentSlot.MAINHAND;
++    }
++    // Paper end
++
++    @Override
 +    // Paper start - Cancellable death event
 +    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(DamageSource source) {
-+        ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND).copy(); // Paper - modified by supercall
+         ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
+ 
+-        if (!itemstack.isEmpty()) {
++        boolean releaseMouth = false;
++        if (!itemstack.isEmpty() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Fix MC-153010
+             this.spawnAtLocation(itemstack);
++            releaseMouth = true;
++        }
 +
 +        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.dropAllDeathLoot(source);
 +
@@ -272,15 +307,14 @@ index 8670d8b2a08e96df787a91f36c48df8b345080dc..6124209f50300eeaab45b66c2f1a5b29
 +        if (deathEvent == null || deathEvent.isCancelled()) {
 +            return deathEvent;
 +        }
-+        // Paper end
- 
-         if (!itemstack.isEmpty()) {
-             this.spawnAtLocation(itemstack);
++
++        if (releaseMouth) {
++            // Paper end - Cancellable death event
              this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
          }
  
 -        super.dropAllDeathLoot(source);
-+        return deathEvent; // Paper
++        return deathEvent; // Paper - Cancellable death event
      }
  
      @Override
