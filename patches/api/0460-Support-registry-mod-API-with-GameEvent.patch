@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 25 Feb 2023 21:26:44 -0800
+Subject: [PATCH] Support registry mod API with GameEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+index 0df2045dab9b19f5456a8946e0b827cbdcf31159..b222103a73d388d5cf7eb088db1de06b582dea7d 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+@@ -7,6 +7,7 @@ import io.papermc.paper.plugin.lifecycle.event.handler.configuration.Prioritized
+ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
+ import io.papermc.paper.registry.RegistryBuilder;
+ import io.papermc.paper.registry.RegistryKey;
++import org.bukkit.GameEvent;
+ import org.jetbrains.annotations.ApiStatus;
+ import org.jetbrains.annotations.NotNull;
+ 
+@@ -19,6 +20,7 @@ import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
+ @ApiStatus.Experimental
+ public final class RegistryEvents {
+ 
++    public static final Provider<GameEvent, GameEvent.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);
+ 
+     /**
+      * Provider for each registry event type for a specific registry.
+diff --git a/src/main/java/org/bukkit/GameEvent.java b/src/main/java/org/bukkit/GameEvent.java
+index 6c9689baca1763e2ef79495d38618d587e792434..fd9ccb69f99ae77da66583770e994cd958fd4bf9 100644
+--- a/src/main/java/org/bukkit/GameEvent.java
++++ b/src/main/java/org/bukkit/GameEvent.java
+@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a generic Mojang game event.
+  */
++@org.checkerframework.framework.qual.DefaultQualifier(NotNull.class) // Paper
+ public abstract class GameEvent implements Keyed {
+ 
+     public static final GameEvent BLOCK_ACTIVATE = getEvent("block_activate");
+@@ -147,4 +148,46 @@ public abstract class GameEvent implements Keyed {
+ 
+         return gameEvent;
+     }
++
++    // Paper start
++    /**
++     * Gets the range of the event which is used to
++     * notify listeners of the event.
++     *
++     * @return the range
++     */
++    public abstract int getRange();
++
++    /**
++     * Gets the vibration level of the game event for vibration listeners.
++     * Not all events have vibration levels, and a level of 0 means
++     * it won't cause any vibrations.
++     *
++     * @return the vibration level
++     */
++    public abstract int getVibrationLevel();
++
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    @org.jetbrains.annotations.ApiStatus.NonExtendable
++    public interface Builder extends io.papermc.paper.registry.RegistryBuilder<GameEvent> {
++
++        /**
++         * Gets the range of the event which is used to
++         * notify listeners of the event.
++         *
++         * @return the range
++         */
++        int range();
++
++        /**
++         * Sets the range of the event which is used to
++         * notify listeners of the event.
++         *
++         * @param range the range
++         * @return the builder
++         */
++        @org.jetbrains.annotations.Contract("_ -> this")
++        @NotNull Builder range(int range);
++    }
++    // Paper end
+ }
