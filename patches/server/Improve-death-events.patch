@@ -238,6 +238,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
+ 
+     }
+ 
++    // Paper start
++    protected boolean shouldSkipLoot(EquipmentSlot slot) { // method to avoid to fallback into the global mob loot logic (i.e fox)
++        return false;
++    }
++    // Paper end
++
+     @Override
+     protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
+         super.dropCustomDeathLoot(source, lootingMultiplier, allowDrops);
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
+ 
+         for (int k = 0; k < j; ++k) {
+             EquipmentSlot enumitemslot = aenumitemslot[k];
++            if (this.shouldSkipLoot(enumitemslot)) continue; // Paper
+             ItemStack itemstack = this.getItemBySlot(enumitemslot);
+             float f = this.getEquipmentDropChance(enumitemslot);
+             boolean flag1 = f > 1.0F;
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
                  }
  
                  this.spawnAtLocation(itemstack);
@@ -256,14 +277,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Fox.java
 @@ -0,0 +0,0 @@ public class Fox extends Animal implements VariantHolder<Fox.Type> {
+         return this.getTrustedUUIDs().contains(uuid);
      }
  
++    // Paper start - handle the bitten item separately like vanilla
      @Override
 -    protected void dropAllDeathLoot(DamageSource source) {
--        ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
++    protected boolean shouldSkipLoot(EquipmentSlot slot) {
++        return slot == EquipmentSlot.MAINHAND;
++    }
++    // Paper end
++
++    @Override
 +    // Paper start - Cancellable death event
 +    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(DamageSource source) {
-+        ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND).copy(); // Paper - modified by supercall
+         ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
+ 
+-        if (!itemstack.isEmpty()) {
++        boolean releaseMouth = false;
++        if (!itemstack.isEmpty() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Fix MC-153010
+             this.spawnAtLocation(itemstack);
++            releaseMouth = true;
++        }
 +
 +        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.dropAllDeathLoot(source);
 +
@@ -272,15 +307,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (deathEvent == null || deathEvent.isCancelled()) {
 +            return deathEvent;
 +        }
-+        // Paper end
- 
-         if (!itemstack.isEmpty()) {
-             this.spawnAtLocation(itemstack);
++
++        if (releaseMouth) {
++            // Paper end - Cancellable death event
              this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
          }
  
 -        super.dropAllDeathLoot(source);
-+        return deathEvent; // Paper
++        return deathEvent; // Paper - Cancellable death event
      }
  
      @Override
