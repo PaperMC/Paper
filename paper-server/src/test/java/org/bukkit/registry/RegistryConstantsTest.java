@@ -13,12 +13,19 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.damage.DamageType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
 
 public class RegistryConstantsTest extends AbstractTestingBase {
+
+    @Test
+    public void testDamageType() {
+        this.testExcessConstants(DamageType.class, Registry.DAMAGE_TYPE);
+        this.testMissingConstants(DamageType.class, Registries.DAMAGE_TYPE);
+    }
 
     @Test
     public void testTrimMaterial() {

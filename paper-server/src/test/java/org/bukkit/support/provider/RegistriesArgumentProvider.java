@@ -10,12 +10,14 @@ import org.bukkit.GameEvent;
 import org.bukkit.MusicInstrument;
 import org.bukkit.craftbukkit.CraftGameEvent;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
+import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructureType;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
+import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
@@ -40,6 +42,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         DATA.add(Arguments.of(StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class));
         DATA.add(Arguments.of(TrimMaterial.class, Registries.TRIM_MATERIAL, CraftTrimMaterial.class, net.minecraft.world.item.armortrim.TrimMaterial.class));
         DATA.add(Arguments.of(TrimPattern.class, Registries.TRIM_PATTERN, CraftTrimPattern.class, net.minecraft.world.item.armortrim.TrimPattern.class));
+        DATA.add(Arguments.of(DamageType.class, Registries.DAMAGE_TYPE, CraftDamageType.class, net.minecraft.world.damagesource.DamageType.class));
     }
 
     @Override

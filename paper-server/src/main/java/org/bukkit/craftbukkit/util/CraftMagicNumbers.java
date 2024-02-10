@@ -57,9 +57,14 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.damage.CraftDamageEffect;
+import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.CraftLegacy;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
+import org.bukkit.damage.DamageEffect;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
@@ -382,6 +387,17 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 .getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElseThrow();
 
         return new CraftPotionType(namespacedKey, potionRegistry);
+    }
+
+    @Override
+    public DamageEffect getDamageEffect(String key) {
+        Preconditions.checkArgument(key != null, "key cannot be null");
+        return CraftDamageEffect.getById(key);
+    }
+
+    @Override
+    public DamageSource.Builder createDamageSourceBuilder(DamageType damageType) {
+        return new CraftDamageSourceBuilder(damageType);
     }
 
     /**

@@ -16,6 +16,7 @@ import org.bukkit.Keyed;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructureType;
@@ -24,6 +25,7 @@ import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Handleable;
+import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
@@ -114,6 +116,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         }
         if (bukkitClass == TrimPattern.class) {
             return new CraftRegistry<>(TrimPattern.class, registryHolder.registryOrThrow(Registries.TRIM_PATTERN), CraftTrimPattern::new);
+        }
+        if (bukkitClass == DamageType.class) {
+            return new CraftRegistry<>(DamageType.class, registryHolder.registryOrThrow(Registries.DAMAGE_TYPE), CraftDamageType::new);
         }
 
         return null;

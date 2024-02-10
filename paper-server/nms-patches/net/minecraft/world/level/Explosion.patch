@@ -28,7 +28,7 @@
  
      public static DamageSource getDefaultDamageSource(World world, @Nullable Entity entity) {
          return world.damageSources().explosion(entity, getIndirectSourceEntityInternal(entity));
-@@ -85,7 +99,7 @@
+@@ -85,17 +99,18 @@
          this.hitPlayers = Maps.newHashMap();
          this.level = world;
          this.source = entity;
@@ -37,7 +37,11 @@
          this.x = d0;
          this.y = d1;
          this.z = d2;
-@@ -96,6 +110,7 @@
+         this.fire = flag;
+         this.blockInteraction = explosion_effect;
+-        this.damageSource = damagesource == null ? world.damageSources().explosion(this) : damagesource;
++        this.damageSource = damagesource == null ? world.damageSources().explosion(this).customCausingEntity(entity) : damagesource.customCausingEntity(entity); // CraftBukkit - handle source entity
+         this.damageCalculator = explosiondamagecalculator == null ? this.makeDamageCalculator(entity) : explosiondamagecalculator;
          this.smallExplosionParticles = particleparam;
          this.largeExplosionParticles = particleparam1;
          this.explosionSound = soundeffect;
@@ -57,7 +61,7 @@
          this.level.gameEvent(this.source, GameEvent.EXPLODE, new Vec3D(this.x, this.y, this.z));
          Set<BlockPosition> set = Sets.newHashSet();
          boolean flag = true;
-@@ -228,7 +248,37 @@
+@@ -228,7 +248,35 @@
                          d9 /= d11;
                          d10 /= d11;
                          if (this.damageCalculator.shouldDamageEntity(this, entity)) {
@@ -74,7 +78,6 @@
 +                                continue;
 +                            }
 +
-+                            CraftEventFactory.entityDamage = source;
 +                            entity.lastDamageCancelled = false;
 +
 +                            if (entity instanceof EntityEnderDragon) {
@@ -88,7 +91,6 @@
 +                                entity.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity));
 +                            }
 +
-+                            CraftEventFactory.entityDamage = null;
 +                            if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled
 +                                continue;
 +                            }
@@ -96,7 +98,7 @@
                          }
  
                          double d12 = (1.0D - d7) * (double) getSeenPercent(vec3d, entity);
-@@ -247,6 +297,14 @@
+@@ -247,6 +295,14 @@
                          d10 *= d13;
                          Vec3D vec3d1 = new Vec3D(d8, d9, d10);
  
@@ -111,7 +113,7 @@
                          entity.setDeltaMovement(entity.getDeltaMovement().add(vec3d1));
                          if (entity instanceof EntityHuman) {
                              EntityHuman entityhuman = (EntityHuman) entity;
-@@ -287,9 +345,63 @@
+@@ -287,9 +343,63 @@
  
              SystemUtils.shuffle(this.toBlow, this.level.random);
              ObjectListIterator objectlistiterator = this.toBlow.iterator();
@@ -175,7 +177,7 @@
  
                  this.level.getBlockState(blockposition).onExplosionHit(this.level, blockposition, this, (itemstack, blockposition1) -> {
                      addOrAppendStack(list, itemstack, blockposition1);
-@@ -314,7 +426,11 @@
+@@ -314,7 +424,11 @@
                  BlockPosition blockposition1 = (BlockPosition) objectlistiterator1.next();
  
                  if (this.random.nextInt(3) == 0 && this.level.getBlockState(blockposition1).isAir() && this.level.getBlockState(blockposition1.below()).isSolidRender(this.level, blockposition1.below())) {
@@ -188,7 +190,7 @@
                  }
              }
          }
-@@ -322,6 +438,7 @@
+@@ -322,6 +436,7 @@
      }
  
      private static void addOrAppendStack(List<Pair<ItemStack, BlockPosition>> list, ItemStack itemstack, BlockPosition blockposition) {
