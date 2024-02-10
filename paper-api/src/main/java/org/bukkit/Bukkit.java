@@ -1663,11 +1663,27 @@ public final class Bukkit {
      * @param <T> The ban target
      *
      * @return a ban list of the specified type
+     * @deprecated use {@link #getBanList(io.papermc.paper.ban.BanListType)} to enforce the correct return value at compile time.
      */
     @NotNull
+    @Deprecated(since = "1.20.4") // Paper - add BanListType (which has a generic)
     public static <T extends BanList<?>> T getBanList(@NotNull BanList.Type type) {
         return server.getBanList(type);
     }
+    // Paper start - add BanListType (which has a generic)
+    /**
+     * Gets a ban list for the supplied type.
+     *
+     * @param type the type of list to fetch, cannot be null
+     * @param <B> The ban target
+     *
+     * @return a ban list of the specified type
+     */
+    @NotNull
+    public static <B extends BanList<E>, E> B getBanList(final io.papermc.paper.ban.@NotNull BanListType<B> type) {
+        return server.getBanList(type);
+    }
+    // Paper end - add BanListType (which has a generic)
 
     /**
      * Gets a set containing all player operators.

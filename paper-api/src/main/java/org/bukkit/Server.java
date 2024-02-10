@@ -1425,9 +1425,24 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param <T> The ban target
      *
      * @return a ban list of the specified type
+     * @deprecated use {@link #getBanList(io.papermc.paper.ban.BanListType)} to enforce the correct return value at compile time.
      */
+    @Deprecated // Paper - add BanListType (which has a generic)
     @NotNull
     public <T extends BanList<?>> T getBanList(@NotNull BanList.Type type);
+
+    // Paper start - add BanListType (which has a generic)
+    /**
+     * Gets a ban list for the supplied type.
+     *
+     * @param type the type of list to fetch, cannot be null
+     * @param <B> The ban target
+     *
+     * @return a ban list of the specified type
+     */
+    @NotNull
+    <B extends BanList<E>, E> B getBanList(@NotNull io.papermc.paper.ban.BanListType<B> type);
+    // Paper end - add BanListType (which has a generic)
 
     /**
      * Gets a set containing all player operators.

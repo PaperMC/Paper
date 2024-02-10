@@ -16,7 +16,9 @@ public interface BanList<T> {
 
     /**
      * Represents a ban-type that a {@link BanList} may track.
+     * @deprecated use {@link io.papermc.paper.ban.BanListType} to enforce the correct return value at compile time.
      */
+    @Deprecated(since = "1.20.4") // Paper - BanList Type Improvements
     public enum Type {
         /**
          * Banned player names
