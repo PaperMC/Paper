@@ -103,6 +103,23 @@ public interface Chunk extends PersistentDataHolder {
     @NotNull
     ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome, boolean includeBiomeTempRain);
 
+    // Paper start - Add getChunkSnapshot includeLightData parameter
+    /**
+     * Capture thread-safe read-only snapshot of chunk data
+     *
+     * @param includeMaxblocky if true, snapshot includes per-coordinate
+     *     maximum Y values
+     * @param includeBiome if true, snapshot includes per-coordinate biome
+     *     type
+     * @param includeBiomeTempRain if true, snapshot includes per-coordinate
+     *     raw biome temperature and rainfall
+     * @param includeLightData Whether to include per-coordinate light emitted by blocks and sky light data
+     * @return ChunkSnapshot
+     */
+    @NotNull
+    ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome, boolean includeBiomeTempRain, boolean includeLightData);
+    // Paper end - Add getChunkSnapshot includeLightData parameter
+
     /**
      * Checks if entities in this chunk are loaded.
      *
