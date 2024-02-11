@@ -92,7 +92,8 @@ patch;
 
 Your commit will be converted into a patch that you can then PR into Paper.
 
-> ❗ Please note that if you have some specific implementation detail you'd like
+> [!IMPORTANT]
+> Please note that if you have some specific implementation detail you'd like
 > to document, you should do so in the patch message *or* in comments.
 
 ## Modifying Patches
@@ -104,7 +105,8 @@ Modifying previous patches is a bit more complex:
 This method works by temporarily resetting your `HEAD` to the desired commit to
 edit it using `git rebase`.
 
-> ❗ While in the middle of an edit, you will not be able to compile unless you
+> [!WARNING]
+> While in the middle of an edit, you will not be able to compile unless you
 > *also* reset the opposing module(s) to a related commit. In the API's case,
 > you must reset the Server, and reset the API if you're editing the Server.
 > Note also that either module _may_ not compile when doing so. This is not
@@ -455,7 +457,8 @@ the script. Follow the instructions there;
 1. Re-patch the server `./gradlew applyPatches`;
 1. Edit away!
 
-> ❗ This change is temporary! **DO NOT COMMIT CHANGES TO THIS FILE!**  
+> [!WARNING]
+> This change is temporary! **DO NOT COMMIT CHANGES TO THIS FILE!**  
 > Once you have made your changes to the new file, and rebuilt patches, you may
 > undo your changes to `dev-imports.txt`.
 
@@ -485,13 +488,17 @@ using an out of date version of Windows 10, update your system with the
 To set up WSL 2, follow the information here:
 <https://docs.microsoft.com/en-us/windows/wsl/install>
 
+To avoid issues with Intellij and WSL 2 you may also want to add the processes `fsnotifier-wsl` 
+and `idea64.exe` to your Windows Defender exclusions. For more information see: <https://github.com/microsoft/WSL/issues/8995#issuecomment-1356454733>
+
 You will most likely want to use the Ubuntu apps. Once it's set up, install the
 required tools with `sudo apt-get update && sudo apt-get install $TOOL_NAMES
 -y`. Replace `$TOOL_NAMES` with the packages found in the
 [requirements](#requirements). You can now clone the repository and do
 everything like usual.
 
-> ❗ Do not use the `/mnt/` directory in WSL! Instead, mount the WSL directories
+> [!CAUTION]
+> Do not use the `/mnt/` directory in WSL! Instead, mount the WSL directories
 > in Windows like described here:
 > <https://docs.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>
 
