@@ -488,8 +488,10 @@ using an out of date version of Windows 10, update your system with the
 To set up WSL 2, follow the information here:
 <https://docs.microsoft.com/en-us/windows/wsl/install>
 
-To avoid issues with IntelliJ and WSL 2 you may also want to add the processes `fsnotifier-wsl` 
-and `idea64.exe` to your Windows Defender exclusions. For more information see: <https://github.com/microsoft/WSL/issues/8995#issuecomment-1356454733>
+> [!NOTE]
+> To avoid issues with IntelliJ and WSL 2 you may also want to add the processes `fsnotifier-wsl` 
+> and `idea64.exe` to your Windows Defender exclusions. For more information see: 
+> <https://github.com/microsoft/WSL/issues/8995#issuecomment-1356454733>
 
 You will most likely want to use the Ubuntu apps. Once it's set up, install the
 required tools with `sudo apt-get update && sudo apt-get install $TOOL_NAMES
