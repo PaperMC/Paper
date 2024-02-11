@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 27 Feb 2019 22:18:40 -0500
+Subject: [PATCH] Limit Client Sign length more
+
+modified clients can send more data from the client
+to the server and it would get stored on the sign as sent.
+
+Mojang has a limit of 384 which is much higher than reasonable.
+
+the client can barely render around 16 characters as-is, but formatting
+codes can get it to be more than 16 actual length.
+
+Set a limit of 80 which should give an average of 16 characters 2
+sets of legacy formatting codes which should be plenty for all uses.
+
+This does not strip any existing data from the NBT as plugins
+may use this for storing data out of the rendered area.
+
+it only impacts data sent from the client.
+
+Set -DPaper.maxSignLength=XX to change limit or -1 to disable
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 7c5b550845035bf896358b7aad2101ab0b48b3fe..89da9267c4c1a884e5483c423ccc68ed1d79259b 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -290,6 +290,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
+     private final FutureChain chatMessageChain;
+     private boolean waitingForSwitchToConfig;
++    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper - Limit client sign length
+ 
+     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie clientData) {
+         super(server, connection, clientData, player); // CraftBukkit
+@@ -3055,7 +3056,19 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     @Override
+     public void handleSignUpdate(ServerboundSignUpdatePacket packet) {
+-        List<String> list = (List) Stream.of(packet.getLines()).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
++        // Paper start - Limit client sign length
++        String[] lines = packet.getLines();
++        for (int i = 0; i < lines.length; ++i) {
++            if (MAX_SIGN_LINE_LENGTH > 0 && lines[i].length() > MAX_SIGN_LINE_LENGTH) {
++                // This handles multibyte characters as 1
++                int offset = lines[i].codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
++                if (offset < lines[i].length()) {
++                    lines[i] = lines[i].substring(0, offset); // this will break any filtering, but filtering is NYI as of 1.17
++                }
++            }
++        }
++        List<String> list = (List) Stream.of(lines).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
++        // Paper end - Limit client sign length
+ 
+         this.filterTextPacket(list).thenAcceptAsync((list1) -> {
+             this.updateSignText(packet, list1);

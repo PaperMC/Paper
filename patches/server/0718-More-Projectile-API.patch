@@ -1,0 +1,588 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Tue, 22 Jun 2021 23:41:11 -0400
+Subject: [PATCH] More Projectile API
+
+== AT ==
+public net.minecraft.world.entity.projectile.FishingHook timeUntilLured
+public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaX
+public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaY
+public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaZ
+public net.minecraft.world.entity.projectile.ShulkerBullet currentMoveDirection
+public net.minecraft.world.entity.projectile.ShulkerBullet flightSteps
+public net.minecraft.world.entity.projectile.AbstractArrow soundEvent
+public net.minecraft.world.entity.projectile.ThrownTrident dealtDamage
+public net.minecraft.world.entity.projectile.Projectile hasBeenShot
+public net.minecraft.world.entity.projectile.Projectile leftOwner
+public net.minecraft.world.entity.projectile.Projectile preOnHit(Lnet/minecraft/world/phys/HitResult;)V
+public net.minecraft.world.entity.projectile.Projectile canHitEntity(Lnet/minecraft/world/entity/Entity;)Z
+
+Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+index 77235314f4ccc28255b98f2bb52f553fe93313f3..5f316b09fb914ccb0782efe521ad85727f5dd02f 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+@@ -100,6 +100,11 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+     @Override
+     protected void onHit(HitResult hitResult) {
+         super.onHit(hitResult);
++        // Paper start - More projectile API
++        this.splash(hitResult);
++    }
++    public void splash(@Nullable HitResult hitResult) {
++        // Paper end - More projectile API
+         if (!this.level().isClientSide) {
+             ItemStack itemstack = this.getItem();
+             Potion potionregistry = PotionUtils.getPotion(itemstack);
+@@ -113,7 +118,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+                 if (this.isLingering()) {
+                     showParticles = this.makeAreaOfEffectCloud(itemstack, potionregistry, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
+                 } else {
+-                    showParticles = this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
++                    showParticles = this.applySplash(list, hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper - More projectile API
+                 }
+             }
+ 
+@@ -175,7 +180,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+ 
+     }
+ 
+-    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events
++    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events & More projectile API
+         AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
+         List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
+         Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
+@@ -252,7 +257,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+ 
+     }
+ 
+-    private boolean makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean
++    private boolean makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean & More projectile API
+         AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
+         Entity entity = this.getOwner();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
+index 91c2d0b40d3fca86938cd454e1415a4eea3df7c7..c1c52f4fc5f900fac4098e5e37c52dfc4e82b8bb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
+@@ -17,4 +17,65 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
+     @Override
+     public void setBounce(boolean doesBounce) {}
+ 
++    // Paper start - More projectile API
++    @Override
++    public boolean hasLeftShooter() {
++        return this.getHandle().leftOwner;
++    }
++
++    @Override
++    public void setHasLeftShooter(boolean leftShooter) {
++        this.getHandle().leftOwner = leftShooter;
++    }
++
++    @Override
++    public boolean hasBeenShot() {
++        return this.getHandle().hasBeenShot;
++    }
++
++    @Override
++    public void setHasBeenShot(boolean beenShot) {
++        this.getHandle().hasBeenShot = beenShot;
++    }
++
++    @Override
++    public boolean canHitEntity(org.bukkit.entity.Entity entity) {
++        return this.getHandle().canHitEntity(((CraftEntity) entity).getHandle());
++    }
++
++    @Override
++    public void hitEntity(org.bukkit.entity.Entity entity) {
++        this.getHandle().preOnHit(new net.minecraft.world.phys.EntityHitResult(((CraftEntity) entity).getHandle()));
++    }
++
++    @Override
++    public void hitEntity(org.bukkit.entity.Entity entity, org.bukkit.util.Vector vector) {
++        this.getHandle().preOnHit(new net.minecraft.world.phys.EntityHitResult(((CraftEntity) entity).getHandle(), new net.minecraft.world.phys.Vec3(vector.getX(), vector.getY(), vector.getZ())));
++    }
++
++    @Override
++    public net.minecraft.world.entity.projectile.Projectile getHandle() {
++        return (net.minecraft.world.entity.projectile.Projectile) entity;
++    }
++
++    @Override
++    public final org.bukkit.projectiles.ProjectileSource getShooter() {
++        return this.getHandle().projectileSource;
++    }
++
++    @Override
++    public final void setShooter(org.bukkit.projectiles.ProjectileSource shooter) {
++        if (shooter instanceof CraftEntity craftEntity) {
++            this.getHandle().setOwner(craftEntity.getHandle());
++        } else {
++            this.getHandle().setOwner(null);
++        }
++        this.getHandle().projectileSource = shooter;
++    }
++
++    @Override
++    public java.util.UUID getOwnerUniqueId() {
++        return this.getHandle().ownerUUID;
++    }
++    // Paper end - More projectile API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
+index 762c395e45a681a11f3fe9d10e7f0ba310786e80..6d2fe30742f8b41d53dd2cbff120fcc042ea0e0c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
+@@ -58,20 +58,7 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
+         this.getHandle().setCritArrow(critical);
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return this.getHandle().projectileSource;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource shooter) {
+-        if (shooter instanceof Entity) {
+-            this.getHandle().setOwner(((CraftEntity) shooter).getHandle());
+-        } else {
+-            this.getHandle().setOwner(null);
+-        }
+-        this.getHandle().projectileSource = shooter;
+-    }
++    // Paper - moved to AbstractProjectile
+ 
+     @Override
+     public boolean isInBlock() {
+@@ -105,6 +92,27 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
+         return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(getHandle().getPickupItem());
+     }
+ 
++    @Override
++    public void setLifetimeTicks(int ticks) {
++        this.getHandle().life = ticks;
++    }
++
++    @Override
++    public int getLifetimeTicks() {
++        return this.getHandle().life;
++    }
++
++    @org.jetbrains.annotations.NotNull
++    @Override
++    public org.bukkit.Sound getHitSound() {
++        return org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(this.getHandle().soundEvent);
++    }
++
++    @Override
++    public void setHitSound(@org.jetbrains.annotations.NotNull org.bukkit.Sound sound) {
++        this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(sound));
++    }
++
+     @Override
+     public void setNoPhysics(boolean noPhysics) {
+         this.getHandle().setNoPhysics(noPhysics);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
+index 73cb7aa01af3eed71b05b1a539f082b26dcd8d60..2783e218d5e5c24787429237974e196761f4d02b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
+@@ -32,20 +32,7 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
+         this.getHandle().bukkitYield = yield;
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return this.getHandle().projectileSource;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource shooter) {
+-        if (shooter instanceof CraftLivingEntity) {
+-            this.getHandle().setOwner(((CraftLivingEntity) shooter).getHandle());
+-        } else {
+-            this.getHandle().setOwner(null);
+-        }
+-        this.getHandle().projectileSource = shooter;
+-    }
++    // Paper - moved to AbstractProjectile
+ 
+     @Override
+     public Vector getDirection() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+index c9e15a9d82dee935293b2e7e233f5b9b2d822448..fedbfbac02b73382aacc69f8a1e5a3e746c55ea2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+@@ -15,24 +15,26 @@ import org.bukkit.inventory.meta.FireworkMeta;
+ public class CraftFirework extends CraftProjectile implements Firework {
+ 
+     private final Random random = new Random();
+-    private final CraftItemStack item;
++    //private CraftItemStack item; // Paper - Remove usage, not accurate representation of current item.
+ 
+     public CraftFirework(CraftServer server, FireworkRocketEntity entity) {
+         super(server, entity);
+ 
+-        ItemStack item = this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
+-
+-        if (item.isEmpty()) {
+-            item = new ItemStack(Items.FIREWORK_ROCKET);
+-            this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
+-        }
+-
+-        this.item = CraftItemStack.asCraftMirror(item);
+-
+-        // Ensure the item is a firework...
+-        if (this.item.getType() != Material.FIREWORK_ROCKET) {
+-            this.item.setType(Material.FIREWORK_ROCKET);
+-        }
++//        Paper start - Expose firework item directly
++//        ItemStack item = this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
++//
++//        if (item.isEmpty()) {
++//            item = new ItemStack(Items.FIREWORK_ROCKET);
++//            this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
++//        }
++//
++//        this.item = CraftItemStack.asCraftMirror(item);
++//
++//        // Ensure the item is a firework...
++//        if (this.item.getType() != Material.FIREWORK_ROCKET) {
++//            this.item.setType(Material.FIREWORK_ROCKET);
++//        }
++        // Paper end - Expose firework item directly
+     }
+ 
+     @Override
+@@ -47,12 +49,12 @@ public class CraftFirework extends CraftProjectile implements Firework {
+ 
+     @Override
+     public FireworkMeta getFireworkMeta() {
+-        return (FireworkMeta) this.item.getItemMeta();
++        return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), Material.FIREWORK_ROCKET); // Paper - Expose firework item directly
+     }
+ 
+     @Override
+     public void setFireworkMeta(FireworkMeta meta) {
+-        this.item.setItemMeta(meta);
++        applyFireworkEffect(meta); // Paper - Expose firework item directly
+ 
+         // Copied from EntityFireworks constructor, update firework lifetime/power
+         this.getHandle().lifetime = 10 * (1 + meta.getPower()) + this.random.nextInt(6) + this.random.nextInt(7);
+@@ -136,4 +138,46 @@ public class CraftFirework extends CraftProjectile implements Firework {
+         return getHandle().spawningEntity;
+     }
+     // Paper end
++    // Paper start - Expose firework item directly + manually setting flight
++    @Override
++    public org.bukkit.inventory.ItemStack getItem() {
++        return CraftItemStack.asBukkitCopy(this.getHandle().getItem());
++    }
++
++    @Override
++    public void setItem(org.bukkit.inventory.ItemStack itemStack) {
++        FireworkMeta meta = getFireworkMeta();
++        ItemStack nmsItem = itemStack == null ? ItemStack.EMPTY : CraftItemStack.asNMSCopy(itemStack);
++        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nmsItem);
++
++        applyFireworkEffect(meta);
++    }
++
++    @Override
++    public int getTicksFlown() {
++        return this.getHandle().life;
++    }
++
++    @Override
++    public void setTicksFlown(int ticks) {
++        this.getHandle().life = ticks;
++    }
++
++    @Override
++    public int getTicksToDetonate() {
++        return this.getHandle().lifetime;
++    }
++
++    @Override
++    public void setTicksToDetonate(int ticks) {
++        this.getHandle().lifetime = ticks;
++    }
++
++    void applyFireworkEffect(FireworkMeta meta) {
++        ItemStack item = this.getHandle().getItem();
++        CraftItemStack.applyMetaToItem(item, meta);
++
++        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
++    }
++    // Paper end - Expose firework item directly + manually setting flight
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
+index 6e2f91423371ead9890095cf4b1e2299c4dcba28..ad1aeea80877f2cdb9e8ad9c5b46f95dd76b3335 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
+@@ -196,4 +196,15 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
+     public HookState getState() {
+         return HookState.values()[this.getHandle().currentState.ordinal()];
+     }
++    // Paper start - More FishHook API
++    @Override
++    public int getWaitTime() {
++        return this.getHandle().timeUntilLured;
++    }
++
++    @Override
++    public void setWaitTime(int ticks) {
++        this.getHandle().timeUntilLured = ticks;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java
+index 70cbc6c668c60e9d608ca7013b72f9b916c05c2d..47633f05b4fab1dcabc2117e7645fe6d6949622a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java
+@@ -20,13 +20,5 @@ public class CraftLlamaSpit extends AbstractProjectile implements LlamaSpit {
+         return "CraftLlamaSpit";
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return (this.getHandle().getOwner() != null) ? (ProjectileSource) this.getHandle().getOwner().getBukkitEntity() : null;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource source) {
+-        this.getHandle().setOwner((source != null) ? ((CraftLivingEntity) source).getHandle() : null);
+-    }
++    // Paper - moved to AbstractProjectile
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftProjectile.java
+index 696fdfa723aa896a67946f862d7c6890f7f7ab17..4f1fa7dec78970bdfc184d3c1f1632dc9d75a574 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftProjectile.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftProjectile.java
+@@ -10,20 +10,7 @@ public abstract class CraftProjectile extends AbstractProjectile implements Proj
+         super(server, entity);
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return this.getHandle().projectileSource;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource shooter) {
+-        if (shooter instanceof CraftLivingEntity) {
+-            this.getHandle().setOwner((LivingEntity) ((CraftLivingEntity) shooter).entity);
+-        } else {
+-            this.getHandle().setOwner(null);
+-        }
+-        this.getHandle().projectileSource = shooter;
+-    }
++    // Paper - moved to AbstractProjectile
+ 
+     @Override
+     public net.minecraft.world.entity.projectile.Projectile getHandle() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java
+index d685d09cae5f862c0004f148298c800736d2139e..636c4481e3afdf20197e502cf221f5d34d18f101 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java
+@@ -12,20 +12,7 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
+         super(server, entity);
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return this.getHandle().projectileSource;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource shooter) {
+-        if (shooter instanceof Entity) {
+-            this.getHandle().setOwner(((CraftEntity) shooter).getHandle());
+-        } else {
+-            this.getHandle().setOwner(null);
+-        }
+-        this.getHandle().projectileSource = shooter;
+-    }
++    // Paper - moved to AbstractProjectile
+ 
+     @Override
+     public org.bukkit.entity.Entity getTarget() {
+@@ -39,6 +26,40 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
+         this.getHandle().setTarget(target == null ? null : ((CraftEntity) target).getHandle());
+     }
+ 
++    @Override
++    public org.bukkit.util.Vector getTargetDelta() {
++        net.minecraft.world.entity.projectile.ShulkerBullet bullet = this.getHandle();
++        return new org.bukkit.util.Vector(bullet.targetDeltaX, bullet.targetDeltaY, bullet.targetDeltaZ);
++    }
++
++    @Override
++    public void setTargetDelta(org.bukkit.util.Vector vector) {
++        net.minecraft.world.entity.projectile.ShulkerBullet bullet = this.getHandle();
++        bullet.targetDeltaX = vector.getX();
++        bullet.targetDeltaY = vector.getY();
++        bullet.targetDeltaZ = vector.getZ();
++    }
++
++    @Override
++    public org.bukkit.block.BlockFace getCurrentMovementDirection() {
++        return org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(this.getHandle().currentMoveDirection);
++    }
++
++    @Override
++    public void setCurrentMovementDirection(org.bukkit.block.BlockFace movementDirection) {
++        this.getHandle().currentMoveDirection = org.bukkit.craftbukkit.block.CraftBlock.blockFaceToNotch(movementDirection);
++    }
++
++    @Override
++    public int getFlightSteps() {
++        return this.getHandle().flightSteps;
++    }
++
++    @Override
++    public void setFlightSteps(int steps) {
++        this.getHandle().flightSteps = steps;
++    }
++
+     @Override
+     public String toString() {
+         return "CraftShulkerBullet";
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
+index 269af20a6d0d100909a0aea0bdba307ea0658f3e..d5f1681a476c8fe2ae128a84910f4bf04063b75a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
+@@ -35,11 +35,31 @@ public class CraftThrownPotion extends CraftThrowableProjectile implements Throw
+     @Override
+     public void setItem(ItemStack item) {
+         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
+-        Preconditions.checkArgument(item.getType() == Material.LINGERING_POTION || item.getType() == Material.SPLASH_POTION, "ItemStack material must be Material.LINGERING_POTION or Material.SPLASH_POTION but was Material.%s", item.getType());
++        // Preconditions.checkArgument(item.getType() == Material.LINGERING_POTION || item.getType() == Material.SPLASH_POTION, "ItemStack material must be Material.LINGERING_POTION or Material.SPLASH_POTION but was Material.%s", item.getType()); // Paper - Projectile API
++        org.bukkit.inventory.meta.PotionMeta meta = (item.getType() == Material.LINGERING_POTION || item.getType() == Material.SPLASH_POTION) ? null : this.getPotionMeta(); // Paper - Projectile API
+ 
+         this.getHandle().setItem(CraftItemStack.asNMSCopy(item));
++        if (meta != null) this.setPotionMeta(meta); // Paper - Projectile API
+     }
+ 
++    // Paper start - Projectile API
++    @Override
++    public org.bukkit.inventory.meta.PotionMeta getPotionMeta() {
++        return (org.bukkit.inventory.meta.PotionMeta) CraftItemStack.getItemMeta(this.getHandle().getItemRaw(), Material.SPLASH_POTION);
++    }
++
++    @Override
++    public void setPotionMeta(org.bukkit.inventory.meta.PotionMeta meta) {
++        net.minecraft.world.item.ItemStack item = this.getHandle().getItem();
++        CraftItemStack.applyMetaToItem(item, meta);
++        this.getHandle().setItem(item); // Reset item
++    }
++
++    @Override
++    public void splash() {
++        this.getHandle().splash(null);
++    }
++    // Paper end
+     @Override
+     public net.minecraft.world.entity.projectile.ThrownPotion getHandle() {
+         return (net.minecraft.world.entity.projectile.ThrownPotion) this.entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
+index 20f9735c7cb76024e15dbdca7684f5c560876175..8a6af0db8e0aa0cffbf19584be747076c2c8ee44 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
+@@ -53,5 +53,15 @@ public class CraftTrident extends CraftArrow implements Trident {
+         com.google.common.base.Preconditions.checkArgument(loyaltyLevel >= 0 && loyaltyLevel <= 127, "The loyalty level has to be between 0 and 127");
+         this.getHandle().setLoyalty((byte) loyaltyLevel);
+     }
++
++    @Override
++    public boolean hasDealtDamage() {
++        return this.getHandle().dealtDamage;
++    }
++
++    @Override
++    public void setHasDealtDamage(boolean hasDealtDamage) {
++        this.getHandle().dealtDamage = hasDealtDamage;
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index cbac5fa3864e7b2298f75a44f6ef3f0000c9e765..a30626e25272769caf06caa69d32e2d3f9211710 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -831,19 +831,19 @@ public class CraftEventFactory {
+     /**
+      * PotionSplashEvent
+      */
+-    public static PotionSplashEvent callPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, HitResult position, Map<LivingEntity, Double> affectedEntities) {
++    public static PotionSplashEvent callPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult position, Map<LivingEntity, Double> affectedEntities) { // Paper - nullable hitResult
+         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
+ 
+         Block hitBlock = null;
+         BlockFace hitFace = null;
+-        if (position.getType() == HitResult.Type.BLOCK) {
++        if (position != null && position.getType() == HitResult.Type.BLOCK) { // Paper - nullable hitResult
+             BlockHitResult positionBlock = (BlockHitResult) position;
+             hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
+             hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
+         }
+ 
+         org.bukkit.entity.Entity hitEntity = null;
+-        if (position.getType() == HitResult.Type.ENTITY) {
++        if (position != null && position.getType() == HitResult.Type.ENTITY) { // Paper - nullable hitResult
+             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
+         }
+ 
+@@ -852,20 +852,20 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, HitResult position, net.minecraft.world.entity.AreaEffectCloud cloud) {
++    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult position, net.minecraft.world.entity.AreaEffectCloud cloud) { // Paper - nullable hitResult
+         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
+         AreaEffectCloud effectCloud = (AreaEffectCloud) cloud.getBukkitEntity();
+ 
+         Block hitBlock = null;
+         BlockFace hitFace = null;
+-        if (position.getType() == HitResult.Type.BLOCK) {
++        if (position != null && position.getType() == HitResult.Type.BLOCK) { // Paper
+             BlockHitResult positionBlock = (BlockHitResult) position;
+             hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
+             hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
+         }
+ 
+         org.bukkit.entity.Entity hitEntity = null;
+-        if (position.getType() == HitResult.Type.ENTITY) {
++        if (position != null && position.getType() == HitResult.Type.ENTITY) { // Paper
+             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
+         }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 7ce48473222516aefda3c5ad40e5e3fd23502e3d..6725c0824b986885c8aade846f6e159986ffbe59 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -294,12 +294,20 @@ public final class CraftItemStack extends ItemStack {
+     public ItemMeta getItemMeta() {
+         return CraftItemStack.getItemMeta(this.handle);
+     }
++    // Paper start
++    public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta meta) {
++        ((org.bukkit.craftbukkit.inventory.CraftMetaItem) meta).applyToItem(itemStack.getOrCreateTag());
++    }
+ 
+     public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item) {
++        return getItemMeta(item, CraftItemStack.getType(item));
++    }
++    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, Material material) {
++        // Paper end
+         if (!CraftItemStack.hasItemMeta(item)) {
+-            return CraftItemFactory.instance().getItemMeta(CraftItemStack.getType(item));
++            return CraftItemFactory.instance().getItemMeta(material); // Paper
+         }
+-        switch (CraftItemStack.getType(item)) {
++        switch (material) {  // Paper
+             case WRITTEN_BOOK:
+                 return new CraftMetaBookSigned(item.getTag());
+             case WRITABLE_BOOK:

@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 29 Jul 2022 12:35:19 -0400
+Subject: [PATCH] Warn on plugins accessing faraway chunks
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index c49ff35c92874273233ec53ed63aaff9c79edcd0..76deb93a1a1d3f93498176f32ef291e1299c588d 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -345,7 +345,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     }
+ 
+     private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
+-        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000;
++        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000; // Diff on change warnUnsafeChunk()
+     }
+ 
+     private static boolean isOutsideSpawnableHeight(int y) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 97ebf2e2e08469cacc66c4f38bd2edfc2107fe6a..54cdb4b6a97250c1e15e2fce355e3699c9189948 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -318,9 +318,24 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     public boolean setSpawnLocation(int x, int y, int z) {
+         return this.setSpawnLocation(x, y, z, 0.0F);
+     }
++    // Paper start
++    private static void warnUnsafeChunk(String reason, int x, int z) {
++        // if any chunk coord is outside of 30 million blocks
++        if (x > 1875000 || z > 1875000 || x < -1875000 || z < -1875000) {
++            Plugin plugin = io.papermc.paper.util.StackWalkerUtil.getFirstPluginCaller();
++            if (plugin != null) {
++                plugin.getLogger().warning("Plugin is %s at (%s, %s), this might cause issues.".formatted(reason, x, z));
++            }
++            if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) {
++                io.papermc.paper.util.TraceUtil.dumpTraceForThread("Dangerous chunk retrieval");
++            }
++        }
++    }
++    // Paper end
+ 
+     @Override
+     public Chunk getChunkAt(int x, int z) {
++        warnUnsafeChunk("getting a faraway chunk", x, z); // Paper
+         // Paper start - add ticket to hold chunk for a little while longer if plugin accesses it
+         net.minecraft.world.level.chunk.LevelChunk chunk = this.world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
+         if (chunk == null) {
+@@ -421,6 +436,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public boolean regenerateChunk(int x, int z) {
+         org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
++        warnUnsafeChunk("regenerating a faraway chunk", x, z); // Paper
+         // Paper start - implement regenerateChunk method
+         final ServerLevel serverLevel = this.world;
+         final net.minecraft.server.level.ServerChunkCache serverChunkCache = serverLevel.getChunkSource();
+@@ -515,6 +531,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public boolean loadChunk(int x, int z, boolean generate) {
+         org.spigotmc.AsyncCatcher.catchOp("chunk load"); // Spigot
++        warnUnsafeChunk("loading a faraway chunk", x, z); // Paper
+         ChunkAccess chunk = this.world.getChunkSource().getChunk(x, z, generate || isChunkGenerated(x, z) ? ChunkStatus.FULL : ChunkStatus.EMPTY, true); // Paper
+ 
+         // If generate = false, but the chunk already exists, we will get this back.
+@@ -547,6 +564,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public boolean addPluginChunkTicket(int x, int z, Plugin plugin) {
++        warnUnsafeChunk("adding a faraway chunk ticket", x, z); // Paper
+         Preconditions.checkArgument(plugin != null, "null plugin");
+         Preconditions.checkArgument(plugin.isEnabled(), "plugin is not enabled");
+ 
+@@ -628,6 +646,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public void setChunkForceLoaded(int x, int z, boolean forced) {
++        warnUnsafeChunk("forceloading a faraway chunk", x, z); // Paper
+         this.getHandle().setChunkForced(x, z, forced);
+     }
+ 
+@@ -947,6 +966,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public int getHighestBlockYAt(int x, int z, org.bukkit.HeightMap heightMap) {
++        warnUnsafeChunk("getting a faraway chunk", x >> 4, z >> 4); // Paper
+         // Transient load for this tick
+         return this.world.getChunk(x >> 4, z >> 4).getHeight(CraftHeightMap.toNMS(heightMap), x, z);
+     }
+@@ -2380,6 +2400,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     // Spigot end
+     // Paper start
+     public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
++        warnUnsafeChunk("getting a faraway chunk async", x, z); // Paper
+         if (Bukkit.isPrimaryThread()) {
+             net.minecraft.world.level.chunk.LevelChunk immediate = this.world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
+             if (immediate != null) {

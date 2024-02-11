@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sun, 11 Sep 2016 14:30:57 -0500
+Subject: [PATCH] Configurable packet in spam threshold
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index c1c1abd45cae5f1fe010e73199e4b228f919c6a6..f9581c2f53e7a73b942505be8f00ffc3ac1774a9 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1529,13 +1529,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     // Spigot start - limit place/interactions
+     private int limitedPackets;
+     private long lastLimitedPacket = -1;
++    private static int getSpamThreshold() { return io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.incomingPacketThreshold; } // Paper - Configurable threshold
+ 
+     private boolean checkLimit(long timestamp) {
+-        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < 30 && this.limitedPackets++ >= 4) {
++        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < getSpamThreshold() && this.limitedPackets++ >= 8) { // Paper - Configurable threshold; raise packet limit to 8
+             return false;
+         }
+ 
+-        if (this.lastLimitedPacket == -1 || timestamp - this.lastLimitedPacket >= 30) {
++        if (this.lastLimitedPacket == -1 || timestamp - this.lastLimitedPacket >= getSpamThreshold()) { // Paper - Configurable threshold
+             this.lastLimitedPacket = timestamp;
+             this.limitedPackets = 0;
+             return true;

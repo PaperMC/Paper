@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Mon, 19 Aug 2019 19:42:35 +0500
+Subject: [PATCH] Prevent consuming the wrong itemstack
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 7fb9880caa964df65402153b87a953200b930e24..a2b13486bdcd4d50631053c0611ad86d628b7f1f 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3722,9 +3722,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     public void startUsingItem(InteractionHand hand) {
++        // Paper start - Prevent consuming the wrong itemstack
++        this.startUsingItem(hand, false);
++    }
++    public void startUsingItem(InteractionHand hand, boolean forceUpdate) {
++        // Paper end - Prevent consuming the wrong itemstack
+         ItemStack itemstack = this.getItemInHand(hand);
+ 
+-        if (!itemstack.isEmpty() && !this.isUsingItem()) {
++        if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper - Prevent consuming the wrong itemstack
+             this.useItem = itemstack;
+             this.useItemRemaining = itemstack.getUseDuration();
+             if (!this.level().isClientSide) {
+@@ -3804,6 +3809,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 this.releaseUsingItem();
+             } else {
+                 if (!this.useItem.isEmpty() && this.isUsingItem()) {
++                    this.startUsingItem(this.getUsedItemHand(), true); // Paper - Prevent consuming the wrong itemstack
+                     this.triggerItemUseEffects(this.useItem, 16);
+                     // CraftBukkit start - fire PlayerItemConsumeEvent
+                     ItemStack itemstack;
+@@ -3838,8 +3844,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                     }
+ 
+                     this.stopUsingItem();
+-                    // Paper start - if the replacement is anything but the default, update the client inventory
+-                    if (this instanceof ServerPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
++                    // Paper start
++                    if (this instanceof ServerPlayer) {
+                         ((ServerPlayer) this).getBukkitEntity().updateInventory();
+                     }
+                     // Paper end

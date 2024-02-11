@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 17 May 2020 23:47:33 -0700
+Subject: [PATCH] Fix for large move vectors crashing server
+
+Check movement distance also based on current position.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 4e37b9a495babec58f60b59db0e034d5e033b198..5e605b9bdb76ca0c9529e7351432578855cc7fa2 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -472,9 +472,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 float prevYaw = this.player.getYRot();
+                 float prevPitch = this.player.getXRot();
+                 // CraftBukkit end
+-                double d0 = entity.getX();
+-                double d1 = entity.getY();
+-                double d2 = entity.getZ();
++                double d0 = entity.getX();final double fromX = d0; // Paper - OBFHELPER
++                double d1 = entity.getY();final double fromY = d1; // Paper - OBFHELPER
++                double d2 = entity.getZ();final double fromZ = d2; // Paper - OBFHELPER
+                 double d3 = ServerGamePacketListenerImpl.clampHorizontal(packet.getX()); final double toX = d3; // Paper - OBFHELPER
+                 double d4 = ServerGamePacketListenerImpl.clampVertical(packet.getY()); final double toY = d4; // Paper - OBFHELPER
+                 double d5 = ServerGamePacketListenerImpl.clampHorizontal(packet.getZ()); final double toZ = d5; // Paper - OBFHELPER
+@@ -484,7 +484,16 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 double d7 = d4 - this.vehicleFirstGoodY;
+                 double d8 = d5 - this.vehicleFirstGoodZ;
+                 double d9 = entity.getDeltaMovement().lengthSqr();
+-                double d10 = d6 * d6 + d7 * d7 + d8 * d8;
++                // Paper start - fix large move vectors killing the server
++                double currDeltaX = toX - fromX;
++                double currDeltaY = toY - fromY;
++                double currDeltaZ = toZ - fromZ;
++                double d10 = Math.max(d6 * d6 + d7 * d7 + d8 * d8, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
++                double otherFieldX = d3 - this.vehicleLastGoodX;
++                double otherFieldY = d4 - this.vehicleLastGoodY - 1.0E-6D;
++                double otherFieldZ = d5 - this.vehicleLastGoodZ;
++                d10 = Math.max(d10, (otherFieldX * otherFieldX + otherFieldY * otherFieldY + otherFieldZ * otherFieldZ) - 1);
++                // Paper end - fix large move vectors killing the server
+ 
+                 // CraftBukkit start - handle custom speeds and skipped ticks
+                 this.allowedPlayerTicks += (System.currentTimeMillis() / 50) - this.lastTick;
+@@ -530,9 +539,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+                 boolean flag = worldserver.noCollision(entity, entity.getBoundingBox().deflate(0.0625D));
+ 
+-                d6 = d3 - this.vehicleLastGoodX;
+-                d7 = d4 - this.vehicleLastGoodY - 1.0E-6D;
+-                d8 = d5 - this.vehicleLastGoodZ;
++                d6 = d3 - this.vehicleLastGoodX; // Paper - diff on change, used for checking large move vectors above
++                d7 = d4 - this.vehicleLastGoodY - 1.0E-6D; // Paper - diff on change, used for checking large move vectors above
++                d8 = d5 - this.vehicleLastGoodZ; // Paper - diff on change, used for checking large move vectors above
+                 boolean flag1 = entity.verticalCollisionBelow;
+ 
+                 if (entity instanceof LivingEntity) {
+@@ -1272,7 +1281,16 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                         double d7 = d1 - this.firstGoodY;
+                         double d8 = d2 - this.firstGoodZ;
+                         double d9 = this.player.getDeltaMovement().lengthSqr();
+-                        double d10 = d6 * d6 + d7 * d7 + d8 * d8;
++                        // Paper start - fix large move vectors killing the server
++                        double currDeltaX = toX - prevX;
++                        double currDeltaY = toY - prevY;
++                        double currDeltaZ = toZ - prevZ;
++                        double d10 = Math.max(d6 * d6 + d7 * d7 + d8 * d8, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
++                        double otherFieldX = d0 - this.lastGoodX;
++                        double otherFieldY = d1 - this.lastGoodY;
++                        double otherFieldZ = d2 - this.lastGoodZ;
++                        d10 = Math.max(d10, (otherFieldX * otherFieldX + otherFieldY * otherFieldY + otherFieldZ * otherFieldZ) - 1);
++                        // Paper end - fix large move vectors killing the server
+ 
+                         if (this.player.isSleeping()) {
+                             if (d10 > 1.0D) {
+@@ -1326,9 +1344,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+                             AABB axisalignedbb = this.player.getBoundingBox();
+ 
+-                            d6 = d0 - this.lastGoodX;
+-                            d7 = d1 - this.lastGoodY;
+-                            d8 = d2 - this.lastGoodZ;
++                            d6 = d0 - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
++                            d7 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
++                            d8 = d2 - this.lastGoodZ; // Paper - diff on change, used for checking large move vectors above
+                             boolean flag = d7 > 0.0D;
+ 
+                             if (this.player.onGround() && !packet.isOnGround() && flag) {
