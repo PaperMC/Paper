@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Sun, 16 Oct 2016 23:19:30 -0700
+Subject: [PATCH] Add EntityZapEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+index 22f7318711041bfc2847d519933c46b9fd523d01..4034b8e7503f611dc9be121d8da2020ae7155b8c 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+@@ -851,10 +851,17 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+     @Override
+     public void thunderHit(ServerLevel world, LightningBolt lightning) {
+         if (world.getDifficulty() != Difficulty.PEACEFUL) {
+-            Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning);
++            // Paper - Add EntityZapEvent; move log down, event can cancel
+             Witch entitywitch = (Witch) EntityType.WITCH.create(world);
+ 
+             if (entitywitch != null) {
++                // Paper start - Add EntityZapEvent
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightning, entitywitch).isCancelled()) {
++                    return;
++                }
++                if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Move down
++                // Paper end - Add EntityZapEvent
++
+                 entitywitch.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
+                 entitywitch.finalizeSpawn(world, world.getCurrentDifficultyAt(entitywitch.blockPosition()), MobSpawnType.CONVERSION, (SpawnGroupData) null, (CompoundTag) null);
+                 entitywitch.setNoAi(this.isNoAi());
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index b48c07a49f39e303bc5d1faed0c444b6f0118054..96b72d0194ccb1d8198f9a94306ddb1699aa6c06 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1196,6 +1196,14 @@ public class CraftEventFactory {
+         return !event.isCancelled();
+     }
+ 
++    // Paper start
++    public static com.destroystokyo.paper.event.entity.EntityZapEvent callEntityZapEvent(Entity entity, Entity lightning, Entity changedEntity) {
++        com.destroystokyo.paper.event.entity.EntityZapEvent event = new com.destroystokyo.paper.event.entity.EntityZapEvent(entity.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), changedEntity.getBukkitEntity());
++        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
++
+     public static boolean callEntityChangeBlockEvent(Entity entity, BlockPos position, net.minecraft.world.level.block.state.BlockState newBlock) {
+         return CraftEventFactory.callEntityChangeBlockEvent(entity, position, newBlock, false);
+     }

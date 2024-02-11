@@ -1,0 +1,521 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 12 Sep 2023 06:50:16 -0700
+Subject: [PATCH] Actually optimise explosions
+
+The vast majority of blocks an explosion of power ~4 tries
+to destroy are duplicates. The core of the block destroying
+part of this patch is to cache the block state, resistance, and
+whether it should explode - as those will not change.
+
+The other part of this patch is to optimise the visibility
+percentage calculation. The new visibility calculation takes
+advantage of the block caching already done by the explosion logic.
+It continues to update the cache as the visibility calculation
+uses many rays which can overlap significantly.
+
+Effectively, the patch uses a lot of caching to eliminate
+redundant operations.
+
+Performance benchmarking explosions is challenging, as it varies
+depending on the power, the number of nearby entities, and the
+nearby terrain. This means that no benchmark can cover all the cases.
+I decided to test a giant block of TNT, as that's where the optimisations
+would be needed the most.
+
+I tested using a 50x10x50 block of TNT above ground
+and determined the following:
+
+Vanilla time per explosion: 2.27ms
+Lithium time per explosion: 1.07ms
+This patch time per explosion: 0.45ms
+
+The results indicate that this logic is 5 times faster than Vanilla
+and 2.3 times faster than Lithium.
+
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 6894366ebedc461e1e6703317d83f91fb8d4f09b..f0fbde839a527481314f54a1aefa0fc317ba2221 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -111,6 +111,271 @@ public class Explosion {
+         this.yield = this.blockInteraction == Explosion.BlockInteraction.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F; // CraftBukkit
+     }
+ 
++    // Paper start - optimise collisions
++    private static final double[] CACHED_RAYS;
++    static {
++        final it.unimi.dsi.fastutil.doubles.DoubleArrayList rayCoords = new it.unimi.dsi.fastutil.doubles.DoubleArrayList();
++
++        for (int x = 0; x <= 15; ++x) {
++            for (int y = 0; y <= 15; ++y) {
++                for (int z = 0; z <= 15; ++z) {
++                    if ((x == 0 || x == 15) || (y == 0 || y == 15) || (z == 0 || z == 15)) {
++                        double xDir = (double)((float)x / 15.0F * 2.0F - 1.0F);
++                        double yDir = (double)((float)y / 15.0F * 2.0F - 1.0F);
++                        double zDir = (double)((float)z / 15.0F * 2.0F - 1.0F);
++
++                        double mag = Math.sqrt(
++                            xDir * xDir + yDir * yDir + zDir * zDir
++                        );
++
++                        rayCoords.add((xDir / mag) * (double)0.3F);
++                        rayCoords.add((yDir / mag) * (double)0.3F);
++                        rayCoords.add((zDir / mag) * (double)0.3F);
++                    }
++                }
++            }
++        }
++
++        CACHED_RAYS = rayCoords.toDoubleArray();
++    }
++
++    private static final int CHUNK_CACHE_SHIFT = 2;
++    private static final int CHUNK_CACHE_MASK = (1 << CHUNK_CACHE_SHIFT) - 1;
++    private static final int CHUNK_CACHE_WIDTH = 1 << CHUNK_CACHE_SHIFT;
++
++    private static final int BLOCK_EXPLOSION_CACHE_SHIFT = 3;
++    private static final int BLOCK_EXPLOSION_CACHE_MASK = (1 << BLOCK_EXPLOSION_CACHE_SHIFT) - 1;
++    private static final int BLOCK_EXPLOSION_CACHE_WIDTH = 1 << BLOCK_EXPLOSION_CACHE_SHIFT;
++
++    // resistance = (res + 0.3F) * 0.3F;
++    // so for resistance = 0, we need res = -0.3F
++    private static final Float ZERO_RESISTANCE = Float.valueOf(-0.3f);
++    private it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<ExplosionBlockCache> blockCache = null;
++
++    public static final class ExplosionBlockCache {
++
++        public final long key;
++        public final BlockPos immutablePos;
++        public final BlockState blockState;
++        public final FluidState fluidState;
++        public final float resistance;
++        public final boolean outOfWorld;
++        public Boolean shouldExplode; // null -> not called yet
++        public net.minecraft.world.phys.shapes.VoxelShape cachedCollisionShape;
++
++        public ExplosionBlockCache(long key, BlockPos immutablePos, BlockState blockState, FluidState fluidState, float resistance,
++                                   boolean outOfWorld) {
++            this.key = key;
++            this.immutablePos = immutablePos;
++            this.blockState = blockState;
++            this.fluidState = fluidState;
++            this.resistance = resistance;
++            this.outOfWorld = outOfWorld;
++        }
++    }
++
++    private long[] chunkPosCache = null;
++    private net.minecraft.world.level.chunk.LevelChunk[] chunkCache = null;
++
++    private ExplosionBlockCache getOrCacheExplosionBlock(final int x, final int y, final int z,
++                                                         final long key, final boolean calculateResistance) {
++        ExplosionBlockCache ret = this.blockCache.get(key);
++        if (ret != null) {
++            return ret;
++        }
++
++        BlockPos pos = new BlockPos(x, y, z);
++
++        if (!this.level.isInWorldBounds(pos)) {
++            ret = new ExplosionBlockCache(key, pos, null, null, 0.0f, true);
++        } else {
++            net.minecraft.world.level.chunk.LevelChunk chunk;
++            long chunkKey = io.papermc.paper.util.CoordinateUtils.getChunkKey(x >> 4, z >> 4);
++            int chunkCacheKey = ((x >> 4) & CHUNK_CACHE_MASK) | (((z >> 4) << CHUNK_CACHE_SHIFT) & (CHUNK_CACHE_MASK << CHUNK_CACHE_SHIFT));
++            if (this.chunkPosCache[chunkCacheKey] == chunkKey) {
++                chunk = this.chunkCache[chunkCacheKey];
++            } else {
++                this.chunkPosCache[chunkCacheKey] = chunkKey;
++                this.chunkCache[chunkCacheKey] = chunk = this.level.getChunk(x >> 4, z >> 4);
++            }
++
++            BlockState blockState = chunk.getBlockStateFinal(x, y, z);
++            FluidState fluidState = blockState.getFluidState();
++
++            Optional<Float> resistance = !calculateResistance ? Optional.empty() : this.damageCalculator.getBlockExplosionResistance((Explosion)(Object)this, this.level, pos, blockState, fluidState);
++
++            ret = new ExplosionBlockCache(
++                key, pos, blockState, fluidState,
++                (resistance.orElse(ZERO_RESISTANCE).floatValue() + 0.3f) * 0.3f,
++                false
++            );
++        }
++
++        this.blockCache.put(key, ret);
++
++        return ret;
++    }
++
++    private boolean clipsAnything(final Vec3 from, final Vec3 to,
++                                  final io.papermc.paper.util.CollisionUtil.LazyEntityCollisionContext context,
++                                  final ExplosionBlockCache[] blockCache,
++                                  final BlockPos.MutableBlockPos currPos) {
++        // assume that context.delegated = false
++        final double adjX = io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON * (from.x - to.x);
++        final double adjY = io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON * (from.y - to.y);
++        final double adjZ = io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON * (from.z - to.z);
++
++        if (adjX == 0.0 && adjY == 0.0 && adjZ == 0.0) {
++            return false;
++        }
++
++        final double toXAdj = to.x - adjX;
++        final double toYAdj = to.y - adjY;
++        final double toZAdj = to.z - adjZ;
++        final double fromXAdj = from.x + adjX;
++        final double fromYAdj = from.y + adjY;
++        final double fromZAdj = from.z + adjZ;
++
++        int currX = Mth.floor(fromXAdj);
++        int currY = Mth.floor(fromYAdj);
++        int currZ = Mth.floor(fromZAdj);
++
++        final double diffX = toXAdj - fromXAdj;
++        final double diffY = toYAdj - fromYAdj;
++        final double diffZ = toZAdj - fromZAdj;
++
++        final double dxDouble = Math.signum(diffX);
++        final double dyDouble = Math.signum(diffY);
++        final double dzDouble = Math.signum(diffZ);
++
++        final int dx = (int)dxDouble;
++        final int dy = (int)dyDouble;
++        final int dz = (int)dzDouble;
++
++        final double normalizedDiffX = diffX == 0.0 ? Double.MAX_VALUE : dxDouble / diffX;
++        final double normalizedDiffY = diffY == 0.0 ? Double.MAX_VALUE : dyDouble / diffY;
++        final double normalizedDiffZ = diffZ == 0.0 ? Double.MAX_VALUE : dzDouble / diffZ;
++
++        double normalizedCurrX = normalizedDiffX * (diffX > 0.0 ? (1.0 - Mth.frac(fromXAdj)) : Mth.frac(fromXAdj));
++        double normalizedCurrY = normalizedDiffY * (diffY > 0.0 ? (1.0 - Mth.frac(fromYAdj)) : Mth.frac(fromYAdj));
++        double normalizedCurrZ = normalizedDiffZ * (diffZ > 0.0 ? (1.0 - Mth.frac(fromZAdj)) : Mth.frac(fromZAdj));
++
++        for (;;) {
++            currPos.set(currX, currY, currZ);
++
++            // ClipContext.Block.COLLIDER -> BlockBehaviour.BlockStateBase::getCollisionShape
++            // ClipContext.Fluid.NONE -> ignore fluids
++
++            // read block from cache
++            final long key = BlockPos.asLong(currX, currY, currZ);
++
++            final int cacheKey =
++                (currX & BLOCK_EXPLOSION_CACHE_MASK) |
++                    (currY & BLOCK_EXPLOSION_CACHE_MASK) << (BLOCK_EXPLOSION_CACHE_SHIFT) |
++                    (currZ & BLOCK_EXPLOSION_CACHE_MASK) << (BLOCK_EXPLOSION_CACHE_SHIFT + BLOCK_EXPLOSION_CACHE_SHIFT);
++            ExplosionBlockCache cachedBlock = blockCache[cacheKey];
++            if (cachedBlock == null || cachedBlock.key != key) {
++                blockCache[cacheKey] = cachedBlock = this.getOrCacheExplosionBlock(currX, currY, currZ, key, false);
++            }
++
++            final BlockState blockState = cachedBlock.blockState;
++            if (blockState != null && !blockState.emptyCollisionShape()) {
++                net.minecraft.world.phys.shapes.VoxelShape collision = cachedBlock.cachedCollisionShape;
++                if (collision == null) {
++                    collision = blockState.getConstantCollisionShape();
++                    if (collision == null) {
++                        collision = blockState.getCollisionShape(this.level, currPos, context);
++                        if (!context.isDelegated()) {
++                            // if it was not delegated during this call, assume that for any future ones it will not be delegated
++                            // again, and cache the result
++                            cachedBlock.cachedCollisionShape = collision;
++                        }
++                    } else {
++                        cachedBlock.cachedCollisionShape = collision;
++                    }
++                }
++
++                if (!collision.isEmpty() && collision.clip(from, to, currPos) != null) {
++                    return true;
++                }
++            }
++
++            if (normalizedCurrX > 1.0 && normalizedCurrY > 1.0 && normalizedCurrZ > 1.0) {
++                return false;
++            }
++
++            // inc the smallest normalized coordinate
++
++            if (normalizedCurrX < normalizedCurrY) {
++                if (normalizedCurrX < normalizedCurrZ) {
++                    currX += dx;
++                    normalizedCurrX += normalizedDiffX;
++                } else {
++                    // x < y && x >= z <--> z < y && z <= x
++                    currZ += dz;
++                    normalizedCurrZ += normalizedDiffZ;
++                }
++            } else if (normalizedCurrY < normalizedCurrZ) {
++                // y <= x && y < z
++                currY += dy;
++                normalizedCurrY += normalizedDiffY;
++            } else {
++                // y <= x && z <= y <--> z <= y && z <= x
++                currZ += dz;
++                normalizedCurrZ += normalizedDiffZ;
++            }
++        }
++    }
++
++    private float getSeenFraction(final Vec3 source, final Entity target,
++                                  final ExplosionBlockCache[] blockCache,
++                                  final BlockPos.MutableBlockPos blockPos) {
++        final AABB boundingBox = target.getBoundingBox();
++        final double diffX = boundingBox.maxX - boundingBox.minX;
++        final double diffY = boundingBox.maxY - boundingBox.minY;
++        final double diffZ = boundingBox.maxZ - boundingBox.minZ;
++
++        final double incX = 1.0 / (diffX * 2.0 + 1.0);
++        final double incY = 1.0 / (diffY * 2.0 + 1.0);
++        final double incZ = 1.0 / (diffZ * 2.0 + 1.0);
++
++        if (incX < 0.0 || incY < 0.0 || incZ < 0.0) {
++            return 0.0f;
++        }
++
++        final double offX = (1.0 - Math.floor(1.0 / incX) * incX) * 0.5 + boundingBox.minX;
++        final double offY = boundingBox.minY;
++        final double offZ = (1.0 - Math.floor(1.0 / incZ) * incZ) * 0.5 + boundingBox.minZ;
++
++        final io.papermc.paper.util.CollisionUtil.LazyEntityCollisionContext context = new io.papermc.paper.util.CollisionUtil.LazyEntityCollisionContext(target);
++
++        int totalRays = 0;
++        int missedRays = 0;
++
++        for (double dx = 0.0; dx <= 1.0; dx += incX) {
++            final double fromX = Math.fma(dx, diffX, offX);
++            for (double dy = 0.0; dy <= 1.0; dy += incY) {
++                final double fromY = Math.fma(dy, diffY, offY);
++                for (double dz = 0.0; dz <= 1.0; dz += incZ) {
++                    ++totalRays;
++
++                    final Vec3 from = new Vec3(
++                        fromX,
++                        fromY,
++                        Math.fma(dz, diffZ, offZ)
++                    );
++
++                    if (!this.clipsAnything(from, source, context, blockCache, blockPos)) {
++                        ++missedRays;
++                    }
++                }
++            }
++        }
++
++        return (float)missedRays / (float)totalRays;
++    }
++    // Paper end - optimise collisions
++
+     private ExplosionDamageCalculator makeDamageCalculator(@Nullable Entity entity) {
+         return (ExplosionDamageCalculator) (entity == null ? Explosion.EXPLOSION_DAMAGE_CALCULATOR : new EntityBasedExplosionDamageCalculator(entity));
+     }
+@@ -171,40 +436,88 @@ public class Explosion {
+         int i;
+         int j;
+ 
+-        for (int k = 0; k < 16; ++k) {
+-            for (i = 0; i < 16; ++i) {
+-                for (j = 0; j < 16; ++j) {
+-                    if (k == 0 || k == 15 || i == 0 || i == 15 || j == 0 || j == 15) {
+-                        double d0 = (double) ((float) k / 15.0F * 2.0F - 1.0F);
+-                        double d1 = (double) ((float) i / 15.0F * 2.0F - 1.0F);
+-                        double d2 = (double) ((float) j / 15.0F * 2.0F - 1.0F);
+-                        double d3 = Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
+-
+-                        d0 /= d3;
+-                        d1 /= d3;
+-                        d2 /= d3;
++        // Paper start - optimise explosions
++        this.blockCache = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
++
++        this.chunkPosCache = new long[CHUNK_CACHE_WIDTH * CHUNK_CACHE_WIDTH];
++        java.util.Arrays.fill(this.chunkPosCache, ChunkPos.INVALID_CHUNK_POS);
++
++        this.chunkCache = new net.minecraft.world.level.chunk.LevelChunk[CHUNK_CACHE_WIDTH * CHUNK_CACHE_WIDTH];
++
++        final ExplosionBlockCache[] blockCache = new ExplosionBlockCache[BLOCK_EXPLOSION_CACHE_WIDTH * BLOCK_EXPLOSION_CACHE_WIDTH * BLOCK_EXPLOSION_CACHE_WIDTH];
++        // use initial cache value that is most likely to be used: the source position
++        final ExplosionBlockCache initialCache;
++        {
++            final int blockX = Mth.floor(this.x);
++            final int blockY = Mth.floor(this.y);
++            final int blockZ = Mth.floor(this.z);
++
++            final long key = BlockPos.asLong(blockX, blockY, blockZ);
++
++            initialCache = this.getOrCacheExplosionBlock(blockX, blockY, blockZ, key, true);
++        }
++        // only ~1/3rd of the loop iterations in vanilla will result in a ray, as it is iterating the perimeter of
++        // a 16x16x16 cube
++        // we can cache the rays and their normals as well, so that we eliminate the excess iterations / checks and
++        // calculations in one go
++        // additional aggressive caching of block retrieval is very significant, as at low power (i.e tnt) most
++        // block retrievals are not unique
++        for (int ray = 0, len = CACHED_RAYS.length; ray < len;) {
++            {
++                {
++                    {
++                        ExplosionBlockCache cachedBlock = initialCache;
++
++                        double d0 = CACHED_RAYS[ray];
++                        double d1 = CACHED_RAYS[ray + 1];
++                        double d2 = CACHED_RAYS[ray + 2];
++                        ray += 3;
++                        // Paper end - optimise explosions
+                         float f = this.radius * (0.7F + this.level.random.nextFloat() * 0.6F);
+                         double d4 = this.x;
+                         double d5 = this.y;
+                         double d6 = this.z;
+ 
+                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
+-                            BlockPos blockposition = BlockPos.containing(d4, d5, d6);
+-                            BlockState iblockdata = this.level.getBlockState(blockposition);
+-                            if (!iblockdata.isDestroyable()) continue; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
+-                            FluidState fluid = iblockdata.getFluidState(); // Paper - Perf: Optimize call to getFluid for explosions
++                            // Paper start - optimise explosions
++                            final int blockX = Mth.floor(d4);
++                            final int blockY = Mth.floor(d5);
++                            final int blockZ = Mth.floor(d6);
++
++                            final long key = BlockPos.asLong(blockX, blockY, blockZ);
++
++                            if (cachedBlock.key != key) {
++                                final int cacheKey =
++                                    (blockX & BLOCK_EXPLOSION_CACHE_MASK) |
++                                        (blockY & BLOCK_EXPLOSION_CACHE_MASK) << (BLOCK_EXPLOSION_CACHE_SHIFT) |
++                                        (blockZ & BLOCK_EXPLOSION_CACHE_MASK) << (BLOCK_EXPLOSION_CACHE_SHIFT + BLOCK_EXPLOSION_CACHE_SHIFT);
++                                cachedBlock = blockCache[cacheKey];
++                                if (cachedBlock == null || cachedBlock.key != key) {
++                                    blockCache[cacheKey] = cachedBlock = this.getOrCacheExplosionBlock(blockX, blockY, blockZ, key, true);
++                                }
++                            }
+ 
+-                            if (!this.level.isInWorldBounds(blockposition)) {
++                            if (cachedBlock.outOfWorld) {
+                                 break;
+                             }
+ 
+-                            Optional<Float> optional = this.damageCalculator.getBlockExplosionResistance(this, this.level, blockposition, iblockdata, fluid);
++                            BlockPos blockposition = cachedBlock.immutablePos;
++                            BlockState iblockdata = cachedBlock.blockState;
++                            // Paper end - optimise explosions
+ 
+-                            if (optional.isPresent()) {
+-                                f -= ((Float) optional.get() + 0.3F) * 0.3F;
+-                            }
++                            if (!iblockdata.isDestroyable()) continue; // Paper
++                            // Paper - optimise explosions
+ 
+-                            if (f > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, blockposition, iblockdata, f)) {
++                            f -= cachedBlock.resistance; // Paper - optimise explosions
++
++                            if (f > 0.0F && cachedBlock.shouldExplode == null) { // Paper - optimise explosions
++                                // Paper start - optimise explosions
++                                // note: we expect shouldBlockExplode to be pure with respect to power, as Vanilla currently is.
++                                // basically, it is unused, which allows us to cache the result
++                                final boolean shouldExplode = this.damageCalculator.shouldBlockExplode(this, this.level, cachedBlock.immutablePos, cachedBlock.blockState, f);
++                                cachedBlock.shouldExplode = shouldExplode ? Boolean.TRUE : Boolean.FALSE;
++                                if (shouldExplode && (this.fire || !cachedBlock.blockState.isAir())) {
++                                // Paper end - optimise explosions
+                                 set.add(blockposition);
+                                 // Paper start - prevent headless pistons from forming
+                                 if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowHeadlessPistons && iblockdata.getBlock() == Blocks.MOVING_PISTON) {
+@@ -215,11 +528,12 @@ public class Explosion {
+                                     }
+                                 }
+                                 // Paper end - prevent headless pistons from forming
++                                } // Paper - optimise explosions
+                             }
+ 
+-                            d4 += d0 * 0.30000001192092896D;
+-                            d5 += d1 * 0.30000001192092896D;
+-                            d6 += d2 * 0.30000001192092896D;
++                            d4 += d0; // Paper - optimise explosions
++                            d5 += d1; // Paper - optimise explosions
++                            d6 += d2; // Paper - optimise explosions
+                         }
+                     }
+                 }
+@@ -239,6 +553,8 @@ public class Explosion {
+         Vec3 vec3d = new Vec3(this.x, this.y, this.z);
+         Iterator iterator = list.iterator();
+ 
++        final BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos(); // Paper - optimise explosions
++
+         while (iterator.hasNext()) {
+             Entity entity = (Entity) iterator.next();
+ 
+@@ -274,11 +590,11 @@ public class Explosion {
+                                 for (EnderDragonPart entityComplexPart : ((EnderDragon) entity).subEntities) {
+                                     // Calculate damage separately for each EntityComplexPart
+                                     if (list.contains(entityComplexPart)) {
+-                                        entityComplexPart.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity));
++                                        entityComplexPart.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entityComplexPart, getSeenFraction(vec3d, entityComplexPart, blockCache, blockPos))); // Paper - actually optimise explosions and use the right entity to calculate the damage
+                                     }
+                                 }
+                             } else {
+-                                entity.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity));
++                                entity.hurt(this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity, getSeenFraction(vec3d, entity, blockCache, blockPos))); // Paper - actually optimise explosions
+                             }
+ 
+                             if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled
+@@ -287,7 +603,7 @@ public class Explosion {
+                             // CraftBukkit end
+                         }
+ 
+-                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity); // Paper - Optimize explosions
++                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity, blockCache, blockPos); // Paper - Optimize explosions
+                         double d13;
+ 
+                         if (entity instanceof LivingEntity) {
+@@ -324,6 +640,9 @@ public class Explosion {
+             }
+         }
+ 
++        this.blockCache = null; // Paper - optimise explosions
++        this.chunkPosCache = null; // Paper - optimise explosions
++        this.chunkCache = null; // Paper - optimise explosions
+     }
+ 
+     public void finalizeExplosion(boolean particles) {
+@@ -537,14 +856,14 @@ public class Explosion {
+         private BlockInteraction() {}
+     }
+     // Paper start - Optimize explosions
+-    private float getBlockDensity(Vec3 vec3d, Entity entity) {
++    private float getBlockDensity(Vec3 vec3d, Entity entity, ExplosionBlockCache[] blockCache, BlockPos.MutableBlockPos blockPos) { // Paper - optimise explosions
+         if (!this.level.paperConfig().environment.optimizeExplosions) {
+-            return getSeenPercent(vec3d, entity);
++            return this.getSeenFraction(vec3d, entity, blockCache, blockPos); // Paper - optimise explosions
+         }
+         CacheKey key = new CacheKey(this, entity.getBoundingBox());
+         Float blockDensity = this.level.explosionDensityCache.get(key);
+         if (blockDensity == null) {
+-            blockDensity = getSeenPercent(vec3d, entity);
++            blockDensity = this.getSeenFraction(vec3d, entity, blockCache, blockPos); // Paper - optimise explosions;
+             this.level.explosionDensityCache.put(key, blockDensity);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java b/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
+index 24dba1eb6f5dc71e5d1ce2d150930eaefc83f811..f529f5d0f28533ec89f3ee712e59745991d068ee 100644
+--- a/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
++++ b/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
+@@ -20,11 +20,17 @@ public class ExplosionDamageCalculator {
+         return true;
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
+     public float getEntityDamageAmount(Explosion explosion, Entity entity) {
++        // Paper start - actually optimise explosions
++        return this.getEntityDamageAmount(explosion, entity, Explosion.getSeenPercent(explosion.center(), entity));
++    }
++    public float getEntityDamageAmount(Explosion explosion, Entity entity, double seenPercent) {
++        // Paper end - actually optimise explosions
+         float f = explosion.radius() * 2.0F;
+         Vec3 vec3 = explosion.center();
+         double d = Math.sqrt(entity.distanceToSqr(vec3)) / (double)f;
+-        double e = (1.0D - d) * (double)Explosion.getSeenPercent(vec3, entity);
++        double e = (1.0D - d) * seenPercent; // Paper - actually optimise explosions
+         return (float)((e * e + e) / 2.0D * 7.0D * (double)f + 1.0D);
+     }
+ }

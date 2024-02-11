@@ -5,47 +5,58 @@ Subject: [PATCH] Add critical damage API
 
 
 diff --git a/src/main/java/org/bukkit/event/entity/EntityDamageByEntityEvent.java b/src/main/java/org/bukkit/event/entity/EntityDamageByEntityEvent.java
-index 869bad7405ec7fa67728e90d8b9f2e11b542611f..aec5a0c2882cf69e8802b9e754b14d0acc34b162 100644
+index 0a43b1ffdb03bb8b67e880dfd9a6a1ce5d02eb32..f79eb4a0f634354ac68995144821bc4e966d2dd8 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityDamageByEntityEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/EntityDamageByEntityEvent.java
-@@ -11,15 +11,40 @@ import org.jetbrains.annotations.NotNull;
+@@ -4,6 +4,7 @@ import com.google.common.base.Function;
+ import java.util.Map;
+ import org.bukkit.damage.DamageSource;
+ import org.bukkit.entity.Entity;
++import org.jetbrains.annotations.ApiStatus;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+@@ -11,17 +12,43 @@ import org.jetbrains.annotations.NotNull;
+  */
  public class EntityDamageByEntityEvent extends EntityDamageEvent {
      private final Entity damager;
++    private final boolean critical; // Paper
  
-+    @Deprecated // Paper - add critical damage API
-     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
-         super(damagee, cause, damage);
++    @Deprecated
+     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
+         super(damagee, cause, damageSource, damage);
          this.damager = damager;
 +        this.critical = false; // Paper - add critical damage API
      }
  
-+    @Deprecated // Paper - add critical damage API
-     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
-+        // Paper start - add critical damage API
-+        this(damager, damagee, cause, modifiers, modifierFunctions, false);
-+    }
-+
-+    private final boolean critical;
-+    public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions, boolean critical) {
-+        // Paper end
-         super(damagee, cause, modifiers, modifierFunctions);
++    @Deprecated
+     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
+         super(damagee, cause, damageSource, modifiers, modifierFunctions);
          this.damager = damager;
-+        // Paper start - add critical damage API
++        // Paper start
++        this.critical = false;
+     }
+ 
++    @ApiStatus.Internal
++    public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions, boolean critical) {
++        super(damagee, cause, damageSource, modifiers, modifierFunctions);
++        this.damager = damager;
 +        this.critical = critical;
 +    }
 +
 +    /**
 +     * Shows this damage instance was critical.
 +     * The damage instance can be critical if the attacking player met the respective conditions.
-+     * Furthermore arrows may also cause a critical damage event if the arrow {@link org.bukkit.entity.AbstractArrow#isCritical()}.
++     * Furthermore, arrows may also cause a critical damage event if the arrow {@link org.bukkit.entity.AbstractArrow#isCritical()}.
 +     *
 +     * @return if the hit was critical.
 +     * @see <a href="https://minecraft.wiki/wiki/Damage#Critical_hit">https://minecraft.wiki/wiki/Damage#Critical_hit</a>
 +     */
 +    public boolean isCritical() {
 +        return this.critical;
-     }
++    }
 +    // Paper end
- 
++
      /**
       * Returns the entity that damaged the defender.
+      *

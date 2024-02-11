@@ -1,0 +1,756 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 15 Jan 2018 22:11:48 -0500
+Subject: [PATCH] Basic PlayerProfile API
+
+Establishes base extension of profile systems for future edits too
+
+== AT ==
+public org.bukkit.craftbukkit.profile.CraftProfileProperty
+public org.bukkit.craftbukkit.profile.CraftPlayerTextures
+public org.bukkit.craftbukkit.profile.CraftPlayerTextures copyFrom(Lorg/bukkit/profile/PlayerTextures;)V
+public org.bukkit.craftbukkit.profile.CraftPlayerTextures rebuildPropertyIfDirty()V
+public org.bukkit.craftbukkit.profile.CraftPlayerProfile toString(Lcom/mojang/authlib/properties/PropertyMap;)Ljava/lang/String;
+public org.bukkit.craftbukkit.profile.CraftPlayerProfile getProperty(Ljava/lang/String;)Lcom/mojang/authlib/properties/Property;
+public org.bukkit.craftbukkit.profile.CraftPlayerProfile setProperty(Ljava/lang/String;Lcom/mojang/authlib/properties/Property;)V
+
+diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..daa157eaa021d039f9a092bea0b78f7c1f746e3b
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
+@@ -0,0 +1,409 @@
++package com.destroystokyo.paper.profile;
++
++import com.mojang.authlib.yggdrasil.ProfileResult;
++import io.papermc.paper.configuration.GlobalConfiguration;
++import com.google.common.base.Charsets;
++import com.google.common.collect.Iterables;
++import com.mojang.authlib.GameProfile;
++import com.mojang.authlib.properties.Property;
++import com.mojang.authlib.properties.PropertyMap;
++import net.minecraft.Util;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.players.GameProfileCache;
++import org.apache.commons.lang3.StringUtils;
++import org.apache.commons.lang3.Validate;
++import org.bukkit.configuration.serialization.SerializableAs;
++import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.bukkit.craftbukkit.profile.CraftPlayerTextures;
++import org.bukkit.craftbukkit.profile.CraftProfileProperty;
++import org.bukkit.profile.PlayerTextures;
++import org.jetbrains.annotations.NotNull;
++
++import javax.annotation.Nonnull;
++import javax.annotation.Nullable;
++import java.util.*;
++import java.util.concurrent.CompletableFuture;
++
++@SerializableAs("PlayerProfile")
++public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
++
++    private GameProfile profile;
++    private final PropertySet properties = new PropertySet();
++
++    public CraftPlayerProfile(CraftPlayer player) {
++        this.profile = player.getHandle().getGameProfile();
++    }
++
++    public CraftPlayerProfile(UUID id, String name) {
++        this.profile = createAuthLibProfile(id, name);
++    }
++
++    public CraftPlayerProfile(GameProfile profile) {
++        Validate.notNull(profile, "GameProfile cannot be null!");
++        this.profile = profile;
++    }
++
++    @Override
++    public boolean hasProperty(String property) {
++        return profile.getProperties().containsKey(property);
++    }
++
++    @Override
++    public void setProperty(ProfileProperty property) {
++        String name = property.getName();
++        PropertyMap properties = profile.getProperties();
++        properties.removeAll(name);
++        properties.put(name, new Property(name, property.getValue(), property.getSignature()));
++    }
++
++    @Override
++    public CraftPlayerTextures getTextures() {
++        return new CraftPlayerTextures(this);
++    }
++
++    @Override
++    public void setTextures(@Nullable PlayerTextures textures) {
++        if (textures == null) {
++            this.removeProperty("textures");
++        } else {
++            CraftPlayerTextures craftPlayerTextures = new CraftPlayerTextures(this);
++            craftPlayerTextures.copyFrom(textures);
++            craftPlayerTextures.rebuildPropertyIfDirty();
++        }
++    }
++
++    public GameProfile getGameProfile() {
++        return profile;
++    }
++
++    @Nullable
++    @Override
++    public UUID getId() {
++        return profile.getId().equals(Util.NIL_UUID) ? null : profile.getId();
++    }
++
++    @Override
++    @Deprecated(forRemoval = true)
++    public UUID setId(@Nullable UUID uuid) {
++        final GameProfile previousProfile = this.profile;
++        final UUID previousId = this.getId();
++        this.profile = createAuthLibProfile(uuid, previousProfile.getName());
++        copyProfileProperties(previousProfile, this.profile);
++        return previousId;
++    }
++
++    @Override
++    public UUID getUniqueId() {
++        return getId();
++    }
++
++    @Nullable
++    @Override
++    public String getName() {
++        return profile.getName();
++    }
++
++    @Override
++    @Deprecated(forRemoval = true)
++    public String setName(@Nullable String name) {
++        GameProfile prev = this.profile;
++        this.profile = createAuthLibProfile(prev.getId(), name);
++        copyProfileProperties(prev, this.profile);
++        return prev.getName();
++    }
++
++    @Nonnull
++    @Override
++    public Set<ProfileProperty> getProperties() {
++        return properties;
++    }
++
++    @Override
++    public void setProperties(Collection<ProfileProperty> properties) {
++        properties.forEach(this::setProperty);
++    }
++
++    @Override
++    public void clearProperties() {
++        profile.getProperties().clear();
++    }
++
++    @Override
++    public boolean removeProperty(String property) {
++        return !profile.getProperties().removeAll(property).isEmpty();
++    }
++
++    @Nullable
++    @Override
++    public Property getProperty(String property) {
++        return Iterables.getFirst(this.profile.getProperties().get(property), null);
++    }
++
++    @Nullable
++    @Override
++    public void setProperty(@NotNull String propertyName, @Nullable Property property) {
++        PropertyMap properties = profile.getProperties();
++        properties.removeAll(propertyName);
++        if (property != null) {
++            properties.put(propertyName, property);
++        }
++    }
++
++    @Override
++    public @NotNull GameProfile buildGameProfile() {
++        GameProfile profile = new GameProfile(this.profile.getId(), this.profile.getName());
++        profile.getProperties().putAll(this.profile.getProperties());
++        return profile;
++    }
++
++    @Override
++    public CraftPlayerProfile clone() {
++        CraftPlayerProfile clone = new CraftPlayerProfile(this.getId(), this.getName());
++        clone.setProperties(getProperties());
++        return clone;
++    }
++
++    @Override
++    public boolean isComplete() {
++        return this.getId() != null && StringUtils.isNotBlank(this.getName());
++    }
++
++    @Override
++    public @NotNull CompletableFuture<PlayerProfile> update() {
++        return CompletableFuture.supplyAsync(() -> {
++            final CraftPlayerProfile clone = clone();
++            clone.complete(true);
++            return clone;
++        }, Util.PROFILE_EXECUTOR);
++    }
++
++    @Override
++    public boolean completeFromCache() {
++        return completeFromCache(false, GlobalConfiguration.get().proxies.isProxyOnlineMode());
++    }
++
++    public boolean completeFromCache(boolean onlineMode) {
++        return completeFromCache(false, onlineMode);
++    }
++
++    public boolean completeFromCache(boolean lookupUUID, boolean onlineMode) {
++        MinecraftServer server = MinecraftServer.getServer();
++        String name = profile.getName();
++        GameProfileCache userCache = server.getProfileCache();
++        if (this.getId() == null) {
++            final GameProfile profile;
++            if (onlineMode) {
++                profile = lookupUUID ? userCache.get(name).orElse(null) : userCache.getProfileIfCached(name);
++            } else {
++                // Make an OfflinePlayer using an offline mode UUID since the name has no profile
++                profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name);
++            }
++            if (profile != null) {
++                // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
++                copyProfileProperties(this.profile, profile);
++                this.profile = profile;
++            }
++        }
++
++        if ((profile.getName().isEmpty() || !hasTextures()) && this.getId() != null) {
++            Optional<GameProfile> optProfile = userCache.get(this.profile.getId());
++            if (optProfile.isPresent()) {
++                GameProfile profile = optProfile.get();
++                if (this.profile.getName().isEmpty()) {
++                    // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
++                    copyProfileProperties(this.profile, profile);
++                    this.profile = profile;
++                } else {
++                    copyProfileProperties(profile, this.profile);
++                }
++            }
++        }
++        return this.isComplete();
++    }
++
++    public boolean complete(boolean textures) {
++        return complete(textures, GlobalConfiguration.get().proxies.isProxyOnlineMode());
++    }
++    public boolean complete(boolean textures, boolean onlineMode) {
++        MinecraftServer server = MinecraftServer.getServer();
++        boolean isCompleteFromCache = this.completeFromCache(true, onlineMode);
++        if (onlineMode && (!isCompleteFromCache || textures && !hasTextures())) {
++            ProfileResult result = server.getSessionService().fetchProfile(this.getId(), true);
++            if (result != null && result.profile() != null) {
++                copyProfileProperties(result.profile(), this.profile, true);
++            }
++            if (this.isComplete()) {
++                server.getProfileCache().add(this.profile);
++            }
++        }
++        return this.isComplete() && (!onlineMode || !textures || hasTextures());
++    }
++
++    private static void copyProfileProperties(GameProfile source, GameProfile target) {
++        copyProfileProperties(source, target, false);
++    }
++
++    private static void copyProfileProperties(GameProfile source, GameProfile target, boolean clearTarget) {
++        PropertyMap sourceProperties = source.getProperties();
++        PropertyMap targetProperties = target.getProperties();
++        if (clearTarget) targetProperties.clear();
++        if (sourceProperties.isEmpty()) {
++            return;
++        }
++
++        for (Property property : sourceProperties.values()) {
++            targetProperties.removeAll(property.name());
++            targetProperties.put(property.name(), property);
++        }
++    }
++
++    private static GameProfile createAuthLibProfile(UUID uniqueId, String name) {
++        return new GameProfile(
++            uniqueId != null ? uniqueId : Util.NIL_UUID,
++            name != null ? name : ""
++        );
++    }
++
++    private static ProfileProperty toBukkit(Property property) {
++        return new ProfileProperty(property.name(), property.value(), property.signature());
++    }
++
++    public static PlayerProfile asBukkitCopy(GameProfile gameProfile) {
++        CraftPlayerProfile profile = new CraftPlayerProfile(gameProfile.getId(), gameProfile.getName());
++        copyProfileProperties(gameProfile, profile.profile);
++        return profile;
++    }
++
++    public static PlayerProfile asBukkitMirror(GameProfile profile) {
++        return new CraftPlayerProfile(profile);
++    }
++
++    public static Property asAuthlib(ProfileProperty property) {
++        return new Property(property.getName(), property.getValue(), property.getSignature());
++    }
++
++    public static GameProfile asAuthlibCopy(PlayerProfile profile) {
++        CraftPlayerProfile craft = ((CraftPlayerProfile) profile);
++        return asAuthlib(craft.clone());
++    }
++
++    public static GameProfile asAuthlib(PlayerProfile profile) {
++        CraftPlayerProfile craft = ((CraftPlayerProfile) profile);
++        return craft.getGameProfile();
++    }
++
++    @Override
++    public @NotNull Map<String, Object> serialize() {
++        Map<String, Object> map = new LinkedHashMap<>();
++        if (this.getId() != null) {
++            map.put("uniqueId", this.getId().toString());
++        }
++        if (!this.getName().isEmpty()) {
++            map.put("name", getName());
++        }
++        if (!this.properties.isEmpty()) {
++            List<Object> propertiesData = new ArrayList<>();
++            for (ProfileProperty property : properties) {
++                propertiesData.add(CraftProfileProperty.serialize(new Property(property.getName(), property.getValue(), property.getSignature())));
++            }
++            map.put("properties", propertiesData);
++        }
++        return map;
++    }
++
++    public static CraftPlayerProfile deserialize(Map<String, Object> map) {
++        UUID uniqueId = ConfigSerializationUtil.getUuid(map, "uniqueId", true);
++        String name = ConfigSerializationUtil.getString(map, "name", true);
++
++        // This also validates the deserialized unique id and name (ensures that not both are null):
++        CraftPlayerProfile profile = new CraftPlayerProfile(uniqueId, name);
++
++        if (map.containsKey("properties")) {
++            for (Object propertyData : (List<?>) map.get("properties")) {
++                if (!(propertyData instanceof Map)) {
++                    throw new IllegalArgumentException("Property data (" + propertyData + ") is not a valid Map");
++                }
++                Property property = CraftProfileProperty.deserialize((Map<?, ?>) propertyData);
++                profile.profile.getProperties().put(property.name(), property);
++            }
++        }
++
++        return profile;
++    }
++
++    @Override
++    public boolean equals(Object obj) {
++        if (this == obj) return true;
++        if (!(obj instanceof CraftPlayerProfile otherProfile)) return false;
++        return Objects.equals(this.profile, otherProfile.profile);
++    }
++
++    @Override
++    public String toString() {
++        return "CraftPlayerProfile [uniqueId=" + getId() +
++            ", name=" + getName() +
++            ", properties=" + org.bukkit.craftbukkit.profile.CraftPlayerProfile.toString(this.profile.getProperties()) +
++            "]";
++    }
++
++    @Override
++    public int hashCode() {
++        return this.profile.hashCode();
++    }
++
++    private class PropertySet extends AbstractSet<ProfileProperty> {
++
++        @Override
++        @Nonnull
++        public Iterator<ProfileProperty> iterator() {
++            return new ProfilePropertyIterator(profile.getProperties().values().iterator());
++        }
++
++        @Override
++        public int size() {
++            return profile.getProperties().size();
++        }
++
++        @Override
++        public boolean add(ProfileProperty property) {
++            setProperty(property);
++            return true;
++        }
++
++        @Override
++        public boolean addAll(Collection<? extends ProfileProperty> c) {
++            //noinspection unchecked
++            setProperties((Collection<ProfileProperty>) c);
++            return true;
++        }
++
++        @Override
++        public boolean contains(Object o) {
++            return o instanceof ProfileProperty && profile.getProperties().containsKey(((ProfileProperty) o).getName());
++        }
++
++        private class ProfilePropertyIterator implements Iterator<ProfileProperty> {
++            private final Iterator<Property> iterator;
++
++            ProfilePropertyIterator(Iterator<Property> iterator) {
++                this.iterator = iterator;
++            }
++
++            @Override
++            public boolean hasNext() {
++                return iterator.hasNext();
++            }
++
++            @Override
++            public ProfileProperty next() {
++                return toBukkit(iterator.next());
++            }
++
++            @Override
++            public void remove() {
++                iterator.remove();
++            }
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..48e774677edf17d4a99ae9ed23d1b371dab41abb
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
+@@ -0,0 +1,30 @@
++package com.destroystokyo.paper.profile;
++
++import com.mojang.authlib.Environment;
++import com.mojang.authlib.EnvironmentParser;
++import com.mojang.authlib.GameProfileRepository;
++import com.mojang.authlib.minecraft.MinecraftSessionService;
++import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
++import com.mojang.authlib.yggdrasil.YggdrasilEnvironment;
++
++import java.net.Proxy;
++
++public class PaperAuthenticationService extends YggdrasilAuthenticationService {
++
++    private final Environment environment;
++
++    public PaperAuthenticationService(Proxy proxy) {
++        super(proxy);
++        this.environment = EnvironmentParser.getEnvironmentFromProperties().orElse(YggdrasilEnvironment.PROD.getEnvironment());
++    }
++
++    @Override
++    public MinecraftSessionService createMinecraftSessionService() {
++        return new PaperMinecraftSessionService(this.getServicesKeySet(),  this.getProxy(), this.environment);
++    }
++
++    @Override
++    public GameProfileRepository createProfileRepository() {
++        return new PaperGameProfileRepository(this.getProxy(), this.environment);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperGameProfileRepository.java b/src/main/java/com/destroystokyo/paper/profile/PaperGameProfileRepository.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7b9e797b42c88b17d6a7c590a423f4e85d99a59d
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/PaperGameProfileRepository.java
+@@ -0,0 +1,17 @@
++package com.destroystokyo.paper.profile;
++
++import com.mojang.authlib.Environment;
++import com.mojang.authlib.ProfileLookupCallback;
++import com.mojang.authlib.yggdrasil.YggdrasilGameProfileRepository;
++import java.net.Proxy;
++
++public class PaperGameProfileRepository extends YggdrasilGameProfileRepository {
++    public PaperGameProfileRepository(Proxy proxy, Environment environment) {
++        super(proxy, environment);
++    }
++
++    @Override
++    public void findProfilesByNames(String[] names, ProfileLookupCallback callback) {
++        super.findProfilesByNames(names, callback);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java b/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..985e6fc43a0946943847e0c283426242ef594a26
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
+@@ -0,0 +1,22 @@
++package com.destroystokyo.paper.profile;
++
++import com.mojang.authlib.Environment;
++import com.mojang.authlib.yggdrasil.ProfileResult;
++import com.mojang.authlib.yggdrasil.ServicesKeySet;
++import com.mojang.authlib.yggdrasil.YggdrasilMinecraftSessionService;
++
++import java.net.Proxy;
++import java.util.UUID;
++import org.jetbrains.annotations.Nullable;
++
++public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionService {
++
++    protected PaperMinecraftSessionService(ServicesKeySet servicesKeySet, Proxy proxy, Environment environment) {
++        super(servicesKeySet, proxy, environment);
++    }
++
++    @Override
++    public @Nullable ProfileResult fetchProfile(final UUID profileId, final boolean requireSecure) {
++        return super.fetchProfile(profileId, requireSecure);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/SharedPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/SharedPlayerProfile.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7ac27392a8647ef7d0dc78efe78703e993885017
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/SharedPlayerProfile.java
+@@ -0,0 +1,23 @@
++package com.destroystokyo.paper.profile;
++
++import com.mojang.authlib.GameProfile;
++import com.mojang.authlib.properties.Property;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.UUID;
++
++public interface SharedPlayerProfile {
++
++    @Nullable UUID getUniqueId();
++
++    @Nullable String getName();
++
++    boolean removeProperty(@NotNull String property);
++
++    @Nullable Property getProperty(@NotNull String propertyName);
++
++    @Nullable void setProperty(@NotNull String propertyName, @Nullable Property property);
++
++    @NotNull GameProfile buildGameProfile();
++}
+diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
+index 8ebef203d1e2584aed61bd61a93e231416eda749..36c0215a1ebc9372e5f355ecbe34fc1aaefd6903 100644
+--- a/src/main/java/io/papermc/paper/util/MCUtil.java
++++ b/src/main/java/io/papermc/paper/util/MCUtil.java
+@@ -1,5 +1,7 @@
+ package io.papermc.paper.util;
+ 
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
++import com.destroystokyo.paper.profile.PlayerProfile;
+ import com.google.common.util.concurrent.ThreadFactoryBuilder;
+ import io.papermc.paper.math.BlockPosition;
+ import io.papermc.paper.math.FinePosition;
+@@ -17,6 +19,7 @@ import net.minecraft.world.level.ClipContext;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.Vec3;
+ import org.apache.commons.lang.exception.ExceptionUtils;
++import com.mojang.authlib.GameProfile;
+ import org.bukkit.Location;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.craftbukkit.CraftWorld;
+@@ -360,6 +363,10 @@ public final class MCUtil {
+         return run.get();
+     }
+ 
++    public static PlayerProfile toBukkit(GameProfile profile) {
++        return CraftPlayerProfile.asBukkitMirror(profile);
++    }
++
+     /**
+      * Calculates distance between 2 entities
+      * @param e1
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index ba58580f4c60205d1c7a7b7dfcdc22c4fafc9bc6..5374a6b70a9780cfe9f62207b290b9a3ab82c7e9 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -176,7 +176,7 @@ public class Main {
+             }
+ 
+             File file = (File) optionset.valueOf("universe"); // CraftBukkit
+-            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper - pass OptionSet to load paper config files
++            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper - pass OptionSet to load paper config files; override authentication service
+             // CraftBukkit start
+             String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
+             LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
+diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+index adb472c175cc6f6ced7075a37423d6c898fd5ccb..1ec0f3a7148c2f412421772f6e1dff0bb92a51bc 100644
+--- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
++++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+@@ -126,6 +126,17 @@ public class GameProfileCache {
+         return this.operationCount.incrementAndGet();
+     }
+ 
++    // Paper start
++    public @Nullable GameProfile getProfileIfCached(String name) {
++        GameProfileCache.GameProfileInfo entry = this.profilesByName.get(name.toLowerCase(Locale.ROOT));
++        if (entry == null) {
++            return null;
++        }
++        entry.setLastAccess(this.getNextOperation());
++        return entry.getProfile();
++    }
++    // Paper end
++
+     public Optional<GameProfile> get(String name) {
+         String s1 = name.toLowerCase(Locale.ROOT);
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index f7d937c6a11e24afe767411428210f3c042a6f78..eb3bb76cf141991acd6a384bf461719de8392754 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -262,6 +262,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
+ 
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
+ 
++import javax.annotation.Nullable; // Paper
++import javax.annotation.Nonnull; // Paper
++
+ public final class CraftServer implements Server {
+     private final String serverName = "Paper"; // Paper
+     private final String serverVersion;
+@@ -305,6 +308,7 @@ public final class CraftServer implements Server {
+     static {
+         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
+         ConfigurationSerialization.registerClass(CraftPlayerProfile.class);
++        ConfigurationSerialization.registerClass(com.destroystokyo.paper.profile.CraftPlayerProfile.class); // Paper
+         CraftItemFactory.instance();
+     }
+ 
+@@ -2782,5 +2786,42 @@ public final class CraftServer implements Server {
+     public boolean suggestPlayerNamesWhenNullTabCompletions() {
+         return io.papermc.paper.configuration.GlobalConfiguration.get().commands.suggestPlayerNamesWhenNullTabCompletions;
+     }
++
++    @Override
++    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull UUID uuid) {
++        return createProfile(uuid, null);
++    }
++
++    @Override
++    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull String name) {
++        return createProfile(null, name);
++    }
++
++    @Override
++    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
++        Player player = uuid != null ? Bukkit.getPlayer(uuid) : (name != null ? Bukkit.getPlayerExact(name) : null);
++        if (player != null) return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player);
++
++        return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
++    }
++
++    @Override
++    public com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name) {
++        Player player = uuid != null ? Bukkit.getPlayer(uuid) : (name != null ? Bukkit.getPlayerExact(name) : null);
++        if (player == null) {
++            return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
++        }
++
++        if (java.util.Objects.equals(uuid, player.getUniqueId()) && java.util.Objects.equals(name, player.getName())) {
++            return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player);
++        }
++
++        final com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(
++            uuid != null ? uuid : net.minecraft.Util.NIL_UUID,
++            name != null ? name : ""
++        );
++        profile.getProperties().putAll(((CraftPlayer) player).getHandle().getGameProfile().getProperties());
++        return new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
+index edd340c66ea8cec1c76ba29f1deab14c4784a7e5..6f779c6f4422c5b5dc22f66e3e702c714d0e052b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
++++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
+@@ -28,7 +28,7 @@ import org.bukkit.profile.PlayerProfile;
+ import org.bukkit.profile.PlayerTextures;
+ 
+ @SerializableAs("PlayerProfile")
+-public final class CraftPlayerProfile implements PlayerProfile {
++public final class CraftPlayerProfile implements PlayerProfile, com.destroystokyo.paper.profile.SharedPlayerProfile { // Paper
+ 
+     @Nonnull
+     public static GameProfile validateSkullProfile(@Nonnull GameProfile gameProfile) {
+@@ -93,8 +93,10 @@ public final class CraftPlayerProfile implements PlayerProfile {
+         }
+     }
+ 
+-    void removeProperty(String propertyName) {
+-        this.properties.removeAll(propertyName);
++    // Paper start - change return value for shared interface
++    public boolean removeProperty(String propertyName) {
++        return !this.properties.removeAll(propertyName).isEmpty();
++        // Paper end
+     }
+ 
+     void rebuildDirtyProperties() {
+@@ -237,6 +239,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+ 
+     @Override
+     public Map<String, Object> serialize() {
++        // Paper - diff on change
+         Map<String, Object> map = new LinkedHashMap<>();
+         if (this.getUniqueId() != null) {
+             map.put("uniqueId", this.getUniqueId().toString());
+@@ -252,10 +255,12 @@ public final class CraftPlayerProfile implements PlayerProfile {
+             });
+             map.put("properties", propertiesData);
+         }
++        // Paper - diff on change
+         return map;
+     }
+ 
+     public static CraftPlayerProfile deserialize(Map<String, Object> map) {
++        // Paper - diff on change
+         UUID uniqueId = ConfigSerializationUtil.getUuid(map, "uniqueId", true);
+         String name = ConfigSerializationUtil.getString(map, "name", true);
+ 
+@@ -269,7 +274,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+                 profile.properties.put(property.name(), property);
+             }
+         }
+-
++        // Paper - diff on change
+         return profile;
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerTextures.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerTextures.java
+index 78e47fec27f4dd955632d03f7181682af0429961..0dce455fb47b3f5a2eb2b15a1cdbc4c6a54b7b69 100644
+--- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerTextures.java
++++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerTextures.java
+@@ -48,7 +48,7 @@ public final class CraftPlayerTextures implements PlayerTextures {
+         }
+     }
+ 
+-    private final CraftPlayerProfile profile;
++    private final com.destroystokyo.paper.profile.SharedPlayerProfile profile; // Paper
+ 
+     // The textures data is loaded lazily:
+     private boolean loaded = false;
+@@ -67,7 +67,7 @@ public final class CraftPlayerTextures implements PlayerTextures {
+     // GameProfiles (even if these modifications are later reverted).
+     private boolean dirty = false;
+ 
+-    CraftPlayerTextures(@Nonnull CraftPlayerProfile profile) {
++    public CraftPlayerTextures(@Nonnull com.destroystokyo.paper.profile.SharedPlayerProfile profile) { // Paper
+         this.profile = profile;
+     }
+ 

@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 28 Dec 2016 07:18:33 +0100
+Subject: [PATCH] Firework API's
+
+== AT ==
+public net.minecraft.world.entity.projectile.FireworkRocketEntity attachedToEntity
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java b/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+index 764c15e6e35c358f0d04d15c20cf8f382f77c419..7005b3a26e9b5d79064981a4a41bee21b65a9fc3 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+@@ -37,6 +37,7 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+     public int lifetime;
+     @Nullable
+     public LivingEntity attachedToEntity;
++    public java.util.UUID spawningEntity; // Paper
+ 
+     public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> type, Level world) {
+         super(type, world);
+@@ -312,6 +313,11 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+         }
+ 
+         nbt.putBoolean("ShotAtAngle", (Boolean) this.entityData.get(FireworkRocketEntity.DATA_SHOT_AT_ANGLE));
++        // Paper start
++        if (this.spawningEntity != null) {
++            nbt.putUUID("SpawningEntity", this.spawningEntity);
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -328,7 +334,11 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+         if (nbt.contains("ShotAtAngle")) {
+             this.entityData.set(FireworkRocketEntity.DATA_SHOT_AT_ANGLE, nbt.getBoolean("ShotAtAngle"));
+         }
+-
++        // Paper start
++        if (nbt.hasUUID("SpawningEntity")) {
++            this.spawningEntity = nbt.getUUID("SpawningEntity");
++        }
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+index ac7371882d15746e9353865635d0bb716f890c53..ba570f1c9654e1004e068a1efe2118f36c954505 100644
+--- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
++++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+@@ -217,6 +217,7 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+ 
+             if (flag1) {
+                 object = new FireworkRocketEntity(world, projectile, shooter, shooter.getX(), shooter.getEyeY() - 0.15000000596046448D, shooter.getZ(), true);
++                ((FireworkRocketEntity) object).spawningEntity = shooter.getUUID(); // Paper
+             } else {
+                 object = CrossbowItem.getArrow(world, shooter, crossbow, projectile);
+                 if (creative || simulated != 0.0F) {
+diff --git a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+index 5cafb6f0b507127665393741b372286da098d603..7c627d27300247db9122ab2081049345ef306073 100644
+--- a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
++++ b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+@@ -46,6 +46,7 @@ public class FireworkRocketItem extends Item {
+             Vec3 vec3 = context.getClickLocation();
+             Direction direction = context.getClickedFace();
+             FireworkRocketEntity fireworkRocketEntity = new FireworkRocketEntity(level, context.getPlayer(), vec3.x + (double)direction.getStepX() * 0.15D, vec3.y + (double)direction.getStepY() * 0.15D, vec3.z + (double)direction.getStepZ() * 0.15D, itemStack);
++            fireworkRocketEntity.spawningEntity = context.getPlayer() == null ? null : context.getPlayer().getUUID(); // Paper
+             level.addFreshEntity(fireworkRocketEntity);
+             itemStack.shrink(1);
+         }
+@@ -59,6 +60,7 @@ public class FireworkRocketItem extends Item {
+             ItemStack itemStack = user.getItemInHand(hand);
+             if (!world.isClientSide) {
+                 FireworkRocketEntity fireworkRocketEntity = new FireworkRocketEntity(world, itemStack, user);
++                fireworkRocketEntity.spawningEntity = user.getUUID(); // Paper
+                 world.addFreshEntity(fireworkRocketEntity);
+                 if (!user.getAbilities().instabuild) {
+                     itemStack.shrink(1);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+index 5ae87c370e47c545cef27a36e40da137e1ec656b..c9e15a9d82dee935293b2e7e233f5b9b2d822448 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+@@ -129,4 +129,11 @@ public class CraftFirework extends CraftProjectile implements Firework {
+     public void setShotAtAngle(boolean shotAtAngle) {
+         this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_SHOT_AT_ANGLE, shotAtAngle);
+     }
++
++    // Paper start
++    @Override
++    public java.util.UUID getSpawningEntity() {
++        return getHandle().spawningEntity;
++    }
++    // Paper end
+ }

@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Fri, 8 May 2020 00:49:18 -0400
+Subject: [PATCH] Fix PotionEffect ignores icon flag
+
+Co-authored-by: Tamion <70228790+notTamion@users.noreply.github.com>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index fd18531ff94daa6dc2994a69e1e647078a5a664c..9a9d119e76fca75a9e531f4bbd204ab8eb9a1263 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -468,7 +468,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+ 
+     @Override
+     public boolean addPotionEffect(PotionEffect effect, boolean force) {
+-        this.getHandle().addEffect(new MobEffectInstance(CraftPotionEffectType.bukkitToMinecraft(effect.getType()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()), EntityPotionEffectEvent.Cause.PLUGIN);
++        this.getHandle().addEffect(org.bukkit.craftbukkit.potion.CraftPotionUtil.fromBukkit(effect), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
+         return true;
+     }
+ 
+@@ -489,7 +489,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     @Override
+     public PotionEffect getPotionEffect(PotionEffectType type) {
+         MobEffectInstance handle = this.getHandle().getEffect(CraftPotionEffectType.bukkitToMinecraft(type));
+-        return (handle == null) ? null : new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible());
++        return (handle == null) ? null : org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(handle); // Paper
+     }
+ 
+     @Override
+@@ -501,7 +501,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     public Collection<PotionEffect> getActivePotionEffects() {
+         List<PotionEffect> effects = new ArrayList<PotionEffect>();
+         for (MobEffectInstance handle : this.getHandle().activeEffects.values()) {
+-            effects.add(new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible()));
++            effects.add(org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(handle)); // Paper
+         }
+         return effects;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionUtil.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionUtil.java
+index e29679a92da5ec05e122bb972a5ee469059a7a0a..844fb8c662a409670f631228f687d85c5436d3dd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionUtil.java
++++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionUtil.java
+@@ -73,7 +73,7 @@ public class CraftPotionUtil {
+ 
+     public static MobEffectInstance fromBukkit(PotionEffect effect) {
+         MobEffect type = CraftPotionEffectType.bukkitToMinecraft(effect.getType());
+-        return new MobEffectInstance(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles());
++        return new MobEffectInstance(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles(), effect.hasIcon()); // Paper
+     }
+ 
+     public static PotionEffect toBukkit(MobEffectInstance effect) {
+@@ -82,7 +82,7 @@ public class CraftPotionUtil {
+         int duration = effect.getDuration();
+         boolean ambient = effect.isAmbient();
+         boolean particles = effect.isVisible();
+-        return new PotionEffect(type, duration, amp, ambient, particles);
++        return new PotionEffect(type, duration, amp, ambient, particles, effect.showIcon()); // Paper
+     }
+ 
+     public static boolean equals(MobEffect mobEffect, PotionEffectType type) {
