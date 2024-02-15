@@ -17,6 +17,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit start
      @Nullable
      private org.bukkit.block.Block directBlock; // The block that caused the damage. damageSourcePosition is not used for all block damages
+@@ -0,0 +0,0 @@ public class DamageSource {
+ 
+     private DamageSource cloneInstance() {
+         DamageSource damageSource = new DamageSource(this.type, this.directEntity, this.causingEntity, this.damageSourcePosition);
++        damageSource.explodedBlockState = this.explodedBlockState; // Paper - Include explodedBlockState when clone this instance of DamageSource
+         damageSource.directBlock = this.getDirectBlock();
+         damageSource.withSweep = this.isSweep();
+         damageSource.poison = this.isPoison();
 diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSources.java b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/damagesource/DamageSources.java
@@ -138,10 +146,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (source.is(DamageTypeTags.IS_EXPLOSION)) {
              if (damager == null) {
 -                return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
-+                return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.explodedBlockState);
++                return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.explodedBlockState); // Paper - Include BlockState for damage
              }
              DamageCause damageCause = (damager.getBukkitEntity() instanceof org.bukkit.entity.TNTPrimed) ? DamageCause.BLOCK_EXPLOSION : DamageCause.ENTITY_EXPLOSION;
              return CraftEventFactory.callEntityDamageEvent(damager, entity, damageCause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.isCritical()); // Paper - add critical damage API
+@@ -0,0 +0,0 @@ public class CraftEventFactory {
+             } else {
+                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, source.getDirectBlock(), source.getMsgId()));
+             }
+-            return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
++            return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.explodedBlockState); // Paper - Include BlockState for damage
+         }
+ 
+         DamageCause cause;
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
          return CraftEventFactory.callEntityDamageEvent(event, damagee, cancelled);
      }
