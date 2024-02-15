@@ -5,32 +5,28 @@ Subject: [PATCH] Call HangingBreakByEntityEvent for collision with boats
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
-index f88918b7c15b72f4cb1dd313734f550432fd5858..7472bf8688b9d6e6461691bb232a79d9922cf721 100644
+index f88918b7c15b72f4cb1dd313734f550432fd5858..b16bd05bc730cea3601408200baa898b072eb663 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
 @@ -125,14 +125,22 @@ public abstract class HangingEntity extends Entity {
                      BlockState material = this.level().getBlockState(this.blockPosition());
                      HangingBreakEvent.RemoveCause cause;
  
--                    if (!material.isAir()) {
--                        // TODO: This feels insufficient to catch 100% of suffocation cases
--                        cause = HangingBreakEvent.RemoveCause.OBSTRUCTION;
 +                    // Paper start - Call HangingBreakByEntityEvent for collision with boats
 +                    HangingBreakEvent event;
 +                    java.util.List<Entity> collidingEntities = this.level().getHardCollidingEntities(this, this.getBoundingBox(), null);
 +                    if (!collidingEntities.isEmpty()) {
 +                        event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), collidingEntities.get(0).getBukkitEntity());
++                    } else {
++                    // Paper end - Call HangingBreakByEntityEvent for collision with boats
+                     if (!material.isAir()) {
+                         // TODO: This feels insufficient to catch 100% of suffocation cases
+                         cause = HangingBreakEvent.RemoveCause.OBSTRUCTION;
                      } else {
--                        cause = HangingBreakEvent.RemoveCause.PHYSICS;
-+                        // Paper end - Call HangingBreakByEntityEvent for collision with boats
-+                        if (!material.isAir()) {
-+                            // TODO: This feels insufficient to catch 100% of suffocation cases
-+                            cause = HangingBreakEvent.RemoveCause.OBSTRUCTION;
-+                        } else {
-+                            cause = HangingBreakEvent.RemoveCause.PHYSICS;
-+                        }
-+                        event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), cause); // Paper - Call HangingBreakByEntityEvent for collision with boats
+                         cause = HangingBreakEvent.RemoveCause.PHYSICS;
                      }
++                    event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), cause); // Paper - Call HangingBreakByEntityEvent for collision with boats
++                    }
  
 -                    HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), cause);
                      this.level().getCraftServer().getPluginManager().callEvent(event);
