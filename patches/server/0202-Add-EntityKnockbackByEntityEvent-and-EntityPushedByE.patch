@@ -37,7 +37,7 @@ index 6fbde57320a58600f8c4b9ce598fa93bd2772e8b..cf907e0c1a89639639b6453032f8f6fe
  
      protected void markHurt() {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 001179978a81f2f7f1c56270b2a131dda7aaa881..2900326a87d21c8a92edb303ed42fd11ea7f3010 100644
+index 001179978a81f2f7f1c56270b2a131dda7aaa881..4324c1d8d03f69bb40740269170fd70a317d299e 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -1561,7 +1561,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -49,6 +49,15 @@ index 001179978a81f2f7f1c56270b2a131dda7aaa881..2900326a87d21c8a92edb303ed42fd11
      }
  
      private boolean checkTotemDeathProtection(DamageSource source) {
+@@ -1824,7 +1824,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         this.knockback(strength, x, z, null, EntityKnockbackEvent.KnockbackCause.UNKNOWN);
+     }
+ 
+-    public void knockback(double d0, double d1, double d2, Entity attacker, EntityKnockbackEvent.KnockbackCause cause) {
++    public void knockback(double d0, double d1, double d2, @Nullable Entity attacker, EntityKnockbackEvent.KnockbackCause cause) { // Paper - add nullable to attacker param
+         d0 *= 1.0D - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
+         if (true || d0 > 0.0D) { // CraftBukkit - Call event even when force is 0
+             //this.hasImpulse = true; // CraftBukkit - Move down
 @@ -1836,8 +1836,22 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  return;
              }
@@ -58,7 +67,7 @@ index 001179978a81f2f7f1c56270b2a131dda7aaa881..2900326a87d21c8a92edb303ed42fd11
 +            org.bukkit.util.Vector resultingMovement = event.getFinalKnockback();
 +            final org.bukkit.util.Vector deltaMovement = resultingMovement.clone().subtract(currentMovement);
 +            if (attacker != null) {
-+                final com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent knockbackEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent((org.bukkit.entity.LivingEntity) getBukkitEntity(), attacker.getBukkitEntity(), (float) event.getForce(), deltaMovement);
++                final com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent knockbackEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(this.getBukkitLivingEntity(), attacker.getBukkitEntity(), (float) event.getForce(), deltaMovement);
 +                if (!knockbackEvent.callEvent()) {
 +                    return;
 +                }
@@ -164,3 +173,26 @@ index 0f700442a7559fac5d27d1fb6b3716f3853a9897..f3861cea4eb6a39fa16936383f8dabc6
                      }
                  }
  
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 00cfa26783ce0772c75166266ead258a415097bc..ade10a9fd93f4c0f04cd56ce5e1da06af4a05060 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -298,7 +298,17 @@ public class Explosion {
+                             Vec3 result = entity.getDeltaMovement().add(vec3d1);
+                             org.bukkit.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.EXPLOSION, d13, vec3d1, result.x, result.y, result.z);
+ 
+-                            vec3d1 = (event.isCancelled()) ? Vec3.ZERO : new Vec3(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ());
++                            // Paper start - call EntityKnockbackByEntityEvent for explosions
++                            vec3d1 = (event.isCancelled()) ? Vec3.ZERO : new Vec3(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ()).subtract(entity.getDeltaMovement()); // changes on this line fix a bug where vec3d1 wasn't reassigned with the "change", but instead the final deltaMovement
++                            if (this.damageSource.getEntity() != null || this.source != null) {
++                                final org.bukkit.entity.Entity hitBy = this.damageSource.getEntity() != null ? this.damageSource.getEntity().getBukkitEntity() : this.source.getBukkitEntity();
++                                com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent paperEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(((LivingEntity) entity).getBukkitLivingEntity(), hitBy, (float) event.getForce(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(vec3d1));
++                                if (!paperEvent.callEvent()) {
++                                    continue;
++                                }
++                                vec3d1 = org.bukkit.craftbukkit.util.CraftVector.toNMS(paperEvent.getAcceleration());
++                            }
++                            // Paper end - call EntityKnockbackByEntityEvent for explosions
+                         }
+                         // CraftBukkit end
+                         entity.setDeltaMovement(entity.getDeltaMovement().add(vec3d1));
