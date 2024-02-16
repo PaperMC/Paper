@@ -1,0 +1,102 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: masmc05 <masmc05@gmail.com>
+Date: Fri, 16 Feb 2024 14:13:29 +0200
+Subject: [PATCH] Add paper version util class
+
+
+diff --git a/src/main/java/io/papermc/paper/util/misc/PaperServerInfoProviderImpl.java b/src/main/java/io/papermc/paper/util/misc/PaperServerInfoProviderImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4a105d428778b95232e8acb1bb3d09a6c4e94477
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/misc/PaperServerInfoProviderImpl.java
+@@ -0,0 +1,83 @@
++package io.papermc.paper.util.misc;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.util.PaperServerInfoProvider;
++import net.minecraft.SharedConstants;
++import org.bukkit.UnsafeValues;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.craftbukkit.util.Versioning;
++import org.jetbrains.annotations.NotNull;
++import java.util.Arrays;
++import java.util.HashSet;
++import java.util.Locale;
++import java.util.Set;
++import java.util.stream.Stream;
++
++public class PaperServerInfoProviderImpl implements PaperServerInfoProvider {
++    private final String bukkitVersion = Versioning.getBukkitVersion();
++    private final Set<String> implementedAPIs;
++    private final String serverName;
++    private final int[] version;
++    public PaperServerInfoProviderImpl() {
++        ServerImplementationInfo info = new ServerImplementationInfo();
++        this.serverName = info.latestName;
++        this.implementedAPIs = info.implementedAPIs;
++        this.version = Stream.of(this.version().split("\\.")).mapToInt(Integer::parseInt).toArray();
++    }
++    @Override
++    public @NotNull String version() {
++        return SharedConstants.getCurrentVersion().getName();
++    }
++
++    @Override
++    public @NotNull String apiVersion() {
++        return this.bukkitVersion;
++    }
++
++    @Override
++    public @NotNull String serverName() {
++        return this.serverName;
++    }
++
++    @Override
++    @Deprecated
++    public @NotNull UnsafeValues unsafe() {
++        return CraftMagicNumbers.INSTANCE;
++    }
++
++    @Override
++    public boolean is(final int @NotNull ... version) {
++        return Arrays.equals(this.version, version);
++    }
++
++    @Override
++    public boolean isAtLeast(final int @NotNull ... version) {
++        int maxLen = Math.max(this.version.length, version.length);
++        for (int i = 0; i < maxLen; i++) {
++            int a = i < this.version.length ? this.version[i] : 0;
++            int b = i < version.length ? version[i] : 0;
++            if (a != b) {
++                return a > b;
++            }
++        }
++        return true;
++    }
++
++    @Override
++    public boolean implement(final @NotNull String api) {
++        Preconditions.checkNotNull(api, "The API cannot be null");
++        return this.implementedAPIs.contains(api.toUpperCase(Locale.ROOT));
++    }
++    private static class ServerImplementationInfo {
++        private final Set<String> implementedAPIs = new HashSet<>();
++        private String latestName;
++        private ServerImplementationInfo() {
++            this.add("Vanilla");
++            this.add("Paper");
++        }
++        private void add(String api) {
++            this.implementedAPIs.add(api.toUpperCase(Locale.ROOT));
++            this.latestName = api;
++        }
++    }
++}
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.util.PaperServerInfoProvider b/src/main/resources/META-INF/services/io.papermc.paper.util.PaperServerInfoProvider
+new file mode 100644
+index 0000000000000000000000000000000000000000..b48ad39218b8d399d60c98c3e4d66d5149717241
+--- /dev/null
++++ b/src/main/resources/META-INF/services/io.papermc.paper.util.PaperServerInfoProvider
+@@ -0,0 +1 @@
++io.papermc.paper.util.misc.PaperServerInfoProviderImpl

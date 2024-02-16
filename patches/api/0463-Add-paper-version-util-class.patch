@@ -1,0 +1,147 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: masmc05 <masmc05@gmail.com>
+Date: Fri, 16 Feb 2024 14:13:30 +0200
+Subject: [PATCH] Add paper version util class
+
+
+diff --git a/src/main/java/io/papermc/paper/util/PaperServerInfo.java b/src/main/java/io/papermc/paper/util/PaperServerInfo.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b882b328e87cffa06c32fa6618afeab8d08ab0a1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/PaperServerInfo.java
+@@ -0,0 +1,73 @@
++package io.papermc.paper.util;
++
++import net.kyori.adventure.util.Services;
++import org.bukkit.UnsafeValues;
++
++/**
++ * A utility class to get information about the server
++ * Works even before Bukkit is initialized (e.g. on bootstrap)
++ */
++public class PaperServerInfo {
++    private PaperServerInfo() {
++        throw new UnsupportedOperationException("This class cannot be instantiated");
++    }
++    private static final PaperServerInfoProvider provider = Services.service(PaperServerInfoProvider.class).orElseThrow();
++    /**
++     * Get the version of the server
++     * @return the version of the server (e.g. "1.20.4")
++     */
++    public static String version() {
++        return provider.version();
++    }
++
++    /**
++     * Get the api version of the server
++     * @return the api version of the server (e.g. "1.20.4-R0.1-SNAPSHOT")
++     */
++    public static String apiVersion() {
++        return provider.apiVersion();
++    }
++
++    /**
++     * Get the name of the server
++     * @return the name of the server (e.g. "Paper")
++     */
++    public static String serverName() {
++        return provider.serverName();
++    }
++    /**
++     * Returns the unsafe values for the server for unsafe version values
++     * @return the unsafe values for the server
++     */
++    @Deprecated
++    public static UnsafeValues unsafe() {
++        return provider.unsafe();
++    }
++
++    /**
++     * Checks if the server runs exactly the specified version
++     * @param version the version to check (e.g. 1, 20, 4)
++     * @return true if the server runs exactly the specified version
++     */
++    public static boolean is(int... version) {
++        return provider.is(version);
++    }
++
++    /**
++     * Checks if the server runs at least the specified version
++     * @param version the version to check (e.g. 1, 20, 4)
++     * @return true if the server runs on this version or a newer version
++     */
++    public static boolean isAtLeast(int... version) {
++        return provider.isAtLeast(version);
++    }
++
++    /**
++     * Checks if the server implements the specified API
++     * @param api the API to check (e.g. "Folia"), case insensitive
++     * @return true if the server implements the specified API
++     */
++    public static boolean implement(String api) {
++        return provider.implement(api);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/PaperServerInfoProvider.java b/src/main/java/io/papermc/paper/util/PaperServerInfoProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fbb138623f93fd6e8fe534cf1cf339657f4b5418
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/PaperServerInfoProvider.java
+@@ -0,0 +1,56 @@
++package io.papermc.paper.util;
++
++import org.bukkit.UnsafeValues;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A utility class to get information about the server
++ */
++public interface PaperServerInfoProvider {
++    /**
++     * Get the version of the server
++     * @return the version of the server (e.g. "1.20.4")
++     */
++    @NotNull String version();
++
++    /**
++     * Get the api version of the server
++     * @return the api version of the server (e.g. "1.20.4-R0.1-SNAPSHOT")
++     */
++    @NotNull String apiVersion();
++
++    /**
++     * Get the name of the server
++     * @return the name of the server (e.g. "Paper")
++     */
++    @NotNull String serverName();
++
++    /**
++     * Returns the unsafe values for the server for unsafe data values
++     * @return the unsafe values for the server
++     */
++    @Deprecated
++    @NotNull
++    UnsafeValues unsafe();
++
++    /**
++     * Checks if the server runs exactly the specified version
++     * @param version the version to check (e.g. 1, 20, 4)
++     * @return true if the server runs exactly the specified version
++     */
++    boolean is(int @NotNull... version);
++
++    /**
++     * Checks if the server runs at least the specified version
++     * @param version the version to check (e.g. 1, 20, 4)
++     * @return true if the server runs on this version or a newer version
++     */
++    boolean isAtLeast(int @NotNull... version);
++
++    /**
++     * Checks if the server implements the specified API
++     * @param api the API to check (e.g. "Folia"), case insensitive
++     * @return true if the server implements the specified API
++     */
++    boolean implement(@NotNull String api);
++}
