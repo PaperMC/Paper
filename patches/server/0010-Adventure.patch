@@ -1247,7 +1247,7 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2e757cd9b01ac7eba1e4723a6e21dcea9d062483
+index 0000000000000000000000000000000000000000..032d23ecda574ed1a3c740c16d13055f399bd6c4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 @@ -0,0 +1,421 @@
@@ -1674,19 +1674,18 @@ index 0000000000000000000000000000000000000000..2e757cd9b01ac7eba1e4723a6e21dcea
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..49809d4fa42d1054119cf38babba5a6161b5ee97
+index 0000000000000000000000000000000000000000..0a7764797b0f1f346fb35f09377d5639bc382bff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,39 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
 +import java.util.function.Function;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.serializer.ComponentSerializer;
-+import net.minecraft.nbt.NbtOps;
-+import net.minecraft.nbt.Tag;
 +import net.minecraft.network.chat.ComponentSerialization;
++import net.minecraft.util.JavaOps;
 +
 +final class WrapperAwareSerializer implements ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> {
 +    @Override
@@ -1694,26 +1693,26 @@ index 0000000000000000000000000000000000000000..49809d4fa42d1054119cf38babba5a61
 +        if (input instanceof AdventureComponent) {
 +            return ((AdventureComponent) input).adventure;
 +        }
-+        final Tag tag = ComponentSerialization.CODEC.encodeStart(NbtOps.INSTANCE, input)
++        final Object obj = ComponentSerialization.CODEC.encodeStart(JavaOps.INSTANCE, input)
 +            .get().map(Function.identity(), partial -> {
 +                throw new RuntimeException("Failed to encode Minecraft Component: " + input + "; " + partial.message());
 +            });
-+        final Pair<Component, Tag> converted = AdventureCodecs.COMPONENT_CODEC.decode(NbtOps.INSTANCE, tag)
++        final Pair<Component, Object> converted = AdventureCodecs.COMPONENT_CODEC.decode(JavaOps.INSTANCE, obj)
 +            .get().map(Function.identity(), partial -> {
-+                throw new RuntimeException("Failed to decode to adventure Component: " + tag + "; " + partial.message());
++                throw new RuntimeException("Failed to decode to adventure Component: " + obj + "; " + partial.message());
 +            });
 +        return converted.getFirst();
 +    }
 +
 +    @Override
 +    public net.minecraft.network.chat.Component serialize(final Component component) {
-+        final Tag tag = AdventureCodecs.COMPONENT_CODEC.encodeStart(NbtOps.INSTANCE, component)
++        final Object obj = AdventureCodecs.COMPONENT_CODEC.encodeStart(JavaOps.INSTANCE, component)
 +            .get().map(Function.identity(), partial -> {
 +                throw new RuntimeException("Failed to encode adventure Component: " + component + "; " + partial.message());
 +            });
-+        final Pair<net.minecraft.network.chat.Component, Tag> converted = ComponentSerialization.CODEC.decode(NbtOps.INSTANCE, tag)
++        final Pair<net.minecraft.network.chat.Component, Object> converted = ComponentSerialization.CODEC.decode(JavaOps.INSTANCE, obj)
 +            .get().map(Function.identity(), partial -> {
-+                throw new RuntimeException("Failed to decode to Minecraft Component: " + tag + "; " + partial.message());
++                throw new RuntimeException("Failed to decode to Minecraft Component: " + obj + "; " + partial.message());
 +            });
 +        return converted.getFirst();
 +    }
@@ -5631,16 +5630,23 @@ index 0000000000000000000000000000000000000000..3aedd0bbc97edacc1ebf71264b310e55
 +}
 diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f4062116c743
+index 0000000000000000000000000000000000000000..3ced2357b5604aac59a2aa57ded58898c7b78ed4
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
-@@ -0,0 +1,369 @@
+@@ -0,0 +1,403 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
 +import com.mojang.serialization.Codec;
 +import com.mojang.serialization.DataResult;
++import com.mojang.serialization.DynamicOps;
++import com.mojang.serialization.JsonOps;
++import io.papermc.paper.util.MethodParameterSource;
 +import java.io.IOException;
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
 +import java.util.List;
 +import java.util.UUID;
 +import java.util.function.Function;
@@ -5663,6 +5669,7 @@ index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f406
 +import net.minecraft.nbt.Tag;
 +import net.minecraft.network.chat.ComponentSerialization;
 +import net.minecraft.resources.ResourceLocation;
++import net.minecraft.util.JavaOps;
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.Items;
 +import org.apache.commons.lang3.RandomStringUtils;
@@ -5671,6 +5678,7 @@ index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f406
 +import org.junit.jupiter.params.ParameterizedTest;
 +import org.junit.jupiter.params.provider.EnumSource;
 +import org.junit.jupiter.params.provider.MethodSource;
++import org.junitpioneer.jupiter.cartesian.CartesianTest;
 +
 +import static io.papermc.paper.adventure.AdventureCodecs.CLICK_EVENT_CODEC;
 +import static io.papermc.paper.adventure.AdventureCodecs.COMPONENT_CODEC;
@@ -5704,6 +5712,8 @@ index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f406
 +
 +class AdventureCodecsTest extends AbstractTestingBase {
 +
++    static final String PARAMETERIZED_NAME = "[{index}] {displayName}: {arguments}";
++
 +    @Test
 +    void testTextColor() {
 +        final TextColor color = color(0x1d38df);
@@ -5731,7 +5741,7 @@ index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f406
 +        assertEquals(key.asString(), location.toString());
 +    }
 +
-+    @ParameterizedTest
++    @ParameterizedTest(name = PARAMETERIZED_NAME)
 +    @EnumSource(value = ClickEvent.Action.class, mode = EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE"})
 +    void testClickEvent(final ClickEvent.Action action) {
 +        final ClickEvent event = ClickEvent.clickEvent(action, RandomStringUtils.randomAlphanumeric(20));
@@ -5794,33 +5804,47 @@ index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f406
 +        assertEquals(requireNonNull(style.color()).value(), requireNonNull(nms.getColor()).getValue());
 +    }
 +
-+    @ParameterizedTest
-+    @MethodSource({"testStyles"})
-+    void testDirectRoundTripStyle(final Style style) {
-+        testDirectRoundTrip(STYLE_MAP_CODEC.codec(), style);
++    @CartesianTest(name = PARAMETERIZED_NAME)
++    void testDirectRoundTripStyle(
++        @MethodParameterSource("dynamicOps") final DynamicOps<?> dynamicOps,
++        @MethodParameterSource("testStyles") final Style style
++    ) {
++        testDirectRoundTrip(dynamicOps, STYLE_MAP_CODEC.codec(), style);
 +    }
 +
-+    @ParameterizedTest
-+    @MethodSource({"testStyles"})
-+    void testMinecraftRoundTripStyle(final Style style) {
-+        testMinecraftRoundTrip(STYLE_MAP_CODEC.codec(), net.minecraft.network.chat.Style.Serializer.CODEC, style);
++    @CartesianTest(name = PARAMETERIZED_NAME)
++    void testMinecraftRoundTripStyle(
++        @MethodParameterSource("dynamicOps") final DynamicOps<?> dynamicOps,
++        @MethodParameterSource("testStyles") final Style style
++    ) {
++        testMinecraftRoundTrip(dynamicOps, STYLE_MAP_CODEC.codec(), net.minecraft.network.chat.Style.Serializer.CODEC, style);
 +    }
 +
-+    @ParameterizedTest
-+    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores",
-+        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts"})
-+    void testDirectRoundTripComponent(final Component component) {
-+        testDirectRoundTrip(COMPONENT_CODEC, component);
++    @CartesianTest(name = PARAMETERIZED_NAME)
++    void testDirectRoundTripComponent(
++        @MethodParameterSource("dynamicOps") final DynamicOps<?> dynamicOps,
++        @TestComponents final Component component
++    ) {
++        testDirectRoundTrip(dynamicOps, COMPONENT_CODEC, component);
 +    }
 +
-+    @ParameterizedTest
-+    @MethodSource({"testTexts", "testTranslatables", "testKeybinds", "testScores",
-+        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts"})
-+    void testMinecraftRoundTripComponent(final Component component) {
-+        testMinecraftRoundTrip(COMPONENT_CODEC, ComponentSerialization.CODEC, component);
++    @CartesianTest(name = PARAMETERIZED_NAME)
++    void testMinecraftRoundTripComponent(
++        @MethodParameterSource("dynamicOps") final DynamicOps<?> dynamicOps,
++        @TestComponents final Component component
++    ) {
++        testMinecraftRoundTrip(dynamicOps, COMPONENT_CODEC, ComponentSerialization.CODEC, component);
 +    }
 +
-+    @ParameterizedTest
++    static List<DynamicOps<?>> dynamicOps() {
++        return List.of(
++            NbtOps.INSTANCE,
++            JavaOps.INSTANCE,
++            JsonOps.INSTANCE
++        );
++    }
++
++    @ParameterizedTest(name = PARAMETERIZED_NAME)
 +    @MethodSource({"invalidData"})
 +    void invalidThrows(final Tag input) {
 +        assertThrows(RuntimeException.class, () -> {
@@ -5831,33 +5855,33 @@ index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f406
 +        });
 +    }
 +
-+    static <A> void testDirectRoundTrip(final Codec<A> codec, final A adventure) {
-+        final Tag encoded = require(
-+            codec.encodeStart(NbtOps.INSTANCE, adventure),
++    static <A, O> void testDirectRoundTrip(final DynamicOps<O> ops, final Codec<A> codec, final A adventure) {
++        final O encoded = require(
++            codec.encodeStart(ops, adventure),
 +            msg -> "Failed to encode " + adventure + ": " + msg
 +        );
-+        final Pair<A, Tag> roundTripResult = require(
-+            codec.decode(NbtOps.INSTANCE, encoded),
++        final Pair<A, O> roundTripResult = require(
++            codec.decode(ops, encoded),
 +            msg -> "Failed to decode " + encoded + ": " + msg
 +        );
 +        assertEquals(adventure, roundTripResult.getFirst());
 +    }
 +
-+    static <A, M> void testMinecraftRoundTrip(final Codec<A> adventureCodec, final Codec<M> minecraftCodec, final A adventure) {
-+        final Tag encoded = require(
-+            adventureCodec.encodeStart(NbtOps.INSTANCE, adventure),
++    static <A, M, O> void testMinecraftRoundTrip(final DynamicOps<O> ops, final Codec<A> adventureCodec, final Codec<M> minecraftCodec, final A adventure) {
++        final O encoded = require(
++            adventureCodec.encodeStart(ops, adventure),
 +            msg -> "Failed to encode " + adventure + ": " + msg
 +        );
 +        final M minecraftResult = require(
-+            minecraftCodec.decode(NbtOps.INSTANCE, encoded),
++            minecraftCodec.decode(ops, encoded),
 +            msg -> "Failed to decode to Minecraft: " + encoded + "; " + msg
 +        ).getFirst();
-+        final Tag minecraftReEncoded = require(
-+            minecraftCodec.encodeStart(NbtOps.INSTANCE, minecraftResult),
++        final O minecraftReEncoded = require(
++            minecraftCodec.encodeStart(ops, minecraftResult),
 +            msg -> "Failed to re-encode Minecraft: " + minecraftResult + "; " + msg
 +        );
-+        final Pair<A, Tag> roundTripResult = require(
-+            adventureCodec.decode(NbtOps.INSTANCE, minecraftReEncoded),
++        final Pair<A, O> roundTripResult = require(
++            adventureCodec.decode(ops, minecraftReEncoded),
 +            msg -> "Failed to decode " + minecraftReEncoded + ": " + msg
 +        );
 +        assertEquals(adventure, roundTripResult.getFirst());
@@ -5902,6 +5926,15 @@ index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f406
 +        );
 +    }
 +
++    @Retention(RetentionPolicy.RUNTIME)
++    @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
++    @MethodParameterSource({
++        "testTexts", "testTranslatables", "testKeybinds", "testScores",
++        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts"
++    })
++    @interface TestComponents {
++    }
++
 +    static List<Component> testTexts() {
 +        return List.of(
 +            Component.empty(),
@@ -5938,7 +5971,7 @@ index 0000000000000000000000000000000000000000..b97078552a86885bf77a2832d292f406
 +                .key("thisIsA")
 +                .fallback("This is a test.")
 +                .build(),
-+            translatable(key, numeric(5), text("HEY")), // boolean doesn't work in vanilla, can't test here
++            translatable(key, numeric(Integer.MAX_VALUE), text("HEY")), // boolean doesn't work in vanilla, can't test here
 +            translatable(
 +                key,
 +                text().content(name)
