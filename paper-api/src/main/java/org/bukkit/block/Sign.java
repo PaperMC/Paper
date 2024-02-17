@@ -3,8 +3,10 @@ package org.bukkit.block;
 import org.bukkit.DyeColor;
 import org.bukkit.block.sign.Side;
 import org.bukkit.block.sign.SignSide;
+import org.bukkit.entity.Player;
 import org.bukkit.material.Colorable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of either a SignPost or a WallSign.
@@ -128,4 +130,22 @@ public interface Sign extends TileState, Colorable {
      */
     @NotNull
     public SignSide getSide(@NotNull Side side);
+
+    /**
+     * Gets the side of this sign the given player is currently standing on.
+     *
+     * @param player the player
+     * @return the side the player is standing on
+     */
+    @NotNull
+    public SignSide getTargetSide(@NotNull Player player);
+
+    /**
+     * Gets the player that is currently allowed to edit this sign. <br>
+     * Edits from other players will be rejected if this value is not null.
+     *
+     * @return the player allowed to edit this sign, or null
+     */
+    @Nullable
+    public Player getAllowedEditor();
 }
