@@ -1,8 +1,10 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import java.util.UUID;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.world.level.block.entity.TileEntitySign;
+import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.World;
 import org.bukkit.block.Sign;
@@ -91,6 +93,27 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    public SignSide getTargetSide(Player player) {
+        ensureNoWorldGeneration();
+        Preconditions.checkArgument(player != null, "player cannot be null");
+
+        if (getSnapshot().isFacingFrontText(((CraftPlayer) player).getHandle())) {
+            return front;
+        }
+
+        return back;
+    }
+
+    @Override
+    public Player getAllowedEditor() {
+        ensureNoWorldGeneration();
+
+        // getPlayerWhoMayEdit is always null for the snapshot, so we use the wrapped TileEntity
+        UUID id = getTileEntity().getPlayerWhoMayEdit();
+        return (id == null) ? null : Bukkit.getPlayer(id);
     }
 
     @Override
