@@ -18,14 +18,15 @@ index 0000000000000000000000000000000000000000..486da6ebe0137bb3280e8b33c8e35e30
 +}
 diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormat.java b/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormat.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c47e9a7f59a4543973c9350da7fcc9ad82e3a739
+index 0000000000000000000000000000000000000000..66e0569789d523076cb571fb32be78ecff74305b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormat.java
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,19 @@
 +package io.papermc.paper.scoreboard.numbers;
 +
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.ComponentLike;
++import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * A scoreboard number format that replaces the score number with a chat component.
@@ -37,12 +38,12 @@ index 0000000000000000000000000000000000000000..c47e9a7f59a4543973c9350da7fcc9ad
 +     *
 +     * @return the chat component
 +     */
-+    Component component();
++    @NotNull Component component();
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormatImpl.java b/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormatImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..72ba8e0ec2ee449bf7aca4c0a0429da21e2a9600
+index 0000000000000000000000000000000000000000..969bbfcdb68ffb5a207207e20e4d79621900c0f5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormatImpl.java
 @@ -0,0 +1,12 @@
@@ -51,7 +52,7 @@ index 0000000000000000000000000000000000000000..72ba8e0ec2ee449bf7aca4c0a0429da2
 +import net.kyori.adventure.text.Component;
 +import org.jetbrains.annotations.NotNull;
 +
-+record FixedFormatImpl(Component component) implements FixedFormat {
++record FixedFormatImpl(@NotNull Component component) implements FixedFormat {
 +
 +    @Override
 +    public @NotNull Component asComponent() {
@@ -60,10 +61,10 @@ index 0000000000000000000000000000000000000000..72ba8e0ec2ee449bf7aca4c0a0429da2
 +}
 diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/NumberFormat.java b/src/main/java/io/papermc/paper/scoreboard/numbers/NumberFormat.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ac4662dba9de2a8c265da156243ff95656860bbe
+index 0000000000000000000000000000000000000000..eadf637f5fc582a2af5db71274ac1f01b2a28913
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/scoreboard/numbers/NumberFormat.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,60 @@
 +package io.papermc.paper.scoreboard.numbers;
 +
 +import net.kyori.adventure.text.ComponentLike;
@@ -81,8 +82,17 @@ index 0000000000000000000000000000000000000000..ac4662dba9de2a8c265da156243ff956
 +     *
 +     * @return a blank number format
 +     */
-+    static NumberFormat blank() {
++    static @NotNull NumberFormat blank() {
 +        return BlankFormatImpl.INSTANCE;
++    }
++
++    /**
++     * Gets an un-styled number format.
++     *
++     * @return an un-styled number format
++     */
++    static @NotNull StyledFormat noStyle() {
++        return StyledFormatImpl.NO_STYLE;
 +    }
 +
 +    /**
@@ -91,7 +101,7 @@ index 0000000000000000000000000000000000000000..ac4662dba9de2a8c265da156243ff956
 +     * @param style the style to apply on the number
 +     * @return a styled number format
 +     */
-+    static StyledFormat styled(final @NotNull Style style) {
++    static @NotNull StyledFormat styled(final @NotNull Style style) {
 +        return new StyledFormatImpl(style);
 +    }
 +
@@ -101,7 +111,7 @@ index 0000000000000000000000000000000000000000..ac4662dba9de2a8c265da156243ff956
 +     * @param styleBuilderApplicables the style to apply on the number
 +     * @return a styled number format
 +     */
-+    static StyledFormat styled(final StyleBuilderApplicable...styleBuilderApplicables) {
++    static @NotNull StyledFormat styled(final @NotNull StyleBuilderApplicable @NotNull... styleBuilderApplicables) {
 +        return styled(Style.style(styleBuilderApplicables));
 +    }
 +
@@ -111,20 +121,21 @@ index 0000000000000000000000000000000000000000..ac4662dba9de2a8c265da156243ff956
 +     * @param component the component to replace the number with
 +     * @return a fixed number format
 +     */
-+    static FixedFormat fixed(final @NotNull ComponentLike component) {
++    static @NotNull FixedFormat fixed(final @NotNull ComponentLike component) {
 +        return new FixedFormatImpl(component.asComponent());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormat.java b/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormat.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8d5900259db87a2b68e55e5582d7f2cc6eec2e69
+index 0000000000000000000000000000000000000000..fe844677d689c3afe5ff2b706d562724e4121137
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormat.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,19 @@
 +package io.papermc.paper.scoreboard.numbers;
 +
 +import net.kyori.adventure.text.format.Style;
 +import net.kyori.adventure.text.format.StyleBuilderApplicable;
++import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * A scoreboard number format that applies a custom formatting to the score number.
@@ -132,58 +143,29 @@ index 0000000000000000000000000000000000000000..8d5900259db87a2b68e55e5582d7f2cc
 +public interface StyledFormat extends NumberFormat, StyleBuilderApplicable {
 +
 +    /**
-+     * Gets an un-styled number format.
-+     *
-+     * @return an un-styled number format
-+     */
-+    static StyledFormat noStyle() {
-+        return StyledFormatImpl.NO_STYLE;
-+    }
-+
-+    /**
-+     * Gets a number format which resembles the default sidebar styling.
-+     *
-+     * @return a sidebar styled number format
-+     */
-+    static StyledFormat sidebarDefault() {
-+        return StyledFormatImpl.SIDEBAR_DEFAULT;
-+    }
-+
-+    /**
-+     * Gets a number format which resembles the default player list styling.
-+     *
-+     * @return a player list styled number format
-+     */
-+    static StyledFormat playerListDefault() {
-+        return StyledFormatImpl.PLAYER_LIST_DEFAULT;
-+    }
-+
-+    /**
 +     * The style that is being applied to the number in the score
 +     *
 +     * @return the style to apply
 +     */
-+    Style style();
++    @NotNull Style style();
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormatImpl.java b/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormatImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..32a4e8c15f960a248bca87dce9bb4a03f7ac68ef
+index 0000000000000000000000000000000000000000..0421e6c7cb32a912cf4aa281623c4311d5d1a34f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormatImpl.java
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,13 @@
 +package io.papermc.paper.scoreboard.numbers;
 +
-+import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.format.Style;
++import org.jetbrains.annotations.NotNull;
 +
-+record StyledFormatImpl(Style style) implements StyledFormat {
-+    public static final StyledFormat NO_STYLE = new StyledFormatImpl(Style.empty());
-+    public static final StyledFormat SIDEBAR_DEFAULT = new StyledFormatImpl(Style.empty().color(NamedTextColor.RED));
-+    public static final StyledFormat PLAYER_LIST_DEFAULT = new StyledFormatImpl(Style.empty().color(NamedTextColor.YELLOW));
++record StyledFormatImpl(@NotNull Style style) implements StyledFormat {
++    static final StyledFormat NO_STYLE = new StyledFormatImpl(Style.empty());
 +
 +    @Override
-+    public void styleApply(final Style.Builder style) {
++    public void styleApply(final Style.@NotNull Builder style) {
 +        style.merge(this.style);
 +    }
 +}
