@@ -1,0 +1,229 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: David Mayr <davidliebtkekse@gmail.com>
+Date: Sat, 16 Dec 2023 10:40:29 +0100
+Subject: [PATCH] add number format api
+
+Signed-off-by: David Mayr <davidliebtkekse@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/BlankFormatImpl.java b/src/main/java/io/papermc/paper/scoreboard/numbers/BlankFormatImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..486da6ebe0137bb3280e8b33c8e35e309507f118
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/numbers/BlankFormatImpl.java
+@@ -0,0 +1,5 @@
++package io.papermc.paper.scoreboard.numbers;
++
++record BlankFormatImpl() implements NumberFormat {
++    public static final BlankFormatImpl INSTANCE = new BlankFormatImpl();
++}
+diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormat.java b/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormat.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..66e0569789d523076cb571fb32be78ecff74305b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormat.java
+@@ -0,0 +1,19 @@
++package io.papermc.paper.scoreboard.numbers;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.ComponentLike;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A scoreboard number format that replaces the score number with a chat component.
++ */
++public interface FixedFormat extends NumberFormat, ComponentLike {
++
++    /**
++     * The component shown instead of the number for a score
++     *
++     * @return the chat component
++     */
++    @NotNull Component component();
++
++}
+diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormatImpl.java b/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormatImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..969bbfcdb68ffb5a207207e20e4d79621900c0f5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/numbers/FixedFormatImpl.java
+@@ -0,0 +1,12 @@
++package io.papermc.paper.scoreboard.numbers;
++
++import net.kyori.adventure.text.Component;
++import org.jetbrains.annotations.NotNull;
++
++record FixedFormatImpl(@NotNull Component component) implements FixedFormat {
++
++    @Override
++    public @NotNull Component asComponent() {
++        return this.component();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/NumberFormat.java b/src/main/java/io/papermc/paper/scoreboard/numbers/NumberFormat.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..eadf637f5fc582a2af5db71274ac1f01b2a28913
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/numbers/NumberFormat.java
+@@ -0,0 +1,60 @@
++package io.papermc.paper.scoreboard.numbers;
++
++import net.kyori.adventure.text.ComponentLike;
++import net.kyori.adventure.text.format.Style;
++import net.kyori.adventure.text.format.StyleBuilderApplicable;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Describes a scoreboard number format that applies custom formatting to scoreboard scores.
++ */
++public interface NumberFormat {
++
++    /**
++     * Creates a blank scoreboard number format that removes the score number entirely.
++     *
++     * @return a blank number format
++     */
++    static @NotNull NumberFormat blank() {
++        return BlankFormatImpl.INSTANCE;
++    }
++
++    /**
++     * Gets an un-styled number format.
++     *
++     * @return an un-styled number format
++     */
++    static @NotNull StyledFormat noStyle() {
++        return StyledFormatImpl.NO_STYLE;
++    }
++
++    /**
++     * Creates a scoreboard number format that applies a custom formatting to the score number.
++     *
++     * @param style the style to apply on the number
++     * @return a styled number format
++     */
++    static @NotNull StyledFormat styled(final @NotNull Style style) {
++        return new StyledFormatImpl(style);
++    }
++
++    /**
++     * Creates a scoreboard number format that applies a custom formatting to the score number.
++     *
++     * @param styleBuilderApplicables the style to apply on the number
++     * @return a styled number format
++     */
++    static @NotNull StyledFormat styled(final @NotNull StyleBuilderApplicable @NotNull... styleBuilderApplicables) {
++        return styled(Style.style(styleBuilderApplicables));
++    }
++
++    /**
++     * Creates a scoreboard number format that replaces the score number with a chat component.
++     *
++     * @param component the component to replace the number with
++     * @return a fixed number format
++     */
++    static @NotNull FixedFormat fixed(final @NotNull ComponentLike component) {
++        return new FixedFormatImpl(component.asComponent());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormat.java b/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormat.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fe844677d689c3afe5ff2b706d562724e4121137
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormat.java
+@@ -0,0 +1,19 @@
++package io.papermc.paper.scoreboard.numbers;
++
++import net.kyori.adventure.text.format.Style;
++import net.kyori.adventure.text.format.StyleBuilderApplicable;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A scoreboard number format that applies a custom formatting to the score number.
++ */
++public interface StyledFormat extends NumberFormat, StyleBuilderApplicable {
++
++    /**
++     * The style that is being applied to the number in the score
++     *
++     * @return the style to apply
++     */
++    @NotNull Style style();
++
++}
+diff --git a/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormatImpl.java b/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormatImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0421e6c7cb32a912cf4aa281623c4311d5d1a34f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/numbers/StyledFormatImpl.java
+@@ -0,0 +1,13 @@
++package io.papermc.paper.scoreboard.numbers;
++
++import net.kyori.adventure.text.format.Style;
++import org.jetbrains.annotations.NotNull;
++
++record StyledFormatImpl(@NotNull Style style) implements StyledFormat {
++    static final StyledFormat NO_STYLE = new StyledFormatImpl(Style.empty());
++
++    @Override
++    public void styleApply(final Style.@NotNull Builder style) {
++        style.merge(this.style);
++    }
++}
+diff --git a/src/main/java/org/bukkit/scoreboard/Objective.java b/src/main/java/org/bukkit/scoreboard/Objective.java
+index bd4d84cbf220ab02f09ece97873bbf0bdf7a45ba..1750f97d2122e6e597b9549df8f6fa74bf5e2e2d 100644
+--- a/src/main/java/org/bukkit/scoreboard/Objective.java
++++ b/src/main/java/org/bukkit/scoreboard/Objective.java
+@@ -195,4 +195,22 @@ public interface Objective {
+      */
+     void setAutoUpdateDisplay(boolean autoUpdateDisplay);
+     // Paper end - add more score API
++
++    // Paper start - number format api
++    /**
++     * Gets the number format for this objective's scores or null if the client default is used.
++     *
++     * @return this objective's number format, or null if the client default is used
++     * @throws IllegalStateException if this objective has been unregistered
++     */
++    @Nullable io.papermc.paper.scoreboard.numbers.NumberFormat numberFormat();
++
++    /**
++     * Sets the number format for this objective's scores.
++     *
++     * @param format the number format to set, pass null to reset format to default
++     * @throws IllegalStateException if this objective has been unregistered
++     */
++    void numberFormat(@Nullable io.papermc.paper.scoreboard.numbers.NumberFormat format);
++    // Paper end - number format api
+ }
+diff --git a/src/main/java/org/bukkit/scoreboard/Score.java b/src/main/java/org/bukkit/scoreboard/Score.java
+index 5b6f243492d55d2db0d6944dc6daca9b181551d6..fba8e475c1f1a410c44a95fcc474cce19e0f515c 100644
+--- a/src/main/java/org/bukkit/scoreboard/Score.java
++++ b/src/main/java/org/bukkit/scoreboard/Score.java
+@@ -129,4 +129,26 @@ public interface Score {
+      */
+     void customName(net.kyori.adventure.text.@Nullable Component customName);
+     // Paper end - add more score API
++
++    // Paper start - number format api
++    /**
++     * Gets the number format for this score or null if the score has not been set yet
++     * or the objective's default is being used.
++     *
++     * @return this score's number format, or null if the objective's default is used or the score doesn't exist
++     * @throws IllegalStateException if the associated objective has been
++     *     unregistered
++     */
++    @Nullable io.papermc.paper.scoreboard.numbers.NumberFormat numberFormat();
++
++    /**
++     * Sets the number format for this score. If this score has not been set yet {@link #isScoreSet()}, it will be created
++     *
++     * @param format the number format to set, pass null to reset format to default
++     * @throws IllegalStateException if the associated objective has been
++     *     unregistered
++     */
++    void numberFormat(@Nullable io.papermc.paper.scoreboard.numbers.NumberFormat format);
++    // Paper end - number format api
++
+ }

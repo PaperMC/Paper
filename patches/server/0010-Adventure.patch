@@ -1250,7 +1250,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..2e757cd9b01ac7eba1e4723a6e21dcea9d062483
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,401 @@
+@@ -0,0 +1,421 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -1275,6 +1275,7 @@ index 0000000000000000000000000000000000000000..2e757cd9b01ac7eba1e4723a6e21dcea
 +import net.kyori.adventure.text.TranslatableComponent;
 +import net.kyori.adventure.text.TranslationArgument;
 +import net.kyori.adventure.text.flattener.ComponentFlattener;
++import net.kyori.adventure.text.format.Style;
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.serializer.ComponentSerializer;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -1285,6 +1286,7 @@ index 0000000000000000000000000000000000000000..2e757cd9b01ac7eba1e4723a6e21dcea
 +import net.kyori.adventure.translation.Translator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.ChatFormatting;
++import net.minecraft.Util;
 +import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.registries.BuiltInRegistries;
@@ -1650,6 +1652,24 @@ index 0000000000000000000000000000000000000000..2e757cd9b01ac7eba1e4723a6e21dcea
 +
 +    public static @Nullable ChatFormatting asVanilla(final TextColor color) {
 +        return ChatFormatting.getByHexValue(color.value());
++    }
++
++    // Style
++
++    public static net.minecraft.network.chat.Style asVanilla(Style style) {
++        Object encoded = Util.getOrThrow(AdventureCodecs.STYLE_MAP_CODEC.codec()
++            .encodeStart(net.minecraft.util.JavaOps.INSTANCE, style), IllegalStateException::new);
++
++        return Util.getOrThrow(net.minecraft.network.chat.Style.Serializer.CODEC
++            .parse(net.minecraft.util.JavaOps.INSTANCE, encoded), IllegalStateException::new);
++    }
++
++    public static Style asAdventure(net.minecraft.network.chat.Style style) {
++        Object encoded = Util.getOrThrow(net.minecraft.network.chat.Style.Serializer.CODEC
++            .encodeStart(net.minecraft.util.JavaOps.INSTANCE, style), IllegalStateException::new);
++
++        return Util.getOrThrow(AdventureCodecs.STYLE_MAP_CODEC.codec()
++            .parse(net.minecraft.util.JavaOps.INSTANCE, encoded), IllegalStateException::new);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
