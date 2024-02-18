@@ -9,16 +9,48 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/com/mojang/brigadier/CommandDispatcher.java
 +++ b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
 @@ -0,0 +0,0 @@ public class CommandDispatcher<S> {
+             }
+             final CommandContextBuilder<S> context = contextSoFar.copy();
+             final StringReader reader = new StringReader(originalReader);
++            boolean stop = false; // Paper - Handle non-recoverable exceptions
              try {
                  try {
                      child.parse(reader, context);
-+                    // Paper start - Handle non-reoverable exceptions; Rethrow NbtAccounterException so it can be caught properly and immediately
-+                } catch (final net.minecraft.nbt.NbtAccounterException e) {
++                    // Paper start - Handle non-recoverable exceptions
++                } catch (final com.mojang.brigadier.exceptions.TagParseCommandSyntaxException e) {
++                    stop = true;
 +                    throw e;
-+                    // Paper end - Handle non-reoverable exceptions
++                    // Paper end - Handle non-recoverable exceptions
                  } catch (final RuntimeException ex) {
                      throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherParseException().createWithContext(reader, ex.getMessage());
                  }
+@@ -0,0 +0,0 @@ public class CommandDispatcher<S> {
+                 }
+                 errors.put(child, ex);
+                 reader.setCursor(cursor);
++                if (stop) return new ParseResults<>(contextSoFar, originalReader, errors); // Paper - Handle non-recoverable exceptions
+                 continue;
+             }
+ 
+diff --git a/src/main/java/com/mojang/brigadier/exceptions/TagParseCommandSyntaxException.java b/src/main/java/com/mojang/brigadier/exceptions/TagParseCommandSyntaxException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/com/mojang/brigadier/exceptions/TagParseCommandSyntaxException.java
+@@ -0,0 +0,0 @@
++package com.mojang.brigadier.exceptions;
++
++import com.mojang.brigadier.LiteralMessage;
++import net.minecraft.network.chat.Component;
++
++public final class TagParseCommandSyntaxException extends CommandSyntaxException {
++
++    private static final SimpleCommandExceptionType EXCEPTION_TYPE = new SimpleCommandExceptionType(new LiteralMessage("Error parsing NBT"));
++
++    public TagParseCommandSyntaxException(final String message) {
++        super(EXCEPTION_TYPE, Component.literal(message));
++    }
++}
 diff --git a/src/main/java/net/minecraft/nbt/TagParser.java b/src/main/java/net/minecraft/nbt/TagParser.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/nbt/TagParser.java
@@ -83,10 +115,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.reader.expect(c);
      }
 +
-+    private void increaseDepth() {
++    private void increaseDepth() throws CommandSyntaxException {
 +        this.depth++;
 +        if (this.depth > 512) {
-+            throw new net.minecraft.nbt.NbtAccounterException("NBT tag is too complex, depth > 512");
++            throw new com.mojang.brigadier.exceptions.TagParseCommandSyntaxException("NBT tag is too complex, depth > 512");
 +        }
 +    }
  }
@@ -122,22 +154,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          TAB_COMPLETE_EXECUTOR.execute(() -> this.handleCustomCommandSuggestions0(packet));
      }
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
- 
      private void sendServerSuggestions(final ServerboundCommandSuggestionPacket packet, final StringReader stringreader) {
          // Paper end - AsyncTabCompleteEvent
--        ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
-+        // Paper start - Handle non-reoverable exceptions
-+        ParseResults<CommandSourceStack> parseresults;
-+        try {
-+            parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
-+        } catch (final Throwable e) { // This is fine:tm:
-+            if (LOGGER.isDebugEnabled()) {
-+                LOGGER.error("Exception parsing command", e);
-+            }
+         ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
++        // Paper start - Handle non-recoverable exceptions
++        if (!parseresults.getExceptions().isEmpty()
++            && parseresults.getExceptions().values().stream().anyMatch(e -> e instanceof com.mojang.brigadier.exceptions.TagParseCommandSyntaxException)) {
 +            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
 +            return;
 +        }
-+        // Paper end - Handle non-reoverable exceptions
++        // Paper end - Handle non-recoverable exceptions
  
          this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
              // Paper start - Don't tab-complete namespaced commands if send-namespaced is false

@@ -67,7 +67,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (tag.contains(CAN_DESTROY.NBT)) {
 +            ListTag list = tag.getList(CAN_DESTROY.NBT, CraftMagicNumbers.NBT.TAG_STRING);
 +            for (int i = 0; i < list.size(); i++) {
-+                Namespaced namespaced = this.deserializeNamespaced(list.getString(i));
++                Namespaced namespaced = this.blockKeyFromString(list.getString(i));
 +                if (namespaced == null) {
 +                    continue;
 +                }
@@ -79,7 +79,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (tag.contains(CAN_PLACE_ON.NBT)) {
 +            ListTag list = tag.getList(CAN_PLACE_ON.NBT, CraftMagicNumbers.NBT.TAG_STRING);
 +            for (int i = 0; i < list.size(); i++) {
-+                Namespaced namespaced = this.deserializeNamespaced(list.getString(i));
++                Namespaced namespaced = this.blockKeyFromString(list.getString(i));
 +                if (namespaced == null) {
 +                    continue;
 +                }
@@ -100,7 +100,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (canPlaceOnSerialized != null) {
 +            for (Object canPlaceOnElement : canPlaceOnSerialized) {
 +                String canPlaceOnRaw = (String) canPlaceOnElement;
-+                Namespaced value = this.deserializeNamespaced(canPlaceOnRaw);
++                Namespaced value = this.blockKeyFromString(canPlaceOnRaw);
 +                if (value == null) {
 +                    continue;
 +                }
@@ -113,7 +113,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (canDestroySerialized != null) {
 +            for (Object canDestroyElement : canDestroySerialized) {
 +                String canDestroyRaw = (String) canDestroyElement;
-+                Namespaced value = this.deserializeNamespaced(canDestroyRaw);
++                Namespaced value = this.blockKeyFromString(canDestroyRaw);
 +                if (value == null) {
 +                    continue;
 +                }
@@ -347,8 +347,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return mats;
 +    }
 +
-+    private @Nullable Namespaced deserializeNamespaced(String raw) {
-+        boolean isTag = raw.length() > 0 && raw.codePointAt(0) == '#';
++    private @Nullable Namespaced blockKeyFromString(String raw) {
++        boolean isTag = !raw.isEmpty() && raw.codePointAt(0) == '#';
 +        com.mojang.datafixers.util.Either<net.minecraft.commands.arguments.blocks.BlockStateParser.BlockResult, net.minecraft.commands.arguments.blocks.BlockStateParser.TagResult> result;
 +        try {
 +            result = net.minecraft.commands.arguments.blocks.BlockStateParser.parseForTesting(net.minecraft.core.registries.BuiltInRegistries.BLOCK.asLookup(), raw, false);
@@ -367,20 +367,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return null;
 +        }
 +
-+        // don't DC the player if something slips through somehow
-+        Namespaced resource = null;
 +        try {
 +            if (isTag) {
-+                resource = new NamespacedTag(key.getNamespace(), key.getPath());
-+            } else {
-+                resource = CraftNamespacedKey.fromMinecraft(key);
-+            }
-+        } catch (IllegalArgumentException ex) {
-+            org.bukkit.Bukkit.getLogger().warning("Namespaced resource does not validate: " + key.toString());
-+            ex.printStackTrace();
-+        }
++                return new NamespacedTag(key.getNamespace(), key.getPath());
 +
-+        return resource;
++            }
++            return CraftNamespacedKey.fromMinecraft(key);
++        } catch (IllegalArgumentException ignored) {
++            return null;
++        }
 +    }
 +
 +    private @Nonnull String serializeNamespaced(Namespaced resource) {
