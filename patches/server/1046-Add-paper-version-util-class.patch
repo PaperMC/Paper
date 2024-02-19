@@ -6,35 +6,59 @@ Subject: [PATCH] Add paper version util class
 
 diff --git a/src/main/java/io/papermc/paper/util/misc/PaperServerInfoProviderImpl.java b/src/main/java/io/papermc/paper/util/misc/PaperServerInfoProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4a105d428778b95232e8acb1bb3d09a6c4e94477
+index 0000000000000000000000000000000000000000..d85ba01b83c2f29b1b56775d0f51f6b1d182252c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/misc/PaperServerInfoProviderImpl.java
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,195 @@
 +package io.papermc.paper.util.misc;
 +
 +import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++import com.google.gson.Gson;
++import com.google.gson.JsonParser;
++import com.google.gson.stream.JsonReader;
++import com.mojang.logging.LogUtils;
 +import io.papermc.paper.util.PaperServerInfoProvider;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.KeyPattern;
 +import net.minecraft.SharedConstants;
 +import org.bukkit.UnsafeValues;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.craftbukkit.util.Versioning;
 +import org.jetbrains.annotations.NotNull;
++import org.slf4j.Logger;
++import java.io.IOException;
++import java.net.URI;
++import java.net.http.HttpClient;
++import java.net.http.HttpRequest;
++import java.net.http.HttpResponse;
++import java.util.ArrayList;
 +import java.util.Arrays;
 +import java.util.HashSet;
++import java.util.List;
 +import java.util.Locale;
++import java.util.Objects;
++import java.util.Optional;
 +import java.util.Set;
 +import java.util.stream.Stream;
 +
 +public class PaperServerInfoProviderImpl implements PaperServerInfoProvider {
 +    private final String bukkitVersion = Versioning.getBukkitVersion();
-+    private final Set<String> implementedAPIs;
++    private final Set<Key> implementedAPIs;
 +    private final String serverName;
-+    private final int[] version;
++    private final VersionInfo version;
 +    public PaperServerInfoProviderImpl() {
 +        ServerImplementationInfo info = new ServerImplementationInfo();
 +        this.serverName = info.latestName;
 +        this.implementedAPIs = info.implementedAPIs;
-+        this.version = Stream.of(this.version().split("\\.")).mapToInt(Integer::parseInt).toArray();
++        if (SharedConstants.getCurrentVersion().isStable()) {
++            // Release versions, best supported
++            this.version = new StableVersionInfo();
++        } else {
++            // Snapshot, pre-release, etc
++            // Supported the best we can
++            this.version = new NonStableVersionInfo();
++        }
 +    }
 +    @Override
 +    public @NotNull String version() {
@@ -58,38 +82,126 @@ index 0000000000000000000000000000000000000000..4a105d428778b95232e8acb1bb3d09a6
 +    }
 +
 +    @Override
++    public boolean isStable() {
++        return SharedConstants.getCurrentVersion().isStable();
++    }
++
++    @Override
 +    public boolean is(final int @NotNull ... version) {
-+        return Arrays.equals(this.version, version);
++        return this.version.is(version);
++    }
++
++    @Override
++    public boolean is(@NotNull final String version) {
++        Preconditions.checkNotNull(version, "The version cannot be null");
++        return this.version.is(version);
 +    }
 +
 +    @Override
 +    public boolean isAtLeast(final int @NotNull ... version) {
-+        int maxLen = Math.max(this.version.length, version.length);
-+        for (int i = 0; i < maxLen; i++) {
-+            int a = i < this.version.length ? this.version[i] : 0;
-+            int b = i < version.length ? version[i] : 0;
-+            if (a != b) {
-+                return a > b;
-+            }
-+        }
-+        return true;
++        return this.version.isAtLeast(version);
 +    }
 +
 +    @Override
-+    public boolean implement(final @NotNull String api) {
++    public boolean isImplementing(final @NotNull Key api) {
 +        Preconditions.checkNotNull(api, "The API cannot be null");
-+        return this.implementedAPIs.contains(api.toUpperCase(Locale.ROOT));
++        return this.implementedAPIs.contains(api);
 +    }
 +    private static class ServerImplementationInfo {
-+        private final Set<String> implementedAPIs = new HashSet<>();
++        private final Set<Key> implementedAPIs = new HashSet<>();
 +        private String latestName;
 +        private ServerImplementationInfo() {
-+            this.add("Vanilla");
-+            this.add("Paper");
++            this.add("minecraft", "Vanilla");
++            this.add("papermc", "Paper");
 +        }
-+        private void add(String api) {
-+            this.implementedAPIs.add(api.toUpperCase(Locale.ROOT));
-+            this.latestName = api;
++        @SuppressWarnings("PatternValidation")
++        private void add(@KeyPattern.Namespace String namespace, String name) {
++            this.implementedAPIs.add(Key.key(namespace, name.toLowerCase(Locale.ROOT)));
++            this.latestName = name;
++        }
++    }
++    private interface VersionInfo {
++
++        boolean is(int @NotNull ... version);
++
++        boolean is(@NotNull String version);
++
++        boolean isAtLeast(int @NotNull ... version);
++    }
++    private static class StableVersionInfo implements VersionInfo {
++        private final String version = SharedConstants.getCurrentVersion().getId();
++        private final int[] versionArr = Stream.of(this.version.split("\\.")).mapToInt(Integer::parseInt).toArray();
++        @Override
++        public boolean is(final int @NotNull ... version) {
++            return Arrays.equals(this.versionArr, version);
++        }
++
++        @Override
++        public boolean is(@NotNull final String version) {
++            return Objects.equals(this.version, version);
++        }
++
++        @Override
++        public boolean isAtLeast(final int @NotNull ... version) {
++            int maxLen = Math.max(this.versionArr.length, version.length);
++            for (int i = 0; i < maxLen; i++) {
++                int our = i < this.versionArr.length ? this.versionArr[i] : 0;
++                int requested = i < version.length ? version[i] : 0;
++                if (our != requested) {
++                    return our > requested;
++                }
++            }
++            return true;
++        }
++    }
++    private static class NonStableVersionInfo implements VersionInfo {
++        private static final Logger LOGGER = LogUtils.getClassLogger();
++        private static final String manifestURL = Optional.ofNullable(System.getProperty("paper.api.manifest-url"))
++            .orElse("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json");
++        private final String version = SharedConstants.getCurrentVersion().getName();
++        private final String id = SharedConstants.getCurrentVersion().getId();
++        private final List<String> versionList;
++        private NonStableVersionInfo() {
++            HttpClient client = HttpClient.newHttpClient();
++            HttpRequest request = HttpRequest.newBuilder()
++                .uri(URI.create(manifestURL))
++                .build();
++            List<String> versionList = new ArrayList<>();
++            try {
++                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
++                var parsed = JsonParser.parseString(response.body());
++                var versionArray = parsed.getAsJsonObject().getAsJsonArray("versions");
++                for (var version : versionArray) {
++                    versionList.add(version.getAsJsonObject().get("id").getAsString());
++                }
++            } catch (IOException | InterruptedException e) {
++                LOGGER.error("Failed to fetch version manifest", e);
++                LOGGER.error("Plugins depending on version check may not work correctly");
++            }
++            this.versionList = ImmutableList.copyOf(versionList);
++        }
++        @Override
++        public boolean is(final int @NotNull ... version) {
++            return false;
++        }
++
++        @Override
++        public boolean is(@NotNull final String version) {
++            return this.version.equals(version) || this.id.equals(version);
++        }
++
++        @Override
++        public boolean isAtLeast(final int @NotNull ... version) {
++            if (version.length == 0) {
++                return true;
++            }
++            var builder = new StringBuilder();
++            builder.append(version[0]);
++            for (int i = 1; i < version.length; i++) {
++                builder.append('.').append(version[i]);
++            }
++            var versionString = builder.toString();
++            return this.versionList.indexOf(versionString) > this.versionList.indexOf(this.id);
 +        }
 +    }
 +}
