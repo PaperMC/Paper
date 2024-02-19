@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Will33_ <william.aventin@elesia.org>
+Date: Mon, 19 Feb 2024 11:24:56 +0100
+Subject: [PATCH] Add PlayerPreTeleportEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerPreTeleportEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerPreTeleportEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8e659ee9927b3389284e492fc530ce8e683f50d4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerPreTeleportEvent.java
+@@ -0,0 +1,88 @@
++package io.papermc.paper.event.player;
++
++import org.bukkit.Location;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerMoveEvent;
++import org.bukkit.event.player.PlayerTeleportEvent;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Holds information for player teleport events
++ */
++public class PlayerPreTeleportEvent extends PlayerMoveEvent {
++    private static final HandlerList handlers = new HandlerList();
++    private PlayerTeleportEvent.TeleportCause cause = PlayerTeleportEvent.TeleportCause.UNKNOWN;
++
++    // Paper start - Teleport API
++    private boolean dismounted = true;
++    private final java.util.Set<io.papermc.paper.entity.TeleportFlag.Relative> teleportFlagSet;
++    // Paper end
++
++    public PlayerPreTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
++        super(player, from, to);
++        teleportFlagSet = java.util.Collections.emptySet(); // Paper - Teleport API
++    }
++
++    public PlayerPreTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final PlayerTeleportEvent.TeleportCause cause) {
++        this(player, from, to);
++
++        this.cause = cause;
++    }
++
++    // Paper start - Teleport API
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public PlayerPreTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final PlayerTeleportEvent.TeleportCause cause, @NotNull java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> teleportFlagSet) {
++        super(player, from, to);
++        this.teleportFlagSet = teleportFlagSet;
++        this.cause = cause;
++    }
++    // Paper end
++
++    /**
++     * Gets the cause of this teleportation event
++     *
++     * @return Cause of the event
++     */
++    @NotNull
++    public PlayerTeleportEvent.TeleportCause getCause() {
++        return cause;
++    }
++
++
++    // Paper start - Teleport API
++    /**
++     * Gets if the player will be dismounted in this teleportation.
++     *
++     * @return dismounted or not
++     * @deprecated dismounting on tp is no longer controlled by the server
++     */
++    @Deprecated(forRemoval = true)
++    public boolean willDismountPlayer() {
++        return this.dismounted;
++    }
++
++    /**
++     * Returns the relative teleportation flags used in this teleportation.
++     * This determines which axis the player will not lose their velocity in.
++     *
++     * @return an immutable set of relative teleportation flags
++     */
++    @NotNull
++    public java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> getRelativeTeleportationFlags() {
++        return this.teleportFlagSet;
++    }
++    // Paper end
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}

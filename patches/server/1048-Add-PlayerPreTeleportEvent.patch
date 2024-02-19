@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Will33_ <william.aventin@elesia.org>
+Date: Mon, 19 Feb 2024 11:24:55 +0100
+Subject: [PATCH] Add PlayerPreTeleportEvent
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 206520f6f20b2e48b1eefdd4edb26510b88e4c92..d24297c35e9389038baf1279164363565d962a95 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableSet;
+ import com.google.common.io.BaseEncoding;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.datafixers.util.Pair;
++import io.papermc.paper.event.player.PlayerPreTeleportEvent;
+ import it.unimi.dsi.fastutil.shorts.ShortArraySet;
+ import it.unimi.dsi.fastutil.shorts.ShortSet;
+ import java.io.ByteArrayOutputStream;
+@@ -1327,8 +1328,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // Paper end - Teleport API
+         Preconditions.checkArgument(location != null, "location");
+         Preconditions.checkArgument(location.getWorld() != null, "location.world");
++
++        // From = Players current Location
++        Location from = this.getLocation();
++        // To = Players new Location if Teleport is Successful
++        Location to = location;
++
+         // Paper start - Teleport passenger API
+         // Don't allow teleporting between worlds while keeping passengers
++        PlayerPreTeleportEvent playerPreTeleportEvent = new PlayerPreTeleportEvent(this, from, to, cause, Set.copyOf(relativeArguments));
++        this.server.getPluginManager().callEvent(playerPreTeleportEvent);
++        if(playerPreTeleportEvent.isCancelled()){
++            return false;
++        }
++
+         if (ignorePassengers && entity.isVehicle() && location.getWorld() != this.getWorld()) {
+             return false;
+         }
+@@ -1354,10 +1367,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             return false;
+         }
+ 
+-        // From = Players current Location
+-        Location from = this.getLocation();
+-        // To = Players new Location if Teleport is Successful
+-        Location to = location;
+         // Create & Call the Teleport Event.
+         PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause, Set.copyOf(relativeArguments)); // Paper - Teleport API
+         this.server.getPluginManager().callEvent(event);
