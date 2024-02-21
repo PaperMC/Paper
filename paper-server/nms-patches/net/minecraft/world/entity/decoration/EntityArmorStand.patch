@@ -1,10 +1,11 @@
 --- a/net/minecraft/world/entity/decoration/EntityArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/EntityArmorStand.java
-@@ -44,6 +44,15 @@
+@@ -44,6 +44,16 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.inventory.EquipmentSlot;
 +import org.bukkit.craftbukkit.CraftEquipmentSlot;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -16,7 +17,7 @@
  public class EntityArmorStand extends EntityLiving {
  
      public static final int WOBBLE_TIME = 5;
-@@ -106,6 +115,13 @@
+@@ -106,6 +116,13 @@
          this.setPos(d0, d1, d2);
      }
  
@@ -30,7 +31,7 @@
      @Override
      public void refreshDimensions() {
          double d0 = this.getX();
-@@ -161,13 +177,20 @@
+@@ -161,13 +178,20 @@
  
      @Override
      public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
@@ -53,7 +54,7 @@
          }
  
      }
-@@ -402,7 +425,25 @@
+@@ -402,7 +426,25 @@
              return false;
          } else if (itemstack1.isEmpty() && (this.disabledSlots & 1 << enumitemslot.getFilterFlag() + 16) != 0) {
              return false;
@@ -80,7 +81,7 @@
              this.setItemSlot(enumitemslot, itemstack.copyWithCount(1));
              return true;
          } else if (!itemstack.isEmpty() && itemstack.getCount() > 1) {
-@@ -417,15 +458,26 @@
+@@ -417,15 +459,26 @@
              entityhuman.setItemInHand(enumhand, itemstack1);
              return true;
          }
@@ -108,16 +109,16 @@
                  if (damagesource.is(DamageTypeTags.IS_EXPLOSION)) {
                      this.brokenByAnything(damagesource);
                      this.kill();
-@@ -473,7 +525,7 @@
+@@ -473,7 +526,7 @@
                              } else {
                                  this.brokenByPlayer(damagesource);
                                  this.showBreakingParticles();
 -                                this.kill();
-+                                this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.discard() since above damagesource method will call death event
++                                this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - SPIGOT-4890: remain as this.discard() since above damagesource method will call death event
                              }
  
                              return true;
-@@ -541,13 +593,13 @@
+@@ -541,13 +594,13 @@
              itemstack.setHoverName(this.getCustomName());
          }
  
@@ -133,7 +134,7 @@
  
          ItemStack itemstack;
          int i;
-@@ -555,7 +607,7 @@
+@@ -555,7 +608,7 @@
          for (i = 0; i < this.handItems.size(); ++i) {
              itemstack = (ItemStack) this.handItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -142,7 +143,7 @@
                  this.handItems.set(i, ItemStack.EMPTY);
              }
          }
-@@ -563,10 +615,11 @@
+@@ -563,10 +616,11 @@
          for (i = 0; i < this.armorItems.size(); ++i) {
              itemstack = (ItemStack) this.armorItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -155,7 +156,7 @@
  
      }
  
-@@ -662,8 +715,16 @@
+@@ -662,9 +716,17 @@
          return this.isSmall();
      }
  
@@ -168,7 +169,9 @@
 +
      @Override
      public void kill() {
+-        this.remove(Entity.RemovalReason.KILLED);
 +        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event
-         this.remove(Entity.RemovalReason.KILLED);
++        this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
+ 

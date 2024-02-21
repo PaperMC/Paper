@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.WindCharge;
+import org.bukkit.event.entity.EntityRemoveEvent;
 
 public class CraftWindCharge extends CraftFireball implements WindCharge {
     public CraftWindCharge(CraftServer server, net.minecraft.world.entity.projectile.WindCharge entity) {
@@ -11,7 +12,7 @@ public class CraftWindCharge extends CraftFireball implements WindCharge {
     @Override
     public void explode() {
         this.getHandle().explode();
-        this.getHandle().discard(); // SPIGOT-7577 - explode doesn't discard the entity, this happens only in tick and onHitBlock
+        this.getHandle().discard(EntityRemoveEvent.Cause.EXPLODE); // SPIGOT-7577 - explode doesn't discard the entity, this happens only in tick and onHitBlock
     }
 
     @Override

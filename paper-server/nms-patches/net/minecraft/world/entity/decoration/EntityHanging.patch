@@ -1,12 +1,13 @@
 --- a/net/minecraft/world/entity/decoration/EntityHanging.java
 +++ b/net/minecraft/world/entity/decoration/EntityHanging.java
-@@ -26,6 +26,13 @@
+@@ -26,6 +26,14 @@
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.tags.DamageTypeTags;
 +import org.bukkit.entity.Hanging;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 +import org.bukkit.event.hanging.HangingBreakEvent;
 +// CraftBukkit end
@@ -14,7 +15,7 @@
  public abstract class EntityHanging extends Entity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -60,26 +67,37 @@
+@@ -60,26 +68,37 @@
  
      protected void recalculateBoundingBox() {
          if (this.direction != null) {
@@ -65,7 +66,7 @@
                  d8 = 1.0D;
              } else {
                  d6 = 1.0D;
-@@ -88,11 +106,12 @@
+@@ -88,11 +107,12 @@
              d6 /= 32.0D;
              d7 /= 32.0D;
              d8 /= 32.0D;
@@ -80,10 +81,11 @@
          return i % 32 == 0 ? 0.5D : 0.0D;
      }
  
-@@ -103,6 +122,24 @@
+@@ -103,7 +123,25 @@
              if (this.checkInterval++ == 100) {
                  this.checkInterval = 0;
                  if (!this.isRemoved() && !this.survives()) {
+-                    this.discard();
 +                    // CraftBukkit start - fire break events
 +                    IBlockData material = this.level().getBlockState(this.blockPosition());
 +                    HangingBreakEvent.RemoveCause cause;
@@ -102,10 +104,11 @@
 +                        return;
 +                    }
 +                    // CraftBukkit end
-                     this.discard();
++                    this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
                      this.dropItem((Entity) null);
                  }
-@@ -166,6 +203,22 @@
+             }
+@@ -166,6 +204,22 @@
              return false;
          } else {
              if (!this.isRemoved() && !this.level().isClientSide) {
@@ -128,7 +131,7 @@
                  this.kill();
                  this.markHurt();
                  this.dropItem(damagesource.getEntity());
-@@ -178,6 +231,18 @@
+@@ -178,6 +232,18 @@
      @Override
      public void move(EnumMoveType enummovetype, Vec3D vec3d) {
          if (!this.level().isClientSide && !this.isRemoved() && vec3d.lengthSqr() > 0.0D) {
@@ -147,7 +150,7 @@
              this.kill();
              this.dropItem((Entity) null);
          }
-@@ -186,13 +251,22 @@
+@@ -186,13 +252,22 @@
  
      @Override
      public void push(double d0, double d1, double d2) {

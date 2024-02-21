@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/EntitySlime.java
 +++ b/net/minecraft/world/entity/monster/EntitySlime.java
-@@ -44,6 +44,14 @@
+@@ -44,6 +44,15 @@
  import net.minecraft.world.phys.Vec3D;
  import org.joml.Vector3f;
  
@@ -8,6 +8,7 @@
 +import java.util.ArrayList;
 +import java.util.List;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.entity.EntityTransformEvent;
 +import org.bukkit.event.entity.SlimeSplitEvent;
 +// CraftBukkit end
@@ -15,7 +16,7 @@
  public class EntitySlime extends EntityInsentient implements IMonster {
  
      private static final DataWatcherObject<Integer> ID_SIZE = DataWatcher.defineId(EntitySlime.class, DataWatcherRegistry.INT);
-@@ -192,7 +200,7 @@
+@@ -192,11 +201,18 @@
  
      @Override
      public EntityTypes<? extends EntitySlime> getType() {
@@ -24,7 +25,18 @@
      }
  
      @Override
-@@ -206,6 +214,19 @@
+     public void remove(Entity.RemovalReason entity_removalreason) {
++        // CraftBukkit start - add Bukkit remove cause
++        this.remove(entity_removalreason, null);
++    }
++
++    @Override
++    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++        // CraftBukkit end
+         int i = this.getSize();
+ 
+         if (!this.level().isClientSide && i > 1 && this.isDeadOrDying()) {
+@@ -206,6 +222,19 @@
              int j = i / 2;
              int k = 2 + this.random.nextInt(3);
  
@@ -35,7 +47,7 @@
 +            if (!event.isCancelled() && event.getCount() > 0) {
 +                k = event.getCount();
 +            } else {
-+                super.remove(entity_removalreason);
++                super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
 +                return;
 +            }
 +            List<EntityLiving> slimes = new ArrayList<>(j);
@@ -44,7 +56,7 @@
              for (int l = 0; l < k; ++l) {
                  float f1 = ((float) (l % 2) - 0.5F) * f;
                  float f2 = ((float) (l / 2) - 0.5F) * f;
-@@ -221,9 +242,18 @@
+@@ -221,12 +250,21 @@
                      entityslime.setInvulnerable(this.isInvulnerable());
                      entityslime.setSize(j, true);
                      entityslime.moveTo(this.getX() + (double) f1, this.getY() + 0.5D, this.getZ() + (double) f2, this.random.nextFloat() * 360.0F, 0.0F);
@@ -54,7 +66,7 @@
              }
 +            // CraftBukkit start
 +            if (CraftEventFactory.callEntityTransformEvent(this, slimes, EntityTransformEvent.TransformReason.SPLIT).isCancelled()) {
-+                super.remove(entity_removalreason);
++                super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
 +                return;
 +            }
 +            for (EntityLiving living : slimes) {
@@ -63,4 +75,8 @@
 +            // CraftBukkit end
          }
  
-         super.remove(entity_removalreason);
+-        super.remove(entity_removalreason);
++        super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override

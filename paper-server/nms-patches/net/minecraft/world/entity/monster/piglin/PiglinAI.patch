@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/piglin/PiglinAI.java
 +++ b/net/minecraft/world/entity/monster/piglin/PiglinAI.java
-@@ -74,6 +74,13 @@
+@@ -74,6 +74,14 @@
  import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
  import net.minecraft.world.phys.Vec3D;
  
@@ -8,13 +8,14 @@
 +import java.util.stream.Collectors;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.entity.PiglinBarterEvent;
 +// CraftBukkit end
 +
  public class PiglinAI {
  
      public static final int REPELLENT_DETECTION_RANGE_HORIZONTAL = 8;
-@@ -164,7 +171,8 @@
+@@ -164,7 +172,8 @@
      }
  
      private static void initRideHoglinActivity(BehaviorController<EntityPiglin> behaviorcontroller) {
@@ -24,7 +25,7 @@
              return true;
          }), 1)).build())), BehaviorStopRiding.create(8, PiglinAI::wantsToStopRiding)), MemoryModuleType.RIDE_TARGET);
      }
-@@ -174,7 +182,7 @@
+@@ -174,7 +183,7 @@
      }
  
      private static BehaviorGateSingle<EntityLiving> createIdleLookBehaviors() {
@@ -33,7 +34,7 @@
      }
  
      private static BehaviorGateSingle<EntityPiglin> createIdleMovementBehaviors() {
-@@ -195,13 +203,13 @@
+@@ -195,13 +204,13 @@
  
      protected static void updateActivity(EntityPiglin entitypiglin) {
          BehaviorController<EntityPiglin> behaviorcontroller = entitypiglin.getBrain();
@@ -50,7 +51,7 @@
  
              Objects.requireNonNull(entitypiglin);
              optional.ifPresent(entitypiglin::playSoundEvent);
-@@ -233,23 +241,27 @@
+@@ -233,23 +242,27 @@
          stopWalking(entitypiglin);
          ItemStack itemstack;
  
@@ -59,8 +60,9 @@
 +        if (entityitem.getItem().is(Items.GOLD_NUGGET) && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(entitypiglin, entityitem, 0, false).isCancelled()) {
              entitypiglin.take(entityitem, entityitem.getItem().getCount());
              itemstack = entityitem.getItem();
-             entityitem.discard();
+-            entityitem.discard();
 -        } else {
++            entityitem.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
 +        } else if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(entitypiglin, entityitem, entityitem.getItem().getCount() - 1, false).isCancelled()) {
              entitypiglin.take(entityitem, 1);
              itemstack = removeOneItemFromItemEntity(entityitem);
@@ -82,7 +84,16 @@
  
              if (!flag) {
                  putInInventory(entitypiglin, itemstack);
-@@ -285,9 +297,14 @@
+@@ -270,7 +283,7 @@
+         ItemStack itemstack1 = itemstack.split(1);
+ 
+         if (itemstack.isEmpty()) {
+-            entityitem.discard();
++            entityitem.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+         } else {
+             entityitem.setItem(itemstack);
+         }
+@@ -285,9 +298,14 @@
          boolean flag1;
  
          if (entitypiglin.isAdult()) {
@@ -99,7 +110,7 @@
              } else if (!flag1) {
                  boolean flag2 = !entitypiglin.equipItemIfPossible(itemstack).isEmpty();
  
-@@ -300,7 +317,7 @@
+@@ -300,7 +318,7 @@
              if (!flag1) {
                  ItemStack itemstack1 = entitypiglin.getMainHandItem();
  
@@ -108,7 +119,7 @@
                      putInInventory(entitypiglin, itemstack1);
                  } else {
                      throwItems(entitypiglin, Collections.singletonList(itemstack1));
-@@ -377,7 +394,7 @@
+@@ -377,7 +395,7 @@
              return false;
          } else if (isAdmiringDisabled(entitypiglin) && entitypiglin.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)) {
              return false;
@@ -117,7 +128,7 @@
              return isNotHoldingLovedItemInOffHand(entitypiglin);
          } else {
              boolean flag = entitypiglin.canAddToInventory(itemstack);
-@@ -386,6 +403,12 @@
+@@ -386,6 +404,12 @@
          }
      }
  
@@ -130,7 +141,7 @@
      protected static boolean isLovedItem(ItemStack itemstack) {
          return itemstack.is(TagsItem.PIGLIN_LOVED);
      }
-@@ -481,7 +504,7 @@
+@@ -481,7 +505,7 @@
      }
  
      protected static boolean canAdmire(EntityPiglin entitypiglin, ItemStack itemstack) {
@@ -139,7 +150,7 @@
      }
  
      protected static void wasHurtBy(EntityPiglin entitypiglin, EntityLiving entityliving) {
-@@ -738,6 +761,12 @@
+@@ -738,6 +762,12 @@
          return entitypiglin.getBrain().hasMemoryValue(MemoryModuleType.ADMIRING_ITEM);
      }
  
@@ -152,7 +163,7 @@
      private static boolean isBarterCurrency(ItemStack itemstack) {
          return itemstack.is(PiglinAI.BARTERING_ITEM);
      }
-@@ -775,7 +804,7 @@
+@@ -775,7 +805,7 @@
      }
  
      private static boolean isNotHoldingLovedItemInOffHand(EntityPiglin entitypiglin) {

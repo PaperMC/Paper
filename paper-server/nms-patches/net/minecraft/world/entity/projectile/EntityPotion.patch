@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityPotion.java
 +++ b/net/minecraft/world/entity/projectile/EntityPotion.java
-@@ -31,6 +31,17 @@
+@@ -31,6 +31,18 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  
@@ -13,12 +13,13 @@
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.LivingEntity;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +// CraftBukkit end
 +
  public class EntityPotion extends EntityProjectileThrowable implements ItemSupplier {
  
      public static final double SPLASH_RANGE = 4.0D;
-@@ -99,11 +110,11 @@
+@@ -99,18 +111,18 @@
  
              if (flag) {
                  this.applyWater();
@@ -33,7 +34,15 @@
                  }
              }
  
-@@ -145,9 +156,10 @@
+             int i = potionregistry.hasInstantEffects() ? 2007 : 2002;
+ 
+             this.level().levelEvent(i, this.blockPosition(), PotionUtil.getColor(itemstack));
+-            this.discard();
++            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+ 
+@@ -145,9 +157,10 @@
  
      }
  
@@ -45,7 +54,7 @@
  
          if (!list1.isEmpty()) {
              Entity entity1 = this.getEffectSource();
-@@ -168,24 +180,49 @@
+@@ -168,24 +181,49 @@
                              d1 = 1.0D - Math.sqrt(d0) / 4.0D;
                          }
  
@@ -110,7 +119,7 @@
                          }
                      }
                  }
-@@ -194,7 +231,7 @@
+@@ -194,7 +232,7 @@
  
      }
  
@@ -119,7 +128,7 @@
          EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
          Entity entity = this.getOwner();
  
-@@ -221,7 +258,14 @@
+@@ -221,7 +259,14 @@
              entityareaeffectcloud.setFixedColor(nbttagcompound.getInt("CustomPotionColor"));
          }
  
@@ -129,13 +138,13 @@
 +        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved())) {
 +            this.level().addFreshEntity(entityareaeffectcloud);
 +        } else {
-+            entityareaeffectcloud.discard();
++            entityareaeffectcloud.discard(null); // CraftBukkit - add Bukkit remove cause
 +        }
 +        // CraftBukkit end
      }
  
      public boolean isLingering() {
-@@ -232,13 +276,25 @@
+@@ -232,13 +277,25 @@
          IBlockData iblockdata = this.level().getBlockState(blockposition);
  
          if (iblockdata.is(TagsBlock.FIRE)) {

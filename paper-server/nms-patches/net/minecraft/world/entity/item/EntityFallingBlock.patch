@@ -1,17 +1,18 @@
 --- a/net/minecraft/world/entity/item/EntityFallingBlock.java
 +++ b/net/minecraft/world/entity/item/EntityFallingBlock.java
-@@ -49,6 +49,10 @@
+@@ -49,6 +49,11 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
 +// CraftBukkit start;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +// CraftBukkit end
 +
  public class EntityFallingBlock extends Entity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -83,10 +87,17 @@
+@@ -83,10 +88,17 @@
      }
  
      public static EntityFallingBlock fall(World world, BlockPosition blockposition, IBlockData iblockdata) {
@@ -30,16 +31,61 @@
          return entityfallingblock;
      }
  
-@@ -169,6 +180,12 @@
+@@ -121,7 +133,7 @@
+     @Override
+     public void tick() {
+         if (this.blockState.isAir()) {
+-            this.discard();
++            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else {
+             Block block = this.blockState.getBlock();
+ 
+@@ -152,7 +164,7 @@
+                             this.spawnAtLocation((IMaterial) block);
+                         }
+ 
+-                        this.discard();
++                        this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+                     }
+                 } else {
+                     IBlockData iblockdata = this.level().getBlockState(blockposition);
+@@ -169,9 +181,15 @@
                                      this.blockState = (IBlockData) this.blockState.setValue(BlockProperties.WATERLOGGED, true);
                                  }
  
 +                                // CraftBukkit start
 +                                if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.blockState)) {
-+                                    this.discard(); // SPIGOT-6586 called before the event in previous versions
++                                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // SPIGOT-6586 called before the event in previous versions
 +                                    return;
 +                                }
 +                                // CraftBukkit end
                                  if (this.level().setBlock(blockposition, this.blockState, 3)) {
                                      ((WorldServer) this.level()).getChunkSource().chunkMap.broadcast(this, new PacketPlayOutBlockChange(blockposition, this.level().getBlockState(blockposition)));
-                                     this.discard();
+-                                    this.discard();
++                                    this.discard(EntityRemoveEvent.Cause.DESPAWN);
+                                     if (block instanceof Fallable) {
+                                         ((Fallable) block).onLand(this.level(), blockposition, this.blockState, iblockdata, this);
+                                     }
+@@ -199,19 +217,19 @@
+                                         }
+                                     }
+                                 } else if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+-                                    this.discard();
++                                    this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+                                     this.callOnBrokenAfterFall(block, blockposition);
+                                     this.spawnAtLocation((IMaterial) block);
+                                 }
+                             } else {
+-                                this.discard();
++                                this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+                                 if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                                     this.callOnBrokenAfterFall(block, blockposition);
+                                     this.spawnAtLocation((IMaterial) block);
+                                 }
+                             }
+                         } else {
+-                            this.discard();
++                            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                             this.callOnBrokenAfterFall(block, blockposition);
+                         }
+                     }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/npc/EntityVillager.java
 +++ b/net/minecraft/world/entity/npc/EntityVillager.java
-@@ -92,6 +92,14 @@
+@@ -92,6 +92,15 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import org.slf4j.Logger;
  
@@ -8,6 +8,7 @@
 +import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.Villager;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.entity.EntityTransformEvent;
 +import org.bukkit.event.entity.VillagerReplenishTradeEvent;
 +// CraftBukkit end
@@ -15,7 +16,7 @@
  public class EntityVillager extends EntityVillagerAbstract implements ReputationHandler, VillagerDataHolder {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -150,7 +158,7 @@
+@@ -150,7 +159,7 @@
  
      @Override
      public BehaviorController<EntityVillager> getBrain() {
@@ -24,7 +25,7 @@
      }
  
      @Override
-@@ -233,7 +241,7 @@
+@@ -233,7 +242,7 @@
                      this.increaseProfessionLevelOnUpdate = false;
                  }
  
@@ -33,7 +34,7 @@
              }
          }
  
-@@ -361,7 +369,13 @@
+@@ -361,7 +370,13 @@
          while (iterator.hasNext()) {
              MerchantRecipe merchantrecipe = (MerchantRecipe) iterator.next();
  
@@ -48,7 +49,7 @@
          }
  
          this.resendOffersToTradingPlayer();
-@@ -430,7 +444,13 @@
+@@ -430,7 +445,13 @@
              while (iterator.hasNext()) {
                  MerchantRecipe merchantrecipe = (MerchantRecipe) iterator.next();
  
@@ -63,7 +64,7 @@
              }
          }
  
-@@ -490,7 +510,7 @@
+@@ -490,7 +511,7 @@
      @Override
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.addAdditionalSaveData(nbttagcompound);
@@ -72,7 +73,7 @@
          Logger logger = EntityVillager.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -834,7 +854,12 @@
+@@ -834,9 +855,14 @@
                  }
  
                  entitywitch.setPersistenceRequired();
@@ -84,9 +85,12 @@
 +                worldserver.addFreshEntityWithPassengers(entitywitch, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
 +                // CraftBukkit end
                  this.releaseAllPois();
-                 this.discard();
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
              } else {
-@@ -933,7 +958,7 @@
+                 super.thunderHit(worldserver, entitylightning);
+             }
+@@ -933,7 +959,7 @@
              }).limit(5L).collect(Collectors.toList());
  
              if (list1.size() >= j) {
@@ -95,7 +99,7 @@
                      list.forEach(SensorGolemLastSeen::golemDetected);
                  }
              }
-@@ -990,7 +1015,7 @@
+@@ -990,7 +1016,7 @@
      @Override
      public void startSleeping(BlockPosition blockposition) {
          super.startSleeping(blockposition);
@@ -104,7 +108,7 @@
          this.brain.eraseMemory(MemoryModuleType.WALK_TARGET);
          this.brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
      }
-@@ -998,7 +1023,7 @@
+@@ -998,7 +1024,7 @@
      @Override
      public void stopSleeping() {
          super.stopSleeping();

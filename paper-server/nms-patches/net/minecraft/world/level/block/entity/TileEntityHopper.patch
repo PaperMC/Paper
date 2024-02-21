@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityHopper.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityHopper.java
-@@ -32,6 +32,21 @@
+@@ -32,6 +32,22 @@
  import net.minecraft.world.phys.shapes.OperatorBoolean;
  import net.minecraft.world.phys.shapes.VoxelShapes;
  
@@ -13,6 +13,7 @@
 +import org.bukkit.craftbukkit.inventory.CraftInventory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.inventory.HopperInventorySearchEvent;
 +import org.bukkit.event.inventory.InventoryMoveItemEvent;
 +import org.bukkit.event.inventory.InventoryPickupItemEvent;
@@ -22,7 +23,7 @@
  public class TileEntityHopper extends TileEntityLootable implements IHopper {
  
      public static final int MOVE_ITEM_SPEED = 8;
-@@ -40,6 +55,36 @@
+@@ -40,6 +56,36 @@
      private int cooldownTime;
      private long tickedGameTime;
  
@@ -59,7 +60,7 @@
      public TileEntityHopper(BlockPosition blockposition, IBlockData iblockdata) {
          super(TileEntityTypes.HOPPER, blockposition, iblockdata);
          this.items = NonNullList.withSize(5, ItemStack.EMPTY);
-@@ -113,7 +158,7 @@
+@@ -113,7 +159,7 @@
                  boolean flag = false;
  
                  if (!tileentityhopper.isEmpty()) {
@@ -68,7 +69,7 @@
                  }
  
                  if (!tileentityhopper.inventoryFull()) {
-@@ -147,7 +192,7 @@
+@@ -147,7 +193,7 @@
          return false;
      }
  
@@ -77,7 +78,7 @@
          IInventory iinventory1 = getAttachedContainer(world, blockposition, iblockdata);
  
          if (iinventory1 == null) {
-@@ -161,7 +206,30 @@
+@@ -161,7 +207,30 @@
                  for (int i = 0; i < iinventory.getContainerSize(); ++i) {
                      if (!iinventory.getItem(i).isEmpty()) {
                          ItemStack itemstack = iinventory.getItem(i).copy();
@@ -109,7 +110,7 @@
  
                          if (itemstack1.isEmpty()) {
                              iinventory1.setChanged();
-@@ -226,7 +294,34 @@
+@@ -226,7 +295,34 @@
  
          if (!itemstack.isEmpty() && canTakeItemFromContainer(ihopper, iinventory, itemstack, i, enumdirection)) {
              ItemStack itemstack1 = itemstack.copy();
@@ -145,7 +146,7 @@
  
              if (itemstack2.isEmpty()) {
                  iinventory.setChanged();
-@@ -241,6 +336,13 @@
+@@ -241,13 +337,20 @@
  
      public static boolean addItem(IInventory iinventory, EntityItem entityitem) {
          boolean flag = false;
@@ -159,7 +160,15 @@
          ItemStack itemstack = entityitem.getItem().copy();
          ItemStack itemstack1 = addItem((IInventory) null, iinventory, itemstack, (EnumDirection) null);
  
-@@ -367,16 +469,40 @@
+         if (itemstack1.isEmpty()) {
+             flag = true;
+             entityitem.setItem(ItemStack.EMPTY);
+-            entityitem.discard();
++            entityitem.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+         } else {
+             entityitem.setItem(itemstack1);
+         }
+@@ -367,16 +470,40 @@
          return itemstack;
      }
  

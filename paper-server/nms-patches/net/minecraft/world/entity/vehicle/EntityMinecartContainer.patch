@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/vehicle/EntityMinecartContainer.java
 +++ b/net/minecraft/world/entity/vehicle/EntityMinecartContainer.java
-@@ -18,6 +18,14 @@
+@@ -18,6 +18,15 @@
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.level.World;
  
@@ -9,13 +9,14 @@
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.inventory.InventoryHolder;
 +// CraftBukkit end
 +
  public abstract class EntityMinecartContainer extends EntityMinecartAbstract implements ContainerEntity {
  
      private NonNullList<ItemStack> itemStacks;
-@@ -25,14 +33,55 @@
+@@ -25,14 +34,55 @@
      public MinecraftKey lootTable;
      public long lootTableSeed;
  
@@ -70,6 +71,26 @@
          super(entitytypes, world, d0, d1, d2);
 -        this.itemStacks = NonNullList.withSize(36, ItemStack.EMPTY);
 +        this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY); // CraftBukkit - SPIGOT-3513
+     }
+ 
+     @Override
+@@ -76,11 +126,18 @@
+ 
+     @Override
+     public void remove(Entity.RemovalReason entity_removalreason) {
++        // CraftBukkit start - add Bukkit remove cause
++        this.remove(entity_removalreason, null);
++    }
++
++    @Override
++    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++        // CraftBukkit end
+         if (!this.level().isClientSide && entity_removalreason.shouldDestroy()) {
+             InventoryUtils.dropContents(this.level(), (Entity) this, (IInventory) this);
+         }
+ 
+-        super.remove(entity_removalreason);
++        super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
      }
  
      @Override

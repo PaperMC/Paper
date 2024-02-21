@@ -1,10 +1,13 @@
 --- a/net/minecraft/world/entity/projectile/EntityLargeFireball.java
 +++ b/net/minecraft/world/entity/projectile/EntityLargeFireball.java
-@@ -9,17 +9,21 @@
+@@ -9,17 +9,24 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  
-+import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.entity.ExplosionPrimeEvent;
++// CraftBukkit end
 +
  public class EntityLargeFireball extends EntityFireballFireball {
  
@@ -22,11 +25,12 @@
      }
  
      @Override
-@@ -28,7 +32,15 @@
+@@ -28,8 +35,16 @@
          if (!this.level().isClientSide) {
              boolean flag = this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
  
 -            this.level().explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionPower, flag, World.a.MOB);
+-            this.discard();
 +            // CraftBukkit start - fire ExplosionPrimeEvent
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
 +            this.level().getCraftServer().getPluginManager().callEvent(event);
@@ -36,10 +40,11 @@
 +                this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB);
 +            }
 +            // CraftBukkit end
-             this.discard();
++            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
          }
  
-@@ -59,7 +71,8 @@
+     }
+@@ -59,7 +74,8 @@
      public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.readAdditionalSaveData(nbttagcompound);
          if (nbttagcompound.contains("ExplosionPower", 99)) {

@@ -45,6 +45,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.permissions.PermissibleBase;
@@ -291,7 +292,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public void remove() {
         entity.pluginRemoved = true;
-        entity.discard();
+        entity.discard(getHandle().generation ? null : EntityRemoveEvent.Cause.PLUGIN);
     }
 
     @Override

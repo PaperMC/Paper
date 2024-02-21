@@ -1,19 +1,20 @@
 --- a/net/minecraft/world/entity/projectile/EntityArrow.java
 +++ b/net/minecraft/world/entity/projectile/EntityArrow.java
-@@ -47,6 +47,12 @@
+@@ -47,6 +47,13 @@
  import net.minecraft.world.phys.Vec3D;
  import net.minecraft.world.phys.shapes.VoxelShape;
  
 +// CraftBukkit start
 +import net.minecraft.world.entity.item.EntityItem;
 +import org.bukkit.event.entity.EntityCombustByEntityEvent;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.player.PlayerPickupArrowEvent;
 +// CraftBukkit end
 +
  public abstract class EntityArrow extends IProjectile {
  
      private static final double ARROW_BASE_DAMAGE = 2.0D;
-@@ -219,7 +225,7 @@
+@@ -219,7 +226,7 @@
                  }
  
                  if (object != null && !flag) {
@@ -22,7 +23,25 @@
                      this.hasImpulse = true;
                  }
  
-@@ -367,7 +373,13 @@
+@@ -304,7 +311,7 @@
+     protected void tickDespawn() {
+         ++this.life;
+         if (this.life >= 1200) {
+-            this.discard();
++            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         }
+ 
+     }
+@@ -337,7 +344,7 @@
+             }
+ 
+             if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+                 return;
+             }
+ 
+@@ -367,7 +374,13 @@
          boolean flag1 = entity.getType().is(TagsEntity.DEFLECTS_ARROWS);
  
          if (this.isOnFire() && !flag && !flag1) {
@@ -37,7 +56,25 @@
          }
  
          if (entity.hurt(damagesource, (float) i)) {
-@@ -545,7 +557,22 @@
+@@ -418,7 +431,7 @@
+ 
+             this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+             if (this.getPierceLevel() <= 0) {
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+             }
+         } else if (flag1) {
+             this.deflect();
+@@ -432,7 +445,7 @@
+                     this.spawnAtLocation(this.getPickupItem(), 0.1F);
+                 }
+ 
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+             }
+         }
+ 
+@@ -545,9 +558,24 @@
      @Override
      public void playerTouch(EntityHuman entityhuman) {
          if (!this.level().isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0) {
@@ -59,5 +96,8 @@
 +            if ((this.pickup == EntityArrow.PickupStatus.ALLOWED && entityhuman.getInventory().add(itemstack)) || (this.pickup == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.getAbilities().instabuild)) {
 +                // CraftBukkit end
                  entityhuman.take(this, 1);
-                 this.discard();
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
              }
+ 
+         }
