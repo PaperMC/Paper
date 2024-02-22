@@ -325,7 +325,7 @@
                  });
              }
          }
-@@ -411,18 +526,66 @@
+@@ -411,17 +526,65 @@
  
          if (entityplayer1 == entityplayer) {
              this.playersByUUID.remove(uuid);
@@ -363,7 +363,6 @@
 +    public EntityPlayer canPlayerLogin(LoginListener loginlistener, GameProfile gameprofile) {
          IChatMutableComponent ichatmutablecomponent;
  
--        if (this.bans.isBanned(gameprofile)) {
 +        // Moved from processLogin
 +        UUID uuid = gameprofile.getId();
 +        List<EntityPlayer> list = Lists.newArrayList();
@@ -394,11 +393,10 @@
 +        Player player = entity.getBukkitEntity();
 +        PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketaddress).getAddress());
 +
-+        if (getBans().isBanned(gameprofile) && !getBans().get(gameprofile).hasExpired()) {
+         if (this.bans.isBanned(gameprofile)) {
              GameProfileBanEntry gameprofilebanentry = (GameProfileBanEntry) this.bans.get(gameprofile);
  
-             ichatmutablecomponent = IChatBaseComponent.translatable("multiplayer.disconnect.banned.reason", gameprofilebanentry.getReason());
-@@ -430,10 +593,12 @@
+@@ -430,9 +593,11 @@
                  ichatmutablecomponent.append((IChatBaseComponent) IChatBaseComponent.translatable("multiplayer.disconnect.banned.expiration", PlayerList.BAN_DATE_FORMAT.format(gameprofilebanentry.getExpires())));
              }
  
@@ -407,13 +405,11 @@
 +            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(ichatmutablecomponent));
          } else if (!this.isWhiteListed(gameprofile)) {
 -            return IChatBaseComponent.translatable("multiplayer.disconnect.not_whitelisted");
--        } else if (this.ipBans.isBanned(socketaddress)) {
 +            ichatmutablecomponent = IChatBaseComponent.translatable("multiplayer.disconnect.not_whitelisted");
 +            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, CraftChatMessage.fromComponent(ichatmutablecomponent));
-+        } else if (getIpBans().isBanned(socketaddress) && !getIpBans().get(socketaddress).hasExpired()) {
+         } else if (this.ipBans.isBanned(socketaddress)) {
              IpBanEntry ipbanentry = this.ipBans.get(socketaddress);
  
-             ichatmutablecomponent = IChatBaseComponent.translatable("multiplayer.disconnect.banned_ip.reason", ipbanentry.getReason());
 @@ -441,17 +606,32 @@
                  ichatmutablecomponent.append((IChatBaseComponent) IChatBaseComponent.translatable("multiplayer.disconnect.banned_ip.expiration", PlayerList.BAN_DATE_FORMAT.format(ipbanentry.getExpires())));
              }
@@ -604,7 +600,7 @@
 +        for (MobEffect mobEffect : entityplayer.getActiveEffects()) {
 +            entityplayer.connection.send(new PacketPlayOutEntityEffect(entityplayer.getId(), mobEffect));
 +        }
-+
+ 
 +        // Fire advancement trigger
 +        entityplayer.triggerDimensionChangeTriggers(((CraftWorld) fromWorld).getHandle());
 +
@@ -613,7 +609,7 @@
 +            PlayerChangedWorldEvent event = new PlayerChangedWorldEvent(entityplayer.getBukkitEntity(), fromWorld);
 +            server.server.getPluginManager().callEvent(event);
 +        }
- 
++
 +        // Save player file again if they were disconnected
 +        if (entityplayer.connection.isDisconnected()) {
 +            this.save(entityplayer);
