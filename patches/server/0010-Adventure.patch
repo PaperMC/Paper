@@ -2952,7 +2952,7 @@ index a60fef571c94858998a91711b17d3670c28a81bd..04a728a16bb629adbae1cd8586764a6d
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 58872976048a1162602d5f11a85eaead837cd805..acd53d9005fc5f43b94c80ec5e7d0e1f9c86ca98 100644
+index 58872976048a1162602d5f11a85eaead837cd805..93ef520b8f047870f48e908ae55590547ad88729 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -44,6 +44,7 @@ import net.minecraft.nbt.ListTag;
@@ -3018,7 +3018,20 @@ index 58872976048a1162602d5f11a85eaead837cd805..acd53d9005fc5f43b94c80ec5e7d0e1f
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
-@@ -2918,6 +2931,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2239,7 +2252,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     public void sendPlayerChatMessage(PlayerChatMessage message, ChatType.Bound params) {
+         // CraftBukkit start - SPIGOT-7262: if hidden we have to send as disguised message. Query whether we should send at all (but changing this may not be expected).
+-        if (!this.getCraftPlayer().canSee(message.link().sender())) {
++        // Paper start - Do not query the world for players, if they're not in the player list, then they're not in the world - don't query world state
++        // Also, mirror the logic for canSee in terms of "missing" players
++        final ServerPlayer sender = this.server.getPlayerList().getPlayer(message.link().sender());
++        if (sender == null || !this.getCraftPlayer().canSee(sender.getBukkitEntity())) {
++        // Paper end
+             this.sendDisguisedChatMessage(message.decoratedContent(), params);
+             return;
+         }
+@@ -2918,6 +2935,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          this.player.updateOptions(packet.information());
