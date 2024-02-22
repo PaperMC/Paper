@@ -3019,6 +3019,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     public void sendPlayerChatMessage(PlayerChatMessage message, ChatType.Bound params) {
+         // CraftBukkit start - SPIGOT-7262: if hidden we have to send as disguised message. Query whether we should send at all (but changing this may not be expected).
+-        if (!this.getCraftPlayer().canSee(message.link().sender())) {
++        // Paper start - Do not query the world for players, if they're not in the player list, then they're not in the world - don't query world state
++        // Also, mirror the logic for canSee in terms of "missing" players
++        final ServerPlayer sender = this.server.getPlayerList().getPlayer(message.link().sender());
++        if (sender == null || !this.getCraftPlayer().canSee(sender.getBukkitEntity())) {
++        // Paper end
+             this.sendDisguisedChatMessage(message.decoratedContent(), params);
+             return;
+         }
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          this.player.updateOptions(packet.information());
