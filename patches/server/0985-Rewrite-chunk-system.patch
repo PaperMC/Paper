@@ -14896,10 +14896,10 @@ index 73e83d56a340f0c7dcb8ff737d621003e72c6de4..bdaf062f9b66ceab303a0807eca30134
      }
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7e8dc9e8f381abfdcce2746edc93122d623622d1
+index 0000000000000000000000000000000000000000..c78cbec447032de9fe69748591bef6be300160ed
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
-@@ -0,0 +1,606 @@
+@@ -0,0 +1,607 @@
 +package io.papermc.paper.world;
 +
 +import com.destroystokyo.paper.util.maplist.EntityList;
@@ -14926,6 +14926,7 @@ index 0000000000000000000000000000000000000000..7e8dc9e8f381abfdcce2746edc93122d
 +import java.util.Iterator;
 +import java.util.List;
 +import java.util.function.Predicate;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +
 +public final class ChunkEntitySlices {
 +
@@ -15021,12 +15022,12 @@ index 0000000000000000000000000000000000000000..7e8dc9e8f381abfdcce2746edc93122d
 +                continue;
 +            }
 +            if (entity.shouldBeSaved()) {
-+                entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK);
++                entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD);
 +                if (entity.isVehicle()) {
 +                    // we cannot assume that these entities are contained within this chunk, because entities can
 +                    // desync - so we need to remove them all
 +                    for (final Entity passenger : entity.getIndirectPassengers()) {
-+                        passenger.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK);
++                        passenger.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD);
 +                    }
 +                }
 +            }
@@ -16393,7 +16394,7 @@ index 807a6bb1026dac2c4cd0a50afe06fd62ce23558b..2b998bdbe49bf8211b755e0eb7c1bf13
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 3ae47b86b80f9156e71d1da83e492153f360d1b5..5c1accb75655eadd4858ee24cdcdf9b200fbbcb2 100644
+index ee16a8ef86705dc89b1cc300c06cf683431c7ef3..4549b32a3d848e4e84334e889dbc9c6b883fe621 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -119,10 +119,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -18265,7 +18266,7 @@ index 8a118a7b2878d3c99dadfa97e2ae58fda2b3f93b..9bb4223fbb665211df11dc89fcd13cb7
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b5d6a7eaa24d9968e159d77a4295be00332a5457..dff2dfbe9cc04894d42181c6691e27ad061beb40 100644
+index 9816913ad729fd39c173364b92e5db06a733bc55..a3881964bad0cab8f480eda634216d73dfbf7bb0 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -195,7 +195,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -19223,10 +19224,10 @@ index 13209267c26f46492a92e820889a9be0bd2287a0..f3b96a921e7d085b51da62fa5493384a
          this.desiredChunksPerTick = Double.isNaN((double)desiredBatchSize) ? 0.01F : Mth.clamp(desiredBatchSize, 0.01F, 64.0F);
          if (this.unacknowledgedBatches == 0) {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 16ef96f0b2f68556b89c9d732d0e1a407f083fdc..d2e65c105c38c71a6b1739b95547772511a36345 100644
+index d38fe02af4cc35ed5b22acec41bedb76151f8af5..4a569bf782bfdd870f32fe0ab5c3b8b86a07f218 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -293,7 +293,7 @@ public abstract class PlayerList {
+@@ -294,7 +294,7 @@ public abstract class PlayerList {
          boolean flag2 = gamerules.getBoolean(GameRules.RULE_LIMITED_CRAFTING);
  
          // Spigot - view distance
@@ -19235,7 +19236,7 @@ index 16ef96f0b2f68556b89c9d732d0e1a407f083fdc..d2e65c105c38c71a6b1739b955477725
          player.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
          playerconnection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
          playerconnection.send(new ClientboundPlayerAbilitiesPacket(player.getAbilities()));
-@@ -943,8 +943,8 @@ public abstract class PlayerList {
+@@ -944,8 +944,8 @@ public abstract class PlayerList {
          LevelData worlddata = worldserver2.getLevelData();
  
          entityplayer1.connection.send(new ClientboundRespawnPacket(entityplayer1.createCommonSpawnInfo(worldserver2), (byte) i));
@@ -19246,7 +19247,7 @@ index 16ef96f0b2f68556b89c9d732d0e1a407f083fdc..d2e65c105c38c71a6b1739b955477725
          entityplayer1.connection.teleport(CraftLocation.toBukkit(entityplayer1.position(), worldserver2.getWorld(), entityplayer1.getYRot(), entityplayer1.getXRot())); // CraftBukkit
          entityplayer1.connection.send(new ClientboundSetDefaultSpawnPositionPacket(worldserver1.getSharedSpawnPos(), worldserver1.getSharedSpawnAngle()));
          entityplayer1.connection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
-@@ -1496,7 +1496,7 @@ public abstract class PlayerList {
+@@ -1497,7 +1497,7 @@ public abstract class PlayerList {
  
      public void setViewDistance(int viewDistance) {
          this.viewDistance = viewDistance;
@@ -19255,7 +19256,7 @@ index 16ef96f0b2f68556b89c9d732d0e1a407f083fdc..d2e65c105c38c71a6b1739b955477725
          Iterator iterator = this.server.getAllLevels().iterator();
  
          while (iterator.hasNext()) {
-@@ -1511,7 +1511,7 @@ public abstract class PlayerList {
+@@ -1512,7 +1512,7 @@ public abstract class PlayerList {
  
      public void setSimulationDistance(int simulationDistance) {
          this.simulationDistance = simulationDistance;
@@ -19374,10 +19375,10 @@ index 640db9f71608310a64e09f1e3e677c01e6ccd98a..f2a7cb6ebed7a4b4019a09af2a025f62
                          if (flag1) {
                              ++this.converted;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 8c42792ea5cb0fe5d1da7467875efda9be9040e1..bfc3242952fd425ab4f7cd42b21228baa6f75c87 100644
+index fe6ae6c19b07e0b4b9bbe579a2266bb84092fe72..1a91bffc016312e02408766cd9419610aca74b92 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -479,6 +479,58 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -480,6 +480,58 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      }
      // Paper end
  
@@ -19436,7 +19437,7 @@ index 8c42792ea5cb0fe5d1da7467875efda9be9040e1..bfc3242952fd425ab4f7cd42b21228ba
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
          this.passengers = ImmutableList.of();
-@@ -2564,11 +2616,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -2577,11 +2629,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
          return InteractionResult.PASS;
      }
  
@@ -19450,7 +19451,7 @@ index 8c42792ea5cb0fe5d1da7467875efda9be9040e1..bfc3242952fd425ab4f7cd42b21228ba
          return false;
      }
  
-@@ -3993,6 +4045,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -4006,6 +4058,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
          }).count();
      }
  
@@ -19464,7 +19465,7 @@ index 8c42792ea5cb0fe5d1da7467875efda9be9040e1..bfc3242952fd425ab4f7cd42b21228ba
      public boolean hasExactlyOnePlayerPassenger() {
          if (this.passengers.isEmpty()) { return false; } // Paper - Optimize indirect passenger iteration
          return this.countPlayerPassengers() == 1;
-@@ -4345,6 +4404,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -4358,6 +4417,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              return;
          }
          // Paper end - Block invalid positions and bounding box
@@ -19477,10 +19478,10 @@ index 8c42792ea5cb0fe5d1da7467875efda9be9040e1..bfc3242952fd425ab4f7cd42b21228ba
          // Paper start - Fix MC-4
          if (this instanceof ItemEntity) {
              if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.fixEntityPositionDesync) {
-@@ -4468,6 +4533,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -4487,6 +4552,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
      @Override
-     public final void setRemoved(Entity.RemovalReason reason) {
+     public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
 +        // Paper start - rewrite chunk system
 +        io.papermc.paper.util.TickThread.ensureTickThread(this, "Cannot remove entity off-main");
 +        if (!((ServerLevel)this.level).getEntityLookup().canRemoveEntity(this)) {
@@ -19488,19 +19489,19 @@ index 8c42792ea5cb0fe5d1da7467875efda9be9040e1..bfc3242952fd425ab4f7cd42b21228ba
 +            return;
 +        }
 +        // Paper end - rewrite chunk system
+         CraftEventFactory.callEntityRemoveEvent(this, cause);
+         // CraftBukkit end
          final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
-         if (this.removalReason == null) {
-             this.removalReason = reason;
-@@ -4477,7 +4549,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -4498,7 +4570,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
              this.stopRiding();
          }
  
 -        this.getPassengers().forEach(Entity::stopRiding);
-+        if (reason != RemovalReason.UNLOADED_TO_CHUNK) this.getPassengers().forEach(Entity::stopRiding); // Paper - chunk system - don't adjust passenger state when unloading, it's just not safe (and messes with our logic in entity chunk unload)
-         this.levelCallback.onRemove(reason);
++        if (entity_removalreason != RemovalReason.UNLOADED_TO_CHUNK) this.getPassengers().forEach(Entity::stopRiding); // Paper - chunk system - don't adjust passenger state when unloading, it's just not safe (and messes with our logic in entity chunk unload)
+         this.levelCallback.onRemove(entity_removalreason);
          // Paper start - Folia schedulers
-         if (!(this instanceof ServerPlayer) && reason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
-@@ -4508,7 +4580,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+         if (!(this instanceof ServerPlayer) && entity_removalreason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
+@@ -4529,7 +4601,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
      @Override
      public boolean shouldBeSaved() {
@@ -19784,7 +19785,7 @@ index 57d4d2014f33a2f069d6c5aaa8e87e36b63a7177..cc888bbcd6a50124fa553bc4a8ffd1e8
  
      <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> filter, AABB box, Predicate<? super T> predicate);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index d5290c97babfa9415bd52deb14610821f0fa2575..c9afe29bae7f339184f4f46d8f9828f5762d0a9c 100644
+index c0ae70e3490b56aaa464460e3c41175b27136f6b..0df6572c94854526899890fba7e9da681b729f47 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -545,6 +545,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -21521,7 +21522,7 @@ index 6379f26776e2e267b84fe8f8392b53d7d89eb5ad..726aa0461bbf380989a5b51dbfdfdda2
  
      // Paper start - implement pointers
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 205dfed388db7d022e4fd8b3f89485735d3320a8..206520f6f20b2e48b1eefdd4edb26510b88e4c92 100644
+index e874d76437fc4c86fd4ed2d03e416dd1ff528b76..616d2e479d91673695ade0db151a0099b568904f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -3400,31 +3400,31 @@ public class CraftPlayer extends CraftHumanEntity implements Player {

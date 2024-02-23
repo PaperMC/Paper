@@ -1173,10 +1173,10 @@ index 97dbe5a44d2791c6dee830654c3935f4ac54aad4..48da5bdabcf38afbbd1509eca56d5c76
          this.profiler.push("commandFunctions");
          MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot // Paper
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 2eeb216002c1c91879780225335225552744524b..74b3f459c898dc9f5c4411a38c9018fb4866f0b1 100644
+index 0747b0042446271385371f1ca9c8fefdebd851b8..fade1e36037075aae968eb90bbfeac76bfed496a 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -647,6 +647,7 @@ public abstract class PlayerList {
+@@ -648,6 +648,7 @@ public abstract class PlayerList {
  
          entityplayer.unRide();
          worldserver.removePlayerImmediately(entityplayer, Entity.RemovalReason.UNLOADED_WITH_PLAYER);
@@ -1185,10 +1185,10 @@ index 2eeb216002c1c91879780225335225552744524b..74b3f459c898dc9f5c4411a38c9018fb
          this.players.remove(entityplayer);
          this.playersByName.remove(entityplayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 11833b3c755e6ad6d802264ada02e80eb5545143..742ba42e60f9fdb0a78df681732af2be4ce5bdc3 100644
+index 957165e1fce7ddd4c7b7e53a4db8f65739c0ff7f..14855cd35ce7607e74192a55722bd10660f1126b 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -246,11 +246,23 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -247,11 +247,23 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      public @org.jetbrains.annotations.Nullable net.minecraft.server.level.ChunkMap.TrackedEntity tracker; // Paper
      public CraftEntity getBukkitEntity() {
          if (this.bukkitEntity == null) {
@@ -1213,20 +1213,20 @@ index 11833b3c755e6ad6d802264ada02e80eb5545143..742ba42e60f9fdb0a78df681732af2be
      @Override
      public CommandSender getBukkitSender(CommandSourceStack wrapper) {
          return this.getBukkitEntity();
-@@ -4424,6 +4436,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
- 
-     @Override
-     public final void setRemoved(Entity.RemovalReason reason) {
+@@ -4445,6 +4457,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
+         CraftEventFactory.callEntityRemoveEvent(this, cause);
+         // CraftBukkit end
 +        final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
-             this.removalReason = reason;
+             this.removalReason = entity_removalreason;
          }
-@@ -4434,12 +4447,28 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -4455,12 +4468,28 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
          this.getPassengers().forEach(Entity::stopRiding);
-         this.levelCallback.onRemove(reason);
+         this.levelCallback.onRemove(entity_removalreason);
 +        // Paper start - Folia schedulers
-+        if (!(this instanceof ServerPlayer) && reason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
++        if (!(this instanceof ServerPlayer) && entity_removalreason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
 +            // Players need to be special cased, because they are regularly removed from the world
 +            this.retireScheduler();
 +        }
@@ -1332,10 +1332,10 @@ index 56a6b3921c74bdeb27f8736302503bee1f731065..b5140b37d2161d89c6c5d6465949e96f
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
          ConfigurationSerialization.registerClass(CraftPlayerProfile.class);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index e043a43ebda1df7b78c1368ce33a3648345bcb08..b86746be78e909b75a91751fbc4759db088d42a4 100644
+index ba915f1b3cd00c8afe39ece9c9e68737673777f5..282a1cebc0cdb6253d024dd399ef794335883662 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -67,6 +67,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -68,6 +68,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
      private EntityDamageEvent lastDamageEvent;
      private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
      protected net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
@@ -1351,7 +1351,7 @@ index e043a43ebda1df7b78c1368ce33a3648345bcb08..b86746be78e909b75a91751fbc4759db
  
      public CraftEntity(final CraftServer server, final Entity entity) {
          this.server = server;
-@@ -483,6 +492,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -484,6 +493,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          return this.entity;
      }
  
