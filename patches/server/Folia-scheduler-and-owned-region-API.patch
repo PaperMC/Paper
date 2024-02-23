@@ -1214,19 +1214,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public CommandSender getBukkitSender(CommandSourceStack wrapper) {
          return this.getBukkitEntity();
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
- 
-     @Override
-     public final void setRemoved(Entity.RemovalReason reason) {
+     public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
+         CraftEventFactory.callEntityRemoveEvent(this, cause);
+         // CraftBukkit end
 +        final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
-             this.removalReason = reason;
+             this.removalReason = entity_removalreason;
          }
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
  
          this.getPassengers().forEach(Entity::stopRiding);
-         this.levelCallback.onRemove(reason);
+         this.levelCallback.onRemove(entity_removalreason);
 +        // Paper start - Folia schedulers
-+        if (!(this instanceof ServerPlayer) && reason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
++        if (!(this instanceof ServerPlayer) && entity_removalreason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
 +            // Players need to be special cased, because they are regularly removed from the world
 +            this.retireScheduler();
 +        }

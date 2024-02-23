@@ -122,6 +122,51 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
  }
+diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
++++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+@@ -0,0 +0,0 @@ public class TranslatableContents implements ComponentContents {
+ 
+     @Override
+     public <T> Optional<T> visit(FormattedText.ContentConsumer<T> visitor) {
++        // Paper start
++        try {
++            return this.visit(new TranslatableContentConsumer<>(visitor));
++        } catch (IllegalArgumentException var5) {
++            return Optional.empty();
++        }
++    }
++    private <T> Optional<T> visit(TranslatableContentConsumer<T> visitor) {
++        // Paper end
+         this.decompose();
+ 
+         for(FormattedText formattedText : this.decomposedParts) {
+@@ -0,0 +0,0 @@ public class TranslatableContents implements ComponentContents {
+ 
+         return Optional.empty();
+     }
++    // Paper start
++    private static final class TranslatableContentConsumer<T> implements FormattedText.ContentConsumer<T> {
++        private final FormattedText.ContentConsumer<T> visitor;
++        private int visited;
++
++        private TranslatableContentConsumer(FormattedText.ContentConsumer<T> visitor) {
++            this.visitor = visitor;
++        }
++
++        @Override
++        public Optional<T> accept(final String asString) {
++            if (visited++ > 32) {
++                throw new IllegalArgumentException("Too long");
++            }
++            return this.visitor.accept(asString);
++        }
++    }
++    // Paper end
+ 
+     @Override
+     public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
