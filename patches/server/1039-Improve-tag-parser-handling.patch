@@ -122,6 +122,51 @@ index 5bec54239a2b185284c10d58854e5a13e33daae5..94cb73e7f60171aa57bd1dbe7e91ef4d
 +        }
 +    }
  }
+diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..084ffde43447f6ff5e45e9fe3fc6a86bde65fd5a 100644
+--- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
++++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+@@ -197,6 +197,15 @@ public class TranslatableContents implements ComponentContents {
+ 
+     @Override
+     public <T> Optional<T> visit(FormattedText.ContentConsumer<T> visitor) {
++        // Paper start
++        try {
++            return this.visit(new TranslatableContentConsumer<>(visitor));
++        } catch (IllegalArgumentException var5) {
++            return Optional.empty();
++        }
++    }
++    private <T> Optional<T> visit(TranslatableContentConsumer<T> visitor) {
++        // Paper end
+         this.decompose();
+ 
+         for(FormattedText formattedText : this.decomposedParts) {
+@@ -208,6 +217,24 @@ public class TranslatableContents implements ComponentContents {
+ 
+         return Optional.empty();
+     }
++    // Paper start
++    private static final class TranslatableContentConsumer<T> implements FormattedText.ContentConsumer<T> {
++        private final FormattedText.ContentConsumer<T> visitor;
++        private int visited;
++
++        private TranslatableContentConsumer(FormattedText.ContentConsumer<T> visitor) {
++            this.visitor = visitor;
++        }
++
++        @Override
++        public Optional<T> accept(final String asString) {
++            if (visited++ > 32) {
++                throw new IllegalArgumentException("Too long");
++            }
++            return this.visitor.accept(asString);
++        }
++    }
++    // Paper end
+ 
+     @Override
+     public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
 index a5e438a834826161c52ca9db57d234d9ff80a591..4766994cce060564370b0d24836a7da8b5e4a8a1 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
@@ -136,7 +181,7 @@ index a5e438a834826161c52ca9db57d234d9ff80a591..4766994cce060564370b0d24836a7da8
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 2f9c62f2c4c4356a896f7004b77f12a595f9c6dc..ab5b259d8f72022c875cae73be25fe2da346c6b3 100644
+index 98496bcc7ab9adde3fdc8b2cd9eaeceee99e28b4..87e5ee042ab2c052d25ab4c2521a68cf2e2d67b6 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -777,6 +777,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
