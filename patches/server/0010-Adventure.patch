@@ -4726,23 +4726,62 @@ index 2496f4462b35a7297dd9320c35f109d3c2a9867f..6571adf5285ab3f84513c2f5b32ff052
          return event;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
-index d47b248535882bb58ae6c1b6ef756464a1989918..39be45585835eabc8d8bcae0158c094c3dcb1aa3 100644
+index d47b248535882bb58ae6c1b6ef756464a1989918..850c2142b72340f9dc595d7340fc5a55a5ddb735 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
-@@ -73,6 +73,13 @@ public class CraftContainer extends AbstractContainerMenu {
+@@ -50,8 +50,8 @@ public class CraftContainer extends AbstractContainerMenu {
+     public CraftContainer(final Inventory inventory, final Player player, int id) {
+         this(new InventoryView() {
+ 
+-            private final String originalTitle = (inventory instanceof CraftInventoryCustom) ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).getTitle() : inventory.getType().getDefaultTitle();
+-            private String title = this.originalTitle;
++            private final net.kyori.adventure.text.Component originalTitle = (inventory instanceof CraftInventoryCustom) ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).title() : net.kyori.adventure.text.Component.text(inventory.getType().getDefaultTitle()); // Paper
++            private net.kyori.adventure.text.Component title = this.originalTitle; // Paper
+ 
+             @Override
+             public Inventory getTopInventory() {
+@@ -73,21 +73,38 @@ public class CraftContainer extends AbstractContainerMenu {
                  return inventory.getType();
              }
  
 +            // Paper start
-+            @Override
+             @Override
+-            public String getTitle() {
 +            public net.kyori.adventure.text.Component title() {
-+                return inventory instanceof CraftInventoryCustom ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).title() : net.kyori.adventure.text.Component.text(inventory.getType().getDefaultTitle());
-+            }
+                 return this.title;
+             }
+ 
+             @Override
+-            public String getOriginalTitle() {
++            public net.kyori.adventure.text.Component originalTitle() {
+                 return this.originalTitle;
+             }
+ 
+             @Override
+-            public void setTitle(String title) {
++            public void setTitle(final net.kyori.adventure.text.Component title) {
+                 CraftInventoryView.sendInventoryTitleChange(this, title);
+                 this.title = title;
+             }
 +            // Paper end
 +
-             @Override
-             public String getTitle() {
-                 return this.title;
++            @Override
++            public String getTitle() {
++                return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.title); // Paper
++            }
++
++            @Override
++            public String getOriginalTitle() {
++                return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.originalTitle); // Paper
++            }
++
++            @Override
++            public void setTitle(String title) {
++                this.setTitle(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand().deserialize(title)); // Paper
++            }
+ 
+         }, player, id);
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
 index c9cc23757a9fcc58d30b2915d4c5cfbc7d1c767a..fc0e1212022d1aa3506699b60ef338196eb54eba 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
@@ -4830,23 +4869,88 @@ index c9cc23757a9fcc58d30b2915d4c5cfbc7d1c767a..fc0e1212022d1aa3506699b60ef33819
              return this.title;
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
-index 4dd9a80af9901287ab6740b072f2b89678c3d0cb..b2586684295b295a3196a2a9cf724cec975b5a40 100644
+index 4dd9a80af9901287ab6740b072f2b89678c3d0cb..c46e314153fc56839c9dcc3216de47afceefcb2b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
-@@ -73,6 +73,13 @@ public class CraftInventoryView extends InventoryView {
+@@ -19,15 +19,15 @@ public class CraftInventoryView extends InventoryView {
+     private final AbstractContainerMenu container;
+     private final CraftHumanEntity player;
+     private final CraftInventory viewing;
+-    private final String originalTitle;
+-    private String title;
++    private final net.kyori.adventure.text.Component originalTitle; // Paper
++    private net.kyori.adventure.text.Component title; // Paper
+ 
+     public CraftInventoryView(HumanEntity player, Inventory viewing, AbstractContainerMenu container) {
+         // TODO: Should we make sure it really IS a CraftHumanEntity first? And a CraftInventory?
+         this.player = (CraftHumanEntity) player;
+         this.viewing = (CraftInventory) viewing;
+         this.container = container;
+-        this.originalTitle = CraftChatMessage.fromComponent(container.getTitle());
++        this.originalTitle = io.papermc.paper.adventure.PaperAdventure.asAdventure(this.container.getTitle()); // Paper
+         this.title = this.originalTitle;
+     }
+ 
+@@ -73,21 +73,38 @@ public class CraftInventoryView extends InventoryView {
          return CraftItemStack.asCraftMirror(this.container.getSlot(slot).getItem());
      }
  
 +    // Paper start
-+    @Override
+     @Override
+-    public String getTitle() {
 +    public net.kyori.adventure.text.Component title() {
-+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.container.getTitle());
-+    }
+         return this.title;
+     }
+ 
+     @Override
+-    public String getOriginalTitle() {
++    public net.kyori.adventure.text.Component originalTitle() {
+         return this.originalTitle;
+     }
+ 
+     @Override
+-    public void setTitle(String title) {
++    public void setTitle(final net.kyori.adventure.text.Component title) {
+         CraftInventoryView.sendInventoryTitleChange(this, title);
+         this.title = title;
+     }
 +    // Paper end
 +
-     @Override
-     public String getTitle() {
-         return this.title;
++    @Override
++    public String getTitle() {
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.title); // Paper
++    }
++
++    @Override
++    public String getOriginalTitle() {
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.originalTitle); // Paper
++    }
++
++    @Override
++    public void setTitle(String title) {
++        this.setTitle(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title)); // Paper
++    }
+ 
+     public boolean isInTop(int rawSlot) {
+         return rawSlot < this.viewing.getSize();
+@@ -97,7 +114,7 @@ public class CraftInventoryView extends InventoryView {
+         return this.container;
+     }
+ 
+-    public static void sendInventoryTitleChange(InventoryView view, String title) {
++    public static void sendInventoryTitleChange(InventoryView view, net.kyori.adventure.text.Component title) { // Paper
+         Preconditions.checkArgument(view != null, "InventoryView cannot be null");
+         Preconditions.checkArgument(title != null, "Title cannot be null");
+         Preconditions.checkArgument(view.getPlayer() instanceof Player, "NPCs are not currently supported for this function");
+@@ -106,7 +123,7 @@ public class CraftInventoryView extends InventoryView {
+         final ServerPlayer entityPlayer = (ServerPlayer) ((CraftHumanEntity) view.getPlayer()).getHandle();
+         final int containerId = entityPlayer.containerMenu.containerId;
+         final MenuType<?> windowType = CraftContainer.getNotchInventoryType(view.getTopInventory());
+-        entityPlayer.connection.send(new ClientboundOpenScreenPacket(containerId, windowType, CraftChatMessage.fromString(title)[0]));
++        entityPlayer.connection.send(new ClientboundOpenScreenPacket(containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(title))); // Paper
+         ((Player) view.getPlayer()).updateInventory();
+     }
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 index d2c54674711f5d4b0273de628cc6d244969de057..0875dfe89644f5f54d004488ed980092b31c6416 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
