@@ -179,8 +179,10 @@ public enum LootTables implements Keyed {
     SNIFFER_DIGGING("gameplay/sniffer_digging"),
     PIGLIN_BARTERING("gameplay/piglin_bartering"),
     // Spawners
+    @MinecraftExperimental
     TRIAL_CHAMBER_KEY("spawners/trial_chamber/key"),
-    RIAL_CHAMBER_CONSUMABLES("spawners/trial_chamber/consumables"),
+    @MinecraftExperimental
+    TRIAL_CHAMBER_CONSUMABLES("spawners/trial_chamber/consumables"),
     // Archaeology
     DESERT_WELL_ARCHAEOLOGY("archaeology/desert_well"),
     DESERT_PYRAMID_ARCHAEOLOGY("archaeology/desert_pyramid"),
