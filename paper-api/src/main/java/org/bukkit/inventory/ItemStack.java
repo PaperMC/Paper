@@ -143,8 +143,18 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * {@link Material#isItem()} returns false.</b>
      *
      * @param type New type to set the items in this stack to
+     * @deprecated <b>Setting the material type of ItemStacks is no longer supported.</b>
+     * <p>
+     * This method is deprecated due to potential illegal behavior that may occur
+     * during the context of which this ItemStack is being used, allowing for certain item validation to be bypassed.
+     * It is recommended to instead create a new ItemStack object with the desired
+     * Material type, and if possible, set it in the appropriate context.
+     *
+     * Using this method in ItemStacks passed in events will result in undefined behavior.
+     * @see ItemStack#withType(Material)
      */
     @Utility
+    @Deprecated // Paper
     public void setType(@NotNull Material type) {
         Preconditions.checkArgument(type != null, "Material cannot be null");
         this.type = type;
@@ -157,6 +167,24 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
             this.data = null;
         }
     }
+    // Paper start
+    /**
+     * Creates a new ItemStack with the specified Material type, where the item count and item meta is preserved.
+     *
+     * @param type The Material type of the new ItemStack.
+     * @return A new ItemStack instance with the specified Material type.
+     */
+    @NotNull
+    @org.jetbrains.annotations.Contract(value = "_ -> new", pure = true)
+    public ItemStack withType(@NotNull Material type) {
+        ItemStack itemStack = new ItemStack(type, this.amount);
+        if (this.hasItemMeta()) {
+            itemStack.setItemMeta(this.getItemMeta());
+        }
+
+        return itemStack;
+    }
+    // Paper end
 
     /**
      * Gets the amount of items in this stack
