@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nick Hensel <nickhensel25@icloud.com>
+Date: Sun, 28 Aug 2022 23:44:18 +0200
+Subject: [PATCH] Also load resources from LibraryLoader
+
+
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index de017d10db19ca7ca7f73ff0ac08fe6e1773d7dc..7e4f7cb2afbc145e532285c793573ad107bc3033 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -109,14 +109,35 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+ 
+     @Override
+     public URL getResource(String name) {
+-        return findResource(name);
++        // Paper start
++        URL resource = findResource(name);
++        if (resource == null && libraryLoader != null) {
++            return libraryLoader.getResource(name);
++        }
++        return resource;
++        // Paper end
+     }
+ 
+     @Override
+     public Enumeration<URL> getResources(String name) throws IOException {
+-        return findResources(name);
++        // Paper start
++        java.util.ArrayList<URL> resources = new java.util.ArrayList<>();
++        addEnumeration(resources, findResources(name));
++        if (libraryLoader != null) {
++            addEnumeration(resources, libraryLoader.getResources(name));
++        }
++        return Collections.enumeration(resources);
++        // Paper end
+     }
+ 
++    // Paper start
++    private <T> void addEnumeration(java.util.ArrayList<T> list, Enumeration<T> enumeration) {
++        while (enumeration.hasMoreElements()) {
++            list.add(enumeration.nextElement());
++        }
++    }
++    // Paper end
++
+     // Paper start
+     @Override
+     public Class<?> loadClass(@NotNull String name, boolean resolve, boolean checkGlobal, boolean checkLibraries) throws ClassNotFoundException {

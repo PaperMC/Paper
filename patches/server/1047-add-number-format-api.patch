@@ -1,0 +1,138 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: David Mayr <davidliebtkekse@gmail.com>
+Date: Sat, 16 Dec 2023 10:40:29 +0100
+Subject: [PATCH] add number format api
+
+== AT ==
+public net.minecraft.network.chat.numbers.FixedFormat value
+public net.minecraft.network.chat.numbers.StyledFormat style
+
+diff --git a/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java b/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6064086cc76ef0df999c7057121d0ac22bd4df65
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/PaperScoreboardFormat.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.util;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.scoreboard.numbers.NumberFormat;
++
++public final class PaperScoreboardFormat {
++
++    private PaperScoreboardFormat() {
++    }
++
++    public static net.minecraft.network.chat.numbers.NumberFormat asVanilla(final NumberFormat format) {
++        final net.minecraft.network.chat.numbers.NumberFormat vanilla;
++        if (format instanceof final io.papermc.paper.scoreboard.numbers.StyledFormat styled) {
++            vanilla = new net.minecraft.network.chat.numbers.StyledFormat(PaperAdventure.asVanilla(styled.style()));
++        } else if (format instanceof final io.papermc.paper.scoreboard.numbers.FixedFormat fixed) {
++            vanilla = new net.minecraft.network.chat.numbers.FixedFormat(io.papermc.paper.adventure.PaperAdventure
++                .asVanilla(fixed.component()));
++        } else if (format.equals(NumberFormat.blank())) {
++            vanilla = net.minecraft.network.chat.numbers.BlankFormat.INSTANCE;
++        } else {
++            throw new IllegalArgumentException("Unknown format type " + format.getClass());
++        }
++
++        return vanilla;
++    }
++
++    public static NumberFormat asPaper(final net.minecraft.network.chat.numbers.NumberFormat vanilla) {
++        if (vanilla instanceof final net.minecraft.network.chat.numbers.StyledFormat styled) {
++            return NumberFormat.styled(PaperAdventure.asAdventure(styled.style));
++        } else if (vanilla instanceof final net.minecraft.network.chat.numbers.FixedFormat fixed) {
++            return NumberFormat.fixed(io.papermc.paper.adventure.PaperAdventure.asAdventure(fixed.value));
++        } else if (vanilla instanceof net.minecraft.network.chat.numbers.BlankFormat) {
++            return NumberFormat.blank();
++        }
++
++        throw new IllegalArgumentException("Unknown format type " + vanilla.getClass());
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+index 2d3abf2a1da487ead74d698cc5ea4eb729c35c8d..1fec80c4f02aab3770c05bac8bfa2b622625e630 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+@@ -153,6 +153,34 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
+     }
+     // Paper end
+ 
++    // Paper start - add number format
++    @Override
++    public io.papermc.paper.scoreboard.numbers.NumberFormat numberFormat() {
++        this.checkState();
++
++        net.minecraft.network.chat.numbers.NumberFormat vanilla = this.objective.numberFormat();
++        
++        if (vanilla == null) {
++            return null;
++        }
++
++        return io.papermc.paper.util.PaperScoreboardFormat.asPaper(vanilla);
++    }
++
++
++    @Override
++    public void numberFormat(io.papermc.paper.scoreboard.numbers.NumberFormat format) {
++        this.checkState();
++
++        if (format == null) {
++            this.objective.setNumberFormat(null);
++            return;
++        }
++
++        this.objective.setNumberFormat(io.papermc.paper.util.PaperScoreboardFormat.asVanilla(format));
++    }
++    // Paper end - add number format
++
+     @Override
+     public void unregister() {
+         CraftScoreboard scoreboard = this.checkState();
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java
+index 74d9c407e971804bed420370f7b684d8658eb5aa..e307e897d6e1ba4cb21883dfeaf334bfbf56cfc4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java
+@@ -55,6 +55,41 @@ final class CraftScore implements Score {
+         this.objective.checkState().board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).set(score);
+     }
+ 
++
++    // Paper start - add number format
++    @Override
++    public io.papermc.paper.scoreboard.numbers.NumberFormat numberFormat() {
++        ReadOnlyScoreInfo scoreInfo = this.objective.checkState().board
++            .getPlayerScoreInfo(this.entry, this.objective.getHandle());
++
++        if (scoreInfo == null) {
++            return null;
++        }
++
++        net.minecraft.network.chat.numbers.NumberFormat vanilla = scoreInfo.numberFormat();
++
++        if (vanilla == null) {
++            return null;
++        }
++
++        return io.papermc.paper.util.PaperScoreboardFormat.asPaper(vanilla);
++    }
++
++
++    @Override
++    public void numberFormat(io.papermc.paper.scoreboard.numbers.NumberFormat format) {
++        final net.minecraft.world.scores.ScoreAccess access = this.objective.checkState()
++            .board.getOrCreatePlayerScore(this.entry, this.objective.getHandle());
++
++        if (format == null) {
++            access.numberFormatOverride(null);
++            return;
++        }
++
++        access.numberFormatOverride(io.papermc.paper.util.PaperScoreboardFormat.asVanilla(format));
++    }
++    // Paper end - add number format
++
+     @Override
+     public boolean isScoreSet() {
+         Scoreboard board = this.objective.checkState().board;

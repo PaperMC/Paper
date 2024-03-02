@@ -6,10 +6,10 @@ Subject: [PATCH] Drop falling block and tnt entities at the specified height
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-index 66c0b74a41cb9e7403826b4fd54a8575d6f16faa..ee5ef4fe16ce6397bba30900b9c6690e3c4f51e6 100644
+index 4d0fa6caf55605f2f53a374ce6bad0081213f248..9136b0c907d331e100d47e1a800ae2e2c2ec6dad 100644
 --- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-@@ -142,6 +142,16 @@ public class FallingBlockEntity extends Entity {
+@@ -143,6 +143,16 @@ public class FallingBlockEntity extends Entity {
              }
  
              this.move(MoverType.SELF, this.getDeltaMovement());
@@ -19,7 +19,7 @@ index 66c0b74a41cb9e7403826b4fd54a8575d6f16faa..ee5ef4fe16ce6397bba30900b9c6690e
 +                    this.spawnAtLocation(block);
 +                }
 +
-+                this.discard();
++                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
 +                return;
 +            }
 +            // Paper end - Configurable falling blocks height nerf
@@ -27,16 +27,16 @@ index 66c0b74a41cb9e7403826b4fd54a8575d6f16faa..ee5ef4fe16ce6397bba30900b9c6690e
                  BlockPos blockposition = this.blockPosition();
                  boolean flag = this.blockState.getBlock() instanceof ConcretePowderBlock;
 diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-index 36d93ee421406302c05945db17d46b04b485e4c0..19e2f2005bd1fb4d199debd34e92a0794a3d3fe4 100644
+index 8d512e43cdae52c16d1bb7c4ad8b91a947fa367f..f068b57167b183e68db897c70036cdc366a83c98 100644
 --- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-@@ -77,6 +77,12 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+@@ -78,6 +78,12 @@ public class PrimedTnt extends Entity implements TraceableEntity {
          }
  
          this.move(MoverType.SELF, this.getDeltaMovement());
 +        // Paper start - Configurable TNT height nerf
 +        if (this.level().paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
-+            this.discard();
++            this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
 +            return;
 +        }
 +        // Paper end - Configurable TNT height nerf
@@ -44,16 +44,16 @@ index 36d93ee421406302c05945db17d46b04b485e4c0..19e2f2005bd1fb4d199debd34e92a079
          if (this.onGround()) {
              this.setDeltaMovement(this.getDeltaMovement().multiply(0.7D, -0.5D, 0.7D));
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
-index 0fc58f38bbd855414ad36b682e60b069d7b68cb1..48f531da21fa0305ab1e8d5b50276e61e3155a38 100644
+index 6e127279c78b490c5b6c87eb75f3cb991a1afee2..5e17947b256ea6622f9a9b3e51fa8e473fc909ed 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
-@@ -53,6 +53,12 @@ public class MinecartTNT extends AbstractMinecart {
+@@ -54,6 +54,12 @@ public class MinecartTNT extends AbstractMinecart {
      public void tick() {
          super.tick();
          if (this.fuse > 0) {
 +            // Paper start - Configurable TNT height nerf
 +            if (this.level().paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
-+                this.discard();
++                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
 +                return;
 +            }
 +            // Paper end - Configurable TNT height nerf

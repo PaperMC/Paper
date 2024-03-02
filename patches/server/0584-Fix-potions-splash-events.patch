@@ -8,10 +8,10 @@ Fixes SPIGOT-6221: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-6
 Fix splash events cancellation that still show particles/sound
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index b87077c47a0131c5f4ca085b6b32e657043a9e1a..77235314f4ccc28255b98f2bb52f553fe93313f3 100644
+index 6e921bf7101224d6b8261ab8d87724080c4095d7..0204257ca0245830534592922e400a362c347715 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-@@ -105,56 +105,77 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -106,56 +106,77 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
              Potion potionregistry = PotionUtils.getPotion(itemstack);
              List<MobEffectInstance> list = PotionUtils.getMobEffects(itemstack);
              boolean flag = potionregistry == Potions.WATER && list.isEmpty();
@@ -35,7 +35,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..77235314f4ccc28255b98f2bb52f553f
  
              this.level().levelEvent(i, this.blockPosition(), PotionUtils.getColor(itemstack));
 +            } // Paper - Fix potions splash events
-             this.discard();
+             this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
          }
      }
  
@@ -104,7 +104,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..77235314f4ccc28255b98f2bb52f553f
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
          List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
          Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
-@@ -172,6 +193,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -173,6 +194,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
                      if (d0 < 16.0D) {
                          double d1;
  
@@ -112,7 +112,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..77235314f4ccc28255b98f2bb52f553f
                          if (entityliving == entity) {
                              d1 = 1.0D;
                          } else {
-@@ -226,10 +248,11 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -227,10 +249,11 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
                  }
              }
          }
@@ -125,7 +125,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..77235314f4ccc28255b98f2bb52f553f
          AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
          Entity entity = this.getOwner();
  
-@@ -244,10 +267,12 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -245,10 +268,12 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
          entityareaeffectcloud.setPotion(potionregistry);
          Iterator iterator = PotionUtils.getCustomEffects(itemstack).iterator();
  
@@ -138,7 +138,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..77235314f4ccc28255b98f2bb52f553f
          }
  
          CompoundTag nbttagcompound = itemstack.getTag();
-@@ -258,12 +283,13 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -259,12 +284,13 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
  
          // CraftBukkit start
          org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, position, entityareaeffectcloud);
@@ -146,7 +146,7 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..77235314f4ccc28255b98f2bb52f553f
 +        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved() || (noEffects && entityareaeffectcloud.effects.isEmpty() && entityareaeffectcloud.getPotion().getEffects().isEmpty()))) { // Paper - don't spawn area effect cloud if the effects were empty and not changed during the event handling
              this.level().addFreshEntity(entityareaeffectcloud);
          } else {
-             entityareaeffectcloud.discard();
+             entityareaeffectcloud.discard(null); // CraftBukkit - add Bukkit remove cause
          }
          // CraftBukkit end
 +        return !event.isCancelled(); // Paper - Fix potions splash events
@@ -154,10 +154,10 @@ index b87077c47a0131c5f4ca085b6b32e657043a9e1a..77235314f4ccc28255b98f2bb52f553f
  
      public boolean isLingering() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 5112da69c528be09c2b5d5bcac70fce0fb0054a1..e57bafa1d071a2fefe44a150bc5754e76d78cdd9 100644
+index 11b42f349edefb6961b61d709bfbe3ad4b55c7f8..fef616ed1deac6cf400a2f39a2eba11b94921415 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -874,6 +874,32 @@ public class CraftEventFactory {
+@@ -875,6 +875,32 @@ public class CraftEventFactory {
          return event;
      }
  
