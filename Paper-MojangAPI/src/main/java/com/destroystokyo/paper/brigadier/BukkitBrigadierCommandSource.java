@@ -6,6 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated(forRemoval = true)
 public interface BukkitBrigadierCommandSource {
 
     @Nullable
