@@ -3482,12 +3482,13 @@ index 0000000000000000000000000000000000000000..cea9c098ade00ee87b8efc8164ab72f5
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8ebef203d1e2584aed61bd61a93e231416eda749
+index 0000000000000000000000000000000000000000..722dcae9ab65bcacb9fb89dfaa63715d87816476
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
-@@ -0,0 +1,528 @@
+@@ -0,0 +1,554 @@
 +package io.papermc.paper.util;
 +
++import com.google.common.collect.ImmutableList;
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import io.papermc.paper.math.BlockPosition;
 +import io.papermc.paper.math.FinePosition;
@@ -3509,6 +3510,7 @@ index 0000000000000000000000000000000000000000..8ebef203d1e2584aed61bd61a93e2314
 +import org.bukkit.block.BlockFace;
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.util.Waitable;
++import org.jetbrains.annotations.NotNull;
 +import org.spigotmc.AsyncCatcher;
 +
 +import javax.annotation.Nonnull;
@@ -3524,6 +3526,7 @@ index 0000000000000000000000000000000000000000..8ebef203d1e2584aed61bd61a93e2314
 +import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.function.BiConsumer;
 +import java.util.function.Consumer;
++import java.util.function.Predicate;
 +import java.util.function.Supplier;
 +
 +public final class MCUtil {
@@ -4012,6 +4015,29 @@ index 0000000000000000000000000000000000000000..8ebef203d1e2584aed61bd61a93e2314
 +
 +    public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
 +        return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
++    }
++
++    @NotNull
++    public static <T> List<T> copyListAndAdd(@NotNull final List<T> original,
++                                             @NotNull final T newElement) {
++        return ImmutableList.<T>builderWithExpectedSize(original.size() + 1)
++            .addAll(original)
++            .add(newElement)
++            .build();
++    }
++
++    @NotNull
++    public static <T> List<T> copyListAndRemoveIf(@NotNull final List<T> original,
++                                                  @NotNull final Predicate<T> removalPredicate) {
++        final ImmutableList.Builder<T> builder = ImmutableList.builderWithExpectedSize(original.size());
++        for (int i = 0; i < original.size(); i++) {
++            final T value = original.get(i);
++            if (removalPredicate.test(value)) continue;
++
++            builder.add(value);
++        }
++
++        return builder.build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/StackWalkerUtil.java b/src/main/java/io/papermc/paper/util/StackWalkerUtil.java

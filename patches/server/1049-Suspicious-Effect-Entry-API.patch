@@ -14,10 +14,10 @@ in which it replaces PotionEffect.
 Co-authored-by: Yannick Lamprecht <yannicklamprecht@live.de>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
-index b453a47cadbda2e22262bcdc5454c4c6cf5b2583..418d2b269a0d621c9e0a37ad48a0685c23bf6997 100644
+index b453a47cadbda2e22262bcdc5454c4c6cf5b2583..1f18034e2dc498dee9daf84459e2d95301f5f986 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
-@@ -32,20 +32,28 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
+@@ -32,20 +32,32 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
          return ImmutableList.of();
      }
  
@@ -37,20 +37,42 @@ index b453a47cadbda2e22262bcdc5454c4c6cf5b2583..418d2b269a0d621c9e0a37ad48a0685c
 +        if (!overwrite && this.hasEffectForNextStew(suspiciousEffectEntry.effect())) {
              return false;
          }
++        SuspiciousEffectHolder.EffectEntry recordSuspiciousEffect = new SuspiciousEffectHolder.EffectEntry(minecraftPotionEffect, suspiciousEffectEntry.duration());
++        this.removeEffectFromNextStew(suspiciousEffectEntry.effect()); // Avoid duplicates of effects
++        // Paper start - fix modification of immutable stew effects list
          if (this.getHandle().stewEffects == null) {
-             this.getHandle().stewEffects = new ArrayList<>();
+-            this.getHandle().stewEffects = new ArrayList<>();
++            this.getHandle().stewEffects = List.of(recordSuspiciousEffect);
++        } else {
++            this.getHandle().stewEffects = io.papermc.paper.util.MCUtil.copyListAndAdd(this.getHandle().stewEffects, recordSuspiciousEffect);
          }
 -        SuspiciousEffectHolder.EffectEntry recordSuspiciousEffect = new SuspiciousEffectHolder.EffectEntry(minecraftPotionEffect.getEffect(), minecraftPotionEffect.getDuration());
 -        this.removeEffectFromNextStew(potionEffect.getType()); // Avoid duplicates of effects
-+        SuspiciousEffectHolder.EffectEntry recordSuspiciousEffect = new SuspiciousEffectHolder.EffectEntry(minecraftPotionEffect, suspiciousEffectEntry.duration());
-+        this.removeEffectFromNextStew(suspiciousEffectEntry.effect()); // Avoid duplicates of effects
-         return this.getHandle().stewEffects.add(recordSuspiciousEffect);
+-        return this.getHandle().stewEffects.add(recordSuspiciousEffect);
++        // Paper end - fix modification of immutable stew effects list
++        return true;
      }
 +    // Paper end - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
  
      @Override
      public boolean removeEffectFromNextStew(PotionEffectType potionEffectType) {
-@@ -89,6 +97,43 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
+@@ -54,7 +66,14 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
+             return false;
+         }
+         MobEffect minecraftPotionEffectType = CraftPotionEffectType.bukkitToMinecraft(potionEffectType);
+-        return this.getHandle().stewEffects.removeIf(recordSuspiciousEffect -> recordSuspiciousEffect.effect().equals(minecraftPotionEffectType));
++        // Paper start - fix modification of immutable stew effects list
++        if (this.getHandle().stewEffects == null) return false;
++        final int oldSize = this.getHandle().stewEffects.size();
++        this.getHandle().stewEffects = io.papermc.paper.util.MCUtil.copyListAndRemoveIf(
++            this.getHandle().stewEffects, s -> java.util.Objects.equals(s.effect(), minecraftPotionEffectType)
++        );
++        return oldSize != this.getHandle().stewEffects.size();
++        // Paper end - fix modification of immutable stew effects list
+     }
+ 
+     @Override
+@@ -89,6 +108,43 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
          this.getHandle().setVariant(net.minecraft.world.entity.animal.MushroomCow.MushroomType.values()[variant.ordinal()]);
      }
  
