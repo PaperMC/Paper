@@ -14,7 +14,7 @@ in which it replaces PotionEffect.
 Co-authored-by: Yannick Lamprecht <yannicklamprecht@live.de>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
-index b453a47cadbda2e22262bcdc5454c4c6cf5b2583..1f18034e2dc498dee9daf84459e2d95301f5f986 100644
+index b453a47cadbda2e22262bcdc5454c4c6cf5b2583..983e0cdbd1bd950807967a36cba49859fb956f31 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
 @@ -32,20 +32,32 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
@@ -56,23 +56,30 @@ index b453a47cadbda2e22262bcdc5454c4c6cf5b2583..1f18034e2dc498dee9daf84459e2d953
  
      @Override
      public boolean removeEffectFromNextStew(PotionEffectType potionEffectType) {
-@@ -54,7 +66,14 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
+@@ -54,7 +66,21 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
              return false;
          }
          MobEffect minecraftPotionEffectType = CraftPotionEffectType.bukkitToMinecraft(potionEffectType);
 -        return this.getHandle().stewEffects.removeIf(recordSuspiciousEffect -> recordSuspiciousEffect.effect().equals(minecraftPotionEffectType));
 +        // Paper start - fix modification of immutable stew effects list
 +        if (this.getHandle().stewEffects == null) return false;
++
 +        final int oldSize = this.getHandle().stewEffects.size();
 +        this.getHandle().stewEffects = io.papermc.paper.util.MCUtil.copyListAndRemoveIf(
 +            this.getHandle().stewEffects, s -> java.util.Objects.equals(s.effect(), minecraftPotionEffectType)
 +        );
-+        return oldSize != this.getHandle().stewEffects.size();
++
++        final int newSize = this.getHandle().stewEffects.size();
++        if (newSize == 0) {
++            this.getHandle().stewEffects = null; // Null the empty list, mojang expect this
++        }
++
++        return oldSize != newSize; // Yield back if the size changed, implying an object was removed.
 +        // Paper end - fix modification of immutable stew effects list
      }
  
      @Override
-@@ -89,6 +108,43 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
+@@ -89,6 +115,43 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
          this.getHandle().setVariant(net.minecraft.world.entity.animal.MushroomCow.MushroomType.values()[variant.ordinal()]);
      }
  
