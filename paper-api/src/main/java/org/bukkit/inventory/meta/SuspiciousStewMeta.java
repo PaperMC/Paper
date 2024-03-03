@@ -32,12 +32,27 @@ public interface SuspiciousStewMeta extends ItemMeta {
     /**
      * Adds a custom potion effect to this suspicious stew.
      *
+     * @deprecated use {@link #addCustomEffect(io.papermc.paper.potion.SuspiciousEffectEntry, boolean)} as PotionEffect suggests that all attributes are used. In fact, only the PotionEffectType and the duration are used.
      * @param effect the potion effect to add
      * @param overwrite true if any existing effect of the same type should be
      * overwritten
      * @return true if the suspicious stew meta changed as a result of this call
      */
+    @Deprecated // Paper - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
     boolean addCustomEffect(@NotNull PotionEffect effect, boolean overwrite);
+
+    // Paper start - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
+    /**
+     * Adds a custom potion effect to this suspicious stew.
+     *
+     * @param suspiciousEffectEntry the suspicious effect entry to add
+     * @param overwrite true if any existing effect of the same type should be
+     * overwritten
+     * @return true if the suspicious stew meta changed as a result of this call
+     * as a result of this call
+     */
+    boolean addCustomEffect(@NotNull io.papermc.paper.potion.SuspiciousEffectEntry suspiciousEffectEntry, boolean overwrite);
+    // Paper end - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
 
     /**
      * Removes a custom potion effect from this suspicious stew.
