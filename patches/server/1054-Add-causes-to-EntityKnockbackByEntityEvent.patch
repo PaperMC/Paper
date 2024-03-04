@@ -1,0 +1,53 @@
+From 1a4a7b6073cb2f2f6acae8eec39217972166efc1 Mon Sep 17 00:00:00 2001
+From: LoliColleen <76620594+LoliColleen@users.noreply.github.com>
+Date: Tue, 5 Mar 2024 00:58:59 +0800
+Subject: [PATCH] Add-causes-to-EntityKnockbackByEntityEvent
+
+---
+ src/main/java/net/minecraft/world/entity/LivingEntity.java | 3 ++-
+ src/main/java/net/minecraft/world/level/Explosion.java     | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 23570a0b1..4a2849d8f 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.world.entity;
+ 
++import com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent;
+ import com.google.common.base.Objects;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableMap;
+@@ -1930,7 +1931,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             org.bukkit.util.Vector resultingMovement = event.getFinalKnockback();
+             final org.bukkit.util.Vector deltaMovement = resultingMovement.clone().subtract(currentMovement);
+             if (attacker != null) {
+-                final com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent knockbackEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(this.getBukkitLivingEntity(), attacker.getBukkitEntity(), (float) event.getForce(), deltaMovement);
++                final com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent knockbackEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(this.getBukkitLivingEntity(), attacker.getBukkitEntity(), EntityKnockbackByEntityEvent.convertNewCauseToOldCause(cause), (float) event.getForce(), deltaMovement);
+                 if (!knockbackEvent.callEvent()) {
+                     return;
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index b678da2cb..1dad195c6 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.world.level;
+ 
++import com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+ import com.mojang.datafixers.util.Pair;
+@@ -628,7 +629,7 @@ public class Explosion {
+                             vec3d1 = (event.isCancelled()) ? Vec3.ZERO : new Vec3(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ()).subtract(entity.getDeltaMovement()); // changes on this line fix a bug where vec3d1 wasn't reassigned with the "change", but instead the final deltaMovement
+                             if (this.damageSource.getEntity() != null || this.source != null) {
+                                 final org.bukkit.entity.Entity hitBy = this.damageSource.getEntity() != null ? this.damageSource.getEntity().getBukkitEntity() : this.source.getBukkitEntity();
+-                                com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent paperEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(((LivingEntity) entity).getBukkitLivingEntity(), hitBy, (float) event.getForce(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(vec3d1));
++                                com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent paperEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(((LivingEntity) entity).getBukkitLivingEntity(), hitBy, EntityKnockbackByEntityEvent.convertNewCauseToOldCause(org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.EXPLOSION), (float) event.getForce(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(vec3d1));
+                                 if (!paperEvent.callEvent()) {
+                                     continue;
+                                 }
+-- 
+2.44.0.windows.1
+
