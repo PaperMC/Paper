@@ -11,12 +11,13 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..e0ba692c9b107f2b042a9c06549185e1c4777e27
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,110 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
 +import org.bukkit.entity.Entity;
 +import org.bukkit.entity.LivingEntity;
++import org.bukkit.event.entity.EntityKnockbackEvent;
 +import org.bukkit.util.Vector;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
@@ -28,11 +29,20 @@ index 0000000000000000000000000000000000000000..e0ba692c9b107f2b042a9c06549185e1
 +public class EntityKnockbackByEntityEvent extends EntityPushedByEntityAttackEvent {
 +
 +    private final float knockbackStrength;
++    private final KnockbackCause cause;
 +
 +    @ApiStatus.Internal
 +    public EntityKnockbackByEntityEvent(@NotNull LivingEntity entity, @NotNull Entity hitBy, float knockbackStrength, @NotNull Vector acceleration) {
 +        super(entity, hitBy, acceleration);
 +        this.knockbackStrength = knockbackStrength;
++        this.cause = KnockbackCause.UNKNOWN;
++    }
++
++    @ApiStatus.Internal
++    public EntityKnockbackByEntityEvent(@NotNull LivingEntity entity, @NotNull Entity hitBy, @NotNull final KnockbackCause cause, float knockbackStrength, @NotNull Vector acceleration) {
++        super(entity, hitBy, acceleration);
++        this.knockbackStrength = knockbackStrength;
++        this.cause = cause;
 +    }
 +
 +    /**
@@ -57,6 +67,58 @@ index 0000000000000000000000000000000000000000..e0ba692c9b107f2b042a9c06549185e1
 +    @NotNull
 +    public Entity getHitBy() {
 +        return super.getPushedBy();
++    }
++
++    /**
++     * Gets the cause of the knockback.
++     *
++     * @return the cause of the knockback
++     */
++    @NotNull
++    public KnockbackCause getCause() {
++        return cause;
++    }
++
++    /**
++     * An enum to specify the cause of the knockback.
++     */
++    public enum KnockbackCause {
++
++        /**
++         * Knockback caused by non-entity damage.
++         */
++        DAMAGE,
++        /**
++         * Knockback caused by an attacking entity.
++         */
++        ENTITY_ATTACK,
++        /**
++         * Knockback caused by an explosion.
++         */
++        EXPLOSION,
++        /**
++         * Knockback caused by the target blocking with a shield.
++         */
++        SHIELD_BLOCK,
++        /**
++         * Knockback caused by a sweeping attack.
++         */
++        SWEEP_ATTACK,
++        /**
++         * Knockback with an unknown cause.
++         */
++        UNKNOWN;
++    }
++
++    public static KnockbackCause convertNewCauseToOldCause(EntityKnockbackEvent.KnockbackCause knockbackCause) {
++        return switch (knockbackCause) {
++            case DAMAGE -> KnockbackCause.DAMAGE;
++            case ENTITY_ATTACK -> KnockbackCause.ENTITY_ATTACK;
++            case EXPLOSION -> KnockbackCause.EXPLOSION;
++            case SHIELD_BLOCK -> KnockbackCause.SHIELD_BLOCK;
++            case SWEEP_ATTACK -> KnockbackCause.SWEEP_ATTACK;
++            case UNKNOWN -> KnockbackCause.UNKNOWN;
++        };
 +    }
 +
 +}
