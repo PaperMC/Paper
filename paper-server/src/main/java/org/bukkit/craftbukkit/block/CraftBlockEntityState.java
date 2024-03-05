@@ -32,7 +32,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         super(state);
         this.tileEntity = createSnapshot(state.snapshot);
         this.snapshot = tileEntity;
-        load(snapshot);
+        loadData(state.getSnapshotNBT());
     }
 
     public void refreshSnapshot() {
