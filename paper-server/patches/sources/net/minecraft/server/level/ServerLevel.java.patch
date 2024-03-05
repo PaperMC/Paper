@@ -603,18 +603,19 @@
 +        return this.addFreshEntity(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
      }
  
+-    public boolean addWithUUID(Entity entity) {
+-        return this.addEntity(entity);
 +    @Override
 +    public boolean addFreshEntity(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
-+    }
-+
-     public boolean addWithUUID(Entity entity) {
--        return this.addEntity(entity);
-+        // CraftBukkit start
-+        return this.addWithUUID(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
      }
  
++    public boolean addWithUUID(Entity entity) {
++        // CraftBukkit start
++        return this.addWithUUID(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
 +    public boolean addWithUUID(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
@@ -638,7 +639,7 @@
          }
  
      }
-@@ -939,41 +1192,105 @@
+@@ -939,41 +1192,116 @@
          this.entityManager.addNewEntity(player);
      }
  
@@ -746,10 +747,21 @@
 +        if (entity instanceof Player) entityhuman = (Player) entity;
 +        // CraftBukkit end
 +
++        // Paper start - Add BlockBreakProgressUpdateEvent
++        // If a plugin is using this method to send destroy packets for a client-side only entity id, no block progress occurred on the server.
++        // Hence, do not call the event.
++        if (entity != null) {
++            float progressFloat = Mth.clamp(progress, 0, 10) / 10.0f;
++            org.bukkit.craftbukkit.block.CraftBlock bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this, pos);
++            new io.papermc.paper.event.block.BlockBreakProgressUpdateEvent(bukkitBlock, progressFloat, entity.getBukkitEntity())
++                .callEvent();
++        }
++        // Paper end - Add BlockBreakProgressUpdateEvent
++
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
-@@ -982,6 +1299,12 @@
+@@ -982,6 +1310,12 @@
                  double d1 = (double) pos.getY() - entityplayer.getY();
                  double d2 = (double) pos.getZ() - entityplayer.getZ();
  
@@ -762,7 +774,7 @@
                  if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0D) {
                      entityplayer.connection.send(new ClientboundBlockDestructionPacket(entityId, pos, progress));
                  }
-@@ -1030,7 +1353,7 @@
+@@ -1030,7 +1364,7 @@
  
      @Override
      public void levelEvent(@Nullable Player player, int eventId, BlockPos pos, int data) {
@@ -771,7 +783,7 @@
      }
  
      public int getLogicalHeight() {
-@@ -1039,6 +1362,11 @@
+@@ -1039,6 +1373,11 @@
  
      @Override
      public void gameEvent(Holder<GameEvent> event, Vec3 emitterPos, GameEvent.Context emitter) {
@@ -783,7 +795,7 @@
          this.gameEventDispatcher.post(event, emitterPos, emitter);
      }
  
-@@ -1052,6 +1380,7 @@
+@@ -1052,6 +1391,7 @@
  
          this.getChunkSource().blockChanged(pos);
          this.pathTypesByPosCache.invalidate(pos);
@@ -791,7 +803,7 @@
          VoxelShape voxelshape = oldState.getCollisionShape(this, pos);
          VoxelShape voxelshape1 = newState.getCollisionShape(this, pos);
  
-@@ -1060,7 +1389,18 @@
+@@ -1060,7 +1400,18 @@
              Iterator iterator = this.navigatingMobs.iterator();
  
              while (iterator.hasNext()) {
@@ -811,7 +823,7 @@
                  PathNavigation navigationabstract = entityinsentient.getNavigation();
  
                  if (navigationabstract.shouldRecomputePath(pos)) {
-@@ -1082,15 +1422,18 @@
+@@ -1082,15 +1433,18 @@
              }
  
          }
@@ -830,7 +842,7 @@
          this.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, sourceBlock, (Direction) null, orientation);
      }
  
-@@ -1126,9 +1469,20 @@
+@@ -1126,9 +1480,20 @@
  
      @Override
      public void explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, ParticleOptions smallParticle, ParticleOptions largeParticle, Holder<SoundEvent> soundEvent) {
@@ -852,7 +864,7 @@
              case NONE:
                  explosion_effect = Explosion.BlockInteraction.KEEP;
                  break;
-@@ -1144,16 +1498,27 @@
+@@ -1144,16 +1509,27 @@
              case TRIGGER:
                  explosion_effect = Explosion.BlockInteraction.TRIGGER_BLOCK;
                  break;
@@ -883,7 +895,7 @@
          Iterator iterator = this.players.iterator();
  
          while (iterator.hasNext()) {
-@@ -1162,10 +1527,11 @@
+@@ -1162,10 +1538,11 @@
              if (entityplayer.distanceToSqr(vec3d) < 4096.0D) {
                  Optional<Vec3> optional = Optional.ofNullable((Vec3) serverexplosion.getHitPlayers().get(entityplayer));
  
@@ -896,7 +908,7 @@
      }
  
      private Explosion.BlockInteraction getDestroyType(GameRules.Key<GameRules.BooleanValue> decayRule) {
-@@ -1226,17 +1592,29 @@
+@@ -1226,17 +1603,29 @@
      }
  
      public <T extends ParticleOptions> int sendParticles(T parameters, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
@@ -931,7 +943,7 @@
                  ++j;
              }
          }
-@@ -1292,7 +1670,7 @@
+@@ -1292,7 +1681,7 @@
  
      @Nullable
      public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipReferencedStructures) {
@@ -940,7 +952,7 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1334,11 +1712,38 @@
+@@ -1334,11 +1723,38 @@
      @Nullable
      @Override
      public MapItemSavedData getMapData(MapId id) {
@@ -980,7 +992,7 @@
          this.getServer().overworld().getDataStorage().set(id.key(), state);
      }
  
-@@ -1352,7 +1757,9 @@
+@@ -1352,7 +1768,9 @@
          float f1 = this.levelData.getSpawnAngle();
  
          if (!blockposition1.equals(pos) || f1 != angle) {
@@ -990,7 +1002,7 @@
              this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
          }
  
-@@ -1419,6 +1826,11 @@
+@@ -1419,6 +1837,11 @@
              });
              optional1.ifPresent((holder) -> {
                  this.getServer().execute(() -> {
@@ -1002,7 +1014,7 @@
                      this.getPoiManager().add(blockposition1, holder);
                      DebugPackets.sendPoiAddedPacket(this, blockposition1);
                  });
-@@ -1649,6 +2061,11 @@
+@@ -1649,6 +2072,11 @@
      @Override
      public void blockUpdated(BlockPos pos, Block block) {
          if (!this.isDebug()) {
@@ -1014,7 +1026,7 @@
              this.updateNeighborsAt(pos, block);
          }
  
-@@ -1668,12 +2085,12 @@
+@@ -1668,12 +2096,12 @@
      }
  
      public boolean isFlat() {
@@ -1029,7 +1041,7 @@
      }
  
      @Nullable
-@@ -1696,7 +2113,7 @@
+@@ -1696,7 +2124,7 @@
      private static <T> String getTypeCount(Iterable<T> items, Function<T, String> classifier) {
          try {
              Object2IntOpenHashMap<String> object2intopenhashmap = new Object2IntOpenHashMap();
@@ -1038,7 +1050,7 @@
  
              while (iterator.hasNext()) {
                  T t0 = iterator.next();
-@@ -1705,7 +2122,7 @@
+@@ -1705,7 +2133,7 @@
                  object2intopenhashmap.addTo(s, 1);
              }
  
@@ -1047,7 +1059,7 @@
                  String s1 = (String) entry.getKey();
  
                  return s1 + ":" + entry.getIntValue();
-@@ -1717,6 +2134,7 @@
+@@ -1717,6 +2145,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -1055,12 +1067,10 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1800,7 +2218,28 @@
- 
-     public GameRules getGameRules() {
+@@ -1802,6 +2231,27 @@
          return this.serverLevelData.getGameRules();
-+    }
-+
+     }
+ 
 +    // Paper start - respect global sound events gamerule
 +    public List<net.minecraft.server.level.ServerPlayer> getPlayersForGlobalSoundGamerule() {
 +        return this.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS) ? ((ServerLevel) this).getServer().getPlayerList().players : ((ServerLevel) this).players();
@@ -1079,12 +1089,13 @@
 +        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) {
 +            this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
 +        }
-     }
++    }
 +    // Paper end - notify observers even if grow failed
- 
++
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
-@@ -1828,6 +2267,7 @@
+         CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
+@@ -1828,6 +2278,7 @@
          }
  
          public void onTickingStart(Entity entity) {
@@ -1092,7 +1103,7 @@
              ServerLevel.this.entityTickList.add(entity);
          }
  
-@@ -1836,14 +2276,15 @@
+@@ -1836,14 +2287,15 @@
          }
  
          public void onTrackingStart(Entity entity) {
@@ -1110,7 +1121,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1864,9 +2305,58 @@
+@@ -1864,9 +2316,58 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1169,7 +1180,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1874,7 +2364,7 @@
+@@ -1874,7 +2375,7 @@
              }
  
              if (entity instanceof Mob entityinsentient) {
@@ -1178,7 +1189,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1895,10 +2385,27 @@
+@@ -1895,10 +2396,27 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
