@@ -13,10 +13,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+         }
      }
  
-     public void push(double deltaX, double deltaY, double deltaZ) {
+-    public void push(double deltaX, double deltaY, double deltaZ) {
 -        this.setDeltaMovement(this.getDeltaMovement().add(deltaX, deltaY, deltaZ));
++    public final void push(double deltaX, double deltaY, double deltaZ) { // Paper - override the added overload below
 +        // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
 +        this.push(deltaX, deltaY, deltaZ, null);
 +    }
@@ -121,6 +123,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (!this.phaseManager.getCurrentPhase().isSitting() && ((LivingEntity) entity).getLastHurtByMobTimestamp() < entity.tickCount - 2) {
                      entity.hurt(this.damageSources().mobAttack(this), 5.0F);
                      this.doEnchantDamageEffects(this, entity);
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
+@@ -0,0 +0,0 @@ public abstract class HangingEntity extends Entity {
+     }
+ 
+     @Override
+-    public void push(double deltaX, double deltaY, double deltaZ) {
++    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (false && !this.level().isClientSide && !this.isRemoved() && deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 0.0D) { // CraftBukkit - not needed
+             this.kill();
+             this.dropItem((Entity) null);
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -0,0 +0,0 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     @Override
+-    public void push(double deltaX, double deltaY, double deltaZ) {
++    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (!this.fixed) {
+-            super.push(deltaX, deltaY, deltaZ);
++            super.push(deltaX, deltaY, deltaZ, pushingEntity); // Paper - add push source entity param
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
