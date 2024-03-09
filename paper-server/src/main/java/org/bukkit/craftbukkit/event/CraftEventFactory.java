@@ -237,6 +237,7 @@ import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerRecipeBookClickEvent;
 import org.bukkit.event.player.PlayerRecipeBookSettingsChangeEvent;
 import org.bukkit.event.player.PlayerRecipeDiscoverEvent;
+import org.bukkit.event.player.PlayerRiptideEvent;
 import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.event.player.PlayerSignOpenEvent;
 import org.bukkit.event.player.PlayerStatisticIncrementEvent;
@@ -1450,6 +1451,11 @@ public class CraftEventFactory {
         PlayerLeashEntityEvent event = new PlayerLeashEntityEvent(entity.getBukkitEntity(), leashHolder.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(enumhand));
         entity.level().getCraftServer().getPluginManager().callEvent(event);
         return event;
+    }
+
+    public static void callPlayerRiptideEvent(EntityHuman player, ItemStack tridentItemStack, float velocityX, float velocityY, float velocityZ) {
+        PlayerRiptideEvent event = new PlayerRiptideEvent((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(tridentItemStack), new Vector(velocityX, velocityY, velocityZ));
+        player.level().getCraftServer().getPluginManager().callEvent(event);
     }
 
     public static BlockShearEntityEvent callBlockShearEntityEvent(Entity animal, org.bukkit.block.Block dispenser, CraftItemStack is) {
