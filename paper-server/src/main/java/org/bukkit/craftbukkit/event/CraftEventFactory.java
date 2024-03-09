@@ -1092,7 +1092,7 @@ public class CraftEventFactory {
 
     private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(source);
-        Entity damager = (source.getDamager() != null) ? source.getDamager() : source.getEntity();
+        final Entity damager = source.getCustomEventDamager(); // Paper - fix DamageSource API
         if (source.is(DamageTypeTags.IS_EXPLOSION)) {
             if (damager == null) {
                 return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), source.getDirectBlockState(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled);

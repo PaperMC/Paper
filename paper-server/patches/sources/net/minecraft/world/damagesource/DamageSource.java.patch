@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/damagesource/DamageSource.java
 +++ b/net/minecraft/world/damagesource/DamageSource.java
-@@ -21,7 +21,120 @@
+@@ -21,7 +21,106 @@
      private final Entity directEntity;
      @Nullable
      private final Vec3 damageSourcePosition;
@@ -12,8 +12,8 @@
 +    private boolean sweep = false;
 +    private boolean melting = false;
 +    private boolean poison = false;
-+    private Entity customEntityDamager = null; // This field is a helper for when direct entity damage is not set by vanilla
-+    private Entity customCausingEntityDamager = null; // This field is a helper for when causing entity damage is not set by vanilla
++    @Nullable
++    private Entity customEventDamager = null; // This field is a helper for when causing entity damage is not set by vanilla // Paper - fix DamageSource API
  
 +    public DamageSource sweep() {
 +        this.sweep = true;
@@ -42,33 +42,19 @@
 +        return this.poison;
 +    }
 +
-+    public Entity getDamager() {
-+        return (this.customEntityDamager != null) ? this.customEntityDamager : this.directEntity;
++    // Paper start - fix DamageSource API
++    @Nullable
++    public Entity getCustomEventDamager() {
++        return (this.customEventDamager != null) ? this.customEventDamager : this.directEntity;
 +    }
 +
-+    public Entity getCausingDamager() {
-+        return (this.customCausingEntityDamager != null) ? this.customCausingEntityDamager : this.causingEntity;
-+    }
-+
-+    public DamageSource customEntityDamager(Entity entity) {
-+        // This method is not intended for change the causing entity if is already set
-+        // also is only necessary if the entity passed is not the direct entity or different from the current causingEntity
-+        if (this.customEntityDamager != null || this.directEntity == entity || this.causingEntity == entity) {
-+            return this;
++    public DamageSource customEventDamager(Entity entity) {
++        if (this.directEntity != null) {
++            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to Paper)");
 +        }
 +        DamageSource damageSource = this.cloneInstance();
-+        damageSource.customEntityDamager = entity;
-+        return damageSource;
-+    }
-+
-+    public DamageSource customCausingEntityDamager(Entity entity) {
-+        // This method is not intended for change the causing entity if is already set
-+        // also is only necessary if the entity passed is not the direct entity or different from the current causingEntity
-+        if (this.customCausingEntityDamager != null || this.directEntity == entity || this.causingEntity == entity) {
-+            return this;
-+        }
-+        DamageSource damageSource = this.cloneInstance();
-+        damageSource.customCausingEntityDamager = entity;
++        damageSource.customEventDamager = entity;
++        // Paper end - fix DamageSource API
 +        return damageSource;
 +    }
 +
@@ -121,7 +107,7 @@
      public String toString() {
          return "DamageSource (" + this.type().msgId() + ")";
      }
-@@ -163,4 +276,18 @@
+@@ -163,4 +262,18 @@
      public Holder<DamageType> typeHolder() {
          return this.type;
      }

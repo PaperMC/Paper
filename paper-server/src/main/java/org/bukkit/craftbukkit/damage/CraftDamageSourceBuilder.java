@@ -41,6 +41,11 @@ public class CraftDamageSourceBuilder implements DamageSource.Builder {
 
     @Override
     public DamageSource build() {
+        // Paper start - fix DamageCause API
+        if (this.causingEntity != null && this.directEntity == null) {
+            throw new IllegalArgumentException("Direct entity must be set if causing entity is set");
+        }
+        // Paper end - fix DamageCause API
         return CraftDamageSource.buildFromBukkit(this.damageType, this.causingEntity, this.directEntity, this.damageLocation);
     }
 }
