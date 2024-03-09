@@ -9,14 +9,16 @@ Co-authored-by: aerulion <aerulion@gmail.com>
 This event is called when an entity receives knockback by another entity.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index fe314015f8cbc44e29a8ec73ecca4eeadd1da39f..17a8c7e42b31513a4586cd2d40b2d58911814f75 100644
+index fe314015f8cbc44e29a8ec73ecca4eeadd1da39f..d2d1a3e3c8accbdfeecafa86f9cc9f16007c3930 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1869,8 +1869,22 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -1868,9 +1868,23 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+         }
      }
  
-     public void push(double deltaX, double deltaY, double deltaZ) {
+-    public void push(double deltaX, double deltaY, double deltaZ) {
 -        this.setDeltaMovement(this.getDeltaMovement().add(deltaX, deltaY, deltaZ));
++    public final void push(double deltaX, double deltaY, double deltaZ) { // Paper - override the added overload below
 +        // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
 +        this.push(deltaX, deltaY, deltaZ, null);
 +    }
@@ -121,6 +123,35 @@ index 9ab60fb1b7f9c8a342d9116e99f7f0a1e463a626..0d84f1fb53384a827d7418c322a32e32
                  if (!this.phaseManager.getCurrentPhase().isSitting() && ((LivingEntity) entity).getLastHurtByMobTimestamp() < entity.tickCount - 2) {
                      entity.hurt(this.damageSources().mobAttack(this), 5.0F);
                      this.doEnchantDamageEffects(this, entity);
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
+index b3d05578f38af41f242f6634864ce1d2ecac14f8..aaa579ba04445aa350a439610d460a2415320cfc 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
+@@ -250,7 +250,7 @@ public abstract class HangingEntity extends Entity {
+     }
+ 
+     @Override
+-    public void push(double deltaX, double deltaY, double deltaZ) {
++    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (false && !this.level().isClientSide && !this.isRemoved() && deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 0.0D) { // CraftBukkit - not needed
+             this.kill();
+             this.dropItem((Entity) null);
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index 78a3c87b74218a0d5792801c07e3a263c15fcd5b..f90878e0449f39f66ae3a7036a65c374b36b7dbc 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -159,9 +159,9 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     @Override
+-    public void push(double deltaX, double deltaY, double deltaZ) {
++    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (!this.fixed) {
+-            super.push(deltaX, deltaY, deltaZ);
++            super.push(deltaX, deltaY, deltaZ, pushingEntity); // Paper - add push source entity param
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
 index 041f1650b853138e4286fe83a08d79d276054ce7..aba20a4352d8983b01ab5d329187588f68d3e405 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
