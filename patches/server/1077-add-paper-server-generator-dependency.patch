@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Mon, 11 Mar 2024 00:52:56 +0100
+Subject: [PATCH] add paper server generator dependency
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 2da91ed6363c0851e4c459188f5e8ef5475e0c97..646179808a416e9ea15b8d79c7afa4bd21fa84bd 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -4,6 +4,7 @@ import java.time.Instant
+ plugins {
+     java
+     `maven-publish`
++    idea // Paper
+ }
+ 
+ val log4jPlugins = sourceSets.create("log4jPlugins")
+@@ -83,6 +84,22 @@ dependencies {
+     // Paper end - spark
+ }
+ 
++// Paper start
++val generatedServerPath: java.nio.file.Path = rootProject.projectDir.toPath().resolve("paper-server-generator/generated")
++idea {
++    module {
++        generatedSourceDirs.add(generatedServerPath.toFile())
++    }
++}
++sourceSets {
++    main {
++        java {
++            srcDir(generatedServerPath)
++        }
++    }
++}
++// Paper end
++
+ paperweight {
+     craftBukkitPackageVersion.set("v1_21_R3") // also needs to be updated in MappingEnvironment
+ }
+@@ -141,6 +158,17 @@ tasks.check {
+     dependsOn(scanJar)
+ }
+ // Paper end
++// Paper start
++val scanJarForOldGeneratedCode = tasks.register("scanJarForOldGeneratedCode", io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
++    mcVersion.set(providers.gradleProperty("mcVersion"))
++    annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
++    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
++    classpath.from(configurations.compileClasspath)
++}
++tasks.check {
++    dependsOn(scanJarForOldGeneratedCode)
++}
++// Paper end
+ // Paper start - use TCA for console improvements
+ tasks.serverJar {
+     from(alsoShade.elements.map {
