@@ -3,24 +3,18 @@ From: kickash32 <kickash32@gmail.com>
 Date: Fri, 15 May 2020 01:10:03 -0400
 Subject: [PATCH] Ensure safe gateway teleport
 
+== AT ==
+public net.minecraft.world.entity.Entity teleportPassengers()V
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
 @@ -0,0 +0,0 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
-             List<Entity> list = world.getEntitiesOfClass(Entity.class, new AABB(pos), TheEndGatewayBlockEntity::canEntityTeleport);
  
-             if (!list.isEmpty()) {
--                TheEndGatewayBlockEntity.teleportEntity(world, pos, state, (Entity) list.get(world.random.nextInt(list.size())), blockEntity);
-+                // Paper start - Ensure safe gateway teleport
-+                for (Entity entity : list) {
-+                    if (entity.canChangeDimensions()) {
-+                        TheEndGatewayBlockEntity.teleportEntity(world, pos, state, entity, blockEntity);
-+                        break;
-+                    }
-+                }
-+                // Paper end - Ensure safe gateway teleport
-             }
+                     entity1.setPortalCooldown();
+                     ((ServerPlayer) entity1).connection.teleport(teleEvent.getTo());
++                    entity1.teleportPassengers(); // Paper - teleport passengers as well, preventing invisible passengers post teleport.
+                     TheEndGatewayBlockEntity.triggerCooldown(world, pos, state, blockEntity); // CraftBukkit - call at end of method
+                     return;
  
-             if (blockEntity.age % 2400L == 0L) {
