@@ -2949,12 +2949,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Gets the type of this world.
      *
      * @return Type of this world.
-     * @deprecated world type is only used to select the default word generation
-     * settings and is not stored in Vanilla worlds, making it impossible for
-     * this method to always return the correct value.
      */
     @Nullable
-    @Deprecated(since = "1.16.1")
     public WorldType getWorldType();
 
     /**
