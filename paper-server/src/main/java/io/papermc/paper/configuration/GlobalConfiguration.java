@@ -25,6 +25,7 @@ public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
     static final int CURRENT_VERSION = 29; // (when you change the version, change the comment, so it conflicts on rebases): <insert changes here>
     private static GlobalConfiguration instance;
+    public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
         return instance;
     }

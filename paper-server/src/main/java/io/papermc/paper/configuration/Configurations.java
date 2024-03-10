@@ -127,6 +127,7 @@ public abstract class Configurations<G, W> {
         if (Files.notExists(configFile)) {
             node = CommentedConfigurationNode.root(loader.defaultOptions());
             node.node(Configuration.VERSION_FIELD).raw(this.globalConfigVersion());
+            GlobalConfiguration.isFirstStart = true;
         } else {
             node = loader.load();
             this.verifyGlobalConfigVersion(node);
