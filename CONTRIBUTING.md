@@ -319,7 +319,7 @@ Subject: [PATCH] revert serverside behavior of keepalives
 This patch intends to bump up the time that a client has to reply to the
 server back to 30 seconds as per pre 1.12.2, which allowed clients
 more than enough time to reply potentially allowing them to be less
-tempermental due to lag spikes on the network thread, e.g. that caused
+temperamental due to lag spikes on the network thread, e.g. that caused
 by plugins that are interacting with netty.
 
 We also add a system property to allow people to tweak how long the server
