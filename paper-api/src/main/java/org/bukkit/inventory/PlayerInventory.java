@@ -10,9 +10,11 @@ import org.jetbrains.annotations.Nullable;
 public interface PlayerInventory extends Inventory {
 
     /**
-     * Get all ItemStacks from the armor slots
+     * Gets all ItemStacks from the armor slots.
      *
-     * @return All the ItemStacks from the armor slots. Individual items can be null.
+     * @return all the ItemStacks from the armor slots. Individual items can be
+     * null and are returned in a fixed order starting from the boots and going
+     * up to the helmet
      */
     @NotNull
     public ItemStack[] getArmorContents();
