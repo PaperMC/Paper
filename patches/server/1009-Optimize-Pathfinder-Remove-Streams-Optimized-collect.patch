@@ -16,7 +16,7 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index 8519383a9abd45434c1e9888e77548941a80c79c..eb18494bd7257fa5eb00dea16cf4d5667b796f2b 100644
+index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58dfda6c79 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 @@ -38,9 +38,12 @@ public class PathFinder {
@@ -91,7 +91,7 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..eb18494bd7257fa5eb00dea16cf4d566
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
-@@ -105,23 +113,31 @@ public class PathFinder {
+@@ -105,23 +113,32 @@ public class PathFinder {
              }
          }
  
@@ -100,8 +100,6 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..eb18494bd7257fa5eb00dea16cf4d566
 -        }).min(Comparator.comparingInt(Path::getNodeCount)) : set.stream().map((target) -> {
 -            return this.reconstructPath(target.getBestNode(), positions.get(target), false);
 -        }).min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
--        profiler.pop();
--        return optional.isEmpty() ? null : optional.get();
 +        // Paper start - Perf: remove streams and optimize collection
 +        Path best = null;
 +        boolean entryListIsEmpty = entryList.isEmpty();
@@ -112,6 +110,8 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..eb18494bd7257fa5eb00dea16cf4d566
 +            if (best == null || comparator.compare(path, best) < 0)
 +                best = path;
 +        }
+         profiler.pop();
+-        return optional.isEmpty() ? null : optional.get();
 +        return best;
 +        // Paper end - Perf: remove streams and optimize collection
      }
