@@ -1,0 +1,136 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CMarcoo <cmarco.org@gmail.com>
+Date: Thu, 14 Mar 2024 19:49:09 +0100
+Subject: [PATCH] Added patches for EntityDamageDoorEvent.
+
+
+diff --git a/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java
+index 72570e4d8c56d294ff1a57fbb63c6ba70f1ed40c..43614d7916be316710d2fe848b3b60187cca978f 100644
+--- a/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java
++++ b/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java
+@@ -1,100 +1,99 @@
+ package io.papermc.paper.event.entity;
+ 
+ import com.google.common.base.Preconditions;
+-import org.bukkit.block.data.type.Door;
++import org.bukkit.block.data.BlockData;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.event.Cancellable;
+ import org.bukkit.event.HandlerList;
+ import org.bukkit.event.entity.EntityEvent;
+ import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Range;
+ 
+ /**
+- * Called when an entity damages a door.
++ * Called for every tick an entity is damaging a door.
+  * <p>
+  * This event is only called when a new level of progress
+  * has been reached by the damaging entity.
+  */
+ public class EntityDamageDoorEvent extends EntityEvent implements Cancellable {
+ 
+-    private final Door damagedDoor;
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++    private final BlockData damagedDoor;
+     private boolean cancelled;
+     private int breakTime;
+     private int doorBreakTime;
+ 
+-    public EntityDamageDoorEvent(final @NotNull Entity what, final @NotNull Door damagedDoor, final int breakTime, final int doorBreakTime) {
++
++    public EntityDamageDoorEvent(final @NotNull Entity what, final @NotNull BlockData damagedDoor, final int breakTime, final int doorBreakTime) {
+         super(what);
+         this.damagedDoor = damagedDoor;
+         this.breakTime = breakTime;
+         this.doorBreakTime = doorBreakTime;
+     }
+ 
+-    private static final HandlerList HANDLER_LIST = new HandlerList();
+-
+     /**
+-     * Get the door currently being damaged by the Zombie.
++     * Get the {@link BlockData} representing the Door
++     * currently being damaged by the entity.
++     *
+      * @return The door being damaged.
+      */
+     @NotNull
+-    public Door getDamagedDoor() {
+-        return damagedDoor;
++    public BlockData getDamagedDoor() {
++        return this.damagedDoor;
+     }
+ 
+     /**
+      * Get the value indicating the ticks spent
+      * breaking this door.
++     * This will return 0 when the breaking progress starts.
+      *
+      * @return The breaking progress value.
+      */
++    @Range(from = 0, to = Integer.MAX_VALUE)
+     public int getBreakTime() {
+-        return breakTime;
++        return this.breakTime;
+     }
+ 
+     /**
+      * Set the current progress in ticks that
+      * this entity has spent damaging the door.
++     *
+      * @param breakTime The ticks spent damaging the door.
+      */
+-    public void setBreakTime(final int breakTime) {
+-        Preconditions.checkArgument(breakTime < 0, "The breaking progress must be equal or greater than zero!");
++    public void setBreakTime(@Range(from = 0, to = Integer.MAX_VALUE) final int breakTime) {
++        Preconditions.checkArgument(breakTime >= 0, "The breaking progress must be at least -1!");
++        Preconditions.checkArgument(breakTime <= this.doorBreakTime, "The door breaking time cannot be greater than the amount of ticks required to break the door!");
+         this.breakTime = breakTime;
+     }
+ 
+     /**
+      * Get the total amount of ticks required to break
+      * the door that the entity is currently damaging.
++     *
+      * @return The amount of ticks necessary for the entity to break the door.
+      */
++    @Range(from = 0, to = Integer.MAX_VALUE)
+     public int getDoorBreakTime() {
+-        return doorBreakTime;
++        return this.doorBreakTime;
+     }
+ 
+     /**
+      * Set the total amount of ticks required to break
+      * the door that the entity is currently damaging.
++     *
+      * @param doorBreakTime The amount of ticks necessary for the entity to break the door.
+      */
+-    public void setDoorBreakTime(final int doorBreakTime) {
++    public void setDoorBreakTime(@Range(from = 1, to = Integer.MAX_VALUE) final int doorBreakTime) {
+         Preconditions.checkArgument(doorBreakTime > 0, "The amount of ticks required to break the door must be positive!");
++        Preconditions.checkArgument(doorBreakTime >= this.breakTime, "The amount of ticks required to break the door cannot be smaller than the current door breaking time!");
+         this.doorBreakTime = doorBreakTime;
+     }
+ 
+-    /**
+-     * Gets the cancellation state of this event. A cancelled event will not
+-     * be executed in the server, but will still pass to other plugins
+-     *
+-     * @return true if this event is cancelled
+-     */
+     @Override
+     public boolean isCancelled() {
+         return this.cancelled;
+     }
+ 
+-    /**
+-     * Sets the cancellation state of this event. A cancelled event will not
+-     * be executed in the server, but will still pass to other plugins.
+-     *
+-     * @param cancel true if you wish to cancel this event
+-     */
+     @Override
+     public void setCancelled(final boolean cancel) {
+         this.cancelled = cancel;
