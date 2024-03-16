@@ -4,11 +4,12 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.Translatable;
 
 /**
  * Represents a pattern that may be used in an {@link ArmorTrim}.
  */
-public interface TrimPattern extends Keyed {
+public interface TrimPattern extends Keyed, Translatable {
 
     /**
      * {@link Material#SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE}.

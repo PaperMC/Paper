@@ -4,11 +4,12 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.Translatable;
 
 /**
  * Represents a material that may be used in an {@link ArmorTrim}.
  */
-public interface TrimMaterial extends Keyed {
+public interface TrimMaterial extends Keyed, Translatable {
 
     /**
      * {@link Material#QUARTZ}.

@@ -94,6 +94,8 @@ public interface UnsafeValues {
 
     String getTranslationKey(ItemStack itemStack);
 
+    String getTranslationKey(Attribute attribute);
+
     @Nullable
     FeatureFlag getFeatureFlag(@NotNull NamespacedKey key);
 

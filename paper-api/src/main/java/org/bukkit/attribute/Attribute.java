@@ -1,13 +1,15 @@
 package org.bukkit.attribute;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Translatable;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Types of attributes which may be present on an {@link Attributable}.
  */
-public enum Attribute implements Keyed {
+public enum Attribute implements Keyed, Translatable {
 
     /**
      * Maximum health of an Entity.
@@ -76,5 +78,11 @@ public enum Attribute implements Keyed {
     @Override
     public NamespacedKey getKey() {
         return key;
+    }
+
+    @NotNull
+    @Override
+    public String getTranslationKey() {
+        return Bukkit.getUnsafe().getTranslationKey(this);
     }
 }
