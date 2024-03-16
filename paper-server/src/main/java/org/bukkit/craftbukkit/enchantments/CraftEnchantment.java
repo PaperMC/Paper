@@ -149,6 +149,11 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
     }
 
     @Override
+    public String getTranslationKey() {
+        return handle.getDescriptionId();
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;

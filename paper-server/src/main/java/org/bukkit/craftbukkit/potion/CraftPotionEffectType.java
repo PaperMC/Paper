@@ -108,6 +108,12 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
         return Color.fromRGB(handle.getColor());
     }
 
+    @NotNull
+    @Override
+    public String getTranslationKey() {
+        return handle.getDescriptionId();
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {

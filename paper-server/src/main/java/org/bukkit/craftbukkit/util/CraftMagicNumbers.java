@@ -376,6 +376,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
+    public String getTranslationKey(final Attribute attribute) {
+        return CraftAttribute.bukkitToMinecraft(attribute).getDescriptionId();
+    }
+
+    @Override
     public FeatureFlag getFeatureFlag(NamespacedKey namespacedKey) {
         Preconditions.checkArgument(namespacedKey != null, "NamespaceKey cannot be null");
         return CraftFeatureFlag.getFromNMS(namespacedKey);
