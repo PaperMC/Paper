@@ -102,7 +102,7 @@ public class BlockCanBuildEvent extends BlockEvent {
      */
     @NotNull
     public BlockData getBlockData() {
-        return blockData;
+        return blockData.clone(); // Paper - clone because mutation isn't used
     }
 
     /**

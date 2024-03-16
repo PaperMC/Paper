@@ -46,7 +46,7 @@ public class ItemDespawnEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public Location getLocation() {
-        return location;
+        return location.clone(); // Paper - clone to avoid changes
     }
 
     @NotNull

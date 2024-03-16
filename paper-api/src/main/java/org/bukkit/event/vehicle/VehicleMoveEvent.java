@@ -27,7 +27,7 @@ public class VehicleMoveEvent extends VehicleEvent {
      */
     @NotNull
     public Location getFrom() {
-        return from;
+        return from.clone(); // Paper - clone to avoid changes
     }
 
     /**
@@ -37,7 +37,7 @@ public class VehicleMoveEvent extends VehicleEvent {
      */
     @NotNull
     public Location getTo() {
-        return to;
+        return to.clone(); // Paper - clone to avoid changes
     }
 
 

@@ -31,7 +31,7 @@ public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
      */
     @NotNull
     public org.bukkit.util.Vector getVelocity() {
-        return velocity;
+        return velocity.clone();
     }
     // Paper end
 

@@ -39,7 +39,7 @@ public class StructureGrowEvent extends WorldEvent implements Cancellable {
      */
     @NotNull
     public Location getLocation() {
-        return location;
+        return location.clone(); // Paper - clone to avoid changes
     }
 
     /**

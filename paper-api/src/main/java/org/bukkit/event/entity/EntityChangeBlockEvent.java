@@ -61,7 +61,7 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public BlockData getBlockData() {
-        return to;
+        return to.clone(); // Paper - clone because mutation isn't used
     }
 
     @NotNull

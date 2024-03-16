@@ -25,7 +25,7 @@ public class SpawnChangeEvent extends WorldEvent {
      */
     @NotNull
     public Location getPreviousLocation() {
-        return previousLocation;
+        return previousLocation.clone(); // Paper - clone to avoid changes
     }
 
     @NotNull

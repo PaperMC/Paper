@@ -35,7 +35,7 @@ public class EntityPortalEnterEvent extends EntityEvent implements org.bukkit.ev
      */
     @NotNull
     public Location getLocation() {
-        return location;
+        return location.clone(); // Paper - clone to avoid changes
     }
 
     // Paper start
