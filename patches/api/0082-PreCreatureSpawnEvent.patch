@@ -16,41 +16,47 @@ See: https://github.com/PaperMC/Paper/issues/917
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/PreCreatureSpawnEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/PreCreatureSpawnEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8b48759bf6f4fcef0847d9a2461993e3f2fdc9aa
+index 0000000000000000000000000000000000000000..1d582118f19a41b499ee73b5e27ddb66ed34f06b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/PreCreatureSpawnEvent.java
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,109 @@
 +package com.destroystokyo.paper.event.entity;
 +
-+import com.google.common.base.Preconditions;
 +import org.bukkit.Location;
 +import org.bukkit.entity.EntityType;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * WARNING: This event only fires for a limited number of cases, and not for every case that CreatureSpawnEvent does.
-+ *
-+ * You should still listen to CreatureSpawnEvent as a backup, and only use this event as an "enhancement".
++ * WARNING: This event only fires for a limited number of cases, and not for every case that {@link CreatureSpawnEvent} does.
++ * <p>
++ * You should still listen to {@link CreatureSpawnEvent} as a backup, and only use this event as an "enhancement".
 + * The intent of this event is to improve server performance, so it fires even if the spawning might fail later, for
 + * example when the entity would be unable to spawn due to limited space or lighting.
-+ * 
-+ * Currently: NATURAL and SPAWNER based reasons. Please submit a Pull Request for future additions.
++ * <p>
++ * Currently: NATURAL and SPAWNER based reasons. <!-- Please submit a Pull Request for future additions. -->
 + * Also, Plugins that replace Entity Registrations with their own custom entities might not fire this event.
 + */
 +public class PreCreatureSpawnEvent extends Event implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    @NotNull private final Location location;
 +    @NotNull private final EntityType type;
 +    @NotNull private final CreatureSpawnEvent.SpawnReason reason;
 +    private boolean shouldAbortSpawn;
 +
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public PreCreatureSpawnEvent(@NotNull Location location, @NotNull EntityType type, @NotNull CreatureSpawnEvent.SpawnReason reason) {
-+        this.location = Preconditions.checkNotNull(location, "Location may not be null");
-+        this.type = Preconditions.checkNotNull(type, "Type may not be null");
-+        this.reason = Preconditions.checkNotNull(reason, "Reason may not be null");
++        this.location = location;
++        this.type = type;
++        this.reason = reason;
 +    }
 +
 +    /**
@@ -58,7 +64,7 @@ index 0000000000000000000000000000000000000000..8b48759bf6f4fcef0847d9a2461993e3
 +     */
 +    @NotNull
 +    public Location getSpawnLocation() {
-+        return location;
++        return this.location;
 +    }
 +
 +    /**
@@ -66,7 +72,7 @@ index 0000000000000000000000000000000000000000..8b48759bf6f4fcef0847d9a2461993e3
 +     */
 +    @NotNull
 +    public EntityType getType() {
-+        return type;
++        return this.type;
 +    }
 +
 +    /**
@@ -74,14 +80,14 @@ index 0000000000000000000000000000000000000000..8b48759bf6f4fcef0847d9a2461993e3
 +     */
 +    @NotNull
 +    public CreatureSpawnEvent.SpawnReason getReason() {
-+        return reason;
++        return this.reason;
 +    }
 +
 +    /**
 +     * @return If the spawn process should be aborted vs trying more attempts
 +     */
 +    public boolean shouldAbortSpawn() {
-+        return shouldAbortSpawn;
++        return this.shouldAbortSpawn;
 +    }
 +
 +    /**
@@ -94,34 +100,32 @@ index 0000000000000000000000000000000000000000..8b48759bf6f4fcef0847d9a2461993e3
 +        this.shouldAbortSpawn = shouldAbortSpawn;
 +    }
 +
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    @NotNull
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    private boolean cancelled = false;
-+
 +    /**
 +     * @return If the spawn of this creature is cancelled or not
 +     */
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    /**
-+     * Cancelling this event is more efficient than cancelling CreatureSpawnEvent
-+     * @param cancel true if you wish to cancel this event, and abort the spawn of this creature
++     * Cancelling this event is more efficient than cancelling {@link CreatureSpawnEvent}
++     *
++     * @param cancel {@code true} if you wish to cancel this event, and abort the spawn of this creature
 +     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}

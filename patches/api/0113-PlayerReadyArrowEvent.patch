@@ -8,10 +8,10 @@ Plugins can skip selection of certain arrows and control which is used.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5d04a22fd6964d8d44a2aa069c9629722893b1f4
+index 0000000000000000000000000000000000000000..f30c4c372c92a79fb6c3fe80c4b51b5c8c0d4d3b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,94 @@
 +/*
 + * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
 + *
@@ -39,7 +39,6 @@ index 0000000000000000000000000000000000000000..5d04a22fd6964d8d44a2aa069c962972
 +
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
-+import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.inventory.ItemStack;
@@ -49,8 +48,13 @@ index 0000000000000000000000000000000000000000..5d04a22fd6964d8d44a2aa069c962972
 + * Called when a player is firing a bow and the server is choosing an arrow to use.
 + */
 +public class PlayerReadyArrowEvent extends PlayerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    @NotNull private final ItemStack bow;
 +    @NotNull private final ItemStack arrow;
++
++    private boolean cancelled;
 +
 +    public PlayerReadyArrowEvent(@NotNull Player player, @NotNull ItemStack bow, @NotNull ItemStack arrow) {
 +        super(player);
@@ -63,7 +67,7 @@ index 0000000000000000000000000000000000000000..5d04a22fd6964d8d44a2aa069c962972
 +     */
 +    @NotNull
 +    public ItemStack getBow() {
-+        return bow;
++        return this.bow;
 +    }
 +
 +    /**
@@ -71,37 +75,34 @@ index 0000000000000000000000000000000000000000..5d04a22fd6964d8d44a2aa069c962972
 +     */
 +    @NotNull
 +    public ItemStack getArrow() {
-+        return arrow;
++        return this.arrow;
 +    }
-+
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    @NotNull
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    private boolean cancelled = false;
 +
 +    /**
-+     * Whether or not use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
++     * {@inheritDoc}
++     * <br>
++     * Whether use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
 +     */
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    /**
 +     * Cancel use of this arrow. On cancel, the server will try the next arrow available and fire another event.
-+     * @param cancel true if you wish to cancel this event
 +     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++       this.cancelled = cancel;
++    }
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}

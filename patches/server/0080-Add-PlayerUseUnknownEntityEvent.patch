@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Sat, 2 Apr 2016 05:09:16 -0400
+Subject: [PATCH] Add PlayerUseUnknownEntityEvent
+
+Adds the PlayerUseUnknownEntityEvent to be used by plugins dealing with
+virtual entities/entities that are not actually known to the server.
+
+Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java
+index 644a0fdea6576647539b96528717dbaeab498d93..221e64a66ff12a8de5c75992fc26a54a03b317e7 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java
+@@ -169,4 +169,14 @@ public class ServerboundInteractPacket implements Packet<ServerGamePacketListene
+             buf.writeEnum(this.hand);
+         }
+     }
++
++    // Paper start - PlayerUseUnknownEntityEvent
++    public int getEntityId() {
++        return this.entityId;
++    }
++
++    public boolean isAttack() {
++        return this.action.getType() == ActionType.ATTACK;
++    }
++    // Paper end - PlayerUseUnknownEntityEvent
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 37cba1e693490e42908f45dc68e60ac3afebbb49..801e1727bd291f647c91e2c325810ead070f3752 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2404,7 +2404,26 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 });
+             }
+         }
++        // Paper start - PlayerUseUnknownEntityEvent
++        else {
++            packet.dispatch(new net.minecraft.network.protocol.game.ServerboundInteractPacket.Handler() {
++                @Override
++                public void onInteraction(net.minecraft.world.InteractionHand hand) {
++                    CraftEventFactory.callPlayerUseUnknownEntityEvent(ServerGamePacketListenerImpl.this.player, packet, hand, null);
++                }
++
++                @Override
++                public void onInteraction(net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.Vec3 pos) {
++                    CraftEventFactory.callPlayerUseUnknownEntityEvent(ServerGamePacketListenerImpl.this.player, packet, hand, pos);
++                }
+ 
++                @Override
++                public void onAttack() {
++                    CraftEventFactory.callPlayerUseUnknownEntityEvent(ServerGamePacketListenerImpl.this.player, packet, net.minecraft.world.InteractionHand.MAIN_HAND, null);
++                }
++            });
++        }
++        // Paper end - PlayerUseUnknownEntityEvent
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 6571adf5285ab3f84513c2f5b32ff0523c2cccd6..c8f20543cb7f69af010e3fd53f31b7253426f2d0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1850,4 +1850,13 @@ public class CraftEventFactory {
+ 
+         Bukkit.getPluginManager().callEvent(new EntityRemoveEvent(entity.getBukkitEntity(), cause));
+     }
++    // Paper start - PlayerUseUnknownEntityEvent
++    public static void callPlayerUseUnknownEntityEvent(net.minecraft.world.entity.player.Player player, net.minecraft.network.protocol.game.ServerboundInteractPacket packet, InteractionHand hand, @Nullable net.minecraft.world.phys.Vec3 vector) {
++        new com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent(
++            (Player) player.getBukkitEntity(), packet.getEntityId(), packet.isAttack(),
++            CraftEquipmentSlot.getHand(hand),
++            vector != null ? CraftVector.toBukkit(vector) : null
++        ).callEvent();
++    }
++    // Paper end - PlayerUseUnknownEntityEvent
+ }

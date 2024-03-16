@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 19 Jul 2020 15:17:01 -0700
+Subject: [PATCH] Name craft scheduler threads according to the plugin using
+ them
+
+Provides quick access to culprits running far more threads than
+they should be
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncTask.java
+index 365b7e7c665bec357fb76d1479bf17da6f603590..e97f6b76ef2fe21c7c2eca8d4a707e5866d70de9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncTask.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncTask.java
+@@ -25,7 +25,10 @@ class CraftAsyncTask extends CraftTask {
+     @Override
+     public void run() {
+         final Thread thread = Thread.currentThread();
+-        synchronized (this.workers) {
++        // Paper start - name threads according to running plugin
++        final String nameBefore = thread.getName();
++        thread.setName(nameBefore + " - " + this.getOwner().getName());
++        try { synchronized (this.workers) {  // Paper end - name threads according to running plugin
+             if (this.getPeriod() == CraftTask.CANCEL) {
+                 // Never continue running after cancelled.
+                 // Checking this with the lock is important!
+@@ -92,6 +95,7 @@ class CraftAsyncTask extends CraftTask {
+                 }
+             }
+         }
++        } finally { thread.setName(nameBefore); } // Paper - name threads according to running plugin
+     }
+ 
+     LinkedList<BukkitWorker> getWorkers() {

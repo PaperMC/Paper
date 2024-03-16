@@ -24,9 +24,9 @@ jobs:
         java: [17]
       fail-fast: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
@@ -77,13 +77,32 @@ jobs:
       - name: Build
         run: ./gradlew build --stacktrace
 
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test Results (${{ matrix.java }})
+          path: |
+            **/build/test-results/test/TEST-*.xml
+
       - name: Create Paperclip Jar
         if: fromJSON(steps.determine.outputs.result).action == 'paperclip'
         run: ./gradlew createReobfPaperclipJar --stacktrace
 
       - name: Upload Paperclip Jar
         if: fromJSON(steps.determine.outputs.result).action == 'paperclip'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: paper-${{ fromJSON(steps.determine.outputs.result).pr }}
           path: build/libs/paper-paperclip-*-reobf.jar
+  event_file:
+    name: "Event File"
+    # Only run on PRs if the source branch is on someone else's repo
+    if: ${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Event File
+          path: ${{ github.event_path }}

@@ -15,10 +15,10 @@ Co-authored-by: Aikar <aikar@aikar.co>
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077dedadcef9f5d
+index 0000000000000000000000000000000000000000..e0847b6f0202bd8267c537f72a5e8c8cb7c6b1db
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
-@@ -0,0 +1,328 @@
+@@ -0,0 +1,339 @@
 +/*
 + * Copyright (c) 2017 Daniel Ennis (Aikar) MIT License
 + *
@@ -59,47 +59,57 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +
 +import java.util.ArrayList;
 +import java.util.List;
++import java.util.Objects;
 +import java.util.stream.Stream;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
-+ * Allows plugins to compute tab completion results asynchronously. If this event provides completions, then the standard synchronous process will not be fired to populate the results. However, the synchronous TabCompleteEvent will fire with the Async results.
-+ *
++ * Allows plugins to compute tab completion results asynchronously.
++ * <p>
++ * If this event provides completions, then the standard synchronous process
++ * will not be fired to populate the results.
++ * However, the synchronous TabCompleteEvent will fire with the Async results.
++ * <p>
 + * Only 1 process will be allowed to provide completions, the Async Event, or the standard process.
 + */
 +public class AsyncTabCompleteEvent extends Event implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    @NotNull private final CommandSender sender;
 +    @NotNull private final String buffer;
 +    private final boolean isCommand;
 +    @Nullable
-+    private final Location loc;
++    private final Location location;
 +    private final List<Completion> completions = new ArrayList<>();
 +    private final List<String> stringCompletions = new TransformingRandomAccessList<>(
 +        this.completions,
 +        Completion::suggestion,
 +        Completion::completion
 +    );
++    private boolean handled;
 +    private boolean cancelled;
-+    private boolean handled = false;
-+    private boolean fireSyncHandler = true;
 +
++    @ApiStatus.Internal
 +    public AsyncTabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, boolean isCommand, @Nullable Location loc) {
 +        super(true);
 +        this.sender = sender;
 +        this.buffer = buffer;
 +        this.isCommand = isCommand;
-+        this.loc = loc;
++        this.location = loc;
 +    }
 +
 +    @Deprecated
++    @ApiStatus.Internal
 +    public AsyncTabCompleteEvent(@NotNull CommandSender sender, @NotNull List<String> completions, @NotNull String buffer, boolean isCommand, @Nullable Location loc) {
 +        super(true);
 +        this.sender = sender;
 +        this.completions.addAll(fromStrings(completions));
 +        this.buffer = buffer;
 +        this.isCommand = isCommand;
-+        this.loc = loc;
++        this.location = loc;
 +    }
 +
 +    /**
@@ -109,13 +119,13 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +     */
 +    @NotNull
 +    public CommandSender getSender() {
-+        return sender;
++        return this.sender;
 +    }
 +
 +    /**
 +     * The list of completions which will be offered to the sender, in order.
 +     * This list is mutable and reflects what will be offered.
-+     *
++     * <p>
 +     * If this collection is not empty after the event is fired, then
 +     * the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
 +     * or current player names will not be called.
@@ -132,16 +142,16 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +     * If this collection is not empty after the event is fired, then
 +     * the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
 +     * or current player names will not be called.
-+     *
-+     * The passed collection will be cloned to a new List. You must call {{@link #getCompletions()}} to mutate from here
++     * <p>
++     * The passed collection will be cloned to a new {@code List}. You must call {{@link #getCompletions()}} to mutate from here
 +     *
 +     * @param completions the new completions
 +     */
 +    public void setCompletions(@NotNull List<String> completions) {
++        Preconditions.checkArgument(completions != null, "Completions list cannot be null");
 +        if (completions == this.stringCompletions) {
 +            return;
 +        }
-+        Preconditions.checkNotNull(completions);
 +        this.completions.clear();
 +        this.completions.addAll(fromStrings(completions));
 +    }
@@ -166,12 +176,12 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +     * the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
 +     * or current player names will not be called.
 +     * <p>
-+     * The passed collection will be cloned to a new List. You must call {{@link #completions()}} to mutate from here
++     * The passed collection will be cloned to a new {@code List}. You must call {@link #completions()} to mutate from here
 +     *
 +     * @param newCompletions the new completions
 +     */
 +    public void completions(final @NotNull List<Completion> newCompletions) {
-+        Preconditions.checkNotNull(newCompletions, "new completions");
++        Preconditions.checkArgument(newCompletions != null, "new completions cannot be null");
 +        this.completions.clear();
 +        this.completions.addAll(newCompletions);
 +    }
@@ -183,37 +193,37 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +     */
 +    @NotNull
 +    public String getBuffer() {
-+        return buffer;
++        return this.buffer;
 +    }
 +
 +    /**
-+     * @return True if it is a command being tab completed, false if it is a chat message.
++     * @return {@code true} if it is a command being tab completed, {@code false} if it is a chat message.
 +     */
 +    public boolean isCommand() {
-+        return isCommand;
++        return this.isCommand;
 +    }
 +
 +    /**
-+     * @return The position looked at by the sender, or null if none
++     * @return The position looked at by the sender, or {@code null} if none
 +     */
 +    @Nullable
 +    public Location getLocation() {
-+        return loc;
++        return this.location;
 +    }
 +
 +    /**
-+     * If true, the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
++     * If {@code true}, the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
 +     * or current player names will not be called.
 +     *
-+     * @return Is completions considered handled. Always true if completions is not empty.
++     * @return Is completions considered handled. Always {@code true} if completions is not empty.
 +     */
 +    public boolean isHandled() {
-+        return !completions.isEmpty() || handled;
++        return !this.completions.isEmpty() || this.handled;
 +    }
 +
 +    /**
-+     * Sets whether or not to consider the completion request handled.
-+     * If true, the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
++     * Sets whether to consider the completion request handled.
++     * If {@code true}, the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
 +     * or current player names will not be called.
 +     *
 +     * @param handled if this completion should be marked as being handled
@@ -222,37 +232,35 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +        this.handled = handled;
 +    }
 +
-+    private static final HandlerList handlers = new HandlerList();
-+
-+
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    /**
++     * {@inheritDoc}
++     * <br>
 +     * Will provide no completions, and will not fire the synchronous process
-+     * @param cancelled true if you wish to cancel this event
 +     */
 +    @Override
-+    public void setCancelled(boolean cancelled) {
-+        this.cancelled = cancelled;
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
 +    }
 +
 +    @NotNull
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
-+    private static @NotNull List<Completion> fromStrings(final @NotNull List<String> strings) {
-+        final List<Completion> list = new ArrayList<>();
-+        for (final String it : strings) {
-+            list.add(new CompletionImpl(it, null));
++    private static @NotNull List<Completion> fromStrings(final @NotNull List<String> suggestions) {
++        final List<Completion> list = new ArrayList<>(suggestions.size());
++        for (final String suggestion : suggestions) {
++            list.add(new CompletionImpl(suggestion, null));
 +        }
 +        return list;
 +    }
@@ -261,6 +269,7 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +     * A rich tab completion, consisting of a string suggestion, and a nullable {@link Component} tooltip.
 +     */
 +    public interface Completion extends Examinable {
++
 +        /**
 +         * Get the suggestion string for this {@link Completion}.
 +         *
@@ -292,11 +301,11 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +
 +        /**
 +         * Create a new {@link Completion} from a suggestion string and a tooltip {@link Component}.
-+         *
-+         * <p>If the provided component is null, the suggestion will not have a tooltip.</p>
++         * <p>
++         * If the provided component is {@code null}, the suggestion will not have a tooltip.
 +         *
 +         * @param suggestion suggestion string
-+         * @param tooltip    tooltip component, or null
++         * @param tooltip    tooltip component, or {@code null}
 +         * @return new completion instance
 +         */
 +        static @NotNull Completion completion(final @NotNull String suggestion, final @Nullable Component tooltip) {
@@ -304,7 +313,9 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +        }
 +    }
 +
++    @ApiStatus.Internal
 +    static final class CompletionImpl implements Completion {
++
 +        private final String suggestion;
 +        private final Component tooltip;
 +
@@ -333,12 +344,12 @@ index 0000000000000000000000000000000000000000..9be64a95c2345433b6142d611077deda
 +            }
 +            final CompletionImpl that = (CompletionImpl) o;
 +            return this.suggestion.equals(that.suggestion)
-+                && java.util.Objects.equals(this.tooltip, that.tooltip);
++                && Objects.equals(this.tooltip, that.tooltip);
 +        }
 +
 +        @Override
 +        public int hashCode() {
-+            return java.util.Objects.hash(this.suggestion, this.tooltip);
++            return Objects.hash(this.suggestion, this.tooltip);
 +        }
 +
 +        @Override

@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 23 Oct 2018 20:25:05 -0400
+Subject: [PATCH] Don't sleep after profile lookups if not needed
+
+Mojang was sleeping even if we had no more requests to go after
+the current one finished, resulting in 100ms lost per profile lookup
+
+diff --git a/src/main/java/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java b/src/main/java/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java
+index b87546f0061458b2b919a1fe00dde1f4eea6cb3e..55dac5edf694b3bf82b475a71e3524a1bce98882 100644
+--- a/src/main/java/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java
++++ b/src/main/java/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java
+@@ -44,6 +44,7 @@ public class YggdrasilGameProfileRepository implements GameProfileRepository {
+             .collect(Collectors.toSet());
+ 
+         final int page = 0;
++        boolean hasRequested = false; // Paper - Don't sleep after profile lookups if not needed
+ 
+         for (final List<String> request : Iterables.partition(criteria, ENTRIES_PER_PAGE)) {
+             final List<String> normalizedRequest = request.stream().map(YggdrasilGameProfileRepository::normalizeName).toList();
+@@ -75,6 +76,12 @@ public class YggdrasilGameProfileRepository implements GameProfileRepository {
+                         LOGGER.debug("Couldn't find profile {}", name);
+                         callback.onProfileLookupFailed(name, new ProfileNotFoundException("Server did not find the requested profile"));
+                     }
++                    // Paper start - Don't sleep after profile lookups if not needed
++                    if (!hasRequested) {
++                        hasRequested = true;
++                        continue;
++                    }
++                    // Paper end - Don't sleep after profile lookups if not needed
+ 
+                     try {
+                         Thread.sleep(DELAY_BETWEEN_PAGES);

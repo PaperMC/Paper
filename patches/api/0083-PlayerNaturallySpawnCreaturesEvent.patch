@@ -10,25 +10,30 @@ Also a highly more effecient way to blanket block spawns in a world
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/PlayerNaturallySpawnCreaturesEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/PlayerNaturallySpawnCreaturesEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..112a0dbf522b8e74ce882678434923814e6b187f
+index 0000000000000000000000000000000000000000..7fcee73d61347165cefef7b92f0e63e0bed8ad73
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/PlayerNaturallySpawnCreaturesEvent.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,66 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
-+import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Fired when the server is calculating what chunks to try to spawn monsters in every Monster Spawn Tick event
 + */
 +public class PlayerNaturallySpawnCreaturesEvent extends PlayerEvent implements Cancellable {
-+    private byte radius;
 +
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private byte radius;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public PlayerNaturallySpawnCreaturesEvent(@NotNull Player player, byte radius) {
 +        super(player);
 +        this.radius = radius;
@@ -38,7 +43,7 @@ index 0000000000000000000000000000000000000000..112a0dbf522b8e74ce88267843492381
 +     * @return The radius of chunks around this player to be included in natural spawn selection
 +     */
 +    public byte getSpawnRadius() {
-+        return radius;
++        return this.radius;
 +    }
 +
 +    /**
@@ -48,33 +53,30 @@ index 0000000000000000000000000000000000000000..112a0dbf522b8e74ce88267843492381
 +        this.radius = radius;
 +    }
 +
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    @NotNull
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    private boolean cancelled = false;
-+
 +    /**
 +     * @return If this players chunks will be excluded from natural spawns
 +     */
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    /**
-+     * @param cancel true if you wish to cancel this event, and not include this players chunks for natural spawning
++     * @param cancel {@code true} if you wish to cancel this event, and not include this players chunks for natural spawning
 +     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}

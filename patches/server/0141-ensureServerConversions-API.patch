@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 May 2016 22:43:12 -0400
+Subject: [PATCH] ensureServerConversions API
+
+This will take a Bukkit ItemStack and run it through any conversions a server process would perform on it,
+to ensure it meets latest minecraft expectations.
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 70511628eefc28163d07f50f18d9cc55dd93d68b..9d34a7cd8361fd65d30537d4498c8e2a03d93bb1 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -230,7 +230,7 @@ public final class ItemStack {
+ 
+     // Called to run this stack through the data converter to handle older storage methods and serialized items
+     public void convertStack(int version) {
+-        if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion()) {
++        if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion() && MinecraftServer.getServer() != null) { // Paper - skip conversion if the server doesn't exist (for tests)
+             CompoundTag savedStack = new CompoundTag();
+             this.save(savedStack);
+             savedStack = (CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic(NbtOps.INSTANCE, savedStack), version, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+index 0875dfe89644f5f54d004488ed980092b31c6416..89bc6cb62123bc17d579b578c4d1d2e5f8c40837 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+@@ -505,4 +505,11 @@ public final class CraftItemFactory implements ItemFactory {
+         return io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(itemStack).getDisplayName());
+     }
+     // Paper end - Adventure
++
++    // Paper start - ensure server conversions API
++    @Override
++    public ItemStack ensureServerConversions(ItemStack item) {
++        return CraftItemStack.asCraftMirror(CraftItemStack.asNMSCopy(item));
++    }
++    // Paper end - ensure server conversions API
+ }

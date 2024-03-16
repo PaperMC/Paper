@@ -35,10 +35,10 @@ is undefined.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerConnectionCloseEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerConnectionCloseEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..12c1c6fe9dc8dc5f5faf6dcf99f6857219ef22b8
+index 0000000000000000000000000000000000000000..d0fb13adc140f1ca74d0c3448f92baa60684f3e2
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerConnectionCloseEvent.java
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,88 @@
 +package com.destroystokyo.paper.event.player;
 +
 +import org.bukkit.event.Event;
@@ -46,6 +46,9 @@ index 0000000000000000000000000000000000000000..12c1c6fe9dc8dc5f5faf6dcf99f68572
 +
 +import java.net.InetAddress;
 +import java.util.UUID;
++import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
++import org.bukkit.event.player.PlayerQuitEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -53,45 +56,35 @@ index 0000000000000000000000000000000000000000..12c1c6fe9dc8dc5f5faf6dcf99f68572
 + * This event is invoked when a player has disconnected. It is guaranteed that,
 + * if the server is in online-mode, that the provided uuid and username have been
 + * validated.
-+ * </p>
-+ *
 + * <p>
 + * The event is invoked for players who have not yet logged into the world, whereas
-+ * {@link org.bukkit.event.player.PlayerQuitEvent} is only invoked on players who have logged into the world.
-+ * </p>
-+ *
++ * {@link PlayerQuitEvent} is only invoked on players who have logged into the world.
 + * <p>
 + * The event is invoked for players who have already logged into the world,
 + * although whether or not the player exists in the world at the time of
 + * firing is undefined. (That is, whether the plugin can retrieve a Player object
 + * using the event parameters is undefined). However, it is guaranteed that this
-+ * event is invoked AFTER {@link org.bukkit.event.player.PlayerQuitEvent}, if the player has already logged into the world.
-+ * </p>
-+ *
++ * event is invoked AFTER {@link PlayerQuitEvent}, if the player has already logged into the world.
 + * <p>
-+ * This event is guaranteed to never fire unless {@link org.bukkit.event.player.AsyncPlayerPreLoginEvent} has
++ * This event is guaranteed to never fire unless {@link AsyncPlayerPreLoginEvent} has
 + * been fired beforehand, and this event may not be called in parallel with
-+ * {@link org.bukkit.event.player.AsyncPlayerPreLoginEvent} for the same connection.
-+ * </p>
-+ *
++ * {@link AsyncPlayerPreLoginEvent} for the same connection.
 + * <p>
-+ * Cancelling the {@link org.bukkit.event.player.AsyncPlayerPreLoginEvent} guarantees the corresponding
++ * Cancelling the {@link AsyncPlayerPreLoginEvent} guarantees the corresponding
 + * {@code PlayerConnectionCloseEvent} is never called.
-+ * </p>
-+ *
 + * <p>
 + * The event may be invoked asynchronously or synchronously. Plugins should check
 + * {@link Event#isAsynchronous()} and handle accordingly.
-+ * </p>
 + */
 +public class PlayerConnectionCloseEvent extends Event {
 +
-+    private static final HandlerList HANDLERS = new HandlerList();
++    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    @NotNull private final UUID playerUniqueId;
 +    @NotNull private final String playerName;
 +    @NotNull private final InetAddress ipAddress;
 +
++    @ApiStatus.Internal
 +    public PlayerConnectionCloseEvent(@NotNull final UUID playerUniqueId, @NotNull final String playerName, @NotNull final InetAddress ipAddress, final boolean async) {
 +        super(async);
 +        this.playerUniqueId = playerUniqueId;
@@ -126,11 +119,11 @@ index 0000000000000000000000000000000000000000..12c1c6fe9dc8dc5f5faf6dcf99f68572
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +}

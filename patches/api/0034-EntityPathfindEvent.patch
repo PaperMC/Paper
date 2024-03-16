@@ -7,10 +7,10 @@ Fires when an Entity decides to start moving to a location.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EntityPathfindEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EntityPathfindEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..63e46b2fb1b12b36fcb1e98b178cf29dd2e3d1b5
+index 0000000000000000000000000000000000000000..5804497f34bac9a9b6b16c6e5decb0119467df7b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/EntityPathfindEvent.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,87 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.bukkit.Location;
@@ -18,78 +18,83 @@ index 0000000000000000000000000000000000000000..63e46b2fb1b12b36fcb1e98b178cf29d
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Fired when an Entity decides to start moving towards a location.
-+ *
++ * <p>
 + * This event does not fire for the entities actual movement. Only when it
 + * is choosing to start moving to a location.
 + */
 +public class EntityPathfindEvent extends EntityEvent implements Cancellable {
-+    @Nullable private final Entity targetEntity;
-+    @NotNull private final Location loc;
 +
-+    public EntityPathfindEvent(@NotNull Entity entity, @NotNull Location loc, @Nullable Entity targetEntity) {
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @Nullable private final Entity targetEntity;
++    @NotNull private final Location location;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public EntityPathfindEvent(@NotNull Entity entity, @NotNull Location location, @Nullable Entity targetEntity) {
 +        super(entity);
 +        this.targetEntity = targetEntity;
-+        this.loc = loc;
++        this.location = location;
 +    }
 +
 +    /**
 +     * The Entity that is pathfinding.
++     *
 +     * @return The Entity that is pathfinding.
 +     */
 +    @NotNull
 +    public Entity getEntity() {
-+        return entity;
++        return this.entity;
 +    }
 +
 +    /**
 +     * If the Entity is trying to pathfind to an entity, this is the entity in relation.
++     * <br>
++     * Otherwise this will return {@code null}.
 +     *
-+     * Otherwise this will return null.
-+     *
-+     * @return The entity target or null
++     * @return The entity target or {@code null}
 +     */
 +    @Nullable
 +    public Entity getTargetEntity() {
-+        return targetEntity;
++        return this.targetEntity;
 +    }
 +
 +    /**
 +     * The Location of where the entity is about to move to.
-+     *
++     * <br>
 +     * Note that if the target happened to of been an entity
++     *
 +     * @return Location of where the entity is trying to pathfind to.
 +     */
 +    @NotNull
 +    public Location getLoc() {
-+        return loc;
++        return this.location;
 +    }
-+
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    @NotNull
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    private boolean cancelled = false;
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}

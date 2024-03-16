@@ -6,74 +6,130 @@ Subject: [PATCH] Entity AddTo/RemoveFrom World Events
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EntityAddToWorldEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EntityAddToWorldEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..07660202e41ee86f1b66bad3335cf6fe126e7f9c
+index 0000000000000000000000000000000000000000..1d8e3c93a139bba11affca74b742269f24300d2c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/EntityAddToWorldEvent.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,45 @@
 +package com.destroystokyo.paper.event.entity;
 +
++import org.bukkit.World;
 +import org.bukkit.entity.Entity;
-+import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * Fired any time an entity is being added to the world for any reason.
-+ *
-+ * Not to be confused with {@link org.bukkit.event.entity.CreatureSpawnEvent}
-+ * This will fire anytime a chunk is reloaded too.
++ * Fired any time an entity is being added to the world for any reason (including a chunk loading).
++ * <p>
++ * Not to be confused with {@link CreatureSpawnEvent}
 + */
 +public class EntityAddToWorldEvent extends EntityEvent {
 +
-+    public EntityAddToWorldEvent(@NotNull Entity entity) {
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull private final World world;
++
++    @ApiStatus.Internal
++    public EntityAddToWorldEvent(@NotNull Entity entity, @NotNull World world) {
 +        super(entity);
++        this.world = world;
 +    }
 +
-+    private static final HandlerList handlers = new HandlerList();
++    /**
++     * @return The world that the entity is being added to
++     */
++    @NotNull
++    public World getWorld() {
++        return this.world;
++    }
 +
 +    @NotNull
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EntityRemoveFromWorldEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EntityRemoveFromWorldEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e5dbbd660409bae0d3b96e83390511d3a423a52e
+index 0000000000000000000000000000000000000000..d75e6a8334c7408ea8c3f155414fc14dc427f190
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/EntityRemoveFromWorldEvent.java
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,43 @@
 +package com.destroystokyo.paper.event.entity;
 +
++import org.bukkit.World;
 +import org.bukkit.entity.Entity;
-+import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * Fired any time an entity is being removed from a world for any reason
++ * Fired any time an entity is being removed from a world for any reason (including a chunk unloading).
++ * Note: The entity is updated prior to this event being called, as such, the entity's world may not be equal to {@link #getWorld()}.
 + */
 +public class EntityRemoveFromWorldEvent extends EntityEvent {
 +
-+    public EntityRemoveFromWorldEvent(@NotNull Entity entity) {
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull private final World world;
++
++    @ApiStatus.Internal
++    public EntityRemoveFromWorldEvent(@NotNull Entity entity, @NotNull World world) {
 +        super(entity);
++        this.world = world;
 +    }
 +
-+    private static final HandlerList handlers = new HandlerList();
++    /**
++     * @return The world that the entity is being removed from
++     */
++    @NotNull
++    public World getWorld() {
++        return this.world;
++    }
 +
 +    @NotNull
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}
+diff --git a/src/main/java/org/bukkit/event/entity/EntityRemoveEvent.java b/src/main/java/org/bukkit/event/entity/EntityRemoveEvent.java
+index e32df91d911bae42c8137c6f952a6ac6a94d27e0..8ed5d1ccc44951089999db360219b556db89b4ba 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityRemoveEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityRemoveEvent.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.event.entity;
+ 
++import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.event.HandlerList;
+ import org.jetbrains.annotations.ApiStatus;
+@@ -11,8 +12,9 @@ import org.jetbrains.annotations.NotNull;
+  * This event should only be used for monitoring. The result
+  * of modifying the entity during or after this event is unspecified.
+  * This event is not called for a {@link org.bukkit.entity.Player}.
++ * @deprecated use {@link EntityRemoveFromWorldEvent} instead
+  */
+-@ApiStatus.Experimental
++@Deprecated(forRemoval = true)
+ public class EntityRemoveEvent extends EntityEvent {
+ 
+     private static final HandlerList handlers = new HandlerList();
+@@ -112,5 +114,6 @@ public class EntityRemoveEvent extends EntityEvent {
+          * When the chunk an entity is in gets unloaded.
+          */
+         UNLOAD,
++        DISCARD
+     }
+ }

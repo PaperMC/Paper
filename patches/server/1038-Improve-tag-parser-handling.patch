@@ -1,0 +1,214 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Mon, 5 Feb 2024 11:54:04 +0100
+Subject: [PATCH] Improve tag parser handling
+
+
+diff --git a/src/main/java/com/mojang/brigadier/CommandDispatcher.java b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+index 92848b64a78fce7a92e1657c2da6fc5ee53eea44..5d5562676a77259b875e15b744b53258533851a7 100644
+--- a/src/main/java/com/mojang/brigadier/CommandDispatcher.java
++++ b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+@@ -304,9 +304,15 @@ public class CommandDispatcher<S> {
+             }
+             final CommandContextBuilder<S> context = contextSoFar.copy();
+             final StringReader reader = new StringReader(originalReader);
++            boolean stop = false; // Paper - Handle non-recoverable exceptions
+             try {
+                 try {
+                     child.parse(reader, context);
++                    // Paper start - Handle non-recoverable exceptions
++                } catch (final com.mojang.brigadier.exceptions.TagParseCommandSyntaxException e) {
++                    stop = true;
++                    throw e;
++                    // Paper end - Handle non-recoverable exceptions
+                 } catch (final RuntimeException ex) {
+                     throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherParseException().createWithContext(reader, ex.getMessage());
+                 }
+@@ -321,6 +327,7 @@ public class CommandDispatcher<S> {
+                 }
+                 errors.put(child, ex);
+                 reader.setCursor(cursor);
++                if (stop) return new ParseResults<>(contextSoFar, originalReader, errors); // Paper - Handle non-recoverable exceptions
+                 continue;
+             }
+ 
+diff --git a/src/main/java/com/mojang/brigadier/exceptions/TagParseCommandSyntaxException.java b/src/main/java/com/mojang/brigadier/exceptions/TagParseCommandSyntaxException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf248a215dc69bb303c836112309471aab687e23
+--- /dev/null
++++ b/src/main/java/com/mojang/brigadier/exceptions/TagParseCommandSyntaxException.java
+@@ -0,0 +1,13 @@
++package com.mojang.brigadier.exceptions;
++
++import com.mojang.brigadier.LiteralMessage;
++import net.minecraft.network.chat.Component;
++
++public final class TagParseCommandSyntaxException extends CommandSyntaxException {
++
++    private static final SimpleCommandExceptionType EXCEPTION_TYPE = new SimpleCommandExceptionType(new LiteralMessage("Error parsing NBT"));
++
++    public TagParseCommandSyntaxException(final String message) {
++        super(EXCEPTION_TYPE, Component.literal(message));
++    }
++}
+diff --git a/src/main/java/net/minecraft/nbt/TagParser.java b/src/main/java/net/minecraft/nbt/TagParser.java
+index 5bec54239a2b185284c10d58854e5a13e33daae5..94cb73e7f60171aa57bd1dbe7e91ef4db94e70b7 100644
+--- a/src/main/java/net/minecraft/nbt/TagParser.java
++++ b/src/main/java/net/minecraft/nbt/TagParser.java
+@@ -48,6 +48,7 @@ public class TagParser {
+         }
+     }, CompoundTag::toString);
+     private final StringReader reader;
++    private int depth; // Paper
+ 
+     public static CompoundTag parseTag(String string) throws CommandSyntaxException {
+         return (new TagParser(new StringReader(string))).readSingleStruct();
+@@ -156,6 +157,7 @@ public class TagParser {
+ 
+     public CompoundTag readStruct() throws CommandSyntaxException {
+         this.expect('{');
++        this.increaseDepth(); // Paper
+         CompoundTag compoundTag = new CompoundTag();
+         this.reader.skipWhitespace();
+ 
+@@ -179,6 +181,7 @@ public class TagParser {
+         }
+ 
+         this.expect('}');
++        this.depth--; // Paper
+         return compoundTag;
+     }
+ 
+@@ -188,6 +191,7 @@ public class TagParser {
+         if (!this.reader.canRead()) {
+             throw ERROR_EXPECTED_VALUE.createWithContext(this.reader);
+         } else {
++            this.increaseDepth(); // Paper
+             ListTag listTag = new ListTag();
+             TagType<?> tagType = null;
+ 
+@@ -213,6 +217,7 @@ public class TagParser {
+             }
+ 
+             this.expect(']');
++            this.depth--; // Paper
+             return listTag;
+         }
+     }
+@@ -251,11 +256,11 @@ public class TagParser {
+                 }
+ 
+                 if (typeReader == ByteTag.TYPE) {
+-                    list.add((T)((NumericTag)tag).getAsByte());
++                    list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
+                 } else if (typeReader == LongTag.TYPE) {
+-                    list.add((T)((NumericTag)tag).getAsLong());
++                    list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
+                 } else {
+-                    list.add((T)((NumericTag)tag).getAsInt());
++                    list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
+                 }
+ 
+                 if (this.hasElementSeparator()) {
+@@ -286,4 +291,11 @@ public class TagParser {
+         this.reader.skipWhitespace();
+         this.reader.expect(c);
+     }
++
++    private void increaseDepth() throws CommandSyntaxException {
++        this.depth++;
++        if (this.depth > 512) {
++            throw new com.mojang.brigadier.exceptions.TagParseCommandSyntaxException("NBT tag is too complex, depth > 512");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..084ffde43447f6ff5e45e9fe3fc6a86bde65fd5a 100644
+--- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
++++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+@@ -197,6 +197,15 @@ public class TranslatableContents implements ComponentContents {
+ 
+     @Override
+     public <T> Optional<T> visit(FormattedText.ContentConsumer<T> visitor) {
++        // Paper start
++        try {
++            return this.visit(new TranslatableContentConsumer<>(visitor));
++        } catch (IllegalArgumentException var5) {
++            return Optional.empty();
++        }
++    }
++    private <T> Optional<T> visit(TranslatableContentConsumer<T> visitor) {
++        // Paper end
+         this.decompose();
+ 
+         for(FormattedText formattedText : this.decomposedParts) {
+@@ -208,6 +217,24 @@ public class TranslatableContents implements ComponentContents {
+ 
+         return Optional.empty();
+     }
++    // Paper start
++    private static final class TranslatableContentConsumer<T> implements FormattedText.ContentConsumer<T> {
++        private final FormattedText.ContentConsumer<T> visitor;
++        private int visited;
++
++        private TranslatableContentConsumer(FormattedText.ContentConsumer<T> visitor) {
++            this.visitor = visitor;
++        }
++
++        @Override
++        public Optional<T> accept(final String asString) {
++            if (visited++ > 32) {
++                throw new IllegalArgumentException("Too long");
++            }
++            return this.visitor.accept(asString);
++        }
++    }
++    // Paper end
+ 
+     @Override
+     public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
+index a5e438a834826161c52ca9db57d234d9ff80a591..4766994cce060564370b0d24836a7da8b5e4a8a1 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
+@@ -14,7 +14,7 @@ public class ServerboundCommandSuggestionPacket implements Packet<ServerGamePack
+ 
+     public ServerboundCommandSuggestionPacket(FriendlyByteBuf buf) {
+         this.id = buf.readVarInt();
+-        this.command = buf.readUtf(32500);
++        this.command = buf.readUtf(2048); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 98496bcc7ab9adde3fdc8b2cd9eaeceee99e28b4..87e5ee042ab2c052d25ab4c2521a68cf2e2d67b6 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -777,6 +777,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             return;
+         }
+         // Paper end - Don't suggest if tab-complete is disabled
++        // Paper start
++        final int index;
++        if (packet.getCommand().length() > 64 && ((index = packet.getCommand().indexOf(' ')) == -1 || index >= 64)) {
++            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
++            return;
++        }
++        // Paper end
+         // Paper start - AsyncTabCompleteEvent
+         TAB_COMPLETE_EXECUTOR.execute(() -> this.handleCustomCommandSuggestions0(packet));
+     }
+@@ -824,6 +831,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     private void sendServerSuggestions(final ServerboundCommandSuggestionPacket packet, final StringReader stringreader) {
+         // Paper end - AsyncTabCompleteEvent
+         ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
++        // Paper start - Handle non-recoverable exceptions
++        if (!parseresults.getExceptions().isEmpty()
++            && parseresults.getExceptions().values().stream().anyMatch(e -> e instanceof com.mojang.brigadier.exceptions.TagParseCommandSyntaxException)) {
++            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
++            return;
++        }
++        // Paper end - Handle non-recoverable exceptions
+ 
+         this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
+             // Paper start - Don't tab-complete namespaced commands if send-namespaced is false

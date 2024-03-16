@@ -90,10 +90,10 @@ index 0000000000000000000000000000000000000000..4a0c39405d4fbed457787e3c6ded4cc6
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerClientOptionsChangeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerClientOptionsChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cf67dc7d465223710adbf2b798109f525d3b057d
+index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6aea591ae5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerClientOptionsChangeEvent.java
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,136 @@
 +package com.destroystokyo.paper.event.player;
 +
 +import com.destroystokyo.paper.ClientOption;
@@ -103,6 +103,7 @@ index 0000000000000000000000000000000000000000..cf67dc7d465223710adbf2b798109f52
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.inventory.MainHand;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.Map;
@@ -112,7 +113,7 @@ index 0000000000000000000000000000000000000000..cf67dc7d465223710adbf2b798109f52
 + */
 +public class PlayerClientOptionsChangeEvent extends PlayerEvent {
 +
-+    private static final HandlerList handlers = new HandlerList();
++    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    private final String locale;
 +    private final int viewDistance;
@@ -136,6 +137,7 @@ index 0000000000000000000000000000000000000000..cf67dc7d465223710adbf2b798109f52
 +        this.textFilteringEnabled = false;
 +    }
 +
++    @ApiStatus.Internal
 +    public PlayerClientOptionsChangeEvent(@NotNull Player player, @NotNull Map<ClientOption<?>, ?> options) {
 +        super(player);
 +
@@ -151,97 +153,98 @@ index 0000000000000000000000000000000000000000..cf67dc7d465223710adbf2b798109f52
 +
 +    @NotNull
 +    public String getLocale() {
-+        return locale;
++        return this.locale;
 +    }
 +
 +    public boolean hasLocaleChanged() {
-+        return !locale.equals(player.getClientOption(ClientOption.LOCALE));
++        return !this.locale.equals(this.player.getClientOption(ClientOption.LOCALE));
 +    }
 +
 +    public int getViewDistance() {
-+        return viewDistance;
++        return this.viewDistance;
 +    }
 +
 +    public boolean hasViewDistanceChanged() {
-+        return viewDistance != player.getClientOption(ClientOption.VIEW_DISTANCE);
++        return this.viewDistance != this.player.getClientOption(ClientOption.VIEW_DISTANCE);
 +    }
 +
 +    @NotNull
 +    public ChatVisibility getChatVisibility() {
-+        return chatVisibility;
++        return this.chatVisibility;
 +    }
 +
 +    public boolean hasChatVisibilityChanged() {
-+        return chatVisibility != player.getClientOption(ClientOption.CHAT_VISIBILITY);
++        return this.chatVisibility != this.player.getClientOption(ClientOption.CHAT_VISIBILITY);
 +    }
 +
 +    public boolean hasChatColorsEnabled() {
-+        return chatColors;
++        return this.chatColors;
 +    }
 +
 +    public boolean hasChatColorsEnabledChanged() {
-+        return chatColors != player.getClientOption(ClientOption.CHAT_COLORS_ENABLED);
++        return this.chatColors != this.player.getClientOption(ClientOption.CHAT_COLORS_ENABLED);
 +    }
 +
 +    @NotNull
 +    public SkinParts getSkinParts() {
-+        return skinparts;
++        return this.skinparts;
 +    }
 +
 +    public boolean hasSkinPartsChanged() {
-+        return skinparts.getRaw() != player.getClientOption(ClientOption.SKIN_PARTS).getRaw();
++        return this.skinparts.getRaw() != this.player.getClientOption(ClientOption.SKIN_PARTS).getRaw();
 +    }
 +
 +    @NotNull
 +    public MainHand getMainHand() {
-+        return mainHand;
++        return this.mainHand;
 +    }
 +
 +    public boolean hasMainHandChanged() {
-+        return mainHand != player.getClientOption(ClientOption.MAIN_HAND);
++        return this.mainHand != this.player.getClientOption(ClientOption.MAIN_HAND);
 +    }
 +
 +    public boolean allowsServerListings() {
-+        return allowsServerListings;
++        return this.allowsServerListings;
 +    }
 +
 +    public boolean hasAllowServerListingsChanged() {
-+        return allowsServerListings != player.getClientOption(ClientOption.ALLOW_SERVER_LISTINGS);
++        return this.allowsServerListings != this.player.getClientOption(ClientOption.ALLOW_SERVER_LISTINGS);
 +    }
 +
 +    public boolean hasTextFilteringEnabled() {
-+        return textFilteringEnabled;
++        return this.textFilteringEnabled;
 +    }
 +
 +    public boolean hasTextFilteringChanged() {
-+        return textFilteringEnabled != player.getClientOption(ClientOption.TEXT_FILTERING_ENABLED);
++        return this.textFilteringEnabled != this.player.getClientOption(ClientOption.TEXT_FILTERING_ENABLED);
 +    }
 +
 +    @Override
 +    @NotNull
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index c463a52aef540e7b69c5ea32bce1239ed6c57a4f..46e78e3e7102e3e91f10ac001dca555e13732247 100644
+index 8f2a6f8ac70a7d5c2b8f9c17199b6eb88750a703..962cfd7b81a38e8e0bf4371d7c3aca80f40636af 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -2932,6 +2932,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      * Reset the cooldown counter to 0, effectively starting the cooldown period.
-      */
+@@ -3238,6 +3238,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      void resetCooldown();
-+
+     // Paper end - attack cooldown API
+ 
++    // Paper start - client option API
 +    /**
 +     * @return the client option value of the player
 +     */
-+    @NotNull
-+    <T> T getClientOption(@NotNull com.destroystokyo.paper.ClientOption<T> option);
-     // Paper end
- 
++    <T> @NotNull T getClientOption(com.destroystokyo.paper.@NotNull ClientOption<T> option);
++    // Paper end - client option API
++
      // Spigot start
+     public class Spigot extends Entity.Spigot {
+ 

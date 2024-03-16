@@ -7,10 +7,10 @@ Subject: [PATCH] Add handshake event to allow plugins to handle client
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..59ae7bc3a0a2079fe4b3a92d777aca682a58e4e3
+index 0000000000000000000000000000000000000000..7c049bad187b94331f42f96833d1cf4ce03ef477
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,267 @@
 +package com.destroystokyo.paper.event.player;
 +
 +import com.google.common.base.Preconditions;
@@ -20,6 +20,7 @@ index 0000000000000000000000000000000000000000..59ae7bc3a0a2079fe4b3a92d777aca68
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -27,18 +28,18 @@ index 0000000000000000000000000000000000000000..59ae7bc3a0a2079fe4b3a92d777aca68
 +
 +/**
 + * This event is fired during a player handshake.
-+ *
-+ * <p>If there are no listeners listening to this event, the logic default
-+ * to your server platform will be ran.</p>
++ * <p>
++ * If there are no listeners listening to this event, the logic default
++ * to your server platform will be run.
 + *
 + * <p>WARNING: TAMPERING WITH THIS EVENT CAN BE DANGEROUS</p>
 + */
 +public class PlayerHandshakeEvent extends Event implements Cancellable {
 +
-+    private static final HandlerList HANDLERS = new HandlerList();
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    @NotNull private final String originalHandshake;
 +    @NotNull private final String originalSocketAddressHostname;
-+    private boolean cancelled;
 +    @Nullable private String serverHostname;
 +    @Nullable private String socketAddressHostname;
 +    @Nullable private UUID uniqueId;
@@ -46,26 +47,15 @@ index 0000000000000000000000000000000000000000..59ae7bc3a0a2079fe4b3a92d777aca68
 +    private boolean failed;
 +    private Component failMessage = Component.text("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!", NamedTextColor.YELLOW);
 +
-+    /**
-+     * Creates a new {@link PlayerHandshakeEvent}.
-+     *
-+     * @param originalHandshake the original handshake string
-+     * @param cancelled if this event is enabled
-+     *
-+     * @deprecated in favour of {@link PlayerHandshakeEvent(String, String, boolean)}
-+     */
++    private boolean cancelled;
++
 +    @Deprecated
++    @ApiStatus.Internal
 +    public PlayerHandshakeEvent(@NotNull String originalHandshake, boolean cancelled) {
 +        this(originalHandshake, "127.0.0.1", cancelled);
 +    }
 +
-+    /**
-+     * Creates a new {@link PlayerHandshakeEvent}.
-+     *
-+     * @param originalHandshake the original handshake string
-+     * @param originalSocketAddressHostname the original socket address hostname
-+     * @param cancelled if this event is enabled
-+     */
++    @ApiStatus.Internal
 +    public PlayerHandshakeEvent(@NotNull String originalHandshake, @NotNull String originalSocketAddressHostname, boolean cancelled) {
 +        super(true);
 +        this.originalHandshake = originalHandshake;
@@ -75,9 +65,9 @@ index 0000000000000000000000000000000000000000..59ae7bc3a0a2079fe4b3a92d777aca68
 +
 +    /**
 +     * Determines if this event is cancelled.
-+     *
-+     * <p>When this event is cancelled, custom handshake logic will not
-+     * be processed.</p>
++     * <p>
++     * When this event is cancelled, custom handshake logic will not
++     * be processed.
 +     *
 +     * @return {@code true} if this event is cancelled, {@code false} otherwise
 +     */
@@ -88,15 +78,15 @@ index 0000000000000000000000000000000000000000..59ae7bc3a0a2079fe4b3a92d777aca68
 +
 +    /**
 +     * Sets if this event is cancelled.
++     * <p>
++     * When this event is cancelled, custom handshake logic will not
++     * be processed.
 +     *
-+     * <p>When this event is cancelled, custom handshake logic will not
-+     * be processed.</p>
-+     *
-+     * @param cancelled {@code true} if this event is cancelled, {@code false} otherwise
++     * @param cancel {@code true} if this event is cancelled, {@code false} otherwise
 +     */
 +    @Override
-+    public void setCancelled(boolean cancelled) {
-+        this.cancelled = cancelled;
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
 +    }
 +
 +    /**
@@ -201,9 +191,9 @@ index 0000000000000000000000000000000000000000..59ae7bc3a0a2079fe4b3a92d777aca68
 +
 +    /**
 +     * Determines if authentication failed.
-+     *
-+     * <p>When {@code true}, the client connecting will be disconnected
-+     * with the {@link #getFailMessage() fail message}.</p>
++     * <p>
++     * When {@code true}, the client connecting will be disconnected
++     * with the {@link #getFailMessage() fail message}.
 +     *
 +     * @return {@code true} if authentication failed, {@code false} otherwise
 +     */
@@ -213,9 +203,9 @@ index 0000000000000000000000000000000000000000..59ae7bc3a0a2079fe4b3a92d777aca68
 +
 +    /**
 +     * Sets if authentication failed and the client should be disconnected.
-+     *
-+     * <p>When {@code true}, the client connecting will be disconnected
-+     * with the {@link #getFailMessage() fail message}.</p>
++     * <p>
++     * When {@code true}, the client connecting will be disconnected
++     * with the {@link #getFailMessage() fail message}.
 +     *
 +     * @param failed {@code true} if authentication failed, {@code false} otherwise
 +     */
@@ -280,11 +270,11 @@ index 0000000000000000000000000000000000000000..59ae7bc3a0a2079fe4b3a92d777aca68
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +}

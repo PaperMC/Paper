@@ -1,0 +1,244 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Wed, 1 Jul 2020 18:01:49 -0400
+Subject: [PATCH] Remove streams from hot code
+
+Co-authored-by: Bjarne Koll <lynxplay101@gmail.com>
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
+index 4b31a91a8d8a3b231e323692d0a0f7ae04dc7e89..79e7a7adf9f9d8b9fee7ae3bb3bebab86fa7fd72 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
+@@ -52,7 +52,7 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+         if (this.hasRequiredMemories(entity)) {
+             this.status = Behavior.Status.RUNNING;
+             this.orderPolicy.apply(this.behaviors);
+-            this.runningPolicy.apply(this.behaviors.stream(), world, entity, time);
++            this.runningPolicy.apply(this.behaviors, world, entity, time); // Paper - Perf: Remove streams from hot code
+             return true;
+         } else {
+             return false;
+@@ -61,11 +61,13 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+ 
+     @Override
+     public final void tickOrStop(ServerLevel world, E entity, long time) {
+-        this.behaviors.stream().filter((task) -> {
+-            return task.getStatus() == Behavior.Status.RUNNING;
+-        }).forEach((task) -> {
+-            task.tickOrStop(world, entity, time);
+-        });
++        // Paper start - Perf: Remove streams from hot code
++        for (final BehaviorControl<? super E> task : this.behaviors) {
++            if (task.getStatus() == Behavior.Status.RUNNING) {
++                task.tickOrStop(world, entity, time);
++            }
++        }
++        // Paper end - Perf: Remove streams from hot code
+         if (this.behaviors.stream().noneMatch((task) -> {
+             return task.getStatus() == Behavior.Status.RUNNING;
+         })) {
+@@ -77,12 +79,16 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+     @Override
+     public final void doStop(ServerLevel world, E entity, long time) {
+         this.status = Behavior.Status.STOPPED;
+-        this.behaviors.stream().filter((task) -> {
+-            return task.getStatus() == Behavior.Status.RUNNING;
+-        }).forEach((task) -> {
+-            task.doStop(world, entity, time);
+-        });
+-        this.exitErasedMemories.forEach(entity.getBrain()::eraseMemory);
++        // Paper start - Perf: Remove streams from hot code
++        for (final BehaviorControl<? super E> task : this.behaviors) {
++            if (task.getStatus() == Behavior.Status.RUNNING) {
++                task.doStop(world, entity, time);
++            }
++        }
++        for (final MemoryModuleType<?> exitErasedMemory : this.exitErasedMemories) {
++            entity.getBrain().eraseMemory(exitErasedMemory);
++        }
++        // Paper end - Perf: Remove streams from hot code
+     }
+ 
+     @Override
+@@ -116,26 +122,30 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+ 
+     public static enum RunningPolicy {
+         RUN_ONE {
++            // Paper start - Perf: Remove streams from hot code
+             @Override
+-            public <E extends LivingEntity> void apply(Stream<BehaviorControl<? super E>> tasks, ServerLevel world, E entity, long time) {
+-                tasks.filter((task) -> {
+-                    return task.getStatus() == Behavior.Status.STOPPED;
+-                }).filter((task) -> {
+-                    return task.tryStart(world, entity, time);
+-                }).findFirst();
++            public <E extends LivingEntity> void apply(ShufflingList<BehaviorControl<? super E>> tasks, ServerLevel world, E entity, long time) {
++                for (final BehaviorControl<? super E> task : tasks) {
++                    if (task.getStatus() == Behavior.Status.STOPPED && task.tryStart(world, entity, time)) {
++                        break;
++                    }
++                }
++                // Paper end - Perf: Remove streams from hot code
+             }
+         },
+         TRY_ALL {
++            // Paper start - Perf: Remove streams from hot code
+             @Override
+-            public <E extends LivingEntity> void apply(Stream<BehaviorControl<? super E>> tasks, ServerLevel world, E entity, long time) {
+-                tasks.filter((task) -> {
+-                    return task.getStatus() == Behavior.Status.STOPPED;
+-                }).forEach((task) -> {
+-                    task.tryStart(world, entity, time);
+-                });
++            public <E extends LivingEntity> void apply(ShufflingList<BehaviorControl<? super E>> tasks, ServerLevel world, E entity, long time) {
++                for (final BehaviorControl<? super E> task : tasks) {
++                    if (task.getStatus() == Behavior.Status.STOPPED) {
++                        task.tryStart(world, entity, time);
++                    }
++                }
++                // Paper end - Perf: Remove streams from hot code
+             }
+         };
+ 
+-        public abstract <E extends LivingEntity> void apply(Stream<BehaviorControl<? super E>> tasks, ServerLevel world, E entity, long time);
++        public abstract <E extends LivingEntity> void apply(ShufflingList<BehaviorControl<? super E>> tasks, ServerLevel world, E entity, long time); // Paper - Perf: Remove streams from hot code
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
+index f1e717dc8320a00c0cc0ff53d97b74e7c1e109fe..2240fc6d5ba9530fcd62d6b560c17a275d4f164a 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
++++ b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
+@@ -61,8 +61,22 @@ public class GossipContainer {
+         });
+     }
+ 
++    // Paper start - Perf: Remove streams from hot code
++    private List<GossipContainer.GossipEntry> decompress() {
++        List<GossipContainer.GossipEntry> list = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++        for (Map.Entry<UUID, GossipContainer.EntityGossips> entry : this.gossips.entrySet()) {
++            for (GossipContainer.GossipEntry cur : entry.getValue().decompress(entry.getKey())) {
++                if (cur.weightedValue() != 0) {
++                    list.add(cur);
++                }
++            }
++        }
++        return list;
++    }
++    // Paper end - Perf: Remove streams from hot code
++
+     private Collection<GossipContainer.GossipEntry> selectGossipsForTransfer(RandomSource random, int count) {
+-        List<GossipContainer.GossipEntry> list = this.unpack().toList();
++        List<GossipContainer.GossipEntry> list = this.decompress(); // Paper - Perf: Remove streams from hot code
+         if (list.isEmpty()) {
+             return Collections.emptyList();
+         } else {
+@@ -156,7 +170,7 @@ public class GossipContainer {
+     }
+ 
+     public <T> T store(DynamicOps<T> ops) {
+-        return GossipContainer.GossipEntry.LIST_CODEC.encodeStart(ops, this.unpack().toList()).resultOrPartial((error) -> {
++        return GossipContainer.GossipEntry.LIST_CODEC.encodeStart(ops, this.decompress()).resultOrPartial((error) -> { // Paper - Perf: Remove streams from hot code
+             LOGGER.warn("Failed to serialize gossips: {}", (Object)error);
+         }).orElseGet(ops::emptyList);
+     }
+@@ -184,11 +198,23 @@ public class GossipContainer {
+         final Object2IntMap<GossipType> entries = new Object2IntOpenHashMap<>();
+ 
+         public int weightedValue(Predicate<GossipType> gossipTypeFilter) {
+-            return this.entries.object2IntEntrySet().stream().filter((entry) -> {
+-                return gossipTypeFilter.test(entry.getKey());
+-            }).mapToInt((entry) -> {
+-                return entry.getIntValue() * (entry.getKey()).weight;
+-            }).sum();
++            // Paper start - Perf: Remove streams from hot code
++            int weight = 0;
++            for (Object2IntMap.Entry<GossipType> entry : entries.object2IntEntrySet()) {
++                if (gossipTypeFilter.test(entry.getKey())) {
++                    weight += entry.getIntValue() * entry.getKey().weight;
++                }
++            }
++            return weight;
++        }
++
++        public List<GossipContainer.GossipEntry> decompress(UUID uuid) {
++            List<GossipContainer.GossipEntry> list = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++            for (Object2IntMap.Entry<GossipType> entry : entries.object2IntEntrySet()) {
++                list.add(new GossipContainer.GossipEntry(uuid, entry.getKey(), entry.getIntValue()));
++            }
++            return list;
++            // Paper end - Perf: Remove streams from hot code
+         }
+ 
+         public Stream<GossipContainer.GossipEntry> unpack(UUID target) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
+index a41c3365db8e9999b686f5bf4bd888458cee43a5..18e2fd705fe0db7cb9e3afe1ce7c8dcfaf93b1a5 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
+@@ -25,14 +25,18 @@ public class NearestItemSensor extends Sensor<Mob> {
+     protected void doTick(ServerLevel world, Mob entity) {
+         Brain<?> brain = entity.getBrain();
+         List<ItemEntity> list = world.getEntitiesOfClass(ItemEntity.class, entity.getBoundingBox().inflate(32.0D, 16.0D, 32.0D), (itemEntity) -> {
+-            return true;
++            return itemEntity.closerThan(entity, MAX_DISTANCE_TO_WANTED_ITEM) && entity.wantsToPickUp(itemEntity.getItem()); // Paper - Perf: Move predicate into getEntities
+         });
+         list.sort(Comparator.comparingDouble(entity::distanceToSqr));
+-        Optional<ItemEntity> optional = list.stream().filter((itemEntity) -> {
+-            return entity.wantsToPickUp(itemEntity.getItem());
+-        }).filter((itemEntity) -> {
+-            return itemEntity.closerThan(entity, 32.0D);
+-        }).filter(entity::hasLineOfSight).findFirst();
+-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, optional);
++        // Paper start - Perf: remove streams from hot code
++        ItemEntity nearest = null;
++        for (ItemEntity entityItem : list) {
++            if (entity.hasLineOfSight(entityItem)) { // Paper - Perf: Move predicate into getEntities
++                nearest = entityItem;
++                break;
++            }
++        }
++        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, Optional.ofNullable(nearest));
++        // Paper end - Perf: remove streams from hot code
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java b/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java
+index bb8d8edb47621665872a5e8fc01512ba40c1b913..dcb62d768d234f60af77ffb589ac2011afcfae4b 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java
+@@ -36,9 +36,10 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
+         int j = pos.getMinBlockZ();
+         ObjectList<Beardifier.Rigid> objectList = new ObjectArrayList<>(10);
+         ObjectList<JigsawJunction> objectList2 = new ObjectArrayList<>(32);
+-        world.startsForStructure(pos, (structure) -> {
++        // Paper start - Perf: Remove streams from hot code
++        for (net.minecraft.world.level.levelgen.structure.StructureStart start : world.startsForStructure(pos, (structure) -> {
+             return structure.terrainAdaptation() != TerrainAdjustment.NONE;
+-        }).forEach((start) -> {
++        })) { // Paper end - Perf: Remove streams from hot code
+             TerrainAdjustment terrainAdjustment = start.getStructure().terrainAdaptation();
+ 
+             for(StructurePiece structurePiece : start.getPieces()) {
+@@ -51,9 +52,11 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
+                         }
+ 
+                         for(JigsawJunction jigsawJunction : poolElementStructurePiece.getJunctions()) {
+-                            int i = jigsawJunction.getSourceX();
+-                            int j = jigsawJunction.getSourceZ();
+-                            if (i > i - 12 && j > j - 12 && i < i + 15 + 12 && j < j + 15 + 12) {
++                            // Paper start - decompile fix
++                            int i2 = jigsawJunction.getSourceX();
++                            int j2 = jigsawJunction.getSourceZ();
++                            if (i2 > i - 12 && j2 > j - 12 && i2 < i + 15 + 12 && j2 < j + 15 + 12) {
++                                // Paper end - decompile fix
+                                 objectList2.add(jigsawJunction);
+                             }
+                         }
+@@ -63,7 +66,7 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
+                 }
+             }
+ 
+-        });
++        } // Paper - Perf: Remove streams from hot code
+         return new Beardifier(objectList.iterator(), objectList2.iterator());
+     }
+ 

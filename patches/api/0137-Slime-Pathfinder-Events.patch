@@ -6,14 +6,14 @@ Subject: [PATCH] Slime Pathfinder Events
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimeChangeDirectionEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimeChangeDirectionEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..473fbded8ab534308f2c0bd0b87512fcce5c9e58
+index 0000000000000000000000000000000000000000..30864539574e23bbe9e4c5dc73ad6614de782ac2
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimeChangeDirectionEvent.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,40 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.bukkit.entity.Slime;
-+import org.bukkit.event.Cancellable;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -22,9 +22,11 @@ index 0000000000000000000000000000000000000000..473fbded8ab534308f2c0bd0b87512fc
 + * This event does not fire for the entity's actual movement. Only when it
 + * is choosing to change direction.
 + */
-+public class SlimeChangeDirectionEvent extends SlimePathfindEvent implements Cancellable {
++public class SlimeChangeDirectionEvent extends SlimePathfindEvent {
++
 +    private float yaw;
 +
++    @ApiStatus.Internal
 +    public SlimeChangeDirectionEvent(@NotNull Slime slime, float yaw) {
 +        super(slime);
 +        this.yaw = yaw;
@@ -36,7 +38,7 @@ index 0000000000000000000000000000000000000000..473fbded8ab534308f2c0bd0b87512fc
 +     * @return Chosen yaw
 +     */
 +    public float getNewYaw() {
-+        return yaw;
++        return this.yaw;
 +    }
 +
 +    /**
@@ -50,16 +52,17 @@ index 0000000000000000000000000000000000000000..473fbded8ab534308f2c0bd0b87512fc
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimePathfindEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimePathfindEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..14b67da109321ae6521eab2ac6f6945f05d02db5
+index 0000000000000000000000000000000000000000..706ed85a5415d688aaa5f138cbf583b9e2bab27d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimePathfindEvent.java
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,56 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.bukkit.entity.Slime;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -69,6 +72,12 @@ index 0000000000000000000000000000000000000000..14b67da109321ae6521eab2ac6f6945f
 + * is choosing to start moving.
 + */
 +public class SlimePathfindEvent extends EntityEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public SlimePathfindEvent(@NotNull Slime slime) {
 +        super(slime);
 +    }
@@ -80,43 +89,39 @@ index 0000000000000000000000000000000000000000..14b67da109321ae6521eab2ac6f6945f
 +     */
 +    @NotNull
 +    public Slime getEntity() {
-+        return (Slime) entity;
++        return (Slime) super.getEntity();
 +    }
-+
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    @NotNull
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    private boolean cancelled = false;
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimeSwimEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimeSwimEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c8dd49d11da5a90a1bac965a75f2b65fd825f3f7
+index 0000000000000000000000000000000000000000..65e8a29751e338b0f0acda7bef9e014852a73e6e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimeSwimEvent.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,19 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.bukkit.entity.Slime;
-+import org.bukkit.event.Cancellable;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -125,22 +130,24 @@ index 0000000000000000000000000000000000000000..c8dd49d11da5a90a1bac965a75f2b65f
 + * This event does not fire for the entity's actual movement. Only when it
 + * is choosing to start jumping.
 + */
-+public class SlimeSwimEvent extends SlimeWanderEvent implements Cancellable {
++public class SlimeSwimEvent extends SlimeWanderEvent {
++
++    @ApiStatus.Internal
 +    public SlimeSwimEvent(@NotNull Slime slime) {
 +        super(slime);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimeTargetLivingEntityEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimeTargetLivingEntityEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e9ba32799ed838779e49cd4c5011b7515b3363cb
+index 0000000000000000000000000000000000000000..87c64b04dfec232e98361c3ec29da7664498c65b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimeTargetLivingEntityEvent.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,33 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.bukkit.entity.LivingEntity;
 +import org.bukkit.entity.Slime;
-+import org.bukkit.event.Cancellable;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -149,9 +156,11 @@ index 0000000000000000000000000000000000000000..e9ba32799ed838779e49cd4c5011b751
 + * This event does not fire for the entity's actual movement. Only when it
 + * is choosing to start moving.
 + */
-+public class SlimeTargetLivingEntityEvent extends SlimePathfindEvent implements Cancellable {
++public class SlimeTargetLivingEntityEvent extends SlimePathfindEvent {
++
 +    @NotNull private final LivingEntity target;
 +
++    @ApiStatus.Internal
 +    public SlimeTargetLivingEntityEvent(@NotNull Slime slime, @NotNull LivingEntity target) {
 +        super(slime);
 +        this.target = target;
@@ -164,19 +173,19 @@ index 0000000000000000000000000000000000000000..e9ba32799ed838779e49cd4c5011b751
 +     */
 +    @NotNull
 +    public LivingEntity getTarget() {
-+        return target;
++        return this.target;
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimeWanderEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimeWanderEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4683a7237d2ed527fc85b9b4e5b2eaaf5ae3d797
+index 0000000000000000000000000000000000000000..2ad9cc1673ffbb8b48349e461d1154d1d4ec2874
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimeWanderEvent.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,19 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.bukkit.entity.Slime;
-+import org.bukkit.event.Cancellable;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -185,7 +194,9 @@ index 0000000000000000000000000000000000000000..4683a7237d2ed527fc85b9b4e5b2eaaf
 + * This event does not fire for the entity's actual movement. Only when it
 + * is choosing to start moving.
 + */
-+public class SlimeWanderEvent extends SlimePathfindEvent implements Cancellable {
++public class SlimeWanderEvent extends SlimePathfindEvent {
++
++    @ApiStatus.Internal
 +    public SlimeWanderEvent(@NotNull Slime slime) {
 +        super(slime);
 +    }

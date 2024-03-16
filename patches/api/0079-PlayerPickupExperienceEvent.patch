@@ -7,10 +7,10 @@ Allows plugins to cancel a player picking up an experience orb
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerPickupExperienceEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerPickupExperienceEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f7beb22d5105157940b39efe594ace9d4cb153f5
+index 0000000000000000000000000000000000000000..0ef10ac6bac990837e21520c800d89420a18e3d4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerPickupExperienceEvent.java
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,83 @@
 +/*
 + * Copyright (c) 2017 Daniel Ennis (Aikar) MIT License
 + *
@@ -39,17 +39,22 @@ index 0000000000000000000000000000000000000000..f7beb22d5105157940b39efe594ace9d
 +import org.bukkit.entity.ExperienceOrb;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
-+import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Fired when a player is attempting to pick up an experience orb
 + */
 +public class PlayerPickupExperienceEvent extends PlayerEvent implements Cancellable {
-+    @NotNull private final ExperienceOrb experienceOrb;
 +
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull private final ExperienceOrb experienceOrb;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public PlayerPickupExperienceEvent(@NotNull Player player, @NotNull ExperienceOrb experienceOrb) {
 +        super(player);
 +        this.experienceOrb = experienceOrb;
@@ -60,34 +65,32 @@ index 0000000000000000000000000000000000000000..f7beb22d5105157940b39efe594ace9d
 +     */
 +    @NotNull
 +    public ExperienceOrb getExperienceOrb() {
-+        return experienceOrb;
++        return this.experienceOrb;
 +    }
 +
-+    private static final HandlerList handlers = new HandlerList();
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * {@inheritDoc}
++     * <br>
++     * If {@code true}, cancels picking up the experience orb, leaving it in the world
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
 +
 +    @NotNull
++    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    private boolean cancelled = false;
-+
-+    @Override
-+    public boolean isCancelled() {
-+        return cancelled;
-+    }
-+
-+    /**
-+     * If true, Cancels picking up the experience orb, leaving it in the world
-+     * @param cancel true if you wish to cancel this event
-+     */
-+    @Override
-+    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++        return HANDLER_LIST;
 +    }
 +}

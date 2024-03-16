@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Sun, 19 Dec 2021 21:11:20 +0100
+Subject: [PATCH] Fix tripwire state inconsistency
+
+This patch prevents updating and re-setting the tripwire when being removed in certain conditions
+
+diff --git a/src/main/java/net/minecraft/world/level/block/TripWireBlock.java b/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
+index bdb99b799d1a97f1340c3d388d2901f7cb1c3527..3cb1db27dba902678a5848a1fb5e2c6ec6241e60 100644
+--- a/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
+@@ -91,7 +91,7 @@ public class TripWireBlock extends Block {
+     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent adjacent tripwires from updating
+         if (!moved && !state.is(newState.getBlock())) {
+-            this.updateSource(world, pos, (BlockState) state.setValue(TripWireBlock.POWERED, true));
++            this.updateSource(world, pos, (BlockState) state.setValue(TripWireBlock.POWERED, true), true); // Paper - fix tripwire state inconsistency
+         }
+     }
+ 
+@@ -108,6 +108,12 @@ public class TripWireBlock extends Block {
+ 
+     private void updateSource(Level world, BlockPos pos, BlockState state) {
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent adjacent tripwires from updating
++        // Paper start - fix tripwire state inconsistency
++        this.updateSource(world, pos, state, false);
++    }
++
++    private void updateSource(Level world, BlockPos pos, BlockState state, boolean beingRemoved) {
++        // Paper end - fix tripwire state inconsistency
+         Direction[] aenumdirection = new Direction[]{Direction.SOUTH, Direction.WEST};
+         int i = aenumdirection.length;
+         int j = 0;
+@@ -123,7 +129,7 @@ public class TripWireBlock extends Block {
+ 
+                     if (iblockdata1.is(this.hook)) {
+                         if (iblockdata1.getValue(TripWireHookBlock.FACING) == enumdirection.getOpposite()) {
+-                            TripWireHookBlock.calculateState(world, blockposition1, iblockdata1, false, true, k, state);
++                            TripWireHookBlock.calculateState(world, blockposition1, iblockdata1, false, true, k, state, beingRemoved); // Paper - fix tripwire state inconsistency
+                         }
+                     } else if (iblockdata1.is((Block) this)) {
+                         ++k;
+diff --git a/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java b/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
+index d9b3877257b31ca1b5acc4a47fbf5b993de69ae0..7f2dcf6a9e69779e6f898284b58fb1e32902000c 100644
+--- a/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
+@@ -118,7 +118,13 @@ public class TripWireHookBlock extends Block {
+         TripWireHookBlock.calculateState(world, pos, state, false, false, -1, (BlockState) null);
+     }
+ 
+-    public static void calculateState(Level world, BlockPos pos, BlockState state, boolean flag, boolean flag1, int i, @Nullable BlockState iblockdata1) {
++    public static void calculateState(Level world, BlockPos pos, BlockState state, boolean beingRemoved, boolean flag1, int i, @Nullable BlockState iblockdata1) {
++        // Paper start - fix tripwire state inconsistency
++        calculateState(world, pos, state, beingRemoved, flag1, i, iblockdata1, false);
++    }
++
++    public static void calculateState(Level world, BlockPos pos, BlockState state, boolean beingRemoved, boolean flag1, int i, @Nullable BlockState iblockdata1, boolean tripWireBeingRemoved) {
++        // Paper end - fix tripwire state inconsistency
+         Optional<Direction> optional = state.getOptionalValue(TripWireHookBlock.FACING);
+ 
+         if (optional.isPresent()) {
+@@ -126,7 +132,7 @@ public class TripWireHookBlock extends Block {
+             boolean flag2 = (Boolean) state.getOptionalValue(TripWireHookBlock.ATTACHED).orElse(false);
+             boolean flag3 = (Boolean) state.getOptionalValue(TripWireHookBlock.POWERED).orElse(false);
+             Block block = state.getBlock();
+-            boolean flag4 = !flag;
++            boolean flag4 = !beingRemoved; // Paper - fix tripwire state inconsistency
+             boolean flag5 = false;
+             int j = 0;
+             BlockState[] aiblockdata = new BlockState[42];
+@@ -156,6 +162,7 @@ public class TripWireHookBlock extends Block {
+                     boolean flag7 = (Boolean) iblockdata2.getValue(TripWireBlock.POWERED);
+ 
+                     flag5 |= flag6 && flag7;
++                    if (k != i || !tripWireBeingRemoved || !flag6) // Paper - fix tripwire state inconsistency; don't update the tripwire again if being removed and not disarmed
+                     aiblockdata[k] = iblockdata2;
+                     if (k == i) {
+                         world.scheduleTick(pos, block, 10);
+@@ -187,7 +194,7 @@ public class TripWireHookBlock extends Block {
+             // CraftBukkit end
+ 
+             TripWireHookBlock.emitState(world, pos, flag4, flag5, flag2, flag3);
+-            if (!flag) {
++            if (!beingRemoved) { // Paper - fix tripwire state inconsistency
+                 if (world.getBlockState(pos).getBlock() == Blocks.TRIPWIRE_HOOK) // Paper - Validate tripwire hook placement before update
+                 world.setBlock(pos, (BlockState) iblockdata3.setValue(TripWireHookBlock.FACING, enumdirection), 3);
+                 if (flag1) {

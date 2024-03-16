@@ -67,7 +67,7 @@ Assuming you have already forked the repository:
 
 1. Clone your fork to your local machine;
 2. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream.
-On Windows, leave out the `./` at the beginning for all `gradlew` commands;
+On Windows, replace the `./` with `.\` at the beginning for all `gradlew` commands;
 3. cd into `Paper-Server` for server changes, and `Paper-API` for API changes.  
 <!--You can also run `./paper server` or `./paper api` for these same directories
 respectively.
@@ -204,29 +204,31 @@ when making and submitting changes.
 
 ## Formatting
 
-All modifications to non-Paper files should be marked.
+All modifications to non-Paper files should be marked. The one exception to this is
+when modifying javadoc comments, which should not have these markers.
 
-- Multi-line changes start with `// Paper start` and end with `// Paper end`;
-- You can put a comment with an explanation if it isn't obvious, like this:
-`// Paper start - reason`.
-   - The comments should generally be about the reason the change was made, what
-  it was before, or what the change is.
-   - Multi-line messages should start with `// Paper start` and use `/* Multi
-  line message here */` for the message itself.
-- One-line changes should have `// Paper` or `// Paper - reason`.
+- You need to add a comment with a short and identifiable description of the patch:
+  `// Paper start - <COMMIT DESCRIPTION>`
+    - The comments should generally be about the reason the change was made, what
+      it was before, or what the change is.
+    - After the general commit description, you can add additional information either
+      after a `;` or in the next line.
+- Multi-line changes start with `// Paper start - <COMMIT DESCRIPTION>` and end
+  with `// Paper end - <COMMIT DESCRIPTION>`.
+- One-line changes should have `// Paper - <COMMIT DESCRIPTION>` at the end of the line.
 
 Here's an example of how to mark changes by Paper:
 
 ```java
-entity.getWorld().dontbeStupid(); // Paper - was beStupid() which is bad
+entity.getWorld().dontBeStupid(); // Paper - Was beStupid(), which is bad
 entity.getFriends().forEach(Entity::explode);
-entity.a();
-entity.b();
-// Paper start - use plugin-set spawn
+entity.updateFriends();
+
+// Paper start - Use plugin-set spawn
 // entity.getWorld().explode(entity.getWorld().getSpawn());
 Location spawnLocation = ((CraftWorld)entity.getWorld()).getSpawnLocation();
 entity.getWorld().explode(new BlockPosition(spawnLocation.getX(), spawnLocation.getY(), spawnLocation.getZ()));
-// Paper end
+// Paper end - Use plugin-set spawn
 ```
 
 We generally follow the usual Java style (aka. Oracle style), or what is programmed
@@ -235,6 +237,21 @@ into most IDEs and formatters by default. There are a few notes, however:
 There are exceptions, especially in Spigot-related files
 - When in doubt or the code around your change is in a clearly different style,
 use the same style as the surrounding code.
+
+### Imports
+When adding new imports to a class in a file not created by the current patch, use the fully qualified class name
+instead of adding a new import to the top of the file. If you are using a type a significant number of times, you
+can add an import with a comment. However, if its only used a couple of times, the FQN is preferred to prevent future
+patch conflicts in the import section of the file.
+
+```java
+import org.bukkit.event.Event;
+// don't add import here, use FQN like below
+
+public class SomeEvent extends Event {
+    public final org.bukkit.Location newLocation; // Paper - add location
+}
+```
 
 ## Access Transformers
 Sometimes, vanilla or CraftBukkit code already contains a field, method, or type you want to access
@@ -302,7 +319,7 @@ Subject: [PATCH] revert serverside behavior of keepalives
 This patch intends to bump up the time that a client has to reply to the
 server back to 30 seconds as per pre 1.12.2, which allowed clients
 more than enough time to reply potentially allowing them to be less
-tempermental due to lag spikes on the network thread, e.g. that caused
+temperamental due to lag spikes on the network thread, e.g. that caused
 by plugins that are interacting with netty.
 
 We also add a system property to allow people to tweak how long the server

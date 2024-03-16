@@ -6,10 +6,10 @@ Subject: [PATCH] AnvilDamageEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/block/AnvilDamagedEvent.java b/src/main/java/com/destroystokyo/paper/event/block/AnvilDamagedEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aa5c3690fb898a7560a9551df91588a0cdc69fe2
+index 0000000000000000000000000000000000000000..4f88c101d81e5c3a8a065260304d5816337666d7
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/block/AnvilDamagedEvent.java
-@@ -0,0 +1,151 @@
+@@ -0,0 +1,154 @@
 +package com.destroystokyo.paper.event.block;
 +
 +import org.bukkit.Material;
@@ -27,10 +27,11 @@ index 0000000000000000000000000000000000000000..aa5c3690fb898a7560a9551df91588a0
 + * Called when an anvil is damaged from being used
 + */
 +public class AnvilDamagedEvent extends InventoryEvent implements Cancellable {
++
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    private boolean cancel;
 +    private DamageState damageState;
++    private boolean cancelled;
 +
 +    @ApiStatus.Internal
 +    public AnvilDamagedEvent(@NotNull InventoryView inventory, @Nullable BlockData blockData) {
@@ -51,7 +52,7 @@ index 0000000000000000000000000000000000000000..aa5c3690fb898a7560a9551df91588a0
 +     */
 +    @NotNull
 +    public DamageState getDamageState() {
-+        return damageState;
++        return this.damageState;
 +    }
 +
 +    /**
@@ -66,31 +67,33 @@ index 0000000000000000000000000000000000000000..aa5c3690fb898a7560a9551df91588a0
 +    /**
 +     * Gets if anvil is breaking on this use
 +     *
-+     * @return True if breaking
++     * @return {@code true} if breaking
 +     */
 +    public boolean isBreaking() {
-+        return damageState == DamageState.BROKEN;
++        return this.damageState == DamageState.BROKEN;
 +    }
 +
 +    /**
 +     * Sets if anvil is breaking on this use
 +     *
-+     * @param breaking True if breaking
++     * @param breaking {@code true} if breaking
 +     */
 +    public void setBreaking(boolean breaking) {
 +        if (breaking) {
-+            damageState = DamageState.BROKEN;
-+        } else if (damageState == DamageState.BROKEN) {
-+            damageState = DamageState.DAMAGED;
++            this.damageState = DamageState.BROKEN;
++        } else if (this.damageState == DamageState.BROKEN) {
++            this.damageState = DamageState.DAMAGED;
 +        }
 +    }
 +
++    @Override
 +    public boolean isCancelled() {
-+        return cancel;
++        return this.cancelled;
 +    }
 +
++    @Override
 +    public void setCancelled(boolean cancel) {
-+        this.cancel = cancel;
++        this.cancelled = cancel;
 +    }
 +
 +    @NotNull
@@ -125,7 +128,7 @@ index 0000000000000000000000000000000000000000..aa5c3690fb898a7560a9551df91588a0
 +         */
 +        @NotNull
 +        public Material getMaterial() {
-+            return material;
++            return this.material;
 +        }
 +
 +        /**
@@ -153,7 +156,7 @@ index 0000000000000000000000000000000000000000..aa5c3690fb898a7560a9551df91588a0
 +                return BROKEN;
 +            }
 +            for (DamageState state : values()) {
-+                if (state.material == material) {
++                if (state.getMaterial() == material) {
 +                    return state;
 +                }
 +            }
