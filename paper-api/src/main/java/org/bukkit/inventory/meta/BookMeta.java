@@ -133,7 +133,7 @@ public interface BookMeta extends ItemMeta {
      * Sets the specified page in the book. Pages of the book must be
      * contiguous.
      * <p>
-     * The data can be up to 256 characters in length, additional characters
+     * The data can be up to 1024 characters in length, additional characters
      * are truncated.
      * <p>
      * Pages are 1-indexed.
@@ -153,7 +153,7 @@ public interface BookMeta extends ItemMeta {
 
     /**
      * Clears the existing book pages, and sets the book to use the provided
-     * pages. Maximum 100 pages with 256 characters per page.
+     * pages. Maximum 100 pages with 1024 characters per page.
      *
      * @param pages A list of pages to set the book to use
      */
@@ -161,15 +161,15 @@ public interface BookMeta extends ItemMeta {
 
     /**
      * Clears the existing book pages, and sets the book to use the provided
-     * pages. Maximum 50 pages with 256 characters per page.
+     * pages. Maximum 100 pages with 1024 characters per page.
      *
      * @param pages A list of strings, each being a page
      */
     void setPages(@NotNull String... pages);
 
     /**
-     * Adds new pages to the end of the book. Up to a maximum of 50 pages with
-     * 256 characters per page.
+     * Adds new pages to the end of the book. Up to a maximum of 100 pages with
+     * 1024 characters per page.
      *
      * @param pages A list of strings, each being a page
      */
