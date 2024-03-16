@@ -5,17 +5,21 @@ Subject: [PATCH] add BlockBreakProgressUpdateEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index bf5e47e8c3706590fdc0731bd9a5858b56d06136..b90967fe00163b5264c3b1bbb25e1fd6569195b8 100644
+index bf5e47e8c3706590fdc0731bd9a5858b56d06136..c850caabebfec88fd19ac54bfe39393e5f8e8d60 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1772,6 +1772,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1772,6 +1772,16 @@ public class ServerLevel extends Level implements WorldGenLevel {
          if (entity instanceof Player) entityhuman = (Player) entity;
          // CraftBukkit end
  
 +        // Paper start - Add BlockBreakProgressUpdateEvent
-+        org.bukkit.craftbukkit.block.CraftBlock bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this, pos);
-+        new io.papermc.paper.event.block.BlockBreakProgressUpdateEvent(bukkitBlock, progress, entity.getBukkitEntity())
-+            .callEvent();
++        // If a plugin is using this method to send destroy packets for a client-side only entity id, no block progress occured on the server.
++        // Hence, do not call the event.
++        if (entity != null) {
++            org.bukkit.craftbukkit.block.CraftBlock bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this, pos);
++            new io.papermc.paper.event.block.BlockBreakProgressUpdateEvent(bukkitBlock, progress, entity.getBukkitEntity())
++                .callEvent();
++        }
 +        // Paper end - Add BlockBreakProgressUpdateEvent
 +
          while (iterator.hasNext()) {
