@@ -4,6 +4,7 @@ Date: Mon, 9 Aug 2021 20:45:46 -0700
 Subject: [PATCH] Fire EntityChangeBlockEvent in more places
 
 Co-authored-by: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
+Co-authored-by: maxcom1 <46265094+maxcom1@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
 index a298f511c8a7eb208a0dd63b24ec050848a31476..41a3ca4edf4fa662f2af13efd7b78b56e24aa4a7 100644
@@ -300,6 +301,25 @@ index 6cccdd1d19488275ff3fe90838cf1c31e844d517..413b307acaad5823b9e06f49fa2faf56
  
              generatoraccess.setBlock(blockposition, iblockdata1, 3);
              generatoraccess.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entity, iblockdata1));
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+index 55b0e2bf98a285cdcd30e40d94192b7a1802efd8..d445ed0895293dd45c36226051f5809be8587ebe 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+@@ -264,7 +264,13 @@ public class BeehiveBlockEntity extends BlockEntity {
+                                             --j;
+                                         }
+ 
+-                                        world.setBlockAndUpdate(blockposition, (BlockState) iblockdata.setValue(BeehiveBlock.HONEY_LEVEL, i + j));
++                                        // Paper start - Fire EntityChangeBlockEvent in more places
++                                        BlockState newBlockState = iblockdata.setValue(BeehiveBlock.HONEY_LEVEL, i + j);
++
++                                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entitybee, blockposition, newBlockState)) {
++                                            world.setBlockAndUpdate(blockposition, newBlockState);
++                                        }
++                                        // Paper end - Fire EntityChangeBlockEvent in more places
+                                     }
+                                 }
+                             }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 index 67c9009b735429e887e706baf50a6023d572a46c..7956002e2d4d583c27e277562312d27ea6871557 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
