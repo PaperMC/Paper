@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mrapple <tony@oc.tc>
+Date: Sun, 25 Nov 2012 13:43:39 -0600
+Subject: [PATCH] Add methods for working with arrows stuck in living entities
+
+Upstream added methods for this, original methods are now
+deprecated
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index a73a5a8291ddd954f2c7b73a4895933e715c5d68..4636e1ebf11025a551d398a6594b1506748a8390 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -267,10 +267,29 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     }
+ 
+     @Override
+-    public void setArrowsInBody(int count) {
++    public void setArrowsInBody(final int count, final boolean fireEvent) { // Paper
+         Preconditions.checkArgument(count >= 0, "New arrow amount must be >= 0");
++        if (!fireEvent) { // Paper
+         this.getHandle().getEntityData().set(net.minecraft.world.entity.LivingEntity.DATA_ARROW_COUNT_ID, count);
++        // Paper start
++        } else {
++            this.getHandle().setArrowCount(count);
++        }
++        // Paper end
++    }
++
++    // Paper start - Add methods for working with arrows stuck in living entities
++    @Override
++    public void setNextArrowRemoval(final int ticks) {
++        Preconditions.checkArgument(ticks >= 0, "New amount of ticks before next arrow removal must be >= 0");
++        this.getHandle().removeArrowTime = ticks;
++    }
++
++    @Override
++    public int getNextArrowRemoval() {
++        return this.getHandle().removeArrowTime;
+     }
++    // Paper end - Add methods for working with arrows stuck in living entities
+ 
+     @Override
+     public void damage(double amount) {
+@@ -799,4 +818,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         this.getHandle().persistentInvisibility = invisible;
+         this.getHandle().setSharedFlag(5, invisible);
+     }
++
++    // Paper start
++    @Override
++    public int getArrowsStuck() {
++        return this.getHandle().getArrowCount();
++    }
++
++    @Override
++    public void setArrowsStuck(final int arrows) {
++        this.getHandle().setArrowCount(arrows);
++    }
++    // Paper end
+ }

@@ -6,19 +6,21 @@ Subject: [PATCH] Add TargetHitEvent API
 
 diff --git a/src/main/java/io/papermc/paper/event/block/TargetHitEvent.java b/src/main/java/io/papermc/paper/event/block/TargetHitEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cc067ae118af9957b1b9f5c8d45f63f9154f4942
+index 0000000000000000000000000000000000000000..5247e7f78e0076089c1e1bdea2afbb455c43732a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/block/TargetHitEvent.java
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,61 @@
 +package io.papermc.paper.event.block;
 +
++import com.google.common.base.Preconditions;
 +import org.bukkit.block.Block;
 +import org.bukkit.block.BlockFace;
 +import org.bukkit.entity.Projectile;
-+import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.ProjectileHitEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Range;
 +
 +/**
 + * Called when a Target Block is hit by a projectile.
@@ -27,35 +29,16 @@ index 0000000000000000000000000000000000000000..cc067ae118af9957b1b9f5c8d45f63f9
 + * and in the case that the shooter is a player, will stop them from receiving
 + * advancement criteria.
 + */
-+public class TargetHitEvent extends ProjectileHitEvent implements Cancellable {
-+    private static final HandlerList handlers = new HandlerList();
-+    private boolean cancelled;
++public class TargetHitEvent extends ProjectileHitEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    private int signalStrength;
 +
++    @ApiStatus.Internal
 +    public TargetHitEvent(@NotNull Projectile projectile, @NotNull Block block, @NotNull BlockFace blockFace, int signalStrength) {
 +        super(projectile, null, block, blockFace);
 +        this.signalStrength = signalStrength;
-+    }
-+
-+    @Override
-+    public boolean isCancelled() {
-+        return cancelled;
-+    }
-+
-+    @Override
-+    public void setCancelled(boolean cancelled) {
-+        this.cancelled = cancelled;
-+    }
-+
-+    @NotNull
-+    @Override
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
 +    }
 +
 +    /**
@@ -63,8 +46,8 @@ index 0000000000000000000000000000000000000000..cc067ae118af9957b1b9f5c8d45f63f9
 +     *
 +     * @return the strength of the redstone signal to be emitted
 +     */
-+    public int getSignalStrength() {
-+        return signalStrength;
++    public @Range(from = 0, to = 15) int getSignalStrength() {
++        return this.signalStrength;
 +    }
 +
 +    /**
@@ -72,10 +55,19 @@ index 0000000000000000000000000000000000000000..cc067ae118af9957b1b9f5c8d45f63f9
 +     *
 +     * @param signalStrength the strength of the redstone signal to be emitted
 +     */
-+    public void setSignalStrength(int signalStrength) {
-+        if (signalStrength < 0 || signalStrength > 15) {
-+            throw new IllegalArgumentException("Signal strength out of range (" + signalStrength + "), must be in range [0,15]");
-+        }
++    public void setSignalStrength(@Range(from = 0, to = 15) int signalStrength) {
++        Preconditions.checkArgument(signalStrength >= 0 && signalStrength <= 15, "Signal strength out of range (%s), must be in range [0,15]", signalStrength);
 +        this.signalStrength = signalStrength;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}

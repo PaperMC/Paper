@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: FireInstall <kettnerl@hu-berlin.de>
+Date: Sat, 20 Jan 2024 16:20:06 +0100
+Subject: [PATCH] Expose LootTable of DecoratedPot
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftDecoratedPot.java b/src/main/java/org/bukkit/craftbukkit/block/CraftDecoratedPot.java
+index d595495943bd94a86aa32a6510e46a7ea5c8a723..e2fe5d8d7d8c00ed5d21cfe409933cdde8932e97 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftDecoratedPot.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftDecoratedPot.java
+@@ -40,6 +40,39 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
+         return new CraftInventoryDecoratedPot(this.getTileEntity());
+     }
+ 
++    // Paper start - expose loot table
++    @Override
++    public void setLootTable(final org.bukkit.loot.LootTable table) {
++        this.setLootTable(table, this.getSeed());
++    }
++
++    @Override
++    public void setLootTable(org.bukkit.loot.LootTable table, long seed) {
++        net.minecraft.resources.ResourceLocation key = (table == null) ? null : org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(table.getKey());
++        this.getSnapshot().setLootTable(key, seed);
++    }
++
++    @Override
++    public org.bukkit.loot.LootTable getLootTable() {
++        if (this.getSnapshot().getLootTable() == null) {
++            return null;
++        }
++
++        net.minecraft.resources.ResourceLocation key = this.getSnapshot().getLootTable();
++        return org.bukkit.Bukkit.getLootTable(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(key));
++    }
++
++    @Override
++    public void setSeed(final long seed) {
++        this.getSnapshot().setLootTableSeed(seed);
++    }
++
++    @Override
++    public long getSeed() {
++        return this.getSnapshot().getLootTableSeed();
++    }
++    // Paper end - expose loot table
++
+     @Override
+     public void setSherd(Side face, Material sherd) {
+         Preconditions.checkArgument(face != null, "face must not be null");

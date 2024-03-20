@@ -6,10 +6,10 @@ Subject: [PATCH] Add PlayerArmorChangeEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..57521010ff0574f1bbc96727948a6185fd37e9ee
+index 0000000000000000000000000000000000000000..ab08219497f7e362f113321c4bcfd180b335bf20
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,127 @@
 +package com.destroystokyo.paper.event.player;
 +
 +import org.bukkit.Material;
@@ -18,9 +18,6 @@ index 0000000000000000000000000000000000000000..57521010ff0574f1bbc96727948a6185
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.inventory.ItemStack;
 +
-+import java.util.Arrays;
-+import java.util.Collections;
-+import java.util.HashSet;
 +import java.util.Set;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
@@ -34,7 +31,8 @@ index 0000000000000000000000000000000000000000..57521010ff0574f1bbc96727948a6185
 + * Not currently called for environmental factors though it <strong>MAY BE IN THE FUTURE</strong>
 + */
 +public class PlayerArmorChangeEvent extends PlayerEvent {
-+    private static final HandlerList HANDLERS = new HandlerList();
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    @NotNull private final SlotType slotType;
 +    @NotNull private final ItemStack oldItem;
@@ -78,20 +76,15 @@ index 0000000000000000000000000000000000000000..57521010ff0574f1bbc96727948a6185
 +        return this.newItem;
 +    }
 +
-+    @Override
-+    public String toString() {
-+        return "ArmorChangeEvent{" + "player=" + player + ", slotType=" + slotType + ", oldItem=" + oldItem + ", newItem=" + newItem + '}';
-+    }
-+
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return HANDLERS;
++        return HANDLER_LIST;
 +    }
 +
 +    public enum SlotType {
@@ -100,11 +93,10 @@ index 0000000000000000000000000000000000000000..57521010ff0574f1bbc96727948a6185
 +        LEGS(NETHERITE_LEGGINGS, DIAMOND_LEGGINGS, GOLDEN_LEGGINGS, IRON_LEGGINGS, CHAINMAIL_LEGGINGS, LEATHER_LEGGINGS),
 +        FEET(NETHERITE_BOOTS, DIAMOND_BOOTS, GOLDEN_BOOTS, IRON_BOOTS, CHAINMAIL_BOOTS, LEATHER_BOOTS);
 +
-+        private final Set<Material> mutableTypes = new HashSet<>();
-+        private Set<Material> immutableTypes;
++        private final Set<Material> types;
 +
 +        SlotType(Material... types) {
-+            this.mutableTypes.addAll(Arrays.asList(types));
++            this.types = Set.of(types);
 +        }
 +
 +        /**
@@ -115,18 +107,14 @@ index 0000000000000000000000000000000000000000..57521010ff0574f1bbc96727948a6185
 +         */
 +        @NotNull
 +        public Set<Material> getTypes() {
-+            if (immutableTypes == null) {
-+                immutableTypes = Collections.unmodifiableSet(mutableTypes);
-+            }
-+
-+            return immutableTypes;
++            return this.types;
 +        }
 +
 +        /**
 +         * Gets the type of slot via the specified material
 +         *
 +         * @param material material to get slot by
-+         * @return slot type the material will go in, or null if it won't
++         * @return slot type the material will go in, or {@code null} if it won't
 +         */
 +        @Nullable
 +        public static SlotType getByMaterial(@NotNull Material material) {

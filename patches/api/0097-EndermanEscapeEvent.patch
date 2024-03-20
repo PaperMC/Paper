@@ -9,23 +9,27 @@ You may cancel this, enabling ranged attacks to damage the enderman for example.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EndermanEscapeEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EndermanEscapeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..806112a8b5a7ce31166675f5b074ceaf42e364b6
+index 0000000000000000000000000000000000000000..f6be848c44d5efaca3fbc03c3be7451411943c24
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/EndermanEscapeEvent.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,86 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.bukkit.entity.Enderman;
-+import org.bukkit.entity.Entity;
 +import org.bukkit.event.Cancellable;
-+import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +public class EndermanEscapeEvent extends EntityEvent implements Cancellable {
-+    @NotNull private final Reason reason;
 +
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull private final Reason reason;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public EndermanEscapeEvent(@NotNull Enderman entity, @NotNull Reason reason) {
 +        super(entity);
 +        this.reason = reason;
@@ -42,39 +46,34 @@ index 0000000000000000000000000000000000000000..806112a8b5a7ce31166675f5b074ceaf
 +     */
 +    @NotNull
 +    public Reason getReason() {
-+        return reason;
++        return this.reason;
 +    }
-+
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    @NotNull
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    private boolean cancelled = false;
 +
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    /**
 +     * Cancels the escape.
-+     *
++     * <p>
 +     * If this escape normally would of resulted in damage avoidance such as indirect,
 +     * the enderman will now take damage.
-+     *
-+     * @param cancel true if you wish to cancel this event
 +     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +
 +    public enum Reason {
@@ -95,7 +94,7 @@ index 0000000000000000000000000000000000000000..806112a8b5a7ce31166675f5b074ceaf
 +         */
 +        STARE,
 +        /**
-+         * Specific case for CRITICAL_HIT where the enderman is taking rain damage
++         * Specific case for {@link #CRITICAL_HIT} where the enderman is taking rain damage
 +         */
 +        DROWN
 +    }

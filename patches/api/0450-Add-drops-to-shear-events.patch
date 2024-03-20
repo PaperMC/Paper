@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 18 May 2021 12:31:54 -0700
+Subject: [PATCH] Add drops to shear events
+
+
+diff --git a/src/main/java/org/bukkit/event/block/BlockShearEntityEvent.java b/src/main/java/org/bukkit/event/block/BlockShearEntityEvent.java
+index 71c0af9373069cfaa074e1fbad592eab81025b1c..610768bd329b8612627d361fd9a773a7b91ff108 100644
+--- a/src/main/java/org/bukkit/event/block/BlockShearEntityEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockShearEntityEvent.java
+@@ -17,11 +17,14 @@ public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
+     private final Entity sheared;
+     private final ItemStack tool;
+     private boolean cancelled;
++    private java.util.List<ItemStack> drops; // Paper
+ 
+-    public BlockShearEntityEvent(@NotNull Block dispenser, @NotNull Entity sheared, @NotNull ItemStack tool) {
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper
++    public BlockShearEntityEvent(@NotNull Block dispenser, @NotNull Entity sheared, @NotNull ItemStack tool, final @NotNull java.util.List<ItemStack> drops) { // Paper - custom shear drops
+         super(dispenser);
+         this.sheared = sheared;
+         this.tool = tool;
++        this.drops = drops; // Paper
+     }
+ 
+     /**
+@@ -64,4 +67,24 @@ public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
+     public static HandlerList getHandlerList() {
+         return handlers;
+     }
++    // Paper start - custom shear drops
++    /**
++     * Get an immutable list of drops for this shearing.
++     *
++     * @return the shearing drops
++     * @see #setDrops(java.util.List)
++     */
++    public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<ItemStack> getDrops() {
++        return java.util.Collections.unmodifiableList(this.drops);
++    }
++
++    /**
++     * Sets the drops for the shearing.
++     *
++     * @param drops the shear drops
++     */
++    public void setDrops(final java.util.@NotNull List<org.bukkit.inventory.ItemStack> drops) {
++        this.drops = java.util.List.copyOf(drops);
++    }
++    // Paper end - custom shear drops
+ }
+diff --git a/src/main/java/org/bukkit/event/player/PlayerShearEntityEvent.java b/src/main/java/org/bukkit/event/player/PlayerShearEntityEvent.java
+index 04b3dce008edefb045162d0f69f87462ea1f3534..63f6799c2543ba67ce9fe6484002062d7a754fd0 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerShearEntityEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerShearEntityEvent.java
+@@ -18,17 +18,20 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
+     private final Entity what;
+     private final ItemStack item;
+     private final EquipmentSlot hand;
++    private java.util.List<ItemStack> drops; // Paper - custom shear drops
+ 
+-    public PlayerShearEntityEvent(@NotNull Player who, @NotNull Entity what, @NotNull ItemStack item, @NotNull EquipmentSlot hand) {
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper
++    public PlayerShearEntityEvent(@NotNull Player who, @NotNull Entity what, @NotNull ItemStack item, @NotNull EquipmentSlot hand, final java.util.@NotNull List<ItemStack> drops) { // Paper - custom shear drops
+         super(who);
+         this.what = what;
+         this.item = item;
+         this.hand = hand;
++        this.drops = drops; // Paper - custom shear drops
+     }
+ 
+     @Deprecated
+     public PlayerShearEntityEvent(@NotNull final Player who, @NotNull final Entity what) {
+-        this(who, what, new ItemStack(Material.SHEARS), EquipmentSlot.HAND);
++        this(who, what, new ItemStack(Material.SHEARS), EquipmentSlot.HAND, java.util.Collections.emptyList()); // Paper - custom shear drops
+     }
+ 
+     @Override
+@@ -82,4 +85,24 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
+         return handlers;
+     }
+ 
++    // Paper start - custom shear drops
++    /**
++     * Get an immutable list of drops for this shearing.
++     *
++     * @return the shearing drops
++     * @see #setDrops(java.util.List)
++     */
++    public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<ItemStack> getDrops() {
++        return this.drops;
++    }
++
++    /**
++     * Sets the drops for the shearing.
++     *
++     * @param drops the shear drops
++     */
++    public void setDrops(final java.util.@NotNull List<org.bukkit.inventory.ItemStack> drops) {
++        this.drops = java.util.List.copyOf(drops);
++    }
++    // Paper end - custom shear drops
+ }

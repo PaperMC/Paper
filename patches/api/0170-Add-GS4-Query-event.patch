@@ -6,16 +6,18 @@ Subject: [PATCH] Add GS4 Query event
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/GS4QueryEvent.java b/src/main/java/com/destroystokyo/paper/event/server/GS4QueryEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda0f42df5b
+index 0000000000000000000000000000000000000000..8edc33bde29e967cec488d0f5e2f1097291978a6
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/server/GS4QueryEvent.java
-@@ -0,0 +1,412 @@
+@@ -0,0 +1,424 @@
 +package com.destroystokyo.paper.event.server;
 +
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.ImmutableList;
++import org.bukkit.Server;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.net.InetAddress;
@@ -25,79 +27,76 @@ index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda
 +import java.util.List;
 +
 +/**
-+ * This event is fired if server is getting queried over GS4 Query protocol
-+ *
++ * This event is fired if server is getting queried over GS4 Query protocol.
++ * <br>
 + * Adapted from Velocity's ProxyQueryEvent
 + *
 + * @author Mark Vainomaa
 + */
 +public final class GS4QueryEvent extends Event {
-+    private static final HandlerList handlers = new HandlerList();
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    private final QueryType queryType;
 +    private final InetAddress querierAddress;
 +    private QueryResponse response;
 +
++    @ApiStatus.Internal
 +    public GS4QueryEvent(@NotNull QueryType queryType, @NotNull InetAddress querierAddress, @NotNull QueryResponse response) {
 +        super(true); // should always be called async
-+        this.queryType = Preconditions.checkNotNull(queryType, "queryType");
-+        this.querierAddress = Preconditions.checkNotNull(querierAddress, "querierAddress");
-+        this.response = Preconditions.checkNotNull(response, "response");
++        this.queryType = queryType;
++        this.querierAddress = querierAddress;
++        this.response = response;
 +    }
 +
 +    /**
 +     * Get query type
++     *
 +     * @return query type
 +     */
 +    @NotNull
 +    public QueryType getQueryType() {
-+        return queryType;
++        return this.queryType;
 +    }
 +
 +    /**
 +     * Get querier address
++     *
 +     * @return querier address
 +     */
 +    @NotNull
 +    public InetAddress getQuerierAddress() {
-+        return querierAddress;
++        return this.querierAddress;
 +    }
 +
 +    /**
 +     * Get query response
++     *
 +     * @return query response
 +     */
 +    @NotNull
 +    public QueryResponse getResponse() {
-+        return response;
++        return this.response;
 +    }
 +
 +    /**
 +     * Set query response
++     *
 +     * @param response query response
 +     */
 +    public void setResponse(@NotNull QueryResponse response) {
 +        this.response = Preconditions.checkNotNull(response, "response");
 +    }
 +
-+    @Override
-+    public String toString() {
-+        return "GS4QueryEvent{" +
-+            "queryType=" + queryType +
-+            ", querierAddress=" + querierAddress +
-+            ", response=" + response +
-+            '}';
-+    }
-+
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    /**
@@ -114,10 +113,10 @@ index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda
 +         * Full query asks pretty much everything present on this event (only hardcoded values cannot be modified here).
 +         */
 +        FULL
-+        ;
 +    }
 +
 +    public final static class QueryResponse {
++
 +        private final String motd;
 +        private final String gameVersion;
 +        private final String map;
@@ -143,95 +142,105 @@ index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda
 +        }
 +
 +        /**
-+         * Get motd which will be used to reply to the query. By default it is {@link org.bukkit.Server#getMotd()}.
++         * Get motd which will be used to reply to the query. By default it is {@link Server#getMotd()}.
++         *
 +         * @return motd
 +         */
 +        @NotNull
 +        public String getMotd() {
-+            return motd;
++            return this.motd;
 +        }
 +
 +        /**
 +         * Get game version which will be used to reply to the query. By default supported Minecraft versions range is sent.
++         *
 +         * @return game version
 +         */
 +        @NotNull
 +        public String getGameVersion() {
-+            return gameVersion;
++            return this.gameVersion;
 +        }
 +
 +        /**
 +         * Get map name which will be used to reply to the query. By default {@code world} is sent.
++         *
 +         * @return map name
 +         */
 +        @NotNull
 +        public String getMap() {
-+            return map;
++            return this.map;
 +        }
 +
 +        /**
 +         * Get current online player count which will be used to reply to the query.
++         *
 +         * @return online player count
 +         */
 +        public int getCurrentPlayers() {
-+            return currentPlayers;
++            return this.currentPlayers;
 +        }
 +
 +        /**
 +         * Get max player count which will be used to reply to the query.
++         *
 +         * @return max player count
 +         */
 +        public int getMaxPlayers() {
-+            return maxPlayers;
++            return this.maxPlayers;
 +        }
 +
 +        /**
-+         * Get server (public facing) hostname
++         * Get server (public facing) hostname.
++         *
 +         * @return server hostname
 +         */
 +        @NotNull
 +        public String getHostname() {
-+            return hostname;
++            return this.hostname;
 +        }
 +
 +        /**
-+         * Get server (public facing) port
++         * Get server (public facing) port.
++         *
 +         * @return server port
 +         */
 +        public int getPort() {
-+            return port;
++            return this.port;
 +        }
 +
 +        /**
 +         * Get collection of players which will be used to reply to the query.
++         *
 +         * @return collection of players
 +         */
 +        @NotNull
 +        public Collection<String> getPlayers() {
-+            return players;
++            return this.players;
 +        }
 +
 +        /**
 +         * Get server software (name and version) which will be used to reply to the query.
++         *
 +         * @return server software
 +         */
 +        @NotNull
 +        public String getServerVersion() {
-+            return serverVersion;
++            return this.serverVersion;
 +        }
 +
 +        /**
 +         * Get list of plugins which will be used to reply to the query.
++         *
 +         * @return collection of plugins
 +         */
 +        @NotNull
 +        public Collection<PluginInformation> getPlugins() {
-+            return plugins;
++            return this.plugins;
 +        }
 +
-+
 +        /**
-+         * Creates a new {@link Builder} instance from data represented by this response
++         * Creates a new {@link Builder} instance from data represented by this response.
++         *
 +         * @return {@link QueryResponse} builder
 +         */
 +        @NotNull
@@ -250,7 +259,8 @@ index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda
 +        }
 +
 +        /**
-+         * Creates a new {@link Builder} instance
++         * Creates a new {@link Builder} instance.
++         *
 +         * @return {@link QueryResponse} builder
 +         */
 +        @NotNull
@@ -272,8 +282,8 @@ index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda
 +            private int maxPlayers;
 +            private int port;
 +
-+            private List<String> players = new ArrayList<>();
-+            private List<PluginInformation> plugins = new ArrayList<>();
++            private final List<String> players = new ArrayList<>();
++            private final List<PluginInformation> plugins = new ArrayList<>();
 +
 +            private Builder() {}
 +
@@ -365,7 +375,8 @@ index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda
 +            }
 +
 +            /**
-+             * Builds new {@link QueryResponse} with supplied data
++             * Builds new {@link QueryResponse} with supplied data.
++             *
 +             * @return response
 +             */
 +            @NotNull
@@ -389,6 +400,7 @@ index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda
 +         * Plugin information
 +         */
 +        public static class PluginInformation {
++
 +            private String name;
 +            private String version;
 +
@@ -399,7 +411,7 @@ index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda
 +
 +            @NotNull
 +            public String getName() {
-+                return name;
++                return this.name;
 +            }
 +
 +            public void setName(@NotNull String name) {
@@ -412,7 +424,7 @@ index 0000000000000000000000000000000000000000..77a19995f6792a182c5a43d6714e7bda
 +
 +            @NotNull
 +            public String getVersion() {
-+                return version;
++                return this.version;
 +            }
 +
 +            @NotNull

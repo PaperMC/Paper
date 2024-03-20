@@ -6,24 +6,29 @@ Subject: [PATCH] Add TNTPrimeEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/block/TNTPrimeEvent.java b/src/main/java/com/destroystokyo/paper/event/block/TNTPrimeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9d7221583454dc922b20af6c233897c0b2ec47da
+index 0000000000000000000000000000000000000000..d8de7332b63feb16c855bf7ea1986fd229489c7c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/block/TNTPrimeEvent.java
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,125 @@
 +package com.destroystokyo.paper.event.block;
 +
++import org.bukkit.Material;
 +import org.bukkit.block.Block;
++import org.bukkit.enchantments.Enchantment;
 +import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.bukkit.entity.TNTPrimed;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.block.BlockEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
-+ * Called when TNT block is about to turn into {@link org.bukkit.entity.TNTPrimed}
++ * Called when TNT block is about to turn into {@link TNTPrimed}
 + * <p>
-+ * Cancelling it won't turn TNT into {@link org.bukkit.entity.TNTPrimed} and leaves
++ * Cancelling it won't turn TNT into {@link TNTPrimed} and leaves
 + * the TNT block as-is
 + *
 + * @author Mark Vainomaa
@@ -31,11 +36,15 @@ index 0000000000000000000000000000000000000000..9d7221583454dc922b20af6c233897c0
 + */
 +@Deprecated(forRemoval = true)
 +public class TNTPrimeEvent extends BlockEvent implements Cancellable {
-+    private static final HandlerList handlers = new HandlerList();
-+    private boolean cancelled;
-+    @NotNull private PrimeReason reason;
-+    @Nullable private Entity primerEntity;
 +
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull private final PrimeReason reason;
++    @Nullable private final Entity primerEntity;
++
++    private boolean cancelled;
++
++    @ApiStatus.Internal
 +    public TNTPrimeEvent(@NotNull Block theBlock, @NotNull PrimeReason reason, @Nullable Entity primerEntity) {
 +        super(theBlock);
 +        this.reason = reason;
@@ -54,10 +63,10 @@ index 0000000000000000000000000000000000000000..9d7221583454dc922b20af6c233897c0
 +
 +    /**
 +     * Gets the TNT primer {@link Entity}.
-+     *
-+     * It's null if {@link #getReason()} is {@link PrimeReason#REDSTONE} or {@link PrimeReason#FIRE}.
-+     * It's not null if {@link #getReason()} is {@link PrimeReason#ITEM} or {@link PrimeReason#PROJECTILE}
-+     * It might be null if {@link #getReason()} is {@link PrimeReason#EXPLOSION}
++     * <p>
++     * It's {@code null} if {@link #getReason()} is {@link PrimeReason#REDSTONE} or {@link PrimeReason#FIRE}.
++     * It's not {@code null} if {@link #getReason()} is {@link PrimeReason#ITEM} or {@link PrimeReason#PROJECTILE}
++     * It might be {@code null} if {@link #getReason()} is {@link PrimeReason#EXPLOSION}
 +     *
 +     * @return The {@link Entity} who primed the TNT
 +     */
@@ -67,9 +76,9 @@ index 0000000000000000000000000000000000000000..9d7221583454dc922b20af6c233897c0
 +    }
 +
 +    /**
-+     * Gets whether spawning {@link org.bukkit.entity.TNTPrimed} should be cancelled or not
++     * Gets whether spawning {@link TNTPrimed} should be cancelled or not
 +     *
-+     * @return Whether spawning {@link org.bukkit.entity.TNTPrimed} should be cancelled or not
++     * @return Whether spawning {@link TNTPrimed} should be cancelled or not
 +     */
 +    @Override
 +    public boolean isCancelled() {
@@ -77,24 +86,24 @@ index 0000000000000000000000000000000000000000..9d7221583454dc922b20af6c233897c0
 +    }
 +
 +    /**
-+     * Sets whether to cancel spawning {@link org.bukkit.entity.TNTPrimed} or not
++     * Sets whether to cancel spawning {@link TNTPrimed} or not
 +     *
-+     * @param cancel whether spawning {@link org.bukkit.entity.TNTPrimed} should be cancelled or not
++     * @param cancel whether spawning {@link TNTPrimed} should be cancelled or not
 +     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
 +        this.cancelled = cancel;
 +    }
 +
-+    @Nullable
++    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
-+    @Nullable
++    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    public enum PrimeReason {
@@ -109,14 +118,14 @@ index 0000000000000000000000000000000000000000..9d7221583454dc922b20af6c233897c0
 +        FIRE,
 +
 +        /**
-+         * When {@link org.bukkit.entity.Player} used {@link org.bukkit.Material#FLINT_AND_STEEL} or
-+         * {@link org.bukkit.Material#FIRE_CHARGE} on given TNT block
++         * When {@link Player} used {@link Material#FLINT_AND_STEEL} or
++         * {@link Material#FIRE_CHARGE} on given TNT block
 +         */
 +        ITEM,
 +
 +        /**
 +         * When TNT prime was caused by an {@link Entity} shooting TNT
-+         * using a bow with {@link org.bukkit.enchantments.Enchantment#ARROW_FIRE} enchantment
++         * using a bow with {@link Enchantment#ARROW_FIRE} enchantment
 +         */
 +        PROJECTILE,
 +

@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Thu, 14 Oct 2021 12:09:39 -0500
+Subject: [PATCH] Add ItemFactory#getSpawnEgg API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+index 12f90520e4d6d5fcea0c2f8e19dad9102970cd99..ef0c6e04a89704688f7b5461b27c0036abbf647d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+@@ -564,4 +564,19 @@ public final class CraftItemFactory implements ItemFactory {
+             new net.md_5.bungee.api.chat.TextComponent(customName));
+     }
+     // Paper end - bungee hover events
++
++    // Paper start - old getSpawnEgg API
++    // @Override // used to override, upstream added conflicting method, is called via Commodore now
++    @Deprecated
++    public ItemStack getSpawnEgg0(org.bukkit.entity.EntityType type) {
++        if (type == null) {
++            return null;
++        }
++        String typeId = type.getKey().toString();
++        net.minecraft.resources.ResourceLocation typeKey = new net.minecraft.resources.ResourceLocation(typeId);
++        net.minecraft.world.entity.EntityType<?> nmsType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(typeKey);
++        net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
++        return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();
++    }
++    // Paper end - old getSpawnEgg API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index 6d6a7abe1aa39a2e4ecf3ac5f55b1f227e1a9db9..010014c06fcea7d603160928f124f54d6e5e63d8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -396,6 +396,15 @@ public class Commodore {
+                         }
+                         // Paper end
+ 
++                        // Paper start - ItemFactory#getSpawnEgg (paper had original method that returned ItemStack, upstream added identical but returned Material)
++                        if (owner.equals("org/bukkit/inventory/ItemFactory") && name.equals("getSpawnEgg") && desc.equals("(Lorg/bukkit/entity/EntityType;)Lorg/bukkit/inventory/ItemStack;")) {
++                            super.visitInsn(Opcodes.SWAP); // has 1 param, this moves the owner instance to the top for the checkcast
++                            super.visitTypeInsn(Opcodes.CHECKCAST, CB_PACKAGE + "/inventory/CraftItemFactory");
++                            super.visitInsn(Opcodes.SWAP); // moves param back to the the top of stack
++                            super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, CB_PACKAGE + "/inventory/CraftItemFactory", "getSpawnEgg0", desc, false);
++                            return;
++                        }
++                        // Paper end - ItemFactory#getSpawnEgg
+                         if (modern) {
+                             if (owner.equals("org/bukkit/Material") || (instantiatedMethodType != null && instantiatedMethodType.getDescriptor().startsWith("(Lorg/bukkit/Material;)"))) {
+                                 switch (name) {

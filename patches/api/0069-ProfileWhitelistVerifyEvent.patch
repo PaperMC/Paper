@@ -9,10 +9,10 @@ Allows you to do dynamic whitelisting and change of kick message
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c6f5e2b5459368ad1e4db9929ca14568a25793fa
+index 0000000000000000000000000000000000000000..52959c2d19c5b73ccd85afce6b2ab8133478f7c6
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,147 @@
 +/*
 + * Copyright (c) 2017 - Daniel Ennis (Aikar) - MIT License
 + *
@@ -43,28 +43,33 @@ index 0000000000000000000000000000000000000000..c6f5e2b5459368ad1e4db9929ca14568
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Fires when the server needs to verify if a player is whitelisted.
-+ *
++ * <p>
 + * Plugins may override/control the servers whitelist with this event,
 + * and dynamically change the kick message.
 + */
 +public class ProfileWhitelistVerifyEvent extends Event {
-+    private static final HandlerList handlers = new HandlerList();
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    @NotNull private final PlayerProfile profile;
 +    private final boolean whitelistEnabled;
-+    private boolean whitelisted;
 +    private final boolean isOp;
++    private boolean whitelisted;
 +    @Nullable private Component kickMessage;
 +
 +    @Deprecated
++    @ApiStatus.Internal
 +    public ProfileWhitelistVerifyEvent(@NotNull final PlayerProfile profile, boolean whitelistEnabled, boolean whitelisted, boolean isOp, @Nullable String kickMessage) {
 +        this(profile, whitelistEnabled, whitelisted, isOp, kickMessage == null ? null : LegacyComponentSerializer.legacySection().deserialize(kickMessage));
 +    }
 +
++    @ApiStatus.Internal
 +    public ProfileWhitelistVerifyEvent(@NotNull final PlayerProfile profile, boolean whitelistEnabled, boolean whitelisted, boolean isOp, @Nullable Component kickMessage) {
 +        this.profile = profile;
 +        this.whitelistEnabled = whitelistEnabled;
@@ -80,11 +85,11 @@ index 0000000000000000000000000000000000000000..c6f5e2b5459368ad1e4db9929ca14568
 +    @Deprecated
 +    @Nullable
 +    public String getKickMessage() {
-+        return this.kickMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(kickMessage);
++        return this.kickMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(this.kickMessage);
 +    }
 +
 +    /**
-+     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to null to use the server configured default
++     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to {@code null} to use the server configured default
 +     * @deprecated Use {@link #kickMessage(Component)}
 +     */
 +    @Deprecated
@@ -101,7 +106,7 @@ index 0000000000000000000000000000000000000000..c6f5e2b5459368ad1e4db9929ca14568
 +    }
 +
 +    /**
-+     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to null to use the server configured default
++     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to {@code null} to use the server configured default
 +     */
 +    public void kickMessage(@Nullable Component kickMessage) {
 +        this.kickMessage = kickMessage;
@@ -112,18 +117,18 @@ index 0000000000000000000000000000000000000000..c6f5e2b5459368ad1e4db9929ca14568
 +     */
 +    @NotNull
 +    public PlayerProfile getPlayerProfile() {
-+        return profile;
++        return this.profile;
 +    }
 +
 +    /**
 +     * @return Whether the player is whitelisted to play on this server (whitelist may be off is why its true)
 +     */
 +    public boolean isWhitelisted() {
-+        return whitelisted;
++        return this.whitelisted;
 +    }
 +
 +    /**
-+     * Changes the players whitelisted state. false will deny the login
++     * Changes the players whitelisted state. {@code false} will deny the login
 +     * @param whitelisted The new whitelisted state
 +     */
 +    public void setWhitelisted(boolean whitelisted) {
@@ -134,24 +139,24 @@ index 0000000000000000000000000000000000000000..c6f5e2b5459368ad1e4db9929ca14568
 +     * @return if the player obtained whitelist status by having op
 +     */
 +    public boolean isOp() {
-+        return isOp;
++        return this.isOp;
 +    }
 +
 +    /**
 +     * @return if the server even has whitelist on
 +     */
 +    public boolean isWhitelistEnabled() {
-+        return whitelistEnabled;
++        return this.whitelistEnabled;
 +    }
 +
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}

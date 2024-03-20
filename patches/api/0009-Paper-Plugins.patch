@@ -5,19 +5,19 @@ Subject: [PATCH] Paper Plugins
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 0c6e0bb90fe5ea29c467323a179a47ec122ba0f6..145f6209a984e74da2d2de03cf725c06c77ef8da 100644
+index af6c528ccc4356f5bba3ce0b9bf6de237d77376e..f9ff7e3692d448e2a1e38d0aa26c2d934442e247 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -48,7 +48,7 @@ dependencies {
-     implementation("org.ow2.asm:asm-commons:9.4")
+@@ -52,7 +52,7 @@ dependencies {
+     implementation("org.ow2.asm:asm-commons:9.5")
      // Paper end
  
--    compileOnly("org.apache.maven:maven-resolver-provider:3.8.5")
-+    api("org.apache.maven:maven-resolver-provider:3.8.5")
-     compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
-     compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
-     compileOnly("com.google.code.findbugs:jsr305:1.3.9") // Paper
-@@ -135,6 +135,7 @@ tasks.withType<Javadoc> {
+-    compileOnly("org.apache.maven:maven-resolver-provider:3.9.6")
++    api("org.apache.maven:maven-resolver-provider:3.9.6") // Paper - make API dependency for Paper Plugins
+     compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
+     compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
+ 
+@@ -138,6 +138,7 @@ tasks.withType<Javadoc> {
          "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
          "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
          // Paper end
@@ -329,7 +329,7 @@ index 0000000000000000000000000000000000000000..2c14693155de3654d5ca011c63e13e4a
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java b/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef393f1f93ca48264fc1b6e3a27787f6a9152e1b
+index 0000000000000000000000000000000000000000..bcf91d048d84144f6acf9bfd2095df9ada2e585f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java
 @@ -0,0 +1,203 @@
@@ -403,7 +403,7 @@ index 0000000000000000000000000000000000000000..ef393f1f93ca48264fc1b6e3a27787f6
 +    /**
 +     * Provides the version of this plugin as defined by the plugin.
 +     * There is no inherit format defined/enforced for the version of a plugin, however a common approach
-+     * might be schematic versioning.
++     * might be semantic versioning.
 +     *
 +     * @return the string representation of the plugin's version
 +     */
@@ -762,10 +762,10 @@ index 0000000000000000000000000000000000000000..e3da0d67cab01e1233dccde1a12ff259
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/library/impl/MavenLibraryResolver.java b/src/main/java/io/papermc/paper/plugin/loader/library/impl/MavenLibraryResolver.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9af07d168beadaa77e4965819200eeb94fe3e092
+index 0000000000000000000000000000000000000000..70f352630de71f575d1aea5a3126da19a94791ab
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/loader/library/impl/MavenLibraryResolver.java
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,133 @@
 +package io.papermc.paper.plugin.loader.library.impl;
 +
 +import io.papermc.paper.plugin.loader.library.ClassPathLibrary;
@@ -841,6 +841,7 @@ index 0000000000000000000000000000000000000000..9af07d168beadaa77e4965819200eeb9
 +        this.repository = locator.getService(RepositorySystem.class);
 +        this.session = MavenRepositorySystemUtils.newSession();
 +
++        this.session.setSystemProperties(System.getProperties());
 +        this.session.setChecksumPolicy(RepositoryPolicy.CHECKSUM_POLICY_FAIL);
 +        this.session.setLocalRepositoryManager(this.repository.newLocalRepositoryManager(this.session, new LocalRepository("libraries")));
 +        this.session.setTransferListener(new AbstractTransferListener() {
@@ -1346,14 +1347,13 @@ index 0000000000000000000000000000000000000000..6bf3d212a6156ad9ab0e82d1ca0a04f8
 +
 +}
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index a3ee6f2f588bc9c87e49378359f450820b9af1b9..0743592273cc1c5f4ab6935349941bf25b438448 100644
+index 0f902aec66ec550f80709f7f314ca90d374ebb53..20efbec3eabb21806a532422130f7904d2c0967e 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -109,4 +109,14 @@ public interface UnsafeValues {
-      * @return an internal potion data
-      */
-     PotionType.InternalPotionData getInternalPotionData(NamespacedKey key);
-+
+@@ -127,4 +127,13 @@ public interface UnsafeValues {
+     @ApiStatus.Internal
+     @NotNull
+     DamageSource.Builder createDamageSourceBuilder(@NotNull DamageType damageType);
 +    // Paper start
 +    @Deprecated(forRemoval = true)
 +    boolean isSupportedApiVersion(String apiVersion);
@@ -2054,7 +2054,7 @@ index 047c0304fd617cec990f80815b43916c6ef5a94c..ab04ffe4cd05315a2ee0f64c553b4c67
              throw ex;
          } catch (Throwable ex) {
 diff --git a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
-index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..e4b6f278a811acbb0070e311c5c3bdaff7b00474 100644
+index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..653135352c104a6ddeb74a1b6d4916c6952d6271 100644
 --- a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
 @@ -36,7 +36,10 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
@@ -2069,7 +2069,15 @@ index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..e4b6f278a811acbb0070e311c5c3bdaf
  {
  
      private final Logger logger;
-@@ -79,7 +82,7 @@ class LibraryLoader
+@@ -55,6 +58,7 @@ class LibraryLoader
+         this.repository = locator.getService( RepositorySystem.class );
+         this.session = MavenRepositorySystemUtils.newSession();
+ 
++        session.setSystemProperties(System.getProperties()); // Paper - paper plugins, backport system properties fix for transitive dependency parsing, see #10116
+         session.setChecksumPolicy( RepositoryPolicy.CHECKSUM_POLICY_FAIL );
+         session.setLocalRepositoryManager( repository.newLocalRepositoryManager( session, new LocalRepository( "libraries" ) ) );
+         session.setTransferListener( new AbstractTransferListener()
+@@ -79,7 +83,7 @@ class LibraryLoader
          }
          logger.log( Level.INFO, "[{0}] Loading {1} libraries... please wait", new Object[]
          {
@@ -2078,7 +2086,7 @@ index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..e4b6f278a811acbb0070e311c5c3bdaf
          } );
  
          List<Dependency> dependencies = new ArrayList<>();
-@@ -117,7 +120,7 @@ class LibraryLoader
+@@ -117,7 +121,7 @@ class LibraryLoader
              jarFiles.add( url );
              logger.log( Level.INFO, "[{0}] Loaded library {1}", new Object[]
              {
@@ -2088,7 +2096,7 @@ index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..e4b6f278a811acbb0070e311c5c3bdaf
          }
  
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 64a294aeb6fb548794708b38c3707f9dd882b2ff..74b6581a97a092c44a0876e7981ff8a8e6153100 100644
+index 64a294aeb6fb548794708b38c3707f9dd882b2ff..58d20eff7e0da2d7fcb1609d55e4284715355634 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -31,7 +31,8 @@ import org.jetbrains.annotations.Nullable;
@@ -2115,7 +2123,7 @@ index 64a294aeb6fb548794708b38c3707f9dd882b2ff..74b6581a97a092c44a0876e7981ff8a8
  
 -    PluginClassLoader(@NotNull final JavaPluginLoader loader, @Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader) throws IOException, InvalidPluginException, MalformedURLException {
 +    @org.jetbrains.annotations.ApiStatus.Internal // Paper
-+    public PluginClassLoader(@Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader, JarFile jarFile, io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext) throws IOException, InvalidPluginException, MalformedURLException { // Paper // Paper - use JarFile provided by SpigotPluginProvider
++    public PluginClassLoader(@Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader, JarFile jarFile, io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext) throws IOException, InvalidPluginException, MalformedURLException { // Paper - use JarFile provided by SpigotPluginProvider
          super(new URL[] {file.toURI().toURL()}, parent);
 -        Preconditions.checkArgument(loader != null, "Loader cannot be null");
 +        this.loader = null; // Paper - pass null into loader field

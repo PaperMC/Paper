@@ -17,10 +17,10 @@ Subject: [PATCH] CB fixes
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 64522a15ecb73087222b33ffb13e29ac048b62a7..82c9886222d49bd03b642c0d9c07d82d1d27896b 100644
+index aac9513ff4d3d494860bd06607cf8af5e466fd5b..30fc222c384938fb4fdd4c6715295aeea57094bc 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -294,7 +294,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -296,7 +296,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
          long l = minecraftserver.getWorldData().worldGenOptions().seed();
  
@@ -30,18 +30,24 @@ index 64522a15ecb73087222b33ffb13e29ac048b62a7..82c9886222d49bd03b642c0d9c07d82d
          if ((this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
              this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-index 869f60e9407ed1c5bee536ef91a21f4d11f8f964..3aa98f7c282cb4884589cb83b1546b924e66f096 100644
+index b2f37e3caf305f7f2c19c59848717bf73bd2ef5d..87c8460324ff2d2a14e1404fcfa3adb2d336a089 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-@@ -445,9 +445,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
+@@ -462,15 +462,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
      }
  
      @Override
--    protected void actuallyHurt(DamageSource source, float amount) {
-+    protected boolean damageEntity0(DamageSource source, float amount) { // Paper - fix CB method rename issue
+-    // CraftBukkit start - void -> boolean
+-    protected boolean actuallyHurt(DamageSource damagesource, float f) {
+-        boolean hurt = super.actuallyHurt(damagesource, f);
+-        if (!hurt) {
+-            return hurt;
+-        }
+-        // CraftBukkit end
++    protected boolean actuallyHurt(DamageSource damagesource, float f) { // Paper - change return type to boolean
          this.standUpInstantly();
--        super.actuallyHurt(source, amount);
-+        return super.damageEntity0(source, amount); // Paper - fix CB method rename issue
+-        return hurt; // CraftBukkit
++        return super.actuallyHurt(damagesource, f); // Paper - change return type to boolean
      }
  
      @Override
@@ -68,10 +74,10 @@ index 161ad6ab1443b2ce33a2d7d91d189c855db0453b..15a9736a870055d639d03063c7cf67fd
          this.registryAccess = registryManager;
          this.structureTemplateManager = structureTemplateManager;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
-index 6ab2fd523b7f4e5cacef4ebb95f6812f391985d1..85133c388eff009ea1ffa391824b6556f7bf2014 100644
+index 809fdf2da78293391aa5c60c04f4ad652b152eec..955b0abd4019fc45df84719eee6bf413e59d941a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
-@@ -174,4 +174,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
+@@ -172,4 +172,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
          org.bukkit.loot.LootTable table = (org.bukkit.loot.LootTable) obj;
          return table.getKey().equals(this.getKey());
      }
@@ -84,26 +90,24 @@ index 6ab2fd523b7f4e5cacef4ebb95f6812f391985d1..85133c388eff009ea1ffa391824b6556
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index d1baf686c0a59584a4866490f4f4fe65b3ac6eed..3d2c168d29873c4418bc297740e7032d6020ff52 100644
+index cd39509d383c47319b71797e5d1df41c2b8c7ab6..2cc1871c81056acd0582184bb684e672d14d3b6f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2422,7 +2422,13 @@ public final class CraftServer implements Server {
+@@ -2466,7 +2466,11 @@ public final class CraftServer implements Server {
          Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
  
          LootDataManager registry = this.getServer().getLootData();
 -        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
 +        // Paper start - honor method contract
 +        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
-+        if (registry.getLootTable(lootTableKey) == net.minecraft.world.level.storage.loot.LootTable.EMPTY) {
-+            return null;
-+        }
-+        return new CraftLootTable(key, registry.getLootTable(lootTableKey));
++        final Optional<net.minecraft.world.level.storage.loot.LootTable> table = registry.getElementOptional(net.minecraft.world.level.storage.loot.LootDataType.TABLE, lootTableKey);
++        return table.map(lootTable -> new CraftLootTable(key, lootTable)).orElse(null);
 +        // Paper end
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 3523f8851472890c97e628e22df883b91ba603fe..b1a1caef59f3ea0fa68ca47040ad6fff9820cc5a 100644
+index 19725db76dc3a12356993aed7edba507b52fe4d7..c2e1376bb06442297bda806ed8dc92f10cbbdd9a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -122,6 +122,7 @@ public class Main {
@@ -114,6 +118,26 @@ index 3523f8851472890c97e628e22df883b91ba603fe..b1a1caef59f3ea0fa68ca47040ad6fff
                  this.acceptsAll(Main.asList("nogui"), "Disables the graphical console");
  
                  this.acceptsAll(Main.asList("nojline"), "Disables jline and emulates the vanilla console");
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index 905adf97c0d1f0d1c774a6835a5dffcfea884e58..c017ce2ca1bc535795c958a2e509af2adf88efa9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -26,6 +26,7 @@ import org.bukkit.scheduler.BukkitWorker;
+ 
+ /**
+  * The fundamental concepts for this implementation:
++ * <ul>
+  * <li>Main thread owns {@link #head} and {@link #currentTick}, but it may be read from any thread</li>
+  * <li>Main thread exclusively controls {@link #temp} and {@link #pending}.
+  *     They are never to be accessed outside of the main thread; alternatives exist to prevent locking.</li>
+@@ -41,6 +42,7 @@ import org.bukkit.scheduler.BukkitWorker;
+  * <li>Sync tasks are only to be removed from runners on the main thread when coupled with a removal from pending and temp.</li>
+  * <li>Most of the design in this scheduler relies on queuing special tasks to perform any data changes on the main thread.
+  *     When executed from inside a synchronous method, the scheduler will be updated before next execution by virtue of the frequent {@link #parsePending()} calls.</li>
++ * </ul>
+  */
+ public class CraftScheduler implements BukkitScheduler {
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java b/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java
 index 5ac25dab93fd4c9e9533c80d1ca3d93446d7a365..245ad120a36b6defca7e6889faae1ca5fc33d0c7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java

@@ -1,0 +1,114 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 12 Dec 2022 12:14:03 -0800
+Subject: [PATCH] Properly track the changed item from dispense events
+
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java b/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
+index 155bd3d6d9c7d3cac7fd04de8210301251d1e17a..bc2e763a848b4bf7e9598ffe1ca2aa35a9af4677 100644
+--- a/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
+@@ -23,7 +23,7 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
+         ServerLevel worldserver = pointer.level();
+         Position iposition = DispenserBlock.getDispensePosition(pointer);
+         Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
+-        Projectile iprojectile = this.getProjectile(worldserver, iposition, stack);
++        // Paper - move down
+ 
+         // CraftBukkit start
+         // iprojectile.shoot((double) enumdirection.getStepX(), (double) ((float) enumdirection.getStepY() + 0.1F), (double) enumdirection.getStepZ(), this.getPower(), this.getUncertainty());
+@@ -52,6 +52,7 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
+                 return stack;
+             }
+         }
++        Projectile iprojectile = this.getProjectile(worldserver, iposition, CraftItemStack.asNMSCopy(event.getItem())); // Paper - move from above and track changed items in the dispense event
+ 
+         iprojectile.shoot(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.getPower(), this.getUncertainty());
+         ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index 58eccc76fe4c24c364e6c634fcca60ab771a5792..e2e1273d787536d2fe1bdbbf8af36eb5ac220599 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -241,10 +241,14 @@ public interface DispenseItemBehavior {
+                         idispensebehavior.dispense(pointer, eventStack);
+                         return stack;
+                     }
++                    // Paper start - track changed items in the dispense event
++                    itemstack1 = CraftItemStack.unwrap(event.getItem()); // unwrap is safe because the stack won't be modified
++                    entitytypes = ((SpawnEggItem) itemstack1.getItem()).getType(itemstack1.getTag());
++                    // Paper end - track changed item from dispense event
+                 }
+ 
+                 try {
+-                    entitytypes.spawn(pointer.level(), stack, (Player) null, pointer.pos().relative(enumdirection), MobSpawnType.DISPENSER, enumdirection != Direction.UP, false);
++                    entitytypes.spawn(pointer.level(), itemstack1, (Player) null, pointer.pos().relative(enumdirection), MobSpawnType.DISPENSER, enumdirection != Direction.UP, false); // Paper - track changed item in dispense event
+                 } catch (Exception exception) {
+                     DispenseItemBehavior.LOGGER.error("Error while dispensing spawn egg from dispenser at {}", pointer.pos(), exception); // CraftBukkit - decompile error
+                     return ItemStack.EMPTY;
+@@ -299,10 +303,11 @@ public interface DispenseItemBehavior {
+                 }
+                 // CraftBukkit end
+ 
++                final ItemStack newStack = CraftItemStack.unwrap(event.getItem()); // Paper - use event itemstack (unwrap is fine here because the stack won't be modified)
+                 Consumer<ArmorStand> consumer = EntityType.appendDefaultStackConfig((entityarmorstand) -> {
+                     entityarmorstand.setYRot(enumdirection.toYRot());
+-                }, worldserver, stack, (Player) null);
+-                ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, stack.getTag(), consumer, blockposition, MobSpawnType.DISPENSER, false, false);
++                }, worldserver, newStack, (Player) null); // Paper - track changed items in the dispense event
++                ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, newStack.getTag(), consumer, blockposition, MobSpawnType.DISPENSER, false, false); // Paper - track changed items in the dispense event
+ 
+                 if (entityarmorstand != null) {
+                     if (shrink) stack.shrink(1); // Paper - actually handle here
+@@ -582,7 +587,7 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 SmallFireball entitysmallfireball = new SmallFireball(worldserver, d0, d1, d2, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
+-                entitysmallfireball.setItem(itemstack1);
++                entitysmallfireball.setItem(CraftItemStack.unwrap(event.getItem())); // Paper - track changed items in the dispense event (unwrap is save cause setItem already copies)
+                 entitysmallfireball.projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
+ 
+                 worldserver.addFreshEntity(entitysmallfireball);
+@@ -628,6 +633,7 @@ public interface DispenseItemBehavior {
+                 int y = blockposition.getY();
+                 int z = blockposition.getZ();
+                 BlockState iblockdata = worldserver.getBlockState(blockposition);
++                ItemStack dispensedItem = stack; // Paper - track changed item from the dispense event
+                 // Paper start - correctly check if the bucket place will succeed
+                 /* Taken from SolidBucketItem#emptyContents */
+                 boolean willEmptyContentsSolidBucketItem = dispensiblecontaineritem instanceof net.minecraft.world.item.SolidBucketItem && worldserver.isInWorldBounds(blockposition) && iblockdata.isAir();
+@@ -657,12 +663,15 @@ public interface DispenseItemBehavior {
+                         }
+                     }
+ 
+-                    dispensiblecontaineritem = (DispensibleContainerItem) CraftItemStack.asNMSCopy(event.getItem()).getItem();
++                    // Paper start - track changed item from dispense event
++                    dispensedItem = CraftItemStack.unwrap(event.getItem()); // unwrap is safe here as the stack isn't mutated
++                    dispensiblecontaineritem = (DispensibleContainerItem) dispensedItem.getItem();
++                    // Paper end - track changed item from dispense event
+                 }
+                 // CraftBukkit end
+ 
+                 if (dispensiblecontaineritem.emptyContents((Player) null, worldserver, blockposition, (BlockHitResult) null)) {
+-                    dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, stack, blockposition);
++                    dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, dispensedItem, blockposition); // Paper - track changed item from dispense event
+                     // CraftBukkit start - Handle stacked buckets
+                     Item item = Items.BUCKET;
+                     stack.shrink(1);
+diff --git a/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java b/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
+index 6f2adf2334e35e8a617a4ced0c1af2abf32bbd8d..cb308808906a8cdb127df8284e106e00553473ca 100644
+--- a/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
+@@ -57,7 +57,12 @@ public class ShulkerBoxDispenseBehavior extends OptionalDispenseItemBehavior {
+             // CraftBukkit end
+ 
+             try {
+-                this.setSuccess(((BlockItem) item).place(new DirectionalPlaceContext(pointer.level(), blockposition, enumdirection, stack, enumdirection1)).consumesAction());
++                // Paper start - track changed items in the dispense event
++                this.setSuccess(((BlockItem) item).place(new DirectionalPlaceContext(pointer.level(), blockposition, enumdirection, CraftItemStack.asNMSCopy(event.getItem()), enumdirection1)).consumesAction());
++                if (this.isSuccess()) {
++                    stack.shrink(1); // vanilla shrink is in the place function above, manually handle it here
++                }
++                // Paper end - track changed items in the dispense event
+             } catch (Exception exception) {
+                 ShulkerBoxDispenseBehavior.LOGGER.error("Error trying to place shulker box at {}", blockposition, exception);
+             }

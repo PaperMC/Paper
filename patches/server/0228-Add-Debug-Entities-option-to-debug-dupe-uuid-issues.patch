@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 21 Jul 2018 08:25:40 -0400
+Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 2a0e81a3ec0774ad98e2d74ac7672c167e28f38e..05b838f7008d5d031b18e161bbde7e72b8205b90 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1425,6 +1425,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 } else {
+                     ChunkMap.TrackedEntity playerchunkmap_entitytracker = new ChunkMap.TrackedEntity(entity, i, j, entitytypes.trackDeltas());
+ 
++                    entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
+                     this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
+                     playerchunkmap_entitytracker.updatePlayers(this.level.players());
+                     if (entity instanceof ServerPlayer) {
+@@ -1467,7 +1468,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         if (playerchunkmap_entitytracker1 != null) {
+             playerchunkmap_entitytracker1.broadcastRemoved();
+         }
+-
++        entity.tracker = null; // Paper - We're no longer tracked
+     }
+ 
+     protected void tick() {
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 113dce44ce086272fe7f20a2007efadee142ff85..0811a2e87192b46c39f54c26ce0e56fc6e9d87e5 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1197,6 +1197,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     // CraftBukkit start
+     private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
+         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
++        // Paper start - extra debug info
++        if (entity.valid) {
++            MinecraftServer.LOGGER.error("Attempted Double World add on {}", entity, new Throwable());
++            return true;
++        }
++        // Paper end - extra debug info
+         if (entity.isRemoved()) {
+             // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getKey(entity.getType())); // CraftBukkit
+             return false;
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index b718e5a1dd49dc855a1161106b53a1d6615e8b69..31ff851cc15216fb5855f829f3fc22c1d26ece21 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -242,6 +242,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
+     private CraftEntity bukkitEntity;
+ 
++    public @org.jetbrains.annotations.Nullable net.minecraft.server.level.ChunkMap.TrackedEntity tracker; // Paper
+     public CraftEntity getBukkitEntity() {
+         if (this.bukkitEntity == null) {
+             this.bukkitEntity = CraftEntity.getEntity(this.level.getCraftServer(), this);
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+index 21a2800db22f287b9c6a8290326fdf3b94ae94b1..2e561ac90a8c91ea13cfc18d09f8e0abbcff9385 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+@@ -34,6 +34,14 @@ public class EntityLookup<T extends EntityAccess> {
+         UUID uUID = entity.getUUID();
+         if (this.byUuid.containsKey(uUID)) {
+             LOGGER.warn("Duplicate entity UUID {}: {}", uUID, entity);
++            // Paper start - extra debug info
++            if (entity instanceof net.minecraft.world.entity.Entity) {
++                final T old = this.byUuid.get(entity.getUUID());
++                if (old instanceof net.minecraft.world.entity.Entity oldCast && oldCast.getId() != entity.getId() && oldCast.valid) {
++                    LOGGER.error("Overwrote an existing entity {} with {}", oldCast, entity);
++                }
++            }
++            // Paper end - extra debug info
+         } else {
+             this.byUuid.put(uUID, entity);
+             this.byId.put(entity.getId(), entity);
