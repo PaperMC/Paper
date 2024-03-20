@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 30 Aug 2021 15:29:45 -0700
+Subject: [PATCH] Specify more directories to search for datapacks
+
+
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 0a843e0afbcb1af8e2641515eb244b791b819b8c..cdaabba2e3ad8d7c30b8ea2ba8b45d80767c04b0 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -173,8 +173,18 @@ public class Main {
+             if (flag) {
+                 Main.LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
+             }
++            // Paper start - additional places to search for datapacks
++            java.util.List<RepositorySource> additionalDatapackFolders = ((java.util.List<File>) optionset.valuesOf("add-datapacks-folder")).stream()
++                .filter(File::exists)
++                .filter(File::isDirectory)
++                .map(f -> new FolderRepositorySource(f, PackSource.SERVER))
++                .collect(java.util.stream.Collectors.toList());
++            additionalDatapackFolders.add(0, new ServerPacksSource());
++            additionalDatapackFolders.add(1, new FolderRepositorySource(convertable_conversionsession.getLevelPath(LevelResource.DATAPACK_DIR).toFile(), PackSource.WORLD));
++            RepositorySource[] sources = additionalDatapackFolders.toArray(new RepositorySource[0]);
++            // Paper end
+ 
+-            PackRepository resourcepackrepository = new PackRepository(PackType.SERVER_DATA, new RepositorySource[]{new ServerPacksSource(), new FolderRepositorySource(convertable_conversionsession.getLevelPath(LevelResource.DATAPACK_DIR).toFile(), PackSource.WORLD)});
++            PackRepository resourcepackrepository = new PackRepository(PackType.SERVER_DATA, sources); // Paper
+             // CraftBukkit start
+             File bukkitDataPackFolder = new File(convertable_conversionsession.getLevelPath(LevelResource.DATAPACK_DIR).toFile(), "bukkit");
+             if (!bukkitDataPackFolder.exists()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index c55ae77807e0ec3698f0d0443caaf18928b41017..26b45c0739012f4f4e274aef4d9141f714fd83ea 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -156,6 +156,11 @@ public class Main {
+                         .ofType(File.class)
+                         .defaultsTo(new File[] {})
+                         .describedAs("Jar file");
++                acceptsAll(asList("add-datapacks-folder"), "Additional folder to look for datapacks in")
++                        .withRequiredArg()
++                        .ofType(File.class)
++                        .defaultsTo(new File[] {})
++                        .describedAs("Folder");
+                 // Paper end
+ 
+                 // Paper start
