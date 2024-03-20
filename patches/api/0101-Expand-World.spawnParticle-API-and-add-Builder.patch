@@ -34,7 +34,7 @@ index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f
 + *
 + * Usage of the builder is preferred over the super long {@link World#spawnParticle(Particle, Location, int, double, double, double, double, Object)} API
 + */
-+public class ParticleBuilder {
++public class ParticleBuilder implements Cloneable {
 +
 +    private Particle particle;
 +    private List<Player> receivers;
@@ -497,6 +497,100 @@ index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f
 +    @NotNull
 +    public ParticleBuilder color(int r, int g, int b) {
 +        return color(Color.fromRGB(r, g, b));
++    }
++
++    /**
++     * Sets the particle Color.
++     * Only valid for REDSTONE.
++     * @param rgb an integer representing the red, green, and blue color components
++     * @return a reference to this object.
++     */
++    @NotNull
++    public ParticleBuilder color(int rgb) {
++        return color(Color.fromRGB(rgb));
++    }
++
++    /**
++     * Sets the particle Color Transition. Only valid for DUST_COLOR_TRANSITION.
++     *
++     * @param fromColor the new particle from color
++     * @param toColor the new particle to color
++     * @return a reference to this object.
++     */
++    @NotNull
++    public ParticleBuilder colorTransition(@Nullable Color fromColor, @Nullable Color toColor) {
++        return colorTransition(fromColor, toColor, 1);
++    }
++
++    /**
++     * Sets the particle Color Transition and size. Only valid for DUST_COLOR_TRANSITION.
++     *
++     * @param fromColor the new particle color for the from color
++     * @param toColor the new particle color for the to color
++     * @param size the size of the particle
++     * @return a reference to this object.
++     */
++    @NotNull
++    public ParticleBuilder colorTransition(@Nullable Color fromColor, @Nullable Color toColor, float size) {
++        if (fromColor != null && toColor == null || fromColor == null && toColor != null) {
++            throw new IllegalStateException("Both colors must be either be provided or null");
++        }
++        if (particle != Particle.DUST_COLOR_TRANSITION && fromColor != null) {
++            throw new IllegalStateException("Color transition may only be set on DUST_COLOR_TRANSITION");
++        }
++
++        // We don't officially support reusing these objects, but here we go again
++        if (fromColor == null) {
++            if (data instanceof Particle.DustTransition) {
++                return data(null);
++            } else {
++                return this;
++            }
++        }
++
++        return data(new Particle.DustTransition(fromColor, toColor, size));
++    }
++
++    /**
++     * Sets the particle Color Transition.
++     * Only valid for DUST_COLOR_TRANSITION.
++     * @param r1 red color component for the from color
++     * @param g1 green color component for the from color
++     * @param b1 blue color component for the from color
++     * @param r2 red color component for the to color
++     * @param g2 green color component for the to color
++     * @param b2 blue color component for the to color
++     * @return a reference to this object.
++     */
++    @NotNull
++    public ParticleBuilder colorTransition(int r1, int g1, int b1, int r2, int g2, int b2) {
++        return colorTransition(Color.fromRGB(r1, g1, b1), Color.fromRGB(r2, g2, b2));
++    }
++
++    /**
++     * Sets the particle Color Transition.
++     * Only valid for DUST_COLOR_TRANSITION.
++     * @param fromRgb an integer representing the red, green, and blue color components for the from color
++     * @param toRgb an integer representing the red, green, and blue color components for the to color
++     * @return a reference to this object.
++     */
++    @NotNull
++    public ParticleBuilder colorTransition(int fromRgb, int toRgb) {
++        return colorTransition(Color.fromRGB(fromRgb), Color.fromRGB(toRgb));
++    }
++
++    @NotNull
++    @Override
++    public ParticleBuilder clone() {
++        try {
++            ParticleBuilder builder = (ParticleBuilder) super.clone();
++            if (this.location != null) {
++                builder.location = this.location.clone();
++            }
++            return builder;
++        } catch (CloneNotSupportedException e) {
++            throw new AssertionError();
++        }
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Particle.java b/src/main/java/org/bukkit/Particle.java
