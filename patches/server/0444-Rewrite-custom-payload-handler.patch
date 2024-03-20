@@ -1,0 +1,189 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LemonCaramel <admin@caramel.moe>
+Date: Mon, 23 Oct 2023 15:03:59 +0900
+Subject: [PATCH] Rewrite custom payload handler
+
+
+diff --git a/src/main/java/io/papermc/paper/network/payload/ChannelPayload.java b/src/main/java/io/papermc/paper/network/payload/ChannelPayload.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c7a8636de412d880d89fae43bb2ecaa61915eed2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/network/payload/ChannelPayload.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper.network.payload;
++
++import net.minecraft.network.FriendlyByteBuf;
++import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
++import net.minecraft.resources.ResourceLocation;
++import org.jetbrains.annotations.NotNull;
++import java.nio.charset.StandardCharsets;
++
++public sealed abstract class ChannelPayload implements CustomPacketPayload permits ChannelPayload.Register, ChannelPayload.Unregister {
++
++    public static final ResourceLocation REGISTER = new ResourceLocation("register");
++    public static final ResourceLocation UNREGISTER = new ResourceLocation("unregister");
++
++    private final String channels;
++
++    private ChannelPayload(final FriendlyByteBuf buf) {
++        this.channels = buf.toString(StandardCharsets.UTF_8);
++        buf.readerIndex(buf.readerIndex() + channels.length());
++    }
++
++    @Override
++    public final void write(final FriendlyByteBuf buf) {
++        buf.writeBytes(channels.getBytes(StandardCharsets.UTF_8));
++    }
++
++    public final String[] channels() {
++        return channels.split("\0");
++    }
++
++    /**
++     * Channel register payload. (minecraft:register)
++     */
++    public static final class Register extends ChannelPayload {
++
++        public Register(final FriendlyByteBuf buf) {
++            super(buf);
++        }
++
++        @Override
++        public @NotNull ResourceLocation id() {
++            return REGISTER;
++        }
++    }
++
++    /**
++     * Channel unregister payload. (minecraft:unregister)
++     */
++    public static final class Unregister extends ChannelPayload {
++
++        public Unregister(final FriendlyByteBuf buf) {
++            super(buf);
++        }
++
++        @Override
++        public @NotNull ResourceLocation id() {
++            return UNREGISTER;
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/network/payload/ReadableMessage.java b/src/main/java/io/papermc/paper/network/payload/ReadableMessage.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..df2d63ab6c557755ed740c1b57e1a71af9db4ba2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/network/payload/ReadableMessage.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.network.payload;
++
++import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
++
++public interface ReadableMessage extends CustomPacketPayload {
++
++    byte[] message();
++}
+diff --git a/src/main/java/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java b/src/main/java/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java
+index af86f752c33a2990405fea058b7c41c437ba9d46..41c5a048ce768f067f0c8324ab30eccb7d13c3db 100644
+--- a/src/main/java/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java
+@@ -12,7 +12,13 @@ import net.minecraft.resources.ResourceLocation;
+ public record ServerboundCustomPayloadPacket(CustomPacketPayload payload) implements Packet<ServerCommonPacketListener> {
+ 
+     private static final int MAX_PAYLOAD_SIZE = 32767;
+-    private static final Map<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>> KNOWN_TYPES = ImmutableMap.<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>>builder().build(); // CraftBukkit - no special handling
++    // Paper start - Rewrite custom payload handler
++    private static final Map<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>> KNOWN_TYPES =
++        ImmutableMap.<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>>builder()
++            .put(io.papermc.paper.network.payload.ChannelPayload.REGISTER, io.papermc.paper.network.payload.ChannelPayload.Register::new)
++            .put(io.papermc.paper.network.payload.ChannelPayload.UNREGISTER, io.papermc.paper.network.payload.ChannelPayload.Unregister::new)
++            .build();
++    // Paper end - Rewrite custom payload handler
+ 
+     public ServerboundCustomPayloadPacket(FriendlyByteBuf buf) {
+         this(readPayload(buf.readResourceLocation(), buf));
+@@ -47,7 +53,24 @@ public record ServerboundCustomPayloadPacket(CustomPacketPayload payload) implem
+     }
+ 
+     // CraftBukkit start
+-    public record UnknownPayload(ResourceLocation id, io.netty.buffer.ByteBuf data) implements CustomPacketPayload {
++    // Paper start - Rewrite custom payload handler
++    public record UnknownPayload(ResourceLocation id, byte[] data) implements io.papermc.paper.network.payload.ReadableMessage {
++
++        public UnknownPayload(final ResourceLocation id, final io.netty.buffer.ByteBuf data) {
++            this(id, UnknownPayload.readMessage(data));
++        }
++
++        private static byte[] readMessage(final io.netty.buffer.ByteBuf data) {
++            final byte[] message = new byte[data.readableBytes()];
++            data.readBytes(message);
++            return message;
++        }
++
++        @Override
++        public byte[] message() {
++            return data;
++        }
++        // Paper end - Rewrite custom payload handler
+ 
+         @Override
+         public void write(FriendlyByteBuf buf) {
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index d25b6431ce617d90fd1d6489a308d6630b92c175..568a1252acb00a8547e95cf529fdf3be7f3ca839 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -104,6 +104,45 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     public void handlePong(ServerboundPongPacket packet) {}
+ 
+     // CraftBukkit start
++    // Paper start - Rewrite custom payload handler
++    @Override
++    public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
++        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
++        if (packet.payload() instanceof io.papermc.paper.network.payload.ChannelPayload.Register payload) {
++            try {
++                final CraftPlayer player = this.getCraftPlayer();
++                for (final String channel : payload.channels()) {
++                    player.addChannel(channel);
++                }
++            } catch (final Exception exception) {
++                ServerGamePacketListenerImpl.LOGGER.error("Couldn't register custom payload", exception);
++                this.disconnect("Invalid payload REGISTER!");
++            }
++            return;
++        } else if (packet.payload() instanceof io.papermc.paper.network.payload.ChannelPayload.Unregister payload) {
++            try {
++                final CraftPlayer player = this.getCraftPlayer();
++                for (final String channel : payload.channels()) {
++                    player.removeChannel(channel);
++                }
++            } catch (final Exception exception) {
++                ServerGamePacketListenerImpl.LOGGER.error("Couldn't unregister custom payload", exception);
++                this.disconnect("Invalid payload UNREGISTER!");
++            }
++            return;
++        }
++
++        // Dispatch Message
++        if (packet.payload() instanceof io.papermc.paper.network.payload.ReadableMessage payload) {
++            try {
++                this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), payload.id().toString(), payload.message());
++            } catch (final Exception exception) {
++                ServerGamePacketListenerImpl.LOGGER.error("Couldn't dispatch custom payload", exception);
++                this.disconnect("Invalid custom payload!");
++            }
++        }
++    }
++    /*
+     private static final ResourceLocation CUSTOM_REGISTER = new ResourceLocation("register");
+     private static final ResourceLocation CUSTOM_UNREGISTER = new ResourceLocation("unregister");
+ 
+@@ -148,6 +187,8 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+         }
+ 
+     }
++    */
++    // Paper end - Rewrite custom payload handler
+ 
+     public final boolean isDisconnected() {
+         return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper

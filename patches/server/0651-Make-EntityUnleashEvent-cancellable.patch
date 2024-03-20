@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Jan 2021 21:25:31 -0800
+Subject: [PATCH] Make EntityUnleashEvent cancellable
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 2e8b1d7b81e212a7b06f4844d0633241dc4b77bf..1e997c1758ed86dc563983317ceb17e626b8dba7 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -1549,7 +1549,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
+         if (flag1 && this.isLeashed()) {
+             // Paper start - drop leash variable
+             EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.UNKNOWN, true);
+-            this.level().getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++            if (!event.callEvent()) { return flag1; }
+             this.dropLeash(true, event.isDropLeash());
+             // Paper end
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/PathfinderMob.java b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
+index 8e362ad31208d87f4a69a1747485610e0588be51..463b72cab6a62e9738b33007728b2b00ae12e1bc 100644
+--- a/src/main/java/net/minecraft/world/entity/PathfinderMob.java
++++ b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
+@@ -59,7 +59,7 @@ public abstract class PathfinderMob extends Mob {
+                 if (f > entity.level().paperConfig().misc.maxLeashDistance) { // Paper
+                     // Paper start - drop leash variable
+                     EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE, true);
+-                    this.level().getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++                    if (!event.callEvent()) { return; }
+                     this.dropLeash(true, event.isDropLeash());
+                     // Paper end
+                 }
+@@ -71,7 +71,7 @@ public abstract class PathfinderMob extends Mob {
+             if (f > entity.level().paperConfig().misc.maxLeashDistance) { // Paper
+                 // Paper start - drop leash variable
+                 EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE, true);
+-                this.level().getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++                if (!event.callEvent()) { return; }
+                 this.dropLeash(true, event.isDropLeash());
+                 // Paper end
+                 this.goalSelector.disableControlFlag(Goal.Flag.MOVE);
