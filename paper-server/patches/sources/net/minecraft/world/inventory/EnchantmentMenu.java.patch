@@ -145,12 +145,19 @@
          if (id >= 0 && id < this.costs.length) {
              ItemStack itemstack = this.enchantSlots.getItem(0);
              ItemStack itemstack1 = this.enchantSlots.getItem(1);
-@@ -162,21 +222,46 @@
-                     ItemStack itemstack2 = itemstack;
+@@ -159,24 +219,55 @@
+                 return false;
+             } else if (this.costs[id] > 0 && !itemstack.isEmpty() && (player.experienceLevel >= j && player.experienceLevel >= this.costs[id] || player.getAbilities().instabuild)) {
+                 this.access.execute((world, blockposition) -> {
+-                    ItemStack itemstack2 = itemstack;
++                    ItemStack itemstack2 = itemstack; // Paper - diff on change
                      List<EnchantmentInstance> list = this.getEnchantmentList(world.registryAccess(), itemstack, id, this.costs[id]);
  
 -                    if (!list.isEmpty()) {
 -                        player.onEnchantmentPerformed(itemstack, j);
+-                        if (itemstack.is(Items.BOOK)) {
+-                            itemstack2 = itemstack.transmuteCopy(Items.ENCHANTED_BOOK);
+-                            this.enchantSlots.setItem(0, itemstack2);
 +                    // CraftBukkit start
 +                    IdMap<Holder<Enchantment>> registry = world.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
 +                    if (true || !list.isEmpty()) {
@@ -158,35 +165,40 @@
 +                        Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<org.bukkit.enchantments.Enchantment, Integer>();
 +                        for (EnchantmentInstance instance : list) {
 +                            enchants.put(CraftEnchantment.minecraftHolderToBukkit(instance.enchantment), instance.level);
-+                        }
+                         }
 +                        CraftItemStack item = CraftItemStack.asCraftMirror(itemstack2);
-+
+ 
+-                        Iterator iterator = list.iterator();
 +                        org.bukkit.enchantments.Enchantment hintedEnchantment = CraftEnchantment.minecraftHolderToBukkit(registry.byId(this.enchantClue[id]));
 +                        int hintedEnchantmentLevel = this.levelClue[id];
 +                        EnchantItemEvent event = new EnchantItemEvent((Player) player.getBukkitEntity(), this.getBukkitView(), this.access.getLocation().getBlock(), item, this.costs[id], enchants, hintedEnchantment, hintedEnchantmentLevel, id);
 +                        world.getCraftServer().getPluginManager().callEvent(event);
-+
+ 
+-                        while (iterator.hasNext()) {
+-                            EnchantmentInstance weightedrandomenchant = (EnchantmentInstance) iterator.next();
 +                        int level = event.getExpLevelCost();
 +                        if (event.isCancelled() || (level > player.experienceLevel && !player.getAbilities().instabuild) || event.getEnchantsToAdd().isEmpty()) {
 +                            return;
 +                        }
 +                        // CraftBukkit end
-                         if (itemstack.is(Items.BOOK)) {
-                             itemstack2 = itemstack.transmuteCopy(Items.ENCHANTED_BOOK);
-                             this.enchantSlots.setItem(0, itemstack2);
-                         }
++                        // Paper start
++                        itemstack2 = org.bukkit.craftbukkit.inventory.CraftItemStack.getOrCloneOnMutation(item, event.getItem());
++                        if (itemstack2 != itemstack) {
++                            this.enchantSlots.setItem(0, itemstack2);
++                        }
++                        if (itemstack2.is(Items.BOOK)) {
++                            itemstack2 = itemstack2.transmuteCopy(Items.ENCHANTED_BOOK);
++                            this.enchantSlots.setItem(0, itemstack2);
++                        }
++                        // Paper end
  
--                        Iterator iterator = list.iterator();
 +                        // CraftBukkit start
 +                        for (Map.Entry<org.bukkit.enchantments.Enchantment, Integer> entry : event.getEnchantsToAdd().entrySet()) {
 +                            Holder<Enchantment> nms = CraftEnchantment.bukkitToMinecraftHolder(entry.getKey());
 +                            if (nms == null) {
 +                                continue;
 +                            }
- 
--                        while (iterator.hasNext()) {
--                            EnchantmentInstance weightedrandomenchant = (EnchantmentInstance) iterator.next();
--
++
 +                            EnchantmentInstance weightedrandomenchant = new EnchantmentInstance(nms, entry.getValue());
                              itemstack2.enchant(weightedrandomenchant.enchantment, weightedrandomenchant.level);
                          }
@@ -198,7 +210,7 @@
                          itemstack1.consume(j, player);
                          if (itemstack1.isEmpty()) {
                              this.enchantSlots.setItem(1, ItemStack.EMPTY);
-@@ -190,7 +275,7 @@
+@@ -190,7 +281,7 @@
                          this.enchantSlots.setChanged();
                          this.enchantmentSeed.set(player.getEnchantmentSeed());
                          this.slotsChanged(this.enchantSlots);
@@ -207,7 +219,7 @@
                      }
  
                  });
-@@ -234,7 +319,7 @@
+@@ -234,7 +325,7 @@
      }
  
      @Override
@@ -216,7 +228,7 @@
          super.removed(player);
          this.access.execute((world, blockposition) -> {
              this.clearContainer(player, this.enchantSlots);
-@@ -242,12 +327,13 @@
+@@ -242,12 +333,13 @@
      }
  
      @Override
@@ -232,7 +244,7 @@
          ItemStack itemstack = ItemStack.EMPTY;
          Slot slot1 = (Slot) this.slots.get(slot);
  
-@@ -293,4 +379,17 @@
+@@ -293,4 +385,17 @@
  
          return itemstack;
      }
