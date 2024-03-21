@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: FireInstall <kettnerl@hu-berlin.de>
+Date: Thu, 21 Mar 2024 17:28:54 +0100
+Subject: [PATCH] Move invisible setting up to entities This moves setting an
+ entity invisible from living entities up to all entities (since vanilla
+ supports it) Why? Even for default "invisible" entities like interaction or
+ item_display the Hitbox and line of sight is always visible when pressing
+ F3+B. This can be a problem if they should be hidden.
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 0b5a31477e3b76833fb97a455842316193663c8e..5885ea1db9ab4af1992833f01385fb34324ca304 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -373,6 +373,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         this.entity.freezeLocked = locked;
+     }
+     // Paper end - Freeze Tick Lock API
++
++    // Paper start - move invisible setting up to entities
++    @Override
++    public boolean isInvisible() {
++        return this.getHandle().isInvisible();
++    }
++
++    @Override
++    public void setInvisible(boolean invisible) {
++        this.getHandle().persistentInvisibility = invisible;
++        this.getHandle().setSharedFlag(5, invisible);
++    }
++    // Paper end - move invisible setting up to entities
++
+     @Override
+     public void remove() {
+         this.entity.pluginRemoved = true;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 3f952d1409118535f325f614f1a6507c40efa4d6..0e2598fab9916be15abd681740fc60add79b309b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -956,6 +956,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         throw new UnsupportedOperationException("Unsupported monster type: " + type + ". This is a bug, report this to Spigot.");
+     }
+ 
++    // Paper start - move invisible setting up to entities
++    /*
+     @Override
+     public boolean isInvisible() {
+         return this.getHandle().isInvisible();
+@@ -965,7 +967,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     public void setInvisible(boolean invisible) {
+         this.getHandle().persistentInvisibility = invisible;
+         this.getHandle().setSharedFlag(5, invisible);
+-    }
++    }*/
++    // Paper end - move invisible setting up to entities
++
+     // Paper start
+     @Override
+     public float getSidewaysMovement() {
