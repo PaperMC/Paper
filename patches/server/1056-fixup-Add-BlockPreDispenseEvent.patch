@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 20 Mar 2024 20:23:49 -0400
+Subject: [PATCH] fixup! Add BlockPreDispenseEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/DispenserBlock.java b/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
+index 644e64850479cea20a98b8a65503ccf3a34fd32a..9086198d83b10fa4baf1f2298e26aed044675f20 100644
+--- a/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
+@@ -104,7 +104,11 @@ public class DispenserBlock extends BaseEntityBlock {
+                 DispenseItemBehavior idispensebehavior = this.getDispenseMethod(itemstack);
+ 
+                 if (idispensebehavior != DispenseItemBehavior.NOOP) {
+-                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockPreDispenseEvent(world, pos, itemstack, i)) return; // Paper - Add BlockPreDispenseEvent
++                    // Paper start - BlockPreDispenseEvent
++                    io.papermc.paper.event.block.BlockPreDispenseEvent preDispenseEvent = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockPreDispenseEvent(world, pos, itemstack, i);
++                    if (!preDispenseEvent.callEvent()) return;
++                    itemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(preDispenseEvent.getItemStack());
++                    // Paper end - BlockPreDispenseEvent
+                     DispenserBlock.eventFired = false; // CraftBukkit - reset event status
+                     tileentitydispenser.setItem(i, idispensebehavior.dispense(sourceblock, itemstack));
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/block/DropperBlock.java b/src/main/java/net/minecraft/world/level/block/DropperBlock.java
+index 9a8a0fb958e8ec782111507bae957f854b2aac72..b571b97687e939acc5239a361d5a70bb5461d7b3 100644
+--- a/src/main/java/net/minecraft/world/level/block/DropperBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DropperBlock.java
+@@ -70,7 +70,11 @@ public class DropperBlock extends DispenserBlock {
+                     ItemStack itemstack1;
+ 
+                     if (iinventory == null) {
+-                        if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockPreDispenseEvent(world, pos, itemstack, i)) return; // Paper - Add BlockPreDispenseEvent
++                        // Paper start - BlockPreDispenseEvent
++                        io.papermc.paper.event.block.BlockPreDispenseEvent preDispenseEvent = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockPreDispenseEvent(world, pos, itemstack, i);
++                        if (!preDispenseEvent.callEvent()) return;
++                        itemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(preDispenseEvent.getItemStack());
++                        // Paper end - BlockPreDispenseEvent
+                         itemstack1 = DropperBlock.DISPENSE_BEHAVIOUR.dispense(sourceblock, itemstack);
+                     } else {
+                         // CraftBukkit start - Fire event when pushing items into other inventories
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index cb3e9672f375a1a660757a05362729ddb5ca7504..a92fa4660002f9f46f89ba692e9db5131c5b1f30 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -2126,10 +2126,9 @@ public class CraftEventFactory {
+         return event.callEvent();
+     }
+ 
+-    public static boolean handleBlockPreDispenseEvent(ServerLevel serverLevel, BlockPos pos, ItemStack itemStack, int slot) {
++    public static io.papermc.paper.event.block.BlockPreDispenseEvent handleBlockPreDispenseEvent(ServerLevel serverLevel, BlockPos pos, ItemStack itemStack, int slot) {
+         org.bukkit.block.Block block = CraftBlock.at(serverLevel, pos);
+-        io.papermc.paper.event.block.BlockPreDispenseEvent event = new io.papermc.paper.event.block.BlockPreDispenseEvent(block, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), slot);
+-        return event.callEvent();
++        return new io.papermc.paper.event.block.BlockPreDispenseEvent(block, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack).clone(), slot);
+     }
+     // Paper end
+ 
