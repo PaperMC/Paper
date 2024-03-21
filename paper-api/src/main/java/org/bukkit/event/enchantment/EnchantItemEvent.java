@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Block table;
-    private final ItemStack item;
+    private ItemStack item; // Paper
     private int level;
     private boolean cancelled;
     private final Map<Enchantment, Integer> enchants;
@@ -71,6 +71,17 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     public ItemStack getItem() {
         return item;
     }
+
+    // Paper start
+    /**
+     * Sets the item to be enchanted
+     *
+     * @param item item
+     */
+    public void setItem(@NotNull final ItemStack item) {
+        this.item = item;
+    }
+    // Paper end
 
     /**
      * Gets the cost (minimum level) which is displayed as a number on the right

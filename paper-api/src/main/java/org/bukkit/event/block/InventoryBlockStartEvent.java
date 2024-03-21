@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 public class InventoryBlockStartEvent extends BlockEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    private final ItemStack source;
+    protected ItemStack source; // Paper
 
     public InventoryBlockStartEvent(@NotNull final Block block, @NotNull ItemStack source) {
         super(block);
