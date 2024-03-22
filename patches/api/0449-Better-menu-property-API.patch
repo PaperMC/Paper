@@ -1,0 +1,464 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 2 Jan 2022 00:39:48 -0800
+Subject: [PATCH] Better menu property API
+
+
+diff --git a/src/main/java/io/papermc/paper/inventory/data/MenuProperty.java b/src/main/java/io/papermc/paper/inventory/data/MenuProperty.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..00fa6495b77027d5c1eaf2a27457f99992edd934
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/data/MenuProperty.java
+@@ -0,0 +1,202 @@
++package io.papermc.paper.inventory.data;
++
++import java.util.Set;
++import org.bukkit.enchantments.Enchantment;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.inventory.InventoryType;
++import org.bukkit.potion.PotionEffectType;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Range;
++import org.jetbrains.annotations.Unmodifiable;
++
++import static io.papermc.paper.inventory.data.MenuPropertyImpl.bool;
++import static io.papermc.paper.inventory.data.MenuPropertyImpl.crafterSlot;
++import static io.papermc.paper.inventory.data.MenuPropertyImpl.enchantNum;
++import static io.papermc.paper.inventory.data.MenuPropertyImpl.enchantment;
++import static io.papermc.paper.inventory.data.MenuPropertyImpl.furnace;
++import static io.papermc.paper.inventory.data.MenuPropertyImpl.numeric;
++import static io.papermc.paper.inventory.data.MenuPropertyImpl.potionEffect;
++
++/**
++ * Properties that apply to {@link org.bukkit.inventory.InventoryView}s.
++ *
++ * @param <T> value type
++ */
++public sealed interface MenuProperty<T> permits MenuPropertyImpl {
++
++    // Furnace, Blast Furnace, Smoker
++    /**
++     * The progress, counting from {@link #FURNACE_FUEL_BURN_TIME_LIMIT} to 0, of the fuel burn time.
++     */
++    MenuProperty<Integer> FURNACE_FUEL_BURN_TIME = furnace(0);
++    /**
++     * The starting point for {@link #FURNACE_FUEL_BURN_TIME} to determine progress percent.
++     */
++    MenuProperty<Integer> FURNACE_FUEL_BURN_TIME_LIMIT = furnace(1);
++    /**
++     * The progress, counting up to {@link #FURNACE_SMELT_PROGRESS_LIMIT} of the smelting process.
++     */
++    MenuProperty<Integer> FURNACE_SMELT_PROGRESS = furnace(2);
++    /**
++     * The value {@link #FURNACE_SMELT_PROGRESS} is counting up to to determine progress percent.
++     */
++    MenuProperty<Integer> FURNACE_SMELT_PROGRESS_LIMIT = furnace(3);
++
++    // Enchantment Table
++    /**
++     * The level requirement for the top enchantment slot.
++     */
++    MenuProperty<Integer> ENCHANT_TABLE_LEVEL_REQUIREMENT_1 = enchantNum(0);
++    /**
++     * The level requirement for the middle enchantment slot.
++     */
++    MenuProperty<Integer> ENCHANT_TABLE_LEVEL_REQUIREMENT_2 = enchantNum(1);
++    /**
++     * The level requirement for the bottom enchantment slot.
++     */
++    MenuProperty<Integer> ENCHANT_TABLE_LEVEL_REQUIREMENT_3 = enchantNum(2);
++
++    /**
++     * The enchantment seed.
++     */
++    MenuProperty<Integer> ENCHANT_TABLE_ENCHANTMENT_SEED = enchantNum(3);
++
++    /**
++     * Enchantment shown for the top enchantment slot.
++     */
++    MenuProperty<Enchantment> ENCHANT_TABLE_ENCHANTMENT_ID_1 = enchantment(4);
++    /**
++     * Enchantment shown for the middle enchantment slot.
++     */
++    MenuProperty<Enchantment> ENCHANT_TABLE_ENCHANTMENT_ID_2 = enchantment(5);
++    /**
++     * Enchantment shown for the bottom enchantment slot.
++     */
++    MenuProperty<Enchantment> ENCHANT_TABLE_ENCHANTMENT_ID_3 = enchantment(6);
++
++    /**
++     * Enchantment level shown for the top enchantment slot.
++     */
++    MenuProperty<Integer> ENCHANT_TABLE_ENCHANTMENT_LEVEL_1 = enchantNum(7);
++    /**
++     * Enchantment level shown for the middle enchantment slot.
++     */
++    MenuProperty<Integer> ENCHANT_TABLE_ENCHANTMENT_LEVEL_2 = enchantNum(8);
++    /**
++     * Enchantment level shown for the bottom enchantment slot.
++     */
++    MenuProperty<Integer> ENCHANT_TABLE_ENCHANTMENT_LEVEL_3 = enchantNum(9);
++
++    // Beacon
++    /**
++     * The beacon power level, controls available buttons.
++     */
++    MenuProperty<Integer> BEACON_LEVEL = numeric(0, InventoryType.BEACON);
++    /**
++     * The potion effect type for the primary effect, controls what effect button is pressed.
++     */
++    MenuProperty<PotionEffectType> BEACON_PRIMARY_EFFECT = potionEffect(1);
++    /**
++     * The potion effect type for the secondary effect, controls what effect button is pressed.
++     */
++    MenuProperty<PotionEffectType> BEACON_SECONDARY_EFFECT = potionEffect(2);
++
++    // Anvil
++    /**
++     * The repair cost shown.
++     */
++    MenuProperty<Integer> ANVIL_REPAIR_COST = numeric(0, InventoryType.ANVIL);
++
++    // Brewing Stand
++    /**
++     * Controls the brewing progress, 0 is full progress, 400 makes it no progress.
++     */
++    MenuProperty<Integer> BREWING_TIME = numeric(0, InventoryType.BREWING);
++    /**
++     * Controls the fuel use progress, 20 is full progress, 0 is no progress.
++     */
++    MenuProperty<Integer> BREWING_FUEL_TIME = numeric(1, InventoryType.BREWING);
++
++    // Stonecutter
++    /**
++     * The index of the selected recipe. -1 means no selection.
++     */
++    MenuProperty<Integer> STONECUTTER_SELECTED_RECIPE = numeric(0, InventoryType.STONECUTTER);
++
++    // Loom
++    /**
++     * The index of the selected pattern. 0 means no selection.
++     */
++    MenuProperty<Integer> LOOM_SELECTED_PATTERN = numeric(0, InventoryType.LOOM);
++
++    // Lectern
++    /**
++     * The current page number, zero-indexed.
++     */
++    MenuProperty<Integer> LECTERN_PAGE_NUMBER = numeric(0, InventoryType.LECTERN);
++
++    // Crafter
++    /**
++     * The triggered state of the crafter menu.
++     */
++    @ApiStatus.Experimental
++    MenuProperty<Boolean> CRAFTER_TRIGGERED = bool(9, InventoryType.CRAFTER);
++
++    /**
++     * The disabled state of a specified slot.
++     *
++     * @param slot slot, 0-9 in a crafter menu
++     * @return the property for that slot
++     */
++    @ApiStatus.Experimental
++    static @NotNull MenuProperty<Boolean> crafterSlotDisabled(final @Range(from = 0, to = 8) int slot) {
++        return crafterSlot(slot);
++    }
++
++    /**
++     * Magic value
++     *
++     * @return magic value
++     */
++    @ApiStatus.Internal
++    int dataId();
++
++    /**
++     * Gets the type of data this property references.
++     *
++     * @return the data type
++     */
++    @NotNull Class<T> dataType();
++
++    /**
++     * Checks if the type is valid for this property.
++     *
++     * @param type the inventory type to check
++     * @return true if valid
++     */
++    default boolean isValidType(final @NotNull InventoryType type) {
++        return this.inventoryTypes().contains(type);
++    }
++
++    /**
++     * Gets an immutable set of inventory types this
++     * property is valid for.
++     *
++     * @return an immutable set of inventory types
++     */
++    @NotNull @Unmodifiable Set<InventoryType> inventoryTypes();
++
++    /**
++     * Sets the property for the player on their open menu.
++     *
++     * @param player the player to set the property for
++     * @param value  the value to set it to
++     * @return true if success
++     * @see HumanEntity#setWindowProperty(MenuProperty, Object)
++     */
++    default boolean setPropertyFor(final @NotNull HumanEntity player, final @NotNull T value) {
++        return player.setWindowProperty(this, value);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/inventory/data/MenuPropertyImpl.java b/src/main/java/io/papermc/paper/inventory/data/MenuPropertyImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..73a86a09ad112b033175c46e46af52cbcedd1f83
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/data/MenuPropertyImpl.java
+@@ -0,0 +1,57 @@
++package io.papermc.paper.inventory.data;
++
++import com.google.common.base.Preconditions;
++import it.unimi.dsi.fastutil.ints.Int2ReferenceMap;
++import it.unimi.dsi.fastutil.ints.Int2ReferenceMaps;
++import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap;
++import java.util.Set;
++import org.bukkit.enchantments.Enchantment;
++import org.bukkit.event.inventory.InventoryType;
++import org.bukkit.potion.PotionEffectType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.ApiStatus;
++
++@DefaultQualifier(NonNull.class)
++@ApiStatus.Internal
++record MenuPropertyImpl<T>(Class<T> dataType, int dataId, Set<InventoryType> inventoryTypes) implements MenuProperty<T> {
++
++    MenuPropertyImpl(final Class<T> dataType, final int dataId, final InventoryType... inventoryTypes) {
++        this(dataType, dataId, Set.of(inventoryTypes));
++    }
++
++    MenuPropertyImpl {
++        inventoryTypes = Set.copyOf(inventoryTypes);
++    }
++
++    static MenuProperty<Integer> furnace(final int dataId) {
++        return numeric(dataId, InventoryType.FURNACE, InventoryType.BLAST_FURNACE, InventoryType.SMOKER);
++    }
++
++    static MenuProperty<Integer> enchantNum(final int dataId) {
++        return numeric(dataId, InventoryType.ENCHANTING);
++    }
++
++    static MenuProperty<Enchantment> enchantment(final int dataId) {
++        return new MenuPropertyImpl<>(Enchantment.class, dataId, InventoryType.ENCHANTING);
++    }
++
++    static MenuProperty<PotionEffectType> potionEffect(final int dataId) {
++        return new MenuPropertyImpl<>(PotionEffectType.class, dataId, InventoryType.BEACON);
++    }
++
++    static MenuProperty<Integer> numeric(final int dataId, final InventoryType... inventoryTypes) {
++        return new MenuPropertyImpl<>(Integer.class, dataId, inventoryTypes);
++    }
++
++    static MenuProperty<Boolean> bool(final int dataId, final InventoryType...inventoryTypes) {
++        return new MenuPropertyImpl<>(Boolean.class, dataId, inventoryTypes);
++    }
++
++    private static final Int2ReferenceMap<MenuProperty<Boolean>> CRAFTER_SLOTS = Int2ReferenceMaps.synchronize(new Int2ReferenceOpenHashMap<>());
++
++    static MenuProperty<Boolean> crafterSlot(final int slot) {
++        Preconditions.checkArgument(slot >= 0 && slot < 9, slot + " must be in [0,8]");
++        return CRAFTER_SLOTS.computeIfAbsent(slot, $ -> bool(slot, InventoryType.CRAFTER));
++    }
++}
+diff --git a/src/main/java/org/bukkit/entity/HumanEntity.java b/src/main/java/org/bukkit/entity/HumanEntity.java
+index 8b0d04d5b39ee817555a36adddc39b18fc6f0d02..12355f05342a1757d8e3631023d6235329d92e92 100644
+--- a/src/main/java/org/bukkit/entity/HumanEntity.java
++++ b/src/main/java/org/bukkit/entity/HumanEntity.java
+@@ -69,9 +69,24 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder
+      * @param prop The property.
+      * @param value The value to set the property to.
+      * @return True if the property was successfully set.
++     * @deprecated use {@link #setWindowProperty(io.papermc.paper.inventory.data.MenuProperty, Object)}
+      */
++    @Deprecated // Paper
+     public boolean setWindowProperty(@NotNull InventoryView.Property prop, int value);
+ 
++    // Paper start
++    /**
++     * If the player currently has an inventory window open, this method will
++     * set a property of that window, such as the state of a progress bar.
++     *
++     * @param prop The property.
++     * @param value The value to set the property to.
++     * @param <T> the type of value
++     * @return True if the property was successfully set.
++     * @see io.papermc.paper.inventory.data.MenuProperty#setPropertyFor(HumanEntity, Object)
++     */
++    <T> boolean setWindowProperty(@NotNull io.papermc.paper.inventory.data.MenuProperty<T> prop, @NotNull T value);
++    // Paper end
+     /**
+      * Gets the player's current enchantment seed.
+      *
+diff --git a/src/main/java/org/bukkit/inventory/InventoryView.java b/src/main/java/org/bukkit/inventory/InventoryView.java
+index ac6c5c7a58c2c88b6cb0f6632fb53e8d67f8a059..ca9854a3746c64d15302cee54bdc4ac464aa78e3 100644
+--- a/src/main/java/org/bukkit/inventory/InventoryView.java
++++ b/src/main/java/org/bukkit/inventory/InventoryView.java
+@@ -1,6 +1,7 @@
+ package org.bukkit.inventory;
+ 
+ import com.google.common.base.Preconditions;
++import io.papermc.paper.inventory.data.MenuProperty;
+ import org.bukkit.entity.HumanEntity;
+ import org.bukkit.event.inventory.InventoryType;
+ import org.jetbrains.annotations.NotNull;
+@@ -18,101 +19,112 @@ public abstract class InventoryView {
+     public static final int OUTSIDE = -999;
+     /**
+      * Represents various extra properties of certain inventory windows.
++     * @deprecated use {@link MenuProperty}s
+      */
++    @Deprecated // Paper
+     public enum Property {
+         /**
+          * The progress of the down-pointing arrow in a brewing inventory.
+          */
+-        BREW_TIME(0, InventoryType.BREWING),
++        BREW_TIME(0, InventoryType.BREWING, MenuProperty.BREWING_TIME), // Paper
+         /**
+          * The progress of the fuel slot in a brewing inventory.
+          *
+          * This is a value between 0 and 20, with 0 making the bar empty, and 20
+          * making the bar full.
+          */
+-        FUEL_TIME(1, InventoryType.BREWING),
++        FUEL_TIME(1, InventoryType.BREWING, MenuProperty.BREWING_FUEL_TIME), // Paper
+         /**
+          * The progress of the flame in a furnace inventory.
+          */
+-        BURN_TIME(0, InventoryType.FURNACE),
++        BURN_TIME(0, InventoryType.FURNACE, MenuProperty.FURNACE_FUEL_BURN_TIME), // Paper
+         /**
+          * How many total ticks the current fuel should last.
+          */
+-        TICKS_FOR_CURRENT_FUEL(1, InventoryType.FURNACE),
++        TICKS_FOR_CURRENT_FUEL(1, InventoryType.FURNACE, MenuProperty.FURNACE_FUEL_BURN_TIME_LIMIT), // Paper
+         /**
+          * The progress of the right-pointing arrow in a furnace inventory.
+          */
+-        COOK_TIME(2, InventoryType.FURNACE),
++        COOK_TIME(2, InventoryType.FURNACE, MenuProperty.FURNACE_SMELT_PROGRESS), // Paper
+         /**
+          * How many total ticks the current smelting should last.
+          */
+-        TICKS_FOR_CURRENT_SMELTING(3, InventoryType.FURNACE),
++        TICKS_FOR_CURRENT_SMELTING(3, InventoryType.FURNACE, MenuProperty.FURNACE_SMELT_PROGRESS_LIMIT), // Paper
+         /**
+          * In an enchanting inventory, the top button's experience level
+          * value.
+          */
+-        ENCHANT_BUTTON1(0, InventoryType.ENCHANTING),
++        ENCHANT_BUTTON1(0, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_LEVEL_REQUIREMENT_1), // Paper
+         /**
+          * In an enchanting inventory, the middle button's experience level
+          * value.
+          */
+-        ENCHANT_BUTTON2(1, InventoryType.ENCHANTING),
++        ENCHANT_BUTTON2(1, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_LEVEL_REQUIREMENT_2), // Paper
+         /**
+          * In an enchanting inventory, the bottom button's experience level
+          * value.
+          */
+-        ENCHANT_BUTTON3(2, InventoryType.ENCHANTING),
++        ENCHANT_BUTTON3(2, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_LEVEL_REQUIREMENT_3), // Paper
+         /**
+          * In an enchanting inventory, the first four bits of the player's xpSeed.
+          */
+-        ENCHANT_XP_SEED(3, InventoryType.ENCHANTING),
++        ENCHANT_XP_SEED(3, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_ENCHANTMENT_SEED), // Paper
+         /**
+          * In an enchanting inventory, the top button's enchantment's id
+          */
+-        ENCHANT_ID1(4, InventoryType.ENCHANTING),
++        ENCHANT_ID1(4, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_ENCHANTMENT_ID_1), // Paper
+         /**
+          * In an enchanting inventory, the middle button's enchantment's id
+          */
+-        ENCHANT_ID2(5, InventoryType.ENCHANTING),
++        ENCHANT_ID2(5, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_ENCHANTMENT_ID_2), // Paper
+         /**
+          * In an enchanting inventory, the bottom button's enchantment's id
+          */
+-        ENCHANT_ID3(6, InventoryType.ENCHANTING),
++        ENCHANT_ID3(6, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_ENCHANTMENT_ID_3), // Paper
+         /**
+          * In an enchanting inventory, the top button's level value.
+          */
+-        ENCHANT_LEVEL1(7, InventoryType.ENCHANTING),
++        ENCHANT_LEVEL1(7, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_ENCHANTMENT_LEVEL_1), // Paper
+         /**
+          * In an enchanting inventory, the middle button's level value.
+          */
+-        ENCHANT_LEVEL2(8, InventoryType.ENCHANTING),
++        ENCHANT_LEVEL2(8, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_ENCHANTMENT_LEVEL_2), // Paper
+         /**
+          * In an enchanting inventory, the bottom button's level value.
+          */
+-        ENCHANT_LEVEL3(9, InventoryType.ENCHANTING),
++        ENCHANT_LEVEL3(9, InventoryType.ENCHANTING, MenuProperty.ENCHANT_TABLE_ENCHANTMENT_LEVEL_3), // Paper
+         /**
+          * In an beacon inventory, the levels of the beacon
+          */
+-        LEVELS(0, InventoryType.BEACON),
++        LEVELS(0, InventoryType.BEACON, MenuProperty.BEACON_LEVEL), // Paper
+         /**
+          * In an beacon inventory, the primary potion effect
+          */
+-        PRIMARY_EFFECT(1, InventoryType.BEACON),
++        PRIMARY_EFFECT(1, InventoryType.BEACON, MenuProperty.BEACON_PRIMARY_EFFECT), // Paper
+         /**
+          * In an beacon inventory, the secondary potion effect
+          */
+-        SECONDARY_EFFECT(2, InventoryType.BEACON),
++        SECONDARY_EFFECT(2, InventoryType.BEACON, MenuProperty.BEACON_SECONDARY_EFFECT), // Paper
+         /**
+          * The repair's cost in xp levels
+          */
+-        REPAIR_COST(0, InventoryType.ANVIL),
++        REPAIR_COST(0, InventoryType.ANVIL, MenuProperty.ANVIL_REPAIR_COST), // Paper
+         /**
+          * The lectern's current open book page
+          */
+-        BOOK_PAGE(0, InventoryType.LECTERN);
++        BOOK_PAGE(0, InventoryType.LECTERN, MenuProperty.LECTERN_PAGE_NUMBER); // Paper
+         int id;
+         InventoryType style;
+-        private Property(int id, /*@NotNull*/ InventoryType appliesTo) {
++        // Paper start - link legacy to replacement
++        final MenuProperty<?> newMenuProperty;
++        @Deprecated
++        public @NotNull MenuProperty<?> getReplacementDataProperty() {
++            return this.newMenuProperty;
++        }
++        private Property(int id, /*@NotNull*/ org.bukkit.event.inventory.InventoryType appliesTo, MenuProperty<?> newMenuProperty) {
++            Preconditions.checkArgument(id == newMenuProperty.dataId() && newMenuProperty.isValidType(appliesTo), "legacy doesn't match replacement: " + this.name());
++            this.newMenuProperty = newMenuProperty;
++            // Paper end
+             this.id = id;
+             style = appliesTo;
+         }
+diff --git a/src/main/java/org/bukkit/inventory/LoomInventory.java b/src/main/java/org/bukkit/inventory/LoomInventory.java
+index 9801b59e203fa610aefad30746aafc3270c71d96..5719a0d2a50654608141d6cf7611e6796114ab56 100644
+--- a/src/main/java/org/bukkit/inventory/LoomInventory.java
++++ b/src/main/java/org/bukkit/inventory/LoomInventory.java
+@@ -3,4 +3,5 @@ package org.bukkit.inventory;
+ /**
+  * Interface to the inventory of a Loom.
+  */
+-public interface LoomInventory extends Inventory { }
++public interface LoomInventory extends Inventory {
++}
