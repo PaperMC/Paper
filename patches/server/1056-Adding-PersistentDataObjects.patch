@@ -1,0 +1,292 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: derverdox <mail.ysp@web.de>
+Date: Thu, 21 Mar 2024 17:45:35 +0100
+Subject: [PATCH] Adding PersistentDataObjects
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 93b661e9cb7743aeff7da3972942cb73049a5e4c..dd896cf1eb36c1ca2e4b09decf6cef36c3220105 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -965,6 +965,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         if (this.metricsRecorder.isRecording()) {
+             this.cancelRecordingMetrics();
+         }
++        // Paper start - Adding PersistentDataObjects
++        long start = System.currentTimeMillis();
++        int saved = org.bukkit.craftbukkit.persistence.CraftPersistentDataObjectCache.saveAllPersistentDataObjects();
++        long end = System.currentTimeMillis() - start;
++        if(saved > 0)
++            MinecraftServer.LOGGER.info("Took "+end+" ms to save "+saved+" persistent data objects");
++        // Paper end - Adding PersistentDataObjects
+ 
+         MinecraftServer.LOGGER.info("Stopping server");
+         Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
+diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+index f55fdd57ced259ad5a95878840e98ffaa3db2e05..8445c2a97781fe40be1369f0de2aee9a730ee1ee 100644
+--- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+@@ -21,6 +21,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     private final Map<String, Tag> customDataTags = new HashMap<>();
+     private final CraftPersistentDataTypeRegistry registry;
+     private final CraftPersistentDataAdapterContext adapterContext;
++    private final CraftPersistentDataObjectCache craftPersistentDataObjectCache; // Paper - Adding PersistentDataObjects
+ 
+     public CraftPersistentDataContainer(Map<String, Tag> customTags, CraftPersistentDataTypeRegistry registry) {
+         this(registry);
+@@ -30,6 +31,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     public CraftPersistentDataContainer(CraftPersistentDataTypeRegistry registry) {
+         this.registry = registry;
+         this.adapterContext = new CraftPersistentDataAdapterContext(this.registry);
++        this.craftPersistentDataObjectCache = new CraftPersistentDataObjectCache(this, registry, customDataTags); // Paper - Adding PersistentDataObjects
+     }
+ 
+ 
+@@ -40,6 +42,10 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+         Preconditions.checkArgument(value != null, "The provided value cannot be null");
+ 
+         this.customDataTags.put(key.toString(), this.registry.wrap(type, type.toPrimitive(value, this.adapterContext)));
++        // Paper start - Adding PersistentDataObjects
++        // Remove persistent data object if the key was taken by another entry
++        craftPersistentDataObjectCache.persistentDataObjectMap.remove(key);
++        // Paper end - Adding PersistentDataObjects
+     }
+ 
+     @Override
+@@ -47,6 +53,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+         Preconditions.checkArgument(type != null, "The provided type cannot be null");
+ 
++        craftPersistentDataObjectCache.serializeObjectAtKeyBeforeLookup(key); // Paper - Adding PersistentDataObjects
+         Tag value = this.customDataTags.get(key.toString());
+         if (value == null) {
+             return false;
+@@ -58,6 +65,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     @Override
+     public boolean has(NamespacedKey key) {
+         Preconditions.checkArgument(key != null, "The provided key for the custom value was null"); // Paper
++        craftPersistentDataObjectCache.serializeObjectAtKeyBeforeLookup(key); // Paper - Adding PersistentDataObjects
+         return this.customDataTags.get(key.toString()) != null;
+     }
+ 
+@@ -66,6 +74,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+         Preconditions.checkArgument(type != null, "The provided type cannot be null");
+ 
++        craftPersistentDataObjectCache.serializeObjectAtKeyBeforeLookup(key); // Paper - Adding PersistentDataObjects
+         Tag value = this.customDataTags.get(key.toString());
+         if (value == null) {
+             return null;
+@@ -85,6 +94,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     @Override
+     public Set<NamespacedKey> getKeys() {
+         Set<NamespacedKey> keys = new HashSet<>();
++        craftPersistentDataObjectCache.saveObjectsToTags(true); // Paper - Adding PersistentDataObjects
+ 
+         this.customDataTags.keySet().forEach(key -> {
+             String[] keyData = key.split(":", 2);
+@@ -100,24 +110,29 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     public void remove(@NotNull NamespacedKey key) {
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+ 
++        this.craftPersistentDataObjectCache.removePersistentDataObject(key, false); // Paper - Adding PersistentDataObjects
+         this.customDataTags.remove(key.toString());
+     }
+ 
+     @Override
+     public boolean isEmpty() {
+-        return this.customDataTags.isEmpty();
++        return this.customDataTags.isEmpty() && craftPersistentDataObjectCache.persistentDataObjectMap.isEmpty(); // Paper - Adding PersistentDataObjects
+     }
+ 
+     @NotNull
+     @Override
+     public void copyTo(PersistentDataContainer other, boolean replace) {
+         Preconditions.checkArgument(other != null, "The target container cannot be null");
++        craftPersistentDataObjectCache.saveObjectsToTags(true); // Paper - Adding PersistentDataObjects
+ 
+         CraftPersistentDataContainer target = (CraftPersistentDataContainer) other;
++        target.craftPersistentDataObjectCache.saveObjectsToTags(true); // Paper - Adding PersistentDataObjects
+         if (replace) {
+             target.customDataTags.putAll(this.customDataTags);
++            target.craftPersistentDataObjectCache.persistentDataObjectMap.putAll(this.craftPersistentDataObjectCache.persistentDataObjectMap); // Paper - Adding PersistentDataObjects
+         } else {
+             this.customDataTags.forEach(target.customDataTags::putIfAbsent);
++            this.craftPersistentDataObjectCache.persistentDataObjectMap.forEach(target.craftPersistentDataObjectCache.persistentDataObjectMap::putIfAbsent); // Paper - Adding PersistentDataObjects
+         }
+     }
+ 
+@@ -135,11 +150,12 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+         Map<String, Tag> myRawMap = this.getRaw();
+         Map<String, Tag> theirRawMap = ((CraftPersistentDataContainer) obj).getRaw();
+ 
+-        return Objects.equals(myRawMap, theirRawMap);
++        return Objects.equals(myRawMap, theirRawMap) && this.craftPersistentDataObjectCache.persistentDataObjectMap.equals(((CraftPersistentDataContainer) obj).craftPersistentDataObjectCache.persistentDataObjectMap); // Paper - Adding PersistentDataObjects
+     }
+ 
+     public CompoundTag toTagCompound() {
+         CompoundTag tag = new CompoundTag();
++        craftPersistentDataObjectCache.saveObjectsToTags(true); // Paper - Adding PersistentDataObjects
+         for (Entry<String, Tag> entry : this.customDataTags.entrySet()) {
+             tag.put(entry.getKey(), entry.getValue());
+         }
+@@ -181,6 +197,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+ 
+     // Paper start
+     public void clear() {
++        this.craftPersistentDataObjectCache.persistentDataObjectMap.clear(); // Paper - Adding PersistentDataObjects
+         this.customDataTags.clear();
+     }
+     // Paper end
+@@ -210,9 +227,18 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+ 
+     // Paper start - deep clone tags
+     public Map<String, Tag> getTagsCloned() {
++        craftPersistentDataObjectCache.saveObjectsToTags(false); // Paper - Adding PersistentDataObjects
+         final Map<String, Tag> tags = new HashMap<>();
+         this.customDataTags.forEach((key, tag) -> tags.put(key, tag.copy()));
+         return tags;
+     }
+     // Paper end - deep clone tags
++
++    // Paper start - Adding PersistentDataObjects
++    @Override
++    public CraftPersistentDataObjectCache getPersistentDataObjectCache() {
++        return craftPersistentDataObjectCache;
++    }
++    // Paper end - Adding PersistentDataObjects
++
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataObjectCache.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataObjectCache.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4f1bd2007cdee660df8af089c668e3562021df89
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataObjectCache.java
+@@ -0,0 +1,127 @@
++package org.bukkit.craftbukkit.persistence;
++
++import com.google.common.base.Preconditions;
++import net.minecraft.nbt.Tag;
++import org.bukkit.NamespacedKey;
++import org.bukkit.persistence.PersistentDataContainer;
++import org.bukkit.persistence.PersistentDataObject;
++import org.bukkit.persistence.PersistentDataObjectCache;
++import org.bukkit.persistence.PersistentDataType;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Collections;
++import java.util.Map;
++import java.util.Set;
++import java.util.WeakHashMap;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.logging.Level;
++
++public class CraftPersistentDataObjectCache implements PersistentDataObjectCache {
++    private static final Set<CraftPersistentDataContainer> weakReferences = Collections.newSetFromMap(new WeakHashMap<>());
++
++    public static int saveAllPersistentDataObjects(){
++        synchronized (weakReferences){
++            int counter = 0;
++            for (CraftPersistentDataContainer weakReference : weakReferences) {
++                CraftPersistentDataObjectCache craftPersistentDataObjectCache = weakReference.getPersistentDataObjectCache();
++                craftPersistentDataObjectCache.saveObjectsToTags(false);
++                craftPersistentDataObjectCache.persistentDataObjectMap.clear();
++                counter++;
++            }
++            return counter;
++        }
++    }
++
++    private final CraftPersistentDataContainer parentContainer;
++    private final CraftPersistentDataTypeRegistry registry;
++    private final Map<String, Tag> tags;
++    final Map<NamespacedKey, PersistentDataObject> persistentDataObjectMap = new ConcurrentHashMap<>();
++    CraftPersistentDataObjectCache(CraftPersistentDataContainer parentContainer, CraftPersistentDataTypeRegistry registry, Map<String, Tag> tags){
++        this.parentContainer = parentContainer;
++        this.registry = registry;
++        this.tags = tags;
++    }
++    @Override
++    public <T extends PersistentDataObject> @NotNull T loadOrCreatePersistentDataObject(@NotNull NamespacedKey key, T newObject) {
++        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
++        Preconditions.checkArgument(newObject != null, "The provided newObject cannot be null");
++        if (persistentDataObjectMap.containsKey(key))
++            return (T) persistentDataObjectMap.get(key);
++        readObjectFromTags(key, newObject);
++        persistentDataObjectMap.put(key, newObject);
++        markParentAsDirty();
++        synchronized (weakReferences){
++            weakReferences.add(parentContainer);
++        }
++        return newObject;
++    }
++
++    @Override
++    public <T extends PersistentDataObject> @Nullable T loadPersistentDataObject(@NotNull NamespacedKey key, @NotNull Class<? extends T> type) {
++        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        if (persistentDataObjectMap.containsKey(key))
++            return (T) persistentDataObjectMap.get(key);
++        return null;
++    }
++
++    @Override
++    public void removePersistentDataObject(@NotNull NamespacedKey key, boolean serializeBeforeRemoval) {
++        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
++        org.bukkit.persistence.PersistentDataObject oldValue = persistentDataObjectMap.remove(key);
++        if(serializeBeforeRemoval && oldValue != null)
++            saveObjectToTags(key, oldValue, true);
++        else {
++            markParentAsDirty();
++        }
++        if(persistentDataObjectMap.isEmpty())
++            synchronized (weakReferences){
++                weakReferences.remove(this);
++            }
++    }
++
++    void saveObjectsToTags(boolean removeWhenEmpty) {
++        for (NamespacedKey namespacedKey : Set.copyOf(persistentDataObjectMap.keySet())) {
++            org.bukkit.persistence.PersistentDataObject persistentDataObject = persistentDataObjectMap.get(namespacedKey);
++            saveObjectToTags(namespacedKey, persistentDataObject, removeWhenEmpty);
++        }
++    }
++
++    void saveObjectToTags(@NotNull NamespacedKey key, @NotNull org.bukkit.persistence.PersistentDataObject persistentDataObject, boolean removeWhenEmpty){
++        try{
++            PersistentDataContainer serialized = persistentDataObject.serialize(parentContainer.getAdapterContext());
++            if(!serialized.isEmpty())
++                tags.put(key.toString(), registry.wrap(PersistentDataType.TAG_CONTAINER, PersistentDataType.TAG_CONTAINER.toPrimitive(serialized, parentContainer.getAdapterContext())));
++            else if(removeWhenEmpty) {
++                tags.remove(key.toString());
++            }
++            markParentAsDirty();
++        }
++        catch (Throwable e){
++            org.bukkit.Bukkit.getLogger().log(Level.WARNING, "An error occured while saving the persistent data object "+ persistentDataObject +" with the key "+key.asString()+" ", e);
++        }
++    }
++
++    void readObjectFromTags(@NotNull NamespacedKey key, @NotNull org.bukkit.persistence.PersistentDataObject persistentDataObject){
++        try{
++            if (parentContainer.has(key, PersistentDataType.TAG_CONTAINER)) {
++                PersistentDataContainer persistentDataContainer = parentContainer.get(key, PersistentDataType.TAG_CONTAINER);
++                if (persistentDataContainer != null)
++                    persistentDataObject.deSerialize(persistentDataContainer);
++            }
++        } catch (Throwable e){
++            org.bukkit.Bukkit.getLogger().log(Level.WARNING, "An error occured while loading the persistent data object "+ persistentDataObject +" with the key "+key.asString()+" ", e);
++        }
++    }
++
++    void serializeObjectAtKeyBeforeLookup(NamespacedKey key){
++        if(persistentDataObjectMap.containsKey(key))
++            saveObjectToTags(key, persistentDataObjectMap.get(key), true);
++    }
++
++    void markParentAsDirty(){
++        if(parentContainer instanceof DirtyCraftPersistentDataContainer dirtyCraftPersistentDataContainer)
++            dirtyCraftPersistentDataContainer.dirty(true);
++    }
++}
