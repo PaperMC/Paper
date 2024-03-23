@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 1 Jan 2022 15:53:52 -0800
+Subject: [PATCH] Improve GameRule API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index bfde5bbcccfaa754ec6bdf4f3817981a93e465bd..2bb191805c7fc83478ead9c1783cfbbb722a732b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2882,6 +2882,13 @@ public final class CraftServer implements Server {
+         return net.minecraft.server.MinecraftServer.getServer().hasStopped();
+     }
+ 
++    @Override
++    public <T> T getGameRuleDefault(org.bukkit.GameRule<T> rule) {
++        Validate.notNull(rule, "GameRule cannot be null");
++        return Objects.requireNonNull(CraftWorld.convert(rule, CraftWorld.getGameRuleDefinitions().get(rule.getName()).createRule()), rule + " is an unrecognized game rule");
++    }
++
++
+     private com.destroystokyo.paper.entity.ai.MobGoals mobGoals = new com.destroystokyo.paper.entity.ai.PaperMobGoals();
+     @Override
+     public com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index f0b14914438840bd819fa7da8b76f4fcc13704d0..6190edd15206c0b97f72e6b3fa1ad48dcb5c35a4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1959,13 +1959,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public <T> T getGameRuleValue(GameRule<T> rule) {
+         Validate.notNull(rule, "GameRule cannot be null");
+-        return this.convert(rule, this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName())));
++        return Objects.requireNonNull(convert(rule, this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName()))), rule + " is an unrecognized game rule"); // Paper - make not null
+     }
+ 
+     @Override
+     public <T> T getGameRuleDefault(GameRule<T> rule) {
+         Validate.notNull(rule, "GameRule cannot be null");
+-        return this.convert(rule, CraftWorld.getGameRuleDefinitions().get(rule.getName()).createRule());
++        return Objects.requireNonNull(convert(rule, CraftWorld.getGameRuleDefinitions().get(rule.getName()).createRule()), rule + " is an unrecognized game rule"); // Paper - make not null
+     }
+ 
+     @Override
+@@ -1985,7 +1985,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return true;
+     }
+ 
+-    private <T> T convert(GameRule<T> rule, GameRules.Value<?> value) {
++    public static <T> T convert(GameRule<T> rule, GameRules.Value<?> value) { // Paper - make static
+         if (value == null) {
+             return null;
+         }
