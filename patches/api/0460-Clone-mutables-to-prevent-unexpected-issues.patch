@@ -10,6 +10,72 @@ unexpected behaviors. Let this be a lesson to use
 immutable types for simple things Location, Vector, and
 others.
 
+diff --git a/src/main/java/io/papermc/paper/potion/PotionMix.java b/src/main/java/io/papermc/paper/potion/PotionMix.java
+index 3fc922ebf972418b84181cd02e68d8ef0efd739b..66de746515efa06f2f555586a1600129d22807dd 100644
+--- a/src/main/java/io/papermc/paper/potion/PotionMix.java
++++ b/src/main/java/io/papermc/paper/potion/PotionMix.java
+@@ -32,9 +32,9 @@ public class PotionMix implements Keyed {
+      */
+     public PotionMix(final @NotNull NamespacedKey key, final @NotNull ItemStack result, final @NotNull RecipeChoice input, final @NotNull RecipeChoice ingredient) {
+         this.key = key;
+-        this.result = result;
+-        this.input = input;
+-        this.ingredient = ingredient;
++        this.result = result.clone();
++        this.input = input.clone();
++        this.ingredient = ingredient.clone();
+     }
+ 
+     /**
+@@ -60,7 +60,7 @@ public class PotionMix implements Keyed {
+      * @return the result itemstack
+      */
+     public @NotNull ItemStack getResult() {
+-        return this.result;
++        return this.result.clone();
+     }
+ 
+     /**
+@@ -69,7 +69,7 @@ public class PotionMix implements Keyed {
+      * @return the bottom 3 slot ingredients
+      */
+     public @NotNull RecipeChoice getInput() {
+-        return this.input;
++        return this.input.clone();
+     }
+ 
+     /**
+@@ -78,7 +78,7 @@ public class PotionMix implements Keyed {
+      * @return the top slot input
+      */
+     public @NotNull RecipeChoice getIngredient() {
+-        return this.ingredient;
++        return this.ingredient.clone();
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/Vibration.java b/src/main/java/org/bukkit/Vibration.java
+index bbc01e7c192ae6689c301670047ff114306c57cb..3c3087dfacb062b61305d7340b72fcbc9381e3a6 100644
+--- a/src/main/java/org/bukkit/Vibration.java
++++ b/src/main/java/org/bukkit/Vibration.java
+@@ -79,7 +79,7 @@ public class Vibration {
+             private final Location block;
+ 
+             public BlockDestination(@NotNull Location block) {
+-                this.block = block;
++                this.block = block.clone(); // Paper - clone mutable types
+             }
+ 
+             public BlockDestination(@NotNull Block block) {
+@@ -88,7 +88,7 @@ public class Vibration {
+ 
+             @NotNull
+             public Location getLocation() {
+-                return block;
++                return block.clone(); // Paper - clone mutable types
+             }
+ 
+             @NotNull
 diff --git a/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java b/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java
 index 08d09c2a92d8aa6adf6610cc05905d58a76fce1f..c74ac0cb004aa219ce2f761969a4bb46cb7c9160 100644
 --- a/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java
@@ -23,6 +89,32 @@ index 08d09c2a92d8aa6adf6610cc05905d58a76fce1f..c74ac0cb004aa219ce2f761969a4bb46
      }
  
      /**
+diff --git a/src/main/java/org/bukkit/event/block/BlockDispenseEvent.java b/src/main/java/org/bukkit/event/block/BlockDispenseEvent.java
+index 14d1eb5d93fd5a87473a0b8df240cf09f1752360..8c20af440417f31dd9a0da3252fa1de041586b6d 100644
+--- a/src/main/java/org/bukkit/event/block/BlockDispenseEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockDispenseEvent.java
+@@ -65,7 +65,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
+      * @param vel the velocity of the item being dispensed
+      */
+     public void setVelocity(@NotNull Vector vel) {
+-        velocity = vel;
++        velocity = vel.clone(); // Paper - clone mutable types
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/event/block/FluidLevelChangeEvent.java b/src/main/java/org/bukkit/event/block/FluidLevelChangeEvent.java
+index 9bd0440c3776c0b73c6eb11274070b11d0ade856..4a0f28180d2232f3781be2dfe88d345e10310ca3 100644
+--- a/src/main/java/org/bukkit/event/block/FluidLevelChangeEvent.java
++++ b/src/main/java/org/bukkit/event/block/FluidLevelChangeEvent.java
+@@ -43,7 +43,7 @@ public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
+         Preconditions.checkArgument(newData != null, "newData null");
+         Preconditions.checkArgument(this.newData.getMaterial().equals(newData.getMaterial()), "Cannot change fluid type");
+ 
+-        this.newData = newData;
++        this.newData = newData.clone(); // Paper - clone mutable types
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/event/entity/EntityChangeBlockEvent.java b/src/main/java/org/bukkit/event/entity/EntityChangeBlockEvent.java
 index 1a9575ad4c81aefa5ef0b927f6ac8f7064b55c49..24e1a49e48dd8f9eb2515b2ffe472a0c4d2bc09b 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityChangeBlockEvent.java
@@ -49,6 +141,19 @@ index 099efafa14c10910e4ed04abb1823f0c1a96b6a6..8506fa03293c575c35b55b0522248074
      }
  
      /**
+diff --git a/src/main/java/org/bukkit/event/entity/EntityKnockbackEvent.java b/src/main/java/org/bukkit/event/entity/EntityKnockbackEvent.java
+index fe3374fbbfef728358e4a15bbf2deb238a1e0bfd..375d843ccdf23c005497b7f13bd64d536203309c 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityKnockbackEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityKnockbackEvent.java
+@@ -99,7 +99,7 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
+     public void setFinalKnockback(@NotNull Vector knockback) {
+         Preconditions.checkArgument(knockback != null, "Knockback cannot be null");
+ 
+-        this.knockback = knockback;
++        this.knockback = knockback.clone(); // Paper - clone mutable types
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java b/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
 index 6818e9f0ba32ca1a1e612703f7526b29f5a6438f..e4e3d2e22c28ef251d76c48ade267b4eb3749e7d 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
@@ -62,6 +167,28 @@ index 6818e9f0ba32ca1a1e612703f7526b29f5a6438f..e4e3d2e22c28ef251d76c48ade267b4e
      }
  
      @NotNull
+diff --git a/src/main/java/org/bukkit/event/entity/EntityTeleportEvent.java b/src/main/java/org/bukkit/event/entity/EntityTeleportEvent.java
+index a7918049ae599a583a9188d90eb86922fd948296..e073d69f3678ac15be48fc63c36d39262f69fc3c 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityTeleportEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityTeleportEvent.java
+@@ -52,7 +52,7 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
+      * @param from New location this entity moved from
+      */
+     public void setFrom(@NotNull Location from) {
+-        this.from = from;
++        this.from = from.clone(); // Paper - clone mutable types
+     }
+ 
+     /**
+@@ -71,7 +71,7 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
+      * @param to New Location this entity moved to
+      */
+     public void setTo(@Nullable Location to) {
+-        this.to = to;
++        this.to = to != null ? to.clone() : null; // Paper - clone mutable types
+     }
+ 
+     @NotNull
 diff --git a/src/main/java/org/bukkit/event/entity/ItemDespawnEvent.java b/src/main/java/org/bukkit/event/entity/ItemDespawnEvent.java
 index 6fc66197eb2c5d59c70d8d028b7963748371edbe..2bb29fa449cd6c90b52d2786ed15b6154d591607 100644
 --- a/src/main/java/org/bukkit/event/entity/ItemDespawnEvent.java
@@ -72,6 +199,67 @@ index 6fc66197eb2c5d59c70d8d028b7963748371edbe..2bb29fa449cd6c90b52d2786ed15b615
      public Location getLocation() {
 -        return location;
 +        return location.clone(); // Paper - clone to avoid changes
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java b/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java
+index ddea08e4de2198a0a7565e2fd7a05571ed48f27b..f2e9a4b516f53a16e7946289f65ccd6fbcc31a5e 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java
+@@ -241,7 +241,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
+     @Nullable
+     @Deprecated // Paper
+     public Vector getClickedPosition() {
+-        return clickedPosistion;
++        return clickedPosistion.clone(); // Paper - clone mutables
+     }
+ 
+     // Paper start
+diff --git a/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java b/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java
+index b484abf3b06b1fb3577b43d50d64498dcd7652c9..2020cd5bbea0605f202dd0c27b177914e8ecb27f 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java
+@@ -70,7 +70,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
+      */
+     public void setFrom(@NotNull Location from) {
+         validateLocation(from);
+-        this.from = from;
++        this.from = from.clone(); // Paper - clone mutable types
+     }
+ 
+     /**
+@@ -90,7 +90,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
+      */
+     public void setTo(@NotNull Location to) {
+         validateLocation(to);
+-        this.to = to;
++        this.to = to.clone(); // Paper - clone mutable types
+     }
+ 
+     // Paper start - PlayerMoveEvent improvements
+diff --git a/src/main/java/org/bukkit/event/player/PlayerRespawnEvent.java b/src/main/java/org/bukkit/event/player/PlayerRespawnEvent.java
+index b45f265ec7819b06a9a8361e8c1e43fd88b3138b..46571e35d9985af6c2f4af26e74bdd6259a69ccc 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerRespawnEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerRespawnEvent.java
+@@ -69,7 +69,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
+         Preconditions.checkArgument(respawnLocation != null, "Respawn location can not be null");
+         Preconditions.checkArgument(respawnLocation.getWorld() != null, "Respawn world can not be null");
+ 
+-        this.respawnLocation = respawnLocation;
++        this.respawnLocation = respawnLocation.clone(); // Paper - clone mutable types
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerVelocityEvent.java b/src/main/java/org/bukkit/event/player/PlayerVelocityEvent.java
+index 61e098d94af9261de1755e743a49657f79427995..83413820788d438e8dea9de2256799a4e9a804c9 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerVelocityEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerVelocityEvent.java
+@@ -45,7 +45,7 @@ public class PlayerVelocityEvent extends PlayerEvent implements Cancellable {
+      * @param velocity The velocity vector that will be sent to the player
+      */
+     public void setVelocity(@NotNull Vector velocity) {
+-        this.velocity = velocity;
++        this.velocity = velocity.clone(); // Paper - clone mutable types
      }
  
      @NotNull
@@ -110,6 +298,19 @@ index 7bfb84d3948c773e943374316ea25a19288ec7d0..fc4cf7b21b24fe38617fa150f697bc29
      }
  
  
+diff --git a/src/main/java/org/bukkit/event/world/AsyncStructureSpawnEvent.java b/src/main/java/org/bukkit/event/world/AsyncStructureSpawnEvent.java
+index 5f05b32bdf0b24650d247e7a11c87bc812a3639f..af7d5dea890a31e06c240f05e9cd9bbbb1cc0070 100644
+--- a/src/main/java/org/bukkit/event/world/AsyncStructureSpawnEvent.java
++++ b/src/main/java/org/bukkit/event/world/AsyncStructureSpawnEvent.java
+@@ -45,7 +45,7 @@ public class AsyncStructureSpawnEvent extends WorldEvent implements Cancellable
+      */
+     @NotNull
+     public BoundingBox getBoundingBox() {
+-        return boundingBox;
++        return boundingBox.clone(); // Paper - clone mutable types
+     }
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/event/world/GenericGameEvent.java b/src/main/java/org/bukkit/event/world/GenericGameEvent.java
 index 2a2a329877d8da45c2d6afecf78ce88d52635cad..fb975fefc74d8c9746cab4c02860f55654cf92f7 100644
 --- a/src/main/java/org/bukkit/event/world/GenericGameEvent.java
@@ -149,3 +350,114 @@ index 7af8d6e51c824cf0592b722b834f1d4986e3cc08..783e74bc382f0f6d24203fde7b811f58
      }
  
      /**
+diff --git a/src/main/java/org/bukkit/loot/LootContext.java b/src/main/java/org/bukkit/loot/LootContext.java
+index b35dba42069f771db8727bf98f9d17aff9d6094e..05209201d2695bc95bd37cb972de3121805db4c4 100644
+--- a/src/main/java/org/bukkit/loot/LootContext.java
++++ b/src/main/java/org/bukkit/loot/LootContext.java
+@@ -24,7 +24,7 @@ public final class LootContext {
+     private LootContext(@NotNull Location location, float luck, int lootingModifier, @Nullable Entity lootedEntity, @Nullable HumanEntity killer) {
+         Preconditions.checkArgument(location != null, "LootContext location cannot be null");
+         Preconditions.checkArgument(location.getWorld() != null, "LootContext World cannot be null");
+-        this.location = location;
++        this.location = location.clone(); // Paper - clone mutable types
+         this.luck = luck;
+         this.lootingModifier = lootingModifier;
+         this.lootedEntity = lootedEntity;
+@@ -38,7 +38,7 @@ public final class LootContext {
+      */
+     @NotNull
+     public Location getLocation() {
+-        return location;
++        return location.clone(); // Paper - clone mutable types
+     }
+ 
+     /**
+@@ -108,7 +108,7 @@ public final class LootContext {
+          * @param location the location the LootContext should use
+          */
+         public Builder(@NotNull Location location) {
+-            this.location = location;
++            this.location = location.clone(); // Paper - clone mutable types
+         }
+ 
+         /**
+diff --git a/src/main/java/org/bukkit/util/Transformation.java b/src/main/java/org/bukkit/util/Transformation.java
+index 39f9e50c7dc710ee2f523f1c7074a89a377c1cf2..1837258ba9b7cfc30cf5fed21e22a9f273381479 100644
+--- a/src/main/java/org/bukkit/util/Transformation.java
++++ b/src/main/java/org/bukkit/util/Transformation.java
+@@ -27,9 +27,9 @@ public class Transformation {
+         Preconditions.checkArgument(scale != null, "scale cannot be null");
+         Preconditions.checkArgument(rightRotation != null, "rightRotation cannot be null");
+ 
+-        this.translation = translation;
++        this.translation = new Vector3f(translation); // Paper - copy mutable types
+         this.leftRotation = new Quaternionf(leftRotation);
+-        this.scale = scale;
++        this.scale = new Vector3f(scale); // Paper - copy mutable types
+         this.rightRotation = new Quaternionf(rightRotation);
+     }
+ 
+@@ -39,10 +39,10 @@ public class Transformation {
+         Preconditions.checkArgument(scale != null, "scale cannot be null");
+         Preconditions.checkArgument(rightRotation != null, "rightRotation cannot be null");
+ 
+-        this.translation = translation;
+-        this.leftRotation = leftRotation;
+-        this.scale = scale;
+-        this.rightRotation = rightRotation;
++        this.translation = new Vector3f(translation); // Paper - copy mutable types
++        this.leftRotation = new Quaternionf(leftRotation); // Paper - copy mutable types
++        this.scale = new Vector3f(scale); // Paper - copy mutable types
++        this.rightRotation = new Quaternionf(rightRotation); // Paper - copy mutable types
+     }
+ 
+     /**
+@@ -52,7 +52,7 @@ public class Transformation {
+      */
+     @NotNull
+     public Vector3f getTranslation() {
+-        return this.translation;
++        return new Vector3f(this.translation); // Paper - copy mutable types
+     }
+ 
+     /**
+@@ -62,7 +62,7 @@ public class Transformation {
+      */
+     @NotNull
+     public Quaternionf getLeftRotation() {
+-        return this.leftRotation;
++        return new Quaternionf(this.leftRotation); // Paper - copy mutable types
+     }
+ 
+     /**
+@@ -72,7 +72,7 @@ public class Transformation {
+      */
+     @NotNull
+     public Vector3f getScale() {
+-        return this.scale;
++        return new Vector3f(this.scale); // Paper - copy mutable types
+     }
+ 
+     /**
+@@ -82,7 +82,7 @@ public class Transformation {
+      */
+     @NotNull
+     public Quaternionf getRightRotation() {
+-        return this.rightRotation;
++        return new Quaternionf(this.rightRotation); // Paper - copy mutable types
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/spigotmc/event/player/PlayerSpawnLocationEvent.java b/src/main/java/org/spigotmc/event/player/PlayerSpawnLocationEvent.java
+index 2515887c20738b5add74eff02d2e9672080623d2..67c1f4cf1ebed9f80850169f3f1736c317aaf0a7 100644
+--- a/src/main/java/org/spigotmc/event/player/PlayerSpawnLocationEvent.java
++++ b/src/main/java/org/spigotmc/event/player/PlayerSpawnLocationEvent.java
+@@ -37,7 +37,7 @@ public class PlayerSpawnLocationEvent extends PlayerEvent {
+      * @param location the spawn location
+      */
+     public void setSpawnLocation(@NotNull Location location) {
+-        this.spawnLocation = location;
++        this.spawnLocation = location.clone(); // Paper - clone mutable types
+     }
+ 
+     @NotNull
