@@ -5,17 +5,28 @@ Subject: [PATCH] Item Mutation Fixes
 
 
 diff --git a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
-index 343f44db579839eb61376f876b5eff2e615dc2e5..7b9015bdc3f888056a75f16046b3a19a00fc1465 100644
+index 343f44db579839eb61376f876b5eff2e615dc2e5..b4a63e8d04b60d5a0c6c2d407d777c4142cee2a6 100644
 --- a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
-@@ -251,11 +251,17 @@ public class EnchantmentMenu extends AbstractContainerMenu {
+@@ -229,7 +229,7 @@ public class EnchantmentMenu extends AbstractContainerMenu {
+                 return false;
+             } else if (this.costs[id] > 0 && !itemstack.isEmpty() && (player.experienceLevel >= j && player.experienceLevel >= this.costs[id] || player.getAbilities().instabuild)) {
+                 this.access.execute((world, blockposition) -> {
+-                    ItemStack itemstack2 = itemstack;
++                    ItemStack itemstack2 = itemstack; // Paper -- diff on change
+                     List<EnchantmentInstance> list = this.getEnchantmentList(itemstack, id, this.costs[id]);
+ 
+                     // CraftBukkit start
+@@ -251,11 +251,19 @@ public class EnchantmentMenu extends AbstractContainerMenu {
                              return;
                          }
                          // CraftBukkit end
 -                        boolean flag = itemstack.is(Items.BOOK);
 +                        // Paper start
-+                        itemstack2 = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getItem());
-+                        this.enchantSlots.setItem(0, itemstack2);
++                        itemstack2 = org.bukkit.craftbukkit.inventory.CraftItemStack.getOrCloneOnMutation(item, event.getItem());
++                        if (itemstack2 != itemstack) {
++                         this.enchantSlots.setItem(0, itemstack2);
++                        }
 +                        boolean flag = itemstack2.is(Items.BOOK);
 +                        // Paper end
  
@@ -28,6 +39,15 @@ index 343f44db579839eb61376f876b5eff2e615dc2e5..7b9015bdc3f888056a75f16046b3a19a
  
                              if (nbttagcompound != null) {
                                  itemstack2.setTag(nbttagcompound.copy());
+@@ -277,7 +285,7 @@ public class EnchantmentMenu extends AbstractContainerMenu {
+                                     EnchantmentInstance weightedrandomenchant = new EnchantmentInstance(nms, entry.getValue());
+                                     EnchantedBookItem.addEnchantment(itemstack2, weightedrandomenchant);
+                                 } else {
+-                                    item.addUnsafeEnchantment(entry.getKey(), entry.getValue());
++                                    CraftItemStack.asCraftMirror(itemstack2).addUnsafeEnchantment(entry.getKey(), entry.getValue()); // Paper
+                                 }
+                             } catch (IllegalArgumentException e) {
+                                 /* Just swallow invalid enchantments */
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
 index 9f7b49a6a50cb53d914c8f4b5132c035c5ab71da..90cd24b2110a6699bf633cd6c599375b5acff8a1 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
