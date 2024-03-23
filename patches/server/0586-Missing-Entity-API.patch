@@ -29,6 +29,7 @@ public net.minecraft.world.entity.animal.AbstractSchoolingFish schoolSize
 public net.minecraft.world.entity.animal.Rabbit moreCarrotTicks
 public net.minecraft.world.entity.AreaEffectCloud ownerUUID
 public net.minecraft.world.entity.animal.MushroomCow stewEffects
+public net.minecraft.world.entity.Entity FLAG_INVISIBLE
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
@@ -37,6 +38,7 @@ Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
 Co-authored-by: booky10 <boooky10@gmail.com>
 Co-authored-by: Amin <amin.haddou@frg.wwschool.de>
 Co-authored-by: TrollyLoki <trollyloki@gmail.com>
+Co-authored-by: FireInstall <kettnerl@hu-berlin.de>
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
 index 8117578ced94aa6bf01871f6526a388385c4adf2..59699c59fdfc611177fdb3136f84ab539b17d9c9 100644
@@ -667,6 +669,28 @@ index fc0f0e841dc974d080e1abb9bbafb5165801131f..d657fd2c507a5b215aeab0a5f3e9c2ee
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 07158732dd6a5b7d622b7f2ea10ca87b50365b8a..08d63e104ddc079af6349b6b3665cadae1c619ad 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1078,4 +1078,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return set;
+     }
+     // Paper end
++
++    // Paper start - move up invisibility
++    @Override
++    public boolean isInvisible() {
++        return this.getHandle().isInvisible();
++    }
++
++    @Override
++    public void setInvisible(boolean invisible) {
++        this.getHandle().persistentInvisibility = invisible;
++        this.getHandle().setSharedFlag(net.minecraft.world.entity.Entity.FLAG_INVISIBLE, invisible);
++    }
++    // Paper end - move up invisibility
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
 index 73cb7aa01af3eed71b05b1a539f082b26dcd8d60..e1a2f0924da6ebcdf332040f922226af5d8a2d45 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
@@ -761,12 +785,22 @@ index 2cec61a1bb050c1ef81c5fc3d0afafe9ff29d459..97fa4e1e70203194bd939618b2fad926
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 9ce82b203e37ff1f5a7618fe864ed7616bd8d52e..9a7a670c1e99674e8a554342165b7b77001083fc 100644
+index 9ce82b203e37ff1f5a7618fe864ed7616bd8d52e..6218f15194b7ae0b17f7f1dab78b1337779edb27 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -913,6 +913,22 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
-         this.getHandle().persistentInvisibility = invisible;
-         this.getHandle().setSharedFlag(5, invisible);
+@@ -905,14 +905,29 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+ 
+     @Override
+     public boolean isInvisible() {
+-        return this.getHandle().isInvisible();
++        return super.isInvisible(); // Paper - move invisibility up to Entity - diff on change
+     }
+ 
+     @Override
+     public void setInvisible(boolean invisible) {
+-        this.getHandle().persistentInvisibility = invisible;
+-        this.getHandle().setSharedFlag(5, invisible);
++        super.setInvisible(invisible); // Paper - move invisibility up to Entity
      }
 +    // Paper start
 +    @Override
