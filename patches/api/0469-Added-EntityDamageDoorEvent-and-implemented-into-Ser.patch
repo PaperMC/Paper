@@ -6,10 +6,10 @@ Subject: [PATCH] Added EntityDamageDoorEvent and implemented into Server.
 
 diff --git a/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3a4efb7c983e5b4ca4d49360e9338fcd2ae6fd34
+index 0000000000000000000000000000000000000000..403ede1eece18d5b70117a789f27903887525581
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,125 @@
 +package io.papermc.paper.event.entity;
 +
 +import com.google.common.base.Preconditions;
@@ -18,24 +18,24 @@ index 0000000000000000000000000000000000000000..3a4efb7c983e5b4ca4d49360e9338fcd
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Range;
 +
 +/**
 + * Called for every tick an entity is damaging a door.
-+ * <p>
-+ * This event is only called when a new level of progress
-+ * has been reached by the damaging entity.
 + */
 +public class EntityDamageDoorEvent extends EntityEvent implements Cancellable {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
++
 +    private final BlockData damagedDoor;
 +    private boolean cancelled;
 +    private int breakTime;
 +    private final int doorBreakTime;
 +    private boolean playEffect;
 +
++    @ApiStatus.Internal
 +    public EntityDamageDoorEvent(final @NotNull Entity what, final @NotNull BlockData damagedDoor, final int breakTime, final int doorBreakTime, boolean playEffect) {
 +        super(what);
 +        this.damagedDoor = damagedDoor;
@@ -74,7 +74,7 @@ index 0000000000000000000000000000000000000000..3a4efb7c983e5b4ca4d49360e9338fcd
 +     * @param breakTime The ticks spent damaging the door.
 +     */
 +    public void setBreakTime(@Range(from = 0, to = Integer.MAX_VALUE) final int breakTime) {
-+        Preconditions.checkArgument(breakTime >= 0, "The breaking progress must be at least -1!");
++        Preconditions.checkArgument(breakTime >= 0, "The breaking progress must be at least 0!");
 +        Preconditions.checkArgument(breakTime < this.doorBreakTime, "The door breaking time cannot be greater than or equal to the amount of ticks required to break the door!");
 +        this.breakTime = breakTime;
 +    }
@@ -97,17 +97,17 @@ index 0000000000000000000000000000000000000000..3a4efb7c983e5b4ca4d49360e9338fcd
 +     * @return will play effect
 +     */
 +    public boolean playsEffect() {
-+        return playEffect;
++        return this.playEffect;
 +    }
 +
 +    /**
 +     * Sets if this should play an effect when damaging the door.
 +     * This includes the sound, and arm swing (if the entity isn't currently swinging)
 +     *
-+     * @param playEffect will play effect
++     * @param playEffects will play effect
 +     */
-+    public void setPlayEffect(final boolean playEffect) {
-+        this.playEffect = playEffect;
++    public void playsEffect(final boolean playEffects) {
++        this.playEffect = playEffects;
 +    }
 +
 +    @Override
@@ -115,6 +115,11 @@ index 0000000000000000000000000000000000000000..3a4efb7c983e5b4ca4d49360e9338fcd
 +        return this.cancelled;
 +    }
 +
++    /**
++     * Cancelling this event will reset the break progress of this door.
++     *
++     * @param cancel true if you wish to cancel this event
++     */
 +    @Override
 +    public void setCancelled(final boolean cancel) {
 +        this.cancelled = cancel;
