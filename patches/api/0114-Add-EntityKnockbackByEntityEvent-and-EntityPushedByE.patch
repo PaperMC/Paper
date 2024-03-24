@@ -5,10 +5,11 @@ Subject: [PATCH] Add EntityKnockbackByEntityEvent and
  EntityPushedByEntityAttackEvent
 
 Co-authored-by: aerulion <aerulion@gmail.com>
+Co-authored-by: leguan <longboard.noah@gmail.com>
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e0ba692c9b107f2b042a9c06549185e1c4777e27
+index 0000000000000000000000000000000000000000..69b09853d3688bc795fbd0f43d18121a65462dbd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java
 @@ -0,0 +1,48 @@
@@ -30,8 +31,8 @@ index 0000000000000000000000000000000000000000..e0ba692c9b107f2b042a9c06549185e1
 +    private final float knockbackStrength;
 +
 +    @ApiStatus.Internal
-+    public EntityKnockbackByEntityEvent(@NotNull LivingEntity entity, @NotNull Entity hitBy, float knockbackStrength, @NotNull Vector acceleration) {
-+        super(entity, hitBy, acceleration);
++    public EntityKnockbackByEntityEvent(@NotNull LivingEntity entity, @NotNull Entity hitBy, @NotNull KnockbackCause cause, float knockbackStrength, @NotNull Vector acceleration) {
++        super(entity, hitBy, acceleration, cause);
 +        this.knockbackStrength = knockbackStrength;
 +    }
 +
@@ -62,10 +63,10 @@ index 0000000000000000000000000000000000000000..e0ba692c9b107f2b042a9c06549185e1
 +}
 diff --git a/src/main/java/io/papermc/paper/event/entity/EntityPushedByEntityAttackEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityPushedByEntityAttackEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..404bec776244fd776566c81f671f1009830c6d6e
+index 0000000000000000000000000000000000000000..c7aada6fa052b05e7310af9af158f8af93fa1f98
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/entity/EntityPushedByEntityAttackEvent.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,124 @@
 +package io.papermc.paper.event.entity;
 +
 +import org.bukkit.entity.Entity;
@@ -88,14 +89,16 @@ index 0000000000000000000000000000000000000000..404bec776244fd776566c81f671f1009
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    private final @NotNull Entity pushedBy;
++    private final @NotNull KnockbackCause cause;
 +    private @NotNull Vector acceleration;
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
-+    public EntityPushedByEntityAttackEvent(@NotNull Entity entity, @NotNull Entity pushedBy, @NotNull Vector acceleration) {
++    public EntityPushedByEntityAttackEvent(@NotNull Entity entity, @NotNull Entity pushedBy, @NotNull Vector acceleration, @NotNull KnockbackCause cause) {
 +        super(entity);
 +        this.pushedBy = pushedBy;
 +        this.acceleration = acceleration;
++        this.cause = cause;
 +    }
 +
 +    /**
@@ -116,6 +119,15 @@ index 0000000000000000000000000000000000000000..404bec776244fd776566c81f671f1009
 +    @NotNull
 +    public Vector getAcceleration() {
 +        return this.acceleration; // TODO Clone in 1.21 to not instantly break what was technically already modifiable
++    }
++
++    /**
++     * Gets the cause of the knockback.
++     *
++     * @return the cause of the knockback
++     */
++    public @NotNull KnockbackCause getCause() {
++        return this.cause;
 +    }
 +
 +    /**
@@ -146,6 +158,37 @@ index 0000000000000000000000000000000000000000..404bec776244fd776566c81f671f1009
 +    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
++    }
++
++    /**
++     * An enum to specify the cause of the knockback.
++     */
++    public enum KnockbackCause {
++
++        /**
++         * Knockback caused by non-entity damage.
++         */
++        DAMAGE,
++        /**
++         * Knockback caused by an attacking entity.
++         */
++        ENTITY_ATTACK,
++        /**
++         * Knockback caused by an explosion.
++         */
++        EXPLOSION,
++        /**
++         * Knockback caused by the target blocking with a shield.
++         */
++        SHIELD_BLOCK,
++        /**
++         * Knockback caused by a sweeping attack.
++         */
++        SWEEP_ATTACK,
++        /**
++         * Knockback with an unknown cause.
++         */
++        UNKNOWN;
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/event/entity/EntityKnockbackByEntityEvent.java b/src/main/java/org/bukkit/event/entity/EntityKnockbackByEntityEvent.java
