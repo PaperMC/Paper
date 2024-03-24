@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukas Planz <me@md5lukas.de>
+Date: Mon, 2 Oct 2023 15:48:13 +0200
+Subject: [PATCH] Add API for client-side signs
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 34fcdeb0f4039f1fc6c4c8c593cc615560af1ba2..764e17cd5bff62ac2f3e21206618bfbae1abe86a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3372,6 +3372,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         if (worldserver.hasChunkAt(blockposition)) {
+             BlockEntity tileentity = worldserver.getBlockEntity(blockposition);
+ 
++            // Paper start
++            if (!new io.papermc.paper.event.packet.PreSignChangeEvent(this.player.getBukkitEntity(),
++                io.papermc.paper.math.Position.block(blockposition.getX(), blockposition.getY(), blockposition.getZ()),
++                packet.isFrontText() ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK,
++                signText.stream().map(line -> (net.kyori.adventure.text.Component) net.kyori.adventure.text.Component.text(line.raw())).toList())
++                .callEvent()) {
++                return;
++            }
++            // Paper end
+             if (!(tileentity instanceof SignBlockEntity)) {
+                 return;
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 604ed1f6742a6b028b9db2809f7bd4b9a3b38f4d..d2823030771d1b24d55892f75cb51546c88380f6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2861,6 +2861,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void openSign(@NotNull Sign sign, @NotNull Side side) {
+         CraftSign.openSign(sign, this, side);
+     }
++    // Paper start
++    @Override
++    public void openLocalSign(@NotNull io.papermc.paper.math.BlockPosition block, @NotNull Side side) {
++        getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundOpenSignEditorPacket(new net.minecraft.core.BlockPos(block.blockX(), block.blockY(), block.blockZ()), side == Side.FRONT));
++    }
++    // Paper end
+ 
+     @Override
+     public void showDemoScreen() {
