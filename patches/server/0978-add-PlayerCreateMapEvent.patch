@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: chmodsayshello <chmodsayshello@hotmail.com>
+Date: Tue, 2 May 2023 18:22:35 +0200
+Subject: [PATCH] add PlayerCreateMapEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/EmptyMapItem.java b/src/main/java/net/minecraft/world/item/EmptyMapItem.java
+index e92bb09dd3218d5a13e6251bddd0812acadda2be..7da8084db2ad53d2d467e3b9868a523f7ce3970a 100644
+--- a/src/main/java/net/minecraft/world/item/EmptyMapItem.java
++++ b/src/main/java/net/minecraft/world/item/EmptyMapItem.java
+@@ -18,13 +18,18 @@ public class EmptyMapItem extends ComplexItem {
+         if (world.isClientSide) {
+             return InteractionResultHolder.success(itemStack);
+         } else {
+-            if (!user.getAbilities().instabuild) {
+-                itemStack.shrink(1);
+-            }
+-
+             user.awardStat(Stats.ITEM_USED.get(this));
+             user.level.playSound((Player)null, user, SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, user.getSoundSource(), 1.0F, 1.0F);
+             ItemStack itemStack2 = MapItem.create(world, user.getBlockX(), user.getBlockZ(), (byte)0, true, false);
++            // Paper start
++            io.papermc.paper.event.player.PlayerCreateMapEvent playerCreateMapEvent = new io.papermc.paper.event.player.PlayerCreateMapEvent((org.bukkit.entity.Player) user.getBukkitEntity(), itemStack2.asBukkitCopy());
++            world.getCraftServer().getPluginManager().callEvent(playerCreateMapEvent);
++            if (playerCreateMapEvent.isCancelled()) {
++                return InteractionResultHolder.consume(itemStack);
++            } else if (!user.getAbilities().instabuild) { // Paper - moved down a couple of lines so an item gets removed only if the event wasn't cancelled!
++                itemStack.shrink(1);
++            }
++            // Paper end
+             if (itemStack.isEmpty()) {
+                 return InteractionResultHolder.consume(itemStack2);
+             } else {
