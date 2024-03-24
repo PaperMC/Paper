@@ -5,11 +5,12 @@ Subject: [PATCH] Add EntityKnockbackByEntityEvent and
  EntityPushedByEntityAttackEvent
 
 Co-authored-by: aerulion <aerulion@gmail.com>
+Co-authored-by: leguan <longboard.noah@gmail.com>
 
 This event is called when an entity receives knockback by another entity.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index fe314015f8cbc44e29a8ec73ecca4eeadd1da39f..d2d1a3e3c8accbdfeecafa86f9cc9f16007c3930 100644
+index 0cc82ffdcebbdd92fa953e7c52a20911f46a503c..ef961bdf245e6cd502fba0934b5e491a56649087 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1868,9 +1868,23 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
@@ -26,7 +27,7 @@ index fe314015f8cbc44e29a8ec73ecca4eeadd1da39f..d2d1a3e3c8accbdfeecafa86f9cc9f16
 +    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) {
 +        org.bukkit.util.Vector delta = new org.bukkit.util.Vector(deltaX, deltaY, deltaZ);
 +        if (pushingEntity != null) {
-+            io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent event = new io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent(getBukkitEntity(), pushingEntity.getBukkitEntity(), delta);
++            io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent event = new io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent(getBukkitEntity(), pushingEntity.getBukkitEntity(), delta, io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent.KnockbackCause.ENTITY_ATTACK);
 +            if (!event.callEvent()) {
 +                return;
 +            }
@@ -39,7 +40,7 @@ index fe314015f8cbc44e29a8ec73ecca4eeadd1da39f..d2d1a3e3c8accbdfeecafa86f9cc9f16
  
      protected void markHurt() {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 21bef887193c777ec1e311b3bf5c0213180ea4ca..83a56061ce23d3d6f7d8ad3201ce325106f8a4d0 100644
+index 21bef887193c777ec1e311b3bf5c0213180ea4ca..026897fb65b69cec17bcef68f289baaf434a0f60 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -1569,7 +1569,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -69,7 +70,7 @@ index 21bef887193c777ec1e311b3bf5c0213180ea4ca..83a56061ce23d3d6f7d8ad3201ce3251
 +            org.bukkit.util.Vector resultingMovement = event.getFinalKnockback();
 +            final org.bukkit.util.Vector deltaMovement = resultingMovement.clone().subtract(currentMovement);
 +            if (attacker != null) {
-+                final com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent knockbackEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(this.getBukkitLivingEntity(), attacker.getBukkitEntity(), (float) event.getForce(), deltaMovement);
++                final com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent knockbackEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(this.getBukkitLivingEntity(), attacker.getBukkitEntity(), CraftEventFactory.convertKnockbackCause(cause), (float) event.getForce(), deltaMovement);
 +                if (!knockbackEvent.callEvent()) {
 +                    return;
 +                }
@@ -205,7 +206,7 @@ index c210ae3795b1bbaefbe84a6f62b9d3dd75d642a4..f1d7f202b99b8ae4c16d10956d68d74e
                  }
  
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index 00cfa26783ce0772c75166266ead258a415097bc..ade10a9fd93f4c0f04cd56ce5e1da06af4a05060 100644
+index 00cfa26783ce0772c75166266ead258a415097bc..81663fd1419a3269b0ee2c96d02381fd38232e09 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
 @@ -298,7 +298,17 @@ public class Explosion {
@@ -217,7 +218,7 @@ index 00cfa26783ce0772c75166266ead258a415097bc..ade10a9fd93f4c0f04cd56ce5e1da06a
 +                            vec3d1 = (event.isCancelled()) ? Vec3.ZERO : new Vec3(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ()).subtract(entity.getDeltaMovement()); // changes on this line fix a bug where vec3d1 wasn't reassigned with the "change", but instead the final deltaMovement
 +                            if (this.damageSource.getEntity() != null || this.source != null) {
 +                                final org.bukkit.entity.Entity hitBy = this.damageSource.getEntity() != null ? this.damageSource.getEntity().getBukkitEntity() : this.source.getBukkitEntity();
-+                                com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent paperEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(((LivingEntity) entity).getBukkitLivingEntity(), hitBy, (float) event.getForce(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(vec3d1));
++                                com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent paperEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(((LivingEntity) entity).getBukkitLivingEntity(), hitBy, com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent.KnockbackCause.EXPLOSION, (float) event.getForce(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(vec3d1));
 +                                if (!paperEvent.callEvent()) {
 +                                    continue;
 +                                }
@@ -227,3 +228,20 @@ index 00cfa26783ce0772c75166266ead258a415097bc..ade10a9fd93f4c0f04cd56ce5e1da06a
                          }
                          // CraftBukkit end
                          entity.setDeltaMovement(entity.getDeltaMovement().add(vec3d1));
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 096e80bb71d10c897a20bb3c0b4b761328c9f56e..e71364e5721cefda23d2764d4fc400a802f458d4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1872,6 +1872,12 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
++    // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent - Add cause
++    public static io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent.KnockbackCause convertKnockbackCause(org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause bukkitKnockbackCause) {
++        return io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent.KnockbackCause.valueOf(bukkitKnockbackCause.name());
++    }
++    // Paper end - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent - Add cause
++
+     public static void callEntityRemoveEvent(Entity entity, EntityRemoveEvent.Cause cause) {
+         if (entity instanceof ServerPlayer) {
+             return; // Don't call for player
