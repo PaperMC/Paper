@@ -1,0 +1,1018 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 8 Dec 2021 16:49:33 -0800
+Subject: [PATCH] BlockProperty API
+
+
+diff --git a/src/main/java/io/papermc/paper/block/fluid/FluidData.java b/src/main/java/io/papermc/paper/block/fluid/FluidData.java
+index 913acd58547d97cafc1466f6e2b3b4d22cf0b02d..6413ed69e7bce467ab1f575362728cc136e2e61c 100644
+--- a/src/main/java/io/papermc/paper/block/fluid/FluidData.java
++++ b/src/main/java/io/papermc/paper/block/fluid/FluidData.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.block.fluid;
+ 
++import io.papermc.paper.block.property.BlockPropertyHolder;
+ import org.bukkit.Fluid;
+ import org.bukkit.Location;
+ import org.bukkit.util.Vector;
+@@ -10,7 +11,7 @@ import org.jetbrains.annotations.Range;
+  * A representation of a fluid in a specific state of data.
+  * This type is not linked to a specific location and hence mostly resembles a {@link org.bukkit.block.data.BlockData}.
+  */
+-public interface FluidData extends Cloneable {
++public interface FluidData extends Cloneable, BlockPropertyHolder {
+ 
+     /**
+      * Gets the fluid type of this fluid data.
+diff --git a/src/main/java/io/papermc/paper/block/property/AbstractBlockProperty.java b/src/main/java/io/papermc/paper/block/property/AbstractBlockProperty.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d750e2a1ab6002dc26c6f1a322771a162eb11029
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/property/AbstractBlockProperty.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.block.property;
++
++import com.google.common.base.MoreObjects;
++import java.util.Locale;
++import org.jetbrains.annotations.NotNull;
++
++abstract sealed class AbstractBlockProperty<T extends Comparable<T>> implements BlockProperty<T> permits BooleanBlockProperty, IntegerBlockProperty, EnumBlockProperty, NoteBlockProperty {
++
++    static final ExceptionCreator EXCEPTION_CREATOR = (value, type, property) -> new IllegalArgumentException(String.format("%s (%s) is not a valid %s for %s", value, value.getClass().getSimpleName(), type.name().toLowerCase(Locale.ENGLISH), property));
++
++    private final String name;
++    private final Class<T> type;
++
++    protected AbstractBlockProperty(final @NotNull String name, final @NotNull Class<T> type) {
++        this.name = name;
++        this.type = type;
++        BlockProperties.PROPERTIES.put(name, this);
++    }
++
++    @Override
++    public final @NotNull String name() {
++        return this.name;
++    }
++
++    @Override
++    public final @NotNull Class<T> type() {
++        return this.type;
++    }
++
++    @Override
++    public String toString() {
++        return MoreObjects.toStringHelper(this)
++            .add("name", this.name)
++            .add("type", this.type)
++            .add("values", this.values())
++            .toString();
++    }
++
++    @FunctionalInterface
++    interface ExceptionCreator {
++
++        @NotNull IllegalArgumentException create(@NotNull Object value, @NotNull Type type, @NotNull BlockProperty<?> property);
++
++        enum Type {
++            NAME,
++            VALUE,
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/property/BlockProperties.java b/src/main/java/io/papermc/paper/block/property/BlockProperties.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..25dd511098efea9ec683e6e018c5c6f21ea1466a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/property/BlockProperties.java
+@@ -0,0 +1,182 @@
++package io.papermc.paper.block.property;
++
++import com.google.common.collect.HashMultimap;
++import com.google.common.collect.Multimap;
++import java.util.Arrays;
++import java.util.Set;
++import java.util.function.Predicate;
++import java.util.stream.Collectors;
++import org.bukkit.Axis;
++import org.bukkit.Instrument;
++import org.bukkit.Note;
++import org.bukkit.block.BlockFace;
++import org.bukkit.block.data.Bisected;
++import org.bukkit.block.data.FaceAttachable;
++import org.bukkit.block.data.Rail;
++import org.bukkit.block.data.type.Bamboo;
++import org.bukkit.block.data.type.Bed;
++import org.bukkit.block.data.type.Bell;
++import org.bukkit.block.data.type.BigDripleaf;
++import org.bukkit.block.data.type.Chest;
++import org.bukkit.block.data.type.Comparator;
++import org.bukkit.block.data.type.Door;
++import org.bukkit.block.data.type.Jigsaw;
++import org.bukkit.block.data.type.PointedDripstone;
++import org.bukkit.block.data.type.RedstoneWire;
++import org.bukkit.block.data.type.SculkSensor;
++import org.bukkit.block.data.type.Slab;
++import org.bukkit.block.data.type.Stairs;
++import org.bukkit.block.data.type.StructureBlock;
++import org.bukkit.block.data.type.TechnicalPiston;
++import org.bukkit.block.data.type.TrialSpawner;
++import org.bukkit.block.data.type.Wall;
++
++/**
++ * All block properties applicable to {@link BlockPropertyHolder}s.
++ */
++public final class BlockProperties {
++
++    static final Multimap<String, BlockProperty<?>> PROPERTIES = HashMultimap.create();
++
++    public static final BooleanBlockProperty ATTACHED = bool("attached");
++    public static final BooleanBlockProperty BOTTOM = bool("bottom");
++    public static final BooleanBlockProperty CONDITIONAL = bool("conditional");
++    public static final BooleanBlockProperty CRACKED = bool("cracked");
++    public static final BooleanBlockProperty DISARMED = bool("disarmed");
++    public static final BooleanBlockProperty DRAG = bool("drag");
++    public static final BooleanBlockProperty ENABLED = bool("enabled");
++    public static final BooleanBlockProperty EXTENDED = bool("extended");
++    public static final BooleanBlockProperty EYE = bool("eye");
++    public static final BooleanBlockProperty FALLING = bool("falling");
++    public static final BooleanBlockProperty HANGING = bool("hanging");
++    public static final BooleanBlockProperty HAS_BOTTLE_0 = bool("has_bottle_0");
++    public static final BooleanBlockProperty HAS_BOTTLE_1 = bool("has_bottle_1");
++    public static final BooleanBlockProperty HAS_BOTTLE_2 = bool("has_bottle_2");
++    public static final BooleanBlockProperty HAS_RECORD = bool("has_record");
++    public static final BooleanBlockProperty HAS_BOOK = bool("has_book");
++    public static final BooleanBlockProperty INVERTED = bool("inverted");
++    public static final BooleanBlockProperty IN_WALL = bool("in_wall");
++    public static final BooleanBlockProperty LIT = bool("lit");
++    public static final BooleanBlockProperty LOCKED = bool("locked");
++    public static final BooleanBlockProperty OCCUPIED = bool("occupied");
++    public static final BooleanBlockProperty OPEN = bool("open");
++    public static final BooleanBlockProperty PERSISTENT = bool("persistent");
++    public static final BooleanBlockProperty POWERED = bool("powered");
++    public static final BooleanBlockProperty SHORT = bool("short");
++    public static final BooleanBlockProperty SIGNAL_FIRE = bool("signal_fire");
++    public static final BooleanBlockProperty SNOWY = bool("snowy");
++    public static final BooleanBlockProperty TRIGGERED = bool("triggered");
++    public static final BooleanBlockProperty UNSTABLE = bool("unstable");
++    public static final BooleanBlockProperty WATERLOGGED = bool("waterlogged");
++    public static final BooleanBlockProperty BERRIES = bool("berries");
++    public static final BooleanBlockProperty BLOOM = bool("bloom");
++    public static final BooleanBlockProperty SHRIEKING = bool("shrieking");
++    public static final BooleanBlockProperty CAN_SUMMON = bool("can_summon");
++    public static final BooleanBlockProperty UP = bool("up");
++    public static final BooleanBlockProperty DOWN = bool("down");
++    public static final BooleanBlockProperty NORTH = bool("north");
++    public static final BooleanBlockProperty EAST = bool("east");
++    public static final BooleanBlockProperty SOUTH = bool("south");
++    public static final BooleanBlockProperty WEST = bool("west");
++    public static final BooleanBlockProperty CHISELED_BOOKSHELF_SLOT_0_OCCUPIED = bool("slot_0_occupied");
++    public static final BooleanBlockProperty CHISELED_BOOKSHELF_SLOT_1_OCCUPIED = bool("slot_1_occupied");
++    public static final BooleanBlockProperty CHISELED_BOOKSHELF_SLOT_2_OCCUPIED = bool("slot_2_occupied");
++    public static final BooleanBlockProperty CHISELED_BOOKSHELF_SLOT_3_OCCUPIED = bool("slot_3_occupied");
++    public static final BooleanBlockProperty CHISELED_BOOKSHELF_SLOT_4_OCCUPIED = bool("slot_4_occupied");
++    public static final BooleanBlockProperty CHISELED_BOOKSHELF_SLOT_5_OCCUPIED = bool("slot_5_occupied");
++    public static final BooleanBlockProperty CRAFTING = bool("crafting");
++
++    public static final IntegerBlockProperty AGE_1 = integer("age", 0, 1);
++    public static final IntegerBlockProperty AGE_2 = integer("age", 0, 2);
++    public static final IntegerBlockProperty AGE_3 = integer("age", 0, 3);
++    public static final IntegerBlockProperty AGE_4 = integer("age", 0, 4);
++    public static final IntegerBlockProperty AGE_5 = integer("age", 0, 5);
++    public static final IntegerBlockProperty AGE_7 = integer("age", 0, 7);
++    public static final IntegerBlockProperty AGE_15 = integer("age", 0, 15);
++    public static final IntegerBlockProperty AGE_25 = integer("age", 0, 25);
++    public static final IntegerBlockProperty BITES = integer("bites", 0, 6);
++    public static final IntegerBlockProperty CANDLES = integer("candles", 1, 4);
++    public static final IntegerBlockProperty DELAY = integer("delay", 1, 4);
++    public static final IntegerBlockProperty DISTANCE = integer("distance", 1, 7);
++    public static final IntegerBlockProperty DUSTED = integer("dusted", 0, 3);
++    public static final IntegerBlockProperty EGGS = integer("eggs", 1, 4);
++    public static final IntegerBlockProperty FLOWER_AMOUNT = integer("flower_amount", 1, 4);
++    public static final IntegerBlockProperty HATCH = integer("hatch", 0, 2);
++    public static final IntegerBlockProperty LAYERS = integer("layers", 1, 8);
++    public static final IntegerBlockProperty LEVEL_CAULDRON = integer("level", 1, 3);
++    public static final IntegerBlockProperty LEVEL_COMPOSTER = integer("level", 0, 8);
++    public static final IntegerBlockProperty LEVEL_FLOWING = integer("level", 1, 8);
++    public static final IntegerBlockProperty LEVEL_HONEY = integer("honey_level", 0, 5);
++    public static final IntegerBlockProperty LEVEL = integer("level", 0, 15);
++    public static final IntegerBlockProperty MOISTURE = integer("moisture", 0, 7);
++    public static final BlockProperty<Note> NOTE = new NoteBlockProperty("note"); // is stored as int, but represented as object
++    public static final IntegerBlockProperty PICKLES = integer("pickles", 1, 4);
++    public static final IntegerBlockProperty POWER = integer("power", 0, 15);
++    public static final IntegerBlockProperty STAGE = integer("stage", 0, 1);
++    public static final IntegerBlockProperty STABILITY_DISTANCE = integer("distance", 0, 7);
++    public static final IntegerBlockProperty RESPAWN_ANCHOR_CHARGES = integer("charges", 0, 4);
++
++    public static final EnumBlockProperty<BlockFace> ROTATION_16 = new RotationBlockProperty("rotation"); // is stored as int, but represented as enum
++    public static final EnumBlockProperty<Axis> HORIZONTAL_AXIS = enumeration("axis", Axis.class, Axis.X, Axis.Z);
++    public static final EnumBlockProperty<Axis> AXIS = enumeration("axis", Axis.class);
++    public static final EnumBlockProperty<BlockFace> FACING = enumeration("facing", BlockFace.class, BlockFace::isCartesian);
++    public static final EnumBlockProperty<BlockFace> FACING_HOPPER = enumeration("facing", BlockFace.class, ((Predicate<BlockFace>) BlockFace::isCartesian).and(face -> face != BlockFace.UP));
++    public static final EnumBlockProperty<BlockFace> HORIZONTAL_FACING = enumeration("facing", BlockFace.class, BlockFace::isCardinal);
++    public static final EnumBlockProperty<Jigsaw.Orientation> ORIENTATION = enumeration("orientation", Jigsaw.Orientation.class);
++    public static final EnumBlockProperty<FaceAttachable.AttachedFace> ATTACH_FACE = enumeration("face", FaceAttachable.AttachedFace.class);
++    public static final EnumBlockProperty<Bell.Attachment> BELL_ATTACHMENT = enumeration("attachment", Bell.Attachment.class);
++    public static final EnumBlockProperty<Wall.Height> EAST_WALL = enumeration("east", Wall.Height.class);
++    public static final EnumBlockProperty<Wall.Height> NORTH_WALL = enumeration("north", Wall.Height.class);
++    public static final EnumBlockProperty<Wall.Height> SOUTH_WALL = enumeration("south", Wall.Height.class);
++    public static final EnumBlockProperty<Wall.Height> WEST_WALL = enumeration("west", Wall.Height.class);
++    public static final EnumBlockProperty<RedstoneWire.Connection> EAST_REDSTONE = enumeration("east", RedstoneWire.Connection.class);
++    public static final EnumBlockProperty<RedstoneWire.Connection> NORTH_REDSTONE = enumeration("north", RedstoneWire.Connection.class);
++    public static final EnumBlockProperty<RedstoneWire.Connection> SOUTH_REDSTONE = enumeration("south", RedstoneWire.Connection.class);
++    public static final EnumBlockProperty<RedstoneWire.Connection> WEST_REDSTONE = enumeration("west", RedstoneWire.Connection.class);
++    public static final EnumBlockProperty<Bisected.Half> DOUBLE_BLOCK_HALF = enumeration("half", Bisected.Half.class);
++    public static final EnumBlockProperty<Bisected.Half> HALF = enumeration("half", Bisected.Half.class);
++    public static final EnumBlockProperty<Rail.Shape> RAIL_SHAPE = enumeration("shape", Rail.Shape.class);
++    public static final EnumBlockProperty<Rail.Shape> RAIL_SHAPE_STRAIGHT = enumeration("shape", Rail.Shape.class, Rail.Shape::isStraight);
++    public static final EnumBlockProperty<Bed.Part> BED_PART = enumeration("part", Bed.Part.class);
++    public static final EnumBlockProperty<Chest.Type> CHEST_TYPE = enumeration("type", Chest.Type.class);
++    public static final EnumBlockProperty<Comparator.Mode> MODE_COMPARATOR = enumeration("mode", Comparator.Mode.class);
++    public static final EnumBlockProperty<Door.Hinge> DOOR_HINGE = enumeration("hinge", Door.Hinge.class);
++    public static final EnumBlockProperty<Instrument> NOTEBLOCK_INSTRUMENT = enumeration("instrument", Instrument.class);
++    public static final EnumBlockProperty<TechnicalPiston.Type> PISTON_TYPE = enumeration("type", TechnicalPiston.Type.class);
++    public static final EnumBlockProperty<Slab.Type> SLAB_TYPE = enumeration("type", Slab.Type.class);
++    public static final EnumBlockProperty<Stairs.Shape> STAIRS_SHAPE = enumeration("shape", Stairs.Shape.class);
++    public static final EnumBlockProperty<StructureBlock.Mode> STRUCTUREBLOCK_MODE = enumeration("mode", StructureBlock.Mode.class);
++    public static final EnumBlockProperty<Bamboo.Leaves> BAMBOO_LEAVES = enumeration("leaves", Bamboo.Leaves.class);
++    public static final EnumBlockProperty<BigDripleaf.Tilt> TILT = enumeration("tilt", BigDripleaf.Tilt.class);
++    public static final EnumBlockProperty<BlockFace> VERTICAL_DIRECTION = enumeration("vertical_direction", BlockFace.class, face -> Math.abs(face.getModY()) > 0);
++    public static final EnumBlockProperty<PointedDripstone.Thickness> DRIPSTONE_THICKNESS = enumeration("thickness", PointedDripstone.Thickness.class);
++    public static final EnumBlockProperty<SculkSensor.Phase> SCULK_SENSOR_PHASE = enumeration("sculk_sensor_phase", SculkSensor.Phase.class);
++    public static final EnumBlockProperty<TrialSpawner.State> TRIAL_SPAWNER_STATE = enumeration("trial_spawner_state", TrialSpawner.State.class);
++
++    private BlockProperties() {
++    }
++
++    //<editor-fold defaultstate="collapsed" desc="static factory methods">
++    private static IntegerBlockProperty integer(final String name, final int min, final int max) {
++        return new IntegerBlockProperty(name, min, max);
++    }
++
++    private static BooleanBlockProperty bool(final String name) {
++        return new BooleanBlockProperty(name);
++    }
++
++    private static <E extends Enum<E>> EnumBlockProperty<E> enumeration(final String name, final Class<E> enumClass) {
++        return new EnumBlockProperty<>(name, enumClass, Set.of(enumClass.getEnumConstants()));
++    }
++
++    @SuppressWarnings("SameParameterValue")
++    @SafeVarargs
++    private static <E extends Enum<E>> EnumBlockProperty<E> enumeration(final String name, final Class<E> enumClass, final E... values) {
++        return new EnumBlockProperty<>(name, enumClass, Set.of(values));
++    }
++
++    private static <E extends Enum<E>> EnumBlockProperty<E> enumeration(final String name, final Class<E> enumClass, final Predicate<E> test) {
++        return new EnumBlockProperty<>(name, enumClass, Arrays.stream(enumClass.getEnumConstants()).filter(test).collect(Collectors.toSet()));
++    }
++    //</editor-fold>
++}
+diff --git a/src/main/java/io/papermc/paper/block/property/BlockProperty.java b/src/main/java/io/papermc/paper/block/property/BlockProperty.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ac300823fb9b4dae329d59692c2a8b217e5dc81f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/property/BlockProperty.java
+@@ -0,0 +1,136 @@
++package io.papermc.paper.block.property;
++
++import java.util.Optional;
++import java.util.Set;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++public sealed interface BlockProperty<T extends Comparable<T>> permits AbstractBlockProperty {
++
++    /**
++     * Gets the name of this property.
++     *
++     * @return the name
++     */
++    @NotNull String name();
++
++    /**
++     * Gets the value type of this property.
++     *
++     * @return the value type
++     */
++    @NotNull Class<T> type();
++
++    /**
++     * Gets the string name for a value of this property.
++     *
++     * @param value the value to get the string name of
++     * @return the string name of the value
++     * @throws IllegalArgumentException if the value is not valid for
++     * @see #value(String)
++     */
++    @NotNull String name(@NotNull T value);
++
++    /**
++     * Checks if the name is a valid name
++     * for a value of this property.
++     *
++     * @param name the name to check
++     * @return true if valid
++     * @see #value(String)
++     */
++    boolean isValidName(@NotNull String name);
++
++    /**
++     * Gets the value of this property from the string name.
++     * Throws an exception if no value is found with that name.
++     *
++     * @param name the name of the value
++     * @return the property with the specified name
++     * @see #isValidName(String)
++     */
++    @NotNull T value(@NotNull String name);
++
++    /**
++     * Checks if the object is a valid value for this property.
++     *
++     * @param object the object to check
++     * @return true if its a valid value
++     * @see #setValue(BlockPropertyHolder.Mutable, Object)
++     */
++    boolean isValue(@NotNull Object object);
++
++    /**
++     * Gets an immutable collection of possible values for this property.
++     *
++     * @return an immutable collection of values
++     */
++    @Unmodifiable @NotNull Set<@NotNull T> values();
++
++    /**
++     * Checks if a {@link BlockPropertyHolder} has this property.
++     *
++     * @param holder the holder of a set of properties (like {@link org.bukkit.block.data.BlockData})
++     * @return true if this property is present
++     * @see BlockPropertyHolder#hasProperty(BlockProperty)
++     */
++    default boolean hasValueOn(final @NotNull BlockPropertyHolder holder) {
++        return holder.hasProperty(this);
++    }
++
++    /**
++     * Gets the value from a {@link BlockPropertyHolder} for this property.
++     *
++     * @param holder the holder of a set of properties (like {@link org.bukkit.block.data.BlockData})
++     * @return the non-null value
++     * @throws IllegalArgumentException if this property is not present
++     * @see #hasValueOn(BlockPropertyHolder)
++     * @see BlockPropertyHolder#getValue(BlockProperty)
++     */
++    default @NotNull T getValue(final @NotNull BlockPropertyHolder holder) {
++        return holder.getValue(this);
++    }
++
++    /**
++     * Gets the optional of the value for this property.
++     *
++     * @param holder the holder of a set of properties (like {@link org.bukkit.block.data.BlockData})
++     * @return the optional of the value, will be empty if the property is not present
++     * @see #getValue(BlockPropertyHolder)
++     * @see BlockPropertyHolder#getOptionalValue(BlockProperty)
++     */
++    default @NotNull Optional<T> getOptionalValue(final @NotNull BlockPropertyHolder holder) {
++        return holder.getOptionalValue(this);
++    }
++
++    /**
++     * Sets the value on a {@link BlockPropertyHolder} for this property.
++     *
++     * @param holder the mutable holder of a set of properties (like {@link org.bukkit.block.data.BlockData})
++     * @param value  the value for this property
++     * @throws IllegalArgumentException if this property is not present
++     * @see #hasValueOn(BlockPropertyHolder)
++     * @see BlockPropertyHolder#hasProperty(BlockProperty)
++     */
++    default void setValue(final @NotNull BlockPropertyHolder.Mutable holder, final @NotNull T value) {
++        holder.setValue(this, value);
++    }
++
++    /**
++     * Sets the value on a {@link BlockPropertyHolder} for this property.
++     *
++     * @param holder the mutable holder of a set of properties (like {@link org.bukkit.block.data.BlockData})
++     * @param value  the value for this property
++     * @throws IllegalArgumentException if this property is not present
++     * @see #hasValueOn(BlockPropertyHolder)
++     * @see BlockPropertyHolder#hasProperty(BlockProperty)
++     */
++    @SuppressWarnings("unchecked")
++    default void setValue(final @NotNull BlockPropertyHolder.Mutable holder, final @NotNull Object value) {
++        if (!this.isValue(value)) {
++            throw AbstractBlockProperty.EXCEPTION_CREATOR.create(value, AbstractBlockProperty.ExceptionCreator.Type.VALUE, this);
++        }
++        this.setValue(holder, (T) value);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/block/property/BlockPropertyHolder.java b/src/main/java/io/papermc/paper/block/property/BlockPropertyHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..988aa5d724226522424709486149020e0fe67f4b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/property/BlockPropertyHolder.java
+@@ -0,0 +1,94 @@
++package io.papermc.paper.block.property;
++
++import java.util.Collection;
++import java.util.Optional;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
++
++/**
++ * Represents an object that holds {@link BlockProperty}s.
++ */
++public interface BlockPropertyHolder {
++
++    /**
++     * Gets the property with this name on the holder (if it exists)
++     *
++     * @param propertyName name of the property
++     * @param <T>          property type;
++     * @return the property, if one is found with that name
++     */
++    <T extends Comparable<T>> @Nullable BlockProperty<T> getProperty(@NotNull String propertyName);
++
++    /**
++     * Checks if this has the property.
++     *
++     * @param property the property to check for
++     * @param <T>      property type
++     * @return true if property is present
++     * @see BlockProperty#hasValueOn(BlockPropertyHolder)
++     */
++    <T extends Comparable<T>> boolean hasProperty(@NotNull BlockProperty<T> property);
++
++    /**
++     * Gets the value for the specified property
++     *
++     * @param property the property
++     * @param <T>      property type
++     * @return the non-null value
++     * @throws IllegalArgumentException if the property is not present
++     * @see #hasProperty(BlockProperty)
++     * @see BlockProperty#getValue(BlockPropertyHolder)
++     */
++    <T extends Comparable<T>> @NotNull T getValue(@NotNull BlockProperty<T> property);
++
++    /**
++     * Gets the optional of the value for the specified property.
++     *
++     * @param property the property
++     * @param <T>      property type
++     * @return the optional of the value, will be empty if the property is not present
++     * @see #getValue(BlockProperty)
++     * @see BlockProperty#getOptionalValue(BlockPropertyHolder)
++     */
++    <T extends Comparable<T>> @NotNull Optional<T> getOptionalValue(@NotNull BlockProperty<T> property);
++
++    /**
++     * Get all properties present on this.
++     *
++     * @return an unmodifiable collection of properties
++     */
++    @NotNull @Unmodifiable Collection<BlockProperty<?>> getProperties();
++
++    /**
++     * Represents an object that holds {@link BlockProperty}s that can be changed.
++     */
++    interface Mutable extends BlockPropertyHolder {
++
++        /**
++         * Sets the value of the specified property.
++         *
++         * @param property the property
++         * @param value    the value for the property
++         * @param <T>      property type
++         * @throws IllegalArgumentException if the property is not present or if the value is invalid
++         * @see #hasProperty(BlockProperty)
++         * @see BlockProperty#setValue(Mutable, Comparable)
++         */
++        <T extends Comparable<T>> void setValue(@NotNull BlockProperty<T> property, @NotNull T value);
++
++        /**
++         * Sets the value of the specified property.
++         *
++         * @param property the property
++         * @param value    the value for the property
++         * @param <T>      property type
++         * @throws IllegalArgumentException if the property is not present or if the value is invalid
++         * @see #hasProperty(BlockProperty)
++         * @see BlockProperty#setValue(Mutable, Comparable)
++         */
++        default <T extends Comparable<T>> void setValue(final @NotNull BlockProperty<T> property, final @NotNull Object value) {
++            property.setValue(this, value);
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/property/BooleanBlockProperty.java b/src/main/java/io/papermc/paper/block/property/BooleanBlockProperty.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e5250229da138cf3aba8bfa493ef0bb71dc6c4e6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/property/BooleanBlockProperty.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.block.property;
++
++import it.unimi.dsi.fastutil.booleans.BooleanSet;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++public final class BooleanBlockProperty extends AbstractBlockProperty<Boolean> {
++
++    private static final BooleanSet VALUES = BooleanSet.of(true, false);
++
++    BooleanBlockProperty(final String name) {
++        super(name, Boolean.class);
++    }
++
++    @Override
++    public @NotNull String name(final @NotNull Boolean value) {
++        return value.toString();
++    }
++
++    @Override
++    public boolean isValidName(final @NotNull String name) {
++        return "true".equals(name) || "false".equals(name);
++    }
++
++    @Override
++    public @NotNull Boolean value(final @NotNull String name) {
++        return switch (name) {
++            case "true" -> true;
++            case "false" -> false;
++            default -> throw EXCEPTION_CREATOR.create(name, ExceptionCreator.Type.NAME, this);
++        };
++    }
++
++    @Override
++    public boolean isValue(final @NotNull Object object) {
++        return object instanceof Boolean;
++    }
++
++    @Override
++    public @Unmodifiable @NotNull BooleanSet values() {
++        return VALUES;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/property/EnumBlockProperty.java b/src/main/java/io/papermc/paper/block/property/EnumBlockProperty.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2568ed7e3058a838804da49969e71123b9e6d3b2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/property/EnumBlockProperty.java
+@@ -0,0 +1,114 @@
++package io.papermc.paper.block.property;
++
++import com.google.common.collect.BiMap;
++import com.google.common.collect.HashBiMap;
++import com.google.common.collect.Sets;
++import java.util.Collection;
++import java.util.List;
++import java.util.Set;
++import java.util.function.ToIntFunction;
++import net.kyori.adventure.util.Index;
++import org.bukkit.Bukkit;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
++
++public sealed class EnumBlockProperty<E extends Enum<E>> extends AbstractBlockProperty<E> permits EnumBlockProperty.EnumIntRepresented {
++
++    private final Set<E> values;
++    private @Nullable Index<String, E> byName; // needs lazy init due to static circular dependencies
++
++    EnumBlockProperty(final String name, final Class<E> type, final Collection<E> values) {
++        super(name, type);
++        this.values = Sets.immutableEnumSet(values);
++    }
++
++    private @NotNull Index<String, E> byNameIndex() {
++        if (this.byName == null) {
++            this.byName = this.createByNameIndex();
++        }
++        return this.byName;
++    }
++
++    @SuppressWarnings("deprecation") // valid unsafe use
++    protected @NotNull Index<String, E> createByNameIndex() {
++        return Index.create(e -> Bukkit.getUnsafe().getPropertyEnumName(this, e), List.copyOf(this.values));
++    }
++
++    @Override
++    public @NotNull String name(final @NotNull E value) {
++        final String valueName = this.byNameIndex().key(value);
++        if (valueName == null) {
++            throw EXCEPTION_CREATOR.create(value, ExceptionCreator.Type.VALUE, this);
++        }
++        return valueName;
++    }
++
++    @Override
++    public boolean isValidName(final @NotNull String name) {
++        return this.byNameIndex().value(name) != null;
++    }
++
++    @Override
++    public @NotNull E value(final @NotNull String name) {
++        final E value = this.byNameIndex().value(name);
++        if (value == null) {
++            throw EXCEPTION_CREATOR.create(name, ExceptionCreator.Type.NAME, this);
++        }
++        return value;
++    }
++
++    @Override
++    public boolean isValue(final @NotNull Object object) {
++        return this.type().isInstance(object) && this.values.contains(object);
++    }
++
++    @Override
++    public @Unmodifiable @NotNull Set<E> values() {
++        return this.values;
++    }
++
++    /**
++     * Represents a property whose value is stored as an int,
++     * but represented as an enum
++     *
++     * @param <E> enum type
++     */
++    static sealed class EnumIntRepresented<E extends Enum<E>> extends EnumBlockProperty<E> implements IntegerBlockProperty.IntRepresented<E> permits RotationBlockProperty {
++
++        private final BiMap<E, Integer> cache;
++
++        EnumIntRepresented(final String name, final Class<E> type, final Collection<E> values) {
++            this(name, type, values, Enum::ordinal);
++        }
++
++        EnumIntRepresented(final String name, final Class<E> type, final Collection<E> values, final ToIntFunction<E> toIntFunction) {
++            super(name, type, values);
++            this.cache = HashBiMap.create(values.size());
++            for (final E value : this.values()) {
++                this.cache.put(value, toIntFunction.applyAsInt(value));
++            }
++        }
++
++        @Override
++        protected @NotNull Index<String, E> createByNameIndex() {
++            return Index.create(v -> Integer.toString(this.toIntValue(v)), List.copyOf(this.cache.keySet()));
++        }
++
++        @Override
++        public int toIntValue(final @NotNull E value) {
++            if (!this.cache.containsKey(value)) {
++                throw EXCEPTION_CREATOR.create(value, ExceptionCreator.Type.VALUE, this);
++            }
++            return this.cache.get(value);
++        }
++
++        @Override
++        public @NotNull E fromIntValue(final int value) {
++            if (!this.cache.inverse().containsKey(value)) {
++                throw EXCEPTION_CREATOR.create(value, ExceptionCreator.Type.VALUE, this);
++            }
++            return this.cache.inverse().get(value);
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/property/IntegerBlockProperty.java b/src/main/java/io/papermc/paper/block/property/IntegerBlockProperty.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..368708a0e5e64547130045fa3b033d467b451121
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/property/IntegerBlockProperty.java
+@@ -0,0 +1,104 @@
++package io.papermc.paper.block.property;
++
++import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
++import it.unimi.dsi.fastutil.ints.IntSet;
++import it.unimi.dsi.fastutil.ints.IntSets;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++public final class IntegerBlockProperty extends AbstractBlockProperty<Integer> {
++
++    private final IntSet values;
++    private final int min;
++    private final int max;
++
++    IntegerBlockProperty(final String name, final int min, final int max) {
++        super(name, Integer.class);
++        this.min = min;
++        this.max = max;
++        if (min < 0 || max <= min) {
++            throw new IllegalArgumentException("Invalid range. Min: " + min + ", Max: " + max);
++        }
++        final IntSet set = new IntLinkedOpenHashSet();
++        for (int i = min; i <= max; i++) {
++            set.add(i);
++        }
++        this.values = IntSets.unmodifiable(set); // use unmodifiable to preserve order (but in reality its immutable)
++    }
++
++    /**
++     * Gets the min value for this property.
++     *
++     * @return the min value
++     */
++    public int min() {
++        return this.min;
++    }
++
++    /**
++     * Gets the max value for this property.
++     *
++     * @return the max value
++     */
++    public int max() {
++        return this.max;
++    }
++
++    @Override
++    public @NotNull String name(final @NotNull Integer value) {
++        if (value > this.max || value < this.min) {
++            throw EXCEPTION_CREATOR.create(value, ExceptionCreator.Type.VALUE, this);
++        }
++        return value.toString();
++    }
++
++    @Override
++    public boolean isValidName(final @NotNull String name) {
++        try {
++            final int value = Integer.parseInt(name);
++            if (this.values.contains(value)) {
++                return true;
++            }
++        } catch (final NumberFormatException ignored) {
++        }
++        return false;
++    }
++
++    @Override
++    public @NotNull Integer value(final @NotNull String name) {
++        try {
++            final int value = Integer.parseInt(name);
++            if (this.values.contains(value)) {
++                return value;
++            }
++            throw EXCEPTION_CREATOR.create(name, ExceptionCreator.Type.NAME, this);
++        } catch (final NumberFormatException exception) {
++            throw EXCEPTION_CREATOR.create(name, ExceptionCreator.Type.NAME, this);
++        }
++    }
++
++    @Override
++    public boolean isValue(final @NotNull Object object) {
++        return object instanceof final Integer num && num >= this.min && num <= this.max;
++    }
++
++    @Override
++    public @Unmodifiable @NotNull IntSet values() {
++        return this.values;
++    }
++
++    /**
++     * Represents properties that are represented in the API as non-integers
++     * but stored as integers
++     *
++     * @param <T> type
++     */
++    @ApiStatus.Internal
++    public sealed interface IntRepresented<T> permits EnumBlockProperty.EnumIntRepresented, NoteBlockProperty {
++
++        int toIntValue(@NotNull T value);
++
++        @NotNull T fromIntValue(int value);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/property/NoteBlockProperty.java b/src/main/java/io/papermc/paper/block/property/NoteBlockProperty.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ecd0aff95f1b10eceb1b283cb5f5cf92d204e8dd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/property/NoteBlockProperty.java
+@@ -0,0 +1,72 @@
++package io.papermc.paper.block.property;
++
++import com.google.common.collect.BiMap;
++import com.google.common.collect.HashBiMap;
++import java.util.Collections;
++import java.util.Set;
++import org.bukkit.Note;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++final class NoteBlockProperty extends AbstractBlockProperty<Note> implements IntegerBlockProperty.IntRepresented<Note> {
++
++    private final BiMap<Integer, Note> cache;
++
++    NoteBlockProperty(final @NotNull String name) {
++        super(name, Note.class);
++        this.cache = HashBiMap.create(25);
++        for (int i = 0; i <= 24; i++) {
++            this.cache.put(i, new Note(i));
++        }
++    }
++
++    @Override
++    public @NotNull String name(final @NotNull Note value) {
++        return String.valueOf(value.getId());
++    }
++
++    @Override
++    public boolean isValidName(final @NotNull String name) {
++        try {
++            final Integer value = Integer.valueOf(name);
++            if (this.cache.containsKey(value)) {
++                return true;
++            }
++        } catch (final NumberFormatException ignored) {
++        }
++        return false;
++    }
++
++    @Override
++    public @NotNull Note value(final @NotNull String name) {
++        try {
++            final Integer value = Integer.valueOf(name);
++            if (this.cache.containsKey(value)) {
++                return this.cache.get(value);
++            }
++            throw EXCEPTION_CREATOR.create(name, ExceptionCreator.Type.NAME, this);
++        } catch (final NumberFormatException exception) {
++            throw EXCEPTION_CREATOR.create(name, ExceptionCreator.Type.NAME, this);
++        }
++    }
++
++    @Override
++    public boolean isValue(final @NotNull Object object) {
++        return object instanceof final Note note && this.cache.inverse().containsKey(note);
++    }
++
++    @Override
++    public @Unmodifiable @NotNull Set<Note> values() {
++        return Collections.unmodifiableSet(this.cache.values());
++    }
++
++    @Override
++    public int toIntValue(final @NotNull Note value) {
++        return this.cache.inverse().get(value);
++    }
++
++    @Override
++    public @NotNull Note fromIntValue(final int value) {
++        return this.cache.get(value);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/property/RotationBlockProperty.java b/src/main/java/io/papermc/paper/block/property/RotationBlockProperty.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8ee17bc3cfd3b579b39f490c349a49ad7c36597b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/property/RotationBlockProperty.java
+@@ -0,0 +1,53 @@
++package io.papermc.paper.block.property;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.Sets;
++import java.util.LinkedHashSet;
++import java.util.Set;
++import org.bukkit.block.BlockFace;
++
++/**
++ * Special exception for the {@link BlockProperties#ROTATION_16} property because
++ * in the API it's represented as an enum, but stored as an integer.
++ */
++final class RotationBlockProperty extends EnumBlockProperty.EnumIntRepresented<BlockFace> {
++
++    private static final Set<BlockFace> VALUES;
++
++    static {
++        final Set<BlockFace> values = new LinkedHashSet<>();
++        for (final BlockFace face : BlockFace.values()) {
++            if (face.getModY() == 0 && (face.getModZ() != 0 || face.getModX() != 0)) {
++                values.add(face);
++            }
++        }
++        Preconditions.checkArgument(values.size() == 16, "Expected 16 enum values");
++        VALUES = Sets.immutableEnumSet(values);
++    }
++
++    RotationBlockProperty(final String name) {
++        super(name, BlockFace.class, VALUES, RotationBlockProperty::enumToInt);
++    }
++
++    private static int enumToInt(final BlockFace rotation) {
++        return switch (rotation) {
++            case SOUTH -> 0x0;
++            case SOUTH_SOUTH_WEST -> 0x1;
++            case SOUTH_WEST -> 0x2;
++            case WEST_SOUTH_WEST -> 0x3;
++            case WEST -> 0x4;
++            case WEST_NORTH_WEST -> 0x5;
++            case NORTH_WEST -> 0x6;
++            case NORTH_NORTH_WEST -> 0x7;
++            case NORTH -> 0x8;
++            case NORTH_NORTH_EAST -> 0x9;
++            case NORTH_EAST -> 0xA;
++            case EAST_NORTH_EAST -> 0xB;
++            case EAST -> 0xC;
++            case EAST_SOUTH_EAST -> 0xD;
++            case SOUTH_EAST -> 0xE;
++            case SOUTH_SOUTH_EAST -> 0xF;
++            default -> throw new IllegalArgumentException("Illegal rotation " + rotation);
++        };
++    }
++}
+diff --git a/src/main/java/org/bukkit/Note.java b/src/main/java/org/bukkit/Note.java
+index aff858346776386f1288b648b221404f7f412399..5fd00e6f5ecd9fd0bcc2bca5675955deb4fcf2f1 100644
+--- a/src/main/java/org/bukkit/Note.java
++++ b/src/main/java/org/bukkit/Note.java
+@@ -9,7 +9,14 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * A note class to store a specific note.
+  */
+-public class Note {
++// Paper start - implement Comparable
++public class Note implements Comparable<Note> {
++
++    @Override
++    public int compareTo(@NotNull Note other) {
++        return Byte.compare(this.note, other.note);
++    }
++    // Paper end
+ 
+     /**
+      * An enum holding tones.
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 9a65c4f614a6c358d74491794d7b25172a00bc11..30b453d3341e8ff6b9be7ab8784c9e071720651e 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -278,6 +278,18 @@ public interface UnsafeValues {
+     String getStatisticCriteriaKey(@NotNull org.bukkit.Statistic statistic);
+     // Paper end
+ 
++    // Paper start - block property API
++    /**
++     * Gets the string representation for this bukkit enum.
++     *
++     * @param enumProperty the enum data property
++     * @param bukkitEnum the enum to get the string representation of
++     * @param <B> the bukkit enum type
++     * @return the string representation of the supplied enum
++     */
++    <B extends Enum<B>> @org.jetbrains.annotations.NotNull String getPropertyEnumName(@org.jetbrains.annotations.NotNull io.papermc.paper.block.property.EnumBlockProperty<B> enumProperty, @org.jetbrains.annotations.NotNull B bukkitEnum);
++    // Paper end
++
+     // Paper start - spawn egg color visibility
+     /**
+      * Obtains the underlying color informating for a spawn egg of a given
+diff --git a/src/main/java/org/bukkit/block/BlockFace.java b/src/main/java/org/bukkit/block/BlockFace.java
+index fe83ed9bf6b6288991b044bb992bd8b2f00edc24..d476385fcb0a1c62d85cb69398b01998d5734644 100644
+--- a/src/main/java/org/bukkit/block/BlockFace.java
++++ b/src/main/java/org/bukkit/block/BlockFace.java
+@@ -104,6 +104,15 @@ public enum BlockFace {
+         }
+     }
+ 
++    // Paper start
++    public boolean isCardinal() {
++        return switch (this) {
++            case NORTH, SOUTH, EAST, WEST -> true;
++            default -> false;
++        };
++    }
++    // Paper end
++
+     @NotNull
+     public BlockFace getOppositeFace() {
+         switch (this) {
+diff --git a/src/main/java/org/bukkit/block/data/BlockData.java b/src/main/java/org/bukkit/block/data/BlockData.java
+index fb4c7cf0f67f3e4227d17f6702ae7b7bf1c110ab..6882ab2570581b197f115ca3f8ffdadc4c5ce57c 100644
+--- a/src/main/java/org/bukkit/block/data/BlockData.java
++++ b/src/main/java/org/bukkit/block/data/BlockData.java
+@@ -17,7 +17,7 @@ import org.jetbrains.annotations.ApiStatus;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+-public interface BlockData extends Cloneable {
++public interface BlockData extends Cloneable, io.papermc.paper.block.property.BlockPropertyHolder.Mutable { // Paper - property API
+ 
+     /**
+      * Get the Material represented by this block data.
+diff --git a/src/main/java/org/bukkit/block/data/Rail.java b/src/main/java/org/bukkit/block/data/Rail.java
+index c8bdab081a316a9fd227d78a70c43c502e4085ef..027ebe6d015b52a112dba353e20f0ca563c7f537 100644
+--- a/src/main/java/org/bukkit/block/data/Rail.java
++++ b/src/main/java/org/bukkit/block/data/Rail.java
+@@ -83,5 +83,10 @@ public interface Rail extends Waterlogged {
+          * block.
+          */
+         NORTH_EAST;
++        // Paper start
++        public boolean isStraight() {
++            return this != SOUTH_EAST && this != SOUTH_WEST && this != NORTH_WEST && this != NORTH_EAST;
++        }
++        // Paper end
+     }
+ }
