@@ -1,0 +1,249 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 18 Dec 2023 16:11:40 -0800
+Subject: [PATCH] Improve console completion with brig suggestions
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+index c5d5648f4ca603ef2b1df723b58f9caf4dd3c722..58d7b7b8fd03804cb057b9c87b3ce7abb3fced18 100644
+--- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
++++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+@@ -1,5 +1,8 @@
+ package com.destroystokyo.paper.console;
+ 
++import io.papermc.paper.configuration.GlobalConfiguration;
++import io.papermc.paper.console.BrigadierCompletionMatcher;
++import io.papermc.paper.console.BrigadierConsoleParser;
+ import net.minecraft.server.dedicated.DedicatedServer;
+ import net.minecrell.terminalconsole.SimpleTerminalConsole;
+ import org.bukkit.craftbukkit.command.ConsoleCommandCompleter;
+@@ -24,6 +27,10 @@ public final class PaperConsole extends SimpleTerminalConsole {
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().console.enableBrigadierHighlighting) {
+             builder.highlighter(new io.papermc.paper.console.BrigadierCommandHighlighter(this.server));
+         }
++        if (GlobalConfiguration.get().console.enableBrigadierCompletions) {
++            builder.parser(new BrigadierConsoleParser(this.server));
++            builder.completionMatcher(new BrigadierCompletionMatcher());
++        }
+         return super.buildReader(builder);
+     }
+ 
+diff --git a/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java b/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
+index 7a4f4c0a0fdcabd2bc4aa26dc9d76fc150b8435c..04bee14ad803a60a171055a7486bd86837ec6d55 100644
+--- a/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
++++ b/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.console;
+ 
++import com.destroystokyo.paper.event.server.AsyncTabCompleteEvent;
+ import com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion;
+ import com.google.common.base.Suppliers;
+ import com.mojang.brigadier.CommandDispatcher;
+@@ -11,10 +12,12 @@ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.List;
+ import java.util.function.Supplier;
++import net.kyori.adventure.text.Component;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.network.chat.ComponentUtils;
+ import net.minecraft.server.dedicated.DedicatedServer;
+ import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.jline.reader.Candidate;
+ import org.jline.reader.LineReader;
+ import org.jline.reader.ParsedLine;
+@@ -35,7 +38,7 @@ public final class BrigadierCommandCompleter {
+         if (this.server.overworld() == null) { // check if overworld is null, as worlds haven't been loaded yet
+             return;
+         } else if (!io.papermc.paper.configuration.GlobalConfiguration.get().console.enableBrigadierCompletions) {
+-            this.addCandidates(candidates, Collections.emptyList(), existing);
++            this.addCandidates(candidates, Collections.emptyList(), existing, new ParseContext(line.line(), 0));
+             return;
+         }
+         final CommandDispatcher<CommandSourceStack> dispatcher = this.server.getCommands().getDispatcher();
+@@ -43,35 +46,44 @@ public final class BrigadierCommandCompleter {
+         this.addCandidates(
+             candidates,
+             dispatcher.getCompletionSuggestions(results, line.cursor()).join().getList(),
+-            existing
++            existing,
++            new ParseContext(line.line(), results.getContext().findSuggestionContext(line.cursor()).startPos)
+         );
+     }
+ 
+     private void addCandidates(
+         final @NonNull List<Candidate> candidates,
+         final @NonNull List<Suggestion> brigSuggestions,
+-        final @NonNull List<Completion> existing
++        final @NonNull List<Completion> existing,
++        final @NonNull ParseContext context
+     ) {
+-        final List<Completion> completions = new ArrayList<>();
+-        brigSuggestions.forEach(it -> completions.add(toCompletion(it)));
+-        for (final Completion completion : existing) {
++        brigSuggestions.forEach(it -> {
++            if (it.getText().isEmpty()) return;
++            candidates.add(toCandidate(it, context));
++        });
++        for (final AsyncTabCompleteEvent.Completion completion : existing) {
+             if (completion.suggestion().isEmpty() || brigSuggestions.stream().anyMatch(it -> it.getText().equals(completion.suggestion()))) {
+                 continue;
+             }
+-            completions.add(completion);
+-        }
+-        for (final Completion completion : completions) {
+-            if (completion.suggestion().isEmpty()) {
+-                continue;
+-            }
+             candidates.add(toCandidate(completion));
+         }
+     }
+ 
++    private static Candidate toCandidate(final Suggestion suggestion, final @NonNull ParseContext context) {
++        Component tooltip = null;
++        if (suggestion.getTooltip() != null) {
++            tooltip = PaperAdventure.asAdventure(ComponentUtils.fromMessage(suggestion.getTooltip()));
++        }
++        return toCandidate(context.line.substring(context.suggestionStart, suggestion.getRange().getStart()) + suggestion.getText(), tooltip); // TODO support mid-word completions without deleting the rest of the command
++    }
++
+     private static @NonNull Candidate toCandidate(final @NonNull Completion completion) {
+-        final String suggestionText = completion.suggestion();
+-        final String suggestionTooltip = PaperAdventure.ANSI_SERIALIZER.serializeOr(completion.tooltip(), null);
+-        return new Candidate(
++        return toCandidate(completion.suggestion(), completion.tooltip());
++    }
++
++    private static @NonNull Candidate toCandidate(final @NonNull String suggestionText, final @Nullable Component tooltip) {
++        final String suggestionTooltip = PaperAdventure.ANSI_SERIALIZER.serializeOr(tooltip, null);
++        return new PaperCandidate(
+             suggestionText,
+             suggestionText,
+             null,
+@@ -96,4 +108,13 @@ public final class BrigadierCommandCompleter {
+         }
+         return stringReader;
+     }
++
++    private record ParseContext(String line, int suggestionStart) {
++    }
++
++    public static final class PaperCandidate extends Candidate {
++        public PaperCandidate(final String value, final String display, final String group, final String descr, final String suffix, final String key, final boolean complete) {
++            super(value, display, group, descr, suffix, key, complete);
++        }
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/console/BrigadierCompletionMatcher.java b/src/main/java/io/papermc/paper/console/BrigadierCompletionMatcher.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7a2ed98cd618a1614dcda06b61167b0d46cc1c37
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/console/BrigadierCompletionMatcher.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.console;
++
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import org.jline.reader.Candidate;
++import org.jline.reader.CompletingParsedLine;
++import org.jline.reader.LineReader;
++import org.jline.reader.impl.CompletionMatcherImpl;
++
++public class BrigadierCompletionMatcher extends CompletionMatcherImpl {
++
++    @Override
++    protected void defaultMatchers(final Map<LineReader.Option, Boolean> options, final boolean prefix, final CompletingParsedLine line, final boolean caseInsensitive, final int errors, final String originalGroupName) {
++        super.defaultMatchers(options, prefix, line, caseInsensitive, errors, originalGroupName);
++        this.matchers.add(0, m -> {
++            final Map<String, List<Candidate>> candidates = new HashMap<>();
++            for (final Map.Entry<String, List<Candidate>> entry : m.entrySet()) {
++                if (entry.getValue().stream().allMatch(BrigadierCommandCompleter.PaperCandidate.class::isInstance)) {
++                    candidates.put(entry.getKey(), entry.getValue());
++                }
++            }
++            return candidates;
++        });
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/console/BrigadierConsoleParser.java b/src/main/java/io/papermc/paper/console/BrigadierConsoleParser.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..176d1c3ea6f6466fd1077010aa244c934dee843c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/console/BrigadierConsoleParser.java
+@@ -0,0 +1,75 @@
++package io.papermc.paper.console;
++
++import com.mojang.brigadier.ImmutableStringReader;
++import com.mojang.brigadier.ParseResults;
++import com.mojang.brigadier.context.CommandContextBuilder;
++import com.mojang.brigadier.context.ParsedCommandNode;
++import com.mojang.brigadier.context.StringRange;
++import java.util.ArrayList;
++import java.util.List;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.server.dedicated.DedicatedServer;
++import org.jline.reader.ParsedLine;
++import org.jline.reader.Parser;
++import org.jline.reader.SyntaxError;
++import org.jline.reader.impl.DefaultParser;
++
++import static io.papermc.paper.console.BrigadierCommandCompleter.prepareStringReader;
++
++public class BrigadierConsoleParser implements Parser {
++
++    private final DedicatedServer server;
++    private final Parser delegate = new DefaultParser();
++
++    public BrigadierConsoleParser(DedicatedServer server) {
++        this.server = server;
++    }
++
++    @Override
++    public ParsedLine parse(final String line, final int cursor, final ParseContext context) throws SyntaxError {
++        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(prepareStringReader(line), this.server.createCommandSourceStack());
++        final ImmutableStringReader reader = results.getReader();
++        final List<String> words = new ArrayList<>();
++        CommandContextBuilder<CommandSourceStack> currentContext = results.getContext();
++        int currentWordIdx = -1;
++        int wordIdx = -1;
++        int wordCursor = -1;
++        if (currentContext.getRange().getLength() > 0) {
++            do {
++                for (final ParsedCommandNode<CommandSourceStack> node : currentContext.getNodes()) {
++                    final StringRange nodeRange = node.getRange();
++                    String current = nodeRange.get(reader);
++                    words.add(current);
++                    currentWordIdx++;
++                    if (wordIdx == -1 && nodeRange.getStart() < cursor && nodeRange.getEnd() >= cursor) {
++                        wordIdx = currentWordIdx;
++                        wordCursor = cursor - nodeRange.getStart();
++                    }
++                }
++                currentContext = currentContext.getChild();
++            } while (currentContext != null);
++        }
++        if ((reader.canRead() && reader.getRemaining().isBlank()) || (!reader.canRead() && words.isEmpty())) { // if blank space or no words yet
++            currentWordIdx++;
++            words.add("");
++            if (wordIdx == -1 && reader.getCursor() < cursor) {
++                wordIdx = currentWordIdx;
++                wordCursor = 0;
++            }
++        } else if (reader.canRead()) {
++            currentWordIdx++;
++            words.add(reader.getRemaining());
++            if (wordIdx == -1 && reader.getCursor() < cursor) {
++                wordIdx = currentWordIdx;
++                wordCursor = cursor - reader.getCursor();
++            }
++        }
++        final ParsedLine parsed = this.delegate.parse(line, cursor, context);
++        final BrigadierParsedLine brigadierParsedLine = new BrigadierParsedLine(words.get(wordIdx), wordCursor, wordIdx, words, line, cursor);
++        // return parsed;
++        return brigadierParsedLine;
++    }
++
++    record BrigadierParsedLine(String word, int wordCursor, int wordIndex, List<String> words, String line, int cursor) implements ParsedLine {
++    }
++}
