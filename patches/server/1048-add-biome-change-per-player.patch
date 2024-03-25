@@ -1,0 +1,374 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Sat, 24 Feb 2024 15:29:57 +0100
+Subject: [PATCH] add biome change per player
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
+index 51f647de153255c919b1440338cf1b3e2d6b5dbf..f6ec892c9e717a3a4b22e42c738ba74de1a510e5 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
+@@ -2,12 +2,21 @@ package net.minecraft.network.protocol.game;
+ 
+ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.Unpooled;
++import io.papermc.paper.event.packet.PlayerBiomesLoadEvent;
++import java.util.ArrayList;
+ import java.util.List;
++import net.minecraft.core.Holder;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.protocol.Packet;
++import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.biome.Biome;
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import net.minecraft.world.level.chunk.LevelChunkSection;
++import net.minecraft.world.level.chunk.PalettedContainer;
++import org.bukkit.BiomesSnapshot;
++import org.bukkit.craftbukkit.CraftBiomesSnapshot;
++import org.bukkit.craftbukkit.CraftChunk;
+ 
+ public record ClientboundChunksBiomesPacket(List<ClientboundChunksBiomesPacket.ChunkBiomeData> chunkBiomeData) implements Packet<ClientGamePacketListener> {
+     private static final int TWO_MEGABYTES = 2097152;
+@@ -16,8 +25,27 @@ public record ClientboundChunksBiomesPacket(List<ClientboundChunksBiomesPacket.C
+         this(buf.readList(ClientboundChunksBiomesPacket.ChunkBiomeData::new));
+     }
+ 
+-    public static ClientboundChunksBiomesPacket forChunks(List<LevelChunk> chunks) {
+-        return new ClientboundChunksBiomesPacket(chunks.stream().map(ClientboundChunksBiomesPacket.ChunkBiomeData::new).toList());
++    public static ClientboundChunksBiomesPacket forChunks(Player player, List<LevelChunk> chunks) {
++        org.bukkit.entity.Player bukkitPlayer = (org.bukkit.entity.Player) player.getBukkitEntity();
++        List<ChunkBiomeData> biomeData = new ArrayList<>();
++        for (LevelChunk chunk : chunks) {
++            final PlayerBiomesLoadEvent biomesLoadEvent = new PlayerBiomesLoadEvent(bukkitPlayer, new CraftChunk(chunk));
++            biomesLoadEvent.callEvent();
++            if (biomesLoadEvent.hasOverrides()) {
++                biomeData.add(create(chunk, biomesLoadEvent));
++            } else {
++                biomeData.add(new ChunkBiomeData(chunk));
++            }
++        }
++        return new ClientboundChunksBiomesPacket(biomeData);
++    }
++
++    private static ClientboundChunksBiomesPacket.ChunkBiomeData create(LevelChunk levelChunk, PlayerBiomesLoadEvent biomesLoadEvent) {
++        final BiomesSnapshot snapshotAt = biomesLoadEvent.getBiomeSnapshot();
++        if(snapshotAt != null){
++            return new ClientboundChunksBiomesPacket.ChunkBiomeData(snapshotAt);
++        }
++        return new ClientboundChunksBiomesPacket.ChunkBiomeData(levelChunk);
+     }
+ 
+     @Override
+@@ -38,6 +66,11 @@ public record ClientboundChunksBiomesPacket(List<ClientboundChunksBiomesPacket.C
+             extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), chunk);
+         }
+ 
++        public ChunkBiomeData(BiomesSnapshot biomesSnapshot) {
++            this(ChunkPos.minFromRegion(biomesSnapshot.getX(), biomesSnapshot.getZ()), new byte[calculateChunkSize(biomesSnapshot)]);
++            extractBiomesSnapshot(new FriendlyByteBuf(this.getWriteBuffer()), biomesSnapshot);
++        }
++
+         public ChunkBiomeData(FriendlyByteBuf buf) {
+             this(buf.readChunkPos(), buf.readByteArray(2097152));
+         }
+@@ -71,6 +104,25 @@ public record ClientboundChunksBiomesPacket(List<ClientboundChunksBiomesPacket.C
+ 
+         }
+ 
++        public static void extractBiomesSnapshot(FriendlyByteBuf buf, BiomesSnapshot biomesSnapshot) {
++            int chunkSectionIndex = 0; // Paper - Anti-Xray
++            for (final PalettedContainer<Holder<Biome>> container : ((CraftBiomesSnapshot) biomesSnapshot).getBiome()) {
++                container.write(buf, null, chunkSectionIndex);
++                chunkSectionIndex++; // Paper - Anti-Xray
++            }
++        }
++
++        private static int calculateChunkSize(BiomesSnapshot biomesSnapshot) {
++            int i = 0;
++
++            for(final PalettedContainer<Holder<Biome>> container : ((CraftBiomesSnapshot) biomesSnapshot).getBiome()) {
++                i += container.getSerializedSize();
++            }
++
++            return i;
++        }
++
++
+         public void write(FriendlyByteBuf buf) {
+             buf.writeChunkPos(this.pos);
+             buf.writeByteArray(this.buffer);
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 12109446fc76a39faee6cda042ca48b3fd3809f4..52c3bd12fbf38713c0e99158a202253c88837502 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1260,7 +1260,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         }
+ 
+         map.forEach((entityplayer1, list1) -> {
+-            entityplayer1.connection.send(ClientboundChunksBiomesPacket.forChunks(list1));
++            entityplayer1.connection.send(ClientboundChunksBiomesPacket.forChunks(entityplayer1, list1));
+         });
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftBiomesSnapshot.java b/src/main/java/org/bukkit/craftbukkit/CraftBiomesSnapshot.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..56215b14623d8f475dbab368cd49e84c8c5c3bcf
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/CraftBiomesSnapshot.java
+@@ -0,0 +1,104 @@
++package org.bukkit.craftbukkit;
++
++import com.google.common.base.Preconditions;
++import com.google.common.base.Predicates;
++import java.util.Objects;
++import java.util.function.Predicate;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.Holder;
++import net.minecraft.core.Registry;
++import net.minecraft.world.level.chunk.PalettedContainer;
++import net.minecraft.world.level.chunk.PalettedContainerRO;
++import org.bukkit.BiomesSnapshot;
++import org.bukkit.block.Biome;
++import org.bukkit.craftbukkit.block.CraftBiome;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.NotNull;
++
++public class CraftBiomesSnapshot implements BiomesSnapshot {
++
++    private final int x, z;
++    private final String worldname;
++    private final int minHeight, maxHeight;
++    private final Registry<net.minecraft.world.level.biome.Biome> biomeRegistry;
++    private final PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome;
++
++    public CraftBiomesSnapshot(final int x, final int z, final String worldname, final int minHeight, final int maxHeight, final Registry<net.minecraft.world.level.biome.Biome> registry, final PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome) {
++        this.x = x;
++        this.z = z;
++        this.worldname = worldname;
++        this.minHeight = minHeight;
++        this.maxHeight = maxHeight;
++        this.biomeRegistry = registry;
++        this.biome = biome;
++    }
++
++    @Override
++    public int getX() {
++        return this.x;
++    }
++
++    @Override
++    public int getZ() {
++        return this.z;
++    }
++
++    @Override
++    public String getWorldName() {
++        return this.worldname;
++    }
++
++    @Override
++    public void setBiome(final int x, final int y, final int z, @NotNull final Biome biome) {
++        Preconditions.checkState(this.biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
++        Objects.requireNonNull(biome, "biome cannot be null");
++        this.validateChunkCoordinates(x, y, z);
++        PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>> biomeLocal = this.biome[this.getSectionIndex(y)];
++        biomeLocal.set(x >> 2, (y & 0xF) >> 2, z >> 2, CraftBiome.bukkitToMinecraftHolder(biome));
++    }
++
++    @Override
++    public final double getRawBiomeTemperature(int x, int y, int z) {
++        Preconditions.checkState(this.biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
++        this.validateChunkCoordinates(x, y, z);
++
++        PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>> biome = this.biome[this.getSectionIndex(y)]; // SPIGOT-7188: Don't need to convert y to biome coordinate scale since it is bound to the block chunk section
++        return biome.get(x >> 2, (y & 0xF) >> 2, z >> 2).value().getTemperature(new BlockPos((this.x << 4) | x, y, (this.z << 4) | z));
++    }
++
++    @Override
++    public final Biome getBiome(int x, int y, int z) {
++        Preconditions.checkState(this.biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
++        this.validateChunkCoordinates(x, y, z);
++
++        PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>> biome = this.biome[this.getSectionIndex(y)]; // SPIGOT-7188: Don't need to convert y to biome coordinate scale since it is bound to the block chunk section
++        return CraftBiome.minecraftHolderToBukkit(biome.get(x >> 2, (y & 0xF) >> 2, z >> 2));
++    }
++
++
++    @Override
++    public boolean contains(@NonNull Biome biome) {
++        Preconditions.checkArgument(biome != null, "Biome cannot be null");
++
++        Predicate<Holder<net.minecraft.world.level.biome.Biome>> nms = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
++        for (PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>> palette : this.biome) {
++            if (palette.maybeHas(nms)) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    public PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] getBiome(){
++        return biome;
++    }
++
++    protected void validateChunkCoordinates(int x, int y, int z) {
++        CraftChunk.validateChunkCoordinates(this.minHeight, this.maxHeight, x, y, z);
++    }
++
++    protected int getSectionIndex(int y) {
++        return (y - this.minHeight) >> 4;
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index dca5f25cf331b5550e9be491b4e8a3466531e021..4f0948050aca3c053fa249903db339da27f40b0f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -299,7 +299,7 @@ public class CraftChunk implements Chunk {
+         byte[][] sectionEmitLights = includeLightData ? new byte[cs.length][] : null;
+         // Paper end - Add getChunkSnapshot includeLightData parameter
+         boolean[] sectionEmpty = new boolean[cs.length];
+-        PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
++        PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
+ 
+         Registry<net.minecraft.world.level.biome.Biome> iregistry = this.worldServer.registryAccess().registryOrThrow(Registries.BIOME);
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java b/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
+index 0756b5adb3039997feadeb94afb10b596abd9424..01b8988023043b743a32faa3b1767cf6ea265773 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
+@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit;
+ import com.google.common.base.Preconditions;
+ import com.google.common.base.Predicates;
+ import java.util.function.Predicate;
+-import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Holder;
+ import net.minecraft.core.Registry;
+ import net.minecraft.world.level.block.state.BlockState;
+@@ -14,8 +13,6 @@ import org.bukkit.ChunkSnapshot;
+ import org.bukkit.Material;
+ import org.bukkit.block.Biome;
+ import org.bukkit.block.data.BlockData;
+-import org.bukkit.craftbukkit.block.CraftBiome;
+-import org.bukkit.craftbukkit.block.CraftBlockType;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ 
+@@ -23,48 +20,22 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+  * Represents a static, thread-safe snapshot of chunk of blocks
+  * Purpose is to allow clean, efficient copy of a chunk data to be made, and then handed off for processing in another thread (e.g. map rendering)
+  */
+-public class CraftChunkSnapshot implements ChunkSnapshot {
+-    private final int x, z;
+-    private final int minHeight, maxHeight;
+-    private final String worldname;
++public class CraftChunkSnapshot extends CraftBiomesSnapshot implements ChunkSnapshot {
+     private final PalettedContainer<BlockState>[] blockids;
+     private final byte[][] skylight;
+     private final byte[][] emitlight;
+     private final boolean[] empty;
+     private final Heightmap hmap; // Height map
+     private final long captureFulltime;
+-    private final Registry<net.minecraft.world.level.biome.Biome> biomeRegistry;
+-    private final PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome;
+-
+-    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, String wname, long wtime, PalettedContainer<BlockState>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, Heightmap hmap, Registry<net.minecraft.world.level.biome.Biome> biomeRegistry, PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome) {
+-        this.x = x;
+-        this.z = z;
+-        this.minHeight = minHeight;
+-        this.maxHeight = maxHeight;
+-        this.worldname = wname;
++
++    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, String wname, long wtime, PalettedContainer<BlockState>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, Heightmap hmap, Registry<net.minecraft.world.level.biome.Biome> biomeRegistry, PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome) {
++        super(x, z, wname, minHeight, maxHeight, biomeRegistry, biome);
+         this.captureFulltime = wtime;
+         this.blockids = sectionBlockIDs;
+         this.skylight = sectionSkyLights;
+         this.emitlight = sectionEmitLights;
+         this.empty = sectionEmpty;
+         this.hmap = hmap;
+-        this.biomeRegistry = biomeRegistry;
+-        this.biome = biome;
+-    }
+-
+-    @Override
+-    public int getX() {
+-        return this.x;
+-    }
+-
+-    @Override
+-    public int getZ() {
+-        return this.z;
+-    }
+-
+-    @Override
+-    public String getWorldName() {
+-        return this.worldname;
+     }
+ 
+     @Override
+@@ -81,20 +52,6 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
+         return false;
+     }
+ 
+-    @Override
+-    public boolean contains(Biome biome) {
+-        Preconditions.checkArgument(biome != null, "Biome cannot be null");
+-
+-        Predicate<Holder<net.minecraft.world.level.biome.Biome>> nms = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
+-        for (PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>> palette : this.biome) {
+-            if (palette.maybeHas(nms)) {
+-                return true;
+-            }
+-        }
+-
+-        return false;
+-    }
+-
+     @Override
+     public Material getBlockType(int x, int y, int z) {
+         this.validateChunkCoordinates(x, y, z);
+@@ -147,29 +104,11 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
+         return this.getBiome(x, 0, z);
+     }
+ 
+-    @Override
+-    public final Biome getBiome(int x, int y, int z) {
+-        Preconditions.checkState(this.biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
+-        this.validateChunkCoordinates(x, y, z);
+-
+-        PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>> biome = this.biome[this.getSectionIndex(y)]; // SPIGOT-7188: Don't need to convert y to biome coordinate scale since it is bound to the block chunk section
+-        return CraftBiome.minecraftHolderToBukkit(biome.get(x >> 2, (y & 0xF) >> 2, z >> 2));
+-    }
+-
+     @Override
+     public final double getRawBiomeTemperature(int x, int z) {
+         return this.getRawBiomeTemperature(x, 0, z);
+     }
+ 
+-    @Override
+-    public final double getRawBiomeTemperature(int x, int y, int z) {
+-        Preconditions.checkState(this.biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
+-        this.validateChunkCoordinates(x, y, z);
+-
+-        PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>> biome = this.biome[this.getSectionIndex(y)]; // SPIGOT-7188: Don't need to convert y to biome coordinate scale since it is bound to the block chunk section
+-        return biome.get(x >> 2, (y & 0xF) >> 2, z >> 2).value().getTemperature(new BlockPos((this.x << 4) | x, y, (this.z << 4) | z));
+-    }
+-
+     @Override
+     public final long getCaptureFullTime() {
+         return this.captureFulltime;
+@@ -179,12 +118,4 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
+     public final boolean isSectionEmpty(int sy) {
+         return this.empty[sy];
+     }
+-
+-    private int getSectionIndex(int y) {
+-        return (y - this.minHeight) >> 4;
+-    }
+-
+-    private void validateChunkCoordinates(int x, int y, int z) {
+-        CraftChunk.validateChunkCoordinates(this.minHeight, this.maxHeight, x, y, z);
+-    }
+ }
