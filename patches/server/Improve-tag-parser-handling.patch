@@ -130,15 +130,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public <T> Optional<T> visit(FormattedText.ContentConsumer<T> visitor) {
-+        // Paper start
++        // Paper start - Count visited parts
 +        try {
 +            return this.visit(new TranslatableContentConsumer<>(visitor));
-+        } catch (IllegalArgumentException var5) {
-+            return Optional.empty();
++        } catch (IllegalArgumentException ignored) {
++            return visitor.accept("...");
 +        }
 +    }
 +    private <T> Optional<T> visit(TranslatableContentConsumer<T> visitor) {
-+        // Paper end
++        // Paper end - Count visited parts
          this.decompose();
  
          for(FormattedText formattedText : this.decomposedParts) {
@@ -146,8 +146,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          return Optional.empty();
      }
-+    // Paper start
++    // Paper start - Count visited parts
 +    private static final class TranslatableContentConsumer<T> implements FormattedText.ContentConsumer<T> {
++        private static final IllegalArgumentException EX = new IllegalArgumentException("Too long");
 +        private final FormattedText.ContentConsumer<T> visitor;
 +        private int visited;
 +
@@ -158,12 +159,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        @Override
 +        public Optional<T> accept(final String asString) {
 +            if (visited++ > 32) {
-+                throw new IllegalArgumentException("Too long");
++                throw EX;
 +            }
 +            return this.visitor.accept(asString);
 +        }
 +    }
-+    // Paper end
++    // Paper end - Count visited parts
  
      @Override
      public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {
