@@ -1,0 +1,247 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 22 Mar 2022 22:17:13 -0700
+Subject: [PATCH] Improve LootContext API
+
+== AT ==
+public net.minecraft.world.level.storage.loot.LootContext params
+
+diff --git a/src/main/java/io/papermc/paper/loot/PaperLootContextKey.java b/src/main/java/io/papermc/paper/loot/PaperLootContextKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d1224789df90c589763486a3f51ba574943b8deb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/loot/PaperLootContextKey.java
+@@ -0,0 +1,114 @@
++package io.papermc.paper.loot;
++
++import com.google.common.collect.BiMap;
++import com.google.common.collect.HashBiMap;
++import io.papermc.paper.util.MCUtil;
++import java.util.HashSet;
++import java.util.IdentityHashMap;
++import java.util.Map;
++import java.util.Set;
++import java.util.function.Function;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.storage.loot.LootParams;
++import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
++import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
++import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
++import org.bukkit.craftbukkit.block.CraftBlockEntityState;
++import org.bukkit.craftbukkit.block.CraftBlockStates;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.damage.CraftDamageSource;
++import org.bukkit.craftbukkit.entity.CraftEntity;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.entity.Entity;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperLootContextKey {
++
++    public static final BiMap<LootContextParam<?>, LootContextKey<?>> KEY_BI_MAP = HashBiMap.create();
++    private static final Set<Converter<?, ?>> CONVERTERS = new HashSet<>();
++    private static final Map<LootContextParam<?>, Converter<?, ?>> NMS_KEY_MAP = new IdentityHashMap<>();
++    private static final Map<LootContextKey<?>, Converter<?, ?>> API_KEY_MAP = new IdentityHashMap<>();
++
++    static {
++        CONVERTERS.add(entity(LootContextParams.THIS_ENTITY, LootContextKey.THIS_ENTITY));
++        CONVERTERS.add(entity(LootContextParams.LAST_DAMAGE_PLAYER, LootContextKey.LAST_DAMAGE_PLAYER));
++        CONVERTERS.add(new LambdaConverter<>(LootContextParams.DAMAGE_SOURCE, LootContextKey.DAMAGE_SOURCE, ds -> ((CraftDamageSource) ds).getHandle(), CraftDamageSource::new));
++        CONVERTERS.add(entity(LootContextParams.KILLER_ENTITY, LootContextKey.KILLER_ENTITY));
++        CONVERTERS.add(entity(LootContextParams.DIRECT_KILLER_ENTITY, LootContextKey.DIRECT_KILLER_ENTITY));
++        CONVERTERS.add(new LambdaConverter<>(LootContextParams.ORIGIN, LootContextKey.ORIGIN, MCUtil::toVec3, MCUtil::toPosition));
++        CONVERTERS.add(new LambdaConverter<>(LootContextParams.BLOCK_STATE, LootContextKey.BLOCK_DATA, bd -> ((CraftBlockData) bd).getState(), BlockState::createCraftBlockData));
++        CONVERTERS.add(new LambdaConverter<>(LootContextParams.BLOCK_ENTITY, LootContextKey.TILE_STATE, ts -> ((CraftBlockEntityState<?>) ts).getTileEntity(), CraftBlockStates::getTileState));
++        CONVERTERS.add(new LambdaConverter<>(LootContextParams.TOOL, LootContextKey.TOOL, CraftItemStack::asNMSCopy, net.minecraft.world.item.ItemStack::asBukkitCopy));
++        CONVERTERS.add(identity(LootContextParams.EXPLOSION_RADIUS, LootContextKey.EXPLOSION_RADIUS));
++        CONVERTERS.add(identity(LootContextParams.LOOTING_MOD, LootContextKey.LOOTING_MOD));
++        for (final Converter<?, ?> converter : CONVERTERS) {
++            KEY_BI_MAP.put(converter.nmsKey, converter.apiKey);
++            NMS_KEY_MAP.put(converter.nmsKey, converter);
++            API_KEY_MAP.put(converter.apiKey, converter);
++        }
++    }
++
++    private PaperLootContextKey() {
++    }
++
++    @SuppressWarnings("unchecked")
++    public static <API, MINECRAFT> void applyToNmsBuilder(final LootContextParamSet paramSet, final LootParams.Builder builder, final LootContextKey<API> apiKey, final Object object) {
++        final LootContextParam<MINECRAFT> nmsParam = (LootContextParam<MINECRAFT>) KEY_BI_MAP.inverse().get(apiKey);
++        if (paramSet.getAllowed().contains(nmsParam) || paramSet.getRequired().contains(nmsParam)) {
++            builder.withOptionalParameter(nmsParam, ((Converter<MINECRAFT, API>) API_KEY_MAP.get(apiKey)).toMinecraft((API) object));
++        }
++    }
++
++    @SuppressWarnings("unchecked")
++    public static <API, MINECRAFT> void applyToApiBuilder(final org.bukkit.loot.LootContext.Builder builder, final LootContextParam<MINECRAFT> nmsKey, final Object object) {
++        builder.with(((LootContextKey<API>) KEY_BI_MAP.get(nmsKey)), ((Converter<MINECRAFT, API>) NMS_KEY_MAP.get(nmsKey)).toApi((MINECRAFT) object));
++    }
++
++    abstract static class Converter<MINECRAFT, API> {
++
++        final LootContextParam<MINECRAFT> nmsKey;
++        final LootContextKey<API> apiKey;
++
++        private Converter(final LootContextParam<MINECRAFT> nmsKey, final LootContextKey<API> apiKey) {
++            this.nmsKey = nmsKey;
++            this.apiKey = apiKey;
++        }
++
++        protected abstract MINECRAFT toMinecraft(API api);
++
++        protected abstract API toApi(MINECRAFT minecraft);
++    }
++
++    static class LambdaConverter<MINECRAFT, API> extends Converter<MINECRAFT, API> {
++
++        private final Function<API, MINECRAFT> toMinecraft;
++        private final Function<MINECRAFT, API> toApi;
++
++        private LambdaConverter(final LootContextParam<MINECRAFT> nmsKey, final LootContextKey<API> apiKey, final Function<API, MINECRAFT> toMinecraft, final Function<MINECRAFT, API> toApi) {
++            super(nmsKey, apiKey);
++            this.toMinecraft = toMinecraft;
++            this.toApi = toApi;
++        }
++
++        @Override
++        protected MINECRAFT toMinecraft(final API api) {
++            return this.toMinecraft.apply(api);
++        }
++
++        @Override
++        protected API toApi(final MINECRAFT minecraft) {
++            return this.toApi.apply(minecraft);
++        }
++    }
++
++    private static <T> LambdaConverter<T, T> identity(final LootContextParam<T> nmsKey, final LootContextKey<T> apiKey) {
++        return new LambdaConverter<>(nmsKey, apiKey, Function.identity(), Function.identity());
++    }
++
++    @SuppressWarnings("unchecked")
++    private static <MINECRAFT extends net.minecraft.world.entity.Entity, API extends Entity> LambdaConverter<MINECRAFT, API> entity(final LootContextParam<MINECRAFT> nmsKey, final LootContextKey<API> apiKey) {
++        return new LambdaConverter<>(nmsKey, apiKey, e -> (MINECRAFT) ((CraftEntity) e).getHandle(), e -> (API) e.getBukkitEntity());
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+index 955b0abd4019fc45df84719eee6bf413e59d941a..ff313ce96958c140621593319fe913d9a5b18eb2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+@@ -76,6 +76,22 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
+ 
+     private LootParams convertContext(LootContext context, Random random) {
+         Preconditions.checkArgument(context != null, "LootContext cannot be null");
++        // Paper start
++        if (!context.isLegacy()) {
++            final LootParams.Builder paramsBuilder = new LootParams.Builder(((CraftWorld) context.getWorld()).getHandle()).withLuck(context.getLuck());
++            context.getContextMap().forEach((lootContextKey, o) -> io.papermc.paper.loot.PaperLootContextKey.applyToNmsBuilder(this.handle.getParamSet(), paramsBuilder, lootContextKey, o));
++
++            return paramsBuilder.create(this.handle.getParamSet());
++            // final net.minecraft.world.level.storage.loot.LootContext.Builder contextBuilder = new net.minecraft.world.level.storage.loot.LootContext.Builder(paramsBuilder.create(this.handle.getParamSet()));
++            //     // .withRandom(new RandomSourceWrapper(random != null ? random : context.getRandom()))
++            // return contextBuilder.create(java.util.Optional.empty());
++        } else {
++            return this.convertLegacyContext(context, random);
++        }
++    }
++    @Deprecated
++    private LootParams convertLegacyContext(final LootContext context, final Random random) {
++        // Paper end
+         Location loc = context.getLocation();
+         Preconditions.checkArgument(loc.getWorld() != null, "LootContext.getLocation#getWorld cannot be null");
+         ServerLevel handle = ((CraftWorld) loc.getWorld()).getHandle();
+@@ -132,6 +148,20 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
+     }
+ 
+     public static LootContext convertContext(net.minecraft.world.level.storage.loot.LootContext info) {
++        // Paper start
++        final LootContext.Builder builder = new LootContext.Builder(info.getLevel().getWorld())
++            .withRandom(new org.bukkit.craftbukkit.util.RandomSourceWrapper.RandomWrapper(info.getRandom()))
++            .luck(info.getLuck());
++        for (final LootContextParam<?> nmsParam : io.papermc.paper.loot.PaperLootContextKey.KEY_BI_MAP.keySet()) {
++            if (info.hasParam(nmsParam)) {
++                io.papermc.paper.loot.PaperLootContextKey.applyToApiBuilder(builder, nmsParam, info.getParam(nmsParam));
++            }
++        }
++        return builder.build();
++    }
++    @Deprecated @io.papermc.paper.annotation.DoNotUse
++    public static LootContext convertLegacyContext(net.minecraft.world.level.storage.loot.LootContext info) {
++        // Paper end
+         Vec3 position = info.getParamOrNull(LootContextParams.ORIGIN);
+         if (position == null) {
+             position = info.getParamOrNull(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParameterSets
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+index 8afc396c162d928902a9d9beb9f039b06630f755..6601aa97b512a67da95d661bc9a1adbbcc921ff6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+@@ -283,6 +283,13 @@ public final class CraftBlockStates {
+     }
+     // Paper end - add exploded state
+ 
++    // Paper start
++    public static org.bukkit.block.TileState getTileState(final BlockEntity blockEntity) {
++        Preconditions.checkArgument(blockEntity.getLevel() != null, "blockEntity has no level");
++        return (org.bukkit.block.TileState) getBlockState(blockEntity.getLevel().getWorld(), blockEntity.getBlockPos(), blockEntity.getBlockState(), blockEntity);
++    }
++    // Paper end
++
+     // See BlockStateFactory#createBlockState(World, BlockPosition, IBlockData, TileEntity)
+     private static CraftBlockState getBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
+         Material material = CraftBlockType.minecraftToBukkit(blockData.getBlock());
+diff --git a/src/test/java/io/papermc/paper/loot/LootContextKeyTest.java b/src/test/java/io/papermc/paper/loot/LootContextKeyTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4aa515b62245d0c20dcc5352aff1984036922932
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/loot/LootContextKeyTest.java
+@@ -0,0 +1,47 @@
++package io.papermc.paper.loot;
++
++import java.lang.reflect.Field;
++import java.lang.reflect.Modifier;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
++import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.jupiter.api.BeforeAll;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertNotEquals;
++
++class LootContextKeyTest {
++
++    static Map<String, LootContextParam<?>> vanillaParams = new HashMap<>();
++
++    @BeforeAll
++    static void collectVanillaContextParams() throws ReflectiveOperationException {
++        Class.forName(LootContextKey.class.getName()); // force-load class
++        for (final Field field : LootContextParams.class.getDeclaredFields()) {
++            if (Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()) && field.getType().equals(LootContextParam.class)) {
++                vanillaParams.put(field.getName(), (LootContextParam<?>) field.get(null));
++            }
++        }
++    }
++
++    @Test
++    void testMinecraftToApi() {
++        vanillaParams.forEach((fieldName, lootContextParam) -> {
++            final List<LootContextKey<?>> matching = LootContextKeyImpl.KEYS.stream().filter(k -> k.key().asString().equals(lootContextParam.getName().toString())).toList();
++            assertEquals(1, matching.size(), "Did not find 1 matching context key for " + lootContextParam.getName());
++        });
++    }
++
++    @Test
++    void testApiToMinecraft() {
++        assertNotEquals(0, LootContextKeyImpl.KEYS.size());
++        LootContextKeyImpl.KEYS.forEach(lootContextKey -> {
++            final List<LootContextParam<?>> matching = vanillaParams.values().stream().filter(p -> p.getName().toString().equals(lootContextKey.key().asString())).toList();
++            assertEquals(1, matching.size(), "Did not find 1 matching loot param for " + lootContextKey.key());
++        });
++    }
++}

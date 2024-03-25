@@ -1,0 +1,394 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 22 Mar 2022 22:14:10 -0700
+Subject: [PATCH] Improve LootContext API
+
+
+diff --git a/src/main/java/io/papermc/paper/loot/LootContextKey.java b/src/main/java/io/papermc/paper/loot/LootContextKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..61184a108f39b03b575324e3251bcca3a8ce76db
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/loot/LootContextKey.java
+@@ -0,0 +1,33 @@
++package io.papermc.paper.loot;
++
++import io.papermc.paper.math.Position;
++import net.kyori.adventure.key.Keyed;
++import org.bukkit.block.TileState;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.damage.DamageSource;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.bukkit.inventory.ItemStack;
++
++import static io.papermc.paper.loot.LootContextKeyImpl.create;
++
++/**
++ * A key to a possible value in a {@link org.bukkit.loot.LootContext}.
++ *
++ * @param <T> the value type
++ */
++@SuppressWarnings("unused")
++public interface LootContextKey<T> extends Keyed {
++
++    LootContextKey<Entity> THIS_ENTITY = create("this_entity");
++    LootContextKey<Player> LAST_DAMAGE_PLAYER = create("last_damage_player");
++    LootContextKey<DamageSource> DAMAGE_SOURCE = create("damage_source");
++    LootContextKey<Entity> KILLER_ENTITY = create("killer_entity");
++    LootContextKey<Entity> DIRECT_KILLER_ENTITY = create("direct_killer_entity");
++    LootContextKey<Position> ORIGIN = create("origin");
++    LootContextKey<BlockData> BLOCK_DATA = create("block_state");
++    LootContextKey<TileState> TILE_STATE = create("block_entity");
++    LootContextKey<ItemStack> TOOL = create("tool");
++    LootContextKey<Float> EXPLOSION_RADIUS = create("explosion_radius");
++    LootContextKey<Integer> LOOTING_MOD = create("bukkit:looting_mod");
++}
+diff --git a/src/main/java/io/papermc/paper/loot/LootContextKeyImpl.java b/src/main/java/io/papermc/paper/loot/LootContextKeyImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9b9194eb5d32f6ea954fce4c7531eb093526b67
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/loot/LootContextKeyImpl.java
+@@ -0,0 +1,20 @@
++package io.papermc.paper.loot;
++
++import java.util.HashSet;
++import java.util.Set;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.KeyPattern;
++import org.jetbrains.annotations.NotNull;
++
++record LootContextKeyImpl<T>(@NotNull Key key) implements LootContextKey<T> {
++
++    static final Set<LootContextKey<?>> KEYS = new HashSet<>();
++
++    static <T> LootContextKey<T> create(@KeyPattern final String name) {
++        final LootContextKeyImpl<T> key = new LootContextKeyImpl<>(Key.key(name));
++        if (!KEYS.add(key)) {
++            throw new IllegalStateException("Already registered " + name);
++        }
++        return key;
++    }
++}
+diff --git a/src/main/java/org/bukkit/loot/LootContext.java b/src/main/java/org/bukkit/loot/LootContext.java
+index 71b7aa9d675e1714e286e6fd4015ead036d912e0..5adbcdae8786135c5b15c80f1b299476d13bb89c 100644
+--- a/src/main/java/org/bukkit/loot/LootContext.java
++++ b/src/main/java/org/bukkit/loot/LootContext.java
+@@ -15,30 +15,121 @@ public final class LootContext {
+ 
+     public static final int DEFAULT_LOOT_MODIFIER = -1;
+ 
+-    private final Location location;
++    // Paper start - loot context overhaul
++    private final org.bukkit.World world;
+     private final float luck;
+-    private final int lootingModifier;
+-    private final Entity lootedEntity;
+-    private final HumanEntity killer;
+-
+-    private LootContext(@NotNull Location location, float luck, int lootingModifier, @Nullable Entity lootedEntity, @Nullable HumanEntity killer) {
+-        Preconditions.checkArgument(location != null, "LootContext location cannot be null");
+-        Preconditions.checkArgument(location.getWorld() != null, "LootContext World cannot be null");
+-        this.location = location;
++    private final java.util.Random random;
++    private final java.util.Map<io.papermc.paper.loot.LootContextKey<?>, Object> contextMap;
++    // TODO dynamic drops API
++    @Deprecated
++    private @org.checkerframework.checker.nullness.qual.MonotonicNonNull Location legacyLocation;
++    private final boolean isLegacy;
++
++    private LootContext(@NotNull org.bukkit.World world, float luck, @NotNull java.util.Random random, @NotNull java.util.Map<io.papermc.paper.loot.LootContextKey<?>, Object> contextMap, boolean isLegacy) {
++        this.world = world;
+         this.luck = luck;
+-        this.lootingModifier = lootingModifier;
+-        this.lootedEntity = lootedEntity;
+-        this.killer = killer;
++        this.random = random;
++        this.contextMap = java.util.Map.copyOf(contextMap);
++        this.isLegacy = isLegacy;
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public boolean isLegacy() {
++        return this.isLegacy;
++    }
++
++    /**
++     * Checks if this context contains a value for the key
++     *
++     * @param contextKey the key to check
++     * @return true if this context has a value for that key
++     */
++    public boolean hasKey(@NotNull io.papermc.paper.loot.LootContextKey<?> contextKey) {
++        return this.contextMap.containsKey(contextKey);
+     }
+ 
++    /**
++     * Gets the value for a context key
++     *
++     * @param contextKey the key for the value
++     * @return the value or null if this context doesn't have a value for the key
++     * @param <T> value type
++     * @see #hasKey(io.papermc.paper.loot.LootContextKey)
++     * @see #getOrThrow(io.papermc.paper.loot.LootContextKey)
++     */
++    @SuppressWarnings("unchecked")
++    public <T> @Nullable T get(@NotNull io.papermc.paper.loot.LootContextKey<T> contextKey) {
++        return (T) this.contextMap.get(contextKey);
++    }
++
++    /**
++     * Gets the value of a context key, throwing an exception
++     * if one isn't found
++     *
++     * @param contextKey the key for the value
++     * @return the value
++     * @param <T> value type
++     * @throws java.util.NoSuchElementException if no value is found for that key
++     */
++    public <T> @NotNull T getOrThrow(@NotNull io.papermc.paper.loot.LootContextKey<T> contextKey) {
++        final T value = this.get(contextKey);
++        if (value == null) {
++            throw new java.util.NoSuchElementException("No value found for " + contextKey);
++        }
++        return value;
++    }
++
++    /**
++     * Gets the random instance used for this context.
++     *
++     * @return the random
++     */
++    public @NotNull java.util.Random getRandom() {
++        return this.random;
++    }
++
++    /**
++     * Gets the world for this context.
++     *
++     * @return the world
++     */
++    public @NotNull org.bukkit.World getWorld() {
++        return this.world;
++    }
++
++    /**
++     * Gets the context map for this loot context.
++     *
++     * @return an unmodifiable map
++     */
++
++    public @NotNull java.util.@org.jetbrains.annotations.Unmodifiable Map<io.papermc.paper.loot.LootContextKey<?>, Object> getContextMap() {
++        return this.contextMap;
++    }
++    // Paper end
++
+     /**
+      * The {@link Location} to store where the loot will be generated.
+      *
+      * @return the Location of where the loot will be generated
++     * @deprecated use {@link #get(io.papermc.paper.loot.LootContextKey)} methods
+      */
+     @NotNull
++    @Deprecated // Paper
+     public Location getLocation() {
+-        return location;
++        // Paper start - fallback to legacy location
++        if (this.legacyLocation == null) {
++            if (contextMap.containsKey(io.papermc.paper.loot.LootContextKey.ORIGIN)) {
++                io.papermc.paper.math.Position pos = this.getOrThrow(io.papermc.paper.loot.LootContextKey.ORIGIN);
++                this.legacyLocation = new Location(this.world, pos.x(), pos.y(), pos.z());
++            } else if (contextMap.containsKey(io.papermc.paper.loot.LootContextKey.THIS_ENTITY)) {
++                this.legacyLocation = this.getOrThrow(io.papermc.paper.loot.LootContextKey.THIS_ENTITY).getLocation();
++            } else {
++                throw new IllegalStateException("All known context key sets require \"origin\" or \"this_entity\" and this one doesn't have either");
++            }
++        }
++        return this.legacyLocation;
++        // Paper end
+     }
+ 
+     /**
+@@ -62,19 +153,23 @@ public final class LootContext {
+      * {@link #getKiller()} entity's looting level will be used instead.
+      *
+      * @return the looting level
++     * @deprecated use {@link #get(io.papermc.paper.loot.LootContextKey)} methods
+      */
++    @Deprecated // Paper
+     public int getLootingModifier() {
+-        return lootingModifier;
++        return java.util.Objects.requireNonNullElse(this.get(io.papermc.paper.loot.LootContextKey.LOOTING_MOD), DEFAULT_LOOT_MODIFIER); // Paper
+     }
+ 
+     /**
+      * Get the {@link Entity} that was killed. Can be null.
+      *
+      * @return the looted entity or null
++     * @deprecated use {@link #get(io.papermc.paper.loot.LootContextKey)} methods
+      */
+     @Nullable
++    @Deprecated // Paper
+     public Entity getLootedEntity() {
+-        return lootedEntity;
++        return this.get(io.papermc.paper.loot.LootContextKey.THIS_ENTITY); // Paper
+     }
+ 
+     /**
+@@ -82,41 +177,87 @@ public final class LootContext {
+      * Can be null.
+      *
+      * @return the killer entity, or null.
++     * @deprecated use {@link #get(io.papermc.paper.loot.LootContextKey)} methods
+      */
+     @Nullable
++    @Deprecated // Paper
+     public HumanEntity getKiller() {
+-        return killer;
++        return this.get(io.papermc.paper.loot.LootContextKey.KILLER_ENTITY) instanceof HumanEntity humanEntity ? humanEntity : null; // Paper
+     }
+ 
+     /**
+      * Utility class to make building {@link LootContext} easier. The only
+-     * required argument is {@link Location} with a valid (non-null)
+-     * {@link org.bukkit.World}.
++     * required argument is {@link org.bukkit.World}.
+      */
+     public static class Builder {
+ 
+-        private final Location location;
++        private final org.bukkit.World world; // Paper
+         private float luck;
+-        private int lootingModifier = LootContext.DEFAULT_LOOT_MODIFIER;
+-        private Entity lootedEntity;
+-        private HumanEntity killer;
++        private java.util.Random random = java.util.concurrent.ThreadLocalRandom.current(); // Paper
++        private final java.util.Map<io.papermc.paper.loot.LootContextKey<?>, Object> contextMap = new java.util.IdentityHashMap<>(); // Paper
++        private boolean isLegacy = false; // Paper
+ 
+         /**
+          * Creates a new LootContext.Builder instance to facilitate easy
+          * creation of {@link LootContext}s.
+          *
+          * @param location the location the LootContext should use
++         * @deprecated not all loot contexts have locations
+          */
++        @Deprecated // Paper
+         public Builder(@NotNull Location location) {
+-            this.location = location;
++            // Paper start
++            com.google.common.base.Preconditions.checkArgument(location.getWorld() != null, "location missing world");
++            this.world = location.getWorld();
++            this.contextMap.put(io.papermc.paper.loot.LootContextKey.ORIGIN, io.papermc.paper.math.Position.fine(location));
++            this.isLegacy = true;
++            // Paper end
++        }
++
++        // Paper start
++        public Builder(@NotNull org.bukkit.World world) {
++            this.world = world;
++        }
++
++        /**
++         * Sets the random instance to use for this context.
++         * Defaults to {@link java.util.concurrent.ThreadLocalRandom#current()}.
++         *
++         * @param random the random to use
++         * @return the builder
++         */
++        @org.jetbrains.annotations.Contract(value = "_ -> this", mutates = "this")
++        public @NotNull Builder withRandom(@NotNull java.util.Random random) {
++            this.random = random;
++            return this;
+         }
+ 
++        /**
++         * Sets or clears context values.
++         *
++         * @param contextKey the key to set or clear for
++         * @param context the value to set, or null to clear
++         * @param <T> the value type
++         * @return the builder
++         */
++        @org.jetbrains.annotations.Contract(value = "_, _ -> this", mutates = "this")
++        public <T> @NotNull Builder with(@NotNull io.papermc.paper.loot.LootContextKey<T> contextKey, @Nullable T context) {
++            if (context == null) {
++                this.contextMap.remove(contextKey);
++            } else {
++                this.contextMap.put(contextKey, context);
++            }
++            return this;
++        }
++        // Paper end
++
+         /**
+          * Set how much luck to have when generating loot.
+          *
+          * @param luck the luck level
+          * @return the Builder
+          */
++        @org.jetbrains.annotations.Contract(value = "_ -> this", mutates = "this") // Paper
+         @NotNull
+         public Builder luck(float luck) {
+             this.luck = luck;
+@@ -131,11 +272,14 @@ public final class LootContext {
+          *
+          * @param modifier the looting level modifier
+          * @return the Builder
++         * @deprecated use {@link #with(io.papermc.paper.loot.LootContextKey, Object)} and {@link io.papermc.paper.loot.LootContextKey#LOOTING_MOD}
+          */
+         @NotNull
++        @org.jetbrains.annotations.Contract(value = "_ -> this", mutates = "this") // Paper
++        @Deprecated // Paper
+         public Builder lootingModifier(int modifier) {
+-            this.lootingModifier = modifier;
+-            return this;
++            this.isLegacy = true; // Paper
++            return this.with(io.papermc.paper.loot.LootContextKey.LOOTING_MOD, modifier); // Paper
+         }
+ 
+         /**
+@@ -143,11 +287,14 @@ public final class LootContext {
+          *
+          * @param lootedEntity the looted entity
+          * @return the Builder
++         * @deprecated use {@link #with(io.papermc.paper.loot.LootContextKey, Object)}
+          */
+         @NotNull
++        @org.jetbrains.annotations.Contract(value = "_ -> this", mutates = "this") // Paper
++        @Deprecated // Paper
+         public Builder lootedEntity(@Nullable Entity lootedEntity) {
+-            this.lootedEntity = lootedEntity;
+-            return this;
++            this.isLegacy = true; // Paper
++            return this.with(io.papermc.paper.loot.LootContextKey.THIS_ENTITY, lootedEntity); // Paper
+         }
+ 
+         /**
+@@ -157,11 +304,14 @@ public final class LootContext {
+          *
+          * @param killer the killer entity
+          * @return the Builder
++         * @deprecated use {@link #with(io.papermc.paper.loot.LootContextKey, Object)}
+          */
+         @NotNull
++        @org.jetbrains.annotations.Contract(value = "_ -> this", mutates = "this") // Paper
++        @Deprecated // Paper
+         public Builder killer(@Nullable HumanEntity killer) {
+-            this.killer = killer;
+-            return this;
++            this.isLegacy = true; // Paper
++            return this.with(io.papermc.paper.loot.LootContextKey.KILLER_ENTITY, killer);
+         }
+ 
+         /**
+@@ -171,8 +321,9 @@ public final class LootContext {
+          * @return a new {@link LootContext} instance
+          */
+         @NotNull
++        @org.jetbrains.annotations.Contract("-> new")
+         public LootContext build() {
+-            return new LootContext(location, luck, lootingModifier, lootedEntity, killer);
++            return new LootContext(this.world, luck, this.random, this.contextMap, this.isLegacy); // Paper
+         }
+     }
+ }
