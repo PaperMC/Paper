@@ -1,0 +1,168 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 9 Mar 2023 11:24:43 -0800
+Subject: [PATCH] Add FeatureFlag API
+
+
+diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java b/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7bd80b5a7483a5084ae97595d92299b4b0ec966a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java
+@@ -0,0 +1,33 @@
++package io.papermc.paper.world.flag;
++
++import java.util.Set;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++/**
++ * Implemented by types that are controlled by {@link FeatureFlags}.
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface FeatureDependant {
++
++    /**
++     * Checks if this is enabled based on the loaded feature flags.
++     *
++     * @return true if enabled
++     */
++    default boolean isEnabled() {
++        return FeatureFlags.provider().isEnabled(this);
++    }
++
++    /**
++     * Gets the set of required feature flags for this
++     * to be enabled.
++     *
++     * @return the immutable set of feature flags
++     */
++    default @Unmodifiable @NotNull Set<FeatureFlag> requiredFeatures() {
++        return FeatureFlags.provider().requiredFeatures(this);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureFlag.java b/src/main/java/io/papermc/paper/world/flag/FeatureFlag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6d1fdc14350e3c80d3269dd7a2dd63f7aceed466
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/flag/FeatureFlag.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.world.flag;
++
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Used to control the availability of certain features.
++ */
++public final class FeatureFlag {
++
++    private final String name;
++
++    FeatureFlag(final String name) {
++        this.name = name;
++    }
++
++    public @NotNull String getName() {
++        return this.name;
++    }
++
++    @Override
++    public String toString() {
++        return "FeatureFlag{%s}".formatted(name);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureFlags.java b/src/main/java/io/papermc/paper/world/flag/FeatureFlags.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..65d52c45fa4f1bc709e4d24768744e7779e7142d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/flag/FeatureFlags.java
+@@ -0,0 +1,61 @@
++package io.papermc.paper.world.flag;
++
++import com.google.common.collect.ImmutableMap;
++import java.util.Map;
++import java.util.Objects;
++import java.util.Set;
++import net.kyori.adventure.key.Key;
++import org.intellij.lang.annotations.Subst;
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * Holds the set of feature flags used to control certain unreleased
++ * features.
++ * <p>
++ * The fields in this class will always represent the available feature
++ * flags in vanilla and so flags will be added and removed when vanilla
++ * changes.
++ * <p>
++ * {@link #VANILLA_FLAGS} has the flags enabled by default on a server and
++ * {@link #ALL_FLAGS} has all flags currently available on the server.
++ */
++public final class FeatureFlags {
++
++    private static final ImmutableMap.Builder<Key, FeatureFlag> ALL_FLAGS_BUILDER = ImmutableMap.builder();
++    public static final FeatureFlag VANILLA = create("vanilla");
++    @ApiStatus.Experimental
++    public static final FeatureFlag BUNDLE = create("bundle");
++    @ApiStatus.Experimental
++    public static final FeatureFlag UPDATE_1_20 = create("update_1_20");
++
++    public static final Set<FeatureFlag> VANILLA_FLAGS = Set.of(VANILLA);
++    public static final Map<Key, FeatureFlag> ALL_FLAGS;
++
++    // Must come after all flag fields are created
++    static {
++        ALL_FLAGS = ALL_FLAGS_BUILDER.build();
++    }
++
++    static FeatureFlagProvider INSTANCE;
++
++    private FeatureFlags() {
++    }
++
++    static FeatureFlagProvider provider() {
++        return Objects.requireNonNull(INSTANCE);
++    }
++
++    private static FeatureFlag create(final @Subst("vanilla") String name) {
++        final FeatureFlag flag = new FeatureFlag(name);
++        ALL_FLAGS_BUILDER.put(Key.key(Key.MINECRAFT_NAMESPACE, name), flag);
++        return flag;
++    }
++
++    @ApiStatus.Internal
++    interface FeatureFlagProvider {
++
++        boolean isEnabled(FeatureDependant dependant);
++
++        Set<FeatureFlag> requiredFeatures(FeatureDependant dependant);
++    }
++}
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 6bbb47d1f9d8d45326232024e82a0ebaf764fae7..333cfd0261ac68c812dae726db88b7099b8f32cb 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -113,7 +113,7 @@ import org.jetbrains.annotations.Nullable;
+  * An enum of all material IDs accepted by the official server and client
+  */
+ @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
+-public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
++public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper
+     //<editor-fold desc="Materials" defaultstate="collapsed">
+     AIR(9648, 0),
+     STONE(22948),
+diff --git a/src/main/java/org/bukkit/entity/EntityType.java b/src/main/java/org/bukkit/entity/EntityType.java
+index 91664b99f1158cb8a2e3c72ec082bf3c39487649..810c921c5720781c72b7c050b150256aad896d2d 100644
+--- a/src/main/java/org/bukkit/entity/EntityType.java
++++ b/src/main/java/org/bukkit/entity/EntityType.java
+@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+-public enum EntityType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
++public enum EntityType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - translatable
+ 
+     // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
+     /**
