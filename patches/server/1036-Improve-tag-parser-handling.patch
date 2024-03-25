@@ -123,31 +123,32 @@ index 5bec54239a2b185284c10d58854e5a13e33daae5..94cb73e7f60171aa57bd1dbe7e91ef4d
 +    }
  }
 diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
-index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..084ffde43447f6ff5e45e9fe3fc6a86bde65fd5a 100644
+index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..981d34dd4cfbc0932b147688751b98552c8beea8 100644
 --- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 +++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 @@ -197,6 +197,15 @@ public class TranslatableContents implements ComponentContents {
  
      @Override
      public <T> Optional<T> visit(FormattedText.ContentConsumer<T> visitor) {
-+        // Paper start
++        // Paper start - Count visited parts
 +        try {
 +            return this.visit(new TranslatableContentConsumer<>(visitor));
-+        } catch (IllegalArgumentException var5) {
-+            return Optional.empty();
++        } catch (IllegalArgumentException ignored) {
++            return visitor.accept("...");
 +        }
 +    }
 +    private <T> Optional<T> visit(TranslatableContentConsumer<T> visitor) {
-+        // Paper end
++        // Paper end - Count visited parts
          this.decompose();
  
          for(FormattedText formattedText : this.decomposedParts) {
-@@ -208,6 +217,24 @@ public class TranslatableContents implements ComponentContents {
+@@ -208,6 +217,25 @@ public class TranslatableContents implements ComponentContents {
  
          return Optional.empty();
      }
-+    // Paper start
++    // Paper start - Count visited parts
 +    private static final class TranslatableContentConsumer<T> implements FormattedText.ContentConsumer<T> {
++        private static final IllegalArgumentException EX = new IllegalArgumentException("Too long");
 +        private final FormattedText.ContentConsumer<T> visitor;
 +        private int visited;
 +
@@ -158,12 +159,12 @@ index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..084ffde43447f6ff5e45e9fe3fc6a86b
 +        @Override
 +        public Optional<T> accept(final String asString) {
 +            if (visited++ > 32) {
-+                throw new IllegalArgumentException("Too long");
++                throw EX;
 +            }
 +            return this.visitor.accept(asString);
 +        }
 +    }
-+    // Paper end
++    // Paper end - Count visited parts
  
      @Override
      public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {
