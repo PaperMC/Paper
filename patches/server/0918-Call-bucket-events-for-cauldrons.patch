@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 16 Jan 2022 10:13:33 -0800
+Subject: [PATCH] Call bucket events for cauldrons
+
+
+diff --git a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java b/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
+index 4039dc7454e9d45f5740a46e308849682497e039..4cbb20872a2b609731781b32822e0c24c0d2f367 100644
+--- a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
++++ b/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
+@@ -282,6 +282,15 @@ public interface CauldronInteraction {
+                     return InteractionResult.SUCCESS;
+                 }
+                 // CraftBukkit end
++                // Paper start
++                if (!output.is(Items.POWDER_SNOW_BUCKET) && net.minecraft.world.level.block.AbstractCauldronBlock.directionForCauldronInteraction != null) {
++                    org.bukkit.event.player.PlayerBucketEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketFillEvent((net.minecraft.server.level.ServerLevel) world, player, pos, pos, net.minecraft.world.level.block.AbstractCauldronBlock.directionForCauldronInteraction, stack, output.getItem(), hand);
++                    if (event.isCancelled()) {
++                        return InteractionResult.PASS;
++                    }
++                    output = event.getItemStack() != null ? org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY;
++                }
++                // Paper end
+                 Item item = stack.getItem();
+ 
+                 player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, output));
+@@ -303,9 +312,19 @@ public interface CauldronInteraction {
+                 return InteractionResult.SUCCESS;
+             }
+             // CraftBukkit end
++            // Paper start
++            ItemStack output = new ItemStack(Items.BUCKET);
++            if (!state.is(Blocks.POWDER_SNOW_CAULDRON) && net.minecraft.world.level.block.AbstractCauldronBlock.directionForCauldronInteraction != null) {
++                org.bukkit.event.player.PlayerBucketEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent((net.minecraft.server.level.ServerLevel) world, player, pos, pos, net.minecraft.world.level.block.AbstractCauldronBlock.directionForCauldronInteraction, stack, hand);
++                if (event.isCancelled()) {
++                    return InteractionResult.PASS;
++                }
++                output = event.getItemStack() != null ? org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY;
++            }
++            // Paper end
+             Item item = stack.getItem();
+ 
+-            player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, new ItemStack(Items.BUCKET)));
++            player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, output)); // Paper
+             player.awardStat(Stats.FILL_CAULDRON);
+             player.awardStat(Stats.ITEM_USED.get(item));
+             // world.setBlockAndUpdate(blockposition, iblockdata); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/world/level/block/AbstractCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/AbstractCauldronBlock.java
+index 47468086c1cae252aa99c55b0065f225357dee62..87bf7170808471207edfc2a97aaf63d3dcce1f43 100644
+--- a/src/main/java/net/minecraft/world/level/block/AbstractCauldronBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/AbstractCauldronBlock.java
+@@ -33,6 +33,7 @@ public abstract class AbstractCauldronBlock extends Block {
+     private static final VoxelShape INSIDE = box(2.0D, 4.0D, 2.0D, 14.0D, 16.0D, 14.0D);
+     protected static final VoxelShape SHAPE = Shapes.join(Shapes.block(), Shapes.or(box(0.0D, 0.0D, 4.0D, 16.0D, 3.0D, 12.0D), box(4.0D, 0.0D, 0.0D, 12.0D, 3.0D, 16.0D), box(2.0D, 0.0D, 2.0D, 14.0D, 3.0D, 14.0D), INSIDE), BooleanOp.ONLY_FIRST);
+     private final Map<Item, CauldronInteraction> interactions;
++    public static @javax.annotation.Nullable net.minecraft.core.Direction directionForCauldronInteraction; // Paper - track hit direction
+ 
+     public AbstractCauldronBlock(BlockBehaviour.Properties settings, Map<Item, CauldronInteraction> behaviorMap) {
+         super(settings);
+@@ -51,6 +52,7 @@ public abstract class AbstractCauldronBlock extends Block {
+     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+         ItemStack itemStack = player.getItemInHand(hand);
+         CauldronInteraction cauldronInteraction = this.interactions.get(itemStack.getItem());
++        directionForCauldronInteraction = hit.getDirection(); // Paper
+         return cauldronInteraction.interact(state, world, pos, player, hand, itemStack);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 03d389f3458cd77166a0319fa38c7207e8714e6f..0bb0d781852588e0460244bc534689bb33fd0dd1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -441,10 +441,12 @@ public class CraftEventFactory {
+     /**
+      * Bucket methods
+      */
++    @Deprecated // Paper - use method with InteractionHand
+     public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(ServerLevel world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemInHand) {
+         return (PlayerBucketEmptyEvent) CraftEventFactory.getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemInHand, Items.BUCKET);
+     }
+ 
++    @Deprecated // Paper - use method with InteractionHand
+     public static PlayerBucketFillEvent callPlayerBucketFillEvent(ServerLevel world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket) {
+         return (PlayerBucketFillEvent) CraftEventFactory.getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket);
+     }
