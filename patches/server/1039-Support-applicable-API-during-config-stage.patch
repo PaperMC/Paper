@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 11 Oct 2023 18:57:45 -0700
+Subject: [PATCH] Support applicable API during config stage
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 76157319b79d7fefe38cb2cc10b2d79c12667e3d..98eb46d5768d960a44ee5603a262c8178a2caa86 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -189,6 +189,7 @@ public class ServerPlayer extends Player {
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_XZ = 32;
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
+     public ServerGamePacketListenerImpl connection;
++    public net.minecraft.server.network.@org.jetbrains.annotations.Nullable ServerConfigurationPacketListenerImpl configConnection; // Paper
+     public final MinecraftServer server;
+     public final ServerPlayerGameMode gameMode;
+     private final PlayerAdvancements advancements;
+diff --git a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+index 8dbcc1b3a70b6bbea3bd2d15b6d66cc4f9cd53f8..f84cf9150e2c42f7ffdbd5a54d0dadfc906cb344 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+@@ -46,6 +46,7 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
+ 
+     public ServerConfigurationPacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, CommonListenerCookie commonlistenercookie, ServerPlayer player) { // CraftBukkit
+         super(minecraftserver, networkmanager, commonlistenercookie, player); // CraftBukkit
++        player.configConnection = this; // Paper
+         this.gameProfile = commonlistenercookie.gameProfile();
+         this.clientInformation = commonlistenercookie.clientInformation();
+     }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8bd243a8d5a4be54f907af2b02e96ea833cee62f..57c3842a90491dc473d5c7b985fba53c0e486e00 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -300,6 +300,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         this.chunkSender = new PlayerChunkSender(connection.isMemoryConnection());
+         connection.setListener(this);
+         this.player = player;
++        player.configConnection = null; // Paper
+         player.connection = this;
+         player.getTextFilter().join();
+         this.signedMessageDecoder = server.enforceSecureProfile() ? SignedMessageChain.Decoder.REJECT_ALL : SignedMessageChain.Decoder.unsigned(player.getUUID());
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 604ed1f6742a6b028b9db2809f7bd4b9a3b38f4d..2b72c1c30cb5934fa15441fbb491c9d41b74d62b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -205,6 +205,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.firstPlayed = System.currentTimeMillis();
+     }
+ 
++
++    // Paper start - send packets during config stage
++    public void sendPacketDuringMultipleStages(final Packet<?> packet) {
++        if (this.getHandle().connection != null) {
++            this.getHandle().connection.send(packet);
++        } else if (this.getHandle().configConnection != null) {
++            this.getHandle().configConnection.send(packet);
++        }
++    }
++
++    @org.jetbrains.annotations.Contract(pure = true)
++    public net.minecraft.server.network.@org.jetbrains.annotations.Nullable ServerCommonPacketListenerImpl commonListener() {
++        if (this.getHandle().connection != null) {
++            return this.getHandle().connection;
++        } else if (this.getHandle().configConnection != null) {
++            return this.getHandle().configConnection;
++        } else {
++            return null;
++        }
++    }
++    // Paper end - send packets during config stage
++
+     // Paper start - implement view distances
+     @Override
+     public int getViewDistance() {
+@@ -592,9 +614,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     @Override
+     public void kickPlayer(String message) {
+         org.spigotmc.AsyncCatcher.catchOp("player kick"); // Spigot
+-        if (this.getHandle().connection == null) return;
++        if (this.commonListener() == null) return; // Paper - configuration stage
+ 
+-        this.getHandle().connection.disconnect(message == null ? "" : message, org.bukkit.event.player.PlayerKickEvent.Cause.PLUGIN); // Paper - kick event cause
++        this.commonListener().disconnect(message == null ? "" : message, org.bukkit.event.player.PlayerKickEvent.Cause.PLUGIN); // Paper - kick event cause // Paper - configuration stage
+     }
+ 
+     // Paper start
+@@ -612,7 +634,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     @Override
+     public void kick(net.kyori.adventure.text.Component message, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
+         org.spigotmc.AsyncCatcher.catchOp("player kick");
+-        final ServerGamePacketListenerImpl connection = this.getHandle().connection;
++        final net.minecraft.server.network.ServerCommonPacketListenerImpl connection = this.commonListener(); // Paper - configuration stage
+         if (connection != null) {
+             connection.disconnect(message == null ? net.kyori.adventure.text.Component.empty() : message, cause);
+         }
+@@ -2329,9 +2351,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         if (hash != null) {
+             Preconditions.checkArgument(hash.length == 20, "Resource pack hash should be 20 bytes long but was %s", hash.length);
+ 
+-            this.getHandle().connection.send(new ClientboundResourcePackPacket(url, BaseEncoding.base16().lowerCase().encode(hash), force, CraftChatMessage.fromStringOrNull(prompt, true)));
++            this.sendPacketDuringMultipleStages(new ClientboundResourcePackPacket(url, BaseEncoding.base16().lowerCase().encode(hash), force, CraftChatMessage.fromStringOrNull(prompt, true))); // Paper - configuration stage
+         } else {
+-            this.getHandle().connection.send(new ClientboundResourcePackPacket(url, "", force, CraftChatMessage.fromStringOrNull(prompt, true)));
++            this.sendPacketDuringMultipleStages(new ClientboundResourcePackPacket(url, "", force, CraftChatMessage.fromStringOrNull(prompt, true))); // Paper - configuration stage
+         }
+     }
+ 
+@@ -2346,7 +2368,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         } else {
+             hash = "";
+         }
+-        this.getHandle().connection.send(new ClientboundResourcePackPacket(url, hash, force, io.papermc.paper.adventure.PaperAdventure.asVanilla(prompt)));
++        this.sendPacketDuringMultipleStages(new ClientboundResourcePackPacket(url, hash, force, io.papermc.paper.adventure.PaperAdventure.asVanilla(prompt))); // Paper - configuration stage
+     }
+     // Paper end
+ 
+@@ -2811,7 +2833,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         net.minecraft.network.chat.Component promptComponent = resourcePackPrompt != null ?
+                             io.papermc.paper.adventure.PaperAdventure.asVanilla(resourcePackPrompt) :
+                            null;
+-        this.getHandle().connection.send(new ClientboundResourcePackPacket(url, hash, required, promptComponent));
++        this.sendPacketDuringMultipleStages(new ClientboundResourcePackPacket(url, hash, required, promptComponent)); // Paper - configuration stage
+     }
+ 
+     @Override
