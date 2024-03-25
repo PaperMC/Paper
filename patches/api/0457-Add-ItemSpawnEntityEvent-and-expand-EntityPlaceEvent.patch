@@ -1,0 +1,304 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 20 Jan 2022 10:54:54 -0800
+Subject: [PATCH] Add ItemSpawnEntityEvent and expand EntityPlaceEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/event/entity/BlockPlaceEntityEvent.java b/src/main/java/io/papermc/paper/event/entity/BlockPlaceEntityEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7287ebcf3338ca30cc23efa22084cdaefbcad2da
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/BlockPlaceEntityEvent.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.event.entity;
++
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockFace;
++import org.bukkit.block.Dispenser;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called when a block, like a dispenser, places an
++ * entity. {@link #getPlayer()} will always be null.
++ * @see org.bukkit.event.hanging.HangingPlaceEvent for paintings, item frames, and leashes.
++ * @see org.bukkit.event.entity.EntityPlaceEvent for a player-only version with more context
++ * @see PlaceEntityEvent to listen to both blocks and players placing entities
++ */
++public class BlockPlaceEntityEvent extends PlaceEntityEvent {
++
++    private final Dispenser dispenser;
++
++    @ApiStatus.Internal
++    public BlockPlaceEntityEvent(final @NotNull Entity entity, final @NotNull Block block, final @NotNull BlockFace blockFace, final @NotNull ItemStack spawningStack, final @NotNull Dispenser dispenser) {
++        super(entity, null, block, blockFace, spawningStack);
++        this.dispenser = dispenser;
++    }
++
++    /**
++     * Get the dispenser responsible for placing the entity.
++     *
++     * @return a non-snapshot Dispenser
++     */
++    public @NotNull Dispenser getDispenser() {
++        return this.dispenser;
++    }
++
++    /**
++     * Player will always be null on this event.
++     */
++    @Override
++    @Contract("-> null")
++    public @Nullable Player getPlayer() {
++        return null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/entity/ItemSpawnEntityEvent.java b/src/main/java/io/papermc/paper/event/entity/ItemSpawnEntityEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6668171113257f5383904ab145da089600630544
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/ItemSpawnEntityEvent.java
+@@ -0,0 +1,96 @@
++package io.papermc.paper.event.entity;
++
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockFace;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * When an itemstack causes the spawning of an entity. Most event fires are going to
++ * be the through the sub-event {@link org.bukkit.event.entity.EntityPlaceEvent} but this
++ * event will also be fired for mob spawn eggs from players and dispensers.
++ */
++public class ItemSpawnEntityEvent extends EntityEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Player player;
++    private final Block block;
++    private final BlockFace blockFace;
++    private final ItemStack spawningStack;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public ItemSpawnEntityEvent(final @NotNull Entity entity, final @Nullable Player player, final @NotNull Block block, final @NotNull BlockFace blockFace, final @NotNull ItemStack spawningStack) {
++        super(entity);
++        this.player = player;
++        this.block = block;
++        this.blockFace = blockFace;
++        this.spawningStack = spawningStack;
++    }
++
++    /**
++     * Returns the player placing the entity (if one is available).
++     *
++     * @return the player placing the entity
++     */
++    public @Nullable Player getPlayer() {
++        return this.player;
++    }
++
++    /**
++     * Returns the block that the entity was placed on
++     *
++     * @return the block that the entity was placed on
++     */
++    public @NotNull Block getBlock() {
++        return this.block;
++    }
++
++    /**
++     * Returns the face of the block that the entity was placed on
++     *
++     * @return the face of the block that the entity was placed on
++     */
++    public @NotNull BlockFace getBlockFace() {
++        return this.blockFace;
++    }
++
++    /**
++     * Gets the itemstack responsible for spawning the entity. Mutating
++     * this itemstack has no effect.
++     * <p>
++     * May return an empty itemstack if the actual stack isn't available.
++     *
++     * @return the spawning itemstack
++     */
++    public @NotNull ItemStack getSpawningStack() {
++        return this.spawningStack;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/entity/PlaceEntityEvent.java b/src/main/java/io/papermc/paper/event/entity/PlaceEntityEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bfd7204c71a1ca46df3e5174aef3fe33e59b4ee6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/PlaceEntityEvent.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.event.entity;
++
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockFace;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Triggered when an entity is created in the world by "placing" an item
++ * on a block from a player or dispenser.
++ * <br>
++ * Note that this event is currently only fired for these specific placements:
++ * armor stands, boats, minecarts, end crystals, mob buckets, and tnt (dispenser only).
++ * @see org.bukkit.event.hanging.HangingPlaceEvent for paintings, item frames, and leashes.
++ * @see org.bukkit.event.entity.EntityPlaceEvent for a player-only version with more context
++ * @see BlockPlaceEntityEvent for a dispener-only version with more context
++ */
++public abstract class PlaceEntityEvent extends ItemSpawnEntityEvent {
++
++    @ApiStatus.Internal
++    protected PlaceEntityEvent(final @NotNull Entity entity, final @Nullable Player player, final @NotNull Block block, final @NotNull BlockFace blockFace, final @NotNull ItemStack spawningStack) {
++        super(entity, player, block, blockFace, spawningStack);
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/entity/EntityPlaceEvent.java b/src/main/java/org/bukkit/event/entity/EntityPlaceEvent.java
+index 71d664dd89995f088c47d17b38547d530319470c..645ef8dde4acce134531cb94344d9d84a8ffdc6a 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityPlaceEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityPlaceEvent.java
+@@ -14,61 +14,34 @@ import org.jetbrains.annotations.Nullable;
+  * Triggered when an entity is created in the world by a player "placing" an item
+  * on a block.
+  * <br>
+- * Note that this event is currently only fired for four specific placements:
+- * armor stands, boats, minecarts, and end crystals.
++ * Note that this event is currently only fired for these specific placements:
++ * armor stands, boats, minecarts, end crystals, and mob buckets.
++ * @see org.bukkit.event.hanging.HangingPlaceEvent for paintings, item frames, and leashes.
++ * @see io.papermc.paper.event.entity.BlockPlaceEntityEvent for a dispenser-only version
++ * @see io.papermc.paper.event.entity.PlaceEntityEvent to listen to both blocks and players placing entities
+  */
+-public class EntityPlaceEvent extends EntityEvent implements Cancellable {
++public class EntityPlaceEvent extends io.papermc.paper.event.entity.PlaceEntityEvent implements Cancellable { // Paper - move to superclass
+ 
+-    private static final HandlerList handlers = new HandlerList();
+-    private boolean cancelled;
+-    private final Player player;
+-    private final Block block;
+-    private final BlockFace blockFace;
++    // Paper - move to superclass
+     private final EquipmentSlot hand;
+ 
+-    public EntityPlaceEvent(@NotNull final Entity entity, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace, @NotNull final EquipmentSlot hand) {
+-        super(entity);
+-        this.player = player;
+-        this.block = block;
+-        this.blockFace = blockFace;
+-        this.hand = hand;
+-    }
+-
++    // Paper start - move event to superclass
+     @Deprecated
+     public EntityPlaceEvent(@NotNull final Entity entity, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace) {
+         this(entity, player, block, blockFace, EquipmentSlot.HAND);
+     }
+ 
+-    /**
+-     * Returns the player placing the entity
+-     *
+-     * @return the player placing the entity
+-     */
+-    @Nullable
+-    public Player getPlayer() {
+-        return player;
+-    }
+-
+-    /**
+-     * Returns the block that the entity was placed on
+-     *
+-     * @return the block that the entity was placed on
+-     */
+-    @NotNull
+-    public Block getBlock() {
+-        return block;
++    @Deprecated
++    public EntityPlaceEvent(@NotNull final Entity entity, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace, @NotNull final EquipmentSlot hand) {
++        this(entity, player, block, blockFace, hand, org.bukkit.inventory.ItemStack.empty());
+     }
+ 
+-    /**
+-     * Returns the face of the block that the entity was placed on
+-     *
+-     * @return the face of the block that the entity was placed on
+-     */
+-    @NotNull
+-    public BlockFace getBlockFace() {
+-        return blockFace;
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityPlaceEvent(final @NotNull Entity entity, final @Nullable Player player, final @NotNull Block block, final @NotNull BlockFace blockFace, final @NotNull EquipmentSlot hand, final @NotNull org.bukkit.inventory.ItemStack spawningStack) {
++        super(entity, player, block, blockFace, spawningStack);
++        this.hand = hand;
+     }
+-
++    // Paper end
+     /**
+      * Get the hand used to place the entity.
+      *
+@@ -79,24 +52,5 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
+         return hand;
+     }
+ 
+-    @Override
+-    public boolean isCancelled() {
+-        return cancelled;
+-    }
+-
+-    @Override
+-    public void setCancelled(boolean cancel) {
+-        this.cancelled = cancel;
+-    }
+-
+-    @NotNull
+-    @Override
+-    public HandlerList getHandlers() {
+-        return handlers;
+-    }
+-
+-    @NotNull
+-    public static HandlerList getHandlerList() {
+-        return handlers;
+-    }
++    // Paper - move to superclass
+ }

@@ -1,0 +1,383 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 20 Jan 2022 10:54:45 -0800
+Subject: [PATCH] Add ItemSpawnEntityEvent and expand EntityPlaceEvent
+
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
+index 6df0db8b4cdab23494ea34236949ece4989110a3..9ebc4e88efcf1ab3130f150a84c3f2c72d18c92c 100644
+--- a/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
+@@ -90,6 +90,11 @@ public class BoatDispenseItemBehavior extends DefaultDispenseItemBehavior {
+         EntityType.createDefaultStackConfig(worldserver, stack, (Player) null).accept(object);
+         ((Boat) object).setVariant(this.type);
+         ((Boat) object).setYRot(enumdirection.toYRot());
++        // Paper start
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEntityEvent(pointer, object, stack).isCancelled()) {
++            return stack;
++        }
++        // Paper end
+         if (worldserver.addFreshEntity((Entity) object) && shrink) stack.shrink(1); // Paper - if entity add was successful and supposed to shrink
+         return stack;
+     }
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index e6ac20a38f31bb0cd6b8840b2518f6992ef7f518..b36391c0f141488244faa40c07f9088fa9ebc29f 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -213,7 +213,7 @@ public interface DispenseItemBehavior {
+             @Override
+             public ItemStack execute(BlockSource pointer, ItemStack stack) {
+                 Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
+-                EntityType entitytypes = ((SpawnEggItem) stack.getItem()).getType(stack.getTag());
++                EntityType<?> entitytypes = ((SpawnEggItem) stack.getItem()).getType(stack.getTag()); // Paper - fixme move to mc dev fixes
+ 
+                 // CraftBukkit start
+                 ServerLevel worldserver = pointer.level();
+@@ -244,7 +244,13 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 try {
+-                    entitytypes.spawn(pointer.level(), stack, (Player) null, pointer.pos().relative(enumdirection), MobSpawnType.DISPENSER, enumdirection != Direction.UP, false);
++                    // Paper start
++                    entitytypes.spawn(pointer.level(), stack, (Player) null, pointer.pos().relative(enumdirection), MobSpawnType.DISPENSER, enumdirection != Direction.UP, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG, entity -> {
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemSpawnEntityEvent(pointer.level(), pointer.pos().relative(enumdirection), enumdirection.getOpposite(), null, entity, stack).isCancelled()) {
++                            entity.discard();
++                        }
++                    });
++                    // Paper end
+                 } catch (Exception exception) {
+                     DispenseItemBehavior.LOGGER.error("Error while dispensing spawn egg from dispenser at {}", pointer.pos(), exception); // CraftBukkit - decompile error
+                     return ItemStack.EMPTY;
+@@ -302,7 +308,16 @@ public interface DispenseItemBehavior {
+                 Consumer<ArmorStand> consumer = EntityType.appendDefaultStackConfig((entityarmorstand) -> {
+                     entityarmorstand.setYRot(enumdirection.toYRot());
+                 }, worldserver, stack, (Player) null);
++                // Paper start
++                final java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
++                consumer = consumer.andThen(stand -> {
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEntityEvent(pointer, stand, stack).isCancelled()) {
++                        cancelled.set(true);
++                    }
++                });
++                // Paper end
+                 ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, stack.getTag(), consumer, blockposition, MobSpawnType.DISPENSER, false, false);
++                if (cancelled.get()) shrink = false; // Paper
+ 
+                 if (entityarmorstand != null) {
+                     if (shrink) stack.shrink(1); // Paper - actually handle here
+@@ -657,7 +672,7 @@ public interface DispenseItemBehavior {
+                 // CraftBukkit end
+ 
+                 if (dispensiblecontaineritem.emptyContents((Player) null, worldserver, blockposition, (BlockHitResult) null)) {
+-                    dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, stack, blockposition);
++                    dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, stack, blockposition, null, pointer.state().getValue(DispenserBlock.FACING).getOpposite()); // Paper
+                     // CraftBukkit start - Handle stacked buckets
+                     Item item = Items.BUCKET;
+                     stack.shrink(1);
+@@ -911,6 +926,11 @@ public interface DispenseItemBehavior {
+ 
+                 PrimedTnt entitytntprimed = new PrimedTnt(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), (LivingEntity) null);
+                 // CraftBukkit end
++                // Paper start
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEntityEvent(pointer, entitytntprimed, stack).isCancelled()) {
++                    return stack;
++                }
++                // Paper end
+ 
+                 worldserver.addFreshEntity(entitytntprimed);
+                 worldserver.playSound((Player) null, entitytntprimed.getX(), entitytntprimed.getY(), entitytntprimed.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 1.0F);
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 940b8d0b89d7e55c938aefbe80ee71b0db3dacb8..9b1485fdc3f9bd31457e2a69bd9905c108c1ca85 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -358,6 +358,13 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+ 
+     @Nullable
+     public T spawn(ServerLevel worldserver, @Nullable ItemStack itemstack, @Nullable Player entityhuman, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        // Paper start
++        return this.spawn(worldserver, itemstack, entityhuman, blockposition, enummobspawn, flag, flag1, spawnReason, null);
++    }
++
++    @Nullable
++    public T spawn(ServerLevel worldserver, @Nullable ItemStack itemstack, @Nullable Player entityhuman, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason, @Nullable final Consumer<T> op) {
++        // Paper end
+         // CraftBukkit end
+         CompoundTag nbttagcompound;
+         Consumer<T> consumer; // CraftBukkit - decompile error
+@@ -370,6 +377,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+             };
+             nbttagcompound = null;
+         }
++        if (op != null) consumer = consumer.andThen(op); // Paper
+ 
+         return this.spawn(worldserver, nbttagcompound, consumer, blockposition, enummobspawn, flag, flag1, spawnReason); // CraftBukkit
+     }
+@@ -435,6 +443,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+         T t0 = this.create(worldserver, nbttagcompound, consumer, blockposition, enummobspawn, flag, flag1);
+ 
+         if (t0 != null) {
++            if (t0.isRemoved()) return null; // Paper - if consumer removed entity, return null
+             worldserver.addFreshEntityWithPassengers(t0, spawnReason);
+             return !t0.isRemoved() ? t0 : null; // Don't return an entity when CreatureSpawnEvent is canceled
+             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/item/BoatItem.java b/src/main/java/net/minecraft/world/item/BoatItem.java
+index 67a5a201d0b26ca7b27e6d0c3ffb9f8b6e16bce0..9c9d4ab63ec4a48fbf4462b2a84735f4c342dbd2 100644
+--- a/src/main/java/net/minecraft/world/item/BoatItem.java
++++ b/src/main/java/net/minecraft/world/item/BoatItem.java
+@@ -76,7 +76,7 @@ public class BoatItem extends Item {
+                 } else {
+                     if (!world.isClientSide) {
+                         // CraftBukkit start
+-                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(world, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), user, entityboat, hand).isCancelled()) {
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(world, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), user, entityboat, hand, itemstack).isCancelled()) { // Paper
+                             return InteractionResultHolder.fail(itemstack);
+                         }
+ 
+diff --git a/src/main/java/net/minecraft/world/item/BucketItem.java b/src/main/java/net/minecraft/world/item/BucketItem.java
+index aa0f09a18ea781e027ea70928b30d3e93061120f..858566bed1a844d0394cbb025e24db9f3130a8b7 100644
+--- a/src/main/java/net/minecraft/world/item/BucketItem.java
++++ b/src/main/java/net/minecraft/world/item/BucketItem.java
+@@ -106,7 +106,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+                     BlockPos blockposition2 = iblockdata.getBlock() instanceof LiquidBlockContainer && this.content == Fluids.WATER ? blockposition : blockposition1;
+ 
+                     if (this.emptyContents(user, world, blockposition2, movingobjectpositionblock, movingobjectpositionblock.getDirection(), blockposition, itemstack, hand)) { // CraftBukkit
+-                        this.checkExtraContent(user, world, itemstack, blockposition2);
++                        this.checkExtraContent(user, world, itemstack, blockposition2, hand, movingobjectpositionblock.getDirection()); // Paper
+                         if (user instanceof ServerPlayer) {
+                             CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer) user, blockposition2, itemstack);
+                         }
+@@ -134,8 +134,8 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+         return !player.getAbilities().instabuild ? new ItemStack(Items.BUCKET) : stack;
+     }
+ 
+-    @Override
+-    public void checkExtraContent(@Nullable Player player, Level world, ItemStack stack, BlockPos pos) {}
++    // @Override // Paper - comment out
++    // public void checkExtraContent(@Nullable Player player, Level world, ItemStack stack, BlockPos pos) {}
+ 
+     @Override
+     public boolean emptyContents(@Nullable Player player, Level world, BlockPos pos, @Nullable BlockHitResult hitResult) {
+diff --git a/src/main/java/net/minecraft/world/item/DispensibleContainerItem.java b/src/main/java/net/minecraft/world/item/DispensibleContainerItem.java
+index 0ca0e2a0a5f63939bd30de22a55806152a5a7698..67f3bc5a88e23bb60e6b300cfa0a7c85fa3ba2d2 100644
+--- a/src/main/java/net/minecraft/world/item/DispensibleContainerItem.java
++++ b/src/main/java/net/minecraft/world/item/DispensibleContainerItem.java
+@@ -7,8 +7,13 @@ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.BlockHitResult;
+ 
+ public interface DispensibleContainerItem {
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+     default void checkExtraContent(@Nullable Player player, Level world, ItemStack stack, BlockPos pos) {
+     }
++    // Paper start
++    default void checkExtraContent(@Nullable Player player, Level world, ItemStack stack, BlockPos pos, @Nullable net.minecraft.world.InteractionHand hand, @Nullable net.minecraft.core.Direction direction) {
++    }
++    // Paper end
+ 
+     boolean emptyContents(@Nullable Player player, Level world, BlockPos pos, @Nullable BlockHitResult hitResult);
+ }
+diff --git a/src/main/java/net/minecraft/world/item/MobBucketItem.java b/src/main/java/net/minecraft/world/item/MobBucketItem.java
+index 686baf7440b793af2620991a2cf82ca877f348e8..ba4de5e4f28d12decb5a885e5ee8a3604d65780d 100644
+--- a/src/main/java/net/minecraft/world/item/MobBucketItem.java
++++ b/src/main/java/net/minecraft/world/item/MobBucketItem.java
+@@ -32,9 +32,9 @@ public class MobBucketItem extends BucketItem {
+     }
+ 
+     @Override
+-    public void checkExtraContent(@Nullable Player player, Level world, ItemStack stack, BlockPos pos) {
++    public void checkExtraContent(@Nullable Player player, Level world, ItemStack stack, BlockPos pos, @Nullable net.minecraft.world.InteractionHand hand, @Nullable net.minecraft.core.Direction direction) { // Paper - add parameters
+         if (world instanceof ServerLevel) {
+-            this.spawn((ServerLevel)world, stack, pos);
++            this.spawn((ServerLevel)world, stack, pos, player, hand, direction); // Paper - add parameters
+             world.gameEvent(player, GameEvent.ENTITY_PLACE, pos);
+         }
+ 
+@@ -45,8 +45,26 @@ public class MobBucketItem extends BucketItem {
+         world.playSound(player, pos, this.emptySound, SoundSource.NEUTRAL, 1.0F, 1.0F);
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+     private void spawn(ServerLevel world, ItemStack stack, BlockPos pos) {
+-        Entity entity = this.type.spawn(world, stack, (Player)null, pos, MobSpawnType.BUCKET, true, false);
++        // Paper start
++        this.spawn(world, stack, pos, null, null, null);
++    }
++    private void spawn(ServerLevel world, ItemStack stack, BlockPos pos, @Nullable Player player, @Nullable net.minecraft.world.InteractionHand hand, @Nullable net.minecraft.core.Direction direction) {
++        Entity entity = this.type.spawn(world, stack, (Player)null, pos, MobSpawnType.BUCKET, true, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG, entity1 -> {
++            if (direction != null) {
++                if (hand == null) {
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEntityEvent(world, pos, direction, entity1, stack).isCancelled()) {
++                        entity1.discard();
++                    }
++                } else {
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(world, pos, direction, player, entity1, hand, stack).isCancelled()) {
++                        entity1.discard();
++                    }
++                }
++            }
++        });
++        // Paper end
+         if (entity instanceof Bucketable bucketable) {
+             bucketable.loadFromBucketTag(stack.getOrCreateTag());
+             bucketable.setFromBucket(true);
+diff --git a/src/main/java/net/minecraft/world/item/SpawnEggItem.java b/src/main/java/net/minecraft/world/item/SpawnEggItem.java
+index 4f10f801dc126e9135432939b6663770c0e7a0bc..7dbf823c73a0738e534f6bd81f7015d9d17b4221 100644
+--- a/src/main/java/net/minecraft/world/item/SpawnEggItem.java
++++ b/src/main/java/net/minecraft/world/item/SpawnEggItem.java
+@@ -60,7 +60,7 @@ public class SpawnEggItem extends Item {
+             Direction enumdirection = context.getClickedFace();
+             BlockState iblockdata = world.getBlockState(blockposition);
+             BlockEntity tileentity = world.getBlockEntity(blockposition);
+-            EntityType entitytypes;
++            EntityType<?> entitytypes; // Paper - fixme move to mc dev fixes
+ 
+             if (tileentity instanceof Spawner) {
+                 if (world.paperConfig().entities.spawning.disableMobSpawnerSpawnEggTransformation) return InteractionResult.FAIL; // Paper
+@@ -83,7 +83,13 @@ public class SpawnEggItem extends Item {
+                 }
+ 
+                 entitytypes = this.getType(itemstack.getTag());
+-                if (entitytypes.spawn((ServerLevel) world, itemstack, context.getPlayer(), blockposition1, MobSpawnType.SPAWN_EGG, true, !Objects.equals(blockposition, blockposition1) && enumdirection == Direction.UP) != null) {
++                // Paper start
++                if (entitytypes.spawn((ServerLevel) world, itemstack, context.getPlayer(), blockposition1, MobSpawnType.SPAWN_EGG, true, !Objects.equals(blockposition, blockposition1) && enumdirection == Direction.UP, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG, entity -> {
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemSpawnEntityEvent(context, entity).isCancelled()) {
++                        entity.discard();
++                    }
++                }) != null) {
++                // Paper end
+                     itemstack.shrink(1);
+                     world.gameEvent((Entity) context.getPlayer(), GameEvent.ENTITY_PLACE, blockposition);
+                 }
+@@ -109,7 +115,13 @@ public class SpawnEggItem extends Item {
+                 return InteractionResultHolder.pass(itemstack);
+             } else if (world.mayInteract(user, blockposition) && user.mayUseItemAt(blockposition, movingobjectpositionblock.getDirection(), itemstack)) {
+                 EntityType<?> entitytypes = this.getType(itemstack.getTag());
+-                Entity entity = entitytypes.spawn((ServerLevel) world, itemstack, user, blockposition, MobSpawnType.SPAWN_EGG, false, false);
++                // Paper start
++                Entity entity = entitytypes.spawn((ServerLevel) world, itemstack, user, blockposition, MobSpawnType.SPAWN_EGG, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG, e -> {
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemSpawnEntityEvent(world, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), user, e, itemstack).isCancelled()) {
++                        e.discard();
++                    }
++                });
++                // Paper end
+ 
+                 if (entity == null) {
+                     return InteractionResultHolder.pass(itemstack);
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 2aab68bac670dcd134d817940020214c7b0797f9..2a8bfdef63b9489cf02bed84ce1f92ceff7d1aa2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -478,19 +478,56 @@ public class CraftEventFactory {
+     }
+ 
+     public static EntityPlaceEvent callEntityPlaceEvent(UseOnContext itemactioncontext, Entity entity) {
+-        return CraftEventFactory.callEntityPlaceEvent(itemactioncontext.getLevel(), itemactioncontext.getClickedPos(), itemactioncontext.getClickedFace(), itemactioncontext.getPlayer(), entity, itemactioncontext.getHand());
++        return CraftEventFactory.callEntityPlaceEvent(itemactioncontext.getLevel(), itemactioncontext.getClickedPos(), itemactioncontext.getClickedFace(), itemactioncontext.getPlayer(), entity, itemactioncontext.getHand(), itemactioncontext.getItemInHand()); // Paper
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - use #callEntityPlaceEvent with spawningStack parameter
+     public static EntityPlaceEvent callEntityPlaceEvent(Level world, BlockPos clickPosition, Direction clickedFace, net.minecraft.world.entity.player.Player human, Entity entity, InteractionHand enumhand) {
++        // Paper start
++        return CraftEventFactory.callEntityPlaceEvent(world, clickPosition, clickedFace, human, entity, enumhand, ItemStack.EMPTY);
++    }
++
++    public static EntityPlaceEvent callEntityPlaceEvent(final Level world, final BlockPos clickPosition, final Direction clickedFace, @Nullable final net.minecraft.world.entity.player.Player human, final Entity entity, final InteractionHand hand, final ItemStack spawningStack) {
++       // Paper end
+         Player who = (human == null) ? null : (Player) human.getBukkitEntity();
+         org.bukkit.block.Block blockClicked = CraftBlock.at(world, clickPosition);
+         org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(clickedFace);
+ 
+-        EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), who, blockClicked, blockFace, CraftEquipmentSlot.getHand(enumhand));
++        final EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), who, blockClicked, blockFace, CraftEquipmentSlot.getHand(hand), spawningStack.asBukkitCopy()); // Paper
+         entity.level().getCraftServer().getPluginManager().callEvent(event);
+ 
+         return event;
+     }
++    // Paper start - various spawn entity events
++    public static io.papermc.paper.event.entity.ItemSpawnEntityEvent callItemSpawnEntityEvent(final UseOnContext useOnContext, final Entity entity) {
++        return CraftEventFactory.callItemSpawnEntityEvent(useOnContext.getLevel(), useOnContext.getClickedPos(), useOnContext.getClickedFace(), useOnContext.getPlayer(), entity, useOnContext.getItemInHand());
++    }
++
++    public static io.papermc.paper.event.entity.ItemSpawnEntityEvent callItemSpawnEntityEvent(final Level world, final BlockPos clickPosition, final Direction clickedFace, @Nullable final net.minecraft.world.entity.player.Player human, final Entity entity, final ItemStack spawningStack) {
++        final Player who = (human == null) ? null : (Player) human.getBukkitEntity();
++        final Block blockClicked = CraftBlock.at(world, clickPosition);
++        final BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
++
++        final io.papermc.paper.event.entity.ItemSpawnEntityEvent event = new io.papermc.paper.event.entity.ItemSpawnEntityEvent(entity.getBukkitEntity(), who, blockClicked, blockFace, CraftItemStack.asBukkitCopy(spawningStack));
++        event.callEvent();
++        return event;
++    }
++
++    public static io.papermc.paper.event.entity.BlockPlaceEntityEvent callBlockPlaceEntityEvent(final net.minecraft.core.dispenser.BlockSource pointer, final Entity entity, final ItemStack spawningStack) {
++        final Direction direction = pointer.state().getValue(net.minecraft.world.level.block.DispenserBlock.FACING);
++        return callBlockPlaceEntityEvent(pointer.level(), pointer.pos().relative(direction), direction.getOpposite(), entity, spawningStack);
++    }
++
++    public static io.papermc.paper.event.entity.BlockPlaceEntityEvent callBlockPlaceEntityEvent(final Level world, final BlockPos clickedPosition, final Direction clickedFace, final Entity entity, final ItemStack spawningStack) {
++        final Block blockClicked = CraftBlock.at(world, clickedPosition);
++        final BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
++        final org.bukkit.block.Dispenser dispenser = (org.bukkit.block.Dispenser) CraftBlockStates.getBlockState(CraftBlock.at(world, clickedPosition.relative(clickedFace)));
++
++        final io.papermc.paper.event.entity.BlockPlaceEntityEvent event = new io.papermc.paper.event.entity.BlockPlaceEntityEvent(entity.getBukkitEntity(), blockClicked, blockFace, CraftItemStack.asBukkitCopy(spawningStack), dispenser);
++        event.callEvent();
++        return event;
++    }
++    // Paper end - various spawn entity events
+ 
+     /**
+      * Bucket methods
+diff --git a/src/test/java/io/papermc/paper/block/DispensibleContainerItemExtraContentsOverrideTest.java b/src/test/java/io/papermc/paper/block/DispensibleContainerItemExtraContentsOverrideTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b1e599a6802e823f94c7a8506a1cea2486acc54c
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/block/DispensibleContainerItemExtraContentsOverrideTest.java
+@@ -0,0 +1,50 @@
++package io.papermc.paper.block;
++
++import io.github.classgraph.ClassGraph;
++import io.github.classgraph.ClassInfo;
++import io.github.classgraph.ClassInfoList;
++import io.github.classgraph.MethodInfo;
++import io.github.classgraph.MethodInfoList;
++import io.github.classgraph.MethodParameterInfo;
++import io.github.classgraph.ScanResult;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.stream.Stream;
++import net.minecraft.world.item.DispensibleContainerItem;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++
++class DispensibleContainerItemExtraContentsOverrideTest {
++
++    public static Stream<ClassInfo> parameters() {
++        final List<ClassInfo> classInfo = new ArrayList<>();
++        try (final ScanResult scanResult = new ClassGraph()
++            .enableClassInfo()
++            .enableMethodInfo()
++            .whitelistPackages("net.minecraft")
++            .scan()
++        ) {
++            final ClassInfoList classesImplementing = scanResult.getClassesImplementing(DispensibleContainerItem.class.getName());
++            for (final ClassInfo info : classesImplementing) {
++                if (info.hasDeclaredMethod("checkExtraContent")) {
++                    classInfo.add(info);
++                }
++            }
++        }
++        return classInfo.stream();
++    }
++
++    @ParameterizedTest
++    @MethodSource("parameters")
++    public void checkCheckExtraContentOverride(final ClassInfo implementsDispensibleContainerItem) {
++        final MethodInfoList checkExtraContent = implementsDispensibleContainerItem.getDeclaredMethodInfo("checkExtraContent");
++        assertEquals(1, checkExtraContent.size(), implementsDispensibleContainerItem.getName() + " has multiple checkExtraContent methods");
++        final MethodInfo next = checkExtraContent.iterator().next();
++        final MethodParameterInfo[] parameterInfo = next.getParameterInfo();
++        assertEquals(6, parameterInfo.length, implementsDispensibleContainerItem.getName() + " doesn't have 6 params for checkExtraContent");
++        assertEquals("InteractionHand", parameterInfo[parameterInfo.length - 2].getTypeDescriptor().toStringWithSimpleNames(), implementsDispensibleContainerItem.getName() + " needs to change its override of checkExtraContent");
++        assertEquals("Direction", parameterInfo[parameterInfo.length - 1].getTypeDescriptor().toStringWithSimpleNames(), implementsDispensibleContainerItem.getName() + " needs to change its override of checkExtraContent");
++    }
++}
