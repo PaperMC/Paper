@@ -1,0 +1,544 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 9 May 2021 19:38:00 -0700
+Subject: [PATCH] More MemoryKey API
+
+
+diff --git a/src/main/java/io/papermc/paper/entity/memory/CollectionMemoryConverter.java b/src/main/java/io/papermc/paper/entity/memory/CollectionMemoryConverter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6bdfc92b7a94a17d15cdc5be82d6386fec37a27c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/memory/CollectionMemoryConverter.java
+@@ -0,0 +1,44 @@
++package io.papermc.paper.entity.memory;
++
++import com.google.common.collect.Collections2;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Set;
++import java.util.function.Function;
++import java.util.function.Supplier;
++
++@SuppressWarnings({"unchecked", "rawtypes"})
++record CollectionMemoryConverter<C extends Collection, B, M>(
++    Function<Collection<?>, C> bukkitCollectionCreator,
++    Function<Collection<?>, C> nmsCollectionCreator,
++    Supplier<C> emptyCollectionSupplier,
++    MemoryConverter<B, M> converter
++) implements MemoryConverter<Collection<B>, Collection<M>> {
++
++    static <B, M> CollectionMemoryConverter<List, B, M> forList(final MemoryConverter<B, M> elementConverter) {
++        return new CollectionMemoryConverter<>(List::copyOf, ArrayList::new, Collections::emptyList, elementConverter);
++    }
++
++    static <B, M> CollectionMemoryConverter<Set, B, M> forSet(final MemoryConverter<B, M> elementConverter) {
++        return new CollectionMemoryConverter<>(Set::copyOf, HashSet::new, Collections::emptySet, elementConverter);
++    }
++
++    @Override
++    public Collection<B> toBukkit(final Collection<M> nmsCollection) {
++        if (nmsCollection.isEmpty()) {
++            return this.emptyCollectionSupplier.get(); // return Collections#empty<Something>
++        }
++        return this.bukkitCollectionCreator.apply(Collections2.transform(nmsCollection, this.converter::toBukkit));
++    }
++
++    @Override
++    public Collection<M> toNms(final Collection<B> bukkitCollection) {
++        if (bukkitCollection.isEmpty()) {
++            return this.nmsCollectionCreator.apply(this.emptyCollectionSupplier.get()); // return a mutable empty collection
++        }
++        return this.nmsCollectionCreator.apply(Collections2.transform(bukkitCollection, this.converter::toNms));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/memory/EntityMemoryConverter.java b/src/main/java/io/papermc/paper/entity/memory/EntityMemoryConverter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fb9ed79302273dfd5cb0a70533a6cf73f2655a95
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/memory/EntityMemoryConverter.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.entity.memory;
++
++import java.lang.reflect.ParameterizedType;
++import java.lang.reflect.Type;
++import net.minecraft.world.entity.Entity;
++import org.bukkit.craftbukkit.entity.CraftEntity;
++
++abstract class EntityMemoryConverter<CBE extends CraftEntity, ME extends Entity> implements MemoryConverter<CBE, ME> {
++
++    private final Class<CBE> craftBukkitEntityClass;
++    private final Class<ME> nmsEntityClass;
++
++    @SuppressWarnings("unchecked")
++    protected EntityMemoryConverter() {
++        Type superType = this.getClass().getGenericSuperclass();
++        if (!(superType instanceof ParameterizedType type)) {
++            throw new IllegalStateException(superType + " is not an instance of ParameterizedType");
++        }
++        this.craftBukkitEntityClass = (Class<CBE>) type.getActualTypeArguments()[0];
++        this.nmsEntityClass = (Class<ME>) type.getActualTypeArguments()[1];
++    }
++
++    @Override
++    public CBE toBukkit(final ME nmsObject) {
++        return this.craftBukkitEntityClass.cast(nmsObject.getBukkitEntity());
++    }
++
++    @Override
++    public ME toNms(final CBE bukkitObject) {
++        return this.nmsEntityClass.cast(bukkitObject.getHandle());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/memory/MemoryConverter.java b/src/main/java/io/papermc/paper/entity/memory/MemoryConverter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..51eb883917ae8a36fd57a989c94ea8a72d04fd67
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/memory/MemoryConverter.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.entity.memory;
++
++import org.bukkit.entity.memory.MemoryKey;
++import org.checkerframework.checker.nullness.qual.Nullable;
++
++interface MemoryConverter<B, M> {
++
++    B toBukkit(M nmsObject);
++
++    M toNms(B bukkitObject);
++
++    @FunctionalInterface
++    interface Factory {
++
++        @Nullable MemoryConverter<?, ?> createMemoryConverter(Object toConvert, MemoryKey<?> memoryKey);
++    }
++
++    record Identity<T>(Class<T> typeClass) implements MemoryConverter<T, T> {
++
++        @Override
++        public T toBukkit(final T nmsObject) {
++            return this.typeClass.cast(nmsObject);
++        }
++
++        @Override
++        public T toNms(final T bukkitObject) {
++            return this.typeClass.cast(bukkitObject);
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/memory/PaperMemoryMapper.java b/src/main/java/io/papermc/paper/entity/memory/PaperMemoryMapper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b458ff528c10a4a802e84820cda8477333b491a8
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/memory/PaperMemoryMapper.java
+@@ -0,0 +1,129 @@
++package io.papermc.paper.entity.memory;
++
++import io.leangen.geantyref.GenericTypeReflector;
++import io.papermc.paper.math.BlockPosition;
++import io.papermc.paper.util.MCUtil;
++import java.lang.reflect.ParameterizedType;
++import java.lang.reflect.Type;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import java.util.UUID;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.GlobalPos;
++import net.minecraft.world.entity.AgeableMob;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.item.ItemEntity;
++import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
++import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.phys.Vec3;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftAgeable;
++import org.bukkit.craftbukkit.entity.CraftEntity;
++import org.bukkit.craftbukkit.entity.CraftHoglin;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.entity.CraftItem;
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.entity.CraftMob;
++import org.bukkit.craftbukkit.entity.CraftPiglinAbstract;
++import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
++import org.bukkit.craftbukkit.util.CraftVector;
++import org.bukkit.entity.Ageable;
++import org.bukkit.entity.Hoglin;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.entity.Item;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Mob;
++import org.bukkit.entity.PiglinAbstract;
++import org.bukkit.entity.memory.MemoryKey;
++import org.bukkit.util.Vector;
++import org.checkerframework.checker.nullness.qual.Nullable;
++
++@SuppressWarnings("Convert2Diamond")
++public final class PaperMemoryMapper {
++
++    private PaperMemoryMapper() {
++    }
++
++    private static final List<MemoryConverter.Factory> MEMORY_CONVERTER_FACTORIES = new ArrayList<>();
++    static final Map<Type, MemoryConverter<?, ?>> MEMORY_CONVERTER_MAP = new HashMap<>();
++    private static final Map<MemoryKey<?>, MemoryConverter<?, ?>> CONVERTER_CACHE = new HashMap<>();
++
++    static {
++        register(Void.class, Long.class, Integer.class, Boolean.class, UUID.class);
++
++        register(new SimpleMemoryConverter<Location, GlobalPos>(CraftMemoryMapper::fromNms, CraftMemoryMapper::toNms) {});
++        register(new SimpleMemoryConverter<BlockPosition, BlockPos>(MCUtil::toPosition, MCUtil::toBlockPos) {});
++        register(new SimpleMemoryConverter<Vector, Vec3>(CraftVector::toBukkit, CraftVector::toNMS) {});
++
++        registerEntity(org.bukkit.entity.Entity.class, new EntityMemoryConverter<CraftEntity, Entity>(){});
++        registerEntity(LivingEntity.class, new EntityMemoryConverter<CraftLivingEntity, net.minecraft.world.entity.LivingEntity>(){});
++        registerEntity(Mob.class, new EntityMemoryConverter<CraftMob, net.minecraft.world.entity.Mob>(){});
++        registerEntity(Ageable.class, new EntityMemoryConverter<CraftAgeable, AgeableMob>(){});
++        registerEntity(HumanEntity.class, new EntityMemoryConverter<CraftHumanEntity, Player>(){});
++
++        registerEntity(PiglinAbstract.class, new EntityMemoryConverter<CraftPiglinAbstract, AbstractPiglin>(){});
++        registerEntity(Item.class, new EntityMemoryConverter<CraftItem, ItemEntity>(){});
++        registerEntity(Hoglin.class, new EntityMemoryConverter<CraftHoglin, net.minecraft.world.entity.monster.hoglin.Hoglin>(){});
++
++        MEMORY_CONVERTER_FACTORIES.add((toConvert, memoryKey) -> {
++            if (memoryKey.getType() instanceof ParameterizedType type && Collection.class.isAssignableFrom(GenericTypeReflector.erase(type))) {
++                final @Nullable MemoryConverter<?, ?> converter = MEMORY_CONVERTER_MAP.get(type.getActualTypeArguments()[0]);
++                if (converter != null) {
++                    if (toConvert instanceof List<?>) {
++                        return CollectionMemoryConverter.forList(converter);
++                    } else if (toConvert instanceof Set<?>) {
++                        return CollectionMemoryConverter.forSet(converter);
++                    }
++                }
++            }
++            return null;
++        });
++    }
++
++    static void register(Class<?>...classes) {
++        for (Class<?> clazz : classes) {
++            register(clazz, new MemoryConverter.Identity<>(clazz));
++        }
++    }
++
++    static void register(MemoryConverter<?, ?> memoryConverter) {
++        register(((ParameterizedType) memoryConverter.getClass().getGenericSuperclass()).getActualTypeArguments()[0], memoryConverter);
++    }
++
++    static <BE extends org.bukkit.entity.Entity, CBE extends BE> void registerEntity(Class<BE> type, MemoryConverter<CBE, ?> entityMemoryConverter) {
++        register(type, entityMemoryConverter);
++    }
++
++    static void register(Type type, MemoryConverter<?, ?> memoryConverter) {
++        MEMORY_CONVERTER_MAP.put(type, memoryConverter);
++    }
++
++    public static <B, M> M toNms(B object, MemoryKey<B> memoryKey) {
++        return PaperMemoryMapper.<B, M>getConverter(object, memoryKey).toNms(object);
++    }
++
++    public static <B, M> B fromNms(M object, MemoryKey<B> memoryKey) {
++        return getConverter(object, memoryKey).toBukkit(object);
++    }
++
++    @SuppressWarnings("unchecked")
++    static <B, M> MemoryConverter<B, M> getConverter(Object object, MemoryKey<B> memoryKey) {
++        final MemoryConverter<B, M> converter = (MemoryConverter<B, M>) CONVERTER_CACHE.computeIfAbsent(memoryKey, key -> {
++            for (MemoryConverter.Factory factory : MEMORY_CONVERTER_FACTORIES) {
++                final @Nullable MemoryConverter<?, ?> fromFactory = factory.createMemoryConverter(object, memoryKey);
++                if (fromFactory != null) {
++                    return fromFactory;
++                }
++            }
++            return MEMORY_CONVERTER_MAP.get(key.getMemoryClass());
++        });
++        if (converter == null) {
++            throw new UnsupportedOperationException("Do not know how to map " + memoryKey);
++        }
++        return converter;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/memory/SimpleMemoryConverter.java b/src/main/java/io/papermc/paper/entity/memory/SimpleMemoryConverter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..57a9420e437a405a1b9142ca2db0027e17ec0991
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/memory/SimpleMemoryConverter.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.entity.memory;
++
++import java.lang.reflect.ParameterizedType;
++import java.lang.reflect.Type;
++import java.util.function.Function;
++
++abstract class SimpleMemoryConverter<B, M> implements MemoryConverter<B, M> {
++
++    private final Function<M, B> toBukkit;
++    private final Function<B, M> toNms;
++
++    SimpleMemoryConverter(final Function<M, B> toBukkit, final Function<B, M> toNms) {
++        this.toBukkit = toBukkit;
++        this.toNms = toNms;
++        Type superType = this.getClass().getGenericSuperclass();
++        if (!(superType instanceof ParameterizedType)) {
++            throw new IllegalStateException(superType + " is not an instance of ParameterizedType");
++        }
++    }
++
++    @Override
++    public B toBukkit(final M nmsObject) {
++        return this.toBukkit.apply(nmsObject);
++    }
++
++    @Override
++    public M toNms(final B bukkitObject) {
++        return this.toNms.apply(bukkitObject);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/memory/package-info.java b/src/main/java/io/papermc/paper/entity/memory/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..be079bbf3aeddcc425d86a1a0aa0de2f2d5ce326
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/memory/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.entity.memory;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 3f952d1409118535f325f614f1a6507c40efa4d6..6f0aad7670449aada1dc87fe6741d87103ef2dc5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -885,13 +885,20 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+ 
+     @Override
+     public <T> T getMemory(MemoryKey<T> memoryKey) {
+-        return (T) this.getHandle().getBrain().getMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey)).map(CraftMemoryMapper::fromNms).orElse(null);
++        if (!this.getHandle().getBrain().hasMemoryValue(CraftMemoryKey.bukkitToMinecraft(memoryKey))) { return null; } // Paper
++        return this.getHandle().getBrain().getMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey)).map(o -> io.papermc.paper.entity.memory.PaperMemoryMapper.fromNms(o, memoryKey)).orElse(null); // Paper
+     }
+ 
+     @Override
+     public <T> void setMemory(MemoryKey<T> memoryKey, T t) {
+-        this.getHandle().getBrain().setMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey), CraftMemoryMapper.toNms(t));
++        this.getHandle().getBrain().setMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey), (Object) io.papermc.paper.entity.memory.PaperMemoryMapper.toNms(t, memoryKey)); // Paper
+     }
++    // Paper start
++    @Override
++    public Collection<MemoryKey<?>> getRecognizedMemories() {
++        return java.util.Collections.unmodifiableCollection(com.google.common.collect.Collections2.transform(this.getHandle().getBrain().getMemories().keySet(), CraftMemoryKey::minecraftToBukkit));
++    }
++    // Paper end
+ 
+     @Override
+     public Sound getHurtSound() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/memory/CraftMemoryMapper.java b/src/main/java/org/bukkit/craftbukkit/entity/memory/CraftMemoryMapper.java
+index ad42f2bf5d2bf2d1e340d1ad34ae912422c2ba5d..3098d38988f9516a4ed181b412f2371c8bea2337 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/memory/CraftMemoryMapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/memory/CraftMemoryMapper.java
+@@ -12,6 +12,7 @@ public final class CraftMemoryMapper {
+ 
+     private CraftMemoryMapper() {}
+ 
++    @Deprecated // Paper
+     public static Object fromNms(Object object) {
+         if (object instanceof GlobalPos) {
+             return CraftMemoryMapper.fromNms((GlobalPos) object);
+@@ -28,6 +29,7 @@ public final class CraftMemoryMapper {
+         throw new UnsupportedOperationException("Do not know how to map " + object);
+     }
+ 
++    @Deprecated // Paper
+     public static Object toNms(Object object) {
+         if (object == null) {
+             return null;
+diff --git a/src/test/java/io/papermc/paper/entity/memory/MemoryKeyTest.java b/src/test/java/io/papermc/paper/entity/memory/MemoryKeyTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..04be96d552185dd7b9c2271a8c5cacffe105cb18
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/entity/memory/MemoryKeyTest.java
+@@ -0,0 +1,118 @@
++package io.papermc.paper.entity.memory;
++
++import io.leangen.geantyref.GenericTypeReflector;
++import java.lang.reflect.Field;
++import java.lang.reflect.Modifier;
++import java.lang.reflect.ParameterizedType;
++import java.lang.reflect.Type;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.world.entity.ai.memory.MemoryModuleType;
++import org.bukkit.Registry;
++import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.memory.MemoryKey;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.BeforeClass;
++import org.junit.Test;
++
++import static org.junit.Assert.assertFalse;
++import static org.junit.Assert.assertNotNull;
++import static org.junit.Assert.assertTrue;
++
++public class MemoryKeyTest extends AbstractTestingBase {
++
++    static Map<MemoryModuleType<?>, Type> memoryModuleTypes = new HashMap<>();
++    static Set<MemoryModuleType<?>> collections = new HashSet<>();
++
++    @BeforeClass
++    public static void beforeTests() throws IllegalAccessException {
++        for (Field field : MemoryModuleType.class.getFields()) {
++            if (!Modifier.isStatic(field.getModifiers())
++                || !MemoryModuleType.class.isAssignableFrom(field.getType())
++                || !(field.getGenericType() instanceof ParameterizedType paramType
++            ) ) {
++                continue;
++            }
++            if (paramType.getActualTypeArguments().length != 1) {
++                continue;
++            }
++            MemoryModuleType<?> memoryModuleType = (MemoryModuleType<?>) field.get(null);
++            memoryModuleTypes.put(memoryModuleType, field.getGenericType());
++            if (Collection.class.isAssignableFrom(GenericTypeReflector.erase(paramType.getActualTypeArguments()[0]))) {
++                collections.add(memoryModuleType);
++            }
++        }
++    }
++
++    @Test
++    public void testKeysHaveNmsEquivalent() {
++        for (MemoryKey<?> memoryKey : Registry.MEMORY_MODULE_TYPE) {
++            assertNotNull(memoryKey.getKey() + " does not match an nms memory key", CraftMemoryKey.fromMemoryKey(memoryKey));
++        }
++    }
++
++    @Test
++    public void testMemoryTypesHaveBukkitEquivalent() {
++        Set<String> missing = new HashSet<>();
++        for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
++            if (shouldSkipMemoryModuleType(memoryModuleType)) continue;
++            MemoryKey<?> key = CraftMemoryKey.toMemoryKey(memoryModuleType);
++            if (key == null) {
++                missing.add(memoryModuleType.toString());
++            }
++        }
++        assertTrue("Missing MemoryKeys for \n" + String.join("\n", missing), missing.isEmpty());
++    }
++
++
++    @Test
++    public void testIfCollection() {
++        boolean foundCollections = false;
++        for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
++            if (collections.contains(memoryModuleType)) {
++                foundCollections = true;
++                assertTrue("Failed to recognize " + memoryModuleType + " as a collection", CraftMemoryKey.toMemoryKey(memoryModuleType).isCollection());
++            }
++
++        }
++        assertTrue("No collection memory types found", foundCollections);
++    }
++
++    @Test
++    public void testGetNonCollectionConverter() {
++        for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
++            if (shouldSkipMemoryModuleType(memoryModuleType)) continue;
++            if (!collections.contains(memoryModuleType)) {
++                MemoryKey<?> bukkitKey = CraftMemoryKey.toMemoryKey(memoryModuleType);
++                assertFalse("Should not be a collection, this is just testing non-collections: " + bukkitKey, bukkitKey.isCollection());
++                assertNotNull("Could not find a converter for: " + bukkitKey.getMemoryClass(), PaperMemoryMapper.MEMORY_CONVERTER_MAP.get(bukkitKey.getMemoryClass()));
++            }
++        }
++    }
++
++    @Test
++    public void testGetCollectionConverter() {
++        List<LivingEntity> nmsList = new ArrayList<>();
++        MemoryConverter<List<LivingEntity>, List<net.minecraft.world.entity.LivingEntity>> listConverter = PaperMemoryMapper.getConverter(nmsList, MemoryKey.NEAREST_LIVING_ENTITIES);
++        assertNotNull(listConverter);
++
++        // Throws error if none found
++        PaperMemoryMapper.fromNms(nmsList, MemoryKey.NEAREST_LIVING_ENTITIES);
++    }
++
++    private static boolean shouldSkipMemoryModuleType(MemoryModuleType<?> moduleType) {
++        // The following are skipped because of missing API
++        return moduleType == MemoryModuleType.WALK_TARGET
++            || moduleType == MemoryModuleType.LOOK_TARGET
++            || moduleType == MemoryModuleType.PATH
++            || moduleType == MemoryModuleType.HURT_BY
++            || moduleType == MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES;
++    }
++}
+diff --git a/src/test/java/org/bukkit/entity/memory/CraftMemoryKeyTest.java b/src/test/java/org/bukkit/entity/memory/CraftMemoryKeyTest.java
+index fe17d6e580f89a5e784e461601510294651fc74a..629c8eb64e5b179180f4feff795cbe5abae9a02d 100644
+--- a/src/test/java/org/bukkit/entity/memory/CraftMemoryKeyTest.java
++++ b/src/test/java/org/bukkit/entity/memory/CraftMemoryKeyTest.java
+@@ -48,30 +48,30 @@ public class CraftMemoryKeyTest extends AbstractTestingBase {
+         assertEquals(MemoryKey.MEETING_POINT, bukkitHomeKey, "MemoryKey should be MEETING_POINT");
+     }
+ 
+-    @Test
+-    public void shouldReturnNullWhenBukkitRepresentationOfKeyisNotAvailable() {
+-        MemoryKey bukkitNoKey = CraftMemoryKey.minecraftToBukkit(MemoryModuleType.NEAREST_LIVING_ENTITIES);
+-        assertNull(bukkitNoKey, "MemoryModuleType should be null");
+-    }
+-
+-    @Test
+-    public void shouldReturnNullWhenBukkitRepresentationOfKeyisNotAvailableAndSerializerIsNotPresent() {
+-        for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
+-            if (!memoryModuleType.getCodec().isPresent()) {
+-                MemoryKey bukkitNoKey = CraftMemoryKey.minecraftToBukkit(memoryModuleType);
+-                assertNull(bukkitNoKey, "MemoryModuleType should be null");
+-            }
+-        }
+-    }
+-
+-    @Test
+-    @Disabled("Unit type not yet implemented")
+-    public void shouldReturnAnInstanceOfMemoryKeyWhenBukkitRepresentationOfKeyisAvailableAndSerializerIsPresent() {
+-        for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
+-            if (memoryModuleType.getCodec().isPresent()) {
+-                MemoryKey bukkitNoKey = CraftMemoryKey.minecraftToBukkit(memoryModuleType);
+-                assertNotNull(bukkitNoKey, "MemoryModuleType should not be null " + BuiltInRegistries.MEMORY_MODULE_TYPE.getKey(memoryModuleType));
+-            }
+-        }
+-    }
++    // @Test
++    // public void shouldReturnNullWhenBukkitRepresentationOfKeyisNotAvailable() {
++    //     MemoryKey bukkitNoKey = CraftMemoryKey.minecraftToBukkit(MemoryModuleType.NEAREST_LIVING_ENTITIES);
++    //     Assert.assertNull("MemoryModuleType should be null", bukkitNoKey);
++    // }
++    //
++    // @Test
++    // public void shouldReturnNullWhenBukkitRepresentationOfKeyisNotAvailableAndSerializerIsNotPresent() {
++    //     for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
++    //         if (!memoryModuleType.getCodec().isPresent()) {
++    //             MemoryKey bukkitNoKey = CraftMemoryKey.toMemoryKey(memoryModuleType);
++    //             Assert.assertNull("MemoryModuleType should be null", bukkitNoKey);
++    //         }
++    //     }
++    // }
++    //
++    // @Test
++    // @Ignore("Unit type not yet implemented")
++    // public void shouldReturnAnInstanceOfMemoryKeyWhenBukkitRepresentationOfKeyisAvailableAndSerializerIsPresent() {
++    //     for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
++    //         if (memoryModuleType.getCodec().isPresent()) {
++    //             MemoryKey bukkitNoKey = CraftMemoryKey.toMemoryKey(memoryModuleType);
++    //             Assert.assertNotNull("MemoryModuleType should not be null " + BuiltInRegistries.MEMORY_MODULE_TYPE.getKey(memoryModuleType), bukkitNoKey);
++    //         }
++    //     }
++    // }
+ }

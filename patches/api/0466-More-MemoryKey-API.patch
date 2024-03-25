@@ -1,0 +1,226 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 9 May 2021 19:35:09 -0700
+Subject: [PATCH] More MemoryKey API
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 66bcd8f9a8fce8f920a0f1dd7ae0a2937da68e80..a34578b7fc4e641600cf75e40ca82d592ee58148 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -69,6 +69,7 @@ dependencies {
+     compileOnlyApi(checkerQual)
+     testCompileOnly(checkerQual)
+     // Paper end
++    api("io.leangen.geantyref:geantyref:1.3.13") // Paper - more memory key API
+ 
+     testImplementation("org.apache.commons:commons-lang3:3.12.0")
+     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index e67455efc84f1e06d3396291d104ce65fee4591b..662687f50a38534a9c775731e1dc4aeb3c06e58f 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -910,6 +910,8 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      * <p>
+      * Note that the value is null when the specific entity does not have that
+      * value by default.
++     * <p>
++     * Any collection that is returned will be immutable.
+      *
+      * @param memoryKey memory to access
+      * @param <T> the type of the return value
+@@ -929,6 +931,17 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      * @param <T> the type of the passed value
+      */
+     <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
++    // Paper start
++    /**
++     * Get the unmodifiable collection of memories that this entity
++     * recognizes. If a {@link MemoryKey} is not in this
++     * collection, {@link #setMemory(MemoryKey, Object)}
++     * will have no effect.
++     *
++     * @return the collection of memories that the entity recognizes
++     */
++    @NotNull Collection<MemoryKey<?>> getRecognizedMemories();
++    // Paper end
+ 
+     /**
+      * Get the {@link Sound} this entity will make when damaged.
+diff --git a/src/main/java/org/bukkit/entity/memory/MemoryKey.java b/src/main/java/org/bukkit/entity/memory/MemoryKey.java
+index 8f601e85df580ef8106eaff8b9eafb5691a4874b..f6d1855d2cce7eb8d9e3b437101c4aac08538139 100644
+--- a/src/main/java/org/bukkit/entity/memory/MemoryKey.java
++++ b/src/main/java/org/bukkit/entity/memory/MemoryKey.java
+@@ -10,6 +10,25 @@ import org.bukkit.Location;
+ import org.bukkit.NamespacedKey;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++// Paper start
++import java.util.Collection;
++import io.papermc.paper.math.BlockPosition;
++import org.bukkit.util.Vector;
++import org.bukkit.entity.Hoglin;
++import org.bukkit.entity.Mob;
++import org.bukkit.entity.PiglinAbstract;
++import java.util.List;
++import java.lang.reflect.Type;
++import io.leangen.geantyref.GenericTypeReflector;
++import io.leangen.geantyref.TypeToken;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Ageable;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.entity.Item;
++
++import static org.bukkit.NamespacedKey.minecraft;
++// Paper end
+ 
+ /**
+  * Represents a key used for accessing memory values of a
+@@ -17,15 +36,31 @@ import org.jetbrains.annotations.Nullable;
+  *
+  * @param <T> the class type of the memory value
+  */
++@SuppressWarnings("Convert2Diamond") // Paper
+ public final class MemoryKey<T> implements Keyed {
+ 
+     private final NamespacedKey namespacedKey;
+     private final Class<T> tClass;
++    private final TypeToken<T> typeToken; // Paper
++    private final boolean isCollection; // Paper
+ 
+     private MemoryKey(NamespacedKey namespacedKey, Class<T> tClass) {
+         this.namespacedKey = namespacedKey;
+         this.tClass = tClass;
+         MEMORY_KEYS.put(namespacedKey, this);
++        // Paper start
++        this.typeToken = TypeToken.get(tClass);
++        this.isCollection = false;
++    }
++
++    @SuppressWarnings("unchecked")
++    private MemoryKey(NamespacedKey namespacedKey, TypeToken<T> typeToken) {
++        this.namespacedKey = namespacedKey;
++        this.tClass = (Class<T>) GenericTypeReflector.erase(typeToken.getType());
++        MEMORY_KEYS.put(namespacedKey, this);
++        this.typeToken = typeToken;
++        this.isCollection = Collection.class.isAssignableFrom(GenericTypeReflector.erase(this.tClass));
++        // Paper end
+     }
+ 
+     @NotNull
+@@ -70,6 +105,114 @@ public final class MemoryKey<T> implements Keyed {
+     public static final MemoryKey<Integer> LIKED_NOTEBLOCK_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("liked_noteblock_cooldown_ticks"), Integer.class);
+     public static final MemoryKey<Integer> ITEM_PICKUP_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("item_pickup_cooldown_ticks"), Integer.class);
+     public static final MemoryKey<Location> SNIFFER_EXPLORED_POSITIONS = new MemoryKey<>(NamespacedKey.minecraft("sniffer_explored_positions"), Location.class);
++    // Paper start
++    public static final MemoryKey<Void> DUMMY = create("dummy", Void.class);
++    public static final MemoryKey<List<Location>> SECONDARY_JOB_SITE = create("secondary_job_site", new TypeToken<List<Location>>() {});
++    public static final MemoryKey<List<LivingEntity>> NEAREST_LIVING_ENTITIES = create("mobs", new TypeToken<List<LivingEntity>>() {});
++    // TODO NearestVisibleLivingEntities "visible_mobs"
++    public static final MemoryKey<List<LivingEntity>> VISIBLE_VILLAGER_BABIES = create("visible_villager_babies", new TypeToken<List<LivingEntity>>() {});
++    public static final MemoryKey<List<HumanEntity>> NEAREST_PLAYERS = create("nearest_players", new TypeToken<List<HumanEntity>>() {});
++    public static final MemoryKey<HumanEntity> NEAREST_VISIBLE_PLAYER = create("nearest_visible_player", HumanEntity.class);
++    public static final MemoryKey<HumanEntity> NEAREST_VISIBLE_TARGETABLE_PLAYER = create("nearest_visible_targetable_player", HumanEntity.class);
++    // TODO WalkTarget "walk_target"
++    // TODO PositionTracker "look_target"
++    public static final MemoryKey<LivingEntity> ATTACK_TARGET = create("attack_target", LivingEntity.class);
++    public static final MemoryKey<Boolean> ATTACK_COOLING_DOWN = create("attack_cooling_down", Boolean.class);
++    public static final MemoryKey<LivingEntity> INTERACTION_TARGET = create("interaction_target", LivingEntity.class);
++    public static final MemoryKey<Ageable> BREED_TARGET = create("breed_target", Ageable.class);
++    public static final MemoryKey<Entity> RIDE_TARGET = create("ride_target", Entity.class);
++    // TODO Path "path"
++    public static final MemoryKey<List<Location>> INTERACTABLE_DOORS = create("interactable_doors", new TypeToken<List<Location>>() {});
++    public static final MemoryKey<Set<Location>> DOORS_TO_CLOSE = create("doors_to_close", new TypeToken<Set<Location>>() {});
++    public static final MemoryKey<BlockPosition> NEAREST_BED = create("nearest_bed", BlockPosition.class);
++    // TODO DamageSource "hurt_by"
++    public static final MemoryKey<LivingEntity> HURT_BY_ENTITY = create("hurt_by_entity", LivingEntity.class);
++    public static final MemoryKey<LivingEntity> AVOID_TARGET = create("avoid_target", LivingEntity.class);
++    public static final MemoryKey<LivingEntity> NEAREST_HOSTILE = create("nearest_hostile", LivingEntity.class);
++    public static final MemoryKey<LivingEntity> NEAREST_ATTACKABLE = create("nearest_attackable", LivingEntity.class);
++    public static final MemoryKey<Location> HIDING_PLACE = create("hiding_place", Location.class);
++    public static final MemoryKey<Long> HEARD_BELL_TIME = create("heard_bell_time", Long.class);
++    public static final MemoryKey<Long> CANT_REACH_WALK_TARGET_SINCE = create("cant_reach_walk_target_since", Long.class);
++    public static final MemoryKey<Ageable> NEAREST_VISIBLE_ADULT = create("nearest_visible_adult", Ageable.class);
++    public static final MemoryKey<Item> NEAREST_VISIBLE_WANTED_ITEM = create("nearest_visible_wanted_item", Item.class);
++    public static final MemoryKey<Mob> NEAREST_VISIBLE_NEMESIS = create("nearest_visible_nemesis", Mob.class);
++    public static final MemoryKey<HumanEntity> TEMPTING_PLAYER = create("tempting_player", HumanEntity.class);
++    public static final MemoryKey<Integer> GAZE_COOLDOWN_TICKS = create("gaze_cooldown_ticks", Integer.class);
++    public static final MemoryKey<Boolean> LONG_JUMP_MID_JUMP = create("long_jump_mid_jump", Boolean.class); // CraftBukkit forgot to add this one themselves
++    public static final MemoryKey<Vector> RAM_TARGET = create("ram_target", Vector.class);
++    public static final MemoryKey<Void> IS_IN_WATER = create("is_in_water", Void.class);
++    public static final MemoryKey<Void> IS_PREGNANT = create("is_pregnant", Void.class);
++    public static final MemoryKey<Boolean> IS_PANICKING = create("is_panicking", Boolean.class);
++    public static final MemoryKey<List<UUID>> UNREACHABLE_TONGUE_TARGETS = create("unreachable_tongue_targets", new TypeToken<List<UUID>>() {});
++    public static final MemoryKey<Integer> TIME_TRYING_TO_REACH_ADMIRE_ITEM = create("time_trying_to_reach_admire_item", Integer.class);
++    public static final MemoryKey<Boolean> DISABLE_WALK_TO_ADMIRE_ITEM = create("disable_walk_to_admire_item", Boolean.class);
++    public static final MemoryKey<BlockPosition> CELEBRATE_LOCATION = create("celebrate_location", BlockPosition.class);
++    public static final MemoryKey<Boolean> DANCING = create("dancing", Boolean.class);
++    public static final MemoryKey<Hoglin> NEAREST_VISIBLE_HUNTABLE_HOGLIN = create("nearest_visible_huntable_hoglin", Hoglin.class);
++    public static final MemoryKey<Hoglin> NEAREST_VISIBLE_BABY_HOGLIN = create("nearest_visible_baby_hoglin", Hoglin.class);
++    public static final MemoryKey<HumanEntity> NEAREST_TARGETABLE_PLAYER_NOT_WEARING_GOLD = create("nearest_targetable_player_not_wearing_gold", HumanEntity.class);
++    public static final MemoryKey<List<PiglinAbstract>> NEARBY_ADULT_PIGLINS = create("nearby_adult_piglins", new TypeToken<List<PiglinAbstract>>() {});
++    public static final MemoryKey<List<PiglinAbstract>> NEAREST_VISIBLE_ADULT_PIGLINS = create("nearest_visible_adult_piglins", new TypeToken<List<PiglinAbstract>>() {});
++    public static final MemoryKey<List<Hoglin>> NEAREST_VISIBLE_ADULT_HOGLINS = create("nearest_visible_adult_hoglins", new TypeToken<List<Hoglin>>() {});
++    public static final MemoryKey<PiglinAbstract> NEAREST_VISIBLE_ADULT_PIGLIN = create("nearest_visible_adult_piglin", new TypeToken<PiglinAbstract>() {});
++    public static final MemoryKey<LivingEntity> NEAREST_VISIBLE_ZOMBIFIED = create("nearest_visible_zombified", LivingEntity.class);
++    public static final MemoryKey<Integer> VISIBLE_ADULT_PIGLIN_COUNT = create("visible_adult_piglin_count", Integer.class);
++    public static final MemoryKey<Integer> VISIBLE_ADULT_HOGLIN_COUNT = create("visible_adult_hoglin_count", Integer.class);
++    public static final MemoryKey<HumanEntity> NEAREST_PLAYER_HOLDING_WANTED_ITEM = create("nearest_player_holding_wanted_item", HumanEntity.class);
++    public static final MemoryKey<Boolean> ATE_RECENTLY = create("ate_recently", Boolean.class);
++    public static final MemoryKey<BlockPosition> NEAREST_REPELLENT = create("nearest_repellent", BlockPosition.class);
++    public static final MemoryKey<Boolean> PACIFIED = create("pacified", Boolean.class);
++    public static final MemoryKey<LivingEntity> ROAR_TARGET = create("roar_target", LivingEntity.class);
++    public static final MemoryKey<BlockPosition> DISTURBANCE_LOCATION = create("disturbance_location", BlockPosition.class);
++    public static final MemoryKey<Void> RECENT_PROJECTILE = create("recent_projectile", Void.class);
++    public static final MemoryKey<Void> IS_SNIFFING = create("is_sniffing", Void.class);
++    public static final MemoryKey<Void> IS_EMERGING = create("is_emerging", Void.class);
++    public static final MemoryKey<Void> ROAR_SOUND_DELAY = create("roar_sound_delay", Void.class);
++    public static final MemoryKey<Void> DIG_COOLDOWN = create("dig_cooldown", Void.class);
++    public static final MemoryKey<Void> ROAR_SOUND_COOLDOWN = create("roar_sound_cooldown", Void.class);
++    public static final MemoryKey<Void> SNIFF_COOLDOWN = create("sniff_cooldown", Void.class);
++    public static final MemoryKey<Void> TOUCH_COOLDOWN = create("touch_cooldown", Void.class);
++    public static final MemoryKey<Void> VIBRATION_COOLDOWN = create("vibration_cooldown", Void.class);
++    public static final MemoryKey<Void> SONIC_BOOM_COOLDOWN = create("sonic_boom_cooldown", Void.class);
++    public static final MemoryKey<Void> SONIC_BOOM_SOUND_COOLDOWN = create("sonic_boom_sound_cooldown", Void.class);
++    public static final MemoryKey<Void> SONIC_BOOM_SOUND_DELAY = create("sonic_boom_sound_delay", Void.class);
++
++    private static <T> MemoryKey<T> create(@NotNull String key, Class<T> classOfT) {
++        return new MemoryKey<>(minecraft(key), classOfT);
++    }
++
++    private static <T> MemoryKey<T> create(@NotNull String key, TypeToken<T> typeOfT) {
++        return new MemoryKey<>(minecraft(key), typeOfT);
++    }
++
++    /**
++     * Gets the exact type of this memory key.
++     *
++     * @return the type
++     */
++    public @NotNull Type getType() {
++        return this.typeToken.getType();
++    }
++
++    /**
++     * Gets if this memory key holds a collection.
++     * A class that extends {@link Collection}.
++     *
++     * @return true if a collection
++     */
++    public boolean isCollection() {
++        return this.isCollection;
++    }
++
++    @Override
++    public String toString() {
++        return "MemoryKey{" +
++            "namespacedKey=" + this.namespacedKey +
++            ", type=" + this.typeToken.getType() +
++            ", isCollection=" + this.isCollection +
++            '}';
++    }
++    // Paper end
+ 
+     /**
+      * Returns a {@link MemoryKey} by a {@link NamespacedKey}.
