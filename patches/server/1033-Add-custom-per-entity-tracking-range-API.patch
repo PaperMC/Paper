@@ -1,0 +1,172 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Irmo van den Berge <irmo.vandenberge@ziggo.nl>
+Date: Sat, 15 Apr 2023 02:43:12 +0200
+Subject: [PATCH] Add custom per-entity tracking range API
+
+Signed-off-by: Irmo van den Berge <irmo.vandenberge@ziggo.nl>
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 65d947df910d60f478e7a449eb161e5105e2c0c9..155918e322ba4fd290d214f8826ea751d566708c 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -351,6 +351,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+         for (int ordinal = 0, len = TRACKING_RANGE_TYPES.length; ordinal < len; ++ordinal) {
+             org.spigotmc.TrackingRange.TrackingRangeType trackingRangeType = TRACKING_RANGE_TYPES[ordinal];
++
++            // Paper start - Custom entity tracking range API
++            // Use a high enough value that only player send distance is a limiting factor
++            // Do not use a ridiculous chunk range as that could break the server when a plugin sets a very high player send distance
++            if (trackingRangeType == org.spigotmc.TrackingRange.TrackingRangeType.CUSTOM) {
++                this.entityTrackerTrackRanges[ordinal] = 100;
++                this.playerEntityTrackerTrackMaps[ordinal] = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets);
++                continue;
++            }
++            // Paper end
++
+             int configuredSpigotValue;
+             switch (trackingRangeType) {
+                 case PLAYER:
+@@ -1597,6 +1608,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             int i = this.range;
+             Iterator iterator = this.entity.getIndirectPassengers().iterator();
+ 
++            // Paper start - Per entity tracking range API
++            if (entity.customTrackingRange > 0) {
++                i = entity.customTrackingRange;
++            }
++            // Paper end
++
+             while (iterator.hasNext()) {
+                 Entity entity = (Entity) iterator.next();
+                 int j = entity.getType().clientTrackingRange() * 16;
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index e8485fb900b25e911a858678a833852731cb2ace..caefa4db77847d6ef94f286d451a5f5e1348150c 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -418,6 +418,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+     public boolean collidingWithWorldBorder; // Paper
+     public boolean fixedPose = false; // Paper
++    public int customTrackingRange = -1; // Paper - Custom Entity Tracking Range API
+ 
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+@@ -500,7 +501,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     public boolean updatingSectionStatus = false;
+     // Paper end
+     // Paper start - optimise entity tracking
+-    final org.spigotmc.TrackingRange.TrackingRangeType trackingRangeType = org.spigotmc.TrackingRange.getTrackingRangeType(this);
++    private final org.spigotmc.TrackingRange.TrackingRangeType trackingRangeType = org.spigotmc.TrackingRange.getTrackingRangeType(this);
+ 
+     public boolean isLegacyTrackingEntity = false;
+ 
+@@ -508,19 +509,25 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         this.isLegacyTrackingEntity = isLegacyTrackingEntity;
+     }
+ 
++    // Paper start - custom entity tracking range API
++    org.spigotmc.TrackingRange.TrackingRangeType getTrackingRangeType() {
++        return customTrackingRange > 0 ? org.spigotmc.TrackingRange.TrackingRangeType.CUSTOM : trackingRangeType;
++    }
++    // Paper end
++
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> getPlayersInTrackRange() {
+         // determine highest range of passengers
+         if (this.passengers.isEmpty()) {
+-            return ((ServerLevel)this.level).getChunkSource().chunkMap.playerEntityTrackerTrackMaps[this.trackingRangeType.ordinal()]
++            return ((ServerLevel)this.level).getChunkSource().chunkMap.playerEntityTrackerTrackMaps[this.getTrackingRangeType().ordinal()]
+                 .getObjectsInRange(MCUtil.getCoordinateKey(this));
+         }
+         Iterable<Entity> passengers = this.getIndirectPassengers();
+         net.minecraft.server.level.ChunkMap chunkMap = ((ServerLevel)this.level).getChunkSource().chunkMap;
+-        org.spigotmc.TrackingRange.TrackingRangeType type = this.trackingRangeType;
++        org.spigotmc.TrackingRange.TrackingRangeType type = this.getTrackingRangeType();
+         int range = chunkMap.getEntityTrackerRange(type.ordinal());
+ 
+         for (Entity passenger : passengers) {
+-            org.spigotmc.TrackingRange.TrackingRangeType passengerType = passenger.trackingRangeType;
++            org.spigotmc.TrackingRange.TrackingRangeType passengerType = passenger.getTrackingRangeType();
+             int passengerRange = chunkMap.getEntityTrackerRange(passengerType.ordinal());
+             if (passengerRange > range) {
+                 type = passengerType;
+@@ -2439,6 +2446,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+                 nbt.putBoolean("Paper.FreezeLock", true);
+             }
+             // Paper end
++            // Paper start - Save custom tracking range
++            if (customTrackingRange > 0) {
++                nbt.putInt("Paper.CustomTrackingRange", customTrackingRange);
++            }
++            // Paper end
+             return nbt;
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
+@@ -2607,6 +2619,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+                 freezeLocked = nbt.getBoolean("Paper.FreezeLock");
+             }
+             // Paper end
++            // Paper start - Load custom tracking range
++            if (nbt.contains("Paper.CustomTrackingRange")) {
++                customTrackingRange = nbt.getInt("Paper.CustomTrackingRange");
++            } else {
++                customTrackingRange = -1;
++            }
++            // Paper end
+ 
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 2dbe8b870fd39b4d22e9725912f443757ae70761..48ee30c4976e8294e91529098e77854d1d9bd00e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1507,4 +1507,22 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return this.getHandle().getScoreboardName();
+     }
+     // Paper end - entity scoreboard name
++
++    // Paper Start - Custom tracking range API
++    @Override
++    public void setCustomTrackingRange(int range) {
++        // 0 or anything else negative also effectively disables it, keeps stuff clean
++        if (range <= 0) {
++            range = -1;
++        }
++
++        // Will switch tracking range to CUSTOM automatically in the tracking code if set
++        entity.customTrackingRange = range;
++    }
++
++    @Override
++    public int getCustomTrackingRange() {
++        return entity.customTrackingRange;
++    }
++    // Paper End - Custom tracking range API
+ }
+diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
+index 8fca15099952626ee537f5ce3eefdfaa6518dc1b..f8376279a7613b8d51747ab9734db60f175be5fb 100644
+--- a/src/main/java/org/spigotmc/TrackingRange.java
++++ b/src/main/java/org/spigotmc/TrackingRange.java
+@@ -21,6 +21,12 @@ public class TrackingRange
+      */
+     public static int getEntityTrackingRange(Entity entity, int defaultRange)
+     {
++        // Paper start - Per entity tracking range API
++        if (entity.customTrackingRange > 0) {
++            return entity.customTrackingRange;
++        }
++        // Paper end
++
+         if ( defaultRange == 0 )
+         {
+             return defaultRange;
+@@ -93,7 +99,8 @@ public class TrackingRange
+         MONSTER,
+         MISC,
+         OTHER,
+-        ENDERDRAGON;
++        ENDERDRAGON,
++        CUSTOM // Custom tracking range type
+     }
+     // Paper end - optimise entity tracking
+ }
