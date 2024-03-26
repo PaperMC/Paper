@@ -5,7 +5,7 @@ Subject: [PATCH] Improve tag parser handling
 
 
 diff --git a/src/main/java/com/mojang/brigadier/CommandDispatcher.java b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
-index 92848b64a78fce7a92e1657c2da6fc5ee53eea44..5d5562676a77259b875e15b744b53258533851a7 100644
+index 92848b64a78fce7a92e1657c2da6fc5ee53eea44..4b4f812eb13d5f03bcf3f8724d8aa8dbbc724e8b 100644
 --- a/src/main/java/com/mojang/brigadier/CommandDispatcher.java
 +++ b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
 @@ -304,9 +304,15 @@ public class CommandDispatcher<S> {
@@ -17,7 +17,7 @@ index 92848b64a78fce7a92e1657c2da6fc5ee53eea44..5d5562676a77259b875e15b744b53258
                  try {
                      child.parse(reader, context);
 +                    // Paper start - Handle non-recoverable exceptions
-+                } catch (final com.mojang.brigadier.exceptions.TagParseCommandSyntaxException e) {
++                } catch (final io.papermc.paper.brigadier.TagParseCommandSyntaxException e) {
 +                    stop = true;
 +                    throw e;
 +                    // Paper end - Handle non-recoverable exceptions
@@ -32,15 +32,17 @@ index 92848b64a78fce7a92e1657c2da6fc5ee53eea44..5d5562676a77259b875e15b744b53258
                  continue;
              }
  
-diff --git a/src/main/java/com/mojang/brigadier/exceptions/TagParseCommandSyntaxException.java b/src/main/java/com/mojang/brigadier/exceptions/TagParseCommandSyntaxException.java
+diff --git a/src/main/java/io/papermc/paper/brigadier/TagParseCommandSyntaxException.java b/src/main/java/io/papermc/paper/brigadier/TagParseCommandSyntaxException.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bf248a215dc69bb303c836112309471aab687e23
+index 0000000000000000000000000000000000000000..a375ad4ba9db990b24a2b9ff366fcba66b753815
 --- /dev/null
-+++ b/src/main/java/com/mojang/brigadier/exceptions/TagParseCommandSyntaxException.java
-@@ -0,0 +1,13 @@
-+package com.mojang.brigadier.exceptions;
++++ b/src/main/java/io/papermc/paper/brigadier/TagParseCommandSyntaxException.java
+@@ -0,0 +1,15 @@
++package io.papermc.paper.brigadier;
 +
 +import com.mojang.brigadier.LiteralMessage;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 +import net.minecraft.network.chat.Component;
 +
 +public final class TagParseCommandSyntaxException extends CommandSyntaxException {
@@ -52,7 +54,7 @@ index 0000000000000000000000000000000000000000..bf248a215dc69bb303c836112309471a
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/nbt/TagParser.java b/src/main/java/net/minecraft/nbt/TagParser.java
-index 5bec54239a2b185284c10d58854e5a13e33daae5..94cb73e7f60171aa57bd1dbe7e91ef4db94e70b7 100644
+index 5bec54239a2b185284c10d58854e5a13e33daae5..ef970428fe9fe36c242ce6588bb6843eb6179d59 100644
 --- a/src/main/java/net/minecraft/nbt/TagParser.java
 +++ b/src/main/java/net/minecraft/nbt/TagParser.java
 @@ -48,6 +48,7 @@ public class TagParser {
@@ -118,7 +120,7 @@ index 5bec54239a2b185284c10d58854e5a13e33daae5..94cb73e7f60171aa57bd1dbe7e91ef4d
 +    private void increaseDepth() throws CommandSyntaxException {
 +        this.depth++;
 +        if (this.depth > 512) {
-+            throw new com.mojang.brigadier.exceptions.TagParseCommandSyntaxException("NBT tag is too complex, depth > 512");
++            throw new io.papermc.paper.brigadier.TagParseCommandSyntaxException("NBT tag is too complex, depth > 512");
 +        }
 +    }
  }
@@ -182,7 +184,7 @@ index a5e438a834826161c52ca9db57d234d9ff80a591..4766994cce060564370b0d24836a7da8
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 98496bcc7ab9adde3fdc8b2cd9eaeceee99e28b4..87e5ee042ab2c052d25ab4c2521a68cf2e2d67b6 100644
+index 98496bcc7ab9adde3fdc8b2cd9eaeceee99e28b4..860d33ac56680babd87358b1d7d2216dac3f7865 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -777,6 +777,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -205,7 +207,7 @@ index 98496bcc7ab9adde3fdc8b2cd9eaeceee99e28b4..87e5ee042ab2c052d25ab4c2521a68cf
          ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
 +        // Paper start - Handle non-recoverable exceptions
 +        if (!parseresults.getExceptions().isEmpty()
-+            && parseresults.getExceptions().values().stream().anyMatch(e -> e instanceof com.mojang.brigadier.exceptions.TagParseCommandSyntaxException)) {
++            && parseresults.getExceptions().values().stream().anyMatch(e -> e instanceof io.papermc.paper.brigadier.TagParseCommandSyntaxException)) {
 +            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
 +            return;
 +        }
