@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CMarcoo <cmarco.org@gmail.com>
+Date: Thu, 14 Mar 2024 17:04:43 +0100
+Subject: [PATCH] Added EntityDamageDoorEvent and implemented into Server.
+
+
+diff --git a/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dcba0dca1713ad836fe4af90342d58ce5049db9d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/EntityDamageDoorEvent.java
+@@ -0,0 +1,128 @@
++package io.papermc.paper.event.entity;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.entity.Entity;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Range;
++
++/**
++ * Called for every tick an entity is damaging a door.
++ */
++public class EntityDamageDoorEvent extends EntityEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final BlockData damagedDoor;
++    private boolean cancelled;
++    private int currentBreakTicks;
++    private final int requiredBreakTicks;
++    private boolean playsEffect;
++
++    @ApiStatus.Internal
++    public EntityDamageDoorEvent(final @NotNull Entity what, final @NotNull BlockData damagedDoor, final int currentBreakTicks, final int requiredBreakTicks, boolean playsEffect) {
++        super(what);
++        this.damagedDoor = damagedDoor;
++        this.currentBreakTicks = currentBreakTicks;
++        this.requiredBreakTicks = requiredBreakTicks;
++        this.playsEffect = playsEffect;
++    }
++
++    /**
++     * Get the {@link BlockData} representing the Door
++     * currently being damaged by the entity.
++     *
++     * @return The door being damaged.
++     */
++    @NotNull
++    public BlockData getDamagedDoor() {
++        return this.damagedDoor.clone();
++    }
++
++    /**
++     * Get the value indicating the ticks spent
++     * breaking this door.
++     * This will return 0 when the breaking progress starts.
++     *
++     * @return The breaking progress value.
++     */
++    @Range(from = 0, to = Integer.MAX_VALUE)
++    public int getCurrentBreakTicks() {
++        return this.currentBreakTicks;
++    }
++
++    /**
++     * Set the current progress in ticks that
++     * this entity has spent damaging the door.
++     * <p>
++     * To instantly break this door, supply {@link EntityDamageDoorEvent#getRequiredBreakTicks()} - 1 into this
++     * method.
++     *
++     * @param breakTicks The ticks spent damaging the door.
++     */
++    public void setCurrentBreakTicks(@Range(from = 0, to = Integer.MAX_VALUE) final int breakTicks) {
++        Preconditions.checkArgument(breakTicks >= 0, "The breaking progress must be at least 0!");
++        Preconditions.checkArgument(breakTicks < this.requiredBreakTicks, "The door breaking time cannot be greater than or equal to the amount of ticks required to break the door!");
++        this.currentBreakTicks = breakTicks;
++    }
++
++    /**
++     * Get the total amount of ticks required to break
++     * the door that the entity is currently damaging.
++     *
++     * @return The amount of ticks necessary for the entity to break the door.
++     */
++    @Range(from = 0, to = Integer.MAX_VALUE)
++    public int getRequiredBreakTicks() {
++        return this.requiredBreakTicks;
++    }
++
++    /**
++     * Returns if this should play an effect when damaging the door.
++     * This includes the sound, and arm swing (if the entity isn't currently swinging)
++     *
++     * @return will play effect
++     */
++    public boolean playsEffect() {
++        return this.playsEffect;
++    }
++
++    /**
++     * Sets if this should play an effect when damaging the door.
++     * This includes the sound, and arm swing (if the entity isn't currently swinging)
++     *
++     * @param playsEffect will play effect
++     */
++    public void playsEffect(final boolean playsEffect) {
++        this.playsEffect = playsEffect;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * Cancelling this event will reset the break progress of this door.
++     *
++     * @param cancel true if you wish to cancel this event
++     */
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
