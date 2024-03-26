@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: derverdox <mail.ysp@web.de>
+Date: Thu, 21 Mar 2024 17:45:36 +0100
+Subject: [PATCH] Adding PersistentDataObjects
+
+
+diff --git a/src/main/java/org/bukkit/persistence/PersistentDataContainer.java b/src/main/java/org/bukkit/persistence/PersistentDataContainer.java
+index decf3b1949d4653a9fb01684b93ff91048137076..226ce81257f7c48117ff1791922e02dce230667e 100644
+--- a/src/main/java/org/bukkit/persistence/PersistentDataContainer.java
++++ b/src/main/java/org/bukkit/persistence/PersistentDataContainer.java
+@@ -219,4 +219,10 @@ public interface PersistentDataContainer {
+         this.readFromBytes(bytes, true);
+     }
+     // Paper end - byte array serialization
++
++    /**
++     * Gets the {@link PersistentDataObjectCache} of this persistent data container
++     * @return the persistent data object cache
++     */
++    PersistentDataObjectCache getPersistentDataObjectCache();
+ }
+diff --git a/src/main/java/org/bukkit/persistence/PersistentDataObject.java b/src/main/java/org/bukkit/persistence/PersistentDataObject.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..720f7a3efc0640571aad30af2ed582ca7a85d5b8
+--- /dev/null
++++ b/src/main/java/org/bukkit/persistence/PersistentDataObject.java
+@@ -0,0 +1,23 @@
++package org.bukkit.persistence;
++
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents a complex data object that is serialized into a PersistentDataContainer.
++ * PersistentDataObjects will be cached in a PersistentDataContainer and thus will be serialized automatically when the vanilla server serializes the PersistentDataHolder.
++ * Besides, they can have attributes and state changing functions.
++ * <p>
++ */
++public interface PersistentDataObject {
++    /**
++     * Called when the object is serialized
++     * @param context - The PersistentDataAdapterContext
++     * @return The PersistentDataContainer the object is serialized into
++     */
++    PersistentDataContainer serialize(@NotNull PersistentDataAdapterContext context);
++    /**
++     * Called when the object is deserialized
++     * @param persistentDataContainer PersistentDataContainer the object was serialized into
++     */
++    void deSerialize(PersistentDataContainer persistentDataContainer);
++}
+diff --git a/src/main/java/org/bukkit/persistence/PersistentDataObjectCache.java b/src/main/java/org/bukkit/persistence/PersistentDataObjectCache.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..319717bb8c26e73a6ff12a07490f8685addf162c
+--- /dev/null
++++ b/src/main/java/org/bukkit/persistence/PersistentDataObjectCache.java
+@@ -0,0 +1,36 @@
++package org.bukkit.persistence;
++
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Holds persistent data objects that are serialized into a {@link PersistentDataContainer}
++ */
++public interface PersistentDataObjectCache {
++    /**
++     * Load or creates a persistent data object.
++     * @param key the key of the persistent data object
++     * @param newObject the object that will be used if no object could be loaded. This object will be stored in the PersistentDataContainer
++     * @return the persistent data object
++     * @param <T> the type of persistent data object
++     */
++    @NotNull
++    <T extends PersistentDataObject> T loadOrCreatePersistentDataObject(@NotNull NamespacedKey key, T newObject);
++
++    /**
++     * Loads a persistent data object.
++     * @param key the key of the persistent data object
++     * @return the persistent data object if one is available.
++     * @param <T> the type of persistent data object
++     */
++    @Nullable
++    <T extends PersistentDataObject> T loadPersistentDataObject(@NotNull NamespacedKey key, @NotNull java.lang.Class<? extends T> type);
++
++    /**
++     * Removes a persistent data object from the persistent data container
++     * @param key the key of the persistent data object
++     * @param serializeBeforeRemoval true if the object should be saved into the persistent data container
++     */
++    void removePersistentDataObject(@NotNull NamespacedKey key, boolean serializeBeforeRemoval);
++}
