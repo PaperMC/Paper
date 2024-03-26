@@ -1,0 +1,4517 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 7 Feb 2024 18:21:14 -0800
+Subject: [PATCH] Replace all RegionFile operations with SectorFile
+
+Please see https://github.com/PaperMC/SectorTool
+for details on the new format and how to use the tool to
+convert the world or how to revert the conversion.
+
+This patch does not include any conversion logic. See the tool
+linked above to convert the world.
+
+Included in this test patch is logic to dump SectorFile operation
+tracing to file `sectorfile.tracer` in the root dir of a world. The
+file is not compressed, and it is appended to only. As a result of
+the lack of compression, when sending the file back for analysis
+please compress it to reduce size usage.
+
+This tracing will be useful for later tests to perform parameter
+scanning on some of the parameters of SectorFile:
+1. The section shift
+2. The sector size
+3. SectorFile cache size
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index ce3747d8d2a8f4327766cf23d5aaa72cfcb380bc..5d6cfc5f23af6f9ffe4c563f1da5b94cf33e37eb 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -32,6 +32,8 @@ dependencies {
+     alsoShade(log4jPlugins.output)
+     implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
+     // Paper end
++    implementation("com.github.luben:zstd-jni:1.5.5-11")
++    implementation("org.lz4:lz4-java:1.8.0")
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
+     implementation("org.ow2.asm:asm-commons:9.5")
+     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
+diff --git a/src/main/java/ca/spottedleaf/io/buffer/BufferChoices.java b/src/main/java/ca/spottedleaf/io/buffer/BufferChoices.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..01c4dd5a547bdf68a58a03ee76783425abd88b23
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/buffer/BufferChoices.java
+@@ -0,0 +1,34 @@
++package ca.spottedleaf.io.buffer;
++
++import java.io.Closeable;
++
++public record BufferChoices(
++        /* 16kb sized buffers */
++        BufferTracker t16k,
++        /* 1mb sized buffers */
++        BufferTracker t1m,
++
++        ZstdTracker zstdCtxs
++) implements Closeable {
++
++    public static BufferChoices createNew(final int maxPer) {
++        return new BufferChoices(
++                new SimpleBufferManager(maxPer, 16 * 1024).tracker(),
++                new SimpleBufferManager(maxPer, 1 * 1024 * 1024).tracker(),
++                new ZstdCtxManager(maxPer).tracker()
++        );
++    }
++
++    public BufferChoices scope() {
++        return new BufferChoices(
++                this.t16k.scope(), this.t1m.scope(), this.zstdCtxs.scope()
++        );
++    }
++
++    @Override
++    public void close() {
++        this.t16k.close();
++        this.t1m.close();
++        this.zstdCtxs.close();
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/buffer/BufferTracker.java b/src/main/java/ca/spottedleaf/io/buffer/BufferTracker.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ce5ea4eb4217aed766438564cf9ef127696695f4
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/buffer/BufferTracker.java
+@@ -0,0 +1,58 @@
++package ca.spottedleaf.io.buffer;
++
++import java.io.Closeable;
++import java.nio.ByteBuffer;
++import java.util.ArrayList;
++import java.util.List;
++
++public final class BufferTracker implements Closeable {
++
++    private static final ByteBuffer[] EMPTY_BYTE_BUFFERS = new ByteBuffer[0];
++    private static final byte[][] EMPTY_BYTE_ARRAYS = new byte[0][];
++
++    public final SimpleBufferManager bufferManager;
++    private final List<ByteBuffer> directBuffers = new ArrayList<>();
++    private final List<byte[]> javaBuffers = new ArrayList<>();
++
++    private boolean released;
++
++    public BufferTracker(final SimpleBufferManager bufferManager) {
++        this.bufferManager = bufferManager;
++    }
++
++    public BufferTracker scope() {
++        return new BufferTracker(this.bufferManager);
++    }
++
++    public ByteBuffer acquireDirectBuffer() {
++        final ByteBuffer ret = this.bufferManager.acquireDirectBuffer();
++        this.directBuffers.add(ret);
++        return ret;
++    }
++
++    public byte[] acquireJavaBuffer() {
++        final byte[] ret = this.bufferManager.acquireJavaBuffer();
++        this.javaBuffers.add(ret);
++        return ret;
++    }
++
++    @Override
++    public void close() {
++        if (this.released) {
++            throw new IllegalStateException("Double-releasing buffers (incorrect class usage?)");
++        }
++        this.released = true;
++
++        final ByteBuffer[] directBuffers = this.directBuffers.toArray(EMPTY_BYTE_BUFFERS);
++        this.directBuffers.clear();
++        for (final ByteBuffer buffer : directBuffers) {
++            this.bufferManager.returnDirectBuffer(buffer);
++        }
++
++        final byte[][] javaBuffers = this.javaBuffers.toArray(EMPTY_BYTE_ARRAYS);
++        this.javaBuffers.clear();
++        for (final byte[] buffer : javaBuffers) {
++            this.bufferManager.returnJavaBuffer(buffer);
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/buffer/SimpleBufferManager.java b/src/main/java/ca/spottedleaf/io/buffer/SimpleBufferManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0b5d59c355582250ec0e2ce112ab504c74d346fe
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/buffer/SimpleBufferManager.java
+@@ -0,0 +1,124 @@
++package ca.spottedleaf.io.buffer;
++
++import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
++import java.nio.ByteBuffer;
++import java.nio.ByteOrder;
++import java.util.ArrayDeque;
++
++public final class SimpleBufferManager {
++
++    private final int max;
++    private final int size;
++
++    private final ReferenceOpenHashSet<ByteBuffer> allocatedNativeBuffers;
++    private final ReferenceOpenHashSet<byte[]> allocatedJavaBuffers;
++
++    private final ArrayDeque<ByteBuffer> nativeBuffers;
++    // ByteBuffer.equals is not reference-based...
++    private final ReferenceOpenHashSet<ByteBuffer> storedNativeBuffers;
++    private final ArrayDeque<byte[]> javaBuffers;
++
++    public SimpleBufferManager(final int maxPer, final int size) {
++        this.max = maxPer;
++        this.size = size;
++
++        if (maxPer < 0) {
++            throw new IllegalArgumentException("'Max per' is negative");
++        }
++
++        if (size < 0) {
++            throw new IllegalArgumentException("Size is negative");
++        }
++
++        final int alloc = Math.min(10, maxPer);
++
++        this.allocatedNativeBuffers = new ReferenceOpenHashSet<>(alloc);
++        this.allocatedJavaBuffers = new ReferenceOpenHashSet<>(alloc);
++
++        this.nativeBuffers = new ArrayDeque<>(alloc);
++        this.storedNativeBuffers = new ReferenceOpenHashSet<>(alloc);
++        this.javaBuffers = new ArrayDeque<>(alloc);
++    }
++
++    public BufferTracker tracker() {
++        return new BufferTracker(this);
++    }
++
++    public ByteBuffer acquireDirectBuffer() {
++        ByteBuffer ret;
++        synchronized (this) {
++            ret = this.nativeBuffers.poll();
++            if (ret != null) {
++                this.storedNativeBuffers.remove(ret);
++            }
++        }
++        if (ret == null) {
++            ret = ByteBuffer.allocateDirect(this.size);
++            synchronized (this) {
++                this.allocatedNativeBuffers.add(ret);
++            }
++        }
++
++        ret.order(ByteOrder.BIG_ENDIAN);
++        ret.limit(ret.capacity());
++        ret.position(0);
++
++        return ret;
++    }
++
++    public synchronized void returnDirectBuffer(final ByteBuffer buffer) {
++        if (!this.allocatedNativeBuffers.contains(buffer)) {
++            throw new IllegalArgumentException("Buffer is not allocated from here");
++        }
++        if (this.storedNativeBuffers.contains(buffer)) {
++            throw new IllegalArgumentException("Buffer is already returned");
++        }
++        if (this.nativeBuffers.size() < this.max) {
++            this.nativeBuffers.addFirst(buffer);
++            this.storedNativeBuffers.add(buffer);
++        } else {
++            this.allocatedNativeBuffers.remove(buffer);
++        }
++    }
++
++    public byte[] acquireJavaBuffer() {
++        byte[] ret;
++        synchronized (this) {
++            ret = this.javaBuffers.poll();
++        }
++        if (ret == null) {
++            ret = new byte[this.size];
++            synchronized (this) {
++                this.allocatedJavaBuffers.add(ret);
++            }
++        }
++        return ret;
++    }
++
++    public synchronized void returnJavaBuffer(final byte[] buffer) {
++        if (!this.allocatedJavaBuffers.contains(buffer)) {
++            throw new IllegalArgumentException("Buffer is not allocated from here");
++        }
++        if (this.javaBuffers.contains(buffer)) {
++            throw new IllegalArgumentException("Buffer is already returned");
++        }
++        if (this.javaBuffers.size() < this.max) {
++            this.javaBuffers.addFirst(buffer);
++        } else {
++            this.allocatedJavaBuffers.remove(buffer);
++        }
++    }
++
++    public synchronized void clearReturnedBuffers() {
++        this.allocatedNativeBuffers.removeAll(this.nativeBuffers);
++        this.storedNativeBuffers.removeAll(this.nativeBuffers);
++        this.nativeBuffers.clear();
++
++        this.allocatedJavaBuffers.removeAll(this.javaBuffers);
++        this.javaBuffers.clear();
++    }
++
++    public int getSize() {
++        return this.size;
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/buffer/ZstdCtxManager.java b/src/main/java/ca/spottedleaf/io/buffer/ZstdCtxManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4bf3b899039a0f65229e517d79ece080a17cf9f7
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/buffer/ZstdCtxManager.java
+@@ -0,0 +1,114 @@
++package ca.spottedleaf.io.buffer;
++
++import com.github.luben.zstd.ZstdCompressCtx;
++import com.github.luben.zstd.ZstdDecompressCtx;
++import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
++import java.util.ArrayDeque;
++import java.util.function.Supplier;
++
++public final class ZstdCtxManager {
++
++    private final int max;
++
++    private final ReferenceOpenHashSet<ZstdCompressCtx> allocatedCompress;
++    private final ReferenceOpenHashSet<ZstdDecompressCtx> allocatedDecompress;
++
++    private final ArrayDeque<ZstdCompressCtx> compressors;
++    private final ArrayDeque<ZstdDecompressCtx> decompressors;
++
++    public ZstdCtxManager(final int maxPer) {
++        this.max = maxPer;
++
++        if (maxPer < 0) {
++            throw new IllegalArgumentException("'Max per' is negative");
++        }
++
++        final int alloc = Math.min(10, maxPer);
++
++        this.allocatedCompress = new ReferenceOpenHashSet<>(alloc);
++        this.allocatedDecompress = new ReferenceOpenHashSet<>(alloc);
++
++        this.compressors = new ArrayDeque<>(alloc);
++        this.decompressors = new ArrayDeque<>(alloc);
++    }
++
++    public ZstdTracker tracker() {
++        return new ZstdTracker(this);
++    }
++
++    public ZstdCompressCtx acquireCompress() {
++        ZstdCompressCtx ret;
++        synchronized (this) {
++            ret = this.compressors.poll();
++        }
++        if (ret == null) {
++            ret = new ZstdCompressCtx();
++            synchronized (this) {
++                this.allocatedCompress.add(ret);
++            }
++        }
++
++        ret.reset();
++
++        return ret;
++    }
++
++    public synchronized void returnCompress(final ZstdCompressCtx compressor) {
++        if (!this.allocatedCompress.contains(compressor)) {
++            throw new IllegalArgumentException("Compressor is not allocated from here");
++        }
++        if (this.compressors.contains(compressor)) {
++            throw new IllegalArgumentException("Compressor is already returned");
++        }
++        if (this.compressors.size() < this.max) {
++            this.compressors.addFirst(compressor);
++        } else {
++            this.allocatedCompress.remove(compressor);
++        }
++    }
++
++    public ZstdDecompressCtx acquireDecompress() {
++        ZstdDecompressCtx ret;
++        synchronized (this) {
++            ret = this.decompressors.poll();
++        }
++        if (ret == null) {
++            ret = new ZstdDecompressCtx();
++            synchronized (this) {
++                this.allocatedDecompress.add(ret);
++            }
++        }
++
++        ret.reset();
++
++        return ret;
++    }
++
++    public synchronized void returnDecompress(final ZstdDecompressCtx decompressor) {
++        if (!this.allocatedDecompress.contains(decompressor)) {
++            throw new IllegalArgumentException("Decompressor is not allocated from here");
++        }
++        if (this.decompressors.contains(decompressor)) {
++            throw new IllegalArgumentException("Decompressor is already returned");
++        }
++        if (this.decompressors.size() < this.max) {
++            this.decompressors.addFirst(decompressor);
++        } else {
++            this.allocatedDecompress.remove(decompressor);
++        }
++    }
++
++    public synchronized void clearReturnedBuffers() {
++        this.allocatedCompress.removeAll(this.compressors);
++        ZstdCompressCtx compress;
++        while ((compress = this.compressors.poll()) != null) {
++            compress.close();
++        }
++
++        this.allocatedDecompress.removeAll(this.decompressors);
++        ZstdDecompressCtx decompress;
++        while ((decompress = this.decompressors.poll()) != null) {
++            decompress.close();
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/buffer/ZstdTracker.java b/src/main/java/ca/spottedleaf/io/buffer/ZstdTracker.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ad6d4e69fea8bb9dea42c2cc3389a1bdb86e25f7
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/buffer/ZstdTracker.java
+@@ -0,0 +1,60 @@
++package ca.spottedleaf.io.buffer;
++
++import com.github.luben.zstd.ZstdCompressCtx;
++import com.github.luben.zstd.ZstdDecompressCtx;
++import java.io.Closeable;
++import java.util.ArrayList;
++import java.util.List;
++
++public final class ZstdTracker implements Closeable {
++
++    private static final ZstdCompressCtx[] EMPTY_COMPRESSORS = new ZstdCompressCtx[0];
++    private static final ZstdDecompressCtx[] EMPTY_DECOMPRSSORS = new ZstdDecompressCtx[0];
++
++    public final ZstdCtxManager zstdCtxManager;
++    private final List<ZstdCompressCtx> compressors = new ArrayList<>();
++    private final List<ZstdDecompressCtx> decompressors = new ArrayList<>();
++
++    private boolean released;
++
++    public ZstdTracker(final ZstdCtxManager zstdCtxManager) {
++        this.zstdCtxManager = zstdCtxManager;
++    }
++
++    public ZstdTracker scope() {
++        return new ZstdTracker(this.zstdCtxManager);
++    }
++
++    public ZstdCompressCtx acquireCompressor() {
++        final ZstdCompressCtx ret = this.zstdCtxManager.acquireCompress();
++        this.compressors.add(ret);
++        return ret;
++    }
++
++    public ZstdDecompressCtx acquireDecompressor() {
++        final ZstdDecompressCtx ret = this.zstdCtxManager.acquireDecompress();
++        this.decompressors.add(ret);
++        return ret;
++    }
++
++    @Override
++    public void close() {
++        if (this.released) {
++            throw new IllegalStateException("Double-releasing buffers (incorrect class usage?)");
++        }
++        this.released = true;
++
++        final ZstdCompressCtx[] compressors = this.compressors.toArray(EMPTY_COMPRESSORS);
++        this.compressors.clear();
++        for (final ZstdCompressCtx compressor : compressors) {
++            this.zstdCtxManager.returnCompress(compressor);
++        }
++
++        final ZstdDecompressCtx[] decompressors = this.decompressors.toArray(EMPTY_DECOMPRSSORS);
++        this.decompressors.clear();
++        for (final ZstdDecompressCtx decompressor : decompressors) {
++            this.zstdCtxManager.returnDecompress(decompressor);
++        }
++    }
++
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/MinecraftRegionFileType.java b/src/main/java/ca/spottedleaf/io/region/MinecraftRegionFileType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..19fae8b8e76d0f1b4b0583ee5f496b70976452ac
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/MinecraftRegionFileType.java
+@@ -0,0 +1,61 @@
++package ca.spottedleaf.io.region;
++
++import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
++import java.util.Collections;
++
++public final class MinecraftRegionFileType {
++
++    private static final Int2ObjectLinkedOpenHashMap<MinecraftRegionFileType> BY_ID = new Int2ObjectLinkedOpenHashMap<>();
++    private static final Int2ObjectLinkedOpenHashMap<String> NAME_TRANSLATION = new Int2ObjectLinkedOpenHashMap<>();
++    private static final Int2ObjectMap<String> TRANSLATION_TABLE = Int2ObjectMaps.unmodifiable(NAME_TRANSLATION);
++
++    public static final MinecraftRegionFileType CHUNK = new MinecraftRegionFileType("region", 0, "chunk_data");
++    public static final MinecraftRegionFileType POI = new MinecraftRegionFileType("poi", 1, "poi_chunk");
++    public static final MinecraftRegionFileType ENTITY = new MinecraftRegionFileType("entities", 2, "entity_chunk");
++
++    private final String folder;
++    private final int id;
++    private final String name;
++
++    public MinecraftRegionFileType(final String folder, final int id, final String name) {
++        if (BY_ID.putIfAbsent(id, this) != null) {
++            throw new IllegalStateException("Duplicate ids");
++        }
++        NAME_TRANSLATION.put(id, name);
++
++        this.folder = folder;
++        this.id = id;
++        this.name = name;
++    }
++
++    public String getName() {
++        return this.name;
++    }
++
++    public String getFolder() {
++        return this.folder;
++    }
++
++    public int getNewId() {
++        return this.id;
++    }
++
++    public static MinecraftRegionFileType byId(final int id) {
++        return BY_ID.get(id);
++    }
++
++    public static String getName(final int id) {
++        final MinecraftRegionFileType type = byId(id);
++        return type == null ? null : type.getName();
++    }
++
++    public static Iterable<MinecraftRegionFileType> getAll() {
++        return Collections.unmodifiableCollection(BY_ID.values());
++    }
++
++    public static Int2ObjectMap<String> getTranslationTable() {
++        return TRANSLATION_TABLE;
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/SectorFile.java b/src/main/java/ca/spottedleaf/io/region/SectorFile.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6183532b891dd48d49b994e34ac1cd78246fc767
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/SectorFile.java
+@@ -0,0 +1,1909 @@
++package ca.spottedleaf.io.region;
++
++import ca.spottedleaf.io.region.io.bytebuffer.BufferedFileChannelInputStream;
++import ca.spottedleaf.io.region.io.bytebuffer.ByteBufferInputStream;
++import ca.spottedleaf.io.region.io.bytebuffer.ByteBufferOutputStream;
++import ca.spottedleaf.io.buffer.BufferChoices;
++import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
++import it.unimi.dsi.fastutil.ints.IntIterator;
++import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
++import it.unimi.dsi.fastutil.longs.LongBidirectionalIterator;
++import it.unimi.dsi.fastutil.longs.LongComparator;
++import it.unimi.dsi.fastutil.longs.LongRBTreeSet;
++import net.jpountz.xxhash.StreamingXXHash64;
++import net.jpountz.xxhash.XXHash64;
++import net.jpountz.xxhash.XXHashFactory;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++import java.io.Closeable;
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.EOFException;
++import java.io.File;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.OutputStream;
++import java.nio.ByteBuffer;
++import java.nio.channels.FileChannel;
++import java.nio.file.AtomicMoveNotSupportedException;
++import java.nio.file.Files;
++import java.nio.file.StandardCopyOption;
++import java.nio.file.StandardOpenOption;
++import java.util.Arrays;
++import java.util.Iterator;
++import java.util.Random;
++
++public final class SectorFile implements Closeable {
++
++    private static final XXHashFactory XXHASH_FACTORY = XXHashFactory.fastestInstance();
++    // Java instance is used for streaming hash instances, as streaming hash instances do not provide bytebuffer API
++    // Native instances would use GetPrimitiveArrayCritical and prevent GC on G1
++    private static final XXHashFactory XXHASH_JAVA_FACTORY = XXHashFactory.fastestJavaInstance();
++    private static final XXHash64 XXHASH64 = XXHASH_FACTORY.hash64();
++    // did not find a use to change this from default, but just in case
++    private static final long XXHASH_SEED = 0L;
++
++    private static final Logger LOGGER = LoggerFactory.getLogger(SectorFile.class);
++
++    private static final int BYTE_SIZE   = Byte.BYTES;
++    private static final int SHORT_SIZE  = Short.BYTES;
++    private static final int INT_SIZE    = Integer.BYTES;
++    private static final int LONG_SIZE   = Long.BYTES;
++    private static final int FLOAT_SIZE  = Float.BYTES;
++    private static final int DOUBLE_SIZE = Double.BYTES;
++
++    public static final String FILE_EXTENSION              = ".sf";
++    public static final String FILE_EXTERNAL_EXTENSION     = ".sfe";
++    public static final String FILE_EXTERNAL_TMP_EXTENSION = FILE_EXTERNAL_EXTENSION + ".tmp";
++
++    public static String getFileName(final int sectionX, final int sectionZ) {
++        return sectionX + "." + sectionZ + FILE_EXTENSION;
++    }
++
++    private static String getExternalBase(final int sectionX, final int sectionZ,
++                                          final int localX, final int localZ,
++                                          final int type) {
++        final int absoluteX = (sectionX << SECTION_SHIFT) | (localX & SECTION_MASK);
++        final int absoluteZ = (sectionZ << SECTION_SHIFT) | (localZ & SECTION_MASK);
++
++        return absoluteX + "." + absoluteZ + "-" + type;
++    }
++
++    public static String getExternalFileName(final int sectionX, final int sectionZ,
++                                             final int localX, final int localZ,
++                                             final int type) {
++        return getExternalBase(sectionX, sectionZ, localX, localZ, type) + FILE_EXTERNAL_EXTENSION;
++    }
++
++    public static String getExternalTempFileName(final int sectionX, final int sectionZ,
++                                                  final int localX, final int localZ, final int type) {
++        return getExternalBase(sectionX, sectionZ, localX, localZ, type) + FILE_EXTERNAL_TMP_EXTENSION;
++    }
++
++    public static final int SECTOR_SHIFT = 9;
++    public static final int SECTOR_SIZE = 1 << SECTOR_SHIFT;
++
++    public static final int SECTION_SHIFT = 5;
++    public static final int SECTION_SIZE = 1 << SECTION_SHIFT;
++    public static final int SECTION_MASK = SECTION_SIZE - 1;
++
++    // General assumptions: Type header offsets are at least one sector in size
++
++    /*
++     * File Header:
++     * First 8-bytes: XXHash64 of entire header data, excluding hash value
++     * Next 42x8 bytes: XXHash64 values for each type header
++     * Next 42x4 bytes: sector offsets of type headers
++     */
++    private static final int FILE_HEADER_SECTOR = 0;
++    public static final int MAX_TYPES = 42;
++
++    public static final class FileHeader {
++
++        public static final int FILE_HEADER_SIZE_BYTES = LONG_SIZE + MAX_TYPES*(LONG_SIZE + INT_SIZE);
++        public static final int FILE_HEADER_TOTAL_SECTORS = (FILE_HEADER_SIZE_BYTES + (SECTOR_SIZE - 1)) >> SECTOR_SHIFT;
++
++        public final long[] xxHash64TypeHeader = new long[MAX_TYPES];
++        public final int[] typeHeaderOffsets = new int[MAX_TYPES];
++
++        public FileHeader() {
++            if (ABSENT_HEADER_XXHASH64 != 0L || ABSENT_TYPE_HEADER_OFFSET != 0) {
++                this.reset();
++            }
++        }
++
++        public void reset() {
++            Arrays.fill(this.xxHash64TypeHeader, ABSENT_HEADER_XXHASH64);
++            Arrays.fill(this.typeHeaderOffsets, ABSENT_TYPE_HEADER_OFFSET);
++        }
++
++        public void write(final ByteBuffer buffer) {
++            final int pos = buffer.position();
++
++            // reserve XXHash64 space
++            buffer.putLong(0L);
++
++            buffer.asLongBuffer().put(0, this.xxHash64TypeHeader);
++            buffer.position(buffer.position() + MAX_TYPES * LONG_SIZE);
++
++            buffer.asIntBuffer().put(0, this.typeHeaderOffsets);
++            buffer.position(buffer.position() + MAX_TYPES * INT_SIZE);
++
++            final long hash = computeHash(buffer, pos);
++
++            buffer.putLong(pos, hash);
++        }
++
++        public static void read(final ByteBuffer buffer, final FileHeader fileHeader) {
++            buffer.duplicate().position(buffer.position() + LONG_SIZE).asLongBuffer().get(0, fileHeader.xxHash64TypeHeader);
++
++            buffer.duplicate().position(buffer.position() + LONG_SIZE + LONG_SIZE * MAX_TYPES)
++                .asIntBuffer().get(0, fileHeader.typeHeaderOffsets);
++
++            buffer.position(buffer.position() + FILE_HEADER_SIZE_BYTES);
++        }
++
++        public static long computeHash(final ByteBuffer buffer, final int offset) {
++            return XXHASH64.hash(buffer, offset + LONG_SIZE, FILE_HEADER_SIZE_BYTES - LONG_SIZE, XXHASH_SEED);
++        }
++
++        public static boolean validate(final ByteBuffer buffer, final int offset) {
++            final long expected = buffer.getLong(offset);
++
++            return expected == computeHash(buffer, offset);
++        }
++
++        public void copyFrom(final FileHeader src) {
++            System.arraycopy(src.xxHash64TypeHeader, 0, this.xxHash64TypeHeader, 0, MAX_TYPES);
++            System.arraycopy(src.typeHeaderOffsets, 0, this.typeHeaderOffsets, 0, MAX_TYPES);
++        }
++    }
++
++    public static record DataHeader(
++            long xxhash64Header,
++            long xxhash64Data,
++            long timeWritten,
++            int compressedSize,
++            short index,
++            byte typeId,
++            byte compressionType
++    ) {
++
++        public static void storeHeader(final ByteBuffer buffer, final XXHash64 xxHash64,
++                                       final long dataHash, final long timeWritten,
++                                       final int compressedSize, final short index, final byte typeId,
++                                       final byte compressionType) {
++            final int pos = buffer.position();
++
++            buffer.putLong(0L); // placeholder for header hash
++            buffer.putLong(dataHash);
++            buffer.putLong(timeWritten);
++            buffer.putInt(compressedSize);
++            buffer.putShort(index);
++            buffer.put(typeId);
++            buffer.put(compressionType);
++
++            // replace placeholder for header hash with real hash
++            buffer.putLong(pos, computeHash(xxHash64, buffer, pos));
++        }
++
++        public static final int DATA_HEADER_LENGTH = LONG_SIZE + LONG_SIZE + LONG_SIZE + INT_SIZE + SHORT_SIZE + BYTE_SIZE + BYTE_SIZE;
++
++        public static DataHeader read(final ByteBuffer buffer) {
++            if (buffer.remaining() < DATA_HEADER_LENGTH) {
++                return null;
++            }
++
++            return new DataHeader(
++                    buffer.getLong(), buffer.getLong(), buffer.getLong(),
++                    buffer.getInt(), buffer.getShort(), buffer.get(), buffer.get()
++            );
++        }
++
++        public static DataHeader read(final ByteBufferInputStream input) throws IOException {
++            final ByteBuffer buffer = ByteBuffer.allocate(DATA_HEADER_LENGTH);
++
++            // read = 0 when buffer is full
++            while (input.read(buffer) > 0);
++
++            buffer.flip();
++            return read(buffer);
++        }
++
++        public static long computeHash(final XXHash64 xxHash64, final ByteBuffer header, final int offset) {
++            return xxHash64.hash(header, offset + LONG_SIZE, DATA_HEADER_LENGTH - LONG_SIZE, XXHASH_SEED);
++        }
++
++        public static boolean validate(final XXHash64 xxHash64, final ByteBuffer header, final int offset) {
++            final long expectedSeed = header.getLong(offset);
++            final long computedSeed = computeHash(xxHash64, header, offset);
++
++            return expectedSeed == computedSeed;
++        }
++    }
++
++    private static final int SECTOR_LENGTH_BITS = 10;
++    private static final int SECTOR_OFFSET_BITS = 22;
++    static {
++        if ((SECTOR_OFFSET_BITS + SECTOR_LENGTH_BITS) != 32) {
++            throw new IllegalStateException();
++        }
++    }
++
++    private static final int MAX_NORMAL_SECTOR_OFFSET = (1 << SECTOR_OFFSET_BITS) - 2; // inclusive
++    private static final int MAX_NORMAL_SECTOR_LENGTH = (1 << SECTOR_LENGTH_BITS) - 1;
++
++    private static final int MAX_INTERNAL_ALLOCATION_BYTES = SECTOR_SIZE * (1 << SECTOR_LENGTH_BITS);
++
++    private static final int TYPE_HEADER_OFFSET_COUNT = SECTION_SIZE * SECTION_SIZE; // total number of offsets per type header
++    private static final int TYPE_HEADER_SECTORS = (TYPE_HEADER_OFFSET_COUNT * INT_SIZE) / SECTOR_SIZE; // total number of sectors used per type header
++
++    // header location is just raw sector number
++    // so, we point to the header itself to indicate absence
++    private static final int ABSENT_TYPE_HEADER_OFFSET = FILE_HEADER_SECTOR;
++    private static final long ABSENT_HEADER_XXHASH64 = 0L;
++
++    private static int makeLocation(final int sectorOffset, final int sectorLength) {
++        return (sectorOffset << SECTOR_LENGTH_BITS) | (sectorLength & ((1 << SECTOR_LENGTH_BITS) - 1));
++    }
++
++    // point to file header sector when absent, as we know that sector is allocated and will not conflict with any real allocation
++    private static final int ABSENT_LOCATION              = makeLocation(FILE_HEADER_SECTOR, 0);
++    // point to outside the maximum allocatable range for external allocations, which will not conflict with any other
++    // data allocation (although, it may conflict with a type header allocation)
++    private static final int EXTERNAL_ALLOCATION_LOCATION = makeLocation(MAX_NORMAL_SECTOR_OFFSET + 1, 0);
++
++    private static int getLocationOffset(final int location) {
++        return location >>> SECTOR_LENGTH_BITS;
++    }
++
++    private static int getLocationLength(final int location) {
++        return location & ((1 << SECTOR_LENGTH_BITS) - 1);
++    }
++
++    private static int getIndex(final int localX, final int localZ) {
++        return (localX & SECTION_MASK) | ((localZ & SECTION_MASK) << SECTION_SHIFT);
++    }
++
++    private static int getLocalX(final int index) {
++        return index & SECTION_MASK;
++    }
++
++    private static int getLocalZ(final int index) {
++        return (index >>> SECTION_SHIFT) & SECTION_MASK;
++    }
++
++    public final File file;
++    public final int sectionX;
++    public final int sectionZ;
++    private final FileChannel channel;
++    private final boolean sync;
++    private final boolean readOnly;
++    private final SectorAllocator sectorAllocator = newSectorAllocator();
++    private final SectorFileCompressionType compressionType;
++
++    private static final class TypeHeader {
++
++        public static final int TYPE_HEADER_SIZE_BYTES = TYPE_HEADER_OFFSET_COUNT * INT_SIZE;
++
++        public final int[] locations;
++
++        private TypeHeader() {
++            this.locations = new int[TYPE_HEADER_OFFSET_COUNT];
++            if (ABSENT_LOCATION != 0) {
++                this.reset();
++            }
++        }
++
++        private TypeHeader(final int[] locations) {
++            this.locations = locations;
++            if (locations.length != TYPE_HEADER_OFFSET_COUNT) {
++                throw new IllegalArgumentException();
++            }
++        }
++
++        public void reset() {
++            Arrays.fill(this.locations, ABSENT_LOCATION);
++        }
++
++        public static TypeHeader read(final ByteBuffer buffer) {
++            final int[] locations = new int[TYPE_HEADER_OFFSET_COUNT];
++            buffer.asIntBuffer().get(0, locations, 0, TYPE_HEADER_OFFSET_COUNT);
++
++            return new TypeHeader(locations);
++        }
++
++        public void write(final ByteBuffer buffer) {
++            buffer.asIntBuffer().put(0, this.locations);
++
++            buffer.position(buffer.position() + TYPE_HEADER_SIZE_BYTES);
++        }
++
++        public static long computeHash(final ByteBuffer buffer, final int offset) {
++            return XXHASH64.hash(buffer, offset, TYPE_HEADER_SIZE_BYTES, XXHASH_SEED);
++        }
++    }
++
++    private final Int2ObjectLinkedOpenHashMap<TypeHeader> typeHeaders = new Int2ObjectLinkedOpenHashMap<>();
++    private final Int2ObjectMap<String> typeTranslationTable;
++    private final FileHeader fileHeader = new FileHeader();
++
++    private void checkReadOnlyHeader(final int type) {
++        // we want to error when a type is used which is not mapped, but we can only store into typeHeaders in write mode
++        // as sometimes we may need to create absent type headers
++        if (this.typeTranslationTable.get(type) == null) {
++            throw new IllegalArgumentException("Unknown type " + type);
++        }
++    }
++
++    static {
++        final int smallBufferSize = 16 * 1024; // 16kb
++        if (FileHeader.FILE_HEADER_SIZE_BYTES > smallBufferSize) {
++            throw new IllegalStateException("Cannot read file header using single small buffer");
++        }
++        if (TypeHeader.TYPE_HEADER_SIZE_BYTES > smallBufferSize) {
++            throw new IllegalStateException("Cannot read type header using single small buffer");
++        }
++    }
++
++    public static final int OPEN_FLAGS_READ_ONLY   = 1 << 0;
++    public static final int OPEN_FLAGS_SYNC_WRITES = 1 << 1;
++
++    public SectorFile(final File file, final int sectionX, final int sectionZ,
++                      final SectorFileCompressionType defaultCompressionType,
++                      final BufferChoices unscopedBufferChoices, final Int2ObjectMap<String> typeTranslationTable,
++                      final int openFlags) throws IOException {
++        final boolean readOnly = (openFlags & OPEN_FLAGS_READ_ONLY) != 0;
++        final boolean sync = (openFlags & OPEN_FLAGS_SYNC_WRITES) != 0;
++
++        if (readOnly & sync) {
++            throw new IllegalArgumentException("Cannot set read-only and sync");
++        }
++        this.file = file;
++        this.sectionX = sectionX;
++        this.sectionZ = sectionZ;
++        if (readOnly) {
++            this.channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
++        } else {
++            if (sync) {
++                this.channel = FileChannel.open(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.DSYNC);
++            } else {
++                this.channel = FileChannel.open(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
++            }
++        }
++        this.sync = sync;
++        this.readOnly = readOnly;
++        this.typeTranslationTable = typeTranslationTable;
++        this.compressionType = defaultCompressionType;
++
++        if (this.channel.size() != 0L) {
++            this.readFileHeader(unscopedBufferChoices);
++        }
++
++        boolean modifiedFileHeader = false;
++
++        try (final BufferChoices scopedBufferChoices = unscopedBufferChoices.scope()) {
++            final ByteBuffer ioBuffer = scopedBufferChoices.t16k().acquireDirectBuffer();
++
++            // make sure we have the type headers required allocated
++            for (final IntIterator iterator = typeTranslationTable.keySet().iterator(); iterator.hasNext(); ) {
++                final int type = iterator.nextInt();
++
++                if (type < 0 || type >= MAX_TYPES) {
++                    throw new IllegalStateException("Type translation table contains illegal type: " + type);
++                }
++
++                final TypeHeader headerData = this.typeHeaders.get(type);
++                if (headerData != null || readOnly) {
++                    // allocated or unable to allocate
++                    continue;
++                }
++
++                modifiedFileHeader = true;
++
++                // need to allocate space for new type header
++                final int offset = this.sectorAllocator.allocate(TYPE_HEADER_SECTORS, false); // in sectors
++                if (offset <= 0) {
++                    throw new IllegalStateException("Cannot allocate space for header " + this.debugType(type) + ":" + offset);
++                }
++
++                this.fileHeader.typeHeaderOffsets[type] = offset;
++                // hash will be computed by writeTypeHeader
++                this.typeHeaders.put(type, new TypeHeader());
++
++                this.writeTypeHeader(ioBuffer, type, true, false);
++            }
++
++            // modified the file header, so write it back
++            if (modifiedFileHeader) {
++                this.writeFileHeader(ioBuffer);
++            }
++        }
++    }
++
++    public int forTestingAllocateSector(final int sectors) {
++        return this.sectorAllocator.allocate(sectors, true);
++    }
++
++    private String debugType(final int type) {
++        final String name = this.typeTranslationTable.get(type);
++        return "{id=" + type + ",name=" + (name == null ? "unknown" : name) + "}";
++    }
++
++    private static SectorAllocator newSectorAllocator() {
++        final SectorAllocator newSectorAllocation = new SectorAllocator(MAX_NORMAL_SECTOR_OFFSET, MAX_NORMAL_SECTOR_LENGTH);
++        if (!newSectorAllocation.tryAllocateDirect(FILE_HEADER_SECTOR, FileHeader.FILE_HEADER_TOTAL_SECTORS, false)) {
++            throw new IllegalStateException("Cannot allocate initial header");
++        }
++        return newSectorAllocation;
++    }
++
++    private void makeBackup(final File target) throws IOException {
++        this.channel.force(true);
++        Files.copy(this.file.toPath(), target.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
++    }
++
++    public static final int RECALCULATE_FLAGS_NO_BACKUP = 1 << 0;
++    public static final int RECALCULATE_FLAGS_NO_LOG    = 1 << 1;
++
++    // returns whether any changes were made, useful for testing
++    public boolean recalculateFile(final BufferChoices unscopedBufferChoices, final int flags) throws IOException {
++        if (this.readOnly) {
++            return false;
++        }
++        if ((flags & RECALCULATE_FLAGS_NO_LOG) == 0) {
++            LOGGER.error("An inconsistency has been detected in the headers for file '" + this.file.getAbsolutePath() +
++                "', recalculating the headers", new Throwable());
++        }
++        // The headers are determined as incorrect, so we are going to rebuild it from the file
++        final SectorAllocator newSectorAllocation = newSectorAllocator();
++
++        if ((flags & RECALCULATE_FLAGS_NO_BACKUP) == 0) {
++            final File backup = new File(this.file.getParentFile(), this.file.getName() + "." + new Random().nextLong() + ".backup");
++            if ((flags & RECALCULATE_FLAGS_NO_LOG) == 0) {
++                LOGGER.info("Making backup of '" + this.file.getAbsolutePath() + "' to '" + backup.getAbsolutePath() + "'");
++            }
++            this.makeBackup(backup);
++        }
++
++        class TentativeTypeHeader {
++            final TypeHeader typeHeader = new TypeHeader();
++            final long[] timestamps = new long[TYPE_HEADER_OFFSET_COUNT];
++        }
++
++        final Int2ObjectLinkedOpenHashMap<TentativeTypeHeader> newTypeHeaders = new Int2ObjectLinkedOpenHashMap<>();
++
++        // order of precedence of data found:
++        // newest timestamp,
++        // located internally,
++        // located closest to start internally
++
++        // force creation tentative type headers for required headers, as we will later replace the current ones
++        for (final IntIterator iterator = this.typeTranslationTable.keySet().iterator(); iterator.hasNext();) {
++            newTypeHeaders.put(iterator.nextInt(), new TentativeTypeHeader());
++        }
++
++        // search for internal data
++
++        try (final BufferChoices scopedChoices = unscopedBufferChoices.scope()) {
++            final ByteBuffer buffer = scopedChoices.t1m().acquireDirectBuffer();
++
++            final long fileSectors = (this.channel.size() + (long)(SECTOR_SIZE - 1)) >>> SECTOR_SHIFT;
++            for (long i = (long)(FILE_HEADER_SECTOR + FileHeader.FILE_HEADER_TOTAL_SECTORS); i <= Math.min(fileSectors, (long)MAX_NORMAL_SECTOR_OFFSET); ++i) {
++                buffer.limit(DataHeader.DATA_HEADER_LENGTH);
++                buffer.position(0);
++
++                this.channel.read(buffer, i << SECTOR_SHIFT);
++
++                if (buffer.hasRemaining()) {
++                    // last sector, which is truncated
++                    continue;
++                }
++
++                buffer.flip();
++
++                if (!DataHeader.validate(XXHASH64, buffer, 0)) {
++                    // no valid data allocated on this sector
++                    continue;
++                }
++
++                final DataHeader dataHeader = DataHeader.read(buffer);
++                // sector size = (compressed size + header size + SECTOR_SIZE-1) >> SECTOR_SHIFT
++                final int maxCompressedSize = (MAX_NORMAL_SECTOR_LENGTH << SECTOR_SHIFT) - DataHeader.DATA_HEADER_LENGTH;
++
++                if (dataHeader.compressedSize > maxCompressedSize || dataHeader.compressedSize < 0) {
++                    // invalid size
++                    continue;
++                }
++
++                final int typeId = (int)(dataHeader.typeId & 0xFF);
++                final int index = (int)(dataHeader.index & 0xFFFF);
++
++                if (typeId < 0 || typeId >= MAX_TYPES) {
++                    // type id is too large or small
++                    continue;
++                }
++
++                final TentativeTypeHeader typeHeader = newTypeHeaders.computeIfAbsent(typeId, (final int key) -> {
++                    return new TentativeTypeHeader();
++                });
++
++                final int prevLocation = typeHeader.typeHeader.locations[index];
++                if (prevLocation != ABSENT_LOCATION) {
++                    // try to skip data if the data is older
++                    final long prevTimestamp = typeHeader.timestamps[index];
++
++                    if ((dataHeader.timeWritten - prevTimestamp) <= 0L) {
++                        // this data is older, skip it
++                        // since we did not validate the data, we cannot skip over the sectors it says it has allocated
++                        continue;
++                    }
++                }
++
++                // read remaining data
++                buffer.limit(dataHeader.compressedSize);
++                buffer.position(0);
++                this.channel.read(buffer, (i << SECTOR_SHIFT) + (long)DataHeader.DATA_HEADER_LENGTH);
++
++                if (buffer.hasRemaining()) {
++                    // data is truncated, skip
++                    continue;
++                }
++
++                buffer.flip();
++
++                // validate data against hash
++                final long gotHash = XXHASH64.hash(buffer, 0, dataHeader.compressedSize, XXHASH_SEED);
++
++                if (gotHash != dataHeader.xxhash64Data) {
++                    // not the data we expect
++                    continue;
++                }
++
++                // since we are a newer timestamp than prev, replace it
++
++                final int sectorOffset = (int)i; // i <= MAX_NORMAL_SECTOR_OFFSET
++                final int sectorLength = (dataHeader.compressedSize + DataHeader.DATA_HEADER_LENGTH + (SECTOR_SIZE - 1)) >> SECTOR_SHIFT;
++                final int newLocation = makeLocation(sectorOffset, sectorLength);
++
++                if (!newSectorAllocation.tryAllocateDirect(sectorOffset, sectorLength, false)) {
++                    throw new IllegalStateException("Unable to allocate sectors");
++                }
++
++                if (prevLocation != ABSENT_LOCATION && prevLocation != EXTERNAL_ALLOCATION_LOCATION) {
++                    newSectorAllocation.freeAllocation(getLocationOffset(prevLocation), getLocationLength(prevLocation));
++                }
++
++                typeHeader.typeHeader.locations[index] = newLocation;
++                typeHeader.timestamps[index] = dataHeader.timeWritten;
++
++                // skip over the sectors, we know they're good
++                i += (long)sectorLength;
++                --i;
++                continue;
++            }
++        }
++
++        final IntOpenHashSet possibleTypes = new IntOpenHashSet(128);
++        possibleTypes.addAll(this.typeTranslationTable.keySet());
++        possibleTypes.addAll(this.typeHeaders.keySet());
++        possibleTypes.addAll(newTypeHeaders.keySet());
++
++        // search for external files
++        for (final IntIterator iterator = possibleTypes.iterator(); iterator.hasNext();) {
++            final int type = iterator.nextInt();
++            for (int localZ = 0; localZ < SECTION_SIZE; ++localZ) {
++                for (int localX = 0; localX < SECTION_SIZE; ++localX) {
++                    final File external = this.getExternalFile(localX, localZ, type);
++                    if (!external.isFile()) {
++                        continue;
++                    }
++
++                    final int index = getIndex(localX, localZ);
++
++                    // read header
++                    final DataHeader header;
++                    try (final BufferChoices scopedChoices = unscopedBufferChoices.scope();
++                        final FileChannel input = FileChannel.open(external.toPath(), StandardOpenOption.READ)) {
++                        final ByteBuffer buffer = scopedChoices.t16k().acquireDirectBuffer();
++
++                        buffer.limit(DataHeader.DATA_HEADER_LENGTH);
++                        buffer.position(0);
++
++                        input.read(buffer);
++
++                        buffer.flip();
++
++                        header = DataHeader.read(buffer);
++
++                        if (header == null) {
++                            // truncated
++                            LOGGER.warn("Deleting truncated external file '" + external.getAbsolutePath() + "'");
++                            external.delete();
++                            continue;
++                        }
++
++                        if (!DataHeader.validate(XXHASH64, buffer, 0)) {
++                            LOGGER.warn("Failed to verify header hash for external file '" + external.getAbsolutePath() + "'");
++                            continue;
++                        }
++                    } catch (final IOException ex) {
++                        LOGGER.warn("Failed to read header from external file '" + external.getAbsolutePath() + "'", ex);
++                        continue;
++                    }
++
++                    // verify the rest of the header
++
++                    if (type != ((int)header.typeId & 0xFF)) {
++                        LOGGER.warn("Mismatch of type and expected type for external file '" + external.getAbsolutePath() + "'");
++                        continue;
++                    }
++
++                    if (index != ((int)header.index & 0xFFFF)) {
++                        LOGGER.warn("Mismatch of index and expected index for external file '" + external.getAbsolutePath() + "'");
++                        continue;
++                    }
++
++                    if (external.length() != ((long)DataHeader.DATA_HEADER_LENGTH + (long)header.compressedSize)) {
++                        LOGGER.warn("Mismatch of filesize and compressed size for external file '" + external.getAbsolutePath() + "'");
++                        continue;
++                    }
++
++                    // we are mostly certain the data is valid, but need still to check the data hash
++                    // we can test the timestamp against current data before the expensive data hash operation though
++
++                    final TentativeTypeHeader typeHeader = newTypeHeaders.computeIfAbsent(type, (final int key) -> {
++                        return new TentativeTypeHeader();
++                    });
++
++                    final int prevLocation = typeHeader.typeHeader.locations[index];
++                    final long prevTimestamp = typeHeader.timestamps[index];
++
++                    if (prevLocation != ABSENT_LOCATION) {
++                        if ((header.timeWritten - prevTimestamp) <= 0L) {
++                            // this data is older, skip
++                            continue;
++                        }
++                    }
++
++                    // now we can test the hash, after verifying everything else is correct
++
++                    try {
++                        final Long externalHash = computeExternalHash(unscopedBufferChoices, external);
++                        if (externalHash == null || externalHash.longValue() != header.xxhash64Data) {
++                            LOGGER.warn("Failed to verify hash for external file '" + external.getAbsolutePath() + "'");
++                            continue;
++                        }
++                    } catch (final IOException ex) {
++                        LOGGER.warn("Failed to compute hash for external file '" + external.getAbsolutePath() + "'", ex);
++                        continue;
++                    }
++
++                    if (prevLocation != ABSENT_LOCATION && prevLocation != EXTERNAL_ALLOCATION_LOCATION) {
++                        newSectorAllocation.freeAllocation(getLocationOffset(prevLocation), getLocationLength(prevLocation));
++                    }
++
++                    typeHeader.typeHeader.locations[index] = EXTERNAL_ALLOCATION_LOCATION;
++                    typeHeader.timestamps[index] = header.timeWritten;
++                }
++            }
++        }
++
++        // now we can build the new headers
++        final Int2ObjectLinkedOpenHashMap<TypeHeader> newHeaders = new Int2ObjectLinkedOpenHashMap<>(newTypeHeaders.size());
++        final FileHeader newFileHeader = new FileHeader();
++
++        for (final Iterator<Int2ObjectMap.Entry<TentativeTypeHeader>> iterator = newTypeHeaders.int2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
++            final Int2ObjectMap.Entry<TentativeTypeHeader> entry = iterator.next();
++
++            final int type = entry.getIntKey();
++            final TentativeTypeHeader tentativeTypeHeader = entry.getValue();
++
++            final int sectorOffset = newSectorAllocation.allocate(TYPE_HEADER_SECTORS, false);
++            if (sectorOffset < 0) {
++                throw new IllegalStateException("Failed to allocate type header");
++            }
++
++            newHeaders.put(type, tentativeTypeHeader.typeHeader);
++            newFileHeader.typeHeaderOffsets[type] = sectorOffset;
++            // hash will be computed later by writeTypeHeader
++        }
++
++        // now print the changes we're about to make
++        if ((flags & RECALCULATE_FLAGS_NO_LOG) == 0) {
++            LOGGER.info("Summarizing header changes for sectorfile " + this.file.getAbsolutePath());
++        }
++
++        boolean changes = false;
++
++        for (final Iterator<Int2ObjectMap.Entry<TypeHeader>> iterator = newHeaders.int2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
++            final Int2ObjectMap.Entry<TypeHeader> entry = iterator.next();
++            final int type = entry.getIntKey();
++            final TypeHeader newTypeHeader = entry.getValue();
++            final TypeHeader oldTypeHeader = this.typeHeaders.get(type);
++
++            boolean hasChanges;
++            if (oldTypeHeader == null) {
++                hasChanges = false;
++                final int[] test = newTypeHeader.locations;
++                for (int i = 0; i < test.length; ++i) {
++                    if (test[i] != ABSENT_LOCATION) {
++                        hasChanges = true;
++                        break;
++                    }
++                }
++            } else {
++                hasChanges = !Arrays.equals(oldTypeHeader.locations, newTypeHeader.locations);
++            }
++
++            if (!hasChanges) {
++                // make logs easier to read by only logging one line if there are no changes
++                if ((flags & RECALCULATE_FLAGS_NO_LOG) == 0) {
++                    LOGGER.info("No changes for type " + this.debugType(type) + " in sectorfile " + this.file.getAbsolutePath());
++                }
++                continue;
++            }
++
++            if ((flags & RECALCULATE_FLAGS_NO_LOG) == 0) {
++                LOGGER.info("Changes for type " + this.debugType(type) + " in sectorfile '" + this.file.getAbsolutePath() + "':");
++            }
++
++            for (int localZ = 0; localZ < SECTION_SIZE; ++localZ) {
++                for (int localX = 0; localX < SECTION_SIZE; ++localX) {
++                    final int index = getIndex(localX, localZ);
++
++                    final int oldLocation = oldTypeHeader == null ? ABSENT_LOCATION : oldTypeHeader.locations[index];
++                    final int newLocation = newTypeHeader.locations[index];
++
++                    if (oldLocation == newLocation) {
++                        continue;
++                    }
++
++                    changes = true;
++
++                    if ((flags & RECALCULATE_FLAGS_NO_LOG) == 0) {
++                        if (oldLocation == ABSENT_LOCATION) {
++                            // found new data
++                            LOGGER.info("Found missing data for " + this.debugType(type) + " located at " + this.getAbsoluteCoordinate(index) + " in sectorfile " + this.file.getAbsolutePath());
++                        } else if (newLocation == ABSENT_LOCATION) {
++                            // lost data
++                            LOGGER.warn("Failed to find data for " + this.debugType(type) + " located at " + this.getAbsoluteCoordinate(index) + " in sectorfile " + this.file.getAbsolutePath());
++                        } else {
++                            // changed to last correct data
++                            LOGGER.info("Replaced with last good data for " + this.debugType(type) + " located at " + this.getAbsoluteCoordinate(index) + " in sectorfile " + this.file.getAbsolutePath());
++                        }
++                    }
++                }
++            }
++
++            if ((flags & RECALCULATE_FLAGS_NO_LOG) == 0) {
++                LOGGER.info("End of changes for type " + this.debugType(type) + " in sectorfile " + this.file.getAbsolutePath());
++            }
++        }
++        if ((flags & RECALCULATE_FLAGS_NO_LOG) == 0) {
++            LOGGER.info("End of changes for sectorfile " + this.file.getAbsolutePath());
++        }
++
++        // replace-in memory
++        this.typeHeaders.clear();
++        this.typeHeaders.putAll(newHeaders);
++        this.fileHeader.copyFrom(newFileHeader);
++        this.sectorAllocator.copyAllocations(newSectorAllocation);
++
++        // write to disk
++        try {
++            // first, the type headers
++            for (final IntIterator iterator = newHeaders.keySet().iterator(); iterator.hasNext();) {
++                final int type = iterator.nextInt();
++                try (final BufferChoices headerBuffers = unscopedBufferChoices.scope()) {
++                    try {
++                        this.writeTypeHeader(headerBuffers.t16k().acquireDirectBuffer(), type, true, false);
++                    } catch (final IOException ex) {
++                        // to ensure we update all the type header hashes, we need call writeTypeHeader for all type headers
++                        // so, we need to catch any IO errors here
++                        LOGGER.error("Failed to write type header " + this.debugType(type) + " to disk for sectorfile " + this.file.getAbsolutePath(), ex);
++                    }
++                }
++            }
++
++            // then we can write the main header
++            try (final BufferChoices headerBuffers = unscopedBufferChoices.scope()) {
++                this.writeFileHeader(headerBuffers.t16k().acquireDirectBuffer());
++            }
++
++            if ((flags & RECALCULATE_FLAGS_NO_LOG) == 0) {
++                LOGGER.info("Successfully wrote new headers to disk for sectorfile " + this.file.getAbsolutePath());
++            }
++        } catch (final IOException ex) {
++            LOGGER.error("Failed to write new headers to disk for sectorfile " + this.file.getAbsolutePath(), ex);
++        }
++
++        return changes;
++    }
++
++    private String getAbsoluteCoordinate(final int index) {
++        return this.getAbsoluteCoordinate(getLocalX(index), getLocalZ(index));
++    }
++
++    private String getAbsoluteCoordinate(final int localX, final int localZ) {
++        return "(" + (localX | (this.sectionX << SECTION_SHIFT)) + "," + (localZ | (this.sectionZ << SECTION_SHIFT)) + ")";
++    }
++
++    private void write(final ByteBuffer buffer, long position) throws IOException {
++        int len = buffer.remaining();
++        while (len > 0) {
++            final int written = this.channel.write(buffer, position);
++            len -= written;
++            position += (long)written;
++        }
++    }
++
++    private void writeFileHeader(final ByteBuffer ioBuffer) throws IOException {
++        ioBuffer.limit(FileHeader.FILE_HEADER_SIZE_BYTES);
++        ioBuffer.position(0);
++
++        this.fileHeader.write(ioBuffer.duplicate());
++
++        this.write(ioBuffer, (long)FILE_HEADER_SECTOR << SECTOR_SHIFT);
++    }
++
++    private void readFileHeader(final BufferChoices unscopedBufferChoices) throws IOException {
++        try (final BufferChoices scopedBufferChoices = unscopedBufferChoices.scope()) {
++            final ByteBuffer buffer = scopedBufferChoices.t16k().acquireDirectBuffer();
++
++            // reset sector allocations + headers for debug/testing
++            this.sectorAllocator.copyAllocations(newSectorAllocator());
++            this.typeHeaders.clear();
++            this.fileHeader.reset();
++
++            buffer.limit(FileHeader.FILE_HEADER_SIZE_BYTES);
++            buffer.position(0);
++
++            final long fileLengthSectors = (this.channel.size() + (SECTOR_SIZE - 1L)) >> SECTOR_SHIFT;
++
++            int read = this.channel.read(buffer, (long)FILE_HEADER_SECTOR << SECTOR_SHIFT);
++
++            if (read != buffer.limit()) {
++                LOGGER.warn("File '" + this.file.getAbsolutePath() + "' has a truncated file header");
++                // File is truncated
++                // All headers will initialise to default
++                return;
++            }
++
++            buffer.position(0);
++
++            if (!FileHeader.validate(buffer, 0)) {
++                LOGGER.warn("File '" + this.file.getAbsolutePath() + "' has file header with hash mismatch");
++                if (!this.readOnly) {
++                    this.recalculateFile(unscopedBufferChoices, 0);
++                    return;
++                } // else: in read-only mode, try to parse the header still
++            }
++
++            FileHeader.read(buffer, this.fileHeader);
++
++            // delay recalculation so that the logs contain all errors found
++            boolean needsRecalculation = false;
++
++            // try to allocate space for written type headers
++            for (int i = 0; i < MAX_TYPES; ++i) {
++                final int typeHeaderOffset = this.fileHeader.typeHeaderOffsets[i];
++                if (typeHeaderOffset == ABSENT_TYPE_HEADER_OFFSET) {
++                    // no data
++                    continue;
++                }
++                // note: only the type headers can bypass the max limit, as the max limit is determined by SECTOR_OFFSET_BITS
++                //       but the type offset is full 31 bits
++                if (typeHeaderOffset < 0 || !this.sectorAllocator.tryAllocateDirect(typeHeaderOffset, TYPE_HEADER_SECTORS, true)) {
++                    LOGGER.error("File '" + this.file.getAbsolutePath() + "' has bad or overlapping offset for type " + this.debugType(i) + ": " + typeHeaderOffset);
++                    needsRecalculation = true;
++                    continue;
++                }
++
++                if (!this.typeTranslationTable.containsKey(i)) {
++                    LOGGER.warn("File '" + this.file.getAbsolutePath() + "' has an unknown type header: " + i);
++                }
++
++                // parse header
++                buffer.position(0);
++                buffer.limit(TypeHeader.TYPE_HEADER_SIZE_BYTES);
++                read = this.channel.read(buffer, (long)typeHeaderOffset << SECTOR_SHIFT);
++
++                if (read != buffer.limit()) {
++                    LOGGER.error("File '" + this.file.getAbsolutePath() + "' has type header " + this.debugType(i) + " pointing to outside of file: " + typeHeaderOffset);
++                    needsRecalculation = true;
++                    continue;
++                }
++
++                final long expectedHash = this.fileHeader.xxHash64TypeHeader[i];
++                final long gotHash = TypeHeader.computeHash(buffer, 0);
++
++                if (expectedHash != gotHash) {
++                    LOGGER.error("File '" + this.file.getAbsolutePath() + "' has type header " + this.debugType(i) + " with a mismatched hash");
++                    needsRecalculation = true;
++                    if (!this.readOnly) {
++                        continue;
++                    } // else: in read-only mode, try to parse the type header still
++                }
++
++                final TypeHeader typeHeader = TypeHeader.read(buffer.flip());
++
++                final int[] locations = typeHeader.locations;
++
++                // here, we now will try to allocate space for the data in the type header
++                // we need to do it even if we don't know what type we're dealing with
++                for (int k = 0; k < locations.length; ++k) {
++                    final int location = locations[k];
++                    if (location == ABSENT_LOCATION || location == EXTERNAL_ALLOCATION_LOCATION) {
++                        // no data or it is on the external file
++                        continue;
++                    }
++
++                    final int locationOffset = getLocationOffset(location);
++                    final int locationLength = getLocationLength(location);
++
++                    if (locationOffset < 0) {
++                        LOGGER.error("File '" + this.file.getAbsolutePath() + "' has negative (o:" + locationOffset + ",l:" + locationLength + ") sector offset for type " + this.debugType(i) + " located at " + this.getAbsoluteCoordinate(k));
++                        needsRecalculation = true;
++                        continue;
++                    } else if (locationLength <= 0) {
++                        LOGGER.error("File '" + this.file.getAbsolutePath() + "' has negative (o:" + locationOffset + ",l:" + locationLength + ") length for type " + this.debugType(i) + " located at " + this.getAbsoluteCoordinate(k));
++                        needsRecalculation = true;
++                        continue;
++                    } else if ((locationOffset + locationLength) > fileLengthSectors || (locationOffset + locationLength) < 0) {
++                        LOGGER.error("File '" + this.file.getAbsolutePath() + "' has sector allocation (o:" + locationOffset + ",l:" + locationLength + ") pointing outside file for type " + this.debugType(i) + " located at " + this.getAbsoluteCoordinate(k));
++                        needsRecalculation = true;
++                        continue;
++                    } else if (!this.sectorAllocator.tryAllocateDirect(locationOffset, locationLength, false)) {
++                        LOGGER.error("File '" + this.file.getAbsolutePath() + "' has overlapping sector allocation (o:" + locationOffset + ",l:" + locationLength + ") for type " + this.debugType(i) + " located at " + this.getAbsoluteCoordinate(k));
++                        needsRecalculation = true;
++                        continue;
++                    }
++                }
++
++                this.typeHeaders.put(i, typeHeader);
++            }
++
++            if (needsRecalculation) {
++                this.recalculateFile(unscopedBufferChoices, 0);
++                return;
++            }
++
++            return;
++        }
++    }
++
++    private void writeTypeHeader(final ByteBuffer buffer, final int type, final boolean updateTypeHeaderHash,
++                                 final boolean writeFileHeader) throws IOException {
++        final TypeHeader headerData = this.typeHeaders.get(type);
++        if (headerData == null) {
++            throw new IllegalStateException("Unhandled type: " + type);
++        }
++
++        if (writeFileHeader & !updateTypeHeaderHash) {
++            throw new IllegalArgumentException("Cannot write file header without updating type header hash");
++        }
++
++        final int offset = this.fileHeader.typeHeaderOffsets[type];
++
++        buffer.position(0);
++        buffer.limit(TypeHeader.TYPE_HEADER_SIZE_BYTES);
++
++        headerData.write(buffer.duplicate());
++
++        final long hash;
++        if (updateTypeHeaderHash) {
++            hash = TypeHeader.computeHash(buffer, 0);
++            this.fileHeader.xxHash64TypeHeader[type] = hash;
++        }
++
++        this.write(buffer, (long)offset << SECTOR_SHIFT);
++
++        if (writeFileHeader) {
++            this.writeFileHeader(buffer);
++        }
++    }
++
++    private void updateAndWriteTypeHeader(final ByteBuffer ioBuffer, final int type, final int index, final int to) throws IOException {
++        final TypeHeader headerData = this.typeHeaders.get(type);
++        if (headerData == null) {
++            throw new IllegalStateException("Unhandled type: " + type);
++        }
++
++        headerData.locations[index] = to;
++
++        this.writeTypeHeader(ioBuffer, type, true, true);
++    }
++
++    private void deleteExternalFile(final int localX, final int localZ, final int type) throws IOException {
++        // use deleteIfExists for error reporting
++        Files.deleteIfExists(this.getExternalFile(localX, localZ, type).toPath());
++    }
++
++    private File getExternalFile(final int localX, final int localZ, final int type) {
++        return new File(this.file.getParentFile(), getExternalFileName(this.sectionX, this.sectionZ, localX, localZ, type));
++    }
++
++    private File getExternalTempFile(final int localX, final int localZ, final int type) {
++        return new File(this.file.getParentFile(), getExternalTempFileName(this.sectionX, this.sectionZ, localX, localZ, type));
++    }
++
++    public static Long computeExternalHash(final BufferChoices unscopedBufferChoices, final File externalFile) throws IOException {
++        if (!externalFile.isFile() || externalFile.length() < (long)DataHeader.DATA_HEADER_LENGTH) {
++            return null;
++        }
++
++        try (final BufferChoices scopedBufferChoices = unscopedBufferChoices.scope();
++             final StreamingXXHash64 streamingXXHash64 = XXHASH_JAVA_FACTORY.newStreamingHash64(XXHASH_SEED);
++             final InputStream fileInput = Files.newInputStream(externalFile.toPath(), StandardOpenOption.READ)) {
++            final byte[] bytes = scopedBufferChoices.t16k().acquireJavaBuffer();
++
++            // first, skip header
++            try {
++                fileInput.skipNBytes((long)DataHeader.DATA_HEADER_LENGTH);
++            } catch (final EOFException ex) {
++                return null;
++            }
++
++            int r;
++            while ((r = fileInput.read(bytes)) >= 0) {
++                streamingXXHash64.update(bytes, 0, r);
++            }
++
++            return streamingXXHash64.getValue();
++        }
++    }
++
++    public static final int READ_FLAG_CHECK_HEADER_HASH          = 1 << 0;
++    public static final int READ_FLAG_CHECK_INTERNAL_DATA_HASH   = 1 << 1;
++    public static final int READ_FLAG_CHECK_EXTERNAL_DATA_HASH   = 1 << 2;
++
++    // do not check external data hash, there is not much we can do if it is actually bad
++    public static final int RECOMMENDED_READ_FLAGS = READ_FLAG_CHECK_HEADER_HASH | READ_FLAG_CHECK_INTERNAL_DATA_HASH;
++    // checks external hash additionally, which requires a separate full file read
++    public static final int FULL_VALIDATION_FLAGS = READ_FLAG_CHECK_HEADER_HASH | READ_FLAG_CHECK_INTERNAL_DATA_HASH | READ_FLAG_CHECK_EXTERNAL_DATA_HASH;
++
++    public boolean hasData(final int localX, final int localZ, final int type) {
++        if (localX < 0 || localX > SECTION_MASK) {
++            throw new IllegalArgumentException("X-coordinate out of range");
++        }
++        if (localZ < 0 || localZ > SECTION_MASK) {
++            throw new IllegalArgumentException("Z-coordinate out of range");
++        }
++
++        final TypeHeader typeHeader = this.typeHeaders.get(type);
++
++        if (typeHeader == null) {
++            this.checkReadOnlyHeader(type);
++            return false;
++        }
++
++        final int index = getIndex(localX, localZ);
++        final int location = typeHeader.locations[index];
++
++        return location != ABSENT_LOCATION;
++    }
++
++    public DataInputStream read(final BufferChoices scopedBufferChoices, final int localX, final int localZ, final int type, final int readFlags) throws IOException {
++        return this.read(scopedBufferChoices, scopedBufferChoices.t1m().acquireDirectBuffer(), localX, localZ, type, readFlags);
++    }
++
++    private DataInputStream tryRecalculate(final String reason, final BufferChoices scopedBufferChoices, final ByteBuffer buffer, final int localX, final int localZ, final int type, final int readFlags) throws IOException {
++        LOGGER.error("File '" + this.file.getAbsolutePath() + "' has error at data for type " + this.debugType(type) + " located at " + this.getAbsoluteCoordinate(getIndex(localX, localZ)) + ": " + reason);
++        // attribute error to bad header data, which we can re-calculate and re-try
++        if (this.readOnly) {
++            // cannot re-calculate, so we can only return null
++            return null;
++        }
++        this.recalculateFile(scopedBufferChoices, 0);
++        // recalculate ensures valid data, so there will be no recursion
++        return this.read(scopedBufferChoices, buffer, localX, localZ, type, readFlags);
++    }
++
++    private DataInputStream read(final BufferChoices scopedBufferChoices, final ByteBuffer buffer, final int localX, final int localZ, final int type, final int readFlags) throws IOException {
++        if (localX < 0 || localX > SECTION_MASK) {
++            throw new IllegalArgumentException("X-coordinate out of range");
++        }
++        if (localZ < 0 || localZ > SECTION_MASK) {
++            throw new IllegalArgumentException("Z-coordinate out of range");
++        }
++
++        if (buffer.capacity() < MAX_INTERNAL_ALLOCATION_BYTES) {
++            throw new IllegalArgumentException("Buffer size must be at least " + MAX_INTERNAL_ALLOCATION_BYTES + " bytes");
++        }
++
++        buffer.limit(buffer.capacity());
++        buffer.position(0);
++
++        final TypeHeader typeHeader = this.typeHeaders.get(type);
++
++        if (typeHeader == null) {
++            this.checkReadOnlyHeader(type);
++            return null;
++        }
++
++        final int index = getIndex(localX, localZ);
++
++        final int location = typeHeader.locations[index];
++
++        if (location == ABSENT_LOCATION) {
++            return null;
++        }
++
++        final boolean external = location == EXTERNAL_ALLOCATION_LOCATION;
++
++        final ByteBufferInputStream rawIn;
++        final File externalFile;
++        if (external) {
++            externalFile = this.getExternalFile(localX, localZ, type);
++
++            rawIn = new BufferedFileChannelInputStream(buffer, externalFile);
++        } else {
++            externalFile = null;
++
++            final int offset = getLocationOffset(location);
++            final int length = getLocationLength(location);
++
++            buffer.limit(length << SECTOR_SHIFT);
++            this.channel.read(buffer, (long)offset << SECTOR_SHIFT);
++            buffer.flip();
++
++            rawIn = new ByteBufferInputStream(buffer);
++        }
++
++        final DataHeader dataHeader = DataHeader.read(rawIn);
++
++        if (dataHeader == null) {
++            rawIn.close();
++            return this.tryRecalculate("truncated " + (external ? "external" : "internal") + " data header", scopedBufferChoices, buffer, localX, localZ, type, readFlags);
++        }
++
++        if ((readFlags & READ_FLAG_CHECK_HEADER_HASH) != 0) {
++            if (!DataHeader.validate(XXHASH64, buffer, 0)) {
++                rawIn.close();
++                return this.tryRecalculate("mismatch of " + (external ? "external" : "internal") + " data header hash", scopedBufferChoices, buffer, localX, localZ, type, readFlags);
++            }
++        }
++
++        if ((int)(dataHeader.typeId & 0xFF) != type) {
++            rawIn.close();
++            return this.tryRecalculate("mismatch of expected type and data header type", scopedBufferChoices, buffer, localX, localZ, type, readFlags);
++        }
++
++        if (((int)dataHeader.index & 0xFFFF) != index) {
++            rawIn.close();
++            return this.tryRecalculate("mismatch of expected coordinates and data header coordinates", scopedBufferChoices, buffer, localX, localZ, type, readFlags);
++        }
++
++        // this is accurate for our implementations of BufferedFileChannelInputStream / ByteBufferInputStream
++        final int bytesAvailable = rawIn.available();
++
++        if (external) {
++            // for external files, the remaining size should exactly match the compressed size
++            if (bytesAvailable != dataHeader.compressedSize) {
++                rawIn.close();
++                return this.tryRecalculate("mismatch of external size and data header size", scopedBufferChoices, buffer, localX, localZ, type, readFlags);
++            }
++        } else {
++            // for non-external files, the remaining size should be >= compressed size AND the
++            // compressed size should be on the same sector
++            if (bytesAvailable < dataHeader.compressedSize || ((bytesAvailable + DataHeader.DATA_HEADER_LENGTH + (SECTOR_SIZE - 1)) >>> SECTOR_SHIFT) != ((dataHeader.compressedSize + DataHeader.DATA_HEADER_LENGTH + (SECTOR_SIZE - 1)) >>> SECTOR_SHIFT)) {
++                rawIn.close();
++                return this.tryRecalculate("mismatch of internal size and data header size", scopedBufferChoices, buffer, localX, localZ, type, readFlags);
++            }
++            // adjust max buffer to prevent reading over
++            buffer.limit(buffer.position() + dataHeader.compressedSize);
++            if (rawIn.available() != dataHeader.compressedSize) {
++                // should not be possible
++                rawIn.close();
++                throw new IllegalStateException();
++            }
++        }
++
++        final byte compressType = dataHeader.compressionType;
++        final SectorFileCompressionType compressionType = SectorFileCompressionType.getById((int)compressType & 0xFF);
++        if (compressionType == null) {
++            LOGGER.error("File '" + this.file.getAbsolutePath() + "' has unrecognized compression type for data type " + this.debugType(type) + " located at " + this.getAbsoluteCoordinate(index));
++            // recalculate will not clobber data types if the compression is unrecognized, so we can only return null here
++            rawIn.close();
++            return null;
++        }
++
++        if (!external && (readFlags & READ_FLAG_CHECK_INTERNAL_DATA_HASH) != 0) {
++            final long expectedHash = XXHASH64.hash(buffer, buffer.position(), dataHeader.compressedSize, XXHASH_SEED);
++            if (expectedHash != dataHeader.xxhash64Data) {
++                rawIn.close();
++                return this.tryRecalculate("mismatch of internal data hash and data header hash", scopedBufferChoices, buffer, localX, localZ, type, readFlags);
++            }
++        } else if (external && (readFlags & READ_FLAG_CHECK_EXTERNAL_DATA_HASH) != 0) {
++            final Long externalHash = computeExternalHash(scopedBufferChoices, externalFile);
++            if (externalHash == null || externalHash.longValue() != dataHeader.xxhash64Data) {
++                rawIn.close();
++                return this.tryRecalculate("mismatch of external data hash and data header hash", scopedBufferChoices, buffer, localX, localZ, type, readFlags);
++            }
++        }
++
++        return new DataInputStream(compressionType.createInput(scopedBufferChoices, rawIn));
++    }
++
++    public boolean delete(final BufferChoices unscopedBufferChoices, final int localX, final int localZ, final int type) throws IOException {
++        if (localX < 0 || localX > SECTION_MASK) {
++            throw new IllegalArgumentException("X-coordinate out of range");
++        }
++        if (localZ < 0 || localZ > SECTION_MASK) {
++            throw new IllegalArgumentException("Z-coordinate out of range");
++        }
++
++        if (this.readOnly) {
++            throw new UnsupportedOperationException("Sectorfile is read-only");
++        }
++
++        final TypeHeader typeHeader = this.typeHeaders.get(type);
++
++        if (typeHeader == null) {
++            this.checkReadOnlyHeader(type);
++            return false;
++        }
++
++        final int index = getIndex(localX, localZ);
++        final int location = typeHeader.locations[index];
++
++        if (location == ABSENT_LOCATION) {
++            return false;
++        }
++
++        // whether the location is external or internal, we delete from the type header before attempting anything else
++        try (final BufferChoices scopedBufferChoices = unscopedBufferChoices.scope()) {
++            this.updateAndWriteTypeHeader(scopedBufferChoices.t16k().acquireDirectBuffer(), type, index, ABSENT_LOCATION);
++        }
++
++        // only proceed to try to delete sector allocation or external file if we succeed in deleting the type header entry
++
++        if (location == EXTERNAL_ALLOCATION_LOCATION) {
++            // only try to delete if the header write may succeed
++            this.deleteExternalFile(localX, localZ, type);
++
++            // no sector allocation to free
++
++            return true;
++        } else {
++            final int offset = getLocationOffset(location);
++            final int length = getLocationLength(location);
++
++            this.sectorAllocator.freeAllocation(offset, length);
++
++            return true;
++        }
++    }
++
++    // performs a sync as if the sync flag is used for creating the sectorfile
++    public static final int WRITE_FLAG_SYNC         = 1 << 0;
++
++    public static record SectorFileOutput(
++            /* Must run save (before close()) to cause the data to be written to the file, close() will not do this */
++            SectorFileOutputStream rawOutput,
++            /* Close is required to run on the outputstream to free resources, but will not commit the data */
++            DataOutputStream outputStream
++    ) {}
++
++    public SectorFileOutput write(final BufferChoices scopedBufferChoices, final int localX, final int localZ, final int type,
++                                  final SectorFileCompressionType forceCompressionType, final int writeFlags) throws IOException {
++        if (this.readOnly) {
++            throw new UnsupportedOperationException("Sectorfile is read-only");
++        }
++
++        if (this.typeHeaders.get(type) == null) {
++            throw new IllegalArgumentException("Unknown type " + type);
++        }
++
++        final SectorFileCompressionType useCompressionType = forceCompressionType == null ? this.compressionType : forceCompressionType;
++
++        final SectorFileOutputStream output = new SectorFileOutputStream(
++                scopedBufferChoices, localX, localZ, type, useCompressionType, writeFlags
++        );
++        final OutputStream compressedOut = useCompressionType.createOutput(scopedBufferChoices, output);
++
++        return new SectorFileOutput(output, new DataOutputStream(compressedOut));
++    }
++
++    // expect buffer to be flipped (pos = 0, lim = written data) AND for the buffer to have the first DATA_HEADER_LENGTH
++    // allocated to the header
++    private void writeInternal(final BufferChoices unscopedBufferChoices, final ByteBuffer buffer, final int localX,
++                               final int localZ, final int type, final long dataHash,
++                               final SectorFileCompressionType compressionType, final int writeFlags) throws IOException {
++        final int totalSize = buffer.limit();
++        final int compressedSize = totalSize - DataHeader.DATA_HEADER_LENGTH;
++
++        final int index = getIndex(localX, localZ);
++
++        DataHeader.storeHeader(
++            buffer.duplicate(), XXHASH64, dataHash, System.currentTimeMillis(), compressedSize,
++            (short)index, (byte)type, (byte)compressionType.getId()
++        );
++
++        final int requiredSectors = (totalSize + (SECTOR_SIZE - 1)) >> SECTOR_SHIFT;
++
++        if (requiredSectors > MAX_NORMAL_SECTOR_LENGTH) {
++            throw new IllegalArgumentException("Provided data is too large for internal write");
++        }
++
++        // allocate new space, write to it, and only after that is successful free the old allocation if it exists
++
++        final int sectorToStore = this.sectorAllocator.allocate(requiredSectors, true);
++        if (sectorToStore < 0) {
++            // no space left in this file, so we need to make an external allocation
++
++            final File externalTmp = this.getExternalTempFile(localX, localZ, type);
++            LOGGER.error("Ran out of space in sectorfile '" + this.file.getAbsolutePath() + "', storing data externally to " + externalTmp.getAbsolutePath());
++            Files.deleteIfExists(externalTmp.toPath());
++
++            final FileChannel channel = FileChannel.open(externalTmp.toPath(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
++            try {
++                // just need to dump the buffer to the file
++                final ByteBuffer bufferDuplicate = buffer.duplicate();
++                while (bufferDuplicate.hasRemaining()) {
++                    channel.write(bufferDuplicate);
++                }
++
++                // this call will write the header again, but that's fine - it's the same data
++                this.finishExternalWrite(
++                        unscopedBufferChoices, channel, externalTmp, compressedSize, localX, localZ,
++                        type, dataHash, compressionType, writeFlags
++                );
++            } finally {
++                channel.close();
++                Files.deleteIfExists(externalTmp.toPath());
++            }
++
++            return;
++        }
++
++        // write data to allocated space
++        this.write(buffer, (long)sectorToStore << SECTOR_SHIFT);
++
++        final int prevLocation = this.typeHeaders.get(type).locations[index];
++
++        // update header on disk
++        final int newLocation = makeLocation(sectorToStore, requiredSectors);
++
++        try (final BufferChoices scopedBufferChoices = unscopedBufferChoices.scope()) {
++            this.updateAndWriteTypeHeader(scopedBufferChoices.t16k().acquireDirectBuffer(), type, index, newLocation);
++        }
++
++        // force disk updates if required
++        if (!this.sync && (writeFlags & WRITE_FLAG_SYNC) != 0) {
++            this.channel.force(false);
++        }
++
++        // finally, now we are certain there are no references to the prev location, we can de-allocate
++        if (prevLocation != ABSENT_LOCATION) {
++            if (prevLocation == EXTERNAL_ALLOCATION_LOCATION) {
++                // de-allocation is done by deleting external file
++                this.deleteExternalFile(localX, localZ, type);
++            } else {
++                // just need to free the sector allocation
++                this.sectorAllocator.freeAllocation(getLocationOffset(prevLocation), getLocationLength(prevLocation));
++            }
++        } // else: nothing to free
++    }
++
++    private void finishExternalWrite(final BufferChoices unscopedBufferChoices, final FileChannel channel, final File externalTmp,
++                                     final int compressedSize, final int localX, final int localZ, final int type, final long dataHash,
++                                     final SectorFileCompressionType compressionType, final int writeFlags) throws IOException {
++        final int index = getIndex(localX, localZ);
++
++        // update header for external file
++        try (final BufferChoices headerChoices = unscopedBufferChoices.scope()) {
++            final ByteBuffer buffer = headerChoices.t16k().acquireDirectBuffer();
++
++            buffer.limit(DataHeader.DATA_HEADER_LENGTH);
++            buffer.position(0);
++
++            DataHeader.storeHeader(
++                    buffer.duplicate(), XXHASH64, dataHash, System.currentTimeMillis(), compressedSize,
++                    (short)index, (byte)type, (byte)compressionType.getId()
++            );
++
++            int offset = 0;
++            while (buffer.hasRemaining()) {
++                offset += channel.write(buffer, (long)offset);
++            }
++        }
++
++        // replace existing external file
++
++        final File external = this.getExternalFile(localX, localZ, type);
++
++        if (this.sync || (writeFlags & WRITE_FLAG_SYNC) != 0) {
++            channel.force(true);
++        }
++        channel.close();
++        try {
++            Files.move(externalTmp.toPath(), external.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
++        } catch (final AtomicMoveNotSupportedException ex) {
++            Files.move(externalTmp.toPath(), external.toPath(), StandardCopyOption.REPLACE_EXISTING);
++        }
++
++        final int prevLocation = this.typeHeaders.get(type).locations[index];
++
++        // update header on disk if required
++
++        if (prevLocation != EXTERNAL_ALLOCATION_LOCATION) {
++            try (final BufferChoices scopedBufferChoices = unscopedBufferChoices.scope()) {
++                this.updateAndWriteTypeHeader(scopedBufferChoices.t16k().acquireDirectBuffer(), type, index, EXTERNAL_ALLOCATION_LOCATION);
++            }
++
++            // force disk updates if required
++            if (!this.sync && (writeFlags & WRITE_FLAG_SYNC) != 0) {
++                this.channel.force(false);
++            }
++        }
++
++        // finally, now we are certain there are no references to the prev location, we can de-allocate
++        if (prevLocation != ABSENT_LOCATION && prevLocation != EXTERNAL_ALLOCATION_LOCATION) {
++            this.sectorAllocator.freeAllocation(getLocationOffset(prevLocation), getLocationLength(prevLocation));
++        }
++
++        LOGGER.warn("Stored externally " + external.length() + " bytes for type " + this.debugType(type) + " to file " + external.getAbsolutePath());
++    }
++
++    public final class SectorFileOutputStream extends ByteBufferOutputStream {
++        private final BufferChoices scopedBufferChoices;
++
++        private File externalFile;
++        private FileChannel externalChannel;
++        private StreamingXXHash64 externalHash;
++        private int totalCompressedSize;
++
++        private final int localX;
++        private final int localZ;
++        private final int type;
++        private final SectorFileCompressionType compressionType;
++        private final int writeFlags;
++
++        private SectorFileOutputStream(final BufferChoices scopedBufferChoices,
++                                       final int localX, final int localZ, final int type,
++                                       final SectorFileCompressionType compressionType,
++                                       final int writeFlags) {
++            super(scopedBufferChoices.t1m().acquireDirectBuffer());
++            // we use a lower limit than capacity to force flush() to be invoked before
++            // the maximum internal size
++            this.buffer.limit((MAX_NORMAL_SECTOR_LENGTH << SECTOR_SHIFT) | (SECTOR_SIZE - 1));
++            // make space for the header
++            for (int i = 0; i < DataHeader.DATA_HEADER_LENGTH; ++i) {
++                this.buffer.put(i, (byte)0);
++            }
++            this.buffer.position(DataHeader.DATA_HEADER_LENGTH);
++
++            this.scopedBufferChoices = scopedBufferChoices;
++
++            this.localX = localX;
++            this.localZ = localZ;
++            this.type = type;
++            this.compressionType = compressionType;
++            this.writeFlags = writeFlags;
++        }
++
++        public int getTotalCompressedSize() {
++            return this.totalCompressedSize;
++        }
++
++        @Override
++        protected ByteBuffer flush(final ByteBuffer current) throws IOException {
++            if (this.externalFile == null && current.hasRemaining()) {
++                return current;
++            }
++            if (current.position() == 0) {
++                // nothing to do
++                return current;
++            }
++
++            final boolean firstWrite = this.externalFile == null;
++
++            if (firstWrite) {
++                final File externalTmpFile = SectorFile.this.getExternalTempFile(this.localX, this.localZ, this.type);
++                LOGGER.warn("Storing external data at " + externalTmpFile.getAbsolutePath());
++                Files.deleteIfExists(externalTmpFile.toPath());
++
++                this.externalFile = externalTmpFile;
++                this.externalChannel = FileChannel.open(externalTmpFile.toPath(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
++                this.externalHash = XXHASH_JAVA_FACTORY.newStreamingHash64(XXHASH_SEED);
++            }
++
++            this.totalCompressedSize += (firstWrite ? current.position() - DataHeader.DATA_HEADER_LENGTH : current.position());
++
++            if (this.totalCompressedSize < 0 || this.totalCompressedSize >= (Integer.MAX_VALUE - DataHeader.DATA_HEADER_LENGTH)) {
++                // too large
++                throw new IOException("External file length exceeds integer maximum");
++            }
++
++            current.flip();
++
++            // update data hash
++            try (final BufferChoices hashChoices = this.scopedBufferChoices.scope()) {
++                final byte[] bytes = hashChoices.t16k().acquireJavaBuffer();
++
++                int offset = firstWrite ? DataHeader.DATA_HEADER_LENGTH : 0;
++                final int len = current.limit();
++
++                while (offset < len) {
++                    final int maxCopy = Math.min(len - offset, bytes.length);
++
++                    current.get(offset, bytes, 0, maxCopy);
++                    offset += maxCopy;
++
++                    this.externalHash.update(bytes, 0, maxCopy);
++                }
++            }
++
++            // update on disk
++            while (current.hasRemaining()) {
++                this.externalChannel.write(current);
++            }
++
++            current.limit(current.capacity());
++            current.position(0);
++            return current;
++        }
++
++        // assume flush() is called before this
++        private void save() throws IOException {
++            if (this.externalFile == null) {
++                // avoid clobbering buffer positions/limits
++                final ByteBuffer buffer = this.buffer.duplicate();
++
++                buffer.flip();
++
++                final long dataHash = XXHASH64.hash(
++                        this.buffer, DataHeader.DATA_HEADER_LENGTH, buffer.remaining() - DataHeader.DATA_HEADER_LENGTH,
++                        XXHASH_SEED
++                );
++
++                SectorFile.this.writeInternal(
++                        this.scopedBufferChoices, buffer, this.localX, this.localZ,
++                        this.type, dataHash, this.compressionType, this.writeFlags
++                );
++            } else {
++                SectorFile.this.finishExternalWrite(
++                        this.scopedBufferChoices, this.externalChannel, this.externalFile, this.totalCompressedSize,
++                        this.localX, this.localZ, this.type, this.externalHash.getValue(), this.compressionType,
++                        this.writeFlags
++                );
++            }
++        }
++
++        public void freeResources() throws IOException {
++            if (this.externalHash != null) {
++                this.externalHash.close();
++                this.externalHash = null;
++            }
++            if (this.externalChannel != null) {
++                this.externalChannel.close();
++                this.externalChannel = null;
++            }
++            if (this.externalFile != null) {
++                // only deletes tmp file if we did not call save()
++                this.externalFile.delete();
++                this.externalFile = null;
++            }
++        }
++
++        @Override
++        public void close() throws IOException {
++            try {
++                this.flush();
++                this.save();
++            } finally {
++                try {
++                    super.close();
++                } finally {
++                    this.freeResources();
++                }
++            }
++        }
++    }
++
++    public void flush() throws IOException {
++        if (!this.channel.isOpen()) {
++            return;
++        }
++        if (!this.readOnly) {
++            if (this.sync) {
++                this.channel.force(true);
++            }
++        }
++    }
++
++    @Override
++    public void close() throws IOException {
++        if (!this.channel.isOpen()) {
++            return;
++        }
++
++        try {
++            this.flush();
++        } finally {
++            this.channel.close();
++        }
++    }
++
++    public static final class SectorAllocator {
++
++        // smallest size first, then by lowest position in file
++        private final LongRBTreeSet freeBlocksBySize = new LongRBTreeSet((LongComparator)(final long a, final long b) -> {
++            final int sizeCompare = Integer.compare(getFreeBlockLength(a), getFreeBlockLength(b));
++            if (sizeCompare != 0) {
++                return sizeCompare;
++            }
++
++            return Integer.compare(getFreeBlockStart(a), getFreeBlockStart(b));
++        });
++
++        private final LongRBTreeSet freeBlocksByOffset = new LongRBTreeSet((LongComparator)(final long a, final long b) -> {
++            return Integer.compare(getFreeBlockStart(a), getFreeBlockStart(b));
++        });
++
++        private final int maxOffset; // inclusive
++        private final int maxLength; // inclusive
++
++        private static final int MAX_ALLOCATION = (Integer.MAX_VALUE >>> 1) + 1;
++        private static final int MAX_LENGTH = (Integer.MAX_VALUE >>> 1) + 1;
++
++        public SectorAllocator(final int maxOffset, final int maxLength) {
++            this.maxOffset = maxOffset;
++            this.maxLength = maxLength;
++
++            this.reset();
++        }
++
++        public void reset() {
++            this.freeBlocksBySize.clear();
++            this.freeBlocksByOffset.clear();
++
++            final long infiniteAllocation = makeFreeBlock(0, MAX_ALLOCATION);
++            this.freeBlocksBySize.add(infiniteAllocation);
++            this.freeBlocksByOffset.add(infiniteAllocation);
++        }
++
++        public void copyAllocations(final SectorAllocator other) {
++            this.freeBlocksBySize.clear();
++            this.freeBlocksBySize.addAll(other.freeBlocksBySize);
++
++            this.freeBlocksByOffset.clear();
++            this.freeBlocksByOffset.addAll(other.freeBlocksByOffset);
++        }
++
++        public int getLastAllocatedBlock() {
++            if (this.freeBlocksByOffset.isEmpty()) {
++                // entire space is allocated
++                return MAX_ALLOCATION - 1;
++            }
++
++            final long lastFreeBlock = this.freeBlocksByOffset.lastLong();
++            final int lastFreeStart = getFreeBlockStart(lastFreeBlock);
++            final int lastFreeEnd = lastFreeStart + getFreeBlockLength(lastFreeBlock) - 1;
++
++            if (lastFreeEnd == (MAX_ALLOCATION - 1)) {
++                // no allocations past this block, so the end must be before this block
++                // note: if lastFreeStart == 0, then we return - 1 which indicates no block has been allocated
++                return lastFreeStart - 1;
++            }
++            return MAX_ALLOCATION - 1;
++        }
++
++        private static long makeFreeBlock(final int start, final int length) {
++            return ((start & 0xFFFFFFFFL) | ((long)length << 32));
++        }
++
++        private static int getFreeBlockStart(final long freeBlock) {
++            return (int)freeBlock;
++        }
++
++        private static int getFreeBlockLength(final long freeBlock) {
++            return (int)(freeBlock >>> 32);
++        }
++
++        private void splitBlock(final long fromBlock, final int allocStart, final int allocEnd) {
++            // allocEnd is inclusive
++
++            // required to remove before adding again in case the split block's offset and/or length is the same
++            this.freeBlocksByOffset.remove(fromBlock);
++            this.freeBlocksBySize.remove(fromBlock);
++
++            final int fromStart = getFreeBlockStart(fromBlock);
++            final int fromEnd = fromStart + getFreeBlockLength(fromBlock) - 1;
++
++            if (fromStart != allocStart) {
++                // need to allocate free block to the left of the allocation
++                if (allocStart < fromStart) {
++                    throw new IllegalStateException();
++                }
++                final long leftBlock = makeFreeBlock(fromStart, allocStart - fromStart);
++                this.freeBlocksByOffset.add(leftBlock);
++                this.freeBlocksBySize.add(leftBlock);
++            }
++
++            if (fromEnd != allocEnd) {
++                // need to allocate free block to the right of the allocation
++                if (allocEnd > fromEnd) {
++                    throw new IllegalStateException();
++                }
++                // fromEnd - allocEnd = (fromEnd + 1) - (allocEnd + 1)
++                final long rightBlock = makeFreeBlock(allocEnd + 1, fromEnd - allocEnd);
++                this.freeBlocksByOffset.add(rightBlock);
++                this.freeBlocksBySize.add(rightBlock);
++            }
++        }
++
++        public boolean tryAllocateDirect(final int from, final int length, final boolean bypassMax) {
++            if (from < 0) {
++                throw new IllegalArgumentException("From must be >= 0");
++            }
++            if (length <= 0) {
++                throw new IllegalArgumentException("Length must be > 0");
++            }
++
++            final int end = from + length - 1; // inclusive
++
++            if (end < 0 || end >= MAX_ALLOCATION || length >= MAX_LENGTH) {
++                return false;
++            }
++
++            if (!bypassMax && (from > this.maxOffset || length > this.maxLength || end > this.maxOffset)) {
++                return false;
++            }
++
++            final LongBidirectionalIterator iterator = this.freeBlocksByOffset.iterator(makeFreeBlock(from, 0));
++            // iterator.next > curr
++            // iterator.prev <= curr
++
++            if (!iterator.hasPrevious()) {
++                // only free blocks starting at from+1, if any
++                return false;
++            }
++
++            final long block = iterator.previousLong();
++            final int blockStart = getFreeBlockStart(block);
++            final int blockLength = getFreeBlockLength(block);
++            final int blockEnd = blockStart + blockLength - 1; // inclusive
++
++            if (from > blockEnd || end > blockEnd) {
++                return false;
++            }
++
++            if (from < blockStart) {
++                throw new IllegalStateException();
++            }
++
++            this.splitBlock(block, from, end);
++
++            return true;
++        }
++
++        public void freeAllocation(final int from, final int length) {
++            if (from < 0) {
++                throw new IllegalArgumentException("From must be >= 0");
++            }
++            if (length <= 0) {
++                throw new IllegalArgumentException("Length must be > 0");
++            }
++
++            final int end = from + length - 1;
++            if (end < 0 || end >= MAX_ALLOCATION || length >= MAX_LENGTH) {
++                throw new IllegalArgumentException("End sector must be in allocation range");
++            }
++
++            final LongBidirectionalIterator iterator = this.freeBlocksByOffset.iterator(makeFreeBlock(from, length));
++            // iterator.next > curr
++            // iterator.prev <= curr
++
++            long prev = -1L;
++            int prevStart = 0;
++            int prevEnd = 0;
++
++            long next = -1L;
++            int nextStart = 0;
++            int nextEnd = 0;
++
++            if (iterator.hasPrevious()) {
++                prev = iterator.previousLong();
++                prevStart = getFreeBlockStart(prev);
++                prevEnd = prevStart + getFreeBlockLength(prev) - 1;
++                // advance back for next usage
++                iterator.nextLong();
++            }
++
++            if (iterator.hasNext()) {
++                next = iterator.nextLong();
++                nextStart = getFreeBlockStart(next);
++                nextEnd = nextStart + getFreeBlockLength(next) - 1;
++            }
++
++            // first, check that we are not trying to free area in another free block
++            if (prev != -1L) {
++                if (from <= prevEnd && end >= prevStart) {
++                    throw new IllegalArgumentException("free call overlaps with already free block");
++                }
++            }
++
++            if (next != -1L) {
++                if (from <= nextEnd && end >= nextStart) {
++                    throw new IllegalArgumentException("free call overlaps with already free block");
++                }
++            }
++
++            // try to merge with left & right free blocks
++            int adjustedStart = from;
++            int adjustedEnd = end;
++            if (prev != -1L && (prevEnd + 1) == from) {
++                adjustedStart = prevStart;
++                // delete merged block
++                this.freeBlocksByOffset.remove(prev);
++                this.freeBlocksBySize.remove(prev);
++            }
++
++            if (next != -1L && nextStart == (end + 1)) {
++                adjustedEnd = nextEnd;
++                // delete merged block
++                this.freeBlocksByOffset.remove(next);
++                this.freeBlocksBySize.remove(next);
++            }
++
++            final long block = makeFreeBlock(adjustedStart, adjustedEnd - adjustedStart + 1);
++            // add merged free block
++            this.freeBlocksByOffset.add(block);
++            this.freeBlocksBySize.add(block);
++        }
++
++        // returns -1 if the allocation cannot be done due to length/position limitations
++        public int allocate(final int length, final boolean checkMaxOffset) {
++            if (length <= 0) {
++                throw new IllegalArgumentException("Length must be > 0");
++            }
++            if (length > this.maxLength) {
++                return -1;
++            }
++
++            if (this.freeBlocksBySize.isEmpty()) {
++                return -1;
++            }
++
++            final LongBidirectionalIterator iterator = this.freeBlocksBySize.iterator(makeFreeBlock(-1, length));
++            // iterator.next > curr
++            // iterator.prev <= curr
++
++            // if we use start = -1, then no block retrieved is <= curr as offset < 0 is invalid. Then, the iterator next()
++            // returns >= makeFreeBlock(0, length) where the comparison is first by length then sector offset.
++            // Thus, we can just select next() as the block to split. This makes the allocation best-fit in that it selects
++            // first the smallest block that can fit the allocation, and that the smallest block selected offset is
++            // as close to 0 compared to the rest of the blocks at the same size
++
++            final long block = iterator.nextLong();
++            final int blockStart = getFreeBlockStart(block);
++
++            final int allocStart = blockStart;
++            final int allocEnd = blockStart + length - 1;
++
++            if (allocStart < 0) {
++                throw new IllegalStateException();
++            }
++
++            if (allocEnd < 0) {
++                // overflow
++                return -1;
++            }
++
++            // note: we do not need to worry about overflow in splitBlock because the free blocks are only allocated
++            // in [0, MAX_ALLOCATION - 1]
++
++            if (checkMaxOffset && (allocEnd > this.maxOffset)) {
++                return -1;
++            }
++
++            this.splitBlock(block, allocStart, allocEnd);
++
++            return blockStart;
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/SectorFileCache.java b/src/main/java/ca/spottedleaf/io/region/SectorFileCache.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..30dd8eb252eb3e9a2c549f5ed3576ba67ec4a33d
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/SectorFileCache.java
+@@ -0,0 +1,276 @@
++package ca.spottedleaf.io.region;
++
++import ca.spottedleaf.io.buffer.BufferChoices;
++import io.papermc.paper.util.CoordinateUtils;
++import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
++import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.NbtAccounter;
++import net.minecraft.nbt.NbtIo;
++import net.minecraft.nbt.StreamTagVisitor;
++import net.minecraft.util.ExceptionCollector;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++import java.io.DataInput;
++import java.io.DataInputStream;
++import java.io.DataOutput;
++import java.io.File;
++import java.io.IOException;
++
++public final class SectorFileCache implements AutoCloseable {
++
++    private static final Logger LOGGER = LoggerFactory.getLogger(SectorFileCache.class);
++
++    private static final ThreadLocal<BufferChoices> BUFFER_CHOICES = ThreadLocal.withInitial(() -> BufferChoices.createNew(10));
++
++    public static BufferChoices getUnscopedBufferChoices() {
++        return BUFFER_CHOICES.get();
++    }
++
++    public final Long2ObjectLinkedOpenHashMap<SectorFile> sectorCache = new Long2ObjectLinkedOpenHashMap<>();
++    private final File directory;
++    private final boolean sync;
++    public final SectorFileTracer tracer;
++
++    private static final int MAX_NON_EXISTING_CACHE = 1024 * 64;
++    private final LongLinkedOpenHashSet nonExistingSectorFiles = new LongLinkedOpenHashSet();
++
++    private boolean doesSectorFilePossiblyExist(final long position) {
++        synchronized (this.nonExistingSectorFiles) {
++            if (this.nonExistingSectorFiles.contains(position)) {
++                this.nonExistingSectorFiles.addAndMoveToFirst(position);
++                return false;
++            }
++            return true;
++        }
++    }
++
++    private void createSectorFile(final long position) {
++        synchronized (this.nonExistingSectorFiles) {
++            this.nonExistingSectorFiles.remove(position);
++        }
++    }
++
++    private void markNonExisting(final long position) {
++        synchronized (this.nonExistingSectorFiles) {
++            if (this.nonExistingSectorFiles.addAndMoveToFirst(position)) {
++                while (this.nonExistingSectorFiles.size() >= MAX_NON_EXISTING_CACHE) {
++                    this.nonExistingSectorFiles.removeLastLong();
++                }
++            }
++        }
++    }
++
++    public boolean doesSectorFileNotExistNoIO(final int chunkX, final int chunkZ) {
++        return !this.doesSectorFilePossiblyExist(CoordinateUtils.getChunkKey(chunkX, chunkZ));
++    }
++
++    public SectorFileCache(final File directory, final boolean sync) {
++        this.directory = directory;
++        this.sync = sync;
++        SectorFileTracer tracer = null;
++        try {
++            tracer = new SectorFileTracer(new File(directory.getParentFile(), "sectorfile.tracer"));
++        } catch (final IOException ex) {
++            LOGGER.error("Failed to start tracer", ex);
++        }
++        this.tracer = tracer;
++    }
++
++    public synchronized SectorFile getRegionFileIfLoaded(final int chunkX, final int chunkZ) {
++        return this.sectorCache.getAndMoveToFirst(CoordinateUtils.getChunkKey(chunkX >> SectorFile.SECTION_SHIFT, chunkZ >> SectorFile.SECTION_SHIFT));
++    }
++
++    public synchronized boolean chunkExists(final BufferChoices unscopedBufferChoices, final int chunkX, final int chunkZ, final int type) throws IOException {
++        final SectorFile sectorFile = this.getSectorFile(unscopedBufferChoices, chunkX, chunkZ, true);
++
++        return sectorFile != null && sectorFile.hasData(chunkX & SectorFile.SECTION_MASK, chunkZ & SectorFile.SECTION_MASK, type);
++    }
++
++    private static ca.spottedleaf.io.region.SectorFileCompressionType getCompressionType() {
++        return switch (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.compressionFormat) {
++            case GZIP -> ca.spottedleaf.io.region.SectorFileCompressionType.GZIP;
++            case ZLIB -> ca.spottedleaf.io.region.SectorFileCompressionType.DEFLATE;
++            case NONE -> ca.spottedleaf.io.region.SectorFileCompressionType.NONE;
++            case LZ4 -> ca.spottedleaf.io.region.SectorFileCompressionType.LZ4;
++            case ZSTD -> ca.spottedleaf.io.region.SectorFileCompressionType.ZSTD;
++        };
++    }
++
++    public synchronized SectorFile getSectorFile(final BufferChoices unscopedBufferChoices, final int chunkX, final int chunkZ, boolean existingOnly) throws IOException {
++        final int sectionX = chunkX >> SectorFile.SECTION_SHIFT;
++        final int sectionZ = chunkZ >> SectorFile.SECTION_SHIFT;
++
++        final long sectionKey = CoordinateUtils.getChunkKey(sectionX, sectionZ);
++
++        SectorFile ret = this.sectorCache.getAndMoveToFirst(sectionKey);
++        if (ret != null) {
++            return ret;
++        }
++
++        if (existingOnly && !this.doesSectorFilePossiblyExist(sectionKey)) {
++            return null;
++        }
++
++        final File file = new File(this.directory, SectorFile.getFileName(sectionX, sectionZ));
++
++        if (existingOnly && !file.isFile()) {
++            this.markNonExisting(sectionKey);
++            return null;
++        }
++
++        if (this.sectorCache.size() >= io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize) {
++            final SectorFile sectorFile = this.sectorCache.removeLast();
++            sectorFile.close();
++            if (this.tracer != null) {
++                this.tracer.add(new SectorFileTracer.FileEvent(SectorFileTracer.FileEventType.CLOSE, sectionX, sectionZ));
++            }
++        }
++
++        if (this.tracer != null) {
++            if (file.isFile()) {
++                this.tracer.add(new SectorFileTracer.FileEvent(SectorFileTracer.FileEventType.OPEN, sectionX, sectionZ));
++            } else {
++                this.tracer.add(new SectorFileTracer.FileEvent(SectorFileTracer.FileEventType.CREATE, sectionX, sectionZ));
++            }
++        }
++
++        this.createSectorFile(sectionKey);
++
++        this.directory.mkdirs();
++
++        ret = new SectorFile(
++            file, sectionX, sectionZ, getCompressionType(), unscopedBufferChoices, MinecraftRegionFileType.getTranslationTable(),
++            (this.sync ? SectorFile.OPEN_FLAGS_SYNC_WRITES : 0)
++        );
++
++        this.sectorCache.putAndMoveToFirst(sectionKey, ret);
++
++        return ret;
++    }
++
++    public CompoundTag read(final BufferChoices unscopedBufferChoices, final int chunkX, final int chunkZ, final int type) throws IOException {
++        final SectorFile sectorFile = this.getSectorFile(unscopedBufferChoices, chunkX, chunkZ, true);
++
++        if (sectorFile == null) {
++            return null;
++        }
++
++        synchronized (sectorFile) {
++            try (final BufferChoices scopedBufferChoices = unscopedBufferChoices.scope();
++                 final DataInputStream is = sectorFile.read(
++                     scopedBufferChoices, chunkX & SectorFile.SECTION_MASK, chunkZ & SectorFile.SECTION_MASK,
++                     type, SectorFile.RECOMMENDED_READ_FLAGS)) {
++
++                if (this.tracer != null) {
++                    // cannot estimate size, available() does not pass through some of the decompressors
++                    this.tracer.add(new SectorFileTracer.DataEvent(SectorFileTracer.DataEventType.READ, chunkX, chunkZ, (byte)type, 0));
++                }
++
++                return is == null ? null : NbtIo.read((DataInput) is);
++            }
++        }
++    }
++
++    public void scanChunk(final BufferChoices unscopedBufferChoices, final int chunkX, final int chunkZ, final int type,
++                          final StreamTagVisitor scanner) throws IOException {
++        final SectorFile sectorFile = this.getSectorFile(unscopedBufferChoices, chunkX, chunkZ, true);
++
++        if (sectorFile == null) {
++            return;
++        }
++
++        synchronized (sectorFile) {
++            try (final BufferChoices scopedBufferChoices = unscopedBufferChoices.scope();
++                 final DataInputStream is = sectorFile.read(
++                     scopedBufferChoices, chunkX & SectorFile.SECTION_MASK, chunkZ & SectorFile.SECTION_MASK,
++                     type, SectorFile.RECOMMENDED_READ_FLAGS)) {
++
++                if (this.tracer != null) {
++                    // cannot estimate size, available() does not pass through some of the decompressors
++                    this.tracer.add(new SectorFileTracer.DataEvent(SectorFileTracer.DataEventType.READ, chunkX, chunkZ, (byte)type, 0));
++                }
++
++                if (is != null) {
++                    NbtIo.parse(is, scanner, NbtAccounter.unlimitedHeap());
++                }
++            }
++        }
++    }
++
++    public void write(final BufferChoices unscopedBufferChoices, final int chunkX, final int chunkZ, final int type, final CompoundTag nbt) throws IOException {
++        final SectorFile sectorFile = this.getSectorFile(unscopedBufferChoices, chunkX, chunkZ, nbt == null);
++        if (nbt == null && sectorFile == null) {
++            return;
++        }
++
++        synchronized (sectorFile) {
++            try (final BufferChoices scopedBufferChoices = unscopedBufferChoices.scope()) {
++                if (nbt == null) {
++                    if (this.tracer != null) {
++                        this.tracer.add(new SectorFileTracer.DataEvent(SectorFileTracer.DataEventType.DELETE, chunkX, chunkZ, (byte)type, 0));
++                    }
++                    sectorFile.delete(
++                        scopedBufferChoices, chunkX & SectorFile.SECTION_MASK,
++                        chunkZ & SectorFile.SECTION_MASK, type
++                    );
++                } else {
++                    final SectorFile.SectorFileOutput output = sectorFile.write(
++                        scopedBufferChoices, chunkX & SectorFile.SECTION_MASK, chunkZ & SectorFile.SECTION_MASK,
++                        type, null, 0
++                    );
++
++                    try {
++                        NbtIo.write(nbt, (DataOutput)output.outputStream());
++                        // need close() to force gzip/deflate/etc to write data through
++                        output.outputStream().close();
++                        if (this.tracer != null) {
++                            this.tracer.add(new SectorFileTracer.DataEvent(SectorFileTracer.DataEventType.WRITE, chunkX, chunkZ, (byte)type, output.rawOutput().getTotalCompressedSize()));
++                        }
++                    } finally {
++                        output.rawOutput().freeResources();
++                    }
++                }
++            }
++        }
++    }
++
++    @Override
++    public synchronized void close() throws IOException {
++        final ExceptionCollector<IOException> collector = new ExceptionCollector<>();
++
++        for (final SectorFile sectorFile : this.sectorCache.values()) {
++            try {
++                synchronized (sectorFile) {
++                    sectorFile.close();
++                }
++            } catch (final IOException ex) {
++                collector.add(ex);
++            }
++        }
++
++        this.sectorCache.clear();
++
++        if (this.tracer != null) {
++            this.tracer.close();
++        }
++
++        collector.throwIfPresent();
++    }
++
++    public synchronized void flush() throws IOException {
++        final ExceptionCollector<IOException> collector = new ExceptionCollector<>();
++
++        for (final SectorFile sectorFile : this.sectorCache.values()) {
++            try {
++                synchronized (sectorFile) {
++                    sectorFile.flush();
++                }
++            } catch (final IOException ex) {
++                collector.add(ex);
++            }
++        }
++
++        collector.throwIfPresent();
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/SectorFileCompressionType.java b/src/main/java/ca/spottedleaf/io/region/SectorFileCompressionType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..020d1f5617b6957924ffc5c13990686e8ac55f0e
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/SectorFileCompressionType.java
+@@ -0,0 +1,109 @@
++package ca.spottedleaf.io.region;
++
++import ca.spottedleaf.io.region.io.bytebuffer.ByteBufferInputStream;
++import ca.spottedleaf.io.region.io.bytebuffer.ByteBufferOutputStream;
++import ca.spottedleaf.io.region.io.java.SimpleBufferedInputStream;
++import ca.spottedleaf.io.region.io.java.SimpleBufferedOutputStream;
++import ca.spottedleaf.io.region.io.zstd.ZSTDInputStream;
++import ca.spottedleaf.io.region.io.zstd.ZSTDOutputStream;
++import ca.spottedleaf.io.buffer.BufferChoices;
++import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++import net.jpountz.lz4.LZ4BlockInputStream;
++import net.jpountz.lz4.LZ4BlockOutputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.OutputStream;
++import java.util.zip.DeflaterOutputStream;
++import java.util.zip.GZIPInputStream;
++import java.util.zip.GZIPOutputStream;
++import java.util.zip.InflaterInputStream;
++
++public abstract class SectorFileCompressionType {
++
++    private static final Int2ObjectMap<SectorFileCompressionType> BY_ID = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
++
++    public static final SectorFileCompressionType GZIP = new SectorFileCompressionType(1) {
++        @Override
++        public InputStream createInput(final BufferChoices scopedBufferChoices, final ByteBufferInputStream input) throws IOException {
++            return new SimpleBufferedInputStream(new GZIPInputStream(input), scopedBufferChoices.t16k().acquireJavaBuffer());
++        }
++
++        @Override
++        public OutputStream createOutput(final BufferChoices scopedBufferChoices, final ByteBufferOutputStream output) throws IOException {
++            return new SimpleBufferedOutputStream(new GZIPOutputStream(output), scopedBufferChoices.t16k().acquireJavaBuffer());
++        }
++    };
++    public static final SectorFileCompressionType DEFLATE = new SectorFileCompressionType(2) {
++        @Override
++        public InputStream createInput(final BufferChoices scopedBufferChoices, final ByteBufferInputStream input) throws IOException {
++            return new SimpleBufferedInputStream(new InflaterInputStream(input), scopedBufferChoices.t16k().acquireJavaBuffer());
++        }
++
++        @Override
++        public OutputStream createOutput(final BufferChoices scopedBufferChoices, final ByteBufferOutputStream output) throws IOException {
++            return new SimpleBufferedOutputStream(new DeflaterOutputStream(output), scopedBufferChoices.t16k().acquireJavaBuffer());
++        }
++    };
++    public static final SectorFileCompressionType NONE = new SectorFileCompressionType(3) {
++        @Override
++        public InputStream createInput(final BufferChoices scopedBufferChoices, final ByteBufferInputStream input) throws IOException {
++            return input;
++        }
++
++        @Override
++        public OutputStream createOutput(final BufferChoices scopedBufferChoices, final ByteBufferOutputStream output) throws IOException {
++            return output;
++        }
++    };
++    public static final SectorFileCompressionType LZ4 = new SectorFileCompressionType(4) {
++        @Override
++        public InputStream createInput(final BufferChoices scopedBufferChoices, final ByteBufferInputStream input) throws IOException {
++            return new SimpleBufferedInputStream(new LZ4BlockInputStream(input), scopedBufferChoices.t16k().acquireJavaBuffer());
++        }
++
++        @Override
++        public OutputStream createOutput(final BufferChoices scopedBufferChoices, final ByteBufferOutputStream output) throws IOException {
++            return new SimpleBufferedOutputStream(new LZ4BlockOutputStream(output), scopedBufferChoices.t16k().acquireJavaBuffer());
++        }
++    };
++    public static final SectorFileCompressionType ZSTD = new SectorFileCompressionType(5) {
++        @Override
++        public InputStream createInput(final BufferChoices scopedBufferChoices, final ByteBufferInputStream input) throws IOException {
++            return new ZSTDInputStream(
++                    scopedBufferChoices.t16k().acquireDirectBuffer(), scopedBufferChoices.t16k().acquireDirectBuffer(),
++                    scopedBufferChoices.zstdCtxs().acquireDecompressor(), null, input
++            );
++        }
++
++        @Override
++        public OutputStream createOutput(final BufferChoices scopedBufferChoices, final ByteBufferOutputStream output) throws IOException {
++            return new ZSTDOutputStream(
++                    scopedBufferChoices.t16k().acquireDirectBuffer(), scopedBufferChoices.t16k().acquireDirectBuffer(),
++                    scopedBufferChoices.zstdCtxs().acquireCompressor(), null, output
++            );
++        }
++    };
++
++    private final int id;
++
++    protected SectorFileCompressionType(final int id) {
++        this.id = id;
++        if (BY_ID.putIfAbsent(id, this) != null) {
++            throw new IllegalArgumentException("Duplicate id");
++        }
++    }
++
++    public final int getId() {
++        return this.id;
++    }
++
++    public abstract InputStream createInput(final BufferChoices scopedBufferChoices, final ByteBufferInputStream input) throws IOException;
++
++    public abstract OutputStream createOutput(final BufferChoices scopedBufferChoices, final ByteBufferOutputStream output) throws IOException;
++
++    public static SectorFileCompressionType getById(final int id) {
++        return BY_ID.get(id);
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/SectorFileTracer.java b/src/main/java/ca/spottedleaf/io/region/SectorFileTracer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cbf8effbddadefe4004e3e3824cd9436d4f1a61e
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/SectorFileTracer.java
+@@ -0,0 +1,183 @@
++package ca.spottedleaf.io.region;
++
++import ca.spottedleaf.io.region.io.bytebuffer.BufferedFileChannelInputStream;
++import ca.spottedleaf.io.region.io.bytebuffer.BufferedFileChannelOutputStream;
++import ca.spottedleaf.io.region.io.java.SimpleBufferedInputStream;
++import ca.spottedleaf.io.region.io.java.SimpleBufferedOutputStream;
++import ca.spottedleaf.io.region.io.zstd.ZSTDOutputStream;
++import com.github.luben.zstd.ZstdCompressCtx;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++import java.io.Closeable;
++import java.io.DataInput;
++import java.io.DataInputStream;
++import java.io.DataOutput;
++import java.io.DataOutputStream;
++import java.io.File;
++import java.io.IOException;
++import java.io.InputStream;
++import java.nio.ByteBuffer;
++import java.util.ArrayDeque;
++import java.util.ArrayList;
++import java.util.List;
++
++public final class SectorFileTracer implements Closeable {
++
++    private static final Logger LOGGER = LoggerFactory.getLogger(SectorFileTracer.class);
++
++    private final File file;
++    private final DataOutputStream out;
++    private final ArrayDeque<Writable> objects = new ArrayDeque<>();
++
++    private static final int MAX_STORED_OBJECTS = 128;
++    private static final TraceEventType[] EVENT_TYPES = TraceEventType.values();
++
++    public SectorFileTracer(final File file) throws IOException {
++        this.file = file;
++
++        file.getParentFile().mkdirs();
++        file.delete();
++        file.createNewFile();
++
++        final int bufferSize = 8 * 1024;
++
++        this.out = new DataOutputStream(
++            new SimpleBufferedOutputStream(
++                new BufferedFileChannelOutputStream(ByteBuffer.allocateDirect(bufferSize), file.toPath(), true),
++                new byte[bufferSize]
++            )
++        );
++    }
++
++    public synchronized void add(final Writable writable) {
++        this.objects.add(writable);
++        if (this.objects.size() >= MAX_STORED_OBJECTS) {
++            Writable polled = null;
++            try {
++                while ((polled = this.objects.poll()) != null) {
++                    polled.write(this.out);
++                }
++            } catch (final IOException ex) {
++                LOGGER.error("Failed to write " + polled + ": ", ex);
++            }
++        }
++    }
++
++    @Override
++    public synchronized void close() throws IOException {
++        try {
++            Writable polled;
++            while ((polled = this.objects.poll()) != null) {
++                polled.write(this.out);
++            }
++        } finally {
++            this.out.close();
++        }
++    }
++
++    private static Writable read(final DataInputStream input) throws IOException {
++        final int next = input.read();
++        if (next == -1) {
++            return null;
++        }
++
++        final TraceEventType event = EVENT_TYPES[next & 0xFF];
++
++        switch (event) {
++            case DATA: {
++                return DataEvent.read(input);
++            }
++            case FILE: {
++                return FileEvent.read(input);
++            }
++            default: {
++                throw new IllegalStateException("Unknown event: " + event);
++            }
++        }
++    }
++
++    public static List<Writable> read(final File file) throws IOException {
++        final List<Writable> ret = new ArrayList<>();
++
++        final int bufferSize = 8 * 1024;
++
++        try (final DataInputStream is = new DataInputStream(
++            new SimpleBufferedInputStream(
++                new BufferedFileChannelInputStream(ByteBuffer.allocateDirect(bufferSize), file),
++                new byte[bufferSize]
++            )
++        )) {
++            Writable curr;
++            while ((curr = read(is)) != null) {
++                ret.add(curr);
++            }
++
++            return ret;
++        }
++    }
++
++    public static interface Writable {
++        public void write(final DataOutput out) throws IOException;
++    }
++
++    public static enum TraceEventType {
++        FILE, DATA;
++    }
++
++    public static enum FileEventType {
++        CREATE, OPEN, CLOSE;
++    }
++
++    public static record FileEvent(
++        FileEventType eventType, int sectionX, int sectionZ
++    ) implements Writable {
++        private static final FileEventType[] TYPES = FileEventType.values();
++
++        @Override
++        public void write(final DataOutput out) throws IOException {
++            out.writeByte(TraceEventType.FILE.ordinal());
++            out.writeByte(this.eventType().ordinal());
++            out.writeInt(this.sectionX());
++            out.writeInt(this.sectionZ());
++        }
++
++        public static FileEvent read(final DataInput input) throws IOException {
++            return new FileEvent(
++                TYPES[(int)input.readByte() & 0xFF],
++                input.readInt(),
++                input.readInt()
++            );
++        }
++    }
++
++    public static enum DataEventType {
++        READ, WRITE, DELETE;
++    }
++
++    public static record DataEvent(
++        DataEventType eventType, int chunkX, int chunkZ, byte type, int size
++    ) implements Writable {
++
++        private static final DataEventType[] TYPES = DataEventType.values();
++
++        @Override
++        public void write(final DataOutput out) throws IOException {
++            out.writeByte(TraceEventType.DATA.ordinal());
++            out.writeByte(this.eventType().ordinal());
++            out.writeInt(this.chunkX());
++            out.writeInt(this.chunkZ());
++            out.writeByte(this.type());
++            out.writeInt(this.size());
++        }
++
++        public static DataEvent read(final DataInput input) throws IOException {
++            return new DataEvent(
++                TYPES[(int)input.readByte() & 0xFF],
++                input.readInt(),
++                input.readInt(),
++                input.readByte(),
++                input.readInt()
++            );
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/BufferedFileChannelInputStream.java b/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/BufferedFileChannelInputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8c98cb471dddd19a6d7265a9abbc04aa971ede3d
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/BufferedFileChannelInputStream.java
+@@ -0,0 +1,68 @@
++package ca.spottedleaf.io.region.io.bytebuffer;
++
++import java.io.File;
++import java.io.IOException;
++import java.nio.ByteBuffer;
++import java.nio.channels.FileChannel;
++import java.nio.file.Path;
++import java.nio.file.StandardOpenOption;
++
++public class BufferedFileChannelInputStream extends ByteBufferInputStream {
++
++    protected final FileChannel input;
++
++    public BufferedFileChannelInputStream(final ByteBuffer buffer, final File file) throws IOException {
++        this(buffer, file.toPath());
++    }
++
++    public BufferedFileChannelInputStream(final ByteBuffer buffer, final Path path) throws IOException {
++        super(buffer);
++
++        this.input = FileChannel.open(path, StandardOpenOption.READ);
++
++        // ensure we can fully utilise the buffer
++        buffer.limit(buffer.capacity());
++        buffer.position(buffer.capacity());
++    }
++
++    @Override
++    public int available() throws IOException {
++        final long avail = (long)super.available() + (this.input.size() - this.input.position());
++
++        final int ret;
++        if (avail < 0) {
++            ret = 0;
++        } else if (avail > (long)Integer.MAX_VALUE) {
++            ret = Integer.MAX_VALUE;
++        } else {
++            ret = (int)avail;
++        }
++
++        return ret;
++    }
++
++    @Override
++    protected ByteBuffer refill(final ByteBuffer current) throws IOException {
++        // note: limit = capacity
++        current.flip();
++
++        this.input.read(current);
++
++        current.flip();
++
++        return current;
++    }
++
++    @Override
++    public void close() throws IOException {
++        try {
++            super.close();
++        } finally {
++            // force any read calls to go to refill()
++            this.buffer.limit(this.buffer.capacity());
++            this.buffer.position(this.buffer.capacity());
++
++            this.input.close();
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/BufferedFileChannelOutputStream.java b/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/BufferedFileChannelOutputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..98c661a8bfac97a208cd0b20fe5a666f5d2e34de
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/BufferedFileChannelOutputStream.java
+@@ -0,0 +1,45 @@
++package ca.spottedleaf.io.region.io.bytebuffer;
++
++import java.io.IOException;
++import java.nio.ByteBuffer;
++import java.nio.channels.FileChannel;
++import java.nio.file.Path;
++import java.nio.file.StandardOpenOption;
++
++public class BufferedFileChannelOutputStream extends ByteBufferOutputStream {
++
++    private final FileChannel channel;
++
++    public BufferedFileChannelOutputStream(final ByteBuffer buffer, final Path path, final boolean append) throws IOException {
++        super(buffer);
++
++        if (append) {
++            this.channel = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
++        } else {
++            this.channel = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
++        }
++    }
++
++    @Override
++    protected ByteBuffer flush(final ByteBuffer current) throws IOException {
++        current.flip();
++
++        while (current.hasRemaining()) {
++            this.channel.write(current);
++        }
++
++        current.limit(current.capacity());
++        current.position(0);
++
++        return current;
++    }
++
++    @Override
++    public void close() throws IOException {
++        try {
++            super.close();
++        } finally {
++            this.channel.close();
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/ByteBufferInputStream.java b/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/ByteBufferInputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8ea05e286a43010afbf3bf4292bfe3d3f911d159
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/ByteBufferInputStream.java
+@@ -0,0 +1,112 @@
++package ca.spottedleaf.io.region.io.bytebuffer;
++
++import java.io.IOException;
++import java.io.InputStream;
++import java.nio.ByteBuffer;
++
++public class ByteBufferInputStream extends InputStream {
++
++    protected ByteBuffer buffer;
++
++    public ByteBufferInputStream(final ByteBuffer buffer) {
++        this.buffer = buffer;
++    }
++
++    protected ByteBuffer refill(final ByteBuffer current) throws IOException {
++        return current;
++    }
++
++    @Override
++    public int read() throws IOException {
++        if (this.buffer.hasRemaining()) {
++            return (int)this.buffer.get() & 0xFF;
++        }
++
++        this.buffer = this.refill(this.buffer);
++        if (!this.buffer.hasRemaining()) {
++            return -1;
++        }
++        return (int)this.buffer.get() & 0xFF;
++    }
++
++    @Override
++    public int read(final byte[] b) throws IOException {
++        return this.read(b, 0, b.length);
++    }
++
++    @Override
++    public int read(final byte[] b, final int off, final int len) throws IOException {
++        if (((len | off) | (off + len) | (b.length - (off + len))) < 0) {
++            // length < 0 || off < 0 || (off + len) < 0
++            throw new IndexOutOfBoundsException();
++        }
++
++        // only return 0 when len = 0
++        if (len == 0) {
++            return 0;
++        }
++
++        int remaining = this.buffer.remaining();
++        if (remaining <= 0) {
++            this.buffer = this.refill(this.buffer);
++            remaining = this.buffer.remaining();
++
++            if (remaining <= 0) {
++                return -1;
++            }
++        }
++
++        final int toRead = Math.min(remaining, len);
++        this.buffer.get(b, off, toRead);
++
++        return toRead;
++    }
++
++    public int read(final ByteBuffer dst) throws IOException {
++        final int off = dst.position();
++        final int len = dst.remaining();
++
++        // assume buffer position/limits are valid
++
++        if (len == 0) {
++            return 0;
++        }
++
++        int remaining = this.buffer.remaining();
++        if (remaining <= 0) {
++            this.buffer = this.refill(this.buffer);
++            remaining = this.buffer.remaining();
++
++            if (remaining <= 0) {
++                return -1;
++            }
++        }
++
++        final int toRead = Math.min(remaining, len);
++
++        dst.put(off, this.buffer, this.buffer.position(), toRead);
++
++        this.buffer.position(this.buffer.position() + toRead);
++        dst.position(off + toRead);
++
++        return toRead;
++    }
++
++    @Override
++    public long skip(final long n) throws IOException {
++        final int remaining = this.buffer.remaining();
++
++        final long toSkip = Math.min(n, (long)remaining);
++
++        if (toSkip > 0) {
++            this.buffer.position(this.buffer.position() + (int)toSkip);
++        }
++
++        return Math.max(0, toSkip);
++    }
++
++    @Override
++    public int available() throws IOException {
++        return this.buffer.remaining();
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/ByteBufferOutputStream.java b/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/ByteBufferOutputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..024e756a9d88981e44b027bfe5a7a7f26d069dd2
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/io/bytebuffer/ByteBufferOutputStream.java
+@@ -0,0 +1,114 @@
++package ca.spottedleaf.io.region.io.bytebuffer;
++
++import java.io.IOException;
++import java.io.OutputStream;
++import java.nio.ByteBuffer;
++
++public abstract class ByteBufferOutputStream extends OutputStream {
++
++    protected ByteBuffer buffer;
++
++    public ByteBufferOutputStream(final ByteBuffer buffer) {
++        this.buffer = buffer;
++    }
++
++    // always returns a buffer with remaining > 0
++    protected abstract ByteBuffer flush(final ByteBuffer current) throws IOException;
++
++    @Override
++    public void write(final int b) throws IOException {
++        if (this.buffer == null) {
++            throw new IOException("Closed stream");
++        }
++
++        if (this.buffer.hasRemaining()) {
++            this.buffer.put((byte)b);
++            return;
++        }
++
++        this.buffer = this.flush(this.buffer);
++        this.buffer.put((byte)b);
++    }
++
++    @Override
++    public void write(final byte[] b) throws IOException {
++        this.write(b, 0, b.length);
++    }
++
++    @Override
++    public void write(final byte[] b, int off, int len) throws IOException {
++        if (((len | off) | (off + len) | (b.length - (off + len))) < 0) {
++            // length < 0 || off < 0 || (off + len) < 0
++            throw new IndexOutOfBoundsException();
++        }
++
++        if (this.buffer == null) {
++            throw new IOException("Closed stream");
++        }
++
++        while (len > 0) {
++            final int maxWrite = Math.min(this.buffer.remaining(), len);
++
++            if (maxWrite == 0) {
++                this.buffer = this.flush(this.buffer);
++                continue;
++            }
++
++            this.buffer.put(b, off, maxWrite);
++
++            off += maxWrite;
++            len -= maxWrite;
++        }
++    }
++
++    public void write(final ByteBuffer buffer) throws IOException {
++        if (this.buffer == null) {
++            throw new IOException("Closed stream");
++        }
++
++        int off = buffer.position();
++        int remaining = buffer.remaining();
++
++        while (remaining > 0) {
++            final int maxWrite = Math.min(this.buffer.remaining(), remaining);
++
++            if (maxWrite == 0) {
++                this.buffer = this.flush(this.buffer);
++                continue;
++            }
++
++            final int thisOffset = this.buffer.position();
++
++            this.buffer.put(thisOffset, buffer, off, maxWrite);
++
++            off += maxWrite;
++            remaining -= maxWrite;
++
++            // update positions in case flush() throws or needs to be called
++            this.buffer.position(thisOffset + maxWrite);
++            buffer.position(off);
++        }
++    }
++
++    @Override
++    public void flush() throws IOException {
++        if (this.buffer == null) {
++            throw new IOException("Closed stream");
++        }
++
++        this.buffer = this.flush(this.buffer);
++    }
++
++    @Override
++    public void close() throws IOException {
++        if (this.buffer == null) {
++            return;
++        }
++
++        try {
++            this.flush();
++        } finally {
++            this.buffer = null;
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/io/java/SimpleBufferedInputStream.java b/src/main/java/ca/spottedleaf/io/region/io/java/SimpleBufferedInputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7a53f69fcd13cc4b784244bc35a768cfbf0ffd41
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/io/java/SimpleBufferedInputStream.java
+@@ -0,0 +1,137 @@
++package ca.spottedleaf.io.region.io.java;
++
++import java.io.IOException;
++import java.io.InputStream;
++
++public class SimpleBufferedInputStream extends InputStream {
++
++    protected static final int DEFAULT_BUFFER_SIZE = 8192;
++
++    protected InputStream input;
++    protected byte[] buffer;
++    protected int pos;
++    protected int max;
++
++    public SimpleBufferedInputStream(final InputStream input) {
++        this(input, DEFAULT_BUFFER_SIZE);
++    }
++
++    public SimpleBufferedInputStream(final InputStream input, final int bufferSize) {
++        this(input, new byte[bufferSize]);
++    }
++
++    public SimpleBufferedInputStream(final InputStream input, final byte[] buffer) {
++        if (buffer.length == 0) {
++            throw new IllegalArgumentException("Buffer size must be > 0");
++        }
++
++        this.input = input;
++        this.buffer = buffer;
++        this.pos = this.max = 0;
++    }
++
++    private void fill() throws IOException {
++        if (this.max < 0) {
++            // already read EOF
++            return;
++        }
++        // assume pos = buffer.length
++        this.max = this.input.read(this.buffer, 0, this.buffer.length);
++        this.pos = 0;
++    }
++
++    @Override
++    public int read() throws IOException {
++        if (this.buffer == null) {
++            throw new IOException("Closed stream");
++        }
++
++        if (this.pos < this.max) {
++            return (int)this.buffer[this.pos++] & 0xFF;
++        }
++
++        this.fill();
++
++        if (this.pos < this.max) {
++            return (int)this.buffer[this.pos++] & 0xFF;
++        }
++
++        return -1;
++    }
++
++    @Override
++    public int read(final byte[] b) throws IOException {
++        return this.read(b, 0, b.length);
++    }
++
++    @Override
++    public int read(final byte[] b, final int off, final int len) throws IOException {
++        if (((len | off) | (off + len) | (b.length - (off + len))) < 0) {
++            // length < 0 || off < 0 || (off + len) < 0
++            throw new IndexOutOfBoundsException();
++        }
++
++        if (this.buffer == null) {
++            throw new IOException("Closed stream");
++        }
++
++        if (len == 0) {
++            return 0;
++        }
++
++        if (this.pos >= this.max) {
++            if (len >= this.buffer.length) {
++                // bypass buffer
++                return this.input.read(b, off, len);
++            }
++
++            this.fill();
++            if (this.pos >= this.max) {
++                return -1;
++            }
++        }
++
++        final int maxRead = Math.min(this.max - this.pos, len);
++
++        System.arraycopy(this.buffer, this.pos, b, off, maxRead);
++
++        this.pos += maxRead;
++
++        return maxRead;
++    }
++
++    @Override
++    public long skip(final long n) throws IOException {
++        final int remaining = this.max - this.pos;
++
++        final long toSkip = Math.min(n, (long)remaining);
++
++        if (toSkip > 0) {
++            this.pos += (int)toSkip;
++        }
++
++        return Math.max(0, toSkip);
++    }
++
++    @Override
++    public int available() throws IOException {
++        if (this.input == null) {
++            throw new IOException("Closed stream");
++        }
++
++        final int upper = Math.max(0, this.input.available());
++        final int ret = upper + Math.max(0, this.max - this.pos);
++
++        return ret < 0 ? Integer.MAX_VALUE : ret; // ret < 0 when overflow
++    }
++
++    @Override
++    public void close() throws IOException {
++        try {
++            this.input.close();
++        } finally {
++            this.input = null;
++            this.buffer = null;
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/io/java/SimpleBufferedOutputStream.java b/src/main/java/ca/spottedleaf/io/region/io/java/SimpleBufferedOutputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a237b642b5f30d87098d43055fe044121473bcb1
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/io/java/SimpleBufferedOutputStream.java
+@@ -0,0 +1,113 @@
++package ca.spottedleaf.io.region.io.java;
++
++import java.io.IOException;
++import java.io.OutputStream;
++
++public class SimpleBufferedOutputStream extends OutputStream {
++
++    protected static final int DEFAULT_BUFFER_SIZE = 8192;
++
++    protected OutputStream output;
++    protected byte[] buffer;
++    protected int pos;
++
++    public SimpleBufferedOutputStream(final OutputStream output) {
++        this(output, DEFAULT_BUFFER_SIZE);
++    }
++
++    public SimpleBufferedOutputStream(final OutputStream output, final int bufferSize) {
++        this(output, new byte[bufferSize]);
++    }
++
++    public SimpleBufferedOutputStream(final OutputStream output, final byte[] buffer) {
++        if (buffer.length == 0) {
++            throw new IllegalArgumentException("Buffer size must be > 0");
++        }
++
++        this.output = output;
++        this.buffer = buffer;
++        this.pos = 0;
++    }
++
++    protected void writeBuffer() throws IOException {
++        if (this.pos > 0) {
++            this.output.write(this.buffer, 0, this.pos);
++            this.pos = 0;
++        }
++    }
++
++    @Override
++    public void write(final int b) throws IOException {
++        if (this.buffer == null) {
++            throw new IOException("Closed stream");
++        }
++
++        if (this.pos < this.buffer.length) {
++            this.buffer[this.pos++] = (byte)b;
++        } else {
++            this.writeBuffer();
++            this.buffer[this.pos++] = (byte)b;
++        }
++    }
++
++    @Override
++    public void write(final byte[] b) throws IOException {
++        this.write(b, 0, b.length);
++    }
++
++    @Override
++    public void write(final byte[] b, int off, int len) throws IOException {
++        if (((len | off) | (off + len) | (b.length - (off + len))) < 0) {
++            // length < 0 || off < 0 || (off + len) < 0
++            throw new IndexOutOfBoundsException();
++        }
++
++        if (this.buffer == null) {
++            throw new IOException("Closed stream");
++        }
++
++        while (len > 0) {
++            final int maxBuffer = Math.min(len, this.buffer.length - this.pos);
++
++            if (maxBuffer == 0) {
++                this.writeBuffer();
++
++                if (len >= this.buffer.length) {
++                    // bypass buffer
++                    this.output.write(b, off, len);
++                    return;
++                }
++
++                continue;
++            }
++
++            System.arraycopy(b, off, this.buffer, this.pos, maxBuffer);
++            this.pos += maxBuffer;
++            off += maxBuffer;
++            len -= maxBuffer;
++        }
++    }
++
++    @Override
++    public void flush() throws IOException {
++        this.writeBuffer();
++    }
++
++    @Override
++    public void close() throws IOException {
++        if (this.buffer == null) {
++            return;
++        }
++
++        try {
++            this.flush();
++        } finally {
++            try {
++                this.output.close();
++            } finally {
++                this.output = null;
++                this.buffer = null;
++            }
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/io/zstd/ZSTDInputStream.java b/src/main/java/ca/spottedleaf/io/region/io/zstd/ZSTDInputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..99d9ef991a715a7c06bf0ceee464ea1b9ce2b7dc
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/io/zstd/ZSTDInputStream.java
+@@ -0,0 +1,148 @@
++package ca.spottedleaf.io.region.io.zstd;
++
++import ca.spottedleaf.io.region.io.bytebuffer.ByteBufferInputStream;
++import com.github.luben.zstd.Zstd;
++import com.github.luben.zstd.ZstdDecompressCtx;
++import com.github.luben.zstd.ZstdIOException;
++import java.io.EOFException;
++import java.io.IOException;
++import java.nio.ByteBuffer;
++import java.util.function.Consumer;
++
++public class ZSTDInputStream extends ByteBufferInputStream {
++
++    private ByteBuffer compressedBuffer;
++    private ZstdDecompressCtx decompressor;
++    private Consumer<ZstdDecompressCtx> closeDecompressor;
++    private ByteBufferInputStream wrap;
++    private boolean lastDecompressFlushed;
++    private boolean done;
++
++    public ZSTDInputStream(final ByteBuffer decompressedBuffer, final ByteBuffer compressedBuffer,
++                           final ZstdDecompressCtx decompressor,
++                           final Consumer<ZstdDecompressCtx> closeDecompressor,
++                           final ByteBufferInputStream wrap) {
++        super(decompressedBuffer);
++
++        if (!decompressedBuffer.isDirect() || !compressedBuffer.isDirect()) {
++            throw new IllegalArgumentException("Buffers must be direct");
++        }
++
++        // set position to max so that we force the first read to go to wrap
++
++        decompressedBuffer.limit(decompressedBuffer.capacity());
++        decompressedBuffer.position(decompressedBuffer.capacity());
++
++        compressedBuffer.limit(compressedBuffer.capacity());
++        compressedBuffer.position(compressedBuffer.capacity());
++
++        synchronized (this) {
++            this.decompressor = decompressor;
++            this.closeDecompressor = closeDecompressor;
++            this.compressedBuffer = compressedBuffer;
++            this.wrap = wrap;
++        }
++    }
++
++    protected synchronized ByteBuffer refillCompressed(final ByteBuffer current) throws IOException {
++        current.limit(current.capacity());
++        current.position(0);
++
++        try {
++            this.wrap.read(current);
++        } finally {
++            current.flip();
++        }
++
++        return current;
++    }
++
++    @Override
++    public synchronized int available() throws IOException {
++        if (this.decompressor == null) {
++            return 0;
++        }
++
++        final long ret = (long)super.available() + (long)this.compressedBuffer.remaining() + (long)this.wrap.available();
++
++        if (ret < 0L) {
++            return 0;
++        } else if (ret > (long)Integer.MAX_VALUE) {
++            return Integer.MAX_VALUE;
++        }
++
++        return (int)ret;
++    }
++
++    @Override
++    protected synchronized final ByteBuffer refill(final ByteBuffer current) throws IOException {
++        if (this.decompressor == null) {
++            throw new EOFException();
++        }
++
++        if (this.done) {
++            return current;
++        }
++
++        ByteBuffer compressedBuffer = this.compressedBuffer;
++        final ZstdDecompressCtx decompressor = this.decompressor;
++
++        for (;;) {
++            if (!compressedBuffer.hasRemaining()) {
++                // try to read more data into source
++                this.compressedBuffer = compressedBuffer = this.refillCompressed(compressedBuffer);
++
++                if (!compressedBuffer.hasRemaining()) {
++                    // EOF
++                    if (!this.lastDecompressFlushed) {
++                        throw new ZstdIOException(Zstd.errCorruptionDetected(), "Truncated stream");
++                    }
++                    return current;
++                } else {
++                    // more data to decompress, so reset the last flushed
++                    this.lastDecompressFlushed = false;
++                }
++            }
++
++            current.limit(current.capacity());
++            current.position(0);
++
++            try {
++                this.lastDecompressFlushed = decompressor.decompressDirectByteBufferStream(current, compressedBuffer);
++            } finally {
++                // if decompressDirectByteBufferStream throws, then current.limit = position = 0
++                current.flip();
++            }
++
++            if (current.hasRemaining()) {
++                return current;
++            } else if (this.lastDecompressFlushed) {
++                this.done = true;
++                return current;
++            } // else: need more data
++        }
++    }
++
++    @Override
++    public synchronized void close() throws IOException {
++        if (this.decompressor == null) {
++            return;
++        }
++
++        final ZstdDecompressCtx decompressor = this.decompressor;
++        final ByteBufferInputStream wrap = this.wrap;
++        final Consumer<ZstdDecompressCtx> closeDecompressor = this.closeDecompressor;
++        this.decompressor = null;
++        this.compressedBuffer = null;
++        this.closeDecompressor = null;
++        this.wrap = null;
++
++        try {
++            if (closeDecompressor != null) {
++                closeDecompressor.accept(decompressor);
++            }
++        } finally {
++            wrap.close();
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/io/region/io/zstd/ZSTDOutputStream.java b/src/main/java/ca/spottedleaf/io/region/io/zstd/ZSTDOutputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..797f079800984607bb9022badf9ebb27b5d3043d
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/io/region/io/zstd/ZSTDOutputStream.java
+@@ -0,0 +1,141 @@
++package ca.spottedleaf.io.region.io.zstd;
++
++import ca.spottedleaf.io.region.io.bytebuffer.ByteBufferOutputStream;
++import com.github.luben.zstd.EndDirective;
++import com.github.luben.zstd.ZstdCompressCtx;
++import java.io.IOException;
++import java.nio.ByteBuffer;
++import java.util.function.Consumer;
++
++public class ZSTDOutputStream extends ByteBufferOutputStream {
++
++    protected static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocateDirect(0);
++
++    private ByteBuffer compressedBuffer;
++    private ZstdCompressCtx compressor;
++    private Consumer<ZstdCompressCtx> closeCompressor;
++    private ByteBufferOutputStream wrap;
++
++    public ZSTDOutputStream(final ByteBuffer decompressedBuffer, final ByteBuffer compressedBuffer,
++                            final ZstdCompressCtx compressor,
++                            final Consumer<ZstdCompressCtx> closeCompressor,
++                            final ByteBufferOutputStream wrap) {
++        super(decompressedBuffer);
++
++        if (!decompressedBuffer.isDirect() || !compressedBuffer.isDirect()) {
++            throw new IllegalArgumentException("Buffers must be direct");
++        }
++
++        decompressedBuffer.limit(decompressedBuffer.capacity());
++        decompressedBuffer.position(0);
++
++        compressedBuffer.limit(compressedBuffer.capacity());
++        compressedBuffer.position(0);
++
++        synchronized (this) {
++            this.compressedBuffer = compressedBuffer;
++            this.compressor = compressor;
++            this.closeCompressor = closeCompressor;
++            this.wrap = wrap;
++        }
++    }
++
++    protected synchronized ByteBuffer emptyBuffer(final ByteBuffer toFlush) throws IOException {
++        toFlush.flip();
++
++        if (toFlush.hasRemaining()) {
++            this.wrap.write(toFlush);
++        }
++
++        toFlush.limit(toFlush.capacity());
++        toFlush.position(0);
++
++        return toFlush;
++    }
++
++    @Override
++    protected synchronized final ByteBuffer flush(final ByteBuffer current) throws IOException {
++        current.flip();
++
++        while (current.hasRemaining()) {
++            if (!this.compressedBuffer.hasRemaining()) {
++                this.compressedBuffer = this.emptyBuffer(this.compressedBuffer);
++            }
++            this.compressor.compressDirectByteBufferStream(this.compressedBuffer, current, EndDirective.CONTINUE);
++        }
++
++        current.limit(current.capacity());
++        current.position(0);
++
++        return current;
++    }
++
++    @Override
++    public synchronized void flush() throws IOException {
++        // flush all buffered data to zstd stream first
++        super.flush();
++
++        // now try to dump compressor buffers
++        do {
++            if (!this.compressedBuffer.hasRemaining()) {
++                this.compressedBuffer = this.emptyBuffer(this.compressedBuffer);
++            }
++        } while (!this.compressor.compressDirectByteBufferStream(this.compressedBuffer, EMPTY_BUFFER, EndDirective.FLUSH));
++
++        // empty compressed buffer into wrap
++        if (this.compressedBuffer.position() != 0) {
++            this.compressedBuffer = this.emptyBuffer(this.compressedBuffer);
++        }
++
++        this.wrap.flush();
++    }
++
++    @Override
++    public synchronized void close() throws IOException {
++        if (this.compressor == null) {
++            // already closed
++            return;
++        }
++
++        try {
++            // flush data to compressor
++            try {
++                super.flush();
++            } finally {
++                // perform super.close
++                // the reason we inline this is so that we do not call our flush(), so that we do not perform ZSTD FLUSH + END,
++                // which is slightly more inefficient than just END
++                this.buffer = null;
++            }
++
++            // perform end stream
++            do {
++                if (!this.compressedBuffer.hasRemaining()) {
++                    this.compressedBuffer = this.emptyBuffer(this.compressedBuffer);
++                }
++            } while (!this.compressor.compressDirectByteBufferStream(this.compressedBuffer, EMPTY_BUFFER, EndDirective.END));
++
++            // flush compressed buffer
++            if (this.compressedBuffer.position() != 0) {
++                this.compressedBuffer = this.emptyBuffer(this.compressedBuffer);
++            }
++
++            // try-finally will flush wrap
++        } finally {
++            try {
++                if (this.closeCompressor != null) {
++                    this.closeCompressor.accept(this.compressor);
++                }
++            } finally {
++                try {
++                    this.wrap.close();
++                } finally {
++                    this.compressor = null;
++                    this.closeCompressor = null;
++                    this.compressedBuffer = null;
++                    this.wrap = null;
++                }
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
+index 2934f0cf0ef09c84739312b00186c2ef0019a165..41e4a1ff14a6572dffc1323cb48928fc61b5b2c7 100644
+--- a/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
++++ b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
+@@ -6,6 +6,9 @@ import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
+ import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedQueueExecutorThread;
+ import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedThreadedTaskQueue;
+ import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
++import ca.spottedleaf.io.region.MinecraftRegionFileType;
++import ca.spottedleaf.io.region.SectorFile;
++import ca.spottedleaf.io.region.SectorFileCache;
+ import com.mojang.logging.LogUtils;
+ import io.papermc.paper.util.CoordinateUtils;
+ import io.papermc.paper.util.TickThread;
+@@ -50,9 +53,16 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+      * getControllerFor is updated.
+      */
+     public static enum RegionFileType {
+-        CHUNK_DATA,
+-        POI_DATA,
+-        ENTITY_DATA;
++        CHUNK_DATA(MinecraftRegionFileType.CHUNK),
++        POI_DATA(MinecraftRegionFileType.POI),
++        ENTITY_DATA(MinecraftRegionFileType.ENTITY);
++
++        public final MinecraftRegionFileType regionFileType;
++
++        private RegionFileType(final MinecraftRegionFileType regionType) {
++            this.regionFileType = regionType;
++        }
++
+     }
+ 
+     protected static final RegionFileType[] CACHED_REGIONFILE_TYPES = RegionFileType.values();
+@@ -816,12 +826,15 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+                                                final ChunkDataController taskController) {
+         final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
+         if (intendingToBlock) {
+-            return taskController.computeForRegionFile(chunkX, chunkZ, true, (final RegionFile file) -> {
++            return taskController.computeForSectorFile(chunkX, chunkZ, true, (final RegionFileType type, final SectorFile file) -> {
+                 if (file == null) { // null if no regionfile exists
+                     return Boolean.FALSE;
+                 }
+ 
+-                return file.hasChunk(chunkPos) ? Boolean.TRUE : Boolean.FALSE;
++                return file.hasData(
++                    chunkPos.x & SectorFile.SECTION_MASK,
++                    chunkPos.z & SectorFile.SECTION_MASK, type.regionFileType.getNewId()
++                ) ? Boolean.TRUE : Boolean.FALSE;
+             });
+         } else {
+             // first check if the region file for sure does not exist
+@@ -829,13 +842,15 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+                 return Boolean.FALSE;
+             } // else: it either exists or is not known, fall back to checking the loaded region file
+ 
+-            return taskController.computeForRegionFileIfLoaded(chunkX, chunkZ, (final RegionFile file) -> {
++            return taskController.computeForRegionFileIfLoaded(chunkX, chunkZ, (final RegionFileType type, final SectorFile file) -> {
+                 if (file == null) { // null if not loaded
+                     // not sure at this point, let the I/O thread figure it out
+                     return Boolean.TRUE;
+                 }
+ 
+-                return file.hasChunk(chunkPos) ? Boolean.TRUE : Boolean.FALSE;
++                return file.hasData(
++                    chunkPos.x & SectorFile.SECTION_MASK,
++                    chunkPos.z & SectorFile.SECTION_MASK, type.regionFileType.getNewId()) ? Boolean.TRUE : Boolean.FALSE;
+             });
+         }
+     }
+@@ -1112,12 +1127,16 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+         protected final ConcurrentHashMap<ChunkCoordinate, ChunkDataTask> tasks = new ConcurrentHashMap<>(8192, 0.10f);
+ 
+         public final RegionFileType type;
++        public final ServerLevel world;
+ 
+-        public ChunkDataController(final RegionFileType type) {
++        public ChunkDataController(final RegionFileType type, final ServerLevel world) {
+             this.type = type;
++            this.world = world;
+         }
+ 
+-        public abstract RegionFileStorage getCache();
++        private SectorFileCache getCache() {
++            return this.world.sectorFileCache;
++        }
+ 
+         public abstract void writeData(final int chunkX, final int chunkZ, final CompoundTag compound) throws IOException;
+ 
+@@ -1128,46 +1147,31 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+         }
+ 
+         public boolean doesRegionFileNotExist(final int chunkX, final int chunkZ) {
+-            return this.getCache().doesRegionFileNotExistNoIO(new ChunkPos(chunkX, chunkZ));
++            return this.getCache().doesSectorFileNotExistNoIO(chunkX, chunkZ);
+         }
+ 
+-        public <T> T computeForRegionFile(final int chunkX, final int chunkZ, final boolean existingOnly, final Function<RegionFile, T> function) {
+-            final RegionFileStorage cache = this.getCache();
+-            final RegionFile regionFile;
++        public <T> T computeForSectorFile(final int chunkX, final int chunkZ, final boolean existingOnly, final BiFunction<RegionFileType, SectorFile, T> function) {
++            final SectorFileCache cache = this.getCache();
++            final SectorFile regionFile;
+             synchronized (cache) {
+                 try {
+-                    regionFile = cache.getRegionFile(new ChunkPos(chunkX, chunkZ), existingOnly, true);
++                    regionFile = cache.getSectorFile(SectorFileCache.getUnscopedBufferChoices(), chunkX, chunkZ, existingOnly);
+                 } catch (final IOException ex) {
+                     throw new RuntimeException(ex);
+                 }
+             }
+ 
+-            try {
+-                return function.apply(regionFile);
+-            } finally {
+-                if (regionFile != null) {
+-                    regionFile.fileLock.unlock();
+-                }
+-            }
++            return function.apply(this.type, regionFile);
+         }
+ 
+-        public <T> T computeForRegionFileIfLoaded(final int chunkX, final int chunkZ, final Function<RegionFile, T> function) {
+-            final RegionFileStorage cache = this.getCache();
+-            final RegionFile regionFile;
++        public <T> T computeForRegionFileIfLoaded(final int chunkX, final int chunkZ, final BiFunction<RegionFileType, SectorFile, T> function) {
++            final SectorFileCache cache = this.getCache();
++            final SectorFile regionFile;
+ 
+             synchronized (cache) {
+-                regionFile = cache.getRegionFileIfLoaded(new ChunkPos(chunkX, chunkZ));
+-                if (regionFile != null) {
+-                    regionFile.fileLock.lock();
+-                }
+-            }
++                regionFile = cache.getRegionFileIfLoaded(chunkX, chunkZ);
+ 
+-            try {
+-                return function.apply(regionFile);
+-            } finally {
+-                if (regionFile != null) {
+-                    regionFile.fileLock.unlock();
+-                }
++                return function.apply(this.type, regionFile);
+             }
+         }
+     }
+diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
+index 6bc7c6f16a1649fc9e24e7cf90fca401e5bd4875..26aeafc36afb7b39638ac70959497694413a7d6d 100644
+--- a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
++++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
+@@ -185,22 +185,12 @@ public final class ChunkHolderManager {
+             RegionFileIOThread.flush();
+         }
+ 
+-        // kill regionfile cache
++        // kill sectorfile cache
+         try {
+-            this.world.chunkDataControllerNew.getCache().close();
++            this.world.sectorFileCache.close();
+         } catch (final IOException ex) {
+             LOGGER.error("Failed to close chunk regionfile cache for world '" + this.world.getWorld().getName() + "'", ex);
+         }
+-        try {
+-            this.world.entityDataControllerNew.getCache().close();
+-        } catch (final IOException ex) {
+-            LOGGER.error("Failed to close entity regionfile cache for world '" + this.world.getWorld().getName() + "'", ex);
+-        }
+-        try {
+-            this.world.poiDataControllerNew.getCache().close();
+-        } catch (final IOException ex) {
+-            LOGGER.error("Failed to close poi regionfile cache for world '" + this.world.getWorld().getName() + "'", ex);
+-        }
+     }
+ 
+     void ensureInAutosave(final NewChunkHolder holder) {
+@@ -298,7 +288,7 @@ public final class ChunkHolderManager {
+             RegionFileIOThread.flush();
+             if (this.world.paperConfig().chunks.flushRegionsOnSave) {
+                 try {
+-                    this.world.chunkSource.chunkMap.regionFileCache.flush();
++                    this.world.sectorFileCache.flush();
+                 } catch (IOException ex) {
+                     LOGGER.error("Exception when flushing regions in world {}", this.world.getWorld().getName(), ex);
+                 }
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index a6f58b3457b7477015c5c6d969e7d83017dd3fa1..c45ae6cd1912c04fa128393b13e0b089ce28fa18 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -186,7 +186,9 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public enum CompressionFormat {
+             GZIP,
+             ZLIB,
+-            NONE
++            NONE,
++            LZ4,
++            ZSTD;
+         }
+     }
+ 
+diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
+index 9017907c0ec67a37a506f09b7e4499cef7885279..70095dcfa871e64e9186572b7fe4fa82e274d58b 100644
+--- a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
++++ b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
+@@ -85,7 +85,8 @@ public class ThreadedWorldUpgrader {
+         LOGGER.info("Starting conversion now for world " + this.worldName);
+ 
+         final WorldInfo info = new WorldInfo(() -> worldPersistentData,
+-                new ChunkStorage(regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey);
++                new ChunkStorage(null, regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey);
++        if (true) throw new UnsupportedOperationException();
+ 
+         long expectedChunks = (long)regionFiles.length * (32L * 32L);
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 5a7278b093e37b95fb005ad5cc3cac90ac36f8fb..9c56ba73b912a6d2cc8c8e4d831151880ae62f8b 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -247,7 +247,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     // Paper end - optimise chunk tick iteration
+ 
+     public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
+-        super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
++        super(world.sectorFileCache, session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
+         // Paper - rewrite chunk system
+         this.tickingGenerated = new AtomicInteger();
+         this.playerMap = new PlayerMap();
+@@ -871,34 +871,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         return nbttagcompound;
+     }
+ 
+-    public ChunkStatus getChunkStatusOnDiskIfCached(ChunkPos chunkPos) {
+-        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFileIfLoaded(chunkPos);
+-
+-        return regionFile == null ? null : regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+-    }
+-
+     public ChunkStatus getChunkStatusOnDisk(ChunkPos chunkPos) throws IOException {
+-        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFile(chunkPos, true);
+-
+-        if (regionFile == null || !regionFileCache.chunkExists(chunkPos)) {
+-            return null;
+-        }
+-
+-        ChunkStatus status = regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+-
+-        if (status != null) {
+-            return status;
+-        }
+-
+-        this.readChunk(chunkPos);
+-
+-        return regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
++        CompoundTag nbt = this.readConvertChunkSync(chunkPos);
++        return nbt == null ? null : ChunkSerializer.getStatus(nbt);
+     }
+ 
+     public void updateChunkStatusOnDisk(ChunkPos chunkPos, @Nullable CompoundTag compound) throws IOException {
+-        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFile(chunkPos, false);
+ 
+-        regionFile.setStatus(chunkPos.x, chunkPos.z, ChunkSerializer.getStatus(compound));
+     }
+ 
+     public ChunkAccess getUnloadingChunk(int chunkX, int chunkZ) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 6934e9dac0d69c043b73b7c46d59f2d39b37c67f..d8fb6afa11e304ffd38753739a312593edb265a9 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -359,14 +359,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     }
+ 
+     // Paper start - rewrite chunk system
++    public final ca.spottedleaf.io.region.SectorFileCache sectorFileCache;
+     public final io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler chunkTaskScheduler;
+     public final io.papermc.paper.chunk.system.io.RegionFileIOThread.ChunkDataController chunkDataControllerNew
+-        = new io.papermc.paper.chunk.system.io.RegionFileIOThread.ChunkDataController(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA) {
+-
+-        @Override
+-        public net.minecraft.world.level.chunk.storage.RegionFileStorage getCache() {
+-            return ServerLevel.this.getChunkSource().chunkMap.regionFileCache;
+-        }
++        = new io.papermc.paper.chunk.system.io.RegionFileIOThread.ChunkDataController(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA, this) {
+ 
+         @Override
+         public void writeData(int chunkX, int chunkZ, net.minecraft.nbt.CompoundTag compound) throws IOException {
+@@ -379,12 +375,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         }
+     };
+     public final io.papermc.paper.chunk.system.io.RegionFileIOThread.ChunkDataController poiDataControllerNew
+-        = new io.papermc.paper.chunk.system.io.RegionFileIOThread.ChunkDataController(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA) {
+-
+-        @Override
+-        public net.minecraft.world.level.chunk.storage.RegionFileStorage getCache() {
+-            return ServerLevel.this.getChunkSource().chunkMap.getPoiManager();
+-        }
++        = new io.papermc.paper.chunk.system.io.RegionFileIOThread.ChunkDataController(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA, this) {
+ 
+         @Override
+         public void writeData(int chunkX, int chunkZ, net.minecraft.nbt.CompoundTag compound) throws IOException {
+@@ -397,12 +388,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         }
+     };
+     public final io.papermc.paper.chunk.system.io.RegionFileIOThread.ChunkDataController entityDataControllerNew
+-        = new io.papermc.paper.chunk.system.io.RegionFileIOThread.ChunkDataController(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.ENTITY_DATA) {
+-
+-        @Override
+-        public net.minecraft.world.level.chunk.storage.RegionFileStorage getCache() {
+-            return ServerLevel.this.entityStorage;
+-        }
++        = new io.papermc.paper.chunk.system.io.RegionFileIOThread.ChunkDataController(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.ENTITY_DATA, this) {
+ 
+         @Override
+         public void writeData(int chunkX, int chunkZ, net.minecraft.nbt.CompoundTag compound) throws IOException {
+@@ -414,25 +400,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             return ServerLevel.this.readEntityChunk(chunkX, chunkZ);
+         }
+     };
+-    private final EntityRegionFileStorage entityStorage;
+-
+-    private static final class EntityRegionFileStorage extends net.minecraft.world.level.chunk.storage.RegionFileStorage {
+-
+-        public EntityRegionFileStorage(Path directory, boolean dsync) {
+-            super(directory, dsync);
+-        }
+-
+-        protected void write(ChunkPos pos, net.minecraft.nbt.CompoundTag nbt) throws IOException {
+-            ChunkPos nbtPos = nbt == null ? null : EntityStorage.readChunkPos(nbt);
+-            if (nbtPos != null && !pos.equals(nbtPos)) {
+-                throw new IllegalArgumentException(
+-                    "Entity chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + pos.toString()
+-                        + " but compound says coordinate is " + nbtPos + " for world: " + this
+-                );
+-            }
+-            super.write(pos, nbt);
+-        }
+-    }
+ 
+     private void writeEntityChunk(int chunkX, int chunkZ, net.minecraft.nbt.CompoundTag compound) throws IOException {
+         if (!io.papermc.paper.chunk.system.io.RegionFileIOThread.isRegionFileThread()) {
+@@ -441,7 +408,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
+                 io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.ENTITY_DATA);
+             return;
+         }
+-        this.entityStorage.write(new ChunkPos(chunkX, chunkZ), compound);
++        this.sectorFileCache.write(
++            ca.spottedleaf.io.region.SectorFileCache.getUnscopedBufferChoices(), chunkX, chunkZ,
++            ca.spottedleaf.io.region.MinecraftRegionFileType.ENTITY.getNewId(), compound
++        );
+     }
+ 
+     private net.minecraft.nbt.CompoundTag readEntityChunk(int chunkX, int chunkZ) throws IOException {
+@@ -451,7 +421,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
+                 io.papermc.paper.chunk.system.io.RegionFileIOThread.getIOBlockingPriorityForCurrentThread()
+             );
+         }
+-        return this.entityStorage.read(new ChunkPos(chunkX, chunkZ));
++        return this.sectorFileCache.read(
++            ca.spottedleaf.io.region.SectorFileCache.getUnscopedBufferChoices(), chunkX, chunkZ,
++            ca.spottedleaf.io.region.MinecraftRegionFileType.ENTITY.getNewId()
++        );
+     }
+ 
+     private final io.papermc.paper.chunk.system.entity.EntityLookup entityLookup;
+@@ -728,7 +701,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // CraftBukkit end
+         boolean flag2 = minecraftserver.forceSynchronousWrites();
+         DataFixer datafixer = minecraftserver.getFixerUpper();
+-        this.entityStorage = new EntityRegionFileStorage(convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system  //EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver);
++        this.sectorFileCache = new ca.spottedleaf.io.region.SectorFileCache(convertable_conversionsession.getDimensionPath(resourcekey).resolve("sectors").toFile(), flag2);
+ 
+         // this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage, this.entitySliceManager); // Paper // Paper - rewrite chunk system
+         StructureTemplateManager structuretemplatemanager = minecraftserver.getStructureManager();
+diff --git a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
+index 77dd632a266f4abed30b87b7909d77857c01e316..0a6a2f829828a8cf250d46b300cc75025e517418 100644
+--- a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
++++ b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
+@@ -116,7 +116,8 @@ public class WorldUpgrader {
+                 ResourceKey<Level> resourcekey1 = (ResourceKey) iterator1.next();
+                 Path path = this.levelStorage.getDimensionPath(resourcekey1);
+ 
+-                builder1.put(resourcekey1, new ChunkStorage(path.resolve("region"), this.dataFixer, true));
++                builder1.put(resourcekey1, new ChunkStorage(null, path.resolve("region"), this.dataFixer, true));
++                if (true) throw new UnsupportedOperationException();
+             }
+ 
+             ImmutableMap<ResourceKey<Level>, ChunkStorage> immutablemap1 = builder1.build();
+diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+index 12a7aaeaa8b4b788b620b1985591c3b93253ccd5..28b8ca04644edbed076c939307484378b9567898 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
++++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+@@ -431,7 +431,10 @@ public class PoiManager extends SectionStorage<PoiSection> {
+             );
+         }
+         // Paper end - rewrite chunk system
+-        return super.read(chunkcoordintpair);
++        return this.world.sectorFileCache.read(
++            ca.spottedleaf.io.region.SectorFileCache.getUnscopedBufferChoices(), chunkcoordintpair.x, chunkcoordintpair.z,
++            ca.spottedleaf.io.region.MinecraftRegionFileType.POI.getNewId()
++        );
+     }
+ 
+     @Override
+@@ -444,7 +447,10 @@ public class PoiManager extends SectionStorage<PoiSection> {
+             return;
+         }
+         // Paper end - rewrite chunk system
+-        super.write(chunkcoordintpair, nbttagcompound);
++        this.world.sectorFileCache.write(
++            ca.spottedleaf.io.region.SectorFileCache.getUnscopedBufferChoices(), chunkcoordintpair.x, chunkcoordintpair.z,
++            ca.spottedleaf.io.region.MinecraftRegionFileType.POI.getNewId(), nbttagcompound
++        );
+     }
+     // Paper end
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+index d16d7c2fed89fb1347df7ddd95856e7f08c22e8a..944e67f26374ccf43dd39e45393c0d611d000c8d 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+@@ -30,15 +30,16 @@ public class ChunkStorage implements AutoCloseable {
+     public static final int LAST_MONOLYTH_STRUCTURE_DATA_VERSION = 1493;
+     // Paper start - rewrite chunk system; async chunk IO
+     private final Object persistentDataLock = new Object();
+-    public final RegionFileStorage regionFileCache;
+     // Paper end - rewrite chunk system
+     protected final DataFixer fixerUpper;
+     @Nullable
+     private volatile LegacyStructureDataHandler legacyStructureHandler;
+ 
+-    public ChunkStorage(Path directory, DataFixer dataFixer, boolean dsync) {
++    protected final ca.spottedleaf.io.region.SectorFileCache sectorCache;
++
++    public ChunkStorage(ca.spottedleaf.io.region.SectorFileCache sectorCache, Path directory, DataFixer dataFixer, boolean dsync) {
+         this.fixerUpper = dataFixer;
+-        this.regionFileCache = new RegionFileStorage(directory, dsync, true); // Paper - rewrite chunk system; async chunk IO & Attempt to recalculate regionfile header if it is corrupt
++        this.sectorCache = sectorCache;
+     }
+ 
+     public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
+@@ -170,7 +171,10 @@ public class ChunkStorage implements AutoCloseable {
+     }
+     @Nullable
+     public CompoundTag readSync(ChunkPos chunkPos) throws IOException {
+-        return this.regionFileCache.read(chunkPos);
++        return this.sectorCache.read(
++            ca.spottedleaf.io.region.SectorFileCache.getUnscopedBufferChoices(),
++            chunkPos.x, chunkPos.z, ca.spottedleaf.io.region.MinecraftRegionFileType.CHUNK.getNewId()
++        );
+     }
+     // Paper end - async chunk io
+ 
+@@ -182,7 +186,10 @@ public class ChunkStorage implements AutoCloseable {
+                 + " but compound says coordinate is " + ChunkSerializer.getChunkCoordinate(nbt) + (world == null ? " for an unknown world" : (" for world: " + world)));
+         }
+         // Paper end - guard against serializing mismatching coordinates
+-        this.regionFileCache.write(chunkPos, nbt); // Paper - rewrite chunk system; async chunk io
++        this.sectorCache.write(
++            ca.spottedleaf.io.region.SectorFileCache.getUnscopedBufferChoices(),
++            chunkPos.x, chunkPos.z, ca.spottedleaf.io.region.MinecraftRegionFileType.CHUNK.getNewId(), nbt
++        );
+         if (this.legacyStructureHandler != null) {
+             synchronized (this.persistentDataLock) { // Paper - rewrite chunk system; async chunk io
+             this.legacyStructureHandler.removeIndex(chunkPos.toLong());
+@@ -196,14 +203,18 @@ public class ChunkStorage implements AutoCloseable {
+     }
+ 
+     public void close() throws IOException {
+-        this.regionFileCache.close(); // Paper - nuke IO worker
++
+     }
+ 
+     public ChunkScanAccess chunkScanner() {
+         // Paper start - nuke IO worker
+         return ((chunkPos, streamTagVisitor) -> {
+             try {
+-                this.regionFileCache.scanChunk(chunkPos, streamTagVisitor);
++                this.sectorCache.scanChunk(
++                    ca.spottedleaf.io.region.SectorFileCache.getUnscopedBufferChoices(),
++                    chunkPos.x, chunkPos.z, ca.spottedleaf.io.region.MinecraftRegionFileType.CHUNK.getNewId(),
++                    streamTagVisitor
++                );
+                 return java.util.concurrent.CompletableFuture.completedFuture(null);
+             } catch (IOException e) {
+                 throw new RuntimeException(e);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
+index 6210a202d27788b1304e749b5bc2d9e2b88f5a63..824257071cfc1a0273446a6f34d9d312fa8303a2 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
+@@ -33,11 +33,7 @@ public class RegionFileVersion {
+ 
+     // Paper start - Configurable region compression format
+     public static RegionFileVersion getCompressionFormat() {
+-        return switch (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.compressionFormat) {
+-            case GZIP -> VERSION_GZIP;
+-            case ZLIB -> VERSION_DEFLATE;
+-            case NONE -> VERSION_NONE;
+-        };
++        throw new UnsupportedOperationException();
+     }
+     // Paper end - Configurable region compression format
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
+index 4aac1979cf57300825a999c876fcf24d3170e68e..75cd75609d401795fba40bb24c729d0660afd4d5 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
+@@ -34,7 +34,7 @@ import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.LevelHeightAccessor;
+ import org.slf4j.Logger;
+ 
+-public class SectionStorage<R> extends RegionFileStorage implements AutoCloseable { // Paper - nuke IOWorker
++public class SectionStorage<R> implements AutoCloseable { // Paper - nuke IOWorker
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final String SECTIONS_TAG = "Sections";
+     // Paper - remove mojang I/O thread
+@@ -48,7 +48,6 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
+     protected final LevelHeightAccessor levelHeightAccessor;
+ 
+     public SectionStorage(Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, RegistryAccess dynamicRegistryManager, LevelHeightAccessor world) {
+-        super(path, dsync); // Paper - remove mojang I/O thread
+         this.codec = codecFactory;
+         this.factory = factory;
+         this.fixerUpper = dataFixer;
+@@ -58,6 +57,14 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
+         // Paper - remove mojang I/O thread
+     }
+ 
++    protected CompoundTag read(ChunkPos pos) throws IOException {
++        throw new AbstractMethodError();
++    }
++
++    protected void write(ChunkPos pos, CompoundTag tag) throws IOException {
++        throw new AbstractMethodError();
++    }
++
+     protected void tick(BooleanSupplier shouldKeepTicking) {
+         while(this.hasWork() && shouldKeepTicking.getAsBoolean()) {
+             ChunkPos chunkPos = SectionPos.of(this.dirty.firstLong()).chunk();
+@@ -240,7 +247,6 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
+     @Override
+     public void close() throws IOException {
+         //this.worker.close(); // Paper - nuke I/O worker - don't call the worker
+-        super.close(); // Paper - nuke I/O worker - call super.close method which is responsible for closing used files.
+     }
+ 
+     // Paper - rewrite chunk system
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index bfb178c69026e9759e9afaebb9da141b62d1f144..8677a28a5d40a4c003823d3259408887e6e335ff 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -573,17 +573,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+                 world.getChunk(x, z); // make sure we're at ticket level 32 or lower
+                 return true;
+             }
+-            net.minecraft.world.level.chunk.storage.RegionFile file;
+-            try {
+-                file = world.getChunkSource().chunkMap.regionFileCache.getRegionFile(chunkPos, false);
+-            } catch (java.io.IOException ex) {
+-                throw new RuntimeException(ex);
+-            }
+-
+-            ChunkStatus status = file.getStatusIfCached(x, z);
+-            if (!file.hasChunk(chunkPos) || (status != null && status != ChunkStatus.FULL)) {
+-                return false;
+-            }
+ 
+             ChunkAccess chunk = world.getChunkSource().getChunk(x, z, ChunkStatus.EMPTY, true);
+             if (!(chunk instanceof ImposterProtoChunk) && !(chunk instanceof net.minecraft.world.level.chunk.LevelChunk)) {
