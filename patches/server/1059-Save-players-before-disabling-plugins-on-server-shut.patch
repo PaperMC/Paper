@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DerEchtePilz <tlfm90@gmail.com>
+Date: Sat, 2 Sep 2023 12:48:58 +0200
+Subject: [PATCH] Save players before disabling plugins on server shutdown
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8f31413c939cc2b0454ad3d9a1b618dbae449d00..bb1749e8d4c7b167dbaadfa5486699f36e46ff62 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -925,13 +925,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         MinecraftServer.LOGGER.info("Stopping server");
+         Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Shutdown and don't bother finishing
+         MinecraftTimings.stopServer(); // Paper
+-        // CraftBukkit start
+-        if (this.server != null) {
+-            this.server.disablePlugins();
+-            this.server.waitForAsyncTasksShutdown(); // Paper
+-        }
+-        // CraftBukkit end
+-        this.getConnection().stop();
++
++        // Paper start - save players before disabling plugins (matches /restart behaviour)
+         this.isSaving = true;
+         if (this.playerList != null) {
+             MinecraftServer.LOGGER.info("Saving players");
+@@ -939,7 +934,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.playerList.removeAll(this.isRestarting); // Paper
+             try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
+         }
++        this.isSaving = false;
++        // Paper end
+ 
++        // CraftBukkit start
++        if (this.server != null) {
++            this.server.disablePlugins();
++            this.server.waitForAsyncTasksShutdown(); // Paper
++        }
++        // CraftBukkit end
++        this.getConnection().stop();
++        this.isSaving = true;
+         MinecraftServer.LOGGER.info("Saving worlds");
+         Iterator iterator = this.getAllLevels().iterator();
+ 
