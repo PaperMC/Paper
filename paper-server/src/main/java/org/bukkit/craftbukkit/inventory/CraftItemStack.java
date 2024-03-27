@@ -429,4 +429,24 @@ public final class CraftItemStack extends ItemStack {
     static boolean hasItemMeta(net.minecraft.world.item.ItemStack item) {
         return !(item == null || item.getComponentsPatch().isEmpty());
     }
+    // Paper start - with type
+    @Override
+    public ItemStack withType(final Material type) {
+        if (type == Material.AIR) {
+            return CraftItemStack.asCraftMirror(null);
+        }
+
+        final net.minecraft.world.item.ItemStack copy = new net.minecraft.world.item.ItemStack(
+            CraftItemType.bukkitToMinecraft(type), this.getAmount()
+        );
+
+        if (this.handle != null) {
+            copy.applyComponents(this.handle.getComponentsPatch());
+        }
+
+        final CraftItemStack mirrored = CraftItemStack.asCraftMirror(copy);
+        mirrored.setItemMeta(mirrored.getItemMeta());
+        return mirrored;
+    }
+    // Paper end
 }
