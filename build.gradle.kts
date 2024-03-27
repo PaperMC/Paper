@@ -11,7 +11,7 @@ plugins {
     java
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
-    id("io.papermc.paperweight.core") version "1.5.11"
+    id("io.papermc.paperweight.core") version "1.5.12"
 }
 
 allprojects {
@@ -92,8 +92,6 @@ paperweight {
 
         mappingsPatch = layout.projectDirectory.file("build-data/mappings-patch.tiny")
         reobfMappingsPatch = layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny")
-
-        spigotServerPatchPatchesDir = layout.projectDirectory.dir("build-data/spigot-server-patches")
 
         reobfPackagesToFix.addAll(
             "co.aikar.timings",
