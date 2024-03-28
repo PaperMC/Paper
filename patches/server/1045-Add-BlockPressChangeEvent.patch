@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakub Zacek <dawon@dawon.eu>
+Date: Thu, 1 Feb 2024 22:15:30 +0100
+Subject: [PATCH] Add BlockPressChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java b/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java
+index 0d573c05f4f8838d4492f749ca473f7a9e8d60dd..e5191f071b8b46756f9c00f2919c055b243b68fb 100644
+--- a/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java
+@@ -97,6 +97,12 @@ public abstract class BasePressurePlateBlock extends Block {
+         org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
+ 
+         if (flag != flag1) {
++            // Paper start - Add BlockPressChangeEvent
++            if (!new io.papermc.paper.event.block.BlockPressChangeEvent(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), entity != null ? entity.getBukkitEntity() : null, !flag).callEvent()) {
++                if (flag) world.scheduleTick(new BlockPos(pos), (Block) this, this.getPressedTime());
++                return;
++            }
++            // Paper end - Add BlockPressChangeEvent
+             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), output, j);
+             manager.callEvent(eventRedstone);
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/ButtonBlock.java b/src/main/java/net/minecraft/world/level/block/ButtonBlock.java
+index 0118c4ef4f5ed0e724b379b5a563e2b6976803a2..84640dfd7fe1e94715fb38a0e0a1e6a50eb1ff0b 100644
+--- a/src/main/java/net/minecraft/world/level/block/ButtonBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ButtonBlock.java
+@@ -141,9 +141,11 @@ public class ButtonBlock extends FaceAttachedHorizontalDirectionalBlock {
+                 return InteractionResult.SUCCESS;
+             }
+             // CraftBukkit end
++            if (new io.papermc.paper.event.block.BlockPressChangeEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), player.getBukkitEntity(), true).callEvent()) { // Paper - Add BlockPressChangeEvent
+             this.press(state, world, pos);
+             this.playSound(player, world, pos, true);
+             world.gameEvent((Entity) player, GameEvent.BLOCK_ACTIVATE, pos);
++            } // Paper - Add BlockPressChangeEvent
+             return InteractionResult.sidedSuccess(world.isClientSide);
+         }
+     }
+@@ -151,7 +153,9 @@ public class ButtonBlock extends FaceAttachedHorizontalDirectionalBlock {
+     @Override
+     public void onExplosionHit(BlockState state, Level world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
+         if (explosion.getBlockInteraction() == Explosion.BlockInteraction.TRIGGER_BLOCK && !world.isClientSide() && !(Boolean) state.getValue(ButtonBlock.POWERED)) {
++            if (new io.papermc.paper.event.block.BlockPressChangeEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), explosion.getDirectSourceEntity() != null ? explosion.getDirectSourceEntity().getBukkitEntity() : null, true).callEvent()) { // Paper - Add BlockPressChangeEvent
+             this.press(state, world, pos);
++            } // Paper - Add BlockPressChangeEvent
+         }
+ 
+         super.onExplosionHit(state, world, pos, explosion, stackMerger);
+@@ -226,6 +230,11 @@ public class ButtonBlock extends FaceAttachedHorizontalDirectionalBlock {
+             if (event.isCancelled()) {
+                 return;
+             }
++            // Paper start - Add BlockPressChangeEvent
++            if (!new io.papermc.paper.event.block.BlockPressChangeEvent(block, entityarrow.getBukkitEntity(), true).callEvent()) {
++                return;
++            }
++            // Paper end - Add BlockPressChangeEvent
+         }
+         // CraftBukkit end
+ 
+@@ -243,6 +252,12 @@ public class ButtonBlock extends FaceAttachedHorizontalDirectionalBlock {
+                 return;
+             }
+             // CraftBukkit end
++            // Paper start - Add BlockPressChangeEvent
++            if (!flag && !new io.papermc.paper.event.block.BlockPressChangeEvent(block, null, false).callEvent()) {
++                world.scheduleTick(new BlockPos(pos), (Block) this, this.ticksToStayPressed);
++                return;
++            }
++            // Paper end - Add BlockPressChangeEvent
+             world.setBlock(pos, (BlockState) state.setValue(ButtonBlock.POWERED, flag), 3);
+             this.updateNeighbours(state, world, pos);
+             this.playSound((Player) null, world, pos, flag);
