@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Wed, 28 Feb 2024 18:49:24 +0100
+Subject: [PATCH] Add BlockPlayerSearchEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index 4b81b0180dfc96fc6a88646838a886ca5b5d301b..3520425c8dd57dd5dcbae212fdd3d80c1bfac983 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -393,6 +393,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+ 
+             int j = BeaconBlockEntity.getLevel(beaconLevel);
+             List list = BeaconBlockEntity.getHumansInRange(world, pos, beaconLevel, blockEntity); // Paper - Custom beacon ranges
++            // Paper start - Add BlockPlayerSearchEvent
++            io.papermc.paper.event.block.BlockPlayerSearchEvent event = new io.papermc.paper.event.block.BlockPlayerSearchEvent(io.papermc.paper.util.MCUtil.toLocation(world, pos).getBlock(), ((List<Player>) list).stream().map(player -> (org.bukkit.entity.Player) player.getBukkitEntity()).collect(Collectors.toList()));
++            event.callEvent();
++            list = event.getPlayers().stream().map(player -> (Player) ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle()).toList();
++            // Paper end - Add BlockPlayerSearchEvent
+ 
+             BeaconBlockEntity.applyEffect(list, primaryEffect, j, b0, true, pos); // Paper - BeaconEffectEvent
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+index 37e0b762b86e74f607a4541ecb7b24ad7a591d0e..cc372e970c6d7aafd54288f72084a085599ef350 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+@@ -193,6 +193,11 @@ public class ConduitBlockEntity extends BlockEntity {
+         int i1 = pos.getZ();
+         AABB axisalignedbb = (new AABB((double) k, (double) l, (double) i1, (double) (k + 1), (double) (l + 1), (double) (i1 + 1))).inflate((double) j).expandTowards(0.0D, (double) world.getHeight(), 0.0D);
+         List<Player> list1 = world.getEntitiesOfClass(Player.class, axisalignedbb);
++        // Paper start - Add BlockPlayerSearchEvent
++        io.papermc.paper.event.block.BlockPlayerSearchEvent event = new io.papermc.paper.event.block.BlockPlayerSearchEvent(io.papermc.paper.util.MCUtil.toLocation(world, pos).getBlock(), list1.stream().filter(entity -> pos.closerThan(entity.blockPosition(), j) && entity.isInWaterOrRain()).map(player -> (org.bukkit.entity.Player) player.getBukkitEntity()).collect(java.util.stream.Collectors.toList()));
++        event.callEvent();
++        list1 = event.getPlayers().stream().map(player -> (Player) ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle()).toList();
++        // Paper end - Add BlockPlayerSearchEvent
+ 
+         if (!list1.isEmpty()) {
+             Iterator iterator = list1.iterator();
+@@ -200,7 +205,7 @@ public class ConduitBlockEntity extends BlockEntity {
+             while (iterator.hasNext()) {
+                 Player entityhuman = (Player) iterator.next();
+ 
+-                if (pos.closerThan(entityhuman.blockPosition(), (double) j) && entityhuman.isInWaterOrRain()) {
++                if (true || pos.closerThan(entityhuman.blockPosition(), (double) j) && entityhuman.isInWaterOrRain()) { // Paper - Add BlockPlayerSearchEvent
+                     entityhuman.addEffect(new MobEffectInstance(MobEffects.CONDUIT_POWER, 260, 0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONDUIT); // CraftBukkit
+                 }
+             }
