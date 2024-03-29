@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.inventory;
 
 import static org.junit.jupiter.api.Assertions.*;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Array;
@@ -11,6 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
+import net.minecraft.nbt.NBTCompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -461,14 +464,33 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
     }
 
     @Test
-    public void testEmptyListDataMaintainType() {
-        final ItemMeta meta = createNewItemMeta();
-        final PersistentDataContainer container = meta.getPersistentDataContainer();
+    public void testEmptyListApplicationToAnyType() throws IOException {
+        final CraftMetaItem craftItem = new CraftMetaItem(new NBTTagCompound());
+        final PersistentDataContainer container = craftItem.getPersistentDataContainer();
 
         container.set(requestKey("list"), PersistentDataType.LIST.strings(), List.of());
-
         assertTrue(container.has(requestKey("list"), PersistentDataType.LIST.strings()));
-        assertFalse(container.has(requestKey("list"), PersistentDataType.LIST.bytes()));
+        assertTrue(container.has(requestKey("list"), PersistentDataType.LIST.bytes()));
+        assertFalse(container.has(requestKey("list"), PersistentDataType.STRING));
+        assertEquals(List.of(), container.get(requestKey("list"), PersistentDataType.LIST.strings()));
+
+        // Write and read the entire container to NBT
+        final NBTTagCompound storage = new NBTTagCompound();
+        craftItem.applyToItem(storage);
+
+        final ByteArrayDataOutput writer = ByteStreams.newDataOutput();
+        NBTCompressedStreamTools.write(storage, writer);
+
+        final NBTTagCompound readStorage = NBTCompressedStreamTools.read(
+            ByteStreams.newDataInput(writer.toByteArray())
+        );
+        final CraftMetaItem readItem = new CraftMetaItem(readStorage);
+        final PersistentDataContainer readContainer = readItem.getPersistentDataContainer();
+
+        assertTrue(readContainer.has(requestKey("list"), PersistentDataType.LIST.strings()));
+        assertTrue(readContainer.has(requestKey("list"), PersistentDataType.LIST.bytes()));
+        assertFalse(readContainer.has(requestKey("list"), PersistentDataType.STRING));
+        assertEquals(List.of(), readContainer.get(requestKey("list"), PersistentDataType.LIST.strings()));
     }
 
     // This is a horrific marriage of tag container array "primitive" types the API offered and the new list types.

@@ -372,7 +372,7 @@ public final class CraftPersistentDataTypeRegistry {
             values.add(this.wrap(listPersistentDataType.elementType(), primitiveValue));
         }
 
-        return new NBTTagList(values, elementAdapter.nmsTypeByte());
+        return new NBTTagList(values, values.isEmpty() ? NBTTagList.TAG_END : elementAdapter.nmsTypeByte());
     }
 
     /**
@@ -405,6 +405,11 @@ public final class CraftPersistentDataTypeRegistry {
      * Computes if the passed {@link NBTBase} is a {@link NBTTagList} and it,
      * including its elements, can be read/written via the passed
      * {@link PersistentDataType}.
+     * <p>
+     * As empty lists do not explicitly store their type, an empty nbt list can be matched to any
+     * ListPersistentDataType.
+     * As the persistent data container API does a full copy, this is a non-issue as callers to
+     * PDC#get(key, LIST.strings()) and PDC#get(key, LIST.ints()) will receive individual copies, avoiding interference.
      *
      * @param type the persistent data type for which to check if the tag
      * matches.
@@ -422,6 +427,6 @@ public final class CraftPersistentDataTypeRegistry {
         final byte elementType = listTag.getElementType();
         final TagAdapter elementAdapter = this.getOrCreateAdapter(listPersistentDataType.elementType());
 
-        return elementAdapter.nmsTypeByte() == elementType;
+        return elementAdapter.nmsTypeByte() == elementType || elementType == NBTTagList.TAG_END;
     }
 }
