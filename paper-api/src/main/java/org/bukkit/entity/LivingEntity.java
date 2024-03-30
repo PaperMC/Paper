@@ -197,6 +197,16 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public void setMaximumAir(int ticks);
 
     /**
+     * Gets the item that the player is using (eating food, drawing back a bow,
+     * blocking, etc.)
+     *
+     * @return the item being used by the player, or null if they are not using
+     * an item
+     */
+    @Nullable
+    public ItemStack getItemInUse();
+
+    /**
      * Gets the number of ticks remaining for the current item's usage.
      *
      * @return The number of ticks remaining
