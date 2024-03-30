@@ -197,6 +197,22 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public void setMaximumAir(int ticks);
 
     /**
+     * Gets the number of ticks remaining for the current item's usage.
+     *
+     * @return The number of ticks remaining
+     */
+    public int getItemInUseTicks();
+
+    /**
+     * Sets the number of ticks that remain for the current item's usage.
+     * Applies to items that take time to use, like eating food, drawing a bow,
+     * or throwing a trident.
+     *
+     * @param ticks The number of ticks remaining
+     */
+    public void setItemInUseTicks(int ticks);
+
+    /**
      * Gets the time in ticks until the next arrow leaves the entity's body.
      *
      * @return ticks until arrow leaves
