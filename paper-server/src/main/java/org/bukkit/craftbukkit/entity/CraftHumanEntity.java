@@ -41,6 +41,7 @@ import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryAbstractHorse;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.craftbukkit.inventory.CraftInventoryLectern;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
@@ -278,31 +279,33 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         EntityPlayer player = (EntityPlayer) getHandle();
         Container formerContainer = getHandle().containerMenu;
 
-        ITileInventory iinventory = null;
+        ITileInventory tileInventory = null;
         if (inventory instanceof CraftInventoryDoubleChest) {
-            iinventory = ((CraftInventoryDoubleChest) inventory).tile;
+            tileInventory = ((CraftInventoryDoubleChest) inventory).tile;
         } else if (inventory instanceof CraftInventoryLectern) {
-            iinventory = ((CraftInventoryLectern) inventory).tile;
+            tileInventory = ((CraftInventoryLectern) inventory).tile;
         } else if (inventory instanceof CraftInventory) {
             CraftInventory craft = (CraftInventory) inventory;
             if (craft.getInventory() instanceof ITileInventory) {
-                iinventory = (ITileInventory) craft.getInventory();
+                tileInventory = (ITileInventory) craft.getInventory();
             }
         }
 
-        if (iinventory instanceof ITileInventory) {
-            if (iinventory instanceof TileEntity) {
-                TileEntity te = (TileEntity) iinventory;
+        if (tileInventory instanceof ITileInventory) {
+            if (tileInventory instanceof TileEntity) {
+                TileEntity te = (TileEntity) tileInventory;
                 if (!te.hasLevel()) {
                     te.setLevel(getHandle().level());
                 }
             }
         }
 
-        Containers<?> container = CraftContainer.getNotchInventoryType(inventory);
-        if (iinventory instanceof ITileInventory) {
-            getHandle().openMenu(iinventory);
+        if (tileInventory instanceof ITileInventory) {
+            getHandle().openMenu(tileInventory);
+        } else if (inventory instanceof CraftInventoryAbstractHorse craft && craft.getInventory().getOwner() instanceof CraftAbstractHorse horse) {
+            getHandle().openHorseInventory(horse.getHandle(), craft.getInventory());
         } else {
+            Containers<?> container = CraftContainer.getNotchInventoryType(inventory);
             openCustomInventory(inventory, player, container);
         }
 
