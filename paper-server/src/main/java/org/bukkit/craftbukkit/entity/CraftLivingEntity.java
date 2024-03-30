@@ -259,6 +259,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public int getItemInUseTicks() {
+        return getHandle().getUseItemRemainingTicks();
+    }
+
+    @Override
+    public void setItemInUseTicks(int ticks) {
+        getHandle().useItemRemaining = ticks;
+    }
+
+    @Override
     public int getArrowCooldown() {
         return getHandle().removeArrowTime;
     }
