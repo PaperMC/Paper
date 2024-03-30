@@ -1,6 +1,8 @@
 package org.bukkit.entity;
 
 import org.bukkit.block.Block;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -123,6 +125,23 @@ public interface AbstractArrow extends Projectile {
      * @param shotFromCrossbow if shot from a crossbow
      */
     public void setShotFromCrossbow(boolean shotFromCrossbow);
+
+    /**
+     * Gets the ItemStack which will be picked up from this arrow.
+     *
+     * @return The picked up ItemStack
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    public ItemStack getItem();
+
+    /**
+     * Sets the ItemStack which will be picked up from this arrow.
+     *
+     * @param item ItemStack set to be picked up
+     */
+    @ApiStatus.Experimental
+    public void setItem(@NotNull ItemStack item);
 
     /**
      * Represents the pickup status of this arrow.
