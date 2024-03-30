@@ -110,15 +110,15 @@
      public FluidState getFluidState(int x, int y, int z) {
 -        try {
 -            int l = this.getSectionIndex(y);
--
--            if (l >= 0 && l < this.sections.length) {
--                LevelChunkSection chunksection = this.sections[l];
 +        // Paper start - Perf: Optimise Chunk#getFluid
 +        // try {  // Remove try catch
 +        int index = this.getSectionIndex(y);
 +            if (index >= 0 && index < this.sections.length) {
 +                LevelChunkSection chunksection = this.sections[index];
  
+-            if (l >= 0 && l < this.sections.length) {
+-                LevelChunkSection chunksection = this.sections[l];
+-
                  if (!chunksection.hasOnlyAir()) {
 -                    return chunksection.getFluidState(x & 15, y & 15, z & 15);
 +                    return chunksection.states.get((y & 15) << 8 | (z & 15) << 4 | x & 15).getFluidState();
@@ -288,7 +288,7 @@
              if (tileentity != null) {
                  Level world = this.level;
  
-@@ -549,9 +626,68 @@
+@@ -549,10 +626,69 @@
          if (this.postLoad != null) {
              this.postLoad.run(this);
              this.postLoad = null;
@@ -335,7 +335,7 @@
 +            }
          }
 +    }
-+
+ 
 +    public void unloadCallback() {
 +        org.bukkit.Server server = this.level.getCraftServer();
 +        org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
@@ -347,16 +347,17 @@
 +        // Paper start
 +        this.loadedTicketLevel = false;
 +        // Paper end
-+    }
+     }
  
 +    @Override
 +    public boolean isUnsaved() {
 +        return super.isUnsaved() && !this.mustNotSave;
-     }
++    }
 +    // CraftBukkit end
- 
++
      public boolean isEmpty() {
          return false;
+     }
 @@ -750,7 +886,7 @@
  
      private <T extends BlockEntity> void updateBlockEntityTicker(T blockEntity) {
@@ -375,7 +376,22 @@
              this.ticker = blockentityticker;
          }
  
-@@ -867,11 +1003,13 @@
+@@ -860,18 +996,25 @@
+                         if (this.blockEntity.getType().isValid(iblockdata)) {
+                             this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), iblockdata, this.blockEntity);
+                             this.loggedInvalidBlockState = false;
+-                        } else if (!this.loggedInvalidBlockState) {
+-                            this.loggedInvalidBlockState = true;
+-                            LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new Object[]{LogUtils.defer(this::getType), LogUtils.defer(this::getPos), iblockdata});
++                        // Paper start - Remove the Block Entity if it's invalid
++                        } else {
++                            LevelChunk.this.removeBlockEntity(this.getPos());
++                            if (!this.loggedInvalidBlockState) {
++                                this.loggedInvalidBlockState = true;
++                                LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new Object[]{LogUtils.defer(this::getType), LogUtils.defer(this::getPos), iblockdata});
++                            }
++                            // Paper end - Remove the Block Entity if it's invalid
+                         }
  
                          gameprofilerfiller.pop();
                      } catch (Throwable throwable) {
