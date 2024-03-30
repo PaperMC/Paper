@@ -5,8 +5,10 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.world.entity.projectile.EntityArrow;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
 
 public class CraftArrow extends AbstractProjectile implements AbstractArrow {
@@ -116,6 +118,18 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
     @Override
     public void setShotFromCrossbow(boolean shotFromCrossbow) {
         getHandle().setShotFromCrossbow(shotFromCrossbow);
+    }
+
+    @Override
+    public ItemStack getItem() {
+        return CraftItemStack.asBukkitCopy(getHandle().pickupItemStack);
+    }
+
+    @Override
+    public void setItem(ItemStack item) {
+        Preconditions.checkArgument(item != null, "ItemStack cannot be null");
+
+        getHandle().pickupItemStack = CraftItemStack.asNMSCopy(item);
     }
 
     @Override
