@@ -437,6 +437,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public Map<Plugin, Collection<Chunk>> getPluginChunkTickets();
 
     /**
+     * Gets all Chunks intersecting the given BoundingBox.
+     *
+     * @param box BoundingBox to check
+     * @return A collection of Chunks intersecting the given BoundingBox
+     */
+    @NotNull
+    public Collection<Chunk> getIntersectingChunks(@NotNull BoundingBox box);
+
+    /**
      * Drops an item at the specified {@link Location}
      *
      * @param location Location to drop the item
