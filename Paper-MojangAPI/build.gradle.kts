@@ -17,7 +17,7 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
-    testImplementation("org.ow2.asm:asm-tree:9.2")
+    testImplementation("org.ow2.asm:asm-tree:9.7")
 }
 
 configure<PublishingExtension> {

@@ -700,12 +700,12 @@ index 0000000000000000000000000000000000000000..2f0d9b953802dee821cfde82d22b0567
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index daedf825e68655492f5ab776bc206a5eb87c0170..7de24c39b460e43d27839b3821e67213508ece81 100644
+index c8134e605e2dd58c2af1cbefc5e20e91b6414d2a..b7ffab0284b0bccd79775b8d03c8b2e088f91d1d 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 @@ -29,7 +29,8 @@ public class PacketUtils {
              engine.executeIfPossible(() -> {
-                 if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerCommonPacketListenerImpl && ((ServerCommonPacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
+                 if (listener instanceof ServerCommonPacketListenerImpl serverCommonPacketListener && serverCommonPacketListener.processedDisconnect) return; // CraftBukkit - Don't handle sync packets for kicked players
                  if (listener.shouldHandleMessage(packet)) {
 -                    try {
 +                    co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
@@ -714,7 +714,7 @@ index daedf825e68655492f5ab776bc206a5eb87c0170..7de24c39b460e43d27839b3821e67213
                      } catch (Exception exception) {
                          label25:
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3691fd58c7baf98b15c50fa4dacf3a35f4f9b4b8..a6a8b5079ceaad90a79a09cab5c38a6fde6d33ee 100644
+index 4c18491a627e66297627abbded1af48b2026e610..3365d2ec8426888c16873a311226fa69840fa2f0 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -186,7 +186,7 @@ import org.bukkit.craftbukkit.Main;
@@ -1315,7 +1315,7 @@ index 5e00df1cd2b8a6691b2f9490b1f4c3ed4d6a988a..72488b0d499e4e0d0ccba38622cc5a3f
  
      public UserWhiteList getWhiteList() {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 01c2ccb29dd74655ef65cc29ff2cafe6b467e5a5..cdb4acbaf019608c57d7a40c6928ddc9c00fd1d5 100644
+index 17e489c4650ba421a993c863426f1a2084d44fb0..360e322ee298048bd280160a49f000384d930c3a 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -135,7 +135,6 @@ import org.bukkit.craftbukkit.event.CraftPortalEvent;
@@ -1393,7 +1393,7 @@ index c4bc491eed487c0a7e30538b0fb46fde91cd7b31..382b55167dede435b034866bd394455f
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index ea73e8a04ee767625d06483dce83d68262887a27..5ae9f9a4cb903909cb26a612a847d12515c52d91 100644
+index 864da662a81b653cd94e2270be262e912e351e21..da755e478d2ab1444c92afd0d916589b2e6f4df4 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -142,7 +142,7 @@ import org.bukkit.event.entity.EntityTeleportEvent;
@@ -1474,7 +1474,7 @@ index ea73e8a04ee767625d06483dce83d68262887a27..5ae9f9a4cb903909cb26a612a847d125
          if (!this.level().isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
              this.hurt(this.damageSources().drown(), 1.0F);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index d89431b476b032f3ff86097bb91b86016d4e3371..aa22d4024cdd0ecb1c0442ecdeae00822597362e 100644
+index bede1a64e4f04aa8e87ddb44f2cc4a1ab46a3b81..d02cc220c8bd59a1289f34fd9fb70a00b0fbc07a 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -91,7 +91,6 @@ import org.bukkit.Bukkit;
@@ -1503,7 +1503,7 @@ index d89431b476b032f3ff86097bb91b86016d4e3371..aa22d4024cdd0ecb1c0442ecdeae0082
          this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
      }
-@@ -725,15 +724,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -726,15 +725,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
          this.timings.tileEntityTick.stopTiming(); // Spigot
          this.tickingBlockEntities = false;
@@ -2019,7 +2019,7 @@ index f97eccb6a17c7876e1e002d798eb67bbe80571a0..76effc345d362047e64d064eb64a5222
 +    } // Paper
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 8db0df55c5e23657b3a99a56fefb8e7419618c16..5e541636b216d4f46be18b1031522bd92e667b67 100644
+index ea994c34e1ca725eae4d05223fc09fc1308b0730..d72e6ebc8b7b002279ba61c30b5a42f8cd5b3b7b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -214,6 +214,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
@@ -2035,7 +2035,7 @@ index 8db0df55c5e23657b3a99a56fefb8e7419618c16..5e541636b216d4f46be18b1031522bd9
  
      public static byte toLegacyData(BlockState data) {
          return CraftLegacy.toLegacyData(data);
-@@ -457,6 +463,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -462,6 +468,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
      public DamageSource.Builder createDamageSourceBuilder(DamageType damageType) {
          return new CraftDamageSourceBuilder(damageType);
      }
