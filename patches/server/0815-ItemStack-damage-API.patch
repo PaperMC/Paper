@@ -11,20 +11,21 @@ the logic associated with damaging them
 public net.minecraft.world.entity.LivingEntity entityEventForEquipmentBreak(Lnet/minecraft/world/entity/EquipmentSlot;)B
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index cd3706e428d446cbbfe282613f7f63824b679305..9c0895f21564dd0ede9f6d169b783aedfd92c03c 100644
+index 7bf76cb26dfed46bbb95c0c457dc5eb4587b3f34..2fcc027629b27f567020f56e5bbe65b9d9713eb1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -1089,6 +1089,53 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
-         throw new IllegalArgumentException(entityCategory + " is an unrecognized entity category");
-     }
- 
-+    @Override
-+    public void broadcastSlotBreak(org.bukkit.inventory.EquipmentSlot slot) {
+@@ -1113,4 +1113,52 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         this.getHandle().knockback(strength, directionX, directionZ);
+     };
+     // Paper end - knockback API
++
++    // Paper start - ItemStack damage API
++    public void broadcastSlotBreak(final org.bukkit.inventory.EquipmentSlot slot) {
 +        this.getHandle().broadcastBreakEvent(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot));
 +    }
 +
 +    @Override
-+    public void broadcastSlotBreak(org.bukkit.inventory.EquipmentSlot slot, Collection<org.bukkit.entity.Player> players) {
++    public void broadcastSlotBreak(final org.bukkit.inventory.EquipmentSlot slot, final Collection<org.bukkit.entity.Player> players) {
 +        if (players.isEmpty()) {
 +            return;
 +        }
@@ -36,9 +37,9 @@ index cd3706e428d446cbbfe282613f7f63824b679305..9c0895f21564dd0ede9f6d169b783aed
 +    }
 +
 +    @Override
-+    public ItemStack damageItemStack(ItemStack stack, int amount) {
++    public ItemStack damageItemStack(ItemStack stack, final int amount) {
 +        final net.minecraft.world.item.ItemStack nmsStack;
-+        if (stack instanceof CraftItemStack craftItemStack) {
++        if (stack instanceof final CraftItemStack craftItemStack) {
 +            if (craftItemStack.handle == null || craftItemStack.handle.isEmpty()) {
 +                return stack;
 +            }
@@ -52,19 +53,17 @@ index cd3706e428d446cbbfe282613f7f63824b679305..9c0895f21564dd0ede9f6d169b783aed
 +    }
 +
 +    @Override
-+    public void damageItemStack(org.bukkit.inventory.EquipmentSlot slot, int amount) {
++    public void damageItemStack(final org.bukkit.inventory.EquipmentSlot slot, final int amount) {
 +        final net.minecraft.world.entity.EquipmentSlot nmsSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot);
 +        this.damageItemStack0(this.getHandle().getItemBySlot(nmsSlot), amount, nmsSlot);
 +    }
 +
-+    private void damageItemStack0(net.minecraft.world.item.ItemStack nmsStack, int amount, net.minecraft.world.entity.EquipmentSlot slot) {
++    private void damageItemStack0(final net.minecraft.world.item.ItemStack nmsStack, final int amount, final net.minecraft.world.entity.EquipmentSlot slot) {
 +        nmsStack.hurtAndBreak(amount, this.getHandle(), livingEntity -> {
 +            if (slot != null) {
 +                livingEntity.broadcastBreakEvent(slot);
 +            }
 +        });
 +    }
-+
-     @Override
-     public void knockback(double strength, double directionX, double directionZ) {
-         Preconditions.checkArgument(strength > 0, "Knockback strength must be > 0");
++    // Paper end - ItemStack damage API
+ }
