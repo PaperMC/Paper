@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pierpaolo Coletta <p.coletta@glyart.com>
+Date: Tue, 2 Apr 2024 20:56:19 +0200
+Subject: [PATCH] make sure block entities are valid when loading them
+
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 465458e8a7dbaf9afb32709a71c7b2620d1e1fd2..b0068071c0b377edddf246bd4e5c3534d1e36c61 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -1036,17 +1036,25 @@ public class LevelChunk extends ChunkAccess {
+     }
+ 
+     public void registerAllBlockEntitiesAfterLevelLoad() {
+-        this.blockEntities.values().forEach((tileentity) -> {
+-            Level world = this.level;
++        // Paper start - Make sure block entities are valid when loading them
++        final Iterator<BlockEntity> iterator = this.blockEntities.values().iterator();
++        while (iterator.hasNext()) {
++            BlockEntity tileentity = (BlockEntity) iterator.next();
++            if (!tileentity.getType().isValid(tileentity.getBlockState())) {
++                LOGGER.warn("Block entity {} @ {} state {} invalid for loading, removed.", tileentity, tileentity.getBlockPos(), tileentity.getBlockState());
++                iterator.remove();
++                continue;
++            }
+ 
+-            if (world instanceof ServerLevel) {
+-                ServerLevel worldserver = (ServerLevel) world;
++            if (this.level instanceof ServerLevel) {
++                ServerLevel worldserver = (ServerLevel) this.level;
+ 
+                 this.addGameEventListener(tileentity, worldserver);
+             }
+ 
+             this.updateBlockEntityTicker(tileentity);
+-        });
++        }
++        // Paper end - Make sure block entities are valid when loading them
+     }
+ 
+     private <T extends BlockEntity> void addGameEventListener(T blockEntity, ServerLevel world) {
