@@ -2,7 +2,6 @@ import java.util.Locale
 
 pluginManagement {
     repositories {
-        mavenLocal()
         gradlePluginPortal()
         maven("https://repo.papermc.io/repository/maven-public/")
     }
