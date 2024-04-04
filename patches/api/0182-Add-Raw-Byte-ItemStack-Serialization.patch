@@ -5,6 +5,8 @@ Subject: [PATCH] Add Raw Byte ItemStack Serialization
 
 Serializes using NBT which is safer for server data migrations than bukkits format.
 
+Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
 index 6e67fdb091a006d2d13bc2d93db4d55348af4c8f..e41d5d9b810c8816cd0d1eba5fd1ea56252fb0df 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
@@ -51,6 +53,116 @@ index e9c29fc1db686b80bc2477d78ec2b361b8600b9e..4b4c364dad70126dee17aabca2c3da9f
 +        return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
 +    }
 +
++    /**
++     * Serializes a collection of items to raw bytes in NBT. Serializes empty items as null.
++     * <p>
++     * If you need a string representation to put into a file, you can for example use {@link java.util.Base64} encoding.
++     *
++     * @param items items to serialize
++     * @return bytes representing the items in NBT
++     * @see #serializeAsBytes()
++     */
++    public static byte @NotNull [] serializeItemsAsBytes(java.util.@NotNull Collection<ItemStack> items) {
++        try (final java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream()) {
++            final java.io.DataOutput output = new java.io.DataOutputStream(outputStream);
++            output.writeByte(ARRAY_SERIALIZATION_VERSION);
++            output.writeInt(items.size());
++            for (final ItemStack item : items) {
++                if (item == null || item.isEmpty()) {
++                    // Ensure the correct order by including empty/null items
++                    output.writeInt(0);
++                    continue;
++                }
++
++                final byte[] itemBytes = item.serializeAsBytes();
++                output.writeInt(itemBytes.length);
++                output.write(itemBytes);
++            }
++            return outputStream.toByteArray();
++        } catch (final java.io.IOException e) {
++            throw new RuntimeException("Error while writing itemstack", e);
++        }
++    }
++
++    /**
++     * Serializes a collection of items to raw bytes in NBT. Serializes empty items as null.
++     * <p>
++     * If you need a string representation to put into a file, you can for example use {@link java.util.Base64} encoding.
++     *
++     * @param items items to serialize
++     * @return bytes representing the items in NBT
++     * @see #serializeAsBytes()
++     */
++    public static byte @NotNull [] serializeItemsAsBytes(@Nullable ItemStack @NotNull [] items) {
++        return serializeItemsAsBytes(java.util.Arrays.asList(items));
++    }
++
++    /**
++     * Deserializes this itemstack from raw NBT bytes.
++     * <p>
++     * If you need a string representation to put into a file, you can for example use {@link java.util.Base64} encoding.
++     *
++     * @param bytes bytes representing an item in NBT
++     * @return ItemStack array migrated to this version of Minecraft if needed
++     * @see #deserializeBytes(byte[])
++     */
++    public static @Nullable ItemStack @NotNull [] deserializeItemsFromBytes(final byte @NotNull [] bytes) {
++        try (final java.io.ByteArrayInputStream inputStream = new java.io.ByteArrayInputStream(bytes)) {
++            final java.io.DataInputStream input = new java.io.DataInputStream(inputStream);
++            final byte version = input.readByte();
++            if (version != ARRAY_SERIALIZATION_VERSION) {
++                throw new IllegalArgumentException("Unsupported version or bad data: " + version);
++            }
++
++            final int count = input.readInt();
++            final ItemStack[] items = new ItemStack[count];
++            for (int i = 0; i < count; i++) {
++                final int length = input.readInt();
++                if (length == 0) {
++                    // Empty item, keep entry as null
++                    continue;
++                }
++
++                final byte[] itemBytes = new byte[length];
++                input.read(itemBytes);
++                items[i] = ItemStack.deserializeBytes(itemBytes);
++            }
++            return items;
++        } catch (final java.io.IOException e) {
++            throw new RuntimeException("Error while reading itemstack", e);
++        }
++    }
++
      /**
       * Gets the Display name as seen in the Client.
       * Currently the server only supports the English language. To override this,
+diff --git a/src/main/java/org/bukkit/util/io/BukkitObjectInputStream.java b/src/main/java/org/bukkit/util/io/BukkitObjectInputStream.java
+index 0f8eb97bd5e2f8b0f0cc03f7c4342aae06c4520c..4bfdc418977be8440290510e4c324c162ddb6d94 100644
+--- a/src/main/java/org/bukkit/util/io/BukkitObjectInputStream.java
++++ b/src/main/java/org/bukkit/util/io/BukkitObjectInputStream.java
+@@ -14,6 +14,9 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization;
+  * <p>
+  * Behavior of implementations extending this class is not guaranteed across
+  * future versions.
++ * @deprecated Object streams on their own are not safe. For safer and more consistent serialization of items,
++ * use {@link org.bukkit.inventory.ItemStack#serializeAsBytes()} or
++ * {@link org.bukkit.inventory.ItemStack#serializeItemsAsBytes(java.util.Collection)}.
+  */
+ public class BukkitObjectInputStream extends ObjectInputStream {
+ 
+diff --git a/src/main/java/org/bukkit/util/io/BukkitObjectOutputStream.java b/src/main/java/org/bukkit/util/io/BukkitObjectOutputStream.java
+index dd1b9ee5f57773f07924aa311823fd8d63195cb2..c5752ae9e5653ce103ee2ba049050bfba641858c 100644
+--- a/src/main/java/org/bukkit/util/io/BukkitObjectOutputStream.java
++++ b/src/main/java/org/bukkit/util/io/BukkitObjectOutputStream.java
+@@ -14,7 +14,11 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
+  * <p>
+  * Behavior of implementations extending this class is not guaranteed across
+  * future versions.
++ * @deprecated Object streams on their own are not safe. For safer and more consistent serialization of items,
++ * use {@link org.bukkit.inventory.ItemStack#serializeAsBytes()} or
++ * {@link org.bukkit.inventory.ItemStack#serializeItemsAsBytes(java.util.Collection)}.
+  */
++@Deprecated // Paper
+ public class BukkitObjectOutputStream extends ObjectOutputStream {
+ 
+     /**
