@@ -41,18 +41,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          )
          for (tld in setOf("net", "com", "org")) {
              attributes("$tld/bukkit", "Sealed" to true)
-@@ -0,0 +0,0 @@ tasks.jar {
-     }
- }
- 
-+tasks.compileJava {
-+    // incremental compilation is currently broken due to patched files having compiled counterparts already on the compile classpath
-+    options.setIncremental(false)
-+}
-+
- publishing {
-     publications.create<MavenPublication>("maven") {
-         artifact(tasks.shadowJar)
 @@ -0,0 +0,0 @@ tasks.shadowJar {
      }
  }
@@ -72,20 +60,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
      useJUnitPlatform()
 @@ -0,0 +0,0 @@ tasks.registerRunTask("runReobf") {
-     classpath(runtimeClasspathWithoutVanillaServer)
- }
- 
-+val runtimeClasspathForRunDev = sourceSets.main.flatMap { src ->
-+    src.runtimeClasspath.elements.map { elements ->
-+        elements.filterNot { file -> file.asFile.endsWith("minecraft.jar") }
-+    }
-+}
  tasks.registerRunTask("runDev") {
      description = "Spin up a non-relocated Mojang-mapped test server"
--    classpath(sourceSets.main.map { it.runtimeClasspath })
-+    classpath(tasks.filterProjectDir.flatMap { it.outputJar })
-+    classpath(runtimeClasspathForRunDev)
-+    jvmArgs("-DPaper.isRunDev=true")
+     classpath(sourceSets.main.map { it.runtimeClasspath })
++    jvmArgs("-DPaper.pushPaperAssetsRoot=true")
  }
 diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -99,27 +77,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final String namespace;
      private final String path;
  
-diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+diff --git a/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java b/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Main.java
-+++ b/src/main/java/net/minecraft/server/Main.java
-@@ -0,0 +0,0 @@ public class Main {
-             */ // CraftBukkit end
+--- a/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java
++++ b/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java
+@@ -0,0 +0,0 @@ public class VanillaPackResourcesBuilder {
  
-         try {
-+            // Paper start
-+            if (Boolean.getBoolean("Paper.isRunDev")) {
-+                net.minecraft.server.packs.VanillaPackResourcesBuilder.developmentConfig = builder -> {
-+                    try {
-+                        builder.pushAssetPath(net.minecraft.server.packs.PackType.SERVER_DATA, net.minecraft.server.packs.VanillaPackResourcesBuilder.safeGetPath(java.util.Objects.requireNonNull(Main.class.getResource("/data/.paperassetsroot"), "Missing required .paperassetsroot file").toURI()).getParent());
-+                    } catch (java.net.URISyntaxException | IOException ex) {
-+                        throw new RuntimeException(ex);
-+                    }
-+                };
+     public VanillaPackResourcesBuilder applyDevelopmentConfig() {
+         developmentConfig.accept(this);
++        if (Boolean.getBoolean("Paper.pushPaperAssetsRoot")) {
++            try {
++                this.pushAssetPath(net.minecraft.server.packs.PackType.SERVER_DATA, net.minecraft.server.packs.VanillaPackResourcesBuilder.safeGetPath(java.util.Objects.requireNonNull(
++                    // Important that this is a patched class
++                    VanillaPackResourcesBuilder.class.getResource("/data/.paperassetsroot"), "Missing required .paperassetsroot file").toURI()).getParent());
++            } catch (java.net.URISyntaxException | IOException ex) {
++                throw new RuntimeException(ex);
 +            }
-+            // Paper end
- 
-             Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
++        }
+         return this;
+     }
  
 diff --git a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -163,3 +139,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 diff --git a/src/main/resources/data/.paperassetsroot b/src/main/resources/data/.paperassetsroot
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
++++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+@@ -0,0 +0,0 @@ public abstract class AbstractTestingBase {
+     public static final Registry<Biome> BIOMES;
+ 
+     static {
++        System.setProperty("Paper.pushPaperAssetsRoot", "true"); // Paper
+         SharedConstants.tryDetectVersion();
+         Bootstrap.bootStrap();
+         // Populate available packs
