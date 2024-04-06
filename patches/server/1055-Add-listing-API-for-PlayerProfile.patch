@@ -1,0 +1,133 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Flo0 <flo.roma@web.de>
+Date: Sat, 6 Apr 2024 23:15:24 +0200
+Subject: [PATCH] Add listing API for PlayerProfile
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+index 56eddd28429cf42c02d88b8bf79f8b616fa45289..ba3dde833e073a9979af5b3554f669b9ec0ccf7e 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+@@ -16,6 +16,7 @@ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.world.level.GameType;
+ 
++
+ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacketListener> {
+     private final EnumSet<ClientboundPlayerInfoUpdatePacket.Action> actions;
+     private final List<ClientboundPlayerInfoUpdatePacket.Entry> entries;
+@@ -68,6 +69,35 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+         return new ClientboundPlayerInfoUpdatePacket(enumSet, new ClientboundPlayerInfoUpdatePacket.Entry(playerInfoId, listed));
+     }
+     // Paper end - Add Listing API for Player
++    // Paper start - Add Listing API for PlayerProfile
++    public static ClientboundPlayerInfoUpdatePacket addAndList(GameProfile profile, int latency, GameType gameMode, @Nullable Component displayName) {
++        EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(
++            ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER,
++            ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED,
++            ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY,
++            ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE
++        );
++
++        if(displayName != null) {
++            enumSet.add(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME);
++        }
++
++        UUID profileId = profile.getId();
++        return new ClientboundPlayerInfoUpdatePacket(enumSet, new ClientboundPlayerInfoUpdatePacket.Entry(profileId, profile, true, latency, gameMode, displayName, null));
++    }
++    public static ClientboundPlayerInfoUpdatePacket updateLatency(UUID playerInfoId, int latency) {
++        EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY);
++        return new ClientboundPlayerInfoUpdatePacket(enumSet, new ClientboundPlayerInfoUpdatePacket.Entry(playerInfoId, true, latency, GameType.DEFAULT_MODE, null));
++    }
++    public static ClientboundPlayerInfoUpdatePacket updateGameMode(UUID playerInfoId, GameType gameMode) {
++        EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE);
++        return new ClientboundPlayerInfoUpdatePacket(enumSet, new ClientboundPlayerInfoUpdatePacket.Entry(playerInfoId, true, 0, gameMode, null));
++    }
++    public static ClientboundPlayerInfoUpdatePacket updateDisplayName(UUID playerInfoId, Component displayName) {
++        EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME);
++        return new ClientboundPlayerInfoUpdatePacket(enumSet, new ClientboundPlayerInfoUpdatePacket.Entry(playerInfoId, true, 0, GameType.DEFAULT_MODE, displayName));
++    }
++    // Paper end - Add Listing API for PlayerProfile
+ 
+     public ClientboundPlayerInfoUpdatePacket(FriendlyByteBuf buf) {
+         this.actions = buf.readEnumSet(ClientboundPlayerInfoUpdatePacket.Action.class);
+@@ -188,6 +218,11 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+             this(profileId, null, listed, 0, GameType.DEFAULT_MODE, null, null);
+         }
+         // Paper end - Add Listing API for Player
++        // Paper start - Add Listing API for PlayerProfile
++        Entry(UUID profileId, boolean listed, int latency, GameType gameMode, @Nullable Component displayName) {
++            this(profileId, null, listed, latency, gameMode, displayName, null);
++        }
++        // Paper end - Add Listing API for PlayerProfile
+     }
+ 
+     static class EntryBuilder {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 616d2e479d91673695ade0db151a0099b568904f..86962f285a1027ec0a818880b0303affa434defa 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2190,6 +2190,62 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+     // Paper end - Add Listing API for Player
+ 
++    // Paper start - Add Listing API for PlayerProfile
++    @Override
++    public void listProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile, int latency, GameMode gameMode, @Nullable net.kyori.adventure.text.Component displayName) {
++        Preconditions.checkNotNull(profile, "profile cannot be null");
++        Preconditions.checkArgument(isOfflineProfile(profile), "using the profile of an online player is not allowed");
++        if (this.getHandle().connection == null) return;
++
++        GameType type = GameType.byId(gameMode.getValue());
++        net.minecraft.network.chat.Component name = io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName);
++        com.mojang.authlib.GameProfile gameProfile = ((com.destroystokyo.paper.profile.CraftPlayerProfile) profile).buildGameProfile();
++        ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.addAndList(gameProfile, latency, type, name);
++        this.getHandle().connection.send(packet);
++    }
++
++    @Override
++    public void updateListedProfileLatency(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile, int latency) {
++        Preconditions.checkNotNull(profile, "profile cannot be null");
++        Preconditions.checkArgument(isOfflineProfile(profile), "using the profile of an online player is not allowed");
++        if (this.getHandle().connection == null) return;
++
++        this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateLatency(profile.getId(), latency));
++    }
++
++    @Override
++    public void updateListedProfileGameMode(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile, GameMode gameMode) {
++        Preconditions.checkNotNull(profile, "profile cannot be null");
++        Preconditions.checkArgument(isOfflineProfile(profile), "using the profile of an online player is not allowed");
++        if (this.getHandle().connection == null) return;
++
++        this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateGameMode(profile.getId(), GameType.byId(gameMode.getValue())));
++    }
++
++    @Override
++    public void updateListedProfileDisplayName(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @Nullable net.kyori.adventure.text.Component displayName) {
++        Preconditions.checkNotNull(profile, "profile cannot be null");
++        Preconditions.checkArgument(isOfflineProfile(profile), "using the profile of an online player is not allowed");
++        if (this.getHandle().connection == null) return;
++
++        this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateDisplayName(profile.getId(), io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName)));
++    }
++
++    @Override
++    public void unlistProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
++        Preconditions.checkNotNull(profile, "profile cannot be null");
++        Preconditions.checkArgument(isOfflineProfile(profile), "using the profile of an online player is not allowed");
++        if (this.getHandle().connection == null) return;
++
++        this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateListed(profile.getId(), false));
++    }
++
++    private boolean isOfflineProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
++        UUID profileId = profile.getId();
++        return Bukkit.getPlayer(profileId) == null;
++    }
++    // Paper end - Add Listing API for PlayerProfile
++
+     @Override
+     public Map<String, Object> serialize() {
+         Map<String, Object> result = new LinkedHashMap<String, Object>();
