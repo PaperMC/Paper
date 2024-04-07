@@ -14,7 +14,15 @@
  public class EntityCreeper extends EntityMonster implements PowerableMob {
  
      private static final DataWatcherObject<Integer> DATA_SWELL_DIR = DataWatcher.defineId(EntityCreeper.class, DataWatcherRegistry.INT);
-@@ -218,9 +225,20 @@
+@@ -53,6 +60,7 @@
+     public int maxSwell = 30;
+     public int explosionRadius = 3;
+     private int droppedSkulls;
++    private EntityHuman entityIgniter; // CraftBukkit
+ 
+     public EntityCreeper(EntityTypes<? extends EntityCreeper> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -218,9 +226,20 @@
      @Override
      public void thunderHit(WorldServer worldserver, EntityLightning entitylightning) {
          super.thunderHit(worldserver, entitylightning);
@@ -35,16 +43,18 @@
      @Override
      protected EnumInteractionResult mobInteract(EntityHuman entityhuman, EnumHand enumhand) {
          ItemStack itemstack = entityhuman.getItemInHand(enumhand);
-@@ -231,7 +249,7 @@
+@@ -230,8 +249,9 @@
+ 
              this.level().playSound(entityhuman, this.getX(), this.getY(), this.getZ(), soundeffect, this.getSoundSource(), 1.0F, this.random.nextFloat() * 0.4F + 0.8F);
              if (!this.level().isClientSide) {
++                this.entityIgniter = entityhuman; // CraftBukkit
                  this.ignite();
 -                if (!itemstack.isDamageableItem()) {
 +                if (itemstack.getItem().getMaxDamage() == 0) { // CraftBukkit - fix MC-264285: unbreakable flint and steels are completely consumed when igniting a creeper
                      itemstack.shrink(1);
                  } else {
                      itemstack.hurtAndBreak(1, entityhuman, (entityhuman1) -> {
-@@ -250,10 +268,19 @@
+@@ -250,10 +270,19 @@
          if (!this.level().isClientSide) {
              float f = this.isPowered() ? 2.0F : 1.0F;
  
@@ -55,7 +65,7 @@
              this.dead = true;
 -            this.level().explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionRadius * f, World.a.MOB);
 -            this.discard();
-+            this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB); // CraftBukkit
++            this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customCausingEntity(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB); // CraftBukkit
 +            this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
              this.spawnLingeringCloud();
 +            // CraftBukkit start
@@ -66,7 +76,7 @@
          }
  
      }
-@@ -264,6 +291,7 @@
+@@ -264,6 +293,7 @@
          if (!collection.isEmpty()) {
              EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
  
@@ -74,7 +84,7 @@
              entityareaeffectcloud.setRadius(2.5F);
              entityareaeffectcloud.setRadiusOnUse(-0.5F);
              entityareaeffectcloud.setWaitTime(10);
-@@ -277,7 +305,7 @@
+@@ -277,7 +307,7 @@
                  entityareaeffectcloud.addEffect(new MobEffect(mobeffect));
              }
  

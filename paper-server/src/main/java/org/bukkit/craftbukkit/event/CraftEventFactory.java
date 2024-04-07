@@ -940,7 +940,7 @@ public class CraftEventFactory {
 
     private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(source);
-        Entity damager = source.getCausingEntity();
+        Entity damager = (bukkitDamageSource.isIndirect() && source.getDirectEntity() != null) ? source.getDirectEntity() : source.getCausingEntity();
         if (source.is(DamageTypeTags.IS_EXPLOSION)) {
             if (damager == null) {
                 return callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
@@ -949,10 +949,6 @@ public class CraftEventFactory {
             return callEntityDamageEvent(damager, entity, damageCause, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
         } else if (damager != null || source.getDirectEntity() != null) {
             DamageCause cause = (source.isSweep()) ? DamageCause.ENTITY_SWEEP_ATTACK : DamageCause.ENTITY_ATTACK;
-
-            if (bukkitDamageSource.isIndirect() && source.getDirectEntity() != null) {
-                damager = source.getDirectEntity();
-            }
 
             if (damager instanceof IProjectile) {
                 if (damager.getBukkitEntity() instanceof ThrownPotion) {
