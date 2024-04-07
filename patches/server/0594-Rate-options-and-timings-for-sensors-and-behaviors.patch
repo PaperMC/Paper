@@ -28,10 +28,10 @@ index 4bd813161a5d76a83cdbd0a9209b9ea9e60ffe1b..e2764186bd6b838ed5cd86c15597a08d
       * Get a named timer for the specified tile entity type to track type specific timings.
       * @param entity
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-index 4ea437253539e3ee533ca9da77a337cbf4d1e807..1e71cde7cb7654f1c21ae5e27e2fad7b58f593eb 100644
+index f639cafa64d98a001e622882c647701547f5c3ac..03092417cd8ab5c6d266f3af9f20f47b34cfaba3 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-@@ -13,6 +13,10 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+@@ -14,6 +14,10 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
      private long endTimestamp;
      private final int minDuration;
      private final int maxDuration;
@@ -42,7 +42,7 @@ index 4ea437253539e3ee533ca9da77a337cbf4d1e807..1e71cde7cb7654f1c21ae5e27e2fad7b
  
      public Behavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState) {
          this(requiredMemoryState, 60);
-@@ -26,6 +30,15 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+@@ -27,6 +31,15 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
          this.minDuration = minRunTime;
          this.maxDuration = maxRunTime;
          this.entryCondition = requiredMemoryState;
@@ -58,7 +58,7 @@ index 4ea437253539e3ee533ca9da77a337cbf4d1e807..1e71cde7cb7654f1c21ae5e27e2fad7b
      }
  
      @Override
-@@ -35,11 +48,19 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+@@ -36,11 +49,19 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
  
      @Override
      public final boolean tryStart(ServerLevel world, E entity, long time) {
@@ -78,7 +78,7 @@ index 4ea437253539e3ee533ca9da77a337cbf4d1e807..1e71cde7cb7654f1c21ae5e27e2fad7b
              return true;
          } else {
              return false;
-@@ -51,11 +72,13 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+@@ -52,11 +73,13 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
  
      @Override
      public final void tickOrStop(ServerLevel world, E entity, long time) {
@@ -89,15 +89,15 @@ index 4ea437253539e3ee533ca9da77a337cbf4d1e807..1e71cde7cb7654f1c21ae5e27e2fad7b
              this.doStop(world, entity, time);
          }
 +        this.timing.stopTiming(); // Paper - behavior timings
- 
      }
  
+     protected void tick(ServerLevel world, E entity, long time) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
-index 7970eebbd6935402223e6bba962bb8ba7d861dfd..fcdb9bde8e1605e30dde3e580491522d4b62cdc0 100644
+index 671fc7725d7c801a2ba009da5bd1bc1a9530f187..9e90cb2f51d1bacacb287e912d14ab9152523205 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
-@@ -19,8 +19,21 @@ public abstract class Sensor<E extends LivingEntity> {
-     private static final TargetingConditions ATTACK_TARGET_CONDITIONS_IGNORE_INVISIBILITY_AND_LINE_OF_SIGHT = TargetingConditions.forCombat().range(16.0D).ignoreLineOfSight().ignoreInvisibilityTesting();
+@@ -26,8 +26,21 @@ public abstract class Sensor<E extends LivingEntity> {
+         .ignoreInvisibilityTesting();
      private final int scanRate;
      private long timeToTick;
 +    // Paper start - configurable sensor tick rate and timings
@@ -118,7 +118,7 @@ index 7970eebbd6935402223e6bba962bb8ba7d861dfd..fcdb9bde8e1605e30dde3e580491522d
          this.scanRate = senseInterval;
          this.timeToTick = (long)RANDOM.nextInt(senseInterval);
      }
-@@ -31,8 +44,12 @@ public abstract class Sensor<E extends LivingEntity> {
+@@ -38,8 +51,12 @@ public abstract class Sensor<E extends LivingEntity> {
  
      public final void tick(ServerLevel world, E entity) {
          if (--this.timeToTick <= 0L) {
@@ -130,5 +130,5 @@ index 7970eebbd6935402223e6bba962bb8ba7d861dfd..fcdb9bde8e1605e30dde3e580491522d
              this.doTick(world, entity);
 +            this.timing.stopTiming(); // Paper - sensor timings
          }
- 
      }
+ 

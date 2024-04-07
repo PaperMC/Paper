@@ -504,7 +504,7 @@ index 0000000000000000000000000000000000000000..9cfa5d36a6991067a3866e0d437749fa
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 93dc90cc4e90d9db4712efff80f811d7c9d55caa..3112eace3d9d3d7b21dfc267993cb9d84819dc11 100644
+index 52220795bf8a73c63837b4e07b1abf99c0344322..a6a97dca29c900278885b5ab1741229fcfaf7b36 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -239,6 +239,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
@@ -596,34 +596,32 @@ index 0e68f692bb9b397cffd7352e7340465b5e3719f4..58af87b8faf4f8d6bdb111c49a429466
      public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
      private int maxStack = MAX_STACK;
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
-index e0fbacd574e0c83c2e1d164ded8e9ccf4af30480..7529751afa2932fd16bc4591189b0358268a7b14 100644
+index 23551b97bdd865c30d7402cff0e221cfe4b1d9d4..f4ad1eea5bced6997edbc3a5ed1360b12b70f68f 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
-@@ -59,10 +59,9 @@ public interface ContainerEntity extends Container, MenuProvider {
+@@ -59,9 +59,8 @@ public interface ContainerEntity extends Container, MenuProvider {
              if (this.getLootTableSeed() != 0L) {
                  nbt.putLong("LootTableSeed", this.getLootTableSeed());
              }
 -        } else {
 -            ContainerHelper.saveAllItems(nbt, this.getItemStacks());
          }
- 
 +        ContainerHelper.saveAllItems(nbt, this.getItemStacks()); // Paper - always save the items, table may still remain
      }
  
      default void readChestVehicleSaveData(CompoundTag nbt) {
-@@ -70,10 +69,9 @@ public interface ContainerEntity extends Container, MenuProvider {
+@@ -69,9 +68,8 @@ public interface ContainerEntity extends Container, MenuProvider {
          if (nbt.contains("LootTable", 8)) {
              this.setLootTable(new ResourceLocation(nbt.getString("LootTable")));
              this.setLootTableSeed(nbt.getLong("LootTableSeed"));
 -        } else {
 -            ContainerHelper.loadAllItems(nbt, this.getItemStacks());
          }
- 
 +        ContainerHelper.loadAllItems(nbt, this.getItemStacks()); // Paper - always load the items, table may still remain
      }
  
      default void chestVehicleDestroyed(DamageSource source, Level world, Entity vehicle) {
-@@ -96,13 +94,13 @@ public interface ContainerEntity extends Container, MenuProvider {
+@@ -93,13 +91,13 @@ public interface ContainerEntity extends Container, MenuProvider {
  
      default void unpackChestVehicleLootTable(@Nullable Player player) {
          MinecraftServer minecraftServer = this.level().getServer();
@@ -634,14 +632,14 @@ index e0fbacd574e0c83c2e1d164ded8e9ccf4af30480..7529751afa2932fd16bc4591189b0358
                  CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.getLootTable());
              }
  
--            this.setLootTable((ResourceLocation)null);
+-            this.setLootTable(null);
 +            this.getLootableData().processRefill(player); // Paper
-             LootParams.Builder builder = (new LootParams.Builder((ServerLevel)this.level())).withParameter(LootContextParams.ORIGIN, this.position());
+             LootParams.Builder builder = new LootParams.Builder((ServerLevel)this.level()).withParameter(LootContextParams.ORIGIN, this.position());
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -176,4 +174,13 @@ public interface ContainerEntity extends Container, MenuProvider {
+@@ -171,4 +169,13 @@ public interface ContainerEntity extends Container, MenuProvider {
      default boolean isChestVehicleStillValid(Player player) {
-         return !this.isRemoved() && this.position().closerThan(player.position(), 8.0D);
+         return !this.isRemoved() && this.position().closerThan(player.position(), 8.0);
      }
 +    // Paper start
 +    default Entity getEntity() {
@@ -654,7 +652,7 @@ index e0fbacd574e0c83c2e1d164ded8e9ccf4af30480..7529751afa2932fd16bc4591189b0358
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index aa4181e59f88be04a3605352fa5ceb3e04149dd3..e4e827a57c2913c719282cc0d5da33586607677b 100644
+index 1c3763d892e4e2df23ccf7a9fdb126e59b36ab65..f33c4633094002a3dd0c54353b62f7b358628be3 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 @@ -17,6 +17,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
@@ -717,7 +715,7 @@ index aa4181e59f88be04a3605352fa5ceb3e04149dd3..e4e827a57c2913c719282cc0d5da3358
 +
      @Override
      public boolean isEmpty() {
-         this.unpackLootTable((Player)null);
+         this.unpackLootTable(null);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java
 index 86076a9d2a3b1044c96518cbaeee66d60a8a22c6..c268513bc5719d80e1c3d73de53b85ec7f852fa9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java

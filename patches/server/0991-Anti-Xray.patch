@@ -1001,7 +1001,7 @@ index 0000000000000000000000000000000000000000..80a2dfb266ae1221680a7b24fee2f7e2
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
-index 6cff1a98dc7cf33947ec760dbc3d3d0ec5db5f6c..51f647de153255c919b1440338cf1b3e2d6b5dbf 100644
+index 51b01a1d4f3a33f9c321349051b038acc9786b9c..76114aa1369539855ccebd4361218693f8975821 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
 @@ -63,8 +63,10 @@ public record ClientboundChunksBiomesPacket(List<ClientboundChunksBiomesPacket.C
@@ -1009,15 +1009,15 @@ index 6cff1a98dc7cf33947ec760dbc3d3d0ec5db5f6c..51f647de153255c919b1440338cf1b3e
  
          public static void extractChunkData(FriendlyByteBuf buf, LevelChunk chunk) {
 +            int chunkSectionIndex = 0; // Paper - Anti-Xray
-             for(LevelChunkSection levelChunkSection : chunk.getSections()) {
+             for (LevelChunkSection levelChunkSection : chunk.getSections()) {
 -                levelChunkSection.getBiomes().write(buf);
 +                levelChunkSection.getBiomes().write(buf, null, chunkSectionIndex); // Paper - Anti-Xray
 +                chunkSectionIndex++; // Paper - Anti-Xray
              }
- 
          }
+ 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
-index 89e3163b0301f8414c9400a6e00cdd85841fe2e8..74b5cec09d953a247bc5aba3c4232a4c28ea1046 100644
+index ebd7b78f9d3439f8278846c32ee3317ad9f1e6ad..9c51c4d12bac588002f530f484ee89b094269349 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 @@ -25,7 +25,10 @@ public class ClientboundLevelChunkPacketData {
@@ -1031,7 +1031,7 @@ index 89e3163b0301f8414c9400a6e00cdd85841fe2e8..74b5cec09d953a247bc5aba3c4232a4c
 +        // Paper end
          this.heightmaps = new CompoundTag();
  
-         for(Map.Entry<Heightmap.Types, Heightmap> entry : chunk.getHeightmaps()) {
+         for (Entry<Heightmap.Types, Heightmap> entry : chunk.getHeightmaps()) {
 @@ -35,7 +38,14 @@ public class ClientboundLevelChunkPacketData {
          }
  
@@ -1047,8 +1047,8 @@ index 89e3163b0301f8414c9400a6e00cdd85841fe2e8..74b5cec09d953a247bc5aba3c4232a4c
 +        // Paper end
          this.blockEntitiesData = Lists.newArrayList();
  
-         for(Map.Entry<BlockPos, BlockEntity> entry2 : chunk.getBlockEntities().entrySet()) {
-@@ -85,9 +95,15 @@ public class ClientboundLevelChunkPacketData {
+         for (Entry<BlockPos, BlockEntity> entry2 : chunk.getBlockEntities().entrySet()) {
+@@ -84,9 +94,15 @@ public class ClientboundLevelChunkPacketData {
          return byteBuf;
      }
  
@@ -1058,14 +1058,14 @@ index 89e3163b0301f8414c9400a6e00cdd85841fe2e8..74b5cec09d953a247bc5aba3c4232a4c
 +    public static void extractChunkData(FriendlyByteBuf buf, LevelChunk chunk, com.destroystokyo.paper.antixray.ChunkPacketInfo<net.minecraft.world.level.block.state.BlockState> chunkPacketInfo) {
 +        int chunkSectionIndex = 0;
 +
-         for(LevelChunkSection levelChunkSection : chunk.getSections()) {
+         for (LevelChunkSection levelChunkSection : chunk.getSections()) {
 -            levelChunkSection.write(buf);
 +            levelChunkSection.write(buf, chunkPacketInfo, chunkSectionIndex);
 +            chunkSectionIndex++;
 +            // Paper end
          }
- 
      }
+ 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 index 26e46d751c8f8162c2bafe2fc109fc91dc4b7c0f..6412dff5ed0505f62dd5b71ab9606257858a7317 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
@@ -1139,17 +1139,17 @@ index 5063eb6d4a24600262c32d2c9eb5fb5bf8fa354e..692a01b52a71e26887ee42cbd5fd64b0
  
      public void destroyAndAck(BlockPos pos, int sequence, String reason) {
 diff --git a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
-index f3b96a921e7d085b51da62fa5493384a7ded1f9d..12f2bf95d3ea3d29f6b4b9ec38a92f7102daa4a1 100644
+index cc56479a54ccbb80e352c3e876e306647807c551..eddff7cf4bc7d0a491994fd0a20a6509dc2b6efc 100644
 --- a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
 +++ b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
-@@ -88,7 +88,10 @@ public class PlayerChunkSender {
+@@ -87,7 +87,10 @@ public class PlayerChunkSender {
  
      public static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) { // Paper - rewrite chunk loader - public
          handler.player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(chunk.getPos().toLong()).addPlayer(handler.player);
--        handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), (BitSet)null, (BitSet)null));
+-        handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null));
 +        // Paper start - Anti-Xray
 +        final boolean shouldModify = world.chunkPacketBlockController.shouldModify(handler.player, chunk);
-+        handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), (BitSet)null, (BitSet)null, shouldModify));
++        handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null, shouldModify));
 +        // Paper end - Anti-Xray
          // Paper start - PlayerChunkLoadEvent
          if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
@@ -1280,7 +1280,7 @@ index b606e33f8b64eaba28c008cc353d88aa45549e31..8852263cb6faec1b68326145aa30e5cd
  
      public int getSerializedSize() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-index dfae0918079425df92d958b04275be8ae60d4b60..0f930f8355ea99d1cb1a8d27edc1c224588f852f 100644
+index a6a8fbe2d6d538a0fea8a202ec8fdbecc009d664..5418261725f7a0dc9a0e8295fe511f69b558a6cd 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -30,6 +30,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
@@ -1309,19 +1309,25 @@ index dfae0918079425df92d958b04275be8ae60d4b60..0f930f8355ea99d1cb1a8d27edc1c224
  
      public static <T> Codec<PalettedContainerRO<T>> codecRO(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) {
          PalettedContainerRO.Unpacker<T, PalettedContainerRO<T>> unpacker = (idListx, paletteProviderx, serialized) -> {
--            return unpack(idListx, paletteProviderx, serialized).map((result) -> {
-+            return unpack(idListx, paletteProviderx, serialized, defaultValue, null).map((result) -> { // Paper - Anti-Xray - Add preset values
-                 return result;
+-            return unpack(idListx, paletteProviderx, serialized).map(result -> {
++            return unpack(idListx, paletteProviderx, serialized, defaultValue, null).map(result -> { // Paper - Anti-Xray - Add preset values
+                 return (PalettedContainerRO<T>)result;
              });
          };
-@@ -66,19 +72,52 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
-         });
+@@ -78,25 +84,58 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+             });
      }
  
--    public PalettedContainer(IdMap<T> idList, PalettedContainer.Strategy paletteProvider, PalettedContainer.Configuration<T> dataProvider, BitStorage storage, List<T> paletteEntries) {
 +    // Paper start - Anti-Xray - Add preset values
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse public PalettedContainer(IdMap<T> idList, PalettedContainer.Strategy paletteProvider, PalettedContainer.Configuration<T> dataProvider, BitStorage storage, List<T> paletteEntries) { this(idList, paletteProvider, dataProvider, storage, paletteEntries, null, null); }
-+    public PalettedContainer(IdMap<T> idList, PalettedContainer.Strategy paletteProvider, PalettedContainer.Configuration<T> dataProvider, BitStorage storage, List<T> paletteEntries, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues) {
+     public PalettedContainer(
+         IdMap<T> idList,
+         PalettedContainer.Strategy paletteProvider,
+         PalettedContainer.Configuration<T> dataProvider,
+         BitStorage storage,
+-        List<T> paletteEntries
++        List<T> paletteEntries, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues
+     ) {
 +        this.presetValues = presetValues;
          this.registry = idList;
          this.strategy = paletteProvider;
@@ -1369,8 +1375,8 @@ index dfae0918079425df92d958b04275be8ae60d4b60..0f930f8355ea99d1cb1a8d27edc1c224
 +        // Paper end
          this.strategy = paletteProvider;
          this.registry = idList;
-         this.data = this.createOrReuseData((PalettedContainer.Data<T>)null, 0);
-@@ -93,11 +132,33 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         this.data = this.createOrReuseData(null, 0);
+@@ -113,11 +152,33 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      @Override
      public synchronized int onResize(int newBits, T object) { // Paper - synchronize
          PalettedContainer.Data<T> data = this.data;
@@ -1405,7 +1411,7 @@ index dfae0918079425df92d958b04275be8ae60d4b60..0f930f8355ea99d1cb1a8d27edc1c224
  
      public T getAndSet(int x, int y, int z, T value) {
          this.acquire();
-@@ -167,25 +228,34 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -186,24 +247,33 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              data.palette.read(buf);
              buf.readLongArray(data.storage.getRaw());
              this.data = data;
@@ -1413,7 +1419,6 @@ index dfae0918079425df92d958b04275be8ae60d4b60..0f930f8355ea99d1cb1a8d27edc1c224
          } finally {
              this.release();
          }
- 
      }
  
 +    // Paper start - Anti-Xray; Add chunk packet info
@@ -1435,15 +1440,15 @@ index dfae0918079425df92d958b04275be8ae60d4b60..0f930f8355ea99d1cb1a8d27edc1c224
          } finally {
              this.release();
          }
- 
      }
  
--    private static <T> DataResult<PalettedContainer<T>> unpack(IdMap<T> idList, PalettedContainer.Strategy paletteProvider, PalettedContainerRO.PackedData<T> serialized) {
-+    private static <T> DataResult<PalettedContainer<T>> unpack(IdMap<T> idList, PalettedContainer.Strategy paletteProvider, PalettedContainerRO.PackedData<T> serialized, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues) { // Paper - Anti-Xray - Add preset values
+     private static <T> DataResult<PalettedContainer<T>> unpack(
+-        IdMap<T> idList, PalettedContainer.Strategy paletteProvider, PalettedContainerRO.PackedData<T> serialized
++        IdMap<T> idList, PalettedContainer.Strategy paletteProvider, PalettedContainerRO.PackedData<T> serialized, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues // Paper - Anti-Xray - Add preset values
+     ) {
          List<T> list = serialized.paletteEntries();
          int i = paletteProvider.size();
-         int j = paletteProvider.calculateBitsForSerialization(idList, list.size());
-@@ -225,7 +295,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -244,7 +314,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              }
          }
  
@@ -1452,7 +1457,7 @@ index dfae0918079425df92d958b04275be8ae60d4b60..0f930f8355ea99d1cb1a8d27edc1c224
      }
  
      @Override
-@@ -285,12 +355,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -303,12 +373,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      }
  
      public PalettedContainer<T> copy() {
@@ -1467,7 +1472,7 @@ index dfae0918079425df92d958b04275be8ae60d4b60..0f930f8355ea99d1cb1a8d27edc1c224
      }
  
      @Override
-@@ -334,9 +404,18 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -351,9 +421,18 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              return 1 + this.palette.getSerializedSize() + VarInt.getByteSize(this.storage.getRaw().length) + this.storage.getRaw().length * 8;
          }
  

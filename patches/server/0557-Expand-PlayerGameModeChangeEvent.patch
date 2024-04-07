@@ -5,39 +5,39 @@ Subject: [PATCH] Expand PlayerGameModeChangeEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java b/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java
-index 50e581613156cca765dfd8e3596dcb3b58520cec..21d6a2a5d1722d44146384c28a3cba2df9b42771 100644
+index 698db6fc0e1088bb80bf277bf14719cad6b68055..ec813a8a0f7e48ce93bf9d254c68ddd56b0a6737 100644
 --- a/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java
 +++ b/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java
 @@ -25,9 +25,13 @@ public class DefaultGameModeCommands {
          GameType gameType = minecraftServer.getForcedGameType();
          if (gameType != null) {
-             for(ServerPlayer serverPlayer : minecraftServer.getPlayerList().getPlayers()) {
+             for (ServerPlayer serverPlayer : minecraftServer.getPlayerList().getPlayers()) {
 -                if (serverPlayer.setGameMode(gameType)) {
--                    ++i;
+-                    i++;
 +                // Paper start - Expand PlayerGameModeChangeEvent
 +                org.bukkit.event.player.PlayerGameModeChangeEvent event = serverPlayer.setGameMode(gameType, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, net.kyori.adventure.text.Component.empty());
 +                if (event != null && event.isCancelled()) {
 +                    source.sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), false);
                  }
 +                // Paper end - Expand PlayerGameModeChangeEvent
-+                    ++i;
++                    i++;
              }
          }
  
 diff --git a/src/main/java/net/minecraft/server/commands/GameModeCommand.java b/src/main/java/net/minecraft/server/commands/GameModeCommand.java
-index aee8618e27b893b72931e925724dd683d2e6d2aa..f7c9127346261d83413ca03a1cdaa84975ae17d6 100644
+index f5be3b762b096540952421c52e4bd23c2d31b917..b1cbf365125b4db64b46a1f834b6d93808cbd709 100644
 --- a/src/main/java/net/minecraft/server/commands/GameModeCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/GameModeCommand.java
-@@ -48,9 +48,14 @@ public class GameModeCommand {
+@@ -63,9 +63,14 @@ public class GameModeCommand {
          int i = 0;
  
-         for(ServerPlayer serverPlayer : targets) {
+         for (ServerPlayer serverPlayer : targets) {
 -            if (serverPlayer.setGameMode(gameMode)) {
 +            // Paper start - Expand PlayerGameModeChangeEvent
 +            org.bukkit.event.player.PlayerGameModeChangeEvent event = serverPlayer.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.COMMAND, net.kyori.adventure.text.Component.empty());
 +            if (event != null && !event.isCancelled()) {
                  logGamemodeChange(context.getSource(), serverPlayer, gameMode);
-                 ++i;
+                 i++;
 +            } else if (event != null && event.cancelMessage() != null) {
 +                context.getSource().sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), true);
 +                // Paper end - Expand PlayerGameModeChangeEvent
@@ -45,7 +45,7 @@ index aee8618e27b893b72931e925724dd683d2e6d2aa..f7c9127346261d83413ca03a1cdaa849
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 8c65b05e66372cf3c92f823d72e94c18fe77622b..a09ef51e94a0bf9f51bf358e7cf77dd5d272aab2 100644
+index 19baf0ecd04ae058fac709889db34bf27679ab5e..28baa63b9b750a7f03da364d9c1fe691d3ce1706 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1940,8 +1940,16 @@ public class ServerPlayer extends Player {

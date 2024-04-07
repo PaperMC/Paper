@@ -5,7 +5,7 @@ Subject: [PATCH] Validate ResourceLocation in NBT reading
 
 
 diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
-index ba0726157417cdde1c9bca93a9e37e68d9b2286d..e3a3f19a6e63fd42e29c418e5a7439972484d492 100644
+index c613577572532fd1b8a8c912b9fd8e41c54669bb..128c6615374e85b772f109200813aa696d784035 100644
 --- a/src/main/java/net/minecraft/nbt/NbtUtils.java
 +++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
 @@ -230,8 +230,10 @@ public final class NbtUtils {
@@ -22,10 +22,10 @@ index ba0726157417cdde1c9bca93a9e37e68d9b2286d..e3a3f19a6e63fd42e29c418e5a743997
                  return Blocks.AIR.defaultBlockState();
              } else {
 diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
-index 5f9dcab27a07969c93555ad0892683c62cbebc8c..a4d875df936b6de16f0233482b03af05b427a79f 100644
+index 651a61681b0b484253f82b43a75e76c5a1c40543..b00e2fe01a433363f75b891086f4c77d27c38209 100644
 --- a/src/main/java/net/minecraft/resources/ResourceLocation.java
 +++ b/src/main/java/net/minecraft/resources/ResourceLocation.java
-@@ -31,6 +31,13 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+@@ -33,6 +33,13 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
      private final String path;
  
      protected ResourceLocation(String namespace, String path, @Nullable ResourceLocation.Dummy extraData) {
@@ -53,7 +53,7 @@ index 8ba573bb4099ee5b27b61f333e72d794c48d5f29..69bdf3f2ee731e59e8d454816a9ca72c
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 693ea3891f18f071cdd79f9162f1521472b3ed24..7f5457522835b073246054e66699fe73f7005b25 100644
+index bb52d084637c97d9cc1ebaeec28358a0ddb3952b..40e21effc948b02874a6ed1d1c340c4dc87579d6 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -879,12 +879,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -98,10 +98,10 @@ index c30f19162e33dbe8f018b7dc66210681b6027389..e8faca6e443239968f0111519f9e5cd0
  
          this.setShotFromCrossbow(nbt.getBoolean("ShotFromCrossbow"));
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
-index 7529751afa2932fd16bc4591189b0358268a7b14..e2e1c7a017e82dc7299e5cd1783818e4f0319c0b 100644
+index f4ad1eea5bced6997edbc3a5ed1360b12b70f68f..648eefb973a4e5e543818c417a6ee39f283ea361 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
-@@ -67,7 +67,7 @@ public interface ContainerEntity extends Container, MenuProvider {
+@@ -66,7 +66,7 @@ public interface ContainerEntity extends Container, MenuProvider {
      default void readChestVehicleSaveData(CompoundTag nbt) {
          this.clearItemStacks();
          if (nbt.contains("LootTable", 8)) {
@@ -109,7 +109,7 @@ index 7529751afa2932fd16bc4591189b0358268a7b14..e2e1c7a017e82dc7299e5cd1783818e4
 +            this.setLootTable(ResourceLocation.tryParse(nbt.getString("LootTable"))); // Paper - Validate ResourceLocation
              this.setLootTableSeed(nbt.getLong("LootTableSeed"));
          }
- 
+         ContainerHelper.loadAllItems(nbt, this.getItemStacks()); // Paper - always load the items, table may still remain
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 index d04fc84eef11adb5ea64077f48794b6ed7fb3ada..89d06253b00604114e543ebbe12a9993ae95dc41 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java

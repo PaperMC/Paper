@@ -5,7 +5,7 @@ Subject: [PATCH] Use Velocity compression and cipher natives
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 5d35409137aff0eab242a0d4eb235e10cb7fe236..9c323b4ad76ee8a6386bca52d56615fd98e6d3cb 100644
+index f9056ee057a22a11288405cd42cd0ba4c9d120c3..bcfe59b6efb628ee1e7f9d60667360d4d885fb6a 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -40,6 +40,11 @@ dependencies {
@@ -102,7 +102,7 @@ index 0f3d502a9680006bcdcd7d272240a2e5c3b46790..ffa1c48585fbbc1d30826d435043527f
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/src/main/java/net/minecraft/network/CompressionDecoder.java b/src/main/java/net/minecraft/network/CompressionDecoder.java
-index 2758c257cb4e2b0497bd9243c635f8fe3dbc414c..2763052eb2d5b8eb432022ab00a417976f4b2927 100644
+index 5927c928b27f64bd3973e95d5867b59f67476d41..76aeebe60ac321ed604661a0ec969bb25210643f 100644
 --- a/src/main/java/net/minecraft/network/CompressionDecoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionDecoder.java
 @@ -13,13 +13,20 @@ public class CompressionDecoder extends ByteToMessageDecoder {
@@ -171,7 +171,7 @@ index 2758c257cb4e2b0497bd9243c635f8fe3dbc414c..2763052eb2d5b8eb432022ab00a41797
          ByteBuffer byteBuffer;
          if (buf.nioBufferCount() > 0) {
 diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
-index 859af8c845bae9781a62fa4acae56c6e2d449e10..f67f59f287d9a5cdd685b6b56ed1daf3f091e099 100644
+index 11a466558c77b43969b8e4be3a3470f84c7fcb1a..3e648aa2f15708ebec3d6e002e5fb49347876767 100644
 --- a/src/main/java/net/minecraft/network/CompressionEncoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionEncoder.java
 @@ -6,21 +6,36 @@ import io.netty.handler.codec.MessageToByteEncoder;
@@ -214,7 +214,7 @@ index 859af8c845bae9781a62fa4acae56c6e2d449e10..f67f59f287d9a5cdd685b6b56ed1daf3
              byte[] bs = new byte[i];
              byteBuf.readBytes(bs);
              VarInt.write(byteBuf2, bs.length);
-@@ -33,10 +48,48 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+@@ -33,8 +48,46 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
              }
  
              this.deflater.reset();
@@ -229,10 +229,9 @@ index 859af8c845bae9781a62fa4acae56c6e2d449e10..f67f59f287d9a5cdd685b6b56ed1daf3
 +                compatibleIn.release();
 +            }
 +            // Paper end - Use Velocity cipher
-         }
- 
-     }
- 
++        }
++    }
++
 +    // Paper start - Use Velocity cipher
 +    @Override
 +    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, ByteBuf msg, boolean preferDirect) throws Exception{
@@ -256,13 +255,12 @@ index 859af8c845bae9781a62fa4acae56c6e2d449e10..f67f59f287d9a5cdd685b6b56ed1daf3
 +    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
 +        if (this.compressor != null) {
 +            this.compressor.close();
-+        }
-+    }
+         }
+     }
 +    // Paper end - Use Velocity cipher
-+
+ 
      public int getThreshold() {
          return this.threshold;
-     }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
 index 7f2aa5e17fe675f3404d67b1794d2ca68b188eb9..fff375fd50fa1a804636a92ded1ae55cff42977d 100644
 --- a/src/main/java/net/minecraft/network/Connection.java

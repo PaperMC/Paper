@@ -118,11 +118,11 @@ index 3d897ec6920eff6176ddac9f0442a997b9ef14fd..abaf1ea340c69c8bee80e64567b44b5c
          this.level = MinMaxBounds.Ints.ANY;
          this.rotX = WrappedMinMaxBounds.ANY;
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
-index 7863833c9a761a2b9364ff572ec909ec5a4538c3..36e26929306c04af7a44012fd7fc9902027e9ea2 100644
+index cb4c218eb06ada02824a0574b077b3f3f65e063b..2d6f92d4967fba88472057cfea020ac64ca1e9c8 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
 +++ b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
-@@ -69,6 +69,19 @@ public class EntitySelectorOptions {
-     public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType((entity) -> {
+@@ -75,6 +75,19 @@ public class EntitySelectorOptions {
+     public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType(entity -> {
          return Component.translatableEscape("argument.entity.options.type.invalid", entity);
      });
 +    // Paper start - tell clients to ask server for suggestions for EntityArguments
@@ -141,16 +141,38 @@ index 7863833c9a761a2b9364ff572ec909ec5a4538c3..36e26929306c04af7a44012fd7fc9902
  
      private static void register(String id, EntitySelectorOptions.Modifier handler, Predicate<EntitySelectorParser> condition, Component description) {
          OPTIONS.put(id, new EntitySelectorOptions.Option(handler, condition, description));
-@@ -316,6 +329,12 @@ public class EntitySelectorOptions {
- 
-                     if (reader.isTag()) {
-                         TagKey<EntityType<?>> tagKey = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.read(reader.getReader()));
-+                        // Paper start - tell clients to ask server for suggestions for EntityArguments; throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
-+                        if (reader.parsingEntityArgumentSuggestions && io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tagKey).isEmpty()) {
-+                            reader.getReader().setCursor(i);
-+                            throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagKey);
-+                        }
-+                        // Paper end - tell clients to ask server for suggestions for EntityArguments
-                         reader.addPredicate((entity) -> {
-                             return entity.getType().is(tagKey) != bl;
-                         });
+@@ -301,7 +314,7 @@ public class EntitySelectorOptions {
+                                     BuiltInRegistries.ENTITY_TYPE.getTagNames().map(TagKey::location), builder, String.valueOf('#')
+                                 );
+                             }
+-        
++
+                             return builder.buildFuture();
+                         }
+                     );
+@@ -314,9 +327,15 @@ public class EntitySelectorOptions {
+                         if (bl) {
+                             reader.setTypeLimitedInversely();
+                         }
+-    
++
+                         if (reader.isTag()) {
+                             TagKey<EntityType<?>> tagKey = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.read(reader.getReader()));
++                            // Paper start - tell clients to ask server for suggestions for EntityArguments; throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
++                            if (reader.parsingEntityArgumentSuggestions && io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tagKey).isEmpty()) {
++                                reader.getReader().setCursor(i);
++                                throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagKey);
++                            }
++                            // Paper end - tell clients to ask server for suggestions for EntityArguments
+                             reader.addPredicate(entity -> {
+                                 return entity.getType().is(tagKey) != bl;
+                             });
+@@ -329,7 +348,7 @@ public class EntitySelectorOptions {
+                             if (Objects.equals(EntityType.PLAYER, entityType) && !bl) {
+                                 reader.setIncludesEntities(false);
+                             }
+-    
++
+                             reader.addPredicate(entity -> {
+                                 return Objects.equals(entityType, entity.getType()) != bl;
+                             });

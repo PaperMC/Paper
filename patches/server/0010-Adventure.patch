@@ -2096,7 +2096,7 @@ index 0000000000000000000000000000000000000000..c0701d4f93a4d77a8177d2dd8d5076f9
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/ChatFormatting.java b/src/main/java/net/minecraft/ChatFormatting.java
-index e7980c88d036c617420e80bda8e1972723f97b52..efbc104acc62c5af8acf35b15f1be0d9f11113c9 100644
+index 75f33ca3425800f63d7b51a0b303aae72e6ef8f8..20baece1b9e1e3fef7236c6643af96c64b7981fd 100644
 --- a/src/main/java/net/minecraft/ChatFormatting.java
 +++ b/src/main/java/net/minecraft/ChatFormatting.java
 @@ -113,6 +113,18 @@ public enum ChatFormatting implements StringRepresentable {
@@ -2131,19 +2131,19 @@ index db93483cfee13ca4303d7452ecbb47507dc5f89e..f6938c35ac6f6116084d3e7ec9cdc918
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
          this(output, pos, rot, world, level, name, displayName, server, entity, false, CommandResultCallback.EMPTY, EntityAnchorArgument.Anchor.FEET, CommandSigningContext.ANONYMOUS, TaskChainer.immediate(server));
 diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
-index 979ea69678319338c543185ba026ad0699a388d6..a3e8b2baec7ac8a61f6cbed7095f84273be385e7 100644
+index 7511445f48d9f13106b5d45b5d5bae9172fccfe4..43a47a6d8e5043ef743c5c2d8fb802d8ba3cb8ec 100644
 --- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 +++ b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
-@@ -51,17 +51,21 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
+@@ -50,17 +50,21 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
      private static void resolveSignedMessage(Consumer<PlayerChatMessage> callback, CommandSourceStack source, PlayerChatMessage message) {
          MinecraftServer minecraftServer = source.getServer();
          CompletableFuture<FilteredText> completableFuture = filterPlainText(source, message);
 -        Component component = minecraftServer.getChatDecorator().decorate(source.getPlayer(), message.decoratedContent());
--        source.getChatMessageChainer().append(completableFuture, (filtered) -> {
+-        source.getChatMessageChainer().append(completableFuture, filtered -> {
 -            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(component).filter(filtered.mask());
 +        // Paper start - support asynchronous chat decoration
 +        CompletableFuture<ChatDecorator.Result> componentFuture = minecraftServer.getChatDecorator().decorate(source.getPlayer(), source, message.decoratedContent());
-+        source.getChatMessageChainer().append(CompletableFuture.allOf(completableFuture, componentFuture), (filtered) -> {
++        source.getChatMessageChainer().append(CompletableFuture.allOf(completableFuture, componentFuture), filtered -> {
 +            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(componentFuture.join().component()).filter(completableFuture.join().mask());
 +            // Paper end - support asynchronous chat decoration
              callback.accept(playerChatMessage2);
@@ -2225,7 +2225,7 @@ index 9373502ede6c8a881af67db005cf12fd9313f37f..53f033d2d887909f5f905c00122d1b09
  
      public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
-index 344c5af75c4a66bb27f3f422937c6c427c15ed25..7070d093c80033b61a9c8495bc56153d986b6b03 100644
+index d0e159f54da70bf0bd834738ced5d4b414a36142..0d80fcee1831af59b06c4d00dc713bd4dad947fc 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
 @@ -35,6 +35,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
@@ -2316,10 +2316,10 @@ index 887b9fd625aa23c4ec828a175d63695f915232d3..8e4a4b15152c2f83444fa8017bec06bb
 +    // Paper end - adventure; support async chat decoration events
  }
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-index 49138ccda0f378b13c7f425be765876eb4026b06..30568c1be4d412bfae5bd07d45b823861ec39ab3 100644
+index c39b04c7e83fba45b5220678b4d94bf96f4c16dc..f51130399642a5e4a004b0661e33cf850ff18b4b 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-@@ -55,12 +55,58 @@ public class ComponentSerialization {
+@@ -58,7 +58,25 @@ public class ComponentSerialization {
          return ExtraCodecs.orCompressed(mapCodec3, mapCodec2);
      }
  
@@ -2342,11 +2342,13 @@ index 49138ccda0f378b13c7f425be765876eb4026b06..30568c1be4d412bfae5bd07d45b82386
 +
 +    private static Codec<Component> createCodec(Codec<Component> selfCodec, @javax.annotation.Nullable java.util.Locale locale) {
 +        // Paper end - adventure; create separate codec for each locale
-         ComponentContents.Type<?>[] types = new ComponentContents.Type[]{PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE};
-         MapCodec<ComponentContents> mapCodec = createLegacyComponentMatcher(types, ComponentContents.Type::codec, ComponentContents::type, "type");
-         Codec<Component> codec = RecordCodecBuilder.create((instance) -> {
-             return instance.group(mapCodec.forGetter(Component::getContents), ExtraCodecs.strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::getSiblings), Style.Serializer.MAP_CODEC.forGetter(Component::getStyle)).apply(instance, MutableComponent::new);
-         });
+         ComponentContents.Type<?>[] types = new ComponentContents.Type[]{
+             PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE
+         };
+@@ -73,6 +91,34 @@ public class ComponentSerialization {
+                     .apply(instance, MutableComponent::new);
+             }
+         );
 +        // Paper start - adventure; create separate codec for each locale
 +        final Codec<Component> origCodec = codec;
 +        codec = new Codec<>() {
@@ -2375,11 +2377,11 @@ index 49138ccda0f378b13c7f425be765876eb4026b06..30568c1be4d412bfae5bd07d45b82386
 +            }
 +        };
 +        // Paper end - adventure; create separate codec for each locale
-         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec).xmap((either) -> {
-             return either.map((either2) -> {
+         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec).xmap(either -> {
+             return either.map(either2 -> {
                  return either2.map(Component::literal, ComponentSerialization::createFromList);
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
-index b6506e881ef337bfd2a7a0644296b48b7300a0f6..57206594f305961a33542e1f8079c75bfa7c535f 100644
+index 103885e8d5458bc06c8bfe0f42c1d35b5716b541..d51c9210bb3267c03cc10920178f7c53e1413c94 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 @@ -41,6 +41,11 @@ public class ComponentUtils {
@@ -2393,12 +2395,12 @@ index b6506e881ef337bfd2a7a0644296b48b7300a0f6..57206594f305961a33542e1f8079c75b
 +            // Paper end - adventure; pass actual vanilla component
              MutableComponent mutableComponent = text.getContents().resolve(source, sender, depth + 1);
  
-             for(Component component : text.getSiblings()) {
+             for (Component component : text.getSiblings()) {
 diff --git a/src/main/java/net/minecraft/network/chat/MessageSignature.java b/src/main/java/net/minecraft/network/chat/MessageSignature.java
-index df9997873c4bbec184379ec14dca1bf4566eb89d..a3e2d03ffe9392cc69e850c5db7d71889a0a27ea 100644
+index 739ef5fb6f4fa37382153ba6a308ca3b451e6b05..7c3154af5d7732037c0ee965f6f8b89424461abd 100644
 --- a/src/main/java/net/minecraft/network/chat/MessageSignature.java
 +++ b/src/main/java/net/minecraft/network/chat/MessageSignature.java
-@@ -13,11 +13,12 @@ import net.minecraft.util.SignatureUpdater;
+@@ -13,6 +13,7 @@ import net.minecraft.util.SignatureUpdater;
  import net.minecraft.util.SignatureValidator;
  
  public record MessageSignature(byte[] bytes) {
@@ -2406,14 +2408,8 @@ index df9997873c4bbec184379ec14dca1bf4566eb89d..a3e2d03ffe9392cc69e850c5db7d7188
      public static final Codec<MessageSignature> CODEC = ExtraCodecs.BASE64_STRING.xmap(MessageSignature::new, MessageSignature::bytes);
      public static final int BYTES = 256;
  
-     public MessageSignature {
--        Preconditions.checkState(bs.length == 256, "Invalid message signature size");
-+        Preconditions.checkState(bytes.length == 256, "Invalid message signature size"); // Paper - decompile fix
-     }
- 
-     public static MessageSignature read(FriendlyByteBuf buf) {
 diff --git a/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java b/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java
-index f8773f2982e6cd40661d138a7c32f219cda9225c..74cf1c043beef03cfd5adf481414a5ee78bef2a6 100644
+index e2def0ca552343143e495736d533b3334686fd62..c87b708c368713a23a10ad97704575ee4df27891 100644
 --- a/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java
 @@ -7,6 +7,12 @@ public interface OutgoingChatMessage {
@@ -2427,10 +2423,10 @@ index f8773f2982e6cd40661d138a7c32f219cda9225c..74cf1c043beef03cfd5adf481414a5ee
 +    // Paper end
 +
      static OutgoingChatMessage create(PlayerChatMessage message) {
-         return (OutgoingChatMessage)(message.isSystem() ? new OutgoingChatMessage.Disguised(message.decoratedContent()) : new OutgoingChatMessage.Player(message));
-     }
-@@ -14,7 +20,12 @@ public interface OutgoingChatMessage {
-     public static record Disguised(Component content) implements OutgoingChatMessage {
+         return (OutgoingChatMessage)(message.isSystem()
+             ? new OutgoingChatMessage.Disguised(message.decoratedContent())
+@@ -16,7 +22,12 @@ public interface OutgoingChatMessage {
+     public static record Disguised(@Override Component content) implements OutgoingChatMessage {
          @Override
          public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params) {
 -            sender.connection.sendDisguisedChatMessage(this.content, params);
@@ -2443,7 +2439,7 @@ index f8773f2982e6cd40661d138a7c32f219cda9225c..74cf1c043beef03cfd5adf481414a5ee
          }
      }
  
-@@ -26,7 +37,13 @@ public interface OutgoingChatMessage {
+@@ -28,7 +39,13 @@ public interface OutgoingChatMessage {
  
          @Override
          public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params) {
@@ -2458,16 +2454,17 @@ index f8773f2982e6cd40661d138a7c32f219cda9225c..74cf1c043beef03cfd5adf481414a5ee
                  sender.connection.sendPlayerChatMessage(playerChatMessage, params);
              }
 diff --git a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
-index 901c1aba1653ed70f4af931835ceb12a357aff55..00560ea19c29fd0e16cbe11ab0b07f12a2ff0cb6 100644
+index 2f3e750c148e3c0c2c0c9e72572ec5021fbab2c9..843126bc73c449615ab81309d22db224a6f484ac 100644
 --- a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
-@@ -14,7 +14,53 @@ import net.minecraft.Util;
- import net.minecraft.util.SignatureUpdater;
+@@ -15,8 +15,54 @@ import net.minecraft.util.SignatureUpdater;
  import net.minecraft.util.SignatureValidator;
  
--public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask) {
-+// Paper start - adventure; support signed messages
-+public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask, @Nullable net.minecraft.network.chat.ChatDecorator.Result result) {
+ public record PlayerChatMessage(
+-    SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask
++    SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask, @Nullable net.minecraft.network.chat.ChatDecorator.Result result // Paper - adventure; support signed messages
+ ) {
++    // Paper start - adventure; support signed messages
 +    public PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask) {
 +        this(link, signature, signedBody, unsignedContent, filterMask, null);
 +    }
@@ -2513,10 +2510,10 @@ index 901c1aba1653ed70f4af931835ceb12a357aff55..00560ea19c29fd0e16cbe11ab0b07f12
 +        return new AdventureView();
 +    }
 +    // Paper end - adventure; support signed messages
-     public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
-         return instance.group(SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link), MessageSignature.CODEC.optionalFieldOf("signature").forGetter((message) -> {
-             return Optional.ofNullable(message.signature);
-@@ -39,7 +85,7 @@ public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignatu
+     public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec(
+         instance -> {
+             return instance.group(
+@@ -50,7 +96,7 @@ public record PlayerChatMessage(
      }
  
      public PlayerChatMessage withUnsignedContent(Component unsignedContent) {
@@ -2764,7 +2761,7 @@ index 4035faedd9f5f72f262822a9f050178d99be06e4..4c18491a627e66297627abbded1af48b
  
      public boolean logIPs() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index a721e9cd0958d7fceed1aba8ae55fefed4e6a887..27a1450696a633578cd44567f240cbc1a4c578ac 100644
+index c57b91c2385d118590bc419e7e6ed586d5d87422..7bad19b7e17bbdac3e8502b6a7e246070ba67e8c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -162,6 +162,7 @@ import net.minecraft.world.damagesource.CombatTracker;
@@ -3247,7 +3244,7 @@ index 2e8e786407869b53cb4d7e4ec8f91fe0a3ad8e1a..5e00df1cd2b8a6691b2f9490b1f4c3ed
      }
  
 diff --git a/src/main/java/net/minecraft/world/BossEvent.java b/src/main/java/net/minecraft/world/BossEvent.java
-index 4c62df5a3781ec9df4a5c5f1b528649e6e8a62d1..affd1b8c7589ba59330dc0b6fc803cce4ee57397 100644
+index 80029e66d7f78aea9327edebd001d3b88b147128..42891df5db9465005d438cc4b65da2dee63d81f2 100644
 --- a/src/main/java/net/minecraft/world/BossEvent.java
 +++ b/src/main/java/net/minecraft/world/BossEvent.java
 @@ -13,6 +13,7 @@ public abstract class BossEvent {
@@ -4056,7 +4053,7 @@ index 9c1063d92a49c71f4458bf1634bcf9d79302ecca..f24b4732db849893fd870b4b6a49f1c4
      @Override
      public String getTranslationKey() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 7126d8cdeea5eb23176af6a97a99b33961749d71..e78a378f0de48cde3702774970e6cda241b8ddda 100644
+index f5a5496e21e29c6ae9f497f5939823078ac8c1c0..0f51f05f334d262b3435cebce47c3b9f08936398 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -67,6 +67,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {

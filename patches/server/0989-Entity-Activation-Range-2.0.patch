@@ -183,10 +183,10 @@ index d6393210cfee53685f83c8491bea8b9c13b01eea..3d95257d2203fe40bb1fab58ad2a1f9e
      public float getWalkTargetValue(BlockPos pos) {
          return this.getWalkTargetValue(pos, this.level());
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index 07c1ca01c38d5d7d0a95ad5004b5df9f4a222935..e5995d0db5dcfba59a873ff439601894fdacd556 100644
+index 05142a6c332b8f2257199fee9db57d3d92f6bff2..b236ac6e261790b53944885d0d6575eba0986fde 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-@@ -33,6 +33,7 @@ public class GoalSelector {
+@@ -34,6 +34,7 @@ public class GoalSelector {
      private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class);
      private int tickCount;
      private int newGoalRate = 3;
@@ -194,7 +194,7 @@ index 07c1ca01c38d5d7d0a95ad5004b5df9f4a222935..e5995d0db5dcfba59a873ff439601894
  
      public GoalSelector(Supplier<ProfilerFiller> profiler) {
          this.profiler = profiler;
-@@ -49,6 +50,20 @@ public class GoalSelector {
+@@ -50,6 +51,20 @@ public class GoalSelector {
          });
      }
  
@@ -213,10 +213,10 @@ index 07c1ca01c38d5d7d0a95ad5004b5df9f4a222935..e5995d0db5dcfba59a873ff439601894
 +    }
 +    // Paper end
      public void removeGoal(Goal goal) {
-         this.availableGoals.stream().filter((wrappedGoal) -> {
+         this.availableGoals.stream().filter(wrappedGoal -> {
              return wrappedGoal.getGoal() == goal;
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-index 9fc374c17f6b3ee4ab3c582d05e96321b772f2d6..07519c817cc6de04a98198c43a0c2b02ba3141eb 100644
+index 6d8ea05e5e86e9f6359b560043bb55a10784e952..aee0147649d458b87d92496eda0c1723ebe570d2 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 @@ -23,6 +23,14 @@ public abstract class MoveToBlockGoal extends Goal {
@@ -234,7 +234,7 @@ index 9fc374c17f6b3ee4ab3c582d05e96321b772f2d6..07519c817cc6de04a98198c43a0c2b02
  
      public MoveToBlockGoal(PathfinderMob mob, double speed, int range, int maxYDifference) {
          this.mob = mob;
-@@ -114,6 +122,7 @@ public abstract class MoveToBlockGoal extends Goal {
+@@ -115,6 +123,7 @@ public abstract class MoveToBlockGoal extends Goal {
                          mutableBlockPos.setWithOffset(blockPos, m, k - 1, n);
                          if (this.mob.isWithinRestriction(mutableBlockPos) && this.isValidTarget(this.mob.level(), mutableBlockPos)) {
                              this.blockPos = mutableBlockPos;
@@ -302,7 +302,7 @@ index fa2569fecefb3e3af3264928a3c7a347710deedf..24044795d8e0f1fb15a4f2f5401f4489
          super.customServerAiStep();
      }
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
-index b149e8bcac034bb3fc118a9adcb0de45e18ed5e9..fc35cfc9d045f3e5b6a50af1d0ba83b6e322091f 100644
+index eaafb57c14ead01ffd2650fdec9ca75406201e41..761142374f793a1cd4228936b21a68d7a0458894 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
 @@ -52,6 +52,7 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
@@ -310,23 +310,24 @@ index b149e8bcac034bb3fc118a9adcb0de45e18ed5e9..fc35cfc9d045f3e5b6a50af1d0ba83b6
              this.setEnabled(bl);
          }
 +        this.immunize();  // Paper
- 
      }
  
-@@ -89,10 +90,12 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+     public boolean isEnabled() {
+@@ -87,11 +88,13 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
  
      public boolean suckInItems() {
          if (HopperBlockEntity.suckInItems(this.level(), this)) {
 +            this.immunize();  // Paper
              return true;
          } else {
-             for(ItemEntity itemEntity : this.level().getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(0.25D, 0.0D, 0.25D), EntitySelector.ENTITY_STILL_ALIVE)) {
+             for (ItemEntity itemEntity : this.level()
+                 .getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(0.25, 0.0, 0.25), EntitySelector.ENTITY_STILL_ALIVE)) {
                  if (HopperBlockEntity.addItem(this, itemEntity)) {
 +                    this.immunize();  // Paper
                      return true;
                  }
              }
-@@ -122,4 +125,11 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+@@ -121,4 +124,11 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
      public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory) {
          return new HopperMenu(syncId, playerInventory, this);
      }
@@ -356,10 +357,10 @@ index 5c209e323a5559480231c6d99357ba8b89edb027..4bedd5801cc8ce14387f02dfb361a00a
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
      // Paper start - add paper world config
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
-index b1061db1d9b3bfde61d5016e10556c4320095827..c71690dbc3dc52803945f1608f0ee3ba94146354 100644
+index 8a5fccf52230eae9777a0157cc25c1321fcf094c..fc6bf624f63beb61737460d5e2ffb70a824b565b 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
-@@ -143,6 +143,10 @@ public class PistonMovingBlockEntity extends BlockEntity {
+@@ -149,6 +149,10 @@ public class PistonMovingBlockEntity extends BlockEntity {
                                  }
  
                                  entity.setDeltaMovement(e, g, h);

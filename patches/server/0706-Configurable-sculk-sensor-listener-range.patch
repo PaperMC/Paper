@@ -7,7 +7,7 @@ Subject: [PATCH] Configurable sculk sensor listener range
 public-f net.minecraft.world.level.gameevent.vibrations.VibrationListener listenerRange
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/CalibratedSculkSensorBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CalibratedSculkSensorBlockEntity.java
-index a18589425006ccabd87b76a9827ab516040009bb..c26492942c854ea311da2369b51692dbbc06e050 100644
+index 4c9c35131e9bd37a48f6c4beb2bbcaf7988069c5..cf865dcfde2ae6c0ae72a8e7469be2dd3e1bc679 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/CalibratedSculkSensorBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/CalibratedSculkSensorBlockEntity.java
 @@ -19,6 +19,12 @@ public class CalibratedSculkSensorBlockEntity extends SculkSensorBlockEntity {
@@ -32,10 +32,10 @@ index a18589425006ccabd87b76a9827ab516040009bb..c26492942c854ea311da2369b51692db
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
-index a6c226da995eecc323d69a3eff1f8d202410e069..1e699b12e58fe985f41b96882988483fd64c5590 100644
+index aee9119c05bf1d7e2601879e87f002f0e3f11216..a1281c0a769568367145a1a67ffae1d5be63a17e 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
-@@ -24,6 +24,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+@@ -23,6 +23,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
      private final VibrationSystem.Listener vibrationListener;
      private final VibrationSystem.User vibrationUser = this.createVibrationUser();
      public int lastVibrationFrequency;
@@ -43,9 +43,9 @@ index a6c226da995eecc323d69a3eff1f8d202410e069..1e699b12e58fe985f41b96882988483f
  
      protected SculkSensorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
          super(type, pos, state);
-@@ -48,9 +49,17 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
-                 this.vibrationData = listener;
-             });
+@@ -50,8 +51,16 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+                     this.vibrationData = listener;
+                 });
          }
 +        // Paper start - Configurable sculk sensor listener range
 +        if (nbt.contains(PAPER_LISTENER_RANGE_NBT_KEY)) {
@@ -54,15 +54,14 @@ index a6c226da995eecc323d69a3eff1f8d202410e069..1e699b12e58fe985f41b96882988483f
 +            this.rangeOverride = null;
 +        }
 +        // Paper end - Configurable sculk sensor listener range
- 
      }
  
 +    protected static final String PAPER_LISTENER_RANGE_NBT_KEY = "Paper.ListenerRange"; // Paper - Configurable sculk sensor listener range
      @Override
      protected void saveAdditional(CompoundTag nbt) {
          super.saveAdditional(nbt);
-@@ -58,7 +67,13 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
-         VibrationSystem.Data.CODEC.encodeStart(NbtOps.INSTANCE, this.vibrationData).resultOrPartial(LOGGER::error).ifPresent((listenerNbt) -> {
+@@ -59,7 +68,13 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+         VibrationSystem.Data.CODEC.encodeStart(NbtOps.INSTANCE, this.vibrationData).resultOrPartial(LOGGER::error).ifPresent(listenerNbt -> {
              nbt.put("listener", listenerNbt);
          });
 +        this.saveRangeOverride(nbt); // Paper - Configurable sculk sensor listener range
@@ -75,7 +74,7 @@ index a6c226da995eecc323d69a3eff1f8d202410e069..1e699b12e58fe985f41b96882988483f
  
      @Override
      public VibrationSystem.Data getVibrationData() {
-@@ -95,6 +110,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+@@ -96,6 +111,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
  
          @Override
          public int getListenerRadius() {

@@ -5,10 +5,10 @@ Subject: [PATCH] Add PlayerKickEvent causes
 
 
 diff --git a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
-index 96814e626a95e4e3c2f4df1a0339d37bb02f2e61..ba12919c3f9aec34a9e64993b143ae92be5eb172 100644
+index 1bb98a7e5267602bf9c37ba5041ff75d77d53e15..ec260062e5206df08425ad65573691fda262fa93 100644
 --- a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
 +++ b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
-@@ -35,16 +35,16 @@ public class SignedMessageChain {
+@@ -34,16 +34,16 @@ public class SignedMessageChain {
          return (signature, body) -> {
              SignedMessageLink signedMessageLink = this.advanceLink();
              if (signedMessageLink == null) {
@@ -22,14 +22,14 @@ index 96814e626a95e4e3c2f4df1a0339d37bb02f2e61..ba12919c3f9aec34a9e64993b143ae92
 +                throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.out_of_order_chat"), true, org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event causes
              } else {
                  this.lastTimeStamp = body.timeStamp();
-                 PlayerChatMessage playerChatMessage = new PlayerChatMessage(signedMessageLink, signature, body, (Component)null, FilterMask.PASS_THROUGH);
+                 PlayerChatMessage playerChatMessage = new PlayerChatMessage(signedMessageLink, signature, body, null, FilterMask.PASS_THROUGH);
                  if (!playerChatMessage.verify(signatureValidator)) {
 -                    throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.unsigned_chat"), true);
 +                    throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.unsigned_chat"), true, org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event causes
                  } else {
                      if (playerChatMessage.hasExpiredServer(Instant.now())) {
-                         LOGGER.warn("Received expired chat: '{}'. Is the client/server system time unsynchronized?", (Object)body.content());
-@@ -68,10 +68,17 @@ public class SignedMessageChain {
+                         LOGGER.warn("Received expired chat: '{}'. Is the client/server system time unsynchronized?", body.content());
+@@ -67,10 +67,17 @@ public class SignedMessageChain {
  
      public static class DecodeException extends ThrowingComponent {
          private final boolean shouldDisconnect;
@@ -48,7 +48,7 @@ index 96814e626a95e4e3c2f4df1a0339d37bb02f2e61..ba12919c3f9aec34a9e64993b143ae92
  
          public boolean shouldDisconnect() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 773e4850956a7ffcd78cc241a598fd13bcfe1d20..7ee46b9f98794d1fec0a8feea71fd495f9199dd0 100644
+index c9545f96317fd6692889d82851d76084efa6a61d..fdda28bd6aa3a2d3079a383157b82ff825cc992d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -2167,7 +2167,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -61,23 +61,23 @@ index 773e4850956a7ffcd78cc241a598fd13bcfe1d20..7ee46b9f98794d1fec0a8feea71fd495
              }
  
 diff --git a/src/main/java/net/minecraft/server/commands/BanIpCommands.java b/src/main/java/net/minecraft/server/commands/BanIpCommands.java
-index 78345cf28be16b2e9bf2237ea60a3be424a8dabf..5397a5013bee9589b59c76ce5a2c00a7dc3ec262 100644
+index 33cadaac63f70384f8997a95a41462afcea9d27e..e7c2672798b5b50f25f924ca87db27fac229f820 100644
 --- a/src/main/java/net/minecraft/server/commands/BanIpCommands.java
 +++ b/src/main/java/net/minecraft/server/commands/BanIpCommands.java
-@@ -62,7 +62,7 @@ public class BanIpCommands {
+@@ -61,7 +61,7 @@ public class BanIpCommands {
              }
  
-             for(ServerPlayer serverPlayer : list) {
+             for (ServerPlayer serverPlayer : list) {
 -                serverPlayer.connection.disconnect(Component.translatable("multiplayer.disconnect.ip_banned"));
 +                serverPlayer.connection.disconnect(Component.translatable("multiplayer.disconnect.ip_banned"), org.bukkit.event.player.PlayerKickEvent.Cause.IP_BANNED); // Paper - kick event cause
              }
  
              return list.size();
 diff --git a/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java b/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
-index 46f45b315011d43c081fb3f004ab62f3da67036a..42c930443505e94ca91a02e65a8df86801034280 100644
+index 8b677cd8974900ef214ebbf441f6a00e88153a77..f5f73d519819e00c8377cd9cf7907704f08a2549 100644
 --- a/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
 +++ b/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
-@@ -43,7 +43,7 @@ public class BanPlayerCommands {
+@@ -44,7 +44,7 @@ public class BanPlayerCommands {
                  }, true);
                  ServerPlayer serverPlayer = source.getServer().getPlayerList().getPlayer(gameProfile.getId());
                  if (serverPlayer != null) {
@@ -87,12 +87,12 @@ index 46f45b315011d43c081fb3f004ab62f3da67036a..42c930443505e94ca91a02e65a8df868
              }
          }
 diff --git a/src/main/java/net/minecraft/server/commands/KickCommand.java b/src/main/java/net/minecraft/server/commands/KickCommand.java
-index b9560b4ae5c0867396006119c5dadd7f3b47f78b..f3e32da770f379d46c65a0ba5a100b5f10be8422 100644
+index 1f82f045d059ba455459e5c9a546c1948e379539..43e0b479891b6e92af7e592bdbe3c7d22888429b 100644
 --- a/src/main/java/net/minecraft/server/commands/KickCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/KickCommand.java
-@@ -33,7 +33,7 @@ public class KickCommand {
+@@ -35,7 +35,7 @@ public class KickCommand {
  
-             for(ServerPlayer serverPlayer : targets) {
+             for (ServerPlayer serverPlayer : targets) {
                  if (!source.getServer().isSingleplayerOwner(serverPlayer.getGameProfile())) {
 -                    serverPlayer.connection.disconnect(reason);
 +                    serverPlayer.connection.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.KICK_COMMAND); // Paper - kick event cause
@@ -461,7 +461,7 @@ index e913acef00c0a1a2f49779800b46997588b46253..dcb8de1c28b767068aa10f044bd8cf72
          // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java b/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
-index 6724d0a1af13e97bc1d3bd94fd43fef742a0deab..20ba0a0c9eae28658888a77dd2170f629bbcb65b 100644
+index 7e474f8ff62169ad6ef1fdb940bb725cf3a26c43..b45b48df79102af21ef617773ab76be281764ff9 100644
 --- a/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
 +++ b/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
 @@ -24,7 +24,7 @@ public record ProfilePublicKey(ProfilePublicKey.Data data) {
@@ -473,7 +473,7 @@ index 6724d0a1af13e97bc1d3bd94fd43fef742a0deab..20ba0a0c9eae28658888a77dd2170f62
          } else {
              return new ProfilePublicKey(publicKeyData);
          }
-@@ -81,8 +81,16 @@ public record ProfilePublicKey(ProfilePublicKey.Data data) {
+@@ -90,8 +90,16 @@ public record ProfilePublicKey(ProfilePublicKey.Data data) {
      }
  
      public static class ValidationException extends ThrowingComponent {

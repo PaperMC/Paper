@@ -16,14 +16,14 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58dfda6c79 100644
+index 846e84d59303661f06f871879cccca3d721d4f04..d1e1f12451058f7f276f8277536a4c0a4d736601 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 @@ -38,9 +38,12 @@ public class PathFinder {
          if (node == null) {
              return null;
          } else {
--            Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap((pos) -> {
+-            Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap(pos -> {
 -                return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
 -            }, Function.identity()));
 +            // Paper start - Perf: remove streams and optimize collection
@@ -59,14 +59,14 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58
 +        List<Map.Entry<Target, BlockPos>> entryList = Lists.newArrayListWithExpectedSize(positions.size()); // Paper - optimize collection
          int j = (int)((float)this.maxVisitedNodes * rangeMultiplier);
  
-         while(!this.openSet.isEmpty()) {
-@@ -71,14 +75,18 @@ public class PathFinder {
+         while (!this.openSet.isEmpty()) {
+@@ -70,14 +74,18 @@ public class PathFinder {
              Node node = this.openSet.pop();
              node.closed = true;
  
--            for(Target target : set) {
+-            for (Target target : set) {
 +            // Paper start - optimize collection
-+            for(int i1 = 0; i1 < positions.size(); i1++) {
++            for (int i1 = 0; i1 < positions.size(); i1++) {
 +                final Map.Entry<Target, BlockPos> entry = positions.get(i1);
 +                Target target = entry.getKey();
                  if (node.distanceManhattan(target) <= (float)distance) {
@@ -82,7 +82,7 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58
                  break;
              }
  
-@@ -93,7 +101,7 @@ public class PathFinder {
+@@ -92,7 +100,7 @@ public class PathFinder {
                      if (node2.walkedDistance < followRange && (!node2.inOpenSet() || g < node2.g)) {
                          node2.cameFrom = node;
                          node2.g = g;
@@ -91,14 +91,14 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
-@@ -105,23 +113,32 @@ public class PathFinder {
+@@ -104,23 +112,32 @@ public class PathFinder {
              }
          }
  
--        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map((node) -> {
+-        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map(node -> {
 -            return this.reconstructPath(node.getBestNode(), positions.get(node), true);
--        }).min(Comparator.comparingInt(Path::getNodeCount)) : set.stream().map((target) -> {
--            return this.reconstructPath(target.getBestNode(), positions.get(target), false);
+-        }).min(Comparator.comparingInt(Path::getNodeCount)) : set.stream().map(targetx -> {
+-            return this.reconstructPath(targetx.getBestNode(), positions.get(targetx), false);
 -        }).min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
 +        // Paper start - Perf: remove streams and optimize collection
 +        Path best = null;
@@ -124,7 +124,7 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58
 +    private float getBestH(Node node, List<Map.Entry<Target, BlockPos>> targets) { // Paper - Perf: remove streams and optimize collection; Set<Target> -> List<Map.Entry<Target, BlockPos>>
          float f = Float.MAX_VALUE;
  
--        for(Target target : targets) {
+-        for (Target target : targets) {
 +        // Paper start - Perf: remove streams and optimize collection
 +        for (int i = 0, targetsSize = targets.size(); i < targetsSize; i++) {
 +            final Target target = targets.get(i).getKey();

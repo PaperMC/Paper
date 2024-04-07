@@ -30,7 +30,7 @@ Additionally, this lets us avoid even allocating new objects for this too, furth
 reducing memory usage.
 
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java b/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java
-index 0d9c15120148409967027dead617e80769939697..2214a3198c712deaac0f3d3478c85352185761d4 100644
+index e164c524aef4fa81fe96ac43454eecff1c38b9c1..9cfbbc61fcfc678f0988d6d45c7994d128051744 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java
 @@ -10,12 +10,33 @@ public class IndirectMerger implements IndexMerger {
@@ -68,10 +68,10 @@ index 0d9c15120148409967027dead617e80769939697..2214a3198c712deaac0f3d3478c85352
          this.firstIndices = new int[k];
          this.secondIndices = new int[k];
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-index 2d273be8145bbd86ffdf33358629da7fc08b4d4c..9176735c08a75854209f24113b0e78332249dc4d 100644
+index 8d8775e87c4aa719e23f115bb6933958beb49c39..d88f69275ffee4669dd6d31e2669c41f66a1919d 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-@@ -247,9 +247,21 @@ public final class Shapes {
+@@ -286,9 +286,21 @@ public final class Shapes {
      }
  
      @VisibleForTesting
@@ -94,11 +94,11 @@ index 2d273be8145bbd86ffdf33358629da7fc08b4d4c..9176735c08a75854209f24113b0e7833
          if (first instanceof CubePointRange && second instanceof CubePointRange) {
              long l = lcm(i, j);
              if ((long)size * l <= 256L) {
-@@ -257,13 +269,22 @@ public final class Shapes {
+@@ -296,15 +308,22 @@ public final class Shapes {
              }
          }
  
--        if (first.getDouble(i) < second.getDouble(0) - 1.0E-7D) {
+-        if (first.getDouble(i) < second.getDouble(0) - 1.0E-7) {
 +        // Paper start - Identical happens more often than Disjoint
 +        if (i == j && Objects.equals(first, second)) {
 +            if (first instanceof IdenticalMerger) {
@@ -107,12 +107,14 @@ index 2d273be8145bbd86ffdf33358629da7fc08b4d4c..9176735c08a75854209f24113b0e7833
 +                return (IndexMerger) second;
 +            }
 +            return new IdenticalMerger(first);
-+        } else if (first.getDouble(i) < second.getDouble(0) - 1.0E-7D) {
++        } else if (first.getDouble(i) < second.getDouble(0) - 1.0E-7) {
              return new NonOverlappingMerger(first, second, false);
-         } else if (second.getDouble(j) < first.getDouble(0) - 1.0E-7D) {
+         } else if (second.getDouble(j) < first.getDouble(0) - 1.0E-7) {
              return new NonOverlappingMerger(second, first, true);
          } else {
--            return (IndexMerger)(i == j && Objects.equals(first, second) ? new IdenticalMerger(first) : new IndirectMerger(first, second, includeFirst, includeSecond));
+-            return (IndexMerger)(i == j && Objects.equals(first, second)
+-                ? new IdenticalMerger(first)
+-                : new IndirectMerger(first, second, includeFirst, includeSecond));
 +            return new IndirectMerger(first, second, includeFirst, includeSecond);
          }
 +        // Paper end

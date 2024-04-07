@@ -143,7 +143,7 @@ index 0000000000000000000000000000000000000000..413dfa52760db393ad6a8b5341200ee7
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java b/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java
-index 4303f2b4e55191f8a53170435c6d1263782d1c8d..1534cbb5cb5da61fa7fa41bd503b01994877a01b 100644
+index f7328e583c63b4b74664ea78110f8b71c635ce60..80f032cca3309b709a11898cbc08bce27cbd624d 100644
 --- a/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java
 +++ b/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java
 @@ -34,6 +34,7 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
@@ -153,17 +153,17 @@ index 4303f2b4e55191f8a53170435c6d1263782d1c8d..1534cbb5cb5da61fa7fa41bd503b0199
 +                this.stackedContents.initialize(recipe.value()); // Paper - Improve exact choice recipe ingredients
                  entity.getInventory().fillStackedContents(this.stackedContents);
                  this.menu.fillCraftSlotsStackedContents(this.stackedContents);
-                 if (this.stackedContents.canCraft(recipe.value(), (IntList)null)) {
+                 if (this.stackedContents.canCraft((Recipe<?>)recipe.value(), null)) {
 @@ -80,7 +81,7 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
              int l = k;
  
-             for(int m : intList) {
+             for (int m : intList) {
 -                int n = StackedContents.fromStackingIndex(m).getMaxStackSize();
 +                int n = StackedContents.maxStackSizeFromStackingIndex(m, this.stackedContents); // Paper - Improve exact choice recipe ingredients
                  if (n < l) {
                      l = n;
                  }
-@@ -97,10 +98,21 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
+@@ -96,10 +97,21 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
      @Override
      public void addItemToSlot(Iterator<Integer> inputs, int slot, int amount, int gridX, int gridY) {
          Slot slot2 = this.menu.getSlot(slot);
@@ -181,13 +181,13 @@ index 4303f2b4e55191f8a53170435c6d1263782d1c8d..1534cbb5cb5da61fa7fa41bd503b0199
 +        }
 +        // Paper end - Improve exact choice recipe ingredients
          if (!itemStack.isEmpty()) {
-             for(int i = 0; i < amount; ++i) {
+             for (int i = 0; i < amount; i++) {
 -                this.moveItemToGrid(slot2, itemStack);
 +                this.moveItemToGrid(slot2, itemStack, isExact); // Paper - Improve exact choice recipe ingredients
              }
          }
- 
-@@ -130,8 +142,14 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
+     }
+@@ -128,8 +140,14 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
          return i;
      }
  
@@ -204,7 +204,7 @@ index 4303f2b4e55191f8a53170435c6d1263782d1c8d..1534cbb5cb5da61fa7fa41bd503b0199
              ItemStack itemStack = this.inventory.getItem(i);
              if (!itemStack.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/world/entity/player/StackedContents.java b/src/main/java/net/minecraft/world/entity/player/StackedContents.java
-index 5cc5f67284ad01c9154876252450552ed37f24bf..9c7b05fec22a8b84c29d7210f1104030a20cc7aa 100644
+index a3a7bfaf5d21a50410017c8d17484ef5a409d68a..33e493874cb8cecd820e80f2c15e6f654bc64b02 100644
 --- a/src/main/java/net/minecraft/world/entity/player/StackedContents.java
 +++ b/src/main/java/net/minecraft/world/entity/player/StackedContents.java
 @@ -21,8 +21,10 @@ import net.minecraft.world.item.crafting.RecipeHolder;
@@ -218,15 +218,15 @@ index 5cc5f67284ad01c9154876252450552ed37f24bf..9c7b05fec22a8b84c29d7210f1104030
          if (!stack.isDamaged() && !stack.isEnchanted() && !stack.hasCustomHoverName()) {
              this.accountStack(stack);
          }
-@@ -37,6 +39,7 @@ public class StackedContents {
+@@ -36,6 +38,7 @@ public class StackedContents {
          if (!stack.isEmpty()) {
              int i = getStackingIndex(stack);
              int j = Math.min(maxCount, stack.getCount());
 +            if (this.extrasMap != null && stack.hasTag() && this.extrasMap.accountStack(stack, j)) return; // Paper - Improve exact choice recipe ingredients; if an exact ingredient, don't include it
              this.put(i, j);
          }
- 
-@@ -84,6 +87,23 @@ public class StackedContents {
+     }
+@@ -82,6 +85,23 @@ public class StackedContents {
          return itemId == 0 ? ItemStack.EMPTY : new ItemStack(Item.byId(itemId));
      }
  
@@ -250,34 +250,34 @@ index 5cc5f67284ad01c9154876252450552ed37f24bf..9c7b05fec22a8b84c29d7210f1104030
      public void clear() {
          this.contents.clear();
      }
-@@ -107,7 +127,7 @@ public class StackedContents {
+@@ -105,7 +125,7 @@ public class StackedContents {
              this.data = new BitSet(this.ingredientCount + this.itemCount + this.ingredientCount + this.ingredientCount * this.itemCount);
  
-             for(int i = 0; i < this.ingredients.size(); ++i) {
+             for (int i = 0; i < this.ingredients.size(); i++) {
 -                IntList intList = this.ingredients.get(i).getStackingIds();
 +                IntList intList = this.getStackingIds(this.ingredients.get(i)); // Paper - Improve exact choice recipe ingredients
  
-                 for(int j = 0; j < this.itemCount; ++j) {
+                 for (int j = 0; j < this.itemCount; j++) {
                      if (intList.contains(this.items[j])) {
-@@ -171,7 +191,7 @@ public class StackedContents {
+@@ -168,7 +188,7 @@ public class StackedContents {
              IntCollection intCollection = new IntAVLTreeSet();
  
-             for(Ingredient ingredient : this.ingredients) {
+             for (Ingredient ingredient : this.ingredients) {
 -                intCollection.addAll(ingredient.getStackingIds());
 +                intCollection.addAll(this.getStackingIds(ingredient)); // Paper - Improve exact choice recipe ingredients
              }
  
              IntIterator intIterator = intCollection.iterator();
-@@ -294,7 +314,7 @@ public class StackedContents {
-             for(Ingredient ingredient : this.ingredients) {
+@@ -297,7 +317,7 @@ public class StackedContents {
+             for (Ingredient ingredient : this.ingredients) {
                  int j = 0;
  
--                for(int k : ingredient.getStackingIds()) {
-+                for(int k : this.getStackingIds(ingredient)) { // Paper - Improve exact choice recipe ingredients
+-                for (int k : ingredient.getStackingIds()) {
++                for (int k : this.getStackingIds(ingredient)) { // Paper - Improve exact choice recipe ingredients
                      j = Math.max(j, StackedContents.this.contents.get(k));
                  }
  
-@@ -305,5 +325,17 @@ public class StackedContents {
+@@ -308,5 +328,17 @@ public class StackedContents {
  
              return i;
          }
@@ -296,7 +296,7 @@ index 5cc5f67284ad01c9154876252450552ed37f24bf..9c7b05fec22a8b84c29d7210f1104030
      }
  }
 diff --git a/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java b/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java
-index ff48b0de1bdf693e01ea04bc1606c5f80d4c401c..43cff6d2fca55192a0a8d9051a0728327c5dcf4b 100644
+index 7fe2389df3f033da60ec246937f67662355d3715..2a99d6b9c5c0bed7c971303cff82f84303184bca 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java
 @@ -6,7 +6,7 @@ import net.minecraft.world.Container;
@@ -308,7 +308,7 @@ index ff48b0de1bdf693e01ea04bc1606c5f80d4c401c..43cff6d2fca55192a0a8d9051a072832
      protected final RecipeType<?> type;
      protected final CookingBookCategory category;
      protected final String group;
-@@ -23,6 +23,7 @@ public abstract class AbstractCookingRecipe implements Recipe<Container> {
+@@ -25,6 +25,7 @@ public abstract class AbstractCookingRecipe implements Recipe<Container> {
          this.result = result;
          this.experience = experience;
          this.cookingTime = cookingTime;

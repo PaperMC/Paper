@@ -128,15 +128,15 @@ index 8a5abc320137d045acba0c87cef9f2912d78b6fb..6907d1be36fbdf0856c0e11983218d2f
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
-index ed1b95ec694b0fe8b647964b18b8c33707fc0b47..65cd42ce9f553e0aa5bf248bdbf902f9d1f55460 100644
+index 3e24da56fc57afa5d8fdcb3c32c60299272fa43e..65cd42ce9f553e0aa5bf248bdbf902f9d1f55460 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
 @@ -21,18 +21,50 @@ public class PlayerSensor extends Sensor<LivingEntity> {
  
      @Override
      protected void doTick(ServerLevel world, LivingEntity entity) {
--        List<Player> list = world.players().stream().filter(EntitySelector.NO_SPECTATORS).filter((player) -> {
--            return entity.closerThan(player, 16.0D);
+-        List<Player> list = world.players().stream().filter(EntitySelector.NO_SPECTATORS).filter(player -> {
+-            return entity.closerThan(player, 16.0);
 -        }).sorted(Comparator.comparingDouble(entity::distanceToSqr)).collect(Collectors.toList());
 +        // Paper start - Perf: optimise nearby player retrieval & remove streams from hot code
 +        io.papermc.paper.util.player.NearbyPlayers nearbyPlayers = world.chunkSource.chunkMap.getNearbyPlayers();
@@ -164,11 +164,11 @@ index ed1b95ec694b0fe8b647964b18b8c33707fc0b47..65cd42ce9f553e0aa5bf248bdbf902f9
 +        players.sort(Comparator.comparingDouble(entity::distanceToSqr));
          Brain<?> brain = entity.getBrain();
 -        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, list);
--        List<Player> list2 = list.stream().filter((player) -> {
+-        List<Player> list2 = list.stream().filter(player -> {
 -            return isEntityTargetable(entity, player);
 -        }).collect(Collectors.toList());
 -        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, list2.isEmpty() ? null : list2.get(0));
--        Optional<Player> optional = list2.stream().filter((player) -> {
+-        Optional<Player> optional = list2.stream().filter(player -> {
 -            return isEntityAttackable(entity, player);
 -        }).findFirst();
 -        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, optional);
@@ -195,34 +195,34 @@ index ed1b95ec694b0fe8b647964b18b8c33707fc0b47..65cd42ce9f553e0aa5bf248bdbf902f9
      }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
-index fae0dbfb6ac09a0c152c0f74a72583f44316def7..c8a80c1b2fedff22e8a877d466062375ffb2f0d7 100644
+index aecb0ad814586bfc5e56755ee14379a69388b38c..d2f0c3b26d4beedb49d86e0242d843590d469d02 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
 @@ -10,7 +10,7 @@ public class TargetingConditions {
      public static final TargetingConditions DEFAULT = forCombat();
-     private static final double MIN_VISIBILITY_DISTANCE_FOR_INVISIBLE_TARGET = 2.0D;
+     private static final double MIN_VISIBILITY_DISTANCE_FOR_INVISIBLE_TARGET = 2.0;
      private final boolean isCombat;
--    private double range = -1.0D;
-+    public double range = -1.0D; // Paper - public
+-    private double range = -1.0;
++    public double range = -1.0; // Paper - public
      private boolean checkLineOfSight = true;
      private boolean testInvisible = true;
      @Nullable
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index f42dd9602805e9d538506ee4e3eac7e2811a3da6..ed84c87a3f76bc0254c1abb189e6b8b808823465 100644
+index 44cfa3821774f22ac05aa679fdee34d8d68b7d60..e6f7081450e129a72ac0b5031b474d14328a6d42 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
-@@ -230,9 +230,13 @@ public interface EntityGetter {
+@@ -235,9 +235,13 @@ public interface EntityGetter {
          T livingEntity = null;
  
-         for(T livingEntity2 : entityList) {
+         for (T livingEntity2 : entityList) {
 +            // Paper start - optimise nearby player retrieval; move up
 +            // don't check entities outside closest range
 +            double e = livingEntity2.distanceToSqr(x, y, z);
-+            if (d == -1.0D || e < d) {
++            if (d == -1.0 || e < d) {
 +            // Paper end - move up
              if (targetPredicate.test(entity, livingEntity2)) {
 -                double e = livingEntity2.distanceToSqr(x, y, z);
--                if (d == -1.0D || e < d) {
+-                if (d == -1.0 || e < d) {
 +                // Paper - optimise nearby player retrieval; move up
                      d = e;
                      livingEntity = livingEntity2;

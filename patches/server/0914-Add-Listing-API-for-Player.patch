@@ -5,10 +5,10 @@ Subject: [PATCH] Add Listing API for Player
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
-index d43106eb89b14667e85cd6e8fa047d64f2e8ec87..56eddd28429cf42c02d88b8bf79f8b616fa45289 100644
+index 71d79adb717729ba6a7a0a97f96b7747e87873c4..c487241f20ac989d37371e0d49c529cb5cd86abe 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
-@@ -29,12 +29,46 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+@@ -29,6 +29,17 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
          this.actions = EnumSet.of(action);
          this.entries = List.of(new ClientboundPlayerInfoUpdatePacket.Entry(player));
      }
@@ -25,7 +25,8 @@ index d43106eb89b14667e85cd6e8fa047d64f2e8ec87..56eddd28429cf42c02d88b8bf79f8b61
 +    // Paper end - Add Listing API for Player
  
      public static ClientboundPlayerInfoUpdatePacket createPlayerInitializing(Collection<ServerPlayer> players) {
-         EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME);
+         EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(
+@@ -42,6 +53,29 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
          return new ClientboundPlayerInfoUpdatePacket(enumSet, players);
      }
  
@@ -54,21 +55,29 @@ index d43106eb89b14667e85cd6e8fa047d64f2e8ec87..56eddd28429cf42c02d88b8bf79f8b61
 +
      public ClientboundPlayerInfoUpdatePacket(FriendlyByteBuf buf) {
          this.actions = buf.readEnumSet(ClientboundPlayerInfoUpdatePacket.Action.class);
-         this.entries = buf.readList((buf2) -> {
-@@ -144,8 +178,16 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
- 
-     public static record Entry(UUID profileId, @Nullable GameProfile profile, boolean listed, int latency, GameType gameMode, @Nullable Component displayName, @Nullable RemoteChatSession.Data chatSession) {
+         this.entries = buf.readList(buf2 -> {
+@@ -158,16 +192,24 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+         @Nullable RemoteChatSession.Data chatSession
+     ) {
          Entry(ServerPlayer player) {
--            this(player.getUUID(), player.getGameProfile(), true, player.connection.latency(), player.gameMode.getGameModeForPlayer(), player.getTabListDisplayName(), Optionull.map(player.getChatSession(), RemoteChatSession::asData));
 +            // Paper start - Add Listing API for Player
 +            this(player, true);
 +        }
 +        Entry(ServerPlayer player, boolean listed) {
-+            this(player.getUUID(), player.getGameProfile(), listed, player.connection.latency(), player.gameMode.getGameModeForPlayer(), player.getTabListDisplayName(), Optionull.map(player.getChatSession(), RemoteChatSession::asData));
-+        }
+             this(
+                 player.getUUID(),
+                 player.getGameProfile(),
+-                true,
++                listed,
+                 player.connection.latency(),
+                 player.gameMode.getGameModeForPlayer(),
+                 player.getTabListDisplayName(),
+                 Optionull.map(player.getChatSession(), RemoteChatSession::asData)
+             );
+         }
 +        Entry(UUID profileId, boolean listed) {
 +            this(profileId, null, listed, 0, GameType.DEFAULT_MODE, null, null);
-         }
++        }
 +        // Paper end - Add Listing API for Player
      }
  

@@ -54,7 +54,7 @@ index 0000000000000000000000000000000000000000..a375ad4ba9db990b24a2b9ff366fcba6
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/nbt/TagParser.java b/src/main/java/net/minecraft/nbt/TagParser.java
-index 5bec54239a2b185284c10d58854e5a13e33daae5..ef970428fe9fe36c242ce6588bb6843eb6179d59 100644
+index c0a06ad138aede0bfd8f3a61f08d906ddda4780b..284a0904963eebc7284d8da601b00e4b4b2574cc 100644
 --- a/src/main/java/net/minecraft/nbt/TagParser.java
 +++ b/src/main/java/net/minecraft/nbt/TagParser.java
 @@ -48,6 +48,7 @@ public class TagParser {
@@ -64,8 +64,8 @@ index 5bec54239a2b185284c10d58854e5a13e33daae5..ef970428fe9fe36c242ce6588bb6843e
 +    private int depth; // Paper
  
      public static CompoundTag parseTag(String string) throws CommandSyntaxException {
-         return (new TagParser(new StringReader(string))).readSingleStruct();
-@@ -156,6 +157,7 @@ public class TagParser {
+         return new TagParser(new StringReader(string)).readSingleStruct();
+@@ -158,6 +159,7 @@ public class TagParser {
  
      public CompoundTag readStruct() throws CommandSyntaxException {
          this.expect('{');
@@ -73,7 +73,7 @@ index 5bec54239a2b185284c10d58854e5a13e33daae5..ef970428fe9fe36c242ce6588bb6843e
          CompoundTag compoundTag = new CompoundTag();
          this.reader.skipWhitespace();
  
-@@ -179,6 +181,7 @@ public class TagParser {
+@@ -181,6 +183,7 @@ public class TagParser {
          }
  
          this.expect('}');
@@ -81,7 +81,7 @@ index 5bec54239a2b185284c10d58854e5a13e33daae5..ef970428fe9fe36c242ce6588bb6843e
          return compoundTag;
      }
  
-@@ -188,6 +191,7 @@ public class TagParser {
+@@ -190,6 +193,7 @@ public class TagParser {
          if (!this.reader.canRead()) {
              throw ERROR_EXPECTED_VALUE.createWithContext(this.reader);
          } else {
@@ -89,7 +89,7 @@ index 5bec54239a2b185284c10d58854e5a13e33daae5..ef970428fe9fe36c242ce6588bb6843e
              ListTag listTag = new ListTag();
              TagType<?> tagType = null;
  
-@@ -213,6 +217,7 @@ public class TagParser {
+@@ -215,6 +219,7 @@ public class TagParser {
              }
  
              this.expect(']');
@@ -97,22 +97,22 @@ index 5bec54239a2b185284c10d58854e5a13e33daae5..ef970428fe9fe36c242ce6588bb6843e
              return listTag;
          }
      }
-@@ -251,11 +256,11 @@ public class TagParser {
-                 }
+@@ -252,11 +257,11 @@ public class TagParser {
+             }
  
-                 if (typeReader == ByteTag.TYPE) {
--                    list.add((T)((NumericTag)tag).getAsByte());
-+                    list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
-                 } else if (typeReader == LongTag.TYPE) {
--                    list.add((T)((NumericTag)tag).getAsLong());
-+                    list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
-                 } else {
--                    list.add((T)((NumericTag)tag).getAsInt());
-+                    list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
-                 }
+             if (typeReader == ByteTag.TYPE) {
+-                list.add((T)((NumericTag)tag).getAsByte());
++                list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
+             } else if (typeReader == LongTag.TYPE) {
+-                list.add((T)((NumericTag)tag).getAsLong());
++                list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
+             } else {
+-                list.add((T)((NumericTag)tag).getAsInt());
++                list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
+             }
  
-                 if (this.hasElementSeparator()) {
-@@ -286,4 +291,11 @@ public class TagParser {
+             if (!this.hasElementSeparator()) {
+@@ -287,4 +292,11 @@ public class TagParser {
          this.reader.skipWhitespace();
          this.reader.expect(c);
      }
@@ -125,10 +125,10 @@ index 5bec54239a2b185284c10d58854e5a13e33daae5..ef970428fe9fe36c242ce6588bb6843e
 +    }
  }
 diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
-index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..981d34dd4cfbc0932b147688751b98552c8beea8 100644
+index 18ff39d166521355f1e7d39c1dbad3becb136753..92aeffbab3513e2e1d5ec15dc7fff04bbd445a2a 100644
 --- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 +++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
-@@ -197,6 +197,15 @@ public class TranslatableContents implements ComponentContents {
+@@ -190,6 +190,15 @@ public class TranslatableContents implements ComponentContents {
  
      @Override
      public <T> Optional<T> visit(FormattedText.ContentConsumer<T> visitor) {
@@ -143,8 +143,8 @@ index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..981d34dd4cfbc0932b147688751b9855
 +        // Paper end - Count visited parts
          this.decompose();
  
-         for(FormattedText formattedText : this.decomposedParts) {
-@@ -208,6 +217,25 @@ public class TranslatableContents implements ComponentContents {
+         for (FormattedText formattedText : this.decomposedParts) {
+@@ -201,6 +210,25 @@ public class TranslatableContents implements ComponentContents {
  
          return Optional.empty();
      }

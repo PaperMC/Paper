@@ -5,17 +5,17 @@ Subject: [PATCH] Fix some rails connecting improperly
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
-index d8dd9f26fe4344541d0544e35bbc66c5d567a80b..6bd4e4d173f34e0234f4474e49ce2d897f85386f 100644
+index 0483ff1b10bc733ffbfe75ef3a2527c3fed90b8a..b62d77c9aa44447de698ffacf26e0b821c7e11c3 100644
 --- a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
 @@ -68,6 +68,7 @@ public abstract class BaseRailBlock extends Block implements SimpleWaterloggedBl
-         state = this.updateDir(world, pos, state, true);
+         BlockState var5 = this.updateDir(world, pos, state, true);
          if (this.isStraight) {
-             world.neighborChanged(state, pos, this, pos, notify);
-+            state = world.getBlockState(pos); // Paper - Fix some rails connecting improperly
+             world.neighborChanged(var5, pos, this, pos, notify);
++            var5 = world.getBlockState(pos); // Paper - Fix some rails connecting improperly
          }
  
-         return state;
+         return var5;
 diff --git a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
 index 41452abc7b761858ff2f3ff6a833b09c16fded4f..17242c24d73c9ffb1c976a45925f85d1aa9e96b3 100644
 --- a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
@@ -29,7 +29,7 @@ index 41452abc7b761858ff2f3ff6a833b09c16fded4f..17242c24d73c9ffb1c976a45925f85d1
              boolean flag1 = false;
              List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (entity) -> {
 diff --git a/src/main/java/net/minecraft/world/level/block/RailState.java b/src/main/java/net/minecraft/world/level/block/RailState.java
-index 0cbfad97371b59de95963a09aa16f3dad7a37222..939665cbe4cce36cd64c299908a738a4d1c2140e 100644
+index 6caafa73b03ed55c95303e49735eaf3dfd34903a..aa7ebaccad8dc555d9e1dee300e75fcd968a3608 100644
 --- a/src/main/java/net/minecraft/world/level/block/RailState.java
 +++ b/src/main/java/net/minecraft/world/level/block/RailState.java
 @@ -17,6 +17,12 @@ public class RailState {
@@ -45,7 +45,7 @@ index 0cbfad97371b59de95963a09aa16f3dad7a37222..939665cbe4cce36cd64c299908a738a4
      public RailState(Level world, BlockPos pos, BlockState state) {
          this.level = world;
          this.pos = pos;
-@@ -143,6 +149,11 @@ public class RailState {
+@@ -141,6 +147,11 @@ public class RailState {
      }
  
      private void connectTo(RailState placementHelper) {
@@ -57,7 +57,7 @@ index 0cbfad97371b59de95963a09aa16f3dad7a37222..939665cbe4cce36cd64c299908a738a4
          this.connections.add(placementHelper.pos);
          BlockPos blockPos = this.pos.north();
          BlockPos blockPos2 = this.pos.south();
-@@ -333,10 +344,15 @@ public class RailState {
+@@ -331,10 +342,15 @@ public class RailState {
          this.state = this.state.setValue(this.block.getShapeProperty(), railShape2);
          if (forceUpdate || this.level.getBlockState(this.pos) != this.state) {
              this.level.setBlock(this.pos, this.state, 3);
@@ -67,14 +67,14 @@ index 0cbfad97371b59de95963a09aa16f3dad7a37222..939665cbe4cce36cd64c299908a738a4
 +            }
 +            // Paper end - Fix some rails connecting improperly
  
-             for(int i = 0; i < this.connections.size(); ++i) {
+             for (int i = 0; i < this.connections.size(); i++) {
                  RailState railState = this.getRail(this.connections.get(i));
 -                if (railState != null) {
 +                if (railState != null && railState.isValid()) { // Paper - Fix some rails connecting improperly
                      railState.removeSoftConnections();
                      if (railState.canConnectTo(this)) {
                          railState.connectTo(this);
-@@ -349,6 +365,6 @@ public class RailState {
+@@ -347,6 +363,6 @@ public class RailState {
      }
  
      public BlockState getState() {
