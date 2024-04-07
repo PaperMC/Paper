@@ -58,6 +58,16 @@ public interface BlockState extends Metadatable {
     BlockState copy();
 
     /**
+     * Copies the state to another block as an unplaced BlockState.
+     *
+     * @param location the location to copy the block state to
+     * @return the new block state
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    BlockState copy(@NotNull Location location);
+
+    /**
      * Gets the type of this block state.
      *
      * @return block type
