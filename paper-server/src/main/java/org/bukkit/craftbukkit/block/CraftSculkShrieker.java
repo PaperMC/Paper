@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.world.level.block.entity.SculkShriekerBlockEntity;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.SculkShrieker;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -13,8 +14,8 @@ public class CraftSculkShrieker extends CraftBlockEntityState<SculkShriekerBlock
         super(world, tileEntity);
     }
 
-    protected CraftSculkShrieker(CraftSculkShrieker state) {
-        super(state);
+    protected CraftSculkShrieker(CraftSculkShrieker state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -37,6 +38,11 @@ public class CraftSculkShrieker extends CraftBlockEntityState<SculkShriekerBlock
 
     @Override
     public CraftSculkShrieker copy() {
-        return new CraftSculkShrieker(this);
+        return new CraftSculkShrieker(this, null);
+    }
+
+    @Override
+    public CraftSculkShrieker copy(Location location) {
+        return new CraftSculkShrieker(this, location);
     }
 }

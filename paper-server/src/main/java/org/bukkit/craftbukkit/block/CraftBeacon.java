@@ -6,6 +6,7 @@ import net.minecraft.world.ChestLock;
 import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.entity.TileEntityBeacon;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Beacon;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
@@ -20,8 +21,8 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
         super(world, tileEntity);
     }
 
-    protected CraftBeacon(CraftBeacon state) {
-        super(state);
+    protected CraftBeacon(CraftBeacon state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -99,6 +100,11 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     @Override
     public CraftBeacon copy() {
-        return new CraftBeacon(this);
+        return new CraftBeacon(this, null);
+    }
+
+    @Override
+    public CraftBeacon copy(Location location) {
+        return new CraftBeacon(this, location);
     }
 }

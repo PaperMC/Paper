@@ -50,10 +50,15 @@ public class CraftBlockState implements BlockState {
         data = blockData;
     }
 
-    // Creates a unplaced copy (world == null copy)
-    protected CraftBlockState(CraftBlockState state) {
-        this.world = null;
-        this.position = state.getPosition().immutable();
+    // Creates an unplaced copy of the given CraftBlockState at the given location
+    protected CraftBlockState(CraftBlockState state, @Nullable Location location) {
+        if (location == null) {
+            this.world = null;
+            this.position = state.getPosition().immutable();
+        } else {
+            this.world = (CraftWorld) location.getWorld();
+            this.position = CraftLocation.toBlockPosition(location);
+        }
         this.data = state.data;
         this.flag = state.flag;
         setWorldHandle(state.getWorldHandle());
@@ -330,6 +335,11 @@ public class CraftBlockState implements BlockState {
 
     @Override
     public CraftBlockState copy() {
-        return new CraftBlockState(this);
+        return new CraftBlockState(this, null);
+    }
+
+    @Override
+    public BlockState copy(Location location) {
+        return new CraftBlockState(this, location);
     }
 }

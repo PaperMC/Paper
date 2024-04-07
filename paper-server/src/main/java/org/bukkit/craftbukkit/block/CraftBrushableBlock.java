@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.level.block.entity.BrushableBlockEntity;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.BrushableBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -16,8 +17,8 @@ public class CraftBrushableBlock extends CraftBlockEntityState<BrushableBlockEnt
         super(world, tileEntity);
     }
 
-    protected CraftBrushableBlock(CraftBrushableBlock state) {
-        super(state);
+    protected CraftBrushableBlock(CraftBrushableBlock state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -71,6 +72,11 @@ public class CraftBrushableBlock extends CraftBlockEntityState<BrushableBlockEnt
 
     @Override
     public CraftBrushableBlock copy() {
-        return new CraftBrushableBlock(this);
+        return new CraftBrushableBlock(this, null);
+    }
+
+    @Override
+    public CraftBrushableBlock copy(Location location) {
+        return new CraftBrushableBlock(this, location);
     }
 }

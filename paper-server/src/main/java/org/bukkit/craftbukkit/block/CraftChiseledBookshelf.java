@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.world.level.block.ChiseledBookShelfBlock;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 import net.minecraft.world.phys.Vec2F;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.ChiseledBookshelf;
@@ -17,8 +18,8 @@ public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookSh
         super(world, tileEntity);
     }
 
-    protected CraftChiseledBookshelf(CraftChiseledBookshelf state) {
-        super(state);
+    protected CraftChiseledBookshelf(CraftChiseledBookshelf state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -74,6 +75,11 @@ public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookSh
 
     @Override
     public CraftChiseledBookshelf copy() {
-        return new CraftChiseledBookshelf(this);
+        return new CraftChiseledBookshelf(this, null);
+    }
+
+    @Override
+    public CraftChiseledBookshelf copy(Location location) {
+        return new CraftChiseledBookshelf(this, location);
     }
 }

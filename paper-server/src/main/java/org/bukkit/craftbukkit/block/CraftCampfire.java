@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityCampfire;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Campfire;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -12,8 +13,8 @@ public class CraftCampfire extends CraftBlockEntityState<TileEntityCampfire> imp
         super(world, tileEntity);
     }
 
-    protected CraftCampfire(CraftCampfire state) {
-        super(state);
+    protected CraftCampfire(CraftCampfire state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -54,6 +55,11 @@ public class CraftCampfire extends CraftBlockEntityState<TileEntityCampfire> imp
 
     @Override
     public CraftCampfire copy() {
-        return new CraftCampfire(this);
+        return new CraftCampfire(this, null);
+    }
+
+    @Override
+    public CraftCampfire copy(Location location) {
+        return new CraftCampfire(this, location);
     }
 }

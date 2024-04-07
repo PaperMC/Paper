@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityEnderChest;
 import net.minecraft.world.level.block.state.IBlockData;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.EnderChest;
 
@@ -11,8 +12,8 @@ public class CraftEnderChest extends CraftBlockEntityState<TileEntityEnderChest>
         super(world, tileEntity);
     }
 
-    protected CraftEnderChest(CraftEnderChest state) {
-        super(state);
+    protected CraftEnderChest(CraftEnderChest state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -43,6 +44,11 @@ public class CraftEnderChest extends CraftBlockEntityState<TileEntityEnderChest>
 
     @Override
     public CraftEnderChest copy() {
-        return new CraftEnderChest(this);
+        return new CraftEnderChest(this, null);
+    }
+
+    @Override
+    public CraftEnderChest copy(Location location) {
+        return new CraftEnderChest(this, location);
     }
 }

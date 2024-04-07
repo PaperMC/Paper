@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.world.level.block.BlockDispenser;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntityDispenser;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -19,8 +20,8 @@ public class CraftDispenser extends CraftLootable<TileEntityDispenser> implement
         super(world, tileEntity);
     }
 
-    protected CraftDispenser(CraftDispenser state) {
-        super(state);
+    protected CraftDispenser(CraftDispenser state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -65,6 +66,11 @@ public class CraftDispenser extends CraftLootable<TileEntityDispenser> implement
 
     @Override
     public CraftDispenser copy() {
-        return new CraftDispenser(this);
+        return new CraftDispenser(this, null);
+    }
+
+    @Override
+    public CraftDispenser copy(Location location) {
+        return new CraftDispenser(this, location);
     }
 }

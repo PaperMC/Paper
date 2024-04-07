@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.world.level.block.entity.SculkCatalystBlockEntity;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.SculkCatalyst;
@@ -13,8 +14,8 @@ public class CraftSculkCatalyst extends CraftBlockEntityState<SculkCatalystBlock
         super(world, tileEntity);
     }
 
-    protected CraftSculkCatalyst(CraftSculkCatalyst state) {
-        super(state);
+    protected CraftSculkCatalyst(CraftSculkCatalyst state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -30,6 +31,11 @@ public class CraftSculkCatalyst extends CraftBlockEntityState<SculkCatalystBlock
 
     @Override
     public CraftSculkCatalyst copy() {
-        return new CraftSculkCatalyst(this);
+        return new CraftSculkCatalyst(this, null);
+    }
+
+    @Override
+    public CraftSculkCatalyst copy(Location location) {
+        return new CraftSculkCatalyst(this, location);
     }
 }

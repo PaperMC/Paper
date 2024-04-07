@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.level.block.entity.TileEntityConduit;
 import net.minecraft.world.phys.AxisAlignedBB;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Conduit;
@@ -19,13 +20,18 @@ public class CraftConduit extends CraftBlockEntityState<TileEntityConduit> imple
         super(world, tileEntity);
     }
 
-    protected CraftConduit(CraftConduit state) {
-        super(state);
+    protected CraftConduit(CraftConduit state, Location location) {
+        super(state, location);
     }
 
     @Override
     public CraftConduit copy() {
-        return new CraftConduit(this);
+        return new CraftConduit(this, null);
+    }
+
+    @Override
+    public CraftConduit copy(Location location) {
+        return new CraftConduit(this, location);
     }
 
     @Override

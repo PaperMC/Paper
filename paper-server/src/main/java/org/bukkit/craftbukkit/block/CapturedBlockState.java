@@ -8,6 +8,7 @@ import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.World;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.entity.TileEntityBeehive;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -23,9 +24,8 @@ public final class CapturedBlockState extends CraftBlockState {
         this.treeBlock = treeBlock;
     }
 
-    protected CapturedBlockState(CapturedBlockState state) {
-        super(state);
-
+    protected CapturedBlockState(CapturedBlockState state, Location location) {
+        super(state, location);
         this.treeBlock = state.treeBlock;
     }
 
@@ -74,7 +74,12 @@ public final class CapturedBlockState extends CraftBlockState {
 
     @Override
     public CapturedBlockState copy() {
-        return new CapturedBlockState(this);
+        return new CapturedBlockState(this, null);
+    }
+
+    @Override
+    public CapturedBlockState copy(Location location) {
+        return new CapturedBlockState(this, location);
     }
 
     public static CapturedBlockState getBlockState(World world, BlockPosition pos, int flag) {

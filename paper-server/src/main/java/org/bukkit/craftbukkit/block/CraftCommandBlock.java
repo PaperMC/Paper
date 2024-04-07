@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityCommand;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.CommandBlock;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -11,8 +12,8 @@ public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand> 
         super(world, tileEntity);
     }
 
-    protected CraftCommandBlock(CraftCommandBlock state) {
-        super(state);
+    protected CraftCommandBlock(CraftCommandBlock state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -37,6 +38,11 @@ public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand> 
 
     @Override
     public CraftCommandBlock copy() {
-        return new CraftCommandBlock(this);
+        return new CraftCommandBlock(this, null);
+    }
+
+    @Override
+    public CraftCommandBlock copy(Location location) {
+        return new CraftCommandBlock(this, location);
     }
 }

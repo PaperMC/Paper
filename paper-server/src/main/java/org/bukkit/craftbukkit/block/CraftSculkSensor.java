@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.world.level.block.entity.SculkSensorBlockEntity;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.SculkSensor;
 
@@ -11,8 +12,8 @@ public class CraftSculkSensor<T extends SculkSensorBlockEntity> extends CraftBlo
         super(world, tileEntity);
     }
 
-    protected CraftSculkSensor(CraftSculkSensor<T> state) {
-        super(state);
+    protected CraftSculkSensor(CraftSculkSensor<T> state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -28,6 +29,11 @@ public class CraftSculkSensor<T extends SculkSensorBlockEntity> extends CraftBlo
 
     @Override
     public CraftSculkSensor<T> copy() {
-        return new CraftSculkSensor<>(this);
+        return new CraftSculkSensor<>(this, null);
+    }
+
+    @Override
+    public CraftSculkSensor<T> copy(Location location) {
+        return new CraftSculkSensor<>(this, location);
     }
 }

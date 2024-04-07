@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.world.level.block.entity.CrafterBlockEntity;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Crafter;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
@@ -13,8 +14,8 @@ public class CraftCrafter extends CraftLootable<CrafterBlockEntity> implements C
         super(world, tileEntity);
     }
 
-    protected CraftCrafter(CraftCrafter state) {
-        super(state);
+    protected CraftCrafter(CraftCrafter state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -33,7 +34,12 @@ public class CraftCrafter extends CraftLootable<CrafterBlockEntity> implements C
 
     @Override
     public CraftCrafter copy() {
-        return new CraftCrafter(this);
+        return new CraftCrafter(this, null);
+    }
+
+    @Override
+    public CraftCrafter copy(Location location) {
+        return new CraftCrafter(this, location);
     }
 
     @Override

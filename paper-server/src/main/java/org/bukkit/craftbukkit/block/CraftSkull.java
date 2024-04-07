@@ -7,6 +7,7 @@ import net.minecraft.resources.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.block.entity.TileEntitySkull;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
@@ -31,8 +32,8 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
         super(world, tileEntity);
     }
 
-    protected CraftSkull(CraftSkull state) {
-        super(state);
+    protected CraftSkull(CraftSkull state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -206,6 +207,11 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
 
     @Override
     public CraftSkull copy() {
-        return new CraftSkull(this);
+        return new CraftSkull(this, null);
+    }
+
+    @Override
+    public CraftSkull copy(Location location) {
+        return new CraftSkull(this, location);
     }
 }

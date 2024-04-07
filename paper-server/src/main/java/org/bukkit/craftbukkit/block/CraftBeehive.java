@@ -20,8 +20,8 @@ public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> imple
         super(world, tileEntity);
     }
 
-    protected CraftBeehive(CraftBeehive state) {
-        super(state);
+    protected CraftBeehive(CraftBeehive state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -88,6 +88,11 @@ public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> imple
 
     @Override
     public CraftBeehive copy() {
-        return new CraftBeehive(this);
+        return new CraftBeehive(this, null);
+    }
+
+    @Override
+    public CraftBeehive copy(Location location) {
+        return new CraftBeehive(this, location);
     }
 }

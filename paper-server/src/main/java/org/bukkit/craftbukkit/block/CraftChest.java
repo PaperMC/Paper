@@ -5,6 +5,7 @@ import net.minecraft.world.level.block.BlockChest;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntityChest;
 import net.minecraft.world.level.block.state.IBlockData;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Chest;
@@ -19,8 +20,8 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
         super(world, tileEntity);
     }
 
-    protected CraftChest(CraftChest state) {
-        super(state);
+    protected CraftChest(CraftChest state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -84,6 +85,11 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
 
     @Override
     public CraftChest copy() {
-        return new CraftChest(this);
+        return new CraftChest(this, null);
+    }
+
+    @Override
+    public CraftChest copy(Location location) {
+        return new CraftChest(this, location);
     }
 }

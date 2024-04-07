@@ -13,6 +13,7 @@ import net.minecraft.util.random.WeightedEntry.b;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.MobSpawnerData;
 import net.minecraft.world.level.block.entity.TileEntityMobSpawner;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.block.spawner.SpawnRule;
@@ -28,8 +29,8 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
         super(world, tileEntity);
     }
 
-    protected CraftCreatureSpawner(CraftCreatureSpawner state) {
-        super(state);
+    protected CraftCreatureSpawner(CraftCreatureSpawner state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -225,6 +226,11 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
 
     @Override
     public CraftCreatureSpawner copy() {
-        return new CraftCreatureSpawner(this);
+        return new CraftCreatureSpawner(this, null);
+    }
+
+    @Override
+    public CraftCreatureSpawner copy(Location location) {
+        return new CraftCreatureSpawner(this, location);
     }
 }

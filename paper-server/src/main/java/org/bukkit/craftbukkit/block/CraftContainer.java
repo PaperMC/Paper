@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.ChestLock;
 import net.minecraft.world.level.block.entity.TileEntityContainer;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Container;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -12,8 +13,8 @@ public abstract class CraftContainer<T extends TileEntityContainer> extends Craf
         super(world, tileEntity);
     }
 
-    protected CraftContainer(CraftContainer<T> state) {
-        super(state);
+    protected CraftContainer(CraftContainer<T> state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -53,4 +54,7 @@ public abstract class CraftContainer<T extends TileEntityContainer> extends Craf
 
     @Override
     public abstract CraftContainer<T> copy();
+
+    @Override
+    public abstract CraftContainer<T> copy(Location location);
 }

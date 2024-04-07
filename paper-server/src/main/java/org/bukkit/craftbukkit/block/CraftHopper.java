@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityHopper;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Hopper;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
@@ -12,8 +13,8 @@ public class CraftHopper extends CraftLootable<TileEntityHopper> implements Hopp
         super(world, tileEntity);
     }
 
-    protected CraftHopper(CraftHopper state) {
-        super(state);
+    protected CraftHopper(CraftHopper state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -32,6 +33,11 @@ public class CraftHopper extends CraftLootable<TileEntityHopper> implements Hopp
 
     @Override
     public CraftHopper copy() {
-        return new CraftHopper(this);
+        return new CraftHopper(this, null);
+    }
+
+    @Override
+    public CraftHopper copy(Location location) {
+        return new CraftHopper(this, location);
     }
 }
