@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Flo0 <flo.roma@web.de>
+Date: Mon, 8 Apr 2024 16:43:16 +0200
+Subject: [PATCH] API for checking sent chunks
+
+
+diff --git a/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
+index 1b090f1e79b996e52097afc49c1cec85936653e6..627c54afcb7b1c1e70333b31ee45e3ad75f85e31 100644
+--- a/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
++++ b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
+@@ -33,6 +33,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ import org.bukkit.entity.Player;
+ import java.lang.invoke.VarHandle;
+ import java.util.ArrayDeque;
++import java.util.Set;
+ import java.util.concurrent.TimeUnit;
+ import java.util.concurrent.atomic.AtomicLong;
+ 
+@@ -1107,6 +1108,16 @@ public class RegionizedPlayerChunkLoader {
+ 
+             // now all tickets should be removed, which is all of our external state
+         }
++
++        // For external checks
++        public boolean isChunkSent(long chunkKey) {
++            return this.sentChunks.contains(chunkKey);
++        }
++
++        // For external checks
++        public Set<Long> getSentChunks() {
++            return Set.copyOf(this.sentChunks);
++        }
+     }
+ 
+     // TODO rebase into util patch
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index e77bf7f432387bdfa7f69d31b014e8cd254fd4ca..1cec8ab8e13d927c4d0263797b60d11fced0986b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -3390,6 +3390,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+     // Paper end
+ 
++    // Paper start - Add chunk view API
++    @Override
++    public Set<java.lang.Long> getSentChunkKeys() {
++        return this.getHandle().chunkLoader.getSentChunks();
++    }
++
++    @Override
++    public boolean isChunkSent(org.bukkit.Chunk chunk) {
++        return this.getHandle().chunkLoader.isChunkSent(chunk.getChunkKey());
++    }
++    // Paper end
++
+     public Player.Spigot spigot()
+     {
+         return this.spigot;
