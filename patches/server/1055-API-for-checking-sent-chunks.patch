@@ -5,18 +5,10 @@ Subject: [PATCH] API for checking sent chunks
 
 
 diff --git a/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
-index 1b090f1e79b996e52097afc49c1cec85936653e6..627c54afcb7b1c1e70333b31ee45e3ad75f85e31 100644
+index 1b090f1e79b996e52097afc49c1cec85936653e6..2d4e3eeab46bb9257986e32bde3fa144ed5954c3 100644
 --- a/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
 +++ b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
-@@ -33,6 +33,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
- import org.bukkit.entity.Player;
- import java.lang.invoke.VarHandle;
- import java.util.ArrayDeque;
-+import java.util.Set;
- import java.util.concurrent.TimeUnit;
- import java.util.concurrent.atomic.AtomicLong;
- 
-@@ -1107,6 +1108,16 @@ public class RegionizedPlayerChunkLoader {
+@@ -1107,6 +1107,16 @@ public class RegionizedPlayerChunkLoader {
  
              // now all tickets should be removed, which is all of our external state
          }
@@ -27,17 +19,17 @@ index 1b090f1e79b996e52097afc49c1cec85936653e6..627c54afcb7b1c1e70333b31ee45e3ad
 +        }
 +
 +        // For external checks
-+        public Set<Long> getSentChunks() {
-+            return Set.copyOf(this.sentChunks);
++        public java.util.Set<Long> getSentChunks() {
++            return java.util.Set.copyOf(this.sentChunks);
 +        }
      }
  
      // TODO rebase into util patch
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index e77bf7f432387bdfa7f69d31b014e8cd254fd4ca..1cec8ab8e13d927c4d0263797b60d11fced0986b 100644
+index e77bf7f432387bdfa7f69d31b014e8cd254fd4ca..7230ecf2127b8767b404a587de19509454b11333 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -3390,6 +3390,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -3390,6 +3390,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
      // Paper end
  
@@ -48,8 +40,23 @@ index e77bf7f432387bdfa7f69d31b014e8cd254fd4ca..1cec8ab8e13d927c4d0263797b60d11f
 +    }
 +
 +    @Override
++    public java.util.Set<org.bukkit.Chunk> getSentChunks() {
++        Set<org.bukkit.Chunk> chunks = new HashSet<>();
++        org.bukkit.World world = this.getWorld();
++        for (long chunkKey : this.getSentChunkKeys()) {
++            chunks.add(world.getChunkAt(chunkKey, false));
++        }
++        return chunks;
++    }
++
++    @Override
 +    public boolean isChunkSent(org.bukkit.Chunk chunk) {
-+        return this.getHandle().chunkLoader.isChunkSent(chunk.getChunkKey());
++        return this.isChunkSent(chunk.getChunkKey());
++    }
++
++    @Override
++    public boolean isChunkSent(long chunkKey) {
++        return this.getHandle().chunkLoader.isChunkSent(chunkKey);
 +    }
 +    // Paper end
 +
