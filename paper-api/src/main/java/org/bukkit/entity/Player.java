@@ -267,6 +267,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     @Nullable
     public InetSocketAddress getAddress();
 
+    // Paper start - Add API to get player's proxy address
+    /**
+     * Gets the socket address of this player's proxy
+     *
+     * @return the player's proxy address, null if the server doesn't have Proxy Protocol enabled, or the player didn't connect to an HAProxy instance
+     */
+    @Nullable
+    public InetSocketAddress getHAProxyAddress();
+    // Paper end - Add API to get player's proxy address
+
     /**
      * Gets if this connection has been transferred from another server.
      *
