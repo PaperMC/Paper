@@ -3485,6 +3485,34 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
     // Paper end
 
+    // Paper start - Add chunk view API
+    @Override
+    public Set<java.lang.Long> getSentChunkKeys() {
+        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
+        final it.unimi.dsi.fastutil.longs.LongOpenHashSet keys = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        this.getHandle().getChunkTrackingView().forEach(pos -> keys.add(pos.longKey));
+        return it.unimi.dsi.fastutil.longs.LongSets.unmodifiable(keys);
+    }
+
+    @Override
+    public Set<org.bukkit.Chunk> getSentChunks() {
+        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
+        final it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<org.bukkit.Chunk> chunks = new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>();
+        final org.bukkit.World world = this.getWorld();
+        this.getHandle().getChunkTrackingView().forEach(pos -> {
+            final org.bukkit.Chunk chunk = world.getChunkAt(pos.longKey);
+            chunks.add(chunk);
+        });
+        return it.unimi.dsi.fastutil.objects.ObjectSets.unmodifiable(chunks);
+    }
+
+    @Override
+    public boolean isChunkSent(final long chunkKey) {
+        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
+        return this.getHandle().getChunkTrackingView().contains(new net.minecraft.world.level.ChunkPos(chunkKey));
+    }
+    // Paper end
+
     public Player.Spigot spigot()
     {
         return this.spigot;
