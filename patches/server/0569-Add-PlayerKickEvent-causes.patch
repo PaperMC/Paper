@@ -5,7 +5,7 @@ Subject: [PATCH] Add PlayerKickEvent causes
 
 
 diff --git a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
-index 1bb98a7e5267602bf9c37ba5041ff75d77d53e15..ec260062e5206df08425ad65573691fda262fa93 100644
+index e15d740275d265c460c1771cdad5556bcec9d798..0af9ed92824ccf30814eceb6a2c2e5c12661c991 100644
 --- a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
 +++ b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
 @@ -34,16 +34,16 @@ public class SignedMessageChain {
@@ -61,10 +61,10 @@ index c9545f96317fd6692889d82851d76084efa6a61d..fdda28bd6aa3a2d3079a383157b82ff8
              }
  
 diff --git a/src/main/java/net/minecraft/server/commands/BanIpCommands.java b/src/main/java/net/minecraft/server/commands/BanIpCommands.java
-index 33cadaac63f70384f8997a95a41462afcea9d27e..e7c2672798b5b50f25f924ca87db27fac229f820 100644
+index b451f98aaa5b694cfd9fadebcb5a4441951e9e87..b23dca02fe85a299d13353706915db2aec3467a6 100644
 --- a/src/main/java/net/minecraft/server/commands/BanIpCommands.java
 +++ b/src/main/java/net/minecraft/server/commands/BanIpCommands.java
-@@ -61,7 +61,7 @@ public class BanIpCommands {
+@@ -66,7 +66,7 @@ public class BanIpCommands {
              }
  
              for (ServerPlayer serverPlayer : list) {
@@ -74,11 +74,11 @@ index 33cadaac63f70384f8997a95a41462afcea9d27e..e7c2672798b5b50f25f924ca87db27fa
  
              return list.size();
 diff --git a/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java b/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
-index 8b677cd8974900ef214ebbf441f6a00e88153a77..f5f73d519819e00c8377cd9cf7907704f08a2549 100644
+index e63a03a419061edc6a1305f6469d2282d960d6d1..be436480873ac914d67dac36061ac087b7389ab1 100644
 --- a/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
 +++ b/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
-@@ -44,7 +44,7 @@ public class BanPlayerCommands {
-                 }, true);
+@@ -55,7 +55,7 @@ public class BanPlayerCommands {
+                 );
                  ServerPlayer serverPlayer = source.getServer().getPlayerList().getPlayer(gameProfile.getId());
                  if (serverPlayer != null) {
 -                    serverPlayer.connection.disconnect(Component.translatable("multiplayer.disconnect.banned"));
@@ -87,18 +87,18 @@ index 8b677cd8974900ef214ebbf441f6a00e88153a77..f5f73d519819e00c8377cd9cf7907704
              }
          }
 diff --git a/src/main/java/net/minecraft/server/commands/KickCommand.java b/src/main/java/net/minecraft/server/commands/KickCommand.java
-index 1f82f045d059ba455459e5c9a546c1948e379539..43e0b479891b6e92af7e592bdbe3c7d22888429b 100644
+index d1caaecfdfba1cdeba032f0bc38c06541fa61633..6468b3a25c7527a2fde6899e4812b5cb79ce4b1d 100644
 --- a/src/main/java/net/minecraft/server/commands/KickCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/KickCommand.java
-@@ -35,7 +35,7 @@ public class KickCommand {
+@@ -48,7 +48,7 @@ public class KickCommand {
  
              for (ServerPlayer serverPlayer : targets) {
                  if (!source.getServer().isSingleplayerOwner(serverPlayer.getGameProfile())) {
 -                    serverPlayer.connection.disconnect(reason);
 +                    serverPlayer.connection.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.KICK_COMMAND); // Paper - kick event cause
-                     source.sendSuccess(() -> {
-                         return Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason);
-                     }, true);
+                     source.sendSuccess(() -> Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason), true);
+                     i++;
+                 }
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 index 6bb846d3ee2fb54ab3ffa116607f2a83e538460e..a65a1466dab52fca75cda16a4b22fef03b6207a0 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
@@ -461,7 +461,7 @@ index e913acef00c0a1a2f49779800b46997588b46253..dcb8de1c28b767068aa10f044bd8cf72
          // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java b/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
-index 7e474f8ff62169ad6ef1fdb940bb725cf3a26c43..b45b48df79102af21ef617773ab76be281764ff9 100644
+index f472dea0bd4f834c0c8f0aa59ae7cdae082b14af..2fa51c3a70f43cd23b8f494fc643d66cecfda7d2 100644
 --- a/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
 +++ b/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
 @@ -24,7 +24,7 @@ public record ProfilePublicKey(ProfilePublicKey.Data data) {
@@ -473,7 +473,7 @@ index 7e474f8ff62169ad6ef1fdb940bb725cf3a26c43..b45b48df79102af21ef617773ab76be2
          } else {
              return new ProfilePublicKey(publicKeyData);
          }
-@@ -90,8 +90,16 @@ public record ProfilePublicKey(ProfilePublicKey.Data data) {
+@@ -88,8 +88,16 @@ public record ProfilePublicKey(ProfilePublicKey.Data data) {
      }
  
      public static class ValidationException extends ThrowingComponent {

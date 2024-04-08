@@ -2153,7 +2153,7 @@ index 0000000000000000000000000000000000000000..1f42bdfdb052056e62a939ab0d1944f8
 +
 +}
 diff --git a/src/main/java/net/minecraft/core/Direction.java b/src/main/java/net/minecraft/core/Direction.java
-index 83a2b952df749b7aaab439db4ec2d38bc4f5b11c..6bcf4d8e5c69dbc655d522abadc7f14ee7b21d71 100644
+index 75694cfd7d8adde6b9246518c20fe75774297a57..84a760fdc50bdafc9150f977e9c5d557a30ee220 100644
 --- a/src/main/java/net/minecraft/core/Direction.java
 +++ b/src/main/java/net/minecraft/core/Direction.java
 @@ -53,6 +53,21 @@ public enum Direction implements StringRepresentable {
@@ -2494,7 +2494,7 @@ index 86a4f30c8784c602436ecf1c78efb0bdca4b7089..b0bea28e9261767c60d30fb0e76f4f3a
  
      public ClipContext(Vec3 start, Vec3 end, ClipContext.Block shapeType, ClipContext.Fluid fluidHandling, Entity entity) {
 diff --git a/src/main/java/net/minecraft/world/level/CollisionGetter.java b/src/main/java/net/minecraft/world/level/CollisionGetter.java
-index a4200e1992207e7665673c2acdb45facfd0bc676..4e32426a3d261f77d6066bb5256596a4ae0de0a3 100644
+index 1ad0c976c6e2d6d31397dff850a9de7c16d16fba..dc877fe2e3c53b353baa59c125232e425fee67d7 100644
 --- a/src/main/java/net/minecraft/world/level/CollisionGetter.java
 +++ b/src/main/java/net/minecraft/world/level/CollisionGetter.java
 @@ -35,6 +35,12 @@ public interface CollisionGetter extends BlockGetter {
@@ -2511,7 +2511,7 @@ index a4200e1992207e7665673c2acdb45facfd0bc676..4e32426a3d261f77d6066bb5256596a4
          return this.noCollision(null, box);
      }
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index eba4663a6928989bfa14d57303d77fdabea31481..44cfa3821774f22ac05aa679fdee34d8d68b7d60 100644
+index 9a28912f52824acdc80a62243b136e6f365bf567..21843501355a0c0c8d594e3e5312e97861c9a777 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
 @@ -46,20 +46,36 @@ public interface EntityGetter {
@@ -2594,10 +2594,10 @@ index eba4663a6928989bfa14d57303d77fdabea31481..44cfa3821774f22ac05aa679fdee34d8
 -                }
 +            entities = this.getHardCollidingEntities(entity, box, null);
 +        }
++
++        final List<VoxelShape> ret = new java.util.ArrayList<>(Math.min(25, entities.size()));
  
 -                return builder.build();
-+        final List<VoxelShape> ret = new java.util.ArrayList<>(Math.min(25, entities.size()));
-+
 +        for (int i = 0, len = entities.size(); i < len; ++i) {
 +            final Entity otherEntity = entities.get(i);
 +
@@ -3537,7 +3537,7 @@ index 7ec02a7849437a18860aa0df7d9ddd71b2447d4c..5e45e49ab09344cb95736f4124b1c6e0
      public OffsetDoubleList(DoubleList oldList, double offset) {
          this.delegate = oldList;
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-index d88f69275ffee4669dd6d31e2669c41f66a1919d..ce8fff01475bdfe9094c237fc5f294f3958edb42 100644
+index 86df4ef44d0a5107ee929dfd40d8ccb0779e8bfc..fbf1a559aefe444410b63a773374e011e4964e16 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
 @@ -16,9 +16,15 @@ public final class Shapes {
@@ -3796,10 +3796,6 @@ index d88f69275ffee4669dd6d31e2669c41f66a1919d..ce8fff01475bdfe9094c237fc5f294f3
 +        // secondly, use our cache to retrieve sliced shape
 +        final VoxelShape newFirst = shape.getFaceShapeClamped(direction);
 +        if (newFirst.isEmpty()) {
-+            return false;
-+        }
-+        final VoxelShape newSecond = neighbor.getFaceShapeClamped(direction.getOpposite());
-+        if (newSecond.isEmpty()) {
              return false;
 -        } else {
 -            Direction.Axis axis = direction.getAxis();
@@ -3811,6 +3807,10 @@ index d88f69275ffee4669dd6d31e2669c41f66a1919d..ce8fff01475bdfe9094c237fc5f294f3
 -                && DoubleMath.fuzzyEquals(voxelShape2.min(axis), 0.0, 1.0E-7)
 -                && !joinIsNotEmpty(new SliceShape(voxelShape, axis, voxelShape.shape.getSize(axis) - 1), new SliceShape(voxelShape2, axis, 0), booleanOp);
          }
++        final VoxelShape newSecond = neighbor.getFaceShapeClamped(direction.getOpposite());
++        if (newSecond.isEmpty()) {
++            return false;
++        }
 +
 +        return !joinIsNotEmpty(newFirst, newSecond, BooleanOp.ONLY_FIRST);
 +        // Paper end - optimise collisions
@@ -3953,7 +3953,7 @@ index 53aa193f33a1a15376a59b8d6dd8cbc6cbec168b..a745ff8d115e1d0da6138e4f06726e07
  
      private static DiscreteVoxelShape makeSlice(DiscreteVoxelShape voxelSet, Direction.Axis axis, int sliceWidth) {
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
-index 80899dc599f05198cc58524355b66791dc418141..6ed187fa64dcbd01927c5180739dc8aaaf1fbe72 100644
+index 2936c56e5690b42518010698e5177755422e4c5d..e6b17f32f2b6930739a98c6139442383c1847add 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 @@ -16,37 +16,438 @@ import net.minecraft.world.phys.BlockHitResult;
@@ -4379,11 +4379,11 @@ index 80899dc599f05198cc58524355b66791dc418141..6ed187fa64dcbd01927c5180739dc8aa
 +        // Paper start - optimise collisions
 +        if (this.isEmpty) {
 +            throw Util.pauseInIde(new UnsupportedOperationException("No bounds for empty shape."));
-         }
++        }
 +        AABB cached = this.cachedBounds;
 +        if (cached != null) {
 +            return cached;
-+        }
+         }
 +
 +        final io.papermc.paper.util.collisions.CachedShapeData shapeData = this.cachedShapeData;
 +
@@ -4412,23 +4412,23 @@ index 80899dc599f05198cc58524355b66791dc418141..6ed187fa64dcbd01927c5180739dc8aa
      }
  
      public VoxelShape singleEncompassing() {
-@@ -69,26 +470,106 @@ public abstract class VoxelShape {
+@@ -69,28 +470,106 @@ public abstract class VoxelShape {
      protected abstract DoubleList getCoords(Direction.Axis axis);
  
      public boolean isEmpty() {
 -        return this.shape.isEmpty();
 +        return this.isEmpty; // Paper - optimise collisions
-     }
- 
++    }
++
 +    // Paper start - optimise collisions
 +    private static DoubleList offsetList(final DoubleList src, final double by) {
 +        if (src instanceof OffsetDoubleList offsetDoubleList) {
 +            return new OffsetDoubleList(offsetDoubleList.delegate, by + offsetDoubleList.offset);
 +        }
 +        return new OffsetDoubleList(src, by);
-+    }
+     }
 +    // Paper end - optimise collisions
-+
+ 
      public VoxelShape move(double x, double y, double z) {
 -        return (VoxelShape)(this.isEmpty()
 -            ? Shapes.empty()
@@ -4460,9 +4460,11 @@ index 80899dc599f05198cc58524355b66791dc418141..6ed187fa64dcbd01927c5180739dc8aa
  
      public VoxelShape optimize() {
 -        VoxelShape[] voxelShapes = new VoxelShape[]{Shapes.empty()};
--        this.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
--            voxelShapes[0] = Shapes.joinUnoptimized(voxelShapes[0], Shapes.box(minX, minY, minZ, maxX, maxY, maxZ), BooleanOp.OR);
--        });
+-        this.forAllBoxes(
+-            (minX, minY, minZ, maxX, maxY, maxZ) -> voxelShapes[0] = Shapes.joinUnoptimized(
+-                    voxelShapes[0], Shapes.box(minX, minY, minZ, maxX, maxY, maxZ), BooleanOp.OR
+-                )
+-        );
 -        return voxelShapes[0];
 +        // Paper start - optimise collisions
 +        // Optimise merge strategy to increase the number of simple joins, and additionally forward the toAabbs cache
@@ -4532,7 +4534,7 @@ index 80899dc599f05198cc58524355b66791dc418141..6ed187fa64dcbd01927c5180739dc8aa
      }
  
      public void forAllEdges(Shapes.DoubleLineConsumer consumer) {
-@@ -128,12 +609,43 @@ public abstract class VoxelShape {
+@@ -126,10 +605,43 @@ public abstract class VoxelShape {
              );
      }
  
@@ -4556,9 +4558,7 @@ index 80899dc599f05198cc58524355b66791dc418141..6ed187fa64dcbd01927c5180739dc8aa
 +
      public List<AABB> toAabbs() {
 -        List<AABB> list = Lists.newArrayList();
--        this.forAllBoxes((x1, y1, z1, x2, y2, z2) -> {
--            list.add(new AABB(x1, y1, z1, x2, y2, z2));
--        });
+-        this.forAllBoxes((x1, y1, z1, x2, y2, z2) -> list.add(new AABB(x1, y1, z1, x2, y2, z2)));
 -        return list;
 +        // Paper start - optimise collisions
 +        io.papermc.paper.util.collisions.CachedToAABBs cachedToAABBs = this.cachedToAABBs;
@@ -4581,8 +4581,8 @@ index 80899dc599f05198cc58524355b66791dc418141..6ed187fa64dcbd01927c5180739dc8aa
      }
  
      public double min(Direction.Axis axis, double from, double to) {
-@@ -160,43 +672,85 @@ public abstract class VoxelShape {
-         }) - 1;
+@@ -154,43 +666,85 @@ public abstract class VoxelShape {
+         return Mth.binarySearch(0, this.shape.getSize(axis) + 1, i -> coord < this.get(axis, i)) - 1;
      }
  
 +    // Paper start - optimise collisions
@@ -4694,7 +4694,7 @@ index 80899dc599f05198cc58524355b66791dc418141..6ed187fa64dcbd01927c5180739dc8aa
      }
  
      public VoxelShape getFaceShape(Direction facing) {
-@@ -233,7 +787,28 @@ public abstract class VoxelShape {
+@@ -227,7 +781,28 @@ public abstract class VoxelShape {
      }
  
      public double collide(Direction.Axis axis, AABB box, double maxDist) {

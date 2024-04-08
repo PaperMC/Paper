@@ -6,10 +6,10 @@ Subject: [PATCH] Optimize Biome Mob Lookups for Mob Spawning
 Uses an EnumMap as well as a Set paired List for O(1) contains calls.
 
 diff --git a/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java b/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
-index c9056ce165a39d9c135cbc5bbbd21c5e418fbf31..0550da2840a6a084b3aa308d28e64d2a27cc78ee 100644
+index c376a6cc04faf8d8545c99c0815682ea7cad98db..ffa24b71400f2041c9154817c6c767bc7dffb176 100644
 --- a/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
 +++ b/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
-@@ -81,12 +81,44 @@ public class MobSpawnSettings {
+@@ -75,8 +75,40 @@ public class MobSpawnSettings {
      }
  
      public static class Builder {
@@ -45,13 +45,8 @@ index c9056ce165a39d9c135cbc5bbbd21c5e418fbf31..0550da2840a6a084b3aa308d28e64d2a
 +        }
 +        // use toImmutableEnumMap collector
          private final Map<MobCategory, List<MobSpawnSettings.SpawnerData>> spawners = Stream.of(MobCategory.values())
--            .collect(ImmutableMap.toImmutableMap(mobCategory -> {
-+            .collect(Maps.toImmutableEnumMap(mobCategory -> {
-                 return (MobCategory)mobCategory;
-             }, mobCategory -> {
--                return Lists.newArrayList();
-+                return new MobList(); // Use MobList instead of ArrayList
-             }));
+-            .collect(ImmutableMap.toImmutableMap(mobCategory -> (MobCategory)mobCategory, mobCategory -> Lists.newArrayList()));
++            .collect(Maps.toImmutableEnumMap(mobCategory -> (MobCategory)mobCategory, mobCategory -> new MobList())); // Use MobList instead of ArrayList
 +        // Paper end - Perf: keep track of data in a pair set to give O(1) contains calls
          private final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts = Maps.newLinkedHashMap();
          private float creatureGenerationProbability = 0.1F;

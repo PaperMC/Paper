@@ -118,13 +118,13 @@ index 3d897ec6920eff6176ddac9f0442a997b9ef14fd..abaf1ea340c69c8bee80e64567b44b5c
          this.level = MinMaxBounds.Ints.ANY;
          this.rotX = WrappedMinMaxBounds.ANY;
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
-index cb4c218eb06ada02824a0574b077b3f3f65e063b..2d6f92d4967fba88472057cfea020ac64ca1e9c8 100644
+index 53f77dbd5be1297d56d25c12e07c3dd65d6c4cd3..2cf42c9d33ce545a48e0080b46758c1bc17fd665 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
 +++ b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
-@@ -75,6 +75,19 @@ public class EntitySelectorOptions {
-     public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType(entity -> {
-         return Component.translatableEscape("argument.entity.options.type.invalid", entity);
-     });
+@@ -75,6 +75,20 @@ public class EntitySelectorOptions {
+     public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType(
+         entity -> Component.translatableEscape("argument.entity.options.type.invalid", entity)
+     );
 +    // Paper start - tell clients to ask server for suggestions for EntityArguments
 +    public static final DynamicCommandExceptionType ERROR_ENTITY_TAG_INVALID = new DynamicCommandExceptionType((object) -> {
 +        return io.papermc.paper.adventure.PaperAdventure
@@ -138,10 +138,20 @@ index cb4c218eb06ada02824a0574b077b3f3f65e063b..2d6f92d4967fba88472057cfea020ac6
 +            );
 +    });
 +    // Paper end - tell clients to ask server for suggestions for EntityArguments
++
  
      private static void register(String id, EntitySelectorOptions.Modifier handler, Predicate<EntitySelectorParser> condition, Component description) {
          OPTIONS.put(id, new EntitySelectorOptions.Option(handler, condition, description));
-@@ -301,7 +314,7 @@ public class EntitySelectorOptions {
+@@ -176,7 +190,7 @@ public class EntitySelectorOptions {
+                     reader.setSuggestions(
+                         (builder, consumer) -> SharedSuggestionProvider.suggest(Arrays.asList("nearest", "furthest", "random", "arbitrary"), builder)
+                     );
+-    
++
+                     reader.setOrder(switch (string) {
+                         case "nearest" -> EntitySelectorParser.ORDER_NEAREST;
+                         case "furthest" -> EntitySelectorParser.ORDER_FURTHEST;
+@@ -280,7 +294,7 @@ public class EntitySelectorOptions {
                                      BuiltInRegistries.ENTITY_TYPE.getTagNames().map(TagKey::location), builder, String.valueOf('#')
                                  );
                              }
@@ -150,7 +160,7 @@ index cb4c218eb06ada02824a0574b077b3f3f65e063b..2d6f92d4967fba88472057cfea020ac6
                              return builder.buildFuture();
                          }
                      );
-@@ -314,9 +327,15 @@ public class EntitySelectorOptions {
+@@ -293,9 +307,15 @@ public class EntitySelectorOptions {
                          if (bl) {
                              reader.setTypeLimitedInversely();
                          }
@@ -164,15 +174,6 @@ index cb4c218eb06ada02824a0574b077b3f3f65e063b..2d6f92d4967fba88472057cfea020ac6
 +                                throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagKey);
 +                            }
 +                            // Paper end - tell clients to ask server for suggestions for EntityArguments
-                             reader.addPredicate(entity -> {
-                                 return entity.getType().is(tagKey) != bl;
-                             });
-@@ -329,7 +348,7 @@ public class EntitySelectorOptions {
-                             if (Objects.equals(EntityType.PLAYER, entityType) && !bl) {
-                                 reader.setIncludesEntities(false);
-                             }
--    
-+
-                             reader.addPredicate(entity -> {
-                                 return Objects.equals(entityType, entity.getType()) != bl;
-                             });
+                             reader.addPredicate(entity -> entity.getType().is(tagKey) != bl);
+                         } else {
+                             ResourceLocation resourceLocation = ResourceLocation.read(reader.getReader());

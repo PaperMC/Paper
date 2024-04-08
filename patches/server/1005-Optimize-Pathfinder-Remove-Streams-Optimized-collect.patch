@@ -16,16 +16,15 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index 846e84d59303661f06f871879cccca3d721d4f04..d1e1f12451058f7f276f8277536a4c0a4d736601 100644
+index a2e7040df11a0138c706a10b190111b6c3bd99a9..d1e1f12451058f7f276f8277536a4c0a4d736601 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -38,9 +38,12 @@ public class PathFinder {
+@@ -38,8 +38,12 @@ public class PathFinder {
          if (node == null) {
              return null;
          } else {
--            Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap(pos -> {
--                return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
--            }, Function.identity()));
+-            Map<Target, BlockPos> map = positions.stream()
+-                .collect(Collectors.toMap(pos -> this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ()), Function.identity()));
 +            // Paper start - Perf: remove streams and optimize collection
 +            List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
 +            for (BlockPos pos : positions) {
@@ -35,7 +34,7 @@ index 846e84d59303661f06f871879cccca3d721d4f04..d1e1f12451058f7f276f8277536a4c0a
              Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
              this.nodeEvaluator.done();
              return path;
-@@ -48,18 +51,19 @@ public class PathFinder {
+@@ -47,18 +51,19 @@ public class PathFinder {
      }
  
      @Nullable
@@ -60,7 +59,7 @@ index 846e84d59303661f06f871879cccca3d721d4f04..d1e1f12451058f7f276f8277536a4c0a
          int j = (int)((float)this.maxVisitedNodes * rangeMultiplier);
  
          while (!this.openSet.isEmpty()) {
-@@ -70,14 +74,18 @@ public class PathFinder {
+@@ -69,14 +74,18 @@ public class PathFinder {
              Node node = this.openSet.pop();
              node.closed = true;
  
@@ -82,7 +81,7 @@ index 846e84d59303661f06f871879cccca3d721d4f04..d1e1f12451058f7f276f8277536a4c0a
                  break;
              }
  
-@@ -92,7 +100,7 @@ public class PathFinder {
+@@ -91,7 +100,7 @@ public class PathFinder {
                      if (node2.walkedDistance < followRange && (!node2.inOpenSet() || g < node2.g)) {
                          node2.cameFrom = node;
                          node2.g = g;
@@ -91,15 +90,15 @@ index 846e84d59303661f06f871879cccca3d721d4f04..d1e1f12451058f7f276f8277536a4c0a
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
-@@ -104,23 +112,32 @@ public class PathFinder {
+@@ -103,23 +112,32 @@ public class PathFinder {
              }
          }
  
--        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map(node -> {
--            return this.reconstructPath(node.getBestNode(), positions.get(node), true);
--        }).min(Comparator.comparingInt(Path::getNodeCount)) : set.stream().map(targetx -> {
--            return this.reconstructPath(targetx.getBestNode(), positions.get(targetx), false);
--        }).min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
+-        Optional<Path> optional = !set3.isEmpty()
+-            ? set3.stream().map(node -> this.reconstructPath(node.getBestNode(), positions.get(node), true)).min(Comparator.comparingInt(Path::getNodeCount))
+-            : set.stream()
+-                .map(targetx -> this.reconstructPath(targetx.getBestNode(), positions.get(targetx), false))
+-                .min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
 +        // Paper start - Perf: remove streams and optimize collection
 +        Path best = null;
 +        boolean entryListIsEmpty = entryList.isEmpty();

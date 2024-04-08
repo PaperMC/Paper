@@ -5,24 +5,26 @@ Subject: [PATCH] Prevent causing expired keys from impacting new joins
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
-index 8875b0d1df39ee2b3de5b4ed61221f38dead2624..71d79adb717729ba6a7a0a97f96b7747e87873c4 100644
+index e4f0949b6538734ff25daf68a428262481feeb81..754a2a5e958a04b3f8bf216b6022f547aa1cd36f 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
-@@ -102,7 +102,13 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
-         INITIALIZE_CHAT((serialized, buf) -> {
-             serialized.chatSession = buf.readNullable(RemoteChatSession.Data::read);
-         }, (buf, entry) -> {
--            buf.writeNullable(entry.chatSession, RemoteChatSession.Data::write);
-+            // Paper start - Prevent causing expired keys from impacting new joins
-+            RemoteChatSession.Data chatSession = entry.chatSession;
-+            if (chatSession != null && chatSession.profilePublicKey().hasExpired()) {
-+                chatSession = null;
-+            }
-+            buf.writeNullable(chatSession, RemoteChatSession.Data::write);
-+            // Paper end - Prevent causing expired keys from impacting new joins
+@@ -101,7 +101,15 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
          }),
-         UPDATE_GAME_MODE((serialized, buf) -> {
-             serialized.gameMode = GameType.byId(buf.readVarInt());
+         INITIALIZE_CHAT(
+             (serialized, buf) -> serialized.chatSession = buf.readNullable(RemoteChatSession.Data::read),
+-            (buf, entry) -> buf.writeNullable(entry.chatSession, RemoteChatSession.Data::write)
++            // Paper start - Prevent causing expired keys from impacting new joins
++            (buf, entry) -> {
++                RemoteChatSession.Data chatSession = entry.chatSession;
++                if (chatSession != null && chatSession.profilePublicKey().hasExpired()) {
++                    chatSession = null;
++                }
++                buf.writeNullable(chatSession, RemoteChatSession.Data::write);
++            }
++            // Paper end - Prevent causing expired keys from impacting new joins
+         ),
+         UPDATE_GAME_MODE((serialized, buf) -> serialized.gameMode = GameType.byId(buf.readVarInt()), (buf, entry) -> buf.writeVarInt(entry.gameMode().getId())),
+         UPDATE_LISTED((serialized, buf) -> serialized.listed = buf.readBoolean(), (buf, entry) -> buf.writeBoolean(entry.listed())),
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index c9dab47fe3db73b31b40e071d37f1be63401c19d..69118af2a873f23f6543676db39263bfeb81b4f1 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java

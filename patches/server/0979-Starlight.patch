@@ -4518,7 +4518,7 @@ index 4e1618462840a1378dbe6492696c97544815edf2..8e8e3896040241bba8fd15f4d6d04656
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf4547786e9c 100644
+index 1dfae40ec19c4df0a97359941cf2c948cd1c9cb2..3229bb8dfb9f39e5fa1c8d91cb58057764cd4abb 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 @@ -23,6 +23,17 @@ import net.minecraft.world.level.chunk.LightChunkGetter;
@@ -4552,7 +4552,7 @@ index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf45
      public ThreadedLevelLightEngine(
          LightChunkGetter chunkProvider,
          ChunkMap chunkStorage,
-@@ -40,12 +57,154 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -40,11 +57,153 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
          ProcessorMailbox<Runnable> processor,
          ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> executor
      ) {
@@ -4687,8 +4687,8 @@ index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf45
 +    public boolean hasLightWork() {
 +        // route to new light engine
 +        return this.theLightEngine.hasUpdates();
-     }
- 
++    }
++
 +    @Override
 +    public LayerLightEventListener getLayerListener(final LightLayer lightType) {
 +        return lightType == LightLayer.BLOCK ? this.theLightEngine.getBlockReader() : this.theLightEngine.getSkyReader();
@@ -4702,13 +4702,12 @@ index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf45
 +        if (sky == 15) return 15;
 +        final int block = this.theLightEngine.getBlockReader().getLightValue(pos);
 +        return Math.max(sky, block);
-+    }
+     }
 +    // Paper end - replace light engine imp
-+
+ 
      @Override
      public void close() {
-     }
-@@ -57,20 +216,16 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -57,16 +216,16 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      @Override
      public void checkBlock(BlockPos pos) {
@@ -4717,11 +4716,7 @@ index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf45
 -            SectionPos.blockToSectionCoord(pos.getX()),
 -            SectionPos.blockToSectionCoord(pos.getZ()),
 -            ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
--            Util.name(() -> {
--                super.checkBlock(blockPos);
--            }, () -> {
--                return "checkBlock " + blockPos;
--            })
+-            Util.name(() -> super.checkBlock(blockPos), () -> "checkBlock " + blockPos)
 -        );
 +        // Paper start - replace light engine impl
 +        final BlockPos posCopy = pos.immutable();
@@ -4733,20 +4728,20 @@ index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf45
  
      protected void updateChunkStatus(ChunkPos pos) {
 +        if (true) return; // Paper - replace light engine impl
-         this.addTask(pos.x, pos.z, () -> {
-             return 0;
-         }, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-@@ -92,17 +247,16 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+         this.addTask(pos.x, pos.z, () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+             super.retainData(pos, false);
+             super.setLightEnabled(pos, false);
+@@ -84,17 +243,16 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      @Override
      public void updateSectionStatus(SectionPos pos, boolean notReady) {
--        this.addTask(pos.x(), pos.z(), () -> {
--            return 0;
--        }, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
--            super.updateSectionStatus(pos, notReady);
--        }, () -> {
--            return "updateSectionStatus " + pos + " " + notReady;
--        }));
+-        this.addTask(
+-            pos.x(),
+-            pos.z(),
+-            () -> 0,
+-            ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
+-            Util.name(() -> super.updateSectionStatus(pos, notReady), () -> "updateSectionStatus " + pos + " " + notReady)
+-        );
 +        // Paper start - replace light engine impl
 +        this.queueTaskForSection(pos.getX(), pos.getY(), pos.getZ(), () -> {
 +            return this.theLightEngine.sectionChange(pos, notReady);
@@ -4757,34 +4752,33 @@ index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf45
      @Override
      public void propagateLightSources(ChunkPos chunkPos) {
 +        if (true) return; // Paper - replace light engine impl
-         this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-             super.propagateLightSources(chunkPos);
-         }, () -> {
-@@ -112,6 +266,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+         this.addTask(
+             chunkPos.x,
+             chunkPos.z,
+@@ -105,6 +263,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      @Override
      public void setLightEnabled(ChunkPos pos, boolean retainData) {
 +        if (true) return; // Paper - replace light engine impl
-         this.addTask(pos.x, pos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-             super.setLightEnabled(pos, retainData);
-         }, () -> {
-@@ -121,6 +276,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+         this.addTask(
+             pos.x,
+             pos.z,
+@@ -115,6 +274,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      @Override
      public void queueSectionData(LightLayer lightType, SectionPos pos, @Nullable DataLayer nibbles) {
 +        if (true) return; // Paper - replace light engine impl
-         this.addTask(pos.x(), pos.z(), () -> {
-             return 0;
-         }, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-@@ -145,6 +301,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+         this.addTask(
+             pos.x(),
+             pos.z(),
+@@ -139,12 +299,14 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      @Override
      public void retainData(ChunkPos pos, boolean retainData) {
 +        if (true) return; // Paper - replace light engine impl
-         this.addTask(pos.x, pos.z, () -> {
-             return 0;
-         }, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-@@ -155,6 +312,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+         this.addTask(
+             pos.x, pos.z, () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> super.retainData(pos, retainData), () -> "retainData " + pos)
+         );
      }
  
      public CompletableFuture<ChunkAccess> initializeLight(ChunkAccess chunk, boolean bl) {
@@ -4792,7 +4786,7 @@ index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf45
          ChunkPos chunkPos = chunk.getPos();
          this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
              LevelChunkSection[] levelChunkSections = chunk.getSections();
-@@ -179,6 +337,37 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -165,6 +327,37 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
      public CompletableFuture<ChunkAccess> lightChunk(ChunkAccess chunk, boolean excludeBlocks) {
@@ -4830,7 +4824,7 @@ index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf45
          ChunkPos chunkPos = chunk.getPos();
          chunk.setLightCorrect(false);
          this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-@@ -198,7 +387,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -180,7 +373,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
      public void tryScheduleUpdate() {
@@ -4839,7 +4833,7 @@ index f103a885777557af6cb864bfe8a6c5ca6ff351ab..814689f9eb0d4024bfa8512b799acf45
              this.taskMailbox.tell(() -> {
                  this.runUpdate();
                  this.scheduled.set(false);
-@@ -219,7 +408,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -201,7 +394,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
          }
  
          objectListIterator.back(j);
@@ -5180,10 +5174,10 @@ index af757309cb46af6df07872f7596b66df6d6f18d7..73e682bb3ef3b2e450ec8c594b5365c7
                      this.level.getChunkSource().getLightEngine().checkBlock(blockposition);
                      gameprofilerfiller.pop();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-index a1ace0df243b43768bbb60a0941c18e3f5d10dfd..a6a8fbe2d6d538a0fea8a202ec8fdbecc009d664 100644
+index 268752a0b939abcaa9c7a302d2642b0c0fa2d331..2d7c6f00d399c7607e653078d77103a54509d03b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-@@ -162,7 +162,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -155,7 +155,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          return this.get(this.strategy.getIndex(x, y, z));
      }
  
@@ -5193,7 +5187,7 @@ index a1ace0df243b43768bbb60a0941c18e3f5d10dfd..a6a8fbe2d6d538a0fea8a202ec8fdbec
          return data.palette.valueFor(data.storage.get(index));
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
-index aee460cd2cfed3134870b5c02bf4ecb5738a5aa0..b4cf3d1405b79fb419be5116484f19dc76187b4a 100644
+index 03e5e5c5ea003ba52b9f3ee405cd77e22ea387c8..1036ff2ac8ba0967a36eb7977ed49500a05a33e6 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 @@ -141,7 +141,7 @@ public class ProtoChunk extends ChunkAccess {

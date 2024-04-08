@@ -18911,7 +18911,7 @@ index bd6c60ebfc76d19313bf01048268f8ce7e6603c5..18356db5d998dccb9e645a9ee0bebc5c
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
          this.chatVisibility = ChatVisiblity.FULL;
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-index 814689f9eb0d4024bfa8512b799acf4547786e9c..abf096eaa0ea1ada68a80c72d72b38e8b9d70c02 100644
+index 3229bb8dfb9f39e5fa1c8d91cb58057764cd4abb..17b624294fc0cab2976e3804e6c9a24b91a0e3aa 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 @@ -37,15 +37,12 @@ import net.minecraft.world.level.chunk.ChunkStatus;
@@ -18970,7 +18970,7 @@ index 814689f9eb0d4024bfa8512b799acf4547786e9c..abf096eaa0ea1ada68a80c72d72b38e8
  
          if (updateFuture == null) {
              // not scheduled
-@@ -287,16 +283,11 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -285,16 +281,11 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
      private void addTask(int x, int z, ThreadedLevelLightEngine.TaskType stage, Runnable task) {
@@ -18989,7 +18989,7 @@ index 814689f9eb0d4024bfa8512b799acf4547786e9c..abf096eaa0ea1ada68a80c72d72b38e8
      }
  
      @Override
-@@ -337,87 +328,15 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -327,83 +318,15 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
      public CompletableFuture<ChunkAccess> lightChunk(ChunkAccess chunk, boolean excludeBlocks) {
@@ -19030,16 +19030,12 @@ index 814689f9eb0d4024bfa8512b799acf4547786e9c..abf096eaa0ea1ada68a80c72d72b38e8
 -            if (!excludeBlocks) {
 -                super.propagateLightSources(chunkPos);
 -            }
--        }, () -> {
--            return "lightChunk " + chunkPos + " " + excludeBlocks;
--        }));
+-        }, () -> "lightChunk " + chunkPos + " " + excludeBlocks));
 -        return CompletableFuture.supplyAsync(() -> {
 -            chunk.setLightCorrect(true);
 -            this.chunkMap.releaseLightTicket(chunkPos);
 -            return chunk;
--        }, task -> {
--            this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, task);
--        });
+-        }, task -> this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, task));
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
@@ -19177,7 +19173,7 @@ index c3e7bd8865cc8990fc59f1ff0dfc1697cbb5ca49..5ece375eaf6bcc61864997a389bb5e24
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
-index b7778d5296d01870e37560d8f03d48e4a4dd62ae..cc56479a54ccbb80e352c3e876e306647807c551 100644
+index e890162e1cea3538ed7dea7b78ee2e5346a8ce7b..9baae5af750b46ededbd660d15934da71befde72 100644
 --- a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
 +++ b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
 @@ -43,16 +43,23 @@ public class PlayerChunkSender {
@@ -19215,7 +19211,7 @@ index b7778d5296d01870e37560d8f03d48e4a4dd62ae..cc56479a54ccbb80e352c3e876e30664
          handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null));
          // Paper start - PlayerChunkLoadEvent
          if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
-@@ -115,6 +123,7 @@ public class PlayerChunkSender {
+@@ -118,6 +126,7 @@ public class PlayerChunkSender {
      }
  
      public void onChunkBatchReceivedByClient(float desiredBatchSize) {
@@ -19511,7 +19507,7 @@ index 5275e7a34f86830d43edcab3a0e94f8d8e9cfae5..b108f779abe3d9798c0bcbc983f41d48
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 9d6b226e297af07486e4ee16091c23acafea9418..c80e75ba66bcd5957d6360a8d5de4f052dbf87d7 100644
+index ed008e1a9573ea3c75de94680b91c8ee598ee44a..c07cc1bf3b98525d72924edee4233364fd8174d0 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -38,12 +38,28 @@ import net.minecraft.world.level.chunk.storage.SectionStorage;
@@ -19546,7 +19542,7 @@ index 9d6b226e297af07486e4ee16091c23acafea9418..c80e75ba66bcd5957d6360a8d5de4f05
      }
  
      public void add(BlockPos pos, Holder<PoiType> type) {
-@@ -201,8 +217,8 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -177,8 +193,8 @@ public class PoiManager extends SectionStorage<PoiSection> {
      }
  
      public int sectionsToVillage(SectionPos pos) {
@@ -19557,7 +19553,7 @@ index 9d6b226e297af07486e4ee16091c23acafea9418..c80e75ba66bcd5957d6360a8d5de4f05
      }
  
      boolean isVillageCenter(long pos) {
-@@ -216,21 +232,118 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -192,21 +208,118 @@ public class PoiManager extends SectionStorage<PoiSection> {
  
      @Override
      public void tick(BooleanSupplier shouldKeepTicking) {
@@ -19680,18 +19676,18 @@ index 9d6b226e297af07486e4ee16091c23acafea9418..c80e75ba66bcd5957d6360a8d5de4f05
 +    // Paper end - rewrite chunk system
 +
      public void checkConsistencyWithBlocks(SectionPos sectionPos, LevelChunkSection chunkSection) {
-         Util.ifElse(this.getOrLoad(sectionPos.asLong()), poiSet -> {
-             poiSet.refresh(populator -> {
-@@ -276,7 +389,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
-                 return pair.getFirst().chunk();
-             })
-             .filter(chunkPos -> {
--                return this.loadedChunks.add(chunkPos.toLong());
-+                return true; // Paper - rewrite chunk system
-             })
-             .forEach(chunkPos -> {
-                 world.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.EMPTY);
-@@ -293,7 +406,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+         Util.ifElse(this.getOrLoad(sectionPos.asLong()), poiSet -> poiSet.refresh(populator -> {
+                 if (mayHavePoi(chunkSection)) {
+@@ -241,7 +354,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+             .map(sectionPos -> Pair.of(sectionPos, this.getOrLoad(sectionPos.asLong())))
+             .filter(pair -> !pair.getSecond().map(PoiSection::isValid).orElse(false))
+             .map(pair -> pair.getFirst().chunk())
+-            .filter(chunkPos -> this.loadedChunks.add(chunkPos.toLong()))
++            // Paper - rewrite chunk system
+             .forEach(chunkPos -> world.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.EMPTY));
+     }
+ 
+@@ -255,7 +368,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
  
          @Override
          protected int getLevelFromSource(long id) {
@@ -19700,7 +19696,7 @@ index 9d6b226e297af07486e4ee16091c23acafea9418..c80e75ba66bcd5957d6360a8d5de4f05
          }
  
          @Override
-@@ -315,6 +428,35 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -277,6 +390,35 @@ public class PoiManager extends SectionStorage<PoiSection> {
          }
      }
  
@@ -19737,7 +19733,7 @@ index 9d6b226e297af07486e4ee16091c23acafea9418..c80e75ba66bcd5957d6360a8d5de4f05
          HAS_SPACE(PoiRecord::hasSpace),
          IS_OCCUPIED(PoiRecord::isOccupied),
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-index b54c6f70a9cb583ddcf1647dbbd05b4e1e5a1308..dbdcc8c842d427e1b0ce178a5d3cad23c4ccaf5e 100644
+index beb0ff150fdd8ca6c44139ccb2d0eb77a4431e0c..f7d69dd83aad8e0ec1497441c61188bcf230865f 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 @@ -29,6 +29,7 @@ public class PoiSection {
@@ -19747,7 +19743,7 @@ index b54c6f70a9cb583ddcf1647dbbd05b4e1e5a1308..dbdcc8c842d427e1b0ce178a5d3cad23
 +    public final Optional<PoiSection> noAllocateOptional = Optional.of(this); // Paper - rewrite chunk system
  
      public static Codec<PoiSection> codec(Runnable updateListener) {
-         return RecordCodecBuilder.<PoiSection>create(instance -> {
+         return RecordCodecBuilder.<PoiSection>create(
 @@ -46,6 +47,12 @@ public class PoiSection {
          this(updateListener, true, ImmutableList.of());
      }
@@ -19762,7 +19758,7 @@ index b54c6f70a9cb583ddcf1647dbbd05b4e1e5a1308..dbdcc8c842d427e1b0ce178a5d3cad23
          this.setDirty = updateListener;
          this.isValid = valid;
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index 77cd9d5518ac1d7c3c900354cdeb7be3fb66b0ac..eba4663a6928989bfa14d57303d77fdabea31481 100644
+index bd20bea7f76a7307f1698fb2dfef37125032d166..9a28912f52824acdc80a62243b136e6f365bf567 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
 @@ -19,6 +19,18 @@ import net.minecraft.world.phys.shapes.Shapes;
@@ -20894,7 +20890,7 @@ index fa086a19f038b929f356292b2f657929765f7b6f..f1ecc3832da094400ed9d45bfc60af10
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index 8c0e4a0e451d1e0ff8ff20fbe3a92bb20b8b4bda..05c71f8468a3ea075c45465515fd1f075d6ce313 100644
+index 809da7fec1e1288a7a7bf1ee46c5b7bdd12bca01..bc6043a21227ce8c9c3879bc9c93c3803f79857b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 @@ -34,17 +34,17 @@ import net.minecraft.world.level.ChunkPos;
@@ -20934,7 +20930,7 @@ index 8c0e4a0e451d1e0ff8ff20fbe3a92bb20b8b4bda..05c71f8468a3ea075c45465515fd1f07
      }
  
      protected void tick(BooleanSupplier shouldKeepTicking) {
-@@ -124,23 +125,21 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -122,23 +123,21 @@ public class SectionStorage<R> implements AutoCloseable {
      }
  
      private void readColumn(ChunkPos pos) {
@@ -20967,7 +20963,7 @@ index 8c0e4a0e451d1e0ff8ff20fbe3a92bb20b8b4bda..05c71f8468a3ea075c45465515fd1f07
          if (data == null) {
              for (int i = this.levelHeightAccessor.getMinSection(); i < this.levelHeightAccessor.getMaxSection(); i++) {
                  this.storage.put(getKey(pos, i), Optional.empty());
-@@ -183,7 +182,7 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -179,7 +178,7 @@ public class SectionStorage<R> implements AutoCloseable {
          Dynamic<Tag> dynamic = this.writeColumn(pos, registryOps);
          Tag tag = dynamic.getValue();
          if (tag instanceof CompoundTag) {
@@ -20976,7 +20972,7 @@ index 8c0e4a0e451d1e0ff8ff20fbe3a92bb20b8b4bda..05c71f8468a3ea075c45465515fd1f07
          } else {
              LOGGER.error("Expected compound tag, got {}", tag);
          }
-@@ -237,7 +236,7 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -229,7 +228,7 @@ public class SectionStorage<R> implements AutoCloseable {
      }
  
      private static int getVersion(Dynamic<?> dynamic) {
@@ -20985,7 +20981,7 @@ index 8c0e4a0e451d1e0ff8ff20fbe3a92bb20b8b4bda..05c71f8468a3ea075c45465515fd1f07
      }
  
      public void flush(ChunkPos pos) {
-@@ -254,6 +253,9 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -246,6 +245,9 @@ public class SectionStorage<R> implements AutoCloseable {
  
      @Override
      public void close() throws IOException {
@@ -21094,7 +21090,7 @@ index 54308f1decc3982f30bf8b7a8a9d8865bfdbb9fd..902156477bdfc9917105f1229f760c26
  
                  while (iterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index 4303dc2366275dfab3901af4e522113f9a84ce4a..f6af4f61775eee7932e96fc600423ff59040d50d 100644
+index 769a8c5788e6a01666b9b5ac24b02c632c6c9e48..09867812600b24b3b7d05b58f98582650d313fc8 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 @@ -49,8 +49,101 @@ public class StructureCheck {
@@ -21214,23 +21210,21 @@ index 4303dc2366275dfab3901af4e522113f9a84ce4a..f6af4f61775eee7932e96fc600423ff5
              if (structureCheckResult != null) {
                  return structureCheckResult;
              } else {
--                boolean bl = this.featureChecks.computeIfAbsent(type, structure2 -> {
--                    return new Long2BooleanOpenHashMap();
--                }).computeIfAbsent(l, chunkPos -> {
-+                boolean bl = this.featureChecksSafe.computeIfAbsent(type, structure2 -> { // Paper - rewrite chunk system - synchronise this class
-+                    return new SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT); // Paper - rewrite chunk system - synchronise this class
-+                }).getOrCompute(l, chunkPos -> { // Paper - rewrite chunk system - synchronise this class
-                     return this.canCreateStructure(pos, type);
-                 });
+-                boolean bl = this.featureChecks
+-                    .computeIfAbsent(type, structure2 -> new Long2BooleanOpenHashMap())
+-                    .computeIfAbsent(l, chunkPos -> this.canCreateStructure(pos, type));
++                boolean bl = this.featureChecksSafe // Paper - rewrite chunk system - synchronise this class
++                    .computeIfAbsent(type, structure2 -> new SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT)) // Paper - rewrite chunk system - synchronise this class
++                    .getOrCompute(l, chunkPos -> this.canCreateStructure(pos, type)); // Paper - rewrite chunk system - synchronise this class
                  return !bl ? StructureCheckResult.START_NOT_PRESENT : StructureCheckResult.CHUNK_LOAD_NEEDED;
-@@ -218,17 +311,26 @@ public class StructureCheck {
+             }
+         }
+@@ -216,15 +309,26 @@ public class StructureCheck {
      }
  
      private void storeFullResults(long pos, Object2IntMap<Structure> referencesByStructure) {
 -        this.loadedChunks.put(pos, deduplicateEmptyMap(referencesByStructure));
--        this.featureChecks.values().forEach(generationPossibilityByChunkPos -> {
--            generationPossibilityByChunkPos.remove(pos);
--        });
+-        this.featureChecks.values().forEach(generationPossibilityByChunkPos -> generationPossibilityByChunkPos.remove(pos));
 +        // Paper start - rewrite chunk system - synchronise this class
 +        this.loadedChunksSafe.put(pos, deduplicateEmptyMap(referencesByStructure));
 +        // once we insert into loadedChunks, we don't really need to be very careful about removing everything
@@ -21254,8 +21248,8 @@ index 4303dc2366275dfab3901af4e522113f9a84ce4a..f6af4f61775eee7932e96fc600423ff5
              }
 +            // Paper end - rewrite chunk system - synchronise this class
  
-             referencesByStructure.computeInt(structure, (feature, references) -> {
-                 return references == null ? 1 : references + 1;
+             referencesByStructure.computeInt(structure, (feature, references) -> references == null ? 1 : references + 1);
+             return referencesByStructure;
 diff --git a/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java b/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java
 index 47c2b2da9799690291396effb9e1b06d71efc6fd..2cdd18f724296f10cd4a522d1e8196723d39cf45 100644
 --- a/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java

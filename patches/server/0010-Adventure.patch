@@ -2096,10 +2096,10 @@ index 0000000000000000000000000000000000000000..c0701d4f93a4d77a8177d2dd8d5076f9
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/ChatFormatting.java b/src/main/java/net/minecraft/ChatFormatting.java
-index 75f33ca3425800f63d7b51a0b303aae72e6ef8f8..20baece1b9e1e3fef7236c6643af96c64b7981fd 100644
+index 8128ad5adc43980e6b19d87b7ade90b2d7bed699..3953972ef49e1899102116f35d9153bd81430aa7 100644
 --- a/src/main/java/net/minecraft/ChatFormatting.java
 +++ b/src/main/java/net/minecraft/ChatFormatting.java
-@@ -113,6 +113,18 @@ public enum ChatFormatting implements StringRepresentable {
+@@ -110,6 +110,18 @@ public enum ChatFormatting implements StringRepresentable {
          return name == null ? null : FORMATTING_BY_NAME.get(cleanName(name));
      }
  
@@ -2237,10 +2237,10 @@ index d0e159f54da70bf0bd834738ced5d4b414a36142..0d80fcee1831af59b06c4d00dc713bd4
                  try {
                      int j = friendlyByteBuf.writerIndex();
 diff --git a/src/main/java/net/minecraft/network/chat/ChatDecorator.java b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
-index 887b9fd625aa23c4ec828a175d63695f915232d3..8e4a4b15152c2f83444fa8017bec06bbd1389e2c 100644
+index e4624d696dcf0ddb6d42a80701dfc47ec6877540..8885e405b626daa0af1485ad734863af73b3c1f3 100644
 --- a/src/main/java/net/minecraft/network/chat/ChatDecorator.java
 +++ b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
-@@ -2,12 +2,72 @@ package net.minecraft.network.chat;
+@@ -2,10 +2,70 @@ package net.minecraft.network.chat;
  
  import javax.annotation.Nullable;
  import net.minecraft.server.level.ServerPlayer;
@@ -2248,10 +2248,8 @@ index 887b9fd625aa23c4ec828a175d63695f915232d3..8e4a4b15152c2f83444fa8017bec06bb
  
  @FunctionalInterface
  public interface ChatDecorator {
-     ChatDecorator PLAIN = (sender, message) -> {
--        return message;
-+        return CompletableFuture.completedFuture(message); // Paper - adventure; support async chat decoration events
-     };
+-    ChatDecorator PLAIN = (sender, message) -> message;
++    ChatDecorator PLAIN = (sender, message) -> CompletableFuture.completedFuture(message); // Paper - adventure; support async chat decoration events;
  
 -    Component decorate(@Nullable ServerPlayer sender, Component message);
 +    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - adventure; support chat decoration events
@@ -2316,10 +2314,10 @@ index 887b9fd625aa23c4ec828a175d63695f915232d3..8e4a4b15152c2f83444fa8017bec06bb
 +    // Paper end - adventure; support async chat decoration events
  }
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-index c39b04c7e83fba45b5220678b4d94bf96f4c16dc..f51130399642a5e4a004b0661e33cf850ff18b4b 100644
+index 48ce8553ac13a1c660a5125e17d2a173d62ca7ff..b89386d9366543f7777e6eab961938763188345f 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-@@ -58,7 +58,25 @@ public class ComponentSerialization {
+@@ -51,7 +51,25 @@ public class ComponentSerialization {
          return ExtraCodecs.orCompressed(mapCodec3, mapCodec2);
      }
  
@@ -2345,9 +2343,9 @@ index c39b04c7e83fba45b5220678b4d94bf96f4c16dc..f51130399642a5e4a004b0661e33cf85
          ComponentContents.Type<?>[] types = new ComponentContents.Type[]{
              PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE
          };
-@@ -73,6 +91,34 @@ public class ComponentSerialization {
-                     .apply(instance, MutableComponent::new);
-             }
+@@ -64,6 +82,34 @@ public class ComponentSerialization {
+                     )
+                     .apply(instance, MutableComponent::new)
          );
 +        // Paper start - adventure; create separate codec for each locale
 +        final Codec<Component> origCodec = codec;
@@ -2377,11 +2375,11 @@ index c39b04c7e83fba45b5220678b4d94bf96f4c16dc..f51130399642a5e4a004b0661e33cf85
 +            }
 +        };
 +        // Paper end - adventure; create separate codec for each locale
-         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec).xmap(either -> {
-             return either.map(either2 -> {
-                 return either2.map(Component::literal, ComponentSerialization::createFromList);
+         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec)
+             .xmap(either -> either.map(either2 -> either2.map(Component::literal, ComponentSerialization::createFromList), text -> (Component)text), text -> {
+                 String string = text.tryCollapseToString();
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
-index 103885e8d5458bc06c8bfe0f42c1d35b5716b541..d51c9210bb3267c03cc10920178f7c53e1413c94 100644
+index 0030c0c91e989fcdc5b7ce6490836a0e8dd3b5d5..3365aed2b67ae0e4dd0410f5190ba474f146139b 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 @@ -41,6 +41,11 @@ public class ComponentUtils {
@@ -2454,7 +2452,7 @@ index e2def0ca552343143e495736d533b3334686fd62..c87b708c368713a23a10ad97704575ee
                  sender.connection.sendPlayerChatMessage(playerChatMessage, params);
              }
 diff --git a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
-index 2f3e750c148e3c0c2c0c9e72572ec5021fbab2c9..843126bc73c449615ab81309d22db224a6f484ac 100644
+index d89049328641faa889b7c567123ab3a2c63b8df0..81e904e78c9fec49ac244f0a62cef75e5824f2dd 100644
 --- a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 @@ -15,8 +15,54 @@ import net.minecraft.util.SignatureUpdater;
@@ -2511,9 +2509,9 @@ index 2f3e750c148e3c0c2c0c9e72572ec5021fbab2c9..843126bc73c449615ab81309d22db224
 +    }
 +    // Paper end - adventure; support signed messages
      public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec(
-         instance -> {
-             return instance.group(
-@@ -50,7 +96,7 @@ public record PlayerChatMessage(
+         instance -> instance.group(
+                     SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link),
+@@ -47,7 +93,7 @@ public record PlayerChatMessage(
      }
  
      public PlayerChatMessage withUnsignedContent(Component unsignedContent) {
