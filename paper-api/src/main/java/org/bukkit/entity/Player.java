@@ -3844,6 +3844,47 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     void resetIdleDuration();
     // Paper end
 
+    // Paper start - Add chunk view API
+    /**
+     * Gets the a set of chunk keys for all chunks that have been sent to the player.
+     *
+     * @return an immutable set of chunk keys
+     * @apiNote currently marked as experimental to gather feedback regarding the returned set being an immutable copy
+     * vs it potentially being an unmodifiable view of the set chunks.
+     */
+    @ApiStatus.Experimental
+    java.util.@NotNull @org.jetbrains.annotations.Unmodifiable Set<Long> getSentChunkKeys();
+
+    /**
+     * Gets the set of chunks that have been sent to the player.
+     *
+     * @return an immutable set of chunks
+     * @apiNote currently marked as experimental to gather feedback regarding the returned set being an immutable copy
+      * vs it potentially being an unmodifiable view of the set chunks.
+     */
+    @ApiStatus.Experimental
+    java.util.@NotNull @org.jetbrains.annotations.Unmodifiable Set<org.bukkit.Chunk> getSentChunks();
+
+    /**
+     * Checks if the player has been sent a specific chunk.
+     *
+     * @param chunk the chunk to check
+     * @return true if the player has been sent the chunk, false otherwise
+     */
+    default boolean isChunkSent(@NotNull org.bukkit.Chunk chunk) {
+        return this.isChunkSent(chunk.getChunkKey());
+    }
+
+    /**
+     * Checks if the player has been sent a specific chunk.
+     *
+     * @param chunkKey the chunk key to check
+     * @return true if the player has been sent the chunk, false otherwise
+     * @see org.bukkit.Chunk#getChunkKey()
+     */
+    boolean isChunkSent(long chunkKey);
+    // Paper end
+
     @NotNull
     @Override
     Spigot spigot();
