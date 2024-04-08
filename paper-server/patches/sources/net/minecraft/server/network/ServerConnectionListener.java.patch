@@ -66,7 +66,7 @@
              this.channels.add(((ServerBootstrap) ((ServerBootstrap) (new ServerBootstrap()).channel(oclass)).childHandler(new ChannelInitializer<Channel>() {
                  protected void initChannel(Channel channel) {
                      try {
-@@ -100,16 +126,51 @@
+@@ -100,16 +126,58 @@
  
                      Connection.configureSerialization(channelpipeline, PacketFlow.SERVERBOUND, false, (BandwidthDebugMonitor) null);
                      int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
@@ -90,6 +90,13 @@
 +
 +                                        Connection connection = (Connection) channel.pipeline().get("packet_handler");
 +                                        connection.address = socketaddr;
++
++                                        // Paper start - Add API to get player's proxy address
++                                        final String proxyAddress = message.destinationAddress();
++                                        final int proxyPort = message.destinationPort();
++
++                                        connection.haProxyAddress = new java.net.InetSocketAddress(proxyAddress, proxyPort);
++                                        // Paper end - Add API to get player's proxy address
 +                                    }
 +                                } else {
 +                                    super.channelRead(ctx, msg);
@@ -121,7 +128,7 @@
      public SocketAddress startMemoryChannel() {
          List list = this.channels;
          ChannelFuture channelfuture;
-@@ -153,6 +214,14 @@
+@@ -153,6 +221,14 @@
          List list = this.connections;
  
          synchronized (this.connections) {
@@ -136,7 +143,7 @@
              Iterator<Connection> iterator = this.connections.iterator();
  
              while (iterator.hasNext()) {
-@@ -176,6 +245,10 @@
+@@ -176,6 +252,10 @@
                              networkmanager.setReadOnly();
                          }
                      } else {

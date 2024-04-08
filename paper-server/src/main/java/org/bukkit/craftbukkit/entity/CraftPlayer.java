@@ -270,7 +270,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public InetSocketAddress getAddress() {
-        if (this.getHandle().connection.protocol() == null) return null;
+        if (this.getHandle().connection == null) return null;
 
         SocketAddress addr = this.getHandle().connection.getRemoteAddress();
         if (addr instanceof InetSocketAddress) {
@@ -279,6 +279,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return null;
         }
     }
+
+    // Paper start - Add API to get player's proxy address
+    @Override
+    public @Nullable InetSocketAddress getHAProxyAddress() {
+        if (this.getHandle().connection == null) return null;
+
+        return this.getHandle().connection.connection.haProxyAddress instanceof final InetSocketAddress inetSocketAddress ? inetSocketAddress : null;
+    }
+    // Paper end - Add API to get player's proxy address
 
     public interface TransferCookieConnection {
 
