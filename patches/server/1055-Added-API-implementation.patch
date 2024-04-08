@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Flo0 <flo.roma@web.de>
+Date: Mon, 8 Apr 2024 16:43:16 +0200
+Subject: [PATCH] Added API implementation
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index dca5f25cf331b5550e9be491b4e8a3466531e021..477060ff2bed3545691c94bd9234771624781010 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -372,6 +372,20 @@ public class CraftChunk implements Chunk {
+         return this.getCraftWorld().getStructures(this.getX(), this.getZ(), structure);
+     }
+ 
++    // Paper start - Add chunk view API
++    @Override
++    public java.util.Set<org.bukkit.entity.Player> getViewingPlayers() {
++        java.util.Set<org.bukkit.entity.Player> players = new java.util.HashSet<>();
++        for(org.bukkit.entity.Player player : this.getWorld().getPlayers()) {
++            if(!player.isViewingChunk(this)) {
++                continue;
++            }
++            players.add(player);
++        }
++        return players;
++    }
++    // Paper end
++
+     @Override
+     public boolean equals(Object o) {
+         if (this == o) return true;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index e77bf7f432387bdfa7f69d31b014e8cd254fd4ca..224207f68062b9e7f4177feca392c2f077bbbe51 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -3390,6 +3390,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+     // Paper end
+ 
++    // Paper start - Add chunk view API
++    @Override
++    public java.util.Set<org.bukkit.Chunk> getViewedChunks() {
++        Set<org.bukkit.Chunk> chunks = new java.util.HashSet<>();
++        org.bukkit.World world = this.getWorld();
++        this.getHandle().getChunkTrackingView().forEach((chunkPos) -> {
++            org.bukkit.Chunk chunk = world.getChunkAt(chunkPos.x, chunkPos.z, false);
++            chunks.add(chunk);
++        });
++        return chunks;
++    }
++
++    @Override
++    public boolean isViewingChunk(org.bukkit.Chunk chunk) {
++        net.minecraft.world.level.ChunkPos chunkPos = new net.minecraft.world.level.ChunkPos(chunk.getX(), chunk.getZ());
++        return this.getHandle().getChunkTrackingView().contains(chunkPos);
++    }
++    // Paper end
++
+     public Player.Spigot spigot()
+     {
+         return this.spigot;
