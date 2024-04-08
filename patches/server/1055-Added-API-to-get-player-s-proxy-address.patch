@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: nostalfinals <yuu8583@proton.me>
+Date: Mon, 8 Apr 2024 23:24:38 +0800
+Subject: [PATCH] Added API to get player's proxy address
+
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 4716f8bd8a64d4f20f0d5957c1e7fabf63020f43..84e144b6a63ae62805244dc8bce60d8106367ff9 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -148,6 +148,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         this.stopReadingPackets = true;
+     }
+     // Paper end - packet limiter
++    // Paper start - Add API to get player's proxy address
++    @Nullable
++    public SocketAddress proxyAddress;
++    // Paper end
+ 
+     public Connection(PacketFlow side) {
+         this.receiving = side;
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index 586521a2cbb1d4dcfb912029f65e4363ec7674a7..44d26da371bd0b9ba970c24c85c62b5640120cd5 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -28,6 +28,7 @@ import io.netty.util.Timeout;
+ import io.netty.util.Timer;
+ import java.io.IOException;
+ import java.net.InetAddress;
++import java.net.InetSocketAddress;
+ import java.net.SocketAddress;
+ import java.util.Collections;
+ import java.util.Iterator;
+@@ -140,10 +141,17 @@ public class ServerConnectionListener {
+                                         String realaddress = message.sourceAddress();
+                                         int realport = message.sourcePort();
+ 
++                                        // Paper start - Add API to get player's proxy address
++                                        String proxyAddress = message.destinationAddress();
++                                        int proxyPort = message.destinationPort();
++
+                                         SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
++                                        SocketAddress proxyAddr = new InetSocketAddress(proxyAddress, proxyPort);
+ 
+                                         Connection connection = (Connection) channel.pipeline().get("packet_handler");
+                                         connection.address = socketaddr;
++                                        connection.proxyAddress = proxyAddr;
++                                        // Paper end
+                                     }
+                                 } else {
+                                     super.channelRead(ctx, msg);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index e77bf7f432387bdfa7f69d31b014e8cd254fd4ca..d3d32aebb5754f56ca41d2692c9fdfe5cf037e60 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -262,6 +262,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+     }
+ 
++    // Paper start - Add API to get player's proxy address
++    @Override
++    public @Nullable InetSocketAddress getProxyAddress() {
++        if (this.getHandle().connection == null) {
++            return null;
++        }
++
++        SocketAddress addr = this.getHandle().connection.connection.proxyAddress;
++
++        if (addr instanceof InetSocketAddress) {
++            return (InetSocketAddress) addr;
++        }
++
++        return null;
++    }
++    // Paper end
++
+     // Paper start - Implement NetworkClient
+     @Override
+     public int getProtocolVersion() {
