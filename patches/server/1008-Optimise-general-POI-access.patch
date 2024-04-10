@@ -841,7 +841,7 @@ index 0000000000000000000000000000000000000000..69be1761b3b5ba7b496c1c10a4db897e
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-index ea9a3cb588213af1a1eb9a79d0b7244f99048b5e..7fe13fa3ecce56117f0b13af386be572719a86c3 100644
+index e8aa27547e3fa1a42720889c7038d4fb0273e7b5..e1b6fe9ecda25f86431baf414f1bfd3a26a8b2bd 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 @@ -71,11 +71,11 @@ public class AcquirePoi {
@@ -884,10 +884,10 @@ index d5a549f08b98c80a5cf0eef02cb8a389c32dfecb..92731b6b593289e9f583c9b705b219e8
                  BlockPos blockPos = path.getTarget();
                  Optional<Holder<PoiType>> optional = poiManager.getType(blockPos);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index c07cc1bf3b98525d72924edee4233364fd8174d0..3ac271b10c63fae4afcadc59140c0ad5b794f129 100644
+index c07cc1bf3b98525d72924edee4233364fd8174d0..61a06706f1468a8d4cceb9fb2aae61cf56bd991d 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-@@ -124,40 +124,48 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -124,36 +124,45 @@ public class PoiManager extends SectionStorage<PoiSection> {
      public Optional<BlockPos> find(
          Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus
      ) {
@@ -938,23 +938,16 @@ index c07cc1bf3b98525d72924edee4233364fd8174d0..3ac271b10c63fae4afcadc59140c0ad5
 -        return this.getInRange(typePredicate, pos, radius, PoiManager.Occupancy.HAS_SPACE)
 -            .filter(poi -> biPredicate.test(poi.getPoiType(), poi.getPos()))
 -            .findFirst()
--            .map(poi -> {
--                poi.acquireTicket();
--                return poi.getPos();
--            });
 +        // Paper start - re-route to faster logic
 +        final @javax.annotation.Nullable PoiRecord closest = io.papermc.paper.util.PoiAccess.findClosestPoiDataRecord(
 +            this, typePredicate, biPredicate, pos, radius, radius * radius, Occupancy.HAS_SPACE, false
 +        );
-+        return Optional.ofNullable(closest).map(poi -> {
++        return Optional.ofNullable(closest)
 +            // Paper end - re-route to faster logic
-+            poi.acquireTicket();
-+            return poi.getPos();
-+        });
-     }
- 
-     public Optional<BlockPos> getRandom(
-@@ -168,8 +176,21 @@ public class PoiManager extends SectionStorage<PoiSection> {
+             .map(poi -> {
+                 poi.acquireTicket();
+                 return poi.getPos();
+@@ -168,8 +177,21 @@ public class PoiManager extends SectionStorage<PoiSection> {
          int radius,
          RandomSource random
      ) {

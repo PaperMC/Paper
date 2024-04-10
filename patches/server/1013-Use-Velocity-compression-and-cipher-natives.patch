@@ -171,16 +171,18 @@ index 5927c928b27f64bd3973e95d5867b59f67476d41..76aeebe60ac321ed604661a0ec969bb2
          ByteBuffer byteBuffer;
          if (buf.nioBufferCount() > 0) {
 diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
-index 11a466558c77b43969b8e4be3a3470f84c7fcb1a..3e648aa2f15708ebec3d6e002e5fb49347876767 100644
+index 11a466558c77b43969b8e4be3a3470f84c7fcb1a..ae6e8ab9c1afa31d808f1fce2654a8b95bee6c31 100644
 --- a/src/main/java/net/minecraft/network/CompressionEncoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionEncoder.java
-@@ -6,21 +6,36 @@ import io.netty.handler.codec.MessageToByteEncoder;
+@@ -6,21 +6,37 @@ import io.netty.handler.codec.MessageToByteEncoder;
  import java.util.zip.Deflater;
  
  public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
 -    private final byte[] encodeBuf = new byte[8192];
-+    private final byte[] encodeBuf; // Paper - Use Velocity cipher
++    @javax.annotation.Nullable private final byte[] encodeBuf; // Paper - Use Velocity cipher
++    @javax.annotation.Nullable // Paper - Use Velocity cipher
      private final Deflater deflater;
++    @javax.annotation.Nullable // Paper - Use Velocity cipher
 +    private final com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper - Use Velocity cipher
      private int threshold;
  
@@ -188,7 +190,7 @@ index 11a466558c77b43969b8e4be3a3470f84c7fcb1a..3e648aa2f15708ebec3d6e002e5fb493
      public CompressionEncoder(int compressionThreshold) {
 +        this(null, compressionThreshold);
 +    }
-+    public CompressionEncoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold) {
++    public CompressionEncoder(@javax.annotation.Nullable com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold) {
          this.threshold = compressionThreshold;
 -        this.deflater = new Deflater();
 +        if (compressor == null) {
@@ -209,15 +211,15 @@ index 11a466558c77b43969b8e4be3a3470f84c7fcb1a..3e648aa2f15708ebec3d6e002e5fb493
              VarInt.write(byteBuf2, 0);
              byteBuf2.writeBytes(byteBuf);
          } else {
-+            // Paper start - Use Velocity cipher
-+            if (this.deflater != null) {
++            if (this.deflater != null) { // Paper - Use Velocity cipher
              byte[] bs = new byte[i];
              byteBuf.readBytes(bs);
              VarInt.write(byteBuf2, bs.length);
-@@ -33,8 +48,46 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+@@ -33,6 +49,43 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
              }
  
              this.deflater.reset();
++            // Paper start - Use Velocity cipher
 +                return;
 +            }
 +
@@ -228,11 +230,9 @@ index 11a466558c77b43969b8e4be3a3470f84c7fcb1a..3e648aa2f15708ebec3d6e002e5fb493
 +            } finally {
 +                compatibleIn.release();
 +            }
-+            // Paper end - Use Velocity cipher
 +        }
 +    }
 +
-+    // Paper start - Use Velocity cipher
 +    @Override
 +    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, ByteBuf msg, boolean preferDirect) throws Exception{
 +        if (this.compressor != null) {
@@ -255,12 +255,10 @@ index 11a466558c77b43969b8e4be3a3470f84c7fcb1a..3e648aa2f15708ebec3d6e002e5fb493
 +    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
 +        if (this.compressor != null) {
 +            this.compressor.close();
++            // Paper end - Use Velocity cipher
          }
      }
-+    // Paper end - Use Velocity cipher
  
-     public int getThreshold() {
-         return this.threshold;
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
 index 7f2aa5e17fe675f3404d67b1794d2ca68b188eb9..fff375fd50fa1a804636a92ded1ae55cff42977d 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
