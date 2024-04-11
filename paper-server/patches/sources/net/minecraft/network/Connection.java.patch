@@ -108,7 +108,7 @@
      }
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
-@@ -185,6 +231,55 @@
+@@ -185,11 +231,61 @@
              if (packetlistener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
              } else {
@@ -164,7 +164,13 @@
                  if (packetlistener.shouldHandleMessage(packet)) {
                      try {
                          Connection.genericsFtw(packet, packetlistener);
-@@ -205,7 +300,7 @@
+                     } catch (RunningOnDifferentThreadException cancelledpackethandleexception) {
+                         ;
++                    } catch (io.papermc.paper.util.ServerStopRejectedExecutionException ignored) { // Paper - do not prematurely disconnect players on stop
+                     } catch (RejectedExecutionException rejectedexecutionexception) {
+                         this.disconnect((Component) Component.translatable("multiplayer.disconnect.server_shutdown"));
+                     } catch (ClassCastException classcastexception) {
+@@ -205,7 +301,7 @@
      }
  
      private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener listener) {
@@ -173,7 +179,7 @@
      }
  
      private void validateListener(ProtocolInfo<?> state, PacketListener listener) {
-@@ -418,12 +513,26 @@
+@@ -418,12 +514,26 @@
          }
      }
  
@@ -200,7 +206,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -431,7 +540,7 @@
+@@ -431,7 +541,7 @@
          }
  
          if (this.channel != null) {
@@ -209,7 +215,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -464,12 +573,15 @@
+@@ -464,12 +574,15 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionInfo) {
@@ -226,7 +232,7 @@
              this.disconnectionDetails = disconnectionInfo;
          }
  
-@@ -537,7 +649,7 @@
+@@ -537,7 +650,7 @@
      }
  
      public void configurePacketHandler(ChannelPipeline pipeline) {
@@ -235,7 +241,7 @@
              public void write(ChannelHandlerContext channelhandlercontext, Object object, ChannelPromise channelpromise) throws Exception {
                  super.write(channelhandlercontext, object, channelpromise);
              }
-@@ -633,6 +745,7 @@
+@@ -633,6 +746,7 @@
              } else {
                  this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressionThreshold));
              }
@@ -243,7 +249,7 @@
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
                  this.channel.pipeline().remove("decompress");
-@@ -641,6 +754,7 @@
+@@ -641,6 +755,7 @@
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
                  this.channel.pipeline().remove("compress");
              }
@@ -251,7 +257,7 @@
          }
  
      }
-@@ -661,6 +775,27 @@
+@@ -661,6 +776,27 @@
  
                      packetlistener1.onDisconnect(disconnectiondetails);
                  }
