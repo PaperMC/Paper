@@ -24,6 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int i = getRedstoneStrength(hitResult, hitResult.getLocation());
          int j = entity instanceof AbstractArrow ? 20 : 8;
 +        // Paper start - Add TargetHitEvent
++        boolean shouldAward = false;
 +        if (entity instanceof Projectile) {
 +            final Projectile projectile = (Projectile) entity;
 +            final org.bukkit.craftbukkit.block.CraftBlock craftBlock = org.bukkit.craftbukkit.block.CraftBlock.at(world, hitResult.getBlockPos());
@@ -31,7 +32,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            final io.papermc.paper.event.block.TargetHitEvent targetHitEvent = new io.papermc.paper.event.block.TargetHitEvent((org.bukkit.entity.Projectile) projectile.getBukkitEntity(), craftBlock, blockFace, i);
 +            if (targetHitEvent.callEvent()) {
 +                i = targetHitEvent.getSignalStrength();
-+                awardTargetHitCriteria(projectile, hitResult, i);
++                shouldAward = true;
 +            } else {
 +                return i;
 +            }
@@ -40,3 +41,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!world.getBlockTicks().hasScheduledTick(hitResult.getBlockPos(), state.getBlock())) {
              setOutputPower(world, state, i, hitResult.getBlockPos(), j);
          }
+ 
++        // Paper start - Award Hit Criteria after Block Update
++        if (shouldAward) {
++            awardTargetHitCriteria((Projectile) entity, hitResult, i);
++        }
++        // Paper end - Award Hit Criteria after Block Update
++
+         return i;
+     }
+ 
