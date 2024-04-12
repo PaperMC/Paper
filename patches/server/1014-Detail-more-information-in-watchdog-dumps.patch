@@ -7,10 +7,10 @@ Subject: [PATCH] Detail more information in watchdog dumps
 - Dump player name, player uuid, position, and world for packet handling
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index fff375fd50fa1a804636a92ded1ae55cff42977d..4716f8bd8a64d4f20f0d5957c1e7fabf63020f43 100644
+index fae2a57570a4007b67b9949b9b16504da36a9886..a536ebcf29d8ef0ed32863bd8d5e70f7a0636e8d 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -586,7 +586,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -587,7 +587,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
                  || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
                  || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
@@ -25,7 +25,7 @@ index fff375fd50fa1a804636a92ded1ae55cff42977d..4716f8bd8a64d4f20f0d5957c1e7fabf
              // Paper end - Buffer joins to world
          }
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index 4202c48ad8f8e85ef46d1bd446ab28f3f4b083d1..32838f87978c0694bdb573236b7cdf72b2e363cd 100644
+index b7ffab0284b0bccd79775b8d03c8b2e088f91d1d..83302c252f54481f239522e5c6861ccfe233070a 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 @@ -18,6 +18,24 @@ public class PacketUtils {
@@ -56,7 +56,7 @@ index 4202c48ad8f8e85ef46d1bd446ab28f3f4b083d1..32838f87978c0694bdb573236b7cdf72
 @@ -27,6 +45,8 @@ public class PacketUtils {
      public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
          if (!engine.isSameThread()) {
-             engine.execute(() -> { // Paper - Fix preemptive player kick on a server shutdown
+             engine.executeIfPossible(() -> {
 +                packetProcessing.push(listener); // Paper - detailed watchdog information
 +                try { // Paper - detailed watchdog information
                  if (listener instanceof ServerCommonPacketListenerImpl serverCommonPacketListener && serverCommonPacketListener.processedDisconnect) return; // CraftBukkit - Don't handle sync packets for kicked players
