@@ -9,7 +9,7 @@ on dropping the item instead of generalizing it for all dropped
 items like CB does.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 2bb82dcffd8fdc25d658ec36a34f959b25217396..bd6c60ebfc76d19313bf01048268f8ce7e6603c5 100644
+index ba4d529249ef7ff7ee18493c3f0f5f1deec33deb..d18437af0e1c7ea32a3f8d7b7622930d1db34cc6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -891,22 +891,20 @@ public class ServerPlayer extends Player {
@@ -104,7 +104,7 @@ index 2848be4604e08d0d651d16e960cda9a4d0234d41..5275e7a34f86830d43edcab3a0e94f8d
              return this.spawnAtLocation(entityitem);
          }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index a648cc01f2cdfac46fd2e760705cf85e534e926f..d396201655fde7ff35cf2a342fa458e5ea3f80a8 100644
+index 038185ee812058b51eebf3e06a1c1cb4813efe0f..a2af0733c8a2e33792f25f05a506e68c50a4244d 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -255,7 +255,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -134,7 +134,7 @@ index 6c215470ad05d59f903cbeff15088a03b42c3f66..12440ee2dccc0a697fb403765f2e1b98
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index f62b5976e307a69ca40d51ae76126005c801df0c..bbe299afd361a107e3936c8ea1a62067fcac9b7e 100644
+index a9a9e01972f03faaca2c59d9b42c3cd366fb33df..4890442eb35a706b7b69d4ad498a3c5d20246566 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -611,7 +611,7 @@ public class ArmorStand extends LivingEntity {
@@ -165,38 +165,33 @@ index f62b5976e307a69ca40d51ae76126005c801df0c..bbe299afd361a107e3936c8ea1a62067
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 53c3b2123d6fa78367aef53d6949e58170cb9fce..99292a908b36e3c75d51c6877c7a0c01d9671aa6 100644
+index 8cdb60bf0a77ac5c9abf89e6e3aa8e6731ee75f3..59b72d59cc8f32cb84eaa222e124558c69ba57ce 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -965,17 +965,23 @@ public class CraftEventFactory {
+@@ -965,12 +965,19 @@ public class CraftEventFactory {
      }
  
-     public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim) {
--        return CraftEventFactory.callEntityDeathEvent(victim, new ArrayList<org.bukkit.inventory.ItemStack>(0));
-+        return CraftEventFactory.callEntityDeathEvent(victim, new ArrayList<>(0)); // Paper - Restore vanilla drops behavior
+     public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource) { // Paper - improve death events
+-        return CraftEventFactory.callEntityDeathEvent(victim, new ArrayList<org.bukkit.inventory.ItemStack>(0), damageSource, com.google.common.util.concurrent.Runnables.doNothing()); // Paper - improve death events
++        return CraftEventFactory.callEntityDeathEvent(victim, new ArrayList<>(0), damageSource, com.google.common.util.concurrent.Runnables.doNothing()); // Paper - improve death events
      }
  
--    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops) {
-+    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<Entity.DefaultDrop> drops) { // Paper - Restore vanilla drops behavior
-         // Paper start
-         return CraftEventFactory.callEntityDeathEvent(victim, drops, com.google.common.util.concurrent.Runnables.doNothing());
-     }
--    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops, Runnable lootCheck) {
-+
+-    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops, final DamageSource damageSource, Runnable lootCheck) { // Paper - improve death events
++    // Paper start - Restore vanilla drops behavior
 +    private static final java.util.function.Function<org.bukkit.inventory.ItemStack, Entity.DefaultDrop> FROM_FUNCTION = stack -> {
 +        if (stack == null) return null;
 +        return new Entity.DefaultDrop(CraftItemType.bukkitToMinecraft(stack.getType()), stack, null);
 +    };
 +
-+    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<Entity.DefaultDrop> drops, Runnable lootCheck) { // Paper
-         // Paper end
++    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<Entity.DefaultDrop> drops, final DamageSource damageSource, Runnable lootCheck) { // Paper - improve death events
++        // Paper end - Restore vanilla drops behavior
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
--        EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward());
-+        EntityDeathEvent event = new EntityDeathEvent(entity, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward()); // Paper - Restore vanilla drops behavior
+-        EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward(), new org.bukkit.craftbukkit.damage.CraftDamageSource(damageSource)); // Paper - improve death events
++        EntityDeathEvent event = new EntityDeathEvent(entity, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(), new org.bukkit.craftbukkit.damage.CraftDamageSource(damageSource)); // Paper - improve death events & Restore vanilla drops behavior
          populateFields(victim, event); // Paper - make cancellable
          CraftWorld world = (CraftWorld) entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
-@@ -989,19 +995,23 @@ public class CraftEventFactory {
+@@ -984,19 +991,23 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          lootCheck.run(); // Paper - advancement triggers before destroying items
  
@@ -216,15 +211,15 @@ index 53c3b2123d6fa78367aef53d6949e58170cb9fce..99292a908b36e3c75d51c6877c7a0c01
          return event;
      }
  
--    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<org.bukkit.inventory.ItemStack> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure
-+    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<Entity.DefaultDrop> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure & Restore vanilla drops behavior
+-    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<org.bukkit.inventory.ItemStack> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory, DamageSource damageSource) { // Paper - Adventure & improve death events
++    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<Entity.DefaultDrop> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory, DamageSource damageSource) { // Paper - Adventure & improve death events & Restore vanilla drops behavior
          CraftPlayer entity = victim.getBukkitEntity();
--        PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
-+        PlayerDeathEvent event = new PlayerDeathEvent(entity, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(), 0, deathMessage); // Paper - Restore vanilla drops behavior
+-        PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage, new org.bukkit.craftbukkit.damage.CraftDamageSource(damageSource)); // Paper - improve death events
++        PlayerDeathEvent event = new PlayerDeathEvent(entity, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(), 0, deathMessage, new org.bukkit.craftbukkit.damage.CraftDamageSource(damageSource)); // Paper - improve death events
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
          populateFields(victim, event); // Paper - make cancellable
-@@ -1020,10 +1030,14 @@ public class CraftEventFactory {
+@@ -1015,10 +1026,14 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          victim.newExp = event.getNewExp();
  

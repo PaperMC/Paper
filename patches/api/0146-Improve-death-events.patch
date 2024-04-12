@@ -15,10 +15,10 @@ items and experience which is otherwise only properly possible by using
 internal code.
 
 diff --git a/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java b/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
-index a5984ab06cce95d30e70511e125f69339b574c04..130cf9e5981f701dff4fa72e71e0b5dc8295bfc8 100644
+index a5984ab06cce95d30e70511e125f69339b574c04..63f41e98ca33f9fc618caf9414d4019fccfefb60 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
-@@ -5,14 +5,24 @@ import org.bukkit.entity.LivingEntity;
+@@ -5,23 +5,43 @@ import org.bukkit.entity.LivingEntity;
  import org.bukkit.event.HandlerList;
  import org.bukkit.inventory.ItemStack;
  import org.jetbrains.annotations.NotNull;
@@ -40,11 +40,30 @@ index a5984ab06cce95d30e70511e125f69339b574c04..130cf9e5981f701dff4fa72e71e0b5dc
 +    @Nullable private org.bukkit.SoundCategory deathSoundCategory;
 +    private float deathSoundVolume;
 +    private float deathSoundPitch;
++    private final org.bukkit.damage.DamageSource damageSource;
 +    // Paper end
  
++    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
      public EntityDeathEvent(@NotNull final LivingEntity entity, @NotNull final List<ItemStack> drops) {
          this(entity, drops, 0);
-@@ -74,4 +84,133 @@ public class EntityDeathEvent extends EntityEvent {
+     }
+ 
++    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
+     public EntityDeathEvent(@NotNull final LivingEntity what, @NotNull final List<ItemStack> drops, final int droppedExp) {
++        // Paper start
++        this(what, drops, droppedExp, org.bukkit.damage.DamageSource.builder(org.bukkit.damage.DamageType.GENERIC_KILL).build());
++    }
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityDeathEvent(@NotNull final LivingEntity what, @NotNull final List<ItemStack> drops, final int droppedExp, final org.bukkit.damage.@NotNull DamageSource damageSource) {
++        // Paper end
+         super(what);
+         this.drops = drops;
+         this.dropExp = droppedExp;
++        this.damageSource = damageSource;
+     }
+ 
+     @NotNull
+@@ -74,4 +94,142 @@ public class EntityDeathEvent extends EntityEvent {
      public static HandlerList getHandlerList() {
          return handlers;
      }
@@ -176,12 +195,44 @@ index a5984ab06cce95d30e70511e125f69339b574c04..130cf9e5981f701dff4fa72e71e0b5dc
 +    public void setDeathSoundPitch(float pitch) {
 +        this.deathSoundPitch = pitch;
 +    }
++
++    /**
++     * Get the {@link org.bukkit.damage.DamageSource} that caused the entity to die.
++     *
++     * @return The damage source
++     */
++    public org.bukkit.damage.@NotNull DamageSource getDamageSource() {
++        return this.damageSource;
++    }
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
-index 03b4e0300d228e3f3a9f4f75c96e0cf9ed1a7d2d..38f81772edacb178e21c3f273e8c41ed46177d6d 100644
+index 03b4e0300d228e3f3a9f4f75c96e0cf9ed1a7d2d..2e9cc15a4be7def4ba139e62357ff3d4bd911e1b 100644
 --- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+@@ -19,17 +19,17 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+     // Paper start - adventure
+     @org.jetbrains.annotations.ApiStatus.Internal
+     public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final @Nullable net.kyori.adventure.text.Component deathMessage) {
+-        this(player, drops, droppedExp, 0, deathMessage);
++        this(player, drops, droppedExp, 0, deathMessage, org.bukkit.damage.DamageSource.builder(org.bukkit.damage.DamageType.GENERIC_KILL).build()); // Paper - improve death message
+     }
+ 
+     @org.jetbrains.annotations.ApiStatus.Internal
+-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final @Nullable net.kyori.adventure.text.Component deathMessage) {
+-        this(player, drops, droppedExp, newExp, 0, 0, deathMessage);
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final @Nullable net.kyori.adventure.text.Component deathMessage, final @NotNull org.bukkit.damage.DamageSource damageSource) { // Paper - improve death message
++        this(player, drops, droppedExp, newExp, 0, 0, deathMessage, damageSource); // Paper - improve death message
+     }
+ 
+     @org.jetbrains.annotations.ApiStatus.Internal
+-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage) {
+-        super(player, drops, droppedExp);
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage, final @NotNull org.bukkit.damage.DamageSource damageSource) { // Paper - improve death message
++        super(player, drops, droppedExp, damageSource); // Paper - improve death message
+         this.newExp = newExp;
+         this.newTotalExp = newTotalExp;
+         this.newLevel = newLevel;
 @@ -62,6 +62,19 @@ public class PlayerDeathEvent extends EntityDeathEvent {
          return (Player) entity;
      }
