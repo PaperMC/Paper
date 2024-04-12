@@ -47,25 +47,3 @@ index 343f44db579839eb61376f876b5eff2e615dc2e5..e6935b6632c7a7e07f4da459c95f5643
                                  }
                              } catch (IllegalArgumentException e) {
                                  /* Just swallow invalid enchantments */
-diff --git a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
-index 9f7b49a6a50cb53d914c8f4b5132c035c5ab71da..90cd24b2110a6699bf633cd6c599375b5acff8a1 100644
---- a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
-+++ b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
-@@ -226,12 +226,15 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
- 
-             if (itemstack1.isEmpty()) {
-                 // CraftBukkit start
--                CampfireStartEvent event = new CampfireStartEvent(CraftBlock.at(this.level,this.worldPosition), CraftItemStack.asCraftMirror(stack), (CampfireRecipe) this.getCookableRecipe(stack).get().toBukkitRecipe());
-+                // Paper start
-+                org.bukkit.inventory.ItemStack originalItem = CraftItemStack.asCraftMirror(stack.split(1));
-+                CampfireStartEvent event = new CampfireStartEvent(CraftBlock.at(this.level,this.worldPosition), originalItem, (CampfireRecipe) this.getCookableRecipe(stack).get().toBukkitRecipe());
-+                // Paper end
-                 this.level.getCraftServer().getPluginManager().callEvent(event);
-                 this.cookingTime[j] = event.getTotalCookTime(); // i -> event.getTotalCookTime()
-                 // CraftBukkit end
-                 this.cookingProgress[j] = 0;
--                this.items.set(j, stack.split(1));
-+                this.items.set(j, CraftItemStack.getOrCloneOnMutation(originalItem, event.getSource())); // Paper
-                 this.level.gameEvent(GameEvent.BLOCK_CHANGE, this.getBlockPos(), GameEvent.Context.of(user, this.getBlockState()));
-                 this.markUpdated();
-                 return true;
