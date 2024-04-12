@@ -2153,7 +2153,7 @@ index 0000000000000000000000000000000000000000..1f42bdfdb052056e62a939ab0d1944f8
 +
 +}
 diff --git a/src/main/java/net/minecraft/core/Direction.java b/src/main/java/net/minecraft/core/Direction.java
-index 75694cfd7d8adde6b9246518c20fe75774297a57..84a760fdc50bdafc9150f977e9c5d557a30ee220 100644
+index 0f32bad1f4e5f4e9abb54d6dc2c06dd2b7176b8e..f0fe2acadac0f57eb06b6aee1940e2c4985e4ca1 100644
 --- a/src/main/java/net/minecraft/core/Direction.java
 +++ b/src/main/java/net/minecraft/core/Direction.java
 @@ -53,6 +53,21 @@ public enum Direction implements StringRepresentable {
@@ -2466,16 +2466,16 @@ index ffa4f34d964fbcc53e2dfe11677832db21a6eb93..7618364e5373fe17cfe45a5a4ee9ab25
  
      }
 diff --git a/src/main/java/net/minecraft/world/level/BlockCollisions.java b/src/main/java/net/minecraft/world/level/BlockCollisions.java
-index cd89623a44f02d7db77f0d0f87545cf80841f403..c9dcd5c72636844a7f012fc52b70c1d9773e833a 100644
+index f6cc3d550df8481086acdcb62f44a1051ae79f80..012733f1808e96aecc3b2fd081e355905d1b0766 100644
 --- a/src/main/java/net/minecraft/world/level/BlockCollisions.java
 +++ b/src/main/java/net/minecraft/world/level/BlockCollisions.java
 @@ -99,7 +99,7 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
                          // Paper end
                          VoxelShape voxelShape = blockState.getCollisionShape(this.collisionGetter, this.pos, this.context);
                          if (voxelShape == Shapes.block()) {
--                            if (this.box.intersects((double)i, (double)j, (double)k, (double)i + 1.0, (double)j + 1.0, (double)k + 1.0)) {
-+                            if (io.papermc.paper.util.CollisionUtil.voxelShapeIntersect(this.box, (double)i, (double)j, (double)k, (double)i + 1.0D, (double)j + 1.0D, (double)k + 1.0D)) { // Paper - keep vanilla behavior for voxelshape intersection - See comment in CollisionUtil
-                                 return this.resultProvider.apply(this.pos, voxelShape.move((double)i, (double)j, (double)k));
+-                            if (this.box.intersects(i, j, k, i + 1.0, j + 1.0, k + 1.0)) {
++                            if (io.papermc.paper.util.CollisionUtil.voxelShapeIntersect(this.box, i, j, k, i + 1.0, j + 1.0, k + 1.0)) { // Paper - keep vanilla behavior for voxelshape intersection - See comment in CollisionUtil
+                                 return this.resultProvider.apply(this.pos, voxelShape.move(i, j, k));
                              }
                          } else {
 diff --git a/src/main/java/net/minecraft/world/level/ClipContext.java b/src/main/java/net/minecraft/world/level/ClipContext.java
@@ -2494,7 +2494,7 @@ index 86a4f30c8784c602436ecf1c78efb0bdca4b7089..b0bea28e9261767c60d30fb0e76f4f3a
  
      public ClipContext(Vec3 start, Vec3 end, ClipContext.Block shapeType, ClipContext.Fluid fluidHandling, Entity entity) {
 diff --git a/src/main/java/net/minecraft/world/level/CollisionGetter.java b/src/main/java/net/minecraft/world/level/CollisionGetter.java
-index 1ad0c976c6e2d6d31397dff850a9de7c16d16fba..dc877fe2e3c53b353baa59c125232e425fee67d7 100644
+index 69754fbebb51f7f804c97a749fd65ce15ae22f1b..160b4c8f40b7b1bc53a8c23b801c5248c13e9a40 100644
 --- a/src/main/java/net/minecraft/world/level/CollisionGetter.java
 +++ b/src/main/java/net/minecraft/world/level/CollisionGetter.java
 @@ -35,6 +35,12 @@ public interface CollisionGetter extends BlockGetter {
@@ -3218,7 +3218,7 @@ index a98ab20814cc29a25e9d29adfbb7e70d46768df2..6d8ff6c06af5545634f255ed17dc1e48
  
          if (!state.getBlock().hasDynamicShape() && !fromState.getBlock().hasDynamicShape()) {
 diff --git a/src/main/java/net/minecraft/world/phys/AABB.java b/src/main/java/net/minecraft/world/phys/AABB.java
-index 62752e28a68400f0e1a44f0196f0e51e3dd702b8..92394960fc76886f393cba02ac33c57739a4b383 100644
+index 1b7f1babf732ab95940ac67437a0b22ee078f19d..ba29de4a759644acdfce9c2e3672f20b200b7b50 100644
 --- a/src/main/java/net/minecraft/world/phys/AABB.java
 +++ b/src/main/java/net/minecraft/world/phys/AABB.java
 @@ -25,6 +25,17 @@ public class AABB {
@@ -3237,9 +3237,9 @@ index 62752e28a68400f0e1a44f0196f0e51e3dd702b8..92394960fc76886f393cba02ac33c577
 +    // Paper end
 +
      public AABB(BlockPos pos) {
-         this((double)pos.getX(), (double)pos.getY(), (double)pos.getZ(), (double)(pos.getX() + 1), (double)(pos.getY() + 1), (double)(pos.getZ() + 1));
+         this(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1);
      }
-@@ -321,7 +332,7 @@ public class AABB {
+@@ -314,7 +325,7 @@ public class AABB {
      }
  
      @Nullable
@@ -3434,7 +3434,7 @@ index 31b570517c1047e8e1cd5280baf80977af2b6121..d8b80632f6186641ee2ddaef9eba7ba9
  
      private boolean isZStripFull(int z1, int z2, int x, int y) {
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/CubeVoxelShape.java b/src/main/java/net/minecraft/world/phys/shapes/CubeVoxelShape.java
-index 32632368f06b79f53342fde060bbcd1b7c64767a..b9af1d14c7815c99273bce8165cf384d669c1a75 100644
+index e00c3419ff523a57dc4346720827854641fa21ad..fc751564e02306006cffd90ef29acb27cc77cd0b 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/CubeVoxelShape.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/CubeVoxelShape.java
 @@ -7,6 +7,7 @@ import net.minecraft.util.Mth;
@@ -3537,7 +3537,7 @@ index 7ec02a7849437a18860aa0df7d9ddd71b2447d4c..5e45e49ab09344cb95736f4124b1c6e0
      public OffsetDoubleList(DoubleList oldList, double offset) {
          this.delegate = oldList;
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-index 86df4ef44d0a5107ee929dfd40d8ccb0779e8bfc..fbf1a559aefe444410b63a773374e011e4964e16 100644
+index 1a014f19f3c5425cc79a82c546066ab701fab1f8..9ac39c6d6289c86954ccb8a2e2afba8d96aa1950 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
 @@ -16,9 +16,15 @@ public final class Shapes {
@@ -3638,12 +3638,12 @@ index 86df4ef44d0a5107ee929dfd40d8ccb0779e8bfc..fbf1a559aefe444410b63a773374e011
 -                    l,
 -                    m,
 -                    n,
--                    (int)Math.round(minX * (double)l),
--                    (int)Math.round(minY * (double)m),
--                    (int)Math.round(minZ * (double)n),
--                    (int)Math.round(maxX * (double)l),
--                    (int)Math.round(maxY * (double)m),
--                    (int)Math.round(maxZ * (double)n)
+-                    (int)Math.round(minX * l),
+-                    (int)Math.round(minY * m),
+-                    (int)Math.round(minZ * n),
+-                    (int)Math.round(maxX * l),
+-                    (int)Math.round(maxY * m),
+-                    (int)Math.round(maxZ * n)
 +                return new ArrayVoxelShape(
 +                        BLOCK.shape,
 +                        minX == 0.0 && maxX == 1.0 ? io.papermc.paper.util.CollisionUtil.ZERO_ONE : DoubleArrayList.wrap(new double[] { minX, maxX }),
@@ -3953,7 +3953,7 @@ index 53aa193f33a1a15376a59b8d6dd8cbc6cbec168b..a745ff8d115e1d0da6138e4f06726e07
  
      private static DiscreteVoxelShape makeSlice(DiscreteVoxelShape voxelSet, Direction.Axis axis, int sliceWidth) {
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
-index 2936c56e5690b42518010698e5177755422e4c5d..e6b17f32f2b6930739a98c6139442383c1847add 100644
+index c88218ead06bec470b79f641651086dc121c42cc..e6b17f32f2b6930739a98c6139442383c1847add 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 @@ -16,37 +16,438 @@ import net.minecraft.world.phys.BlockHitResult;
@@ -4620,9 +4620,9 @@ index 2936c56e5690b42518010698e5177755422e4c5d..e6b17f32f2b6930739a98c6139442383
 -                Vec3 vec32 = start.add(vec3.scale(0.001));
 -                return this.shape
 -                        .isFullWide(
--                            this.findIndex(Direction.Axis.X, vec32.x - (double)pos.getX()),
--                            this.findIndex(Direction.Axis.Y, vec32.y - (double)pos.getY()),
--                            this.findIndex(Direction.Axis.Z, vec32.z - (double)pos.getZ())
+-                            this.findIndex(Direction.Axis.X, vec32.x - pos.getX()),
+-                            this.findIndex(Direction.Axis.Y, vec32.y - pos.getY()),
+-                            this.findIndex(Direction.Axis.Z, vec32.z - pos.getZ())
 -                        )
 -                    ? new BlockHitResult(vec32, Direction.getNearest(vec3.x, vec3.y, vec3.z).getOpposite(), pos, true)
 -                    : AABB.clip(this.toAabbs(), start, end, pos);
