@@ -16,16 +16,15 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58dfda6c79 100644
+index 3e27c9a74c38f11a436df8cd413f9f5f16fd8c3e..c4d6b145d54aaf415dd4b08811c024255092e1b8 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -38,9 +38,12 @@ public class PathFinder {
+@@ -38,8 +38,12 @@ public class PathFinder {
          if (node == null) {
              return null;
          } else {
--            Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap((pos) -> {
--                return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
--            }, Function.identity()));
+-            Map<Target, BlockPos> map = positions.stream()
+-                .collect(Collectors.toMap(pos -> this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), Function.identity()));
 +            // Paper start - Perf: remove streams and optimize collection
 +            List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
 +            for (BlockPos pos : positions) {
@@ -35,7 +34,7 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58
              Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
              this.nodeEvaluator.done();
              return path;
-@@ -48,18 +51,19 @@ public class PathFinder {
+@@ -47,18 +51,19 @@ public class PathFinder {
      }
  
      @Nullable
@@ -57,19 +56,19 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58
          int i = 0;
 -        Set<Target> set3 = Sets.newHashSetWithExpectedSize(set.size());
 +        List<Map.Entry<Target, BlockPos>> entryList = Lists.newArrayListWithExpectedSize(positions.size()); // Paper - optimize collection
-         int j = (int)((float)this.maxVisitedNodes * rangeMultiplier);
+         int j = (int)(this.maxVisitedNodes * rangeMultiplier);
  
-         while(!this.openSet.isEmpty()) {
-@@ -71,14 +75,18 @@ public class PathFinder {
+         while (!this.openSet.isEmpty()) {
+@@ -69,14 +74,18 @@ public class PathFinder {
              Node node = this.openSet.pop();
              node.closed = true;
  
--            for(Target target : set) {
+-            for (Target target : set) {
 +            // Paper start - optimize collection
-+            for(int i1 = 0; i1 < positions.size(); i1++) {
++            for (int i1 = 0; i1 < positions.size(); i1++) {
 +                final Map.Entry<Target, BlockPos> entry = positions.get(i1);
 +                Target target = entry.getKey();
-                 if (node.distanceManhattan(target) <= (float)distance) {
+                 if (node.distanceManhattan(target) <= distance) {
                      target.setReached();
 -                    set3.add(target);
 +                    entryList.add(entry);
@@ -82,7 +81,7 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58
                  break;
              }
  
-@@ -93,7 +101,7 @@ public class PathFinder {
+@@ -91,7 +100,7 @@ public class PathFinder {
                      if (node2.walkedDistance < followRange && (!node2.inOpenSet() || g < node2.g)) {
                          node2.cameFrom = node;
                          node2.g = g;
@@ -91,15 +90,15 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
-@@ -105,23 +113,32 @@ public class PathFinder {
+@@ -103,23 +112,32 @@ public class PathFinder {
              }
          }
  
--        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map((node) -> {
--            return this.reconstructPath(node.getBestNode(), positions.get(node), true);
--        }).min(Comparator.comparingInt(Path::getNodeCount)) : set.stream().map((target) -> {
--            return this.reconstructPath(target.getBestNode(), positions.get(target), false);
--        }).min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
+-        Optional<Path> optional = !set3.isEmpty()
+-            ? set3.stream().map(node -> this.reconstructPath(node.getBestNode(), positions.get(node), true)).min(Comparator.comparingInt(Path::getNodeCount))
+-            : set.stream()
+-                .map(targetx -> this.reconstructPath(targetx.getBestNode(), positions.get(targetx), false))
+-                .min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
 +        // Paper start - Perf: remove streams and optimize collection
 +        Path best = null;
 +        boolean entryListIsEmpty = entryList.isEmpty();
@@ -124,7 +123,7 @@ index 8519383a9abd45434c1e9888e77548941a80c79c..8aa4ac3a6affbe888d6084a27b668c58
 +    private float getBestH(Node node, List<Map.Entry<Target, BlockPos>> targets) { // Paper - Perf: remove streams and optimize collection; Set<Target> -> List<Map.Entry<Target, BlockPos>>
          float f = Float.MAX_VALUE;
  
--        for(Target target : targets) {
+-        for (Target target : targets) {
 +        // Paper start - Perf: remove streams and optimize collection
 +        for (int i = 0, targetsSize = targets.size(); i < targetsSize; i++) {
 +            final Target target = targets.get(i).getKey();

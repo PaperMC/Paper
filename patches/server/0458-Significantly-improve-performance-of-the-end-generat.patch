@@ -12,11 +12,11 @@ Co-authored-by: Dylan Xaldin <Puremin0rez515@gmail.com>
 Co-authored-by: pop4959 <pop4959@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java b/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java
-index fac92f37c32e0398ebc05d9a0378446fcabaef1a..01b60aaf484e1e327ca42d3573fd86d2abd749fa 100644
+index 2cf20ef14ad18346f942395546ad31f2d774f81a..ed8cfa36f41643b191714b2ae6176f58f93bd4b2 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java
-@@ -490,6 +490,16 @@ public final class DensityFunctions {
-         public static final KeyDispatchDataCodec<DensityFunctions.EndIslandDensityFunction> CODEC = KeyDispatchDataCodec.of(MapCodec.unit(new DensityFunctions.EndIslandDensityFunction(0L)));
+@@ -509,6 +509,16 @@ public final class DensityFunctions {
+         );
          private static final float ISLAND_THRESHOLD = -0.9F;
          private final SimplexNoise islandNoise;
 +        // Paper start - Perf: Optimize end generation
@@ -32,16 +32,16 @@ index fac92f37c32e0398ebc05d9a0378446fcabaef1a..01b60aaf484e1e327ca42d3573fd86d2
  
          public EndIslandDensityFunction(long seed) {
              RandomSource randomSource = new LegacyRandomSource(seed);
-@@ -505,12 +515,26 @@ public final class DensityFunctions {
+@@ -524,12 +534,26 @@ public final class DensityFunctions {
              float f = 100.0F - Mth.sqrt((long) x * (long) x + (long) z * (long) z) * 8.0F; // Paper - cast ints to long to avoid integer overflow
              f = Mth.clamp(f, -100.0F, 80.0F);
  
 +            NoiseCache cache = noiseCache.get().computeIfAbsent(sampler, noiseKey -> new NoiseCache()); // Paper - Perf: Optimize end generation
-             for(int m = -12; m <= 12; ++m) {
-                 for(int n = -12; n <= 12; ++n) {
-                     long o = (long)(i + m);
-                     long p = (long)(j + n);
--                    if (o * o + p * p > 4096L && sampler.getValue((double)o, (double)p) < (double)-0.9F) {
+             for (int m = -12; m <= 12; m++) {
+                 for (int n = -12; n <= 12; n++) {
+                     long o = i + m;
+                     long p = j + n;
+-                    if (o * o + p * p > 4096L && sampler.getValue(o, p) < -0.9F) {
 -                        float g = (Mth.abs((float)o) * 3439.0F + Mth.abs((float)p) * 147.0F) % 13.0F + 9.0F;
 +                    // Paper start - Perf: Optimize end generation by using a noise cache
 +                    long key = net.minecraft.world.level.ChunkPos.asLong((int) o, (int) p);
@@ -50,14 +50,14 @@ index fac92f37c32e0398ebc05d9a0378446fcabaef1a..01b60aaf484e1e327ca42d3573fd86d2
 +                    if (cache.keys[index] == key) {
 +                        g = cache.values[index];
 +                    } else {
-+                        if (o * o + p * p > 4096L && sampler.getValue((double)o, (double)p) < (double)-0.9F) {
-+                            g = (Mth.abs((float) o) * 3439.0F + Mth.abs((float) p) * 147.0F) % 13.0F + 9.0F;
++                        if (o * o + p * p > 4096L && sampler.getValue((double)o, (double)p) < -0.9F) {
++                            g = (Mth.abs((float)o) * 3439.0F + Mth.abs((float)p) * 147.0F) % 13.0F + 9.0F;
 +                        }
 +                        cache.keys[index] = key;
 +                        cache.values[index] = g;
 +                    }
 +                    if (g != Float.MIN_VALUE) {
 +                        // Paper end - Perf: Optimize end generation
-                         float h = (float)(k - m * 2);
-                         float q = (float)(l - n * 2);
+                         float h = k - m * 2;
+                         float q = l - n * 2;
                          float r = 100.0F - Mth.sqrt(h * h + q * q) * g;

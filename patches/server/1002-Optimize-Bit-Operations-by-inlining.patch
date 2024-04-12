@@ -7,11 +7,11 @@ Inline bit operations and reduce instruction count to make these hot
 operations faster
 
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
-index 541cef99113af865b995af2cfb7a1e4724dd8878..e17fa30966dea2836fb791becd032fc7d5cc2611 100644
+index aa27b96cf64ddbbc630e2c313ebff7636438aee0..70f9e737b3b9f80395afc3542aafe4a0c774c722 100644
 --- a/src/main/java/net/minecraft/core/BlockPos.java
 +++ b/src/main/java/net/minecraft/core/BlockPos.java
-@@ -37,15 +37,16 @@ public class BlockPos extends Vec3i {
-     }).stable();
+@@ -36,15 +36,16 @@ public class BlockPos extends Vec3i {
+         .stable();
      private static final Logger LOGGER = LogUtils.getLogger();
      public static final BlockPos ZERO = new BlockPos(0, 0, 0);
 -    private static final int PACKED_X_LENGTH = 1 + Mth.log2(Mth.smallestEncompassingPowerOfTwo(30000000));
@@ -36,7 +36,7 @@ index 541cef99113af865b995af2cfb7a1e4724dd8878..e17fa30966dea2836fb791becd032fc7
  
      public BlockPos(int x, int y, int z) {
          super(x, y, z);
-@@ -55,28 +56,29 @@ public class BlockPos extends Vec3i {
+@@ -54,28 +55,29 @@ public class BlockPos extends Vec3i {
          this(pos.getX(), pos.getY(), pos.getZ());
      }
  
@@ -71,20 +71,20 @@ index 541cef99113af865b995af2cfb7a1e4724dd8878..e17fa30966dea2836fb791becd032fc7
      }
  
      public static BlockPos containing(double x, double y, double z) {
-@@ -92,10 +94,7 @@ public class BlockPos extends Vec3i {
+@@ -91,10 +93,7 @@ public class BlockPos extends Vec3i {
      }
  
      public static long asLong(int x, int y, int z) {
 -        long l = 0L;
--        l |= ((long)x & PACKED_X_MASK) << X_OFFSET;
--        l |= ((long)y & PACKED_Y_MASK) << 0;
--        return l | ((long)z & PACKED_Z_MASK) << Z_OFFSET;
+-        l |= (x & PACKED_X_MASK) << X_OFFSET;
+-        l |= (y & PACKED_Y_MASK) << 0;
+-        return l | (z & PACKED_Z_MASK) << Z_OFFSET;
 +        return (((long) x & (long) 67108863) << 38) | (((long) y & (long) 4095)) | (((long) z & (long) 67108863) << 12); // Paper - inline constants and simplify
      }
  
      public static long getFlatIndex(long y) {
 diff --git a/src/main/java/net/minecraft/core/SectionPos.java b/src/main/java/net/minecraft/core/SectionPos.java
-index eb97928380384b8c33cf142dd9a5db65951c94c6..392c3681c08d9e3d99cbabaf72d22c1d1518998d 100644
+index 469e6156704418b6b8f573baee8289726a7a6587..02500dba0c6645add80a73bc837a90331a864652 100644
 --- a/src/main/java/net/minecraft/core/SectionPos.java
 +++ b/src/main/java/net/minecraft/core/SectionPos.java
 @@ -38,7 +38,7 @@ public class SectionPos extends Vec3i {
@@ -180,9 +180,9 @@ index eb97928380384b8c33cf142dd9a5db65951c94c6..392c3681c08d9e3d99cbabaf72d22c1d
 +
      public static long asLong(int x, int y, int z) {
 -        long l = 0L;
--        l |= ((long)x & 4194303L) << 42;
--        l |= ((long)y & 1048575L) << 0;
--        return l | ((long)z & 4194303L) << 20;
+-        l |= (x & 4194303L) << 42;
+-        l |= (y & 1048575L) << 0;
+-        return l | (z & 4194303L) << 20;
 +        return (((long) x & 4194303L) << 42) | (((long) y & 1048575L)) | (((long) z & 4194303L) << 20); // Paper - Simplify to reduce instruction count
      }
  
@@ -210,4 +210,4 @@ index eb97928380384b8c33cf142dd9a5db65951c94c6..392c3681c08d9e3d99cbabaf72d22c1d
 +        return betweenClosedStream(center.x - radius, 0, center.z - radius, center.x + radius, 15, center.z + radius); // Paper - simplify/inline
      }
  
-     public static Stream<SectionPos> betweenClosedStream(final int minX, final int minY, final int minZ, final int maxX, final int maxY, final int maxZ) {
+     public static Stream<SectionPos> betweenClosedStream(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
