@@ -37,9 +37,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public List<StructureStart> startsForStructure(ChunkPos pos, Predicate<Structure> predicate, @Nullable ServerLevelAccessor levelAccessor) {
 +        Map<Structure, LongSet> map = (levelAccessor == null ? this.level : levelAccessor).getChunk(pos.x, pos.z, ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
 +        // Paper end - Fix swamp hut cat generation deadlock
-         ImmutableList.Builder<StructureStart> builder = ImmutableList.builder();
+         Builder<StructureStart> builder = ImmutableList.builder();
  
-         for(Map.Entry<Structure, LongSet> entry : map.entrySet()) {
+         for (Entry<Structure, LongSet> entry : map.entrySet()) {
 @@ -0,0 +0,0 @@ public class StructureManager {
      }
  
@@ -51,12 +51,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - Fix swamp hut cat generation deadlock
          Registry<Structure> registry = this.registryAccess().registryOrThrow(Registries.STRUCTURE);
  
-         for(StructureStart structureStart : this.startsForStructure(new ChunkPos(pos), (structure) -> {
-             return registry.getHolder(registry.getId(structure)).map((reference) -> {
-                 return reference.is(structureTag);
-             }).orElse(false);
--        })) {
-+        }, levelAccessor)) { // Paper - Fix swamp hut cat generation deadlock
+         for (StructureStart structureStart : this.startsForStructure(
+-            new ChunkPos(pos), structure -> registry.getHolder(registry.getId(structure)).map(reference -> reference.is(structureTag)).orElse(false)
++            new ChunkPos(pos), structure -> registry.getHolder(registry.getId(structure)).map(reference -> reference.is(structureTag)).orElse(false), levelAccessor // Paper - Fix swamp hut cat generation deadlock
+         )) {
              if (this.structureHasPieceAt(pos, structureStart)) {
                  return structureStart;
-             }

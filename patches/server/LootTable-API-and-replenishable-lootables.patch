@@ -606,7 +606,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        } else {
 -            ContainerHelper.saveAllItems(nbt, this.getItemStacks());
          }
- 
 +        ContainerHelper.saveAllItems(nbt, this.getItemStacks()); // Paper - always save the items, table may still remain
      }
  
@@ -618,7 +617,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        } else {
 -            ContainerHelper.loadAllItems(nbt, this.getItemStacks());
          }
- 
 +        ContainerHelper.loadAllItems(nbt, this.getItemStacks()); // Paper - always load the items, table may still remain
      }
  
@@ -634,14 +632,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.getLootTable());
              }
  
--            this.setLootTable((ResourceLocation)null);
+-            this.setLootTable(null);
 +            this.getLootableData().processRefill(player); // Paper
-             LootParams.Builder builder = (new LootParams.Builder((ServerLevel)this.level())).withParameter(LootContextParams.ORIGIN, this.position());
+             LootParams.Builder builder = new LootParams.Builder((ServerLevel)this.level()).withParameter(LootContextParams.ORIGIN, this.position());
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
 @@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
      default boolean isChestVehicleStillValid(Player player) {
-         return !this.isRemoved() && this.position().closerThan(player.position(), 8.0D);
+         return !this.isRemoved() && this.position().closerThan(player.position(), 8.0);
      }
 +    // Paper start
 +    default Entity getEntity() {
@@ -717,7 +715,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public boolean isEmpty() {
-         this.unpackLootTable((Player)null);
+         this.unpackLootTable(null);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java

@@ -22,13 +22,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.out_of_order_chat"), true, org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event causes
              } else {
                  this.lastTimeStamp = body.timeStamp();
-                 PlayerChatMessage playerChatMessage = new PlayerChatMessage(signedMessageLink, signature, body, (Component)null, FilterMask.PASS_THROUGH);
+                 PlayerChatMessage playerChatMessage = new PlayerChatMessage(signedMessageLink, signature, body, null, FilterMask.PASS_THROUGH);
                  if (!playerChatMessage.verify(signatureValidator)) {
 -                    throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.unsigned_chat"), true);
 +                    throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.unsigned_chat"), true, org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event causes
                  } else {
                      if (playerChatMessage.hasExpiredServer(Instant.now())) {
-                         LOGGER.warn("Received expired chat: '{}'. Is the client/server system time unsynchronized?", (Object)body.content());
+                         LOGGER.warn("Received expired chat: '{}'. Is the client/server system time unsynchronized?", body.content());
 @@ -0,0 +0,0 @@ public class SignedMessageChain {
  
      public static class DecodeException extends ThrowingComponent {
@@ -67,7 +67,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class BanIpCommands {
              }
  
-             for(ServerPlayer serverPlayer : list) {
+             for (ServerPlayer serverPlayer : list) {
 -                serverPlayer.connection.disconnect(Component.translatable("multiplayer.disconnect.ip_banned"));
 +                serverPlayer.connection.disconnect(Component.translatable("multiplayer.disconnect.ip_banned"), org.bukkit.event.player.PlayerKickEvent.Cause.IP_BANNED); // Paper - kick event cause
              }
@@ -78,7 +78,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
 +++ b/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
 @@ -0,0 +0,0 @@ public class BanPlayerCommands {
-                 }, true);
+                 );
                  ServerPlayer serverPlayer = source.getServer().getPlayerList().getPlayer(gameProfile.getId());
                  if (serverPlayer != null) {
 -                    serverPlayer.connection.disconnect(Component.translatable("multiplayer.disconnect.banned"));
@@ -92,13 +92,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/commands/KickCommand.java
 @@ -0,0 +0,0 @@ public class KickCommand {
  
-             for(ServerPlayer serverPlayer : targets) {
+             for (ServerPlayer serverPlayer : targets) {
                  if (!source.getServer().isSingleplayerOwner(serverPlayer.getGameProfile())) {
 -                    serverPlayer.connection.disconnect(reason);
 +                    serverPlayer.connection.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.KICK_COMMAND); // Paper - kick event cause
-                     source.sendSuccess(() -> {
-                         return Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason);
-                     }, true);
+                     source.sendSuccess(() -> Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason), true);
+                     i++;
+                 }
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java

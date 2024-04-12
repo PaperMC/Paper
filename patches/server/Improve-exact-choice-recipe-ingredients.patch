@@ -153,11 +153,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                this.stackedContents.initialize(recipe.value()); // Paper - Improve exact choice recipe ingredients
                  entity.getInventory().fillStackedContents(this.stackedContents);
                  this.menu.fillCraftSlotsStackedContents(this.stackedContents);
-                 if (this.stackedContents.canCraft(recipe.value(), (IntList)null)) {
+                 if (this.stackedContents.canCraft((Recipe<?>)recipe.value(), null)) {
 @@ -0,0 +0,0 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
              int l = k;
  
-             for(int m : intList) {
+             for (int m : intList) {
 -                int n = StackedContents.fromStackingIndex(m).getMaxStackSize();
 +                int n = StackedContents.maxStackSizeFromStackingIndex(m, this.stackedContents); // Paper - Improve exact choice recipe ingredients
                  if (n < l) {
@@ -181,12 +181,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end - Improve exact choice recipe ingredients
          if (!itemStack.isEmpty()) {
-             for(int i = 0; i < amount; ++i) {
+             for (int i = 0; i < amount; i++) {
 -                this.moveItemToGrid(slot2, itemStack);
 +                this.moveItemToGrid(slot2, itemStack, isExact); // Paper - Improve exact choice recipe ingredients
              }
          }
- 
+     }
 @@ -0,0 +0,0 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
          return i;
      }
@@ -225,7 +225,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (this.extrasMap != null && stack.hasTag() && this.extrasMap.accountStack(stack, j)) return; // Paper - Improve exact choice recipe ingredients; if an exact ingredient, don't include it
              this.put(i, j);
          }
- 
+     }
 @@ -0,0 +0,0 @@ public class StackedContents {
          return itemId == 0 ? ItemStack.EMPTY : new ItemStack(Item.byId(itemId));
      }
@@ -253,27 +253,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class StackedContents {
              this.data = new BitSet(this.ingredientCount + this.itemCount + this.ingredientCount + this.ingredientCount * this.itemCount);
  
-             for(int i = 0; i < this.ingredients.size(); ++i) {
+             for (int i = 0; i < this.ingredients.size(); i++) {
 -                IntList intList = this.ingredients.get(i).getStackingIds();
 +                IntList intList = this.getStackingIds(this.ingredients.get(i)); // Paper - Improve exact choice recipe ingredients
  
-                 for(int j = 0; j < this.itemCount; ++j) {
+                 for (int j = 0; j < this.itemCount; j++) {
                      if (intList.contains(this.items[j])) {
 @@ -0,0 +0,0 @@ public class StackedContents {
              IntCollection intCollection = new IntAVLTreeSet();
  
-             for(Ingredient ingredient : this.ingredients) {
+             for (Ingredient ingredient : this.ingredients) {
 -                intCollection.addAll(ingredient.getStackingIds());
 +                intCollection.addAll(this.getStackingIds(ingredient)); // Paper - Improve exact choice recipe ingredients
              }
  
              IntIterator intIterator = intCollection.iterator();
 @@ -0,0 +0,0 @@ public class StackedContents {
-             for(Ingredient ingredient : this.ingredients) {
+             for (Ingredient ingredient : this.ingredients) {
                  int j = 0;
  
--                for(int k : ingredient.getStackingIds()) {
-+                for(int k : this.getStackingIds(ingredient)) { // Paper - Improve exact choice recipe ingredients
+-                for (int k : ingredient.getStackingIds()) {
++                for (int k : this.getStackingIds(ingredient)) { // Paper - Improve exact choice recipe ingredients
                      j = Math.max(j, StackedContents.this.contents.get(k));
                  }
  

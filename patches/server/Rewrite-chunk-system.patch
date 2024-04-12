@@ -18934,7 +18934,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final boolean hasSkyLight;
      // Paper end - replace light engine impl
 @@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
-     public ThreadedLevelLightEngine(LightChunkGetter chunkProvider, ChunkMap chunkStorage, boolean hasBlockLight, ProcessorMailbox<Runnable> processor, ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> executor) {
+     ) {
          super(chunkProvider, false, false); // Paper - destroy vanilla light engine state
          this.chunkMap = chunkStorage;
 -        this.sorterMailbox = executor;
@@ -18984,7 +18984,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (this.lightTasks.size() >= 1000) {
 -                this.runUpdate();
 -            }
--
 -        }, ChunkPos.asLong(x, z), completedLevelSupplier));
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
@@ -19031,17 +19030,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (!excludeBlocks) {
 -                super.propagateLightSources(chunkPos);
 -            }
--
--        }, () -> {
--            return "lightChunk " + chunkPos + " " + excludeBlocks;
--        }));
+-        }, () -> "lightChunk " + chunkPos + " " + excludeBlocks));
 -        return CompletableFuture.supplyAsync(() -> {
 -            chunk.setLightCorrect(true);
 -            this.chunkMap.releaseLightTicket(chunkPos);
 -            return chunk;
--        }, (task) -> {
--            this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, task);
--        });
+-        }, task -> this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, task));
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
@@ -19052,7 +19046,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                this.scheduled.set(false);
 -            });
 -        }
--
 +        // Paper - rewrite chunk system
      }
  
@@ -19061,7 +19054,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        ObjectListIterator<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> objectListIterator = this.lightTasks.iterator();
 -
 -        int j;
--        for(j = 0; objectListIterator.hasNext() && j < i; ++j) {
+-        for (j = 0; objectListIterator.hasNext() && j < i; j++) {
 -            Pair<ThreadedLevelLightEngine.TaskType, Runnable> pair = objectListIterator.next();
 -            if (pair.getFirst() == ThreadedLevelLightEngine.TaskType.PRE_UPDATE) {
 -                pair.getSecond().run();
@@ -19071,7 +19064,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        objectListIterator.back(j);
 -        this.theLightEngine.propagateChanges(); // Paper - rewrite light engine
 -
--        for(int var5 = 0; objectListIterator.hasNext() && var5 < i; ++var5) {
+-        for (int var5 = 0; objectListIterator.hasNext() && var5 < i; var5++) {
 -            Pair<ThreadedLevelLightEngine.TaskType, Runnable> pair2 = objectListIterator.next();
 -            if (pair2.getFirst() == ThreadedLevelLightEngine.TaskType.POST_UPDATE) {
 -                pair2.getSecond().run();
@@ -19079,7 +19072,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -            objectListIterator.remove();
 -        }
--
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
@@ -19201,7 +19193,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
              // Paper end - PlayerChunkUnloadEvent
 -        }
--
      }
 +    // Paper end - rewrite player chunk loader
  
@@ -19217,7 +19208,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) {
 +    public static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) { // Paper - rewrite chunk loader - public
 +        handler.player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(chunk.getPos().toLong()).addPlayer(handler.player);
-         handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), (BitSet)null, (BitSet)null));
+         handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null));
          // Paper start - PlayerChunkLoadEvent
          if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
 @@ -0,0 +0,0 @@ public class PlayerChunkSender {
@@ -19225,8 +19216,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void onChunkBatchReceivedByClient(float desiredBatchSize) {
 +        if (true) return; // Paper - rewrite player chunk loader
-         --this.unacknowledgedBatches;
-         this.desiredChunksPerTick = Double.isNaN((double)desiredBatchSize) ? 0.01F : Mth.clamp(desiredBatchSize, 0.01F, 64.0F);
+         this.unacknowledgedBatches--;
+         this.desiredChunksPerTick = Double.isNaN(desiredBatchSize) ? 0.01F : Mth.clamp(desiredBatchSize, 0.01F, 64.0F);
          if (this.unacknowledgedBatches == 0) {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -19607,8 +19598,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        io.papermc.paper.chunk.system.poi.PoiChunk ret = manager.getPoiChunkIfLoaded(chunkX, chunkZ, true);
 +
 +        return ret == null ? Optional.empty() : ret.getSectionForVanilla(chunkY);
-+    }
-+
+     }
+ 
 +    @Override
 +    public Optional<PoiSection> getOrLoad(long pos) {
 +        int chunkX = io.papermc.paper.util.CoordinateUtils.getChunkSectionX(pos);
@@ -19670,8 +19661,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                this.onSectionLoad(SectionPos.asLong(chunkX, sectionY, chunkZ));
 +            }
 +        }
-     }
- 
++    }
++
 +    public void checkConsistency(net.minecraft.world.level.chunk.ChunkAccess chunk) {
 +        int chunkX = chunk.getPos().x;
 +        int chunkZ = chunk.getPos().z;
@@ -19685,17 +19676,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - rewrite chunk system
 +
      public void checkConsistencyWithBlocks(SectionPos sectionPos, LevelChunkSection chunkSection) {
-         Util.ifElse(this.getOrLoad(sectionPos.asLong()), (poiSet) -> {
-             poiSet.refresh((populator) -> {
+         Util.ifElse(this.getOrLoad(sectionPos.asLong()), poiSet -> poiSet.refresh(populator -> {
+                 if (mayHavePoi(chunkSection)) {
 @@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> {
-         }).map((pair) -> {
-             return pair.getFirst().chunk();
-         }).filter((chunkPos) -> {
--            return this.loadedChunks.add(chunkPos.toLong());
-+            return true; // Paper - rewrite chunk system
-         }).forEach((chunkPos) -> {
-             world.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.EMPTY);
-         });
+             .map(sectionPos -> Pair.of(sectionPos, this.getOrLoad(sectionPos.asLong())))
+             .filter(pair -> !pair.getSecond().map(PoiSection::isValid).orElse(false))
+             .map(pair -> pair.getFirst().chunk())
+-            .filter(chunkPos -> this.loadedChunks.add(chunkPos.toLong()))
++            // Paper - rewrite chunk system
+             .forEach(chunkPos -> world.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.EMPTY));
+     }
+ 
 @@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> {
  
          @Override
@@ -19752,7 +19743,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final Optional<PoiSection> noAllocateOptional = Optional.of(this); // Paper - rewrite chunk system
  
      public static Codec<PoiSection> codec(Runnable updateListener) {
-         return RecordCodecBuilder.<PoiSection>create((instance) -> {
+         return RecordCodecBuilder.<PoiSection>create(
 @@ -0,0 +0,0 @@ public class PoiSection {
          this(updateListener, true, ImmutableList.of());
      }
@@ -20550,38 +20541,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public CompletableFuture<ChunkEntities<Entity>> loadEntities(ChunkPos pos) {
--        return this.emptyChunks.contains(pos.toLong()) ? CompletableFuture.completedFuture(emptyChunk(pos)) : this.worker.loadAsync(pos).thenApplyAsync((nbt) -> {
--            if (nbt.isEmpty()) {
--                this.emptyChunks.add(pos.toLong());
--                return emptyChunk(pos);
--            } else {
--                try {
--                    ChunkPos chunkPos2 = readChunkPos(nbt.get());
--                    if (!Objects.equals(pos, chunkPos2)) {
--                        LOGGER.error("Chunk file at {} is in the wrong location. (Expected {}, got {})", pos, pos, chunkPos2);
+-        return this.emptyChunks.contains(pos.toLong())
+-            ? CompletableFuture.completedFuture(emptyChunk(pos))
+-            : this.worker.loadAsync(pos).thenApplyAsync(nbt -> {
+-                if (nbt.isEmpty()) {
+-                    this.emptyChunks.add(pos.toLong());
+-                    return emptyChunk(pos);
+-                } else {
+-                    try {
+-                        ChunkPos chunkPos2 = readChunkPos(nbt.get());
+-                        if (!Objects.equals(pos, chunkPos2)) {
+-                            LOGGER.error("Chunk file at {} is in the wrong location. (Expected {}, got {})", pos, pos, chunkPos2);
+-                        }
+-                    } catch (Exception var6) {
+-                        LOGGER.warn("Failed to parse chunk {} position info", pos, var6);
 -                    }
--                } catch (Exception var6) {
--                    LOGGER.warn("Failed to parse chunk {} position info", pos, var6);
--                }
 -
--                CompoundTag compoundTag = this.upgradeChunkTag(nbt.get());
--                ListTag listTag = compoundTag.getList("Entities", 10);
--                List<Entity> list = EntityType.loadEntitiesRecursive(listTag, this.level).collect(ImmutableList.toImmutableList());
--                return new ChunkEntities<>(pos, list);
--            }
--        }, this.entityDeserializerQueue::tell);
+-                    CompoundTag compoundTag = this.upgradeChunkTag(nbt.get());
+-                    ListTag listTag = compoundTag.getList("Entities", 10);
+-                    List<Entity> list = EntityType.loadEntitiesRecursive(listTag, this.level).collect(ImmutableList.toImmutableList());
+-                    return new ChunkEntities<>(pos, list);
+-                }
+-            }, this.entityDeserializerQueue::tell);
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system - copy out read logic into readEntities
-+    }
-+
+     }
+ 
+-    private static ChunkPos readChunkPos(CompoundTag chunkNbt) {
 +    // Paper start - rewrite chunk system
 +    public static List<Entity> readEntities(ServerLevel level, CompoundTag compoundTag) {
 +        ListTag listTag = compoundTag.getList("Entities", 10);
 +        List<Entity> list = EntityType.loadEntitiesRecursive(listTag, level).collect(ImmutableList.toImmutableList());
 +        return list;
-     }
++    }
 +    // Paper end - rewrite chunk system
- 
--    private static ChunkPos readChunkPos(CompoundTag chunkNbt) {
++
 +    public static ChunkPos readChunkPos(CompoundTag chunkNbt) { // Paper - public
          int[] is = chunkNbt.getIntArray("Position");
          return new ChunkPos(is[0], is[1]);
@@ -20598,23 +20591,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          ChunkPos chunkPos = dataList.getPos();
          if (dataList.isEmpty()) {
              if (this.emptyChunks.add(chunkPos.toLong())) {
--                this.worker.store(chunkPos, (CompoundTag)null);
+-                this.worker.store(chunkPos, null);
 +                // Paper - rewrite chunk system
              }
- 
          } else {
 -            ListTag listTag = new ListTag();
--            dataList.getEntities().forEach((entity) -> {
--                CompoundTag compoundTag = new CompoundTag();
--                if (entity.save(compoundTag)) {
--                    listTag.add(compoundTag);
+-            dataList.getEntities().forEach(entity -> {
+-                CompoundTag compoundTagx = new CompoundTag();
+-                if (entity.save(compoundTagx)) {
+-                    listTag.add(compoundTagx);
 -                }
--
 -            });
 -            CompoundTag compoundTag = NbtUtils.addCurrentDataVersion(new CompoundTag());
 -            compoundTag.put("Entities", listTag);
 -            writeChunkPos(compoundTag, chunkPos);
--            this.worker.store(chunkPos, compoundTag).exceptionally((ex) -> {
+-            this.worker.store(chunkPos, compoundTag).exceptionally(ex -> {
 -                LOGGER.error("Failed to store chunk {}", chunkPos, ex);
 -                return null;
 -            });
@@ -20922,7 +20913,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final RegistryAccess registryAccess; // Paper - rewrite chunk system
      protected final LevelHeightAccessor levelHeightAccessor;
  
-     public SectionStorage(Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, RegistryAccess dynamicRegistryManager, LevelHeightAccessor world) {
+     public SectionStorage(
+@@ -0,0 +0,0 @@ public class SectionStorage<R> implements AutoCloseable {
+         RegistryAccess dynamicRegistryManager,
+         LevelHeightAccessor world
+     ) {
 +        super(path, dsync); // Paper - remove mojang I/O thread
          this.codec = codecFactory;
          this.factory = factory;
@@ -20941,12 +20936,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private void readColumn(ChunkPos pos) {
 -        Optional<CompoundTag> optional = this.tryRead(pos).join();
 -        RegistryOps<Tag> registryOps = RegistryOps.create(NbtOps.INSTANCE, this.registryAccess);
--        this.readColumn(pos, registryOps, optional.orElse((CompoundTag)null));
+-        this.readColumn(pos, registryOps, optional.orElse(null));
 +        throw new IllegalStateException("Only chunk system can load in state, offending class:" + this.getClass().getName()); // Paper - rewrite chunk system
      }
  
      private CompletableFuture<Optional<CompoundTag>> tryRead(ChunkPos pos) {
--        return this.worker.loadAsync(pos).exceptionally((throwable) -> {
+-        return this.worker.loadAsync(pos).exceptionally(throwable -> {
 -            if (throwable instanceof IOException iOException) {
 -                LOGGER.error("Error reading chunk {} data from disk", pos, iOException);
 -                return Optional.empty();
@@ -20966,7 +20961,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private <T> void readColumn(ChunkPos pos, DynamicOps<T> ops, @Nullable T data) {
 +        if (true) throw new IllegalStateException("Only chunk system can load in state, offending class:" + this.getClass().getName()); // Paper - rewrite chunk system
          if (data == null) {
-             for(int i = this.levelHeightAccessor.getMinSection(); i < this.levelHeightAccessor.getMaxSection(); ++i) {
+             for (int i = this.levelHeightAccessor.getMinSection(); i < this.levelHeightAccessor.getMaxSection(); i++) {
                  this.storage.put(getKey(pos, i), Optional.empty());
 @@ -0,0 +0,0 @@ public class SectionStorage<R> implements AutoCloseable {
          Dynamic<Tag> dynamic = this.writeColumn(pos, registryOps);
@@ -20975,7 +20970,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.worker.store(pos, (CompoundTag)tag);
 +            try { this.write(pos, (CompoundTag)tag); } catch (IOException ioexception) { SectionStorage.LOGGER.error("Error writing data to disk", ioexception); } // Paper - nuke IOWorker
          } else {
-             LOGGER.error("Expected compound tag, got {}", (Object)tag);
+             LOGGER.error("Expected compound tag, got {}", tag);
          }
 @@ -0,0 +0,0 @@ public class SectionStorage<R> implements AutoCloseable {
      }
@@ -21015,7 +21010,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        if (this.iterated == this.active) {
 -            this.passive.clear();
 -
--            for(Int2ObjectMap.Entry<Entity> entry : Int2ObjectMaps.fastIterable(this.active)) {
+-            for (Entry<Entity> entry : Int2ObjectMaps.fastIterable(this.active)) {
 -                this.passive.put(entry.getIntKey(), entry.getValue());
 -            }
 -
@@ -21024,7 +21019,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.passive = int2ObjectMap;
 -        }
 +        // Paper - replace with better logic, do not delay removals
- 
      }
  
      public void add(Entity entity) {
@@ -21053,7 +21047,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.iterated = this.active;
 -
 -            try {
--                for(Entity entity : this.active.values()) {
+-                for (Entity entity : this.active.values()) {
 -                    action.accept(entity);
 -                }
 -            } finally {
@@ -21067,7 +21061,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            while (iterator.hasNext()) {
 +                action.accept(iterator.next());
              }
--
 +        } finally {
 +            iterator.finishedIterating();
          }
@@ -21202,8 +21195,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - rewrite chunk system - synchronise this class
  
-     public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureTemplateManager structureTemplateManager, ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, ChunkGenerator chunkGenerator, RandomState noiseConfig, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) { // Paper - fix missing CB diff
-         this.storageAccess = chunkIoWorker;
+     public StructureCheck(
+         ChunkScanAccess chunkIoWorker,
 @@ -0,0 +0,0 @@ public class StructureCheck {
  
      public StructureCheckResult checkStart(ChunkPos pos, Structure type, boolean skipReferencedStructures) {
@@ -21217,23 +21210,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (structureCheckResult != null) {
                  return structureCheckResult;
              } else {
--                boolean bl = this.featureChecks.computeIfAbsent(type, (structure2) -> {
--                    return new Long2BooleanOpenHashMap();
--                }).computeIfAbsent(l, (chunkPos) -> {
-+                boolean bl = this.featureChecksSafe.computeIfAbsent(type, (structure2) -> { // Paper - rewrite chunk system - synchronise this class
-+                    return new SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT); // Paper - rewrite chunk system - synchronise this class
-+                }).getOrCompute(l, (chunkPos) -> { // Paper - rewrite chunk system - synchronise this class
-                     return this.canCreateStructure(pos, type);
-                 });
+-                boolean bl = this.featureChecks
+-                    .computeIfAbsent(type, structure2 -> new Long2BooleanOpenHashMap())
+-                    .computeIfAbsent(l, chunkPos -> this.canCreateStructure(pos, type));
++                boolean bl = this.featureChecksSafe // Paper - rewrite chunk system - synchronise this class
++                    .computeIfAbsent(type, structure2 -> new SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT)) // Paper - rewrite chunk system - synchronise this class
++                    .getOrCompute(l, chunkPos -> this.canCreateStructure(pos, type)); // Paper - rewrite chunk system - synchronise this class
                  return !bl ? StructureCheckResult.START_NOT_PRESENT : StructureCheckResult.CHUNK_LOAD_NEEDED;
+             }
+         }
 @@ -0,0 +0,0 @@ public class StructureCheck {
      }
  
      private void storeFullResults(long pos, Object2IntMap<Structure> referencesByStructure) {
 -        this.loadedChunks.put(pos, deduplicateEmptyMap(referencesByStructure));
--        this.featureChecks.values().forEach((generationPossibilityByChunkPos) -> {
--            generationPossibilityByChunkPos.remove(pos);
--        });
+-        this.featureChecks.values().forEach(generationPossibilityByChunkPos -> generationPossibilityByChunkPos.remove(pos));
 +        // Paper start - rewrite chunk system - synchronise this class
 +        this.loadedChunksSafe.put(pos, deduplicateEmptyMap(referencesByStructure));
 +        // once we insert into loadedChunks, we don't really need to be very careful about removing everything
@@ -21257,8 +21248,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
 +            // Paper end - rewrite chunk system - synchronise this class
  
-             referencesByStructure.computeInt(structure, (feature, references) -> {
-                 return references == null ? 1 : references + 1;
+             referencesByStructure.computeInt(structure, (feature, references) -> references == null ? 1 : references + 1);
+             return referencesByStructure;
 diff --git a/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java b/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java
@@ -21298,9 +21289,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.dirty = true; // Paper - add dirty flag
              this.scheduleUnchecked(orderedTick);
          }
- 
+     }
 @@ -0,0 +0,0 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
-         while(iterator.hasNext()) {
+         while (iterator.hasNext()) {
              ScheduledTick<T> scheduledTick = iterator.next();
              if (predicate.test(scheduledTick)) {
 -                iterator.remove();
@@ -21315,7 +21306,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.lastSaved = l; // Paper - add dirty system to level ticks
          ListTag listTag = new ListTag();
          if (this.pendingTicks != null) {
-             for(SavedTick<T> savedTick : this.pendingTicks) {
+             for (SavedTick<T> savedTick : this.pendingTicks) {
 @@ -0,0 +0,0 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
  
      public void unpack(long time) {
@@ -21327,7 +21318,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end - add dirty system to level chunk ticks
              int i = -this.pendingTicks.size();
  
-             for(SavedTick<T> savedTick : this.pendingTicks) {
+             for (SavedTick<T> savedTick : this.pendingTicks) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java

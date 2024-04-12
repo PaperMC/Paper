@@ -79,16 +79,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
      // Paper end
      public void removeGoal(Goal goal) {
--        this.availableGoals.stream().filter((wrappedGoal) -> {
--            return wrappedGoal.getGoal() == goal;
--        }).filter(WrappedGoal::isRunning).forEach(WrappedGoal::stop);
--        this.availableGoals.removeIf((wrappedGoal) -> {
--            return wrappedGoal.getGoal() == goal;
--        });
+-        this.availableGoals.stream().filter(wrappedGoal -> wrappedGoal.getGoal() == goal).filter(WrappedGoal::isRunning).forEach(WrappedGoal::stop);
+-        this.availableGoals.removeIf(wrappedGoal -> wrappedGoal.getGoal() == goal);
 -    }
 -
 -    private static boolean goalContainsAnyFlags(WrappedGoal goal, EnumSet<Goal.Flag> controls) {
--        for(Goal.Flag flag : goal.getFlags()) {
+-        for (Goal.Flag flag : goal.getFlags()) {
 -            if (controls.contains(flag)) {
 -                return true;
 +        // Paper start - remove streams from pathfindergoalselector
@@ -111,7 +107,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      private static boolean goalCanBeReplacedForAllFlags(WrappedGoal goal, Map<Goal.Flag, WrappedGoal> goalsByControl) {
--        for(Goal.Flag flag : goal.getFlags()) {
+-        for (Goal.Flag flag : goal.getFlags()) {
 +        // Paper start
 +        long flagIterator = goal.getFlags().getBackingSet();
 +        int wrappedGoalSize = goal.getFlags().size();
@@ -125,18 +121,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class GoalSelector {
          profilerFiller.push("goalCleanup");
  
-         for(WrappedGoal wrappedGoal : this.availableGoals) {
+         for (WrappedGoal wrappedGoal : this.availableGoals) {
 -            if (wrappedGoal.isRunning() && (goalContainsAnyFlags(wrappedGoal, this.disabledFlags) || !wrappedGoal.canContinueToUse())) {
-+            if (wrappedGoal.isRunning() && (goalContainsAnyFlags(wrappedGoal, this.goalTypes) || !wrappedGoal.canContinueToUse())) {
++            if (wrappedGoal.isRunning() && (goalContainsAnyFlags(wrappedGoal, this.goalTypes) || !wrappedGoal.canContinueToUse())) { // Paper - Perf: optimize goal types by removing streams
                  wrappedGoal.stop();
              }
          }
 @@ -0,0 +0,0 @@ public class GoalSelector {
          profilerFiller.push("goalUpdate");
  
-         for(WrappedGoal wrappedGoal2 : this.availableGoals) {
--            if (!wrappedGoal2.isRunning() && !goalContainsAnyFlags(wrappedGoal2, this.disabledFlags) && goalCanBeReplacedForAllFlags(wrappedGoal2, this.lockedFlags) && wrappedGoal2.canUse()) {
--                for(Goal.Flag flag : wrappedGoal2.getFlags()) {
+         for (WrappedGoal wrappedGoal2 : this.availableGoals) {
+-            if (!wrappedGoal2.isRunning()
+-                && !goalContainsAnyFlags(wrappedGoal2, this.disabledFlags)
+-                && goalCanBeReplacedForAllFlags(wrappedGoal2, this.lockedFlags)
+-                && wrappedGoal2.canUse()) {
+-                for (Goal.Flag flag : wrappedGoal2.getFlags()) {
 +            // Paper start
 +            if (!wrappedGoal2.isRunning() && !goalContainsAnyFlags(wrappedGoal2, this.goalTypes) && goalCanBeReplacedForAllFlags(wrappedGoal2, this.lockedFlags) && wrappedGoal2.canUse()) {
 +                long flagIterator = wrappedGoal2.getFlags().getBackingSet();

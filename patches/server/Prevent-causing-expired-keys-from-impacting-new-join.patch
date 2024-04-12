@@ -9,20 +9,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
 @@ -0,0 +0,0 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
-         INITIALIZE_CHAT((serialized, buf) -> {
-             serialized.chatSession = buf.readNullable(RemoteChatSession.Data::read);
-         }, (buf, entry) -> {
--            buf.writeNullable(entry.chatSession, RemoteChatSession.Data::write);
-+            // Paper start - Prevent causing expired keys from impacting new joins
-+            RemoteChatSession.Data chatSession = entry.chatSession;
-+            if (chatSession != null && chatSession.profilePublicKey().hasExpired()) {
-+                chatSession = null;
-+            }
-+            buf.writeNullable(chatSession, RemoteChatSession.Data::write);
-+            // Paper end - Prevent causing expired keys from impacting new joins
          }),
-         UPDATE_GAME_MODE((serialized, buf) -> {
-             serialized.gameMode = GameType.byId(buf.readVarInt());
+         INITIALIZE_CHAT(
+             (serialized, buf) -> serialized.chatSession = buf.readNullable(RemoteChatSession.Data::read),
+-            (buf, entry) -> buf.writeNullable(entry.chatSession, RemoteChatSession.Data::write)
++            // Paper start - Prevent causing expired keys from impacting new joins
++            (buf, entry) -> {
++                RemoteChatSession.Data chatSession = entry.chatSession;
++                if (chatSession != null && chatSession.profilePublicKey().hasExpired()) {
++                    chatSession = null;
++                }
++                buf.writeNullable(chatSession, RemoteChatSession.Data::write);
++            }
++            // Paper end - Prevent causing expired keys from impacting new joins
+         ),
+         UPDATE_GAME_MODE((serialized, buf) -> serialized.gameMode = GameType.byId(buf.readVarInt()), (buf, entry) -> buf.writeVarInt(entry.gameMode().getId())),
+         UPDATE_LISTED((serialized, buf) -> serialized.listed = buf.readBoolean(), (buf, entry) -> buf.writeBoolean(entry.listed())),
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java

@@ -16,7 +16,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/resources/RegistryOps.java
 @@ -0,0 +0,0 @@ public class RegistryOps<T> extends DelegatingOps<T> {
  
-     private static RegistryOps.RegistryInfoLookup memoizeLookup(final RegistryOps.RegistryInfoLookup registryInfoGetter) {
+     private static RegistryOps.RegistryInfoLookup memoizeLookup(RegistryOps.RegistryInfoLookup registryInfoGetter) {
          return new RegistryOps.RegistryInfoLookup() {
 -            private final Map<ResourceKey<? extends Registry<?>>, Optional<? extends RegistryOps.RegistryInfo<?>>> lookups = new HashMap<>();
 +            // The concurrent access occurs on the Netty IO threads when serializing packets.
@@ -26,8 +26,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              @Override
              public <T> Optional<RegistryOps.RegistryInfo<T>> lookup(ResourceKey<? extends Registry<? extends T>> registryRef) {
--                return this.lookups.computeIfAbsent(registryRef, registryInfoGetter::lookup);
-+                return (Optional<RegistryOps.RegistryInfo<T>>)this.lookups.computeIfAbsent(registryRef, registryInfoGetter::lookup); // Paper - fix concurrent access to lookups field
-             }
-         };
-     }

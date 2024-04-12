@@ -91,27 +91,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/commands/DeOpCommands.java
 +++ b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
 @@ -0,0 +0,0 @@ public class DeOpCommands {
+             if (playerList.isOp(gameProfile)) {
                  playerList.deop(gameProfile);
-                 ++i;
-                 source.sendSuccess(() -> {
--                    return Component.translatable("commands.deop.success", targets.iterator().next().getName());
-+                    return Component.translatable("commands.deop.success", gameProfile.getName()); // Paper - fixes MC-253721
-                 }, true);
+                 i++;
+-                source.sendSuccess(() -> Component.translatable("commands.deop.success", targets.iterator().next().getName()), true);
++                source.sendSuccess(() -> Component.translatable("commands.deop.success", gameProfile.getName()), true); // Paper - fixes MC-253721
              }
          }
+ 
 diff --git a/src/main/java/net/minecraft/server/commands/OpCommand.java b/src/main/java/net/minecraft/server/commands/OpCommand.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/commands/OpCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/OpCommand.java
 @@ -0,0 +0,0 @@ public class OpCommand {
+             if (!playerList.isOp(gameProfile)) {
                  playerList.op(gameProfile);
-                 ++i;
-                 source.sendSuccess(() -> {
--                    return Component.translatable("commands.op.success", targets.iterator().next().getName());
-+                    return Component.translatable("commands.op.success", gameProfile.getName()); // Paper - fixes MC-253721
-                 }, true);
+                 i++;
+-                source.sendSuccess(() -> Component.translatable("commands.op.success", targets.iterator().next().getName()), true);
++                source.sendSuccess(() -> Component.translatable("commands.op.success", gameProfile.getName()), true); // Paper - fixes MC-253721
              }
          }
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -211,7 +211,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/BegGoal.java
 @@ -0,0 +0,0 @@ public class BegGoal extends Goal {
      private boolean playerHoldingInteresting(Player player) {
-         for(InteractionHand interactionHand : InteractionHand.values()) {
+         for (InteractionHand interactionHand : InteractionHand.values()) {
              ItemStack itemStack = player.getItemInHand(interactionHand);
 -            if (this.wolf.isTame() && itemStack.is(Items.BONE)) {
 +            if (!this.wolf.isTame() && itemStack.is(Items.BONE)) { // Paper - Fix MC-84789
@@ -268,7 +268,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
 @@ -0,0 +0,0 @@ public class SwellGoal extends Goal {
-         return this.creeper.getSwellDir() > 0 || livingEntity != null && this.creeper.distanceToSqr(livingEntity) < 9.0D;
+         return this.creeper.getSwellDir() > 0 || livingEntity != null && this.creeper.distanceToSqr(livingEntity) < 9.0;
      }
  
 +    // Paper start - Fix MC-179072
@@ -344,7 +344,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return 0;
          } else {
 +            cat.moveTo(pos, 0.0F, 0.0F); // Paper - move up - Fix MC-147659
-             cat.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, (SpawnGroupData)null, (CompoundTag)null);
+             cat.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null, null);
 -            cat.moveTo(pos, 0.0F, 0.0F);
              world.addFreshEntityWithPassengers(cat);
              return 1;
@@ -392,7 +392,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/item/BundleItem.java
 +++ b/src/main/java/net/minecraft/world/item/BundleItem.java
 @@ -0,0 +0,0 @@ public class BundleItem extends Item {
-                 });
+                 removeOne(stack).ifPresent(removedStack -> add(stack, slot.safeInsert(removedStack)));
              } else if (itemStack.getItem().canFitInsideContainerItems()) {
                  int i = (64 - getContentWeight(stack)) / getWeight(itemStack);
 -                int j = add(stack, slot.safeTake(itemStack.getCount(), i, player));
@@ -414,14 +414,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/item/SaddleItem.java
 +++ b/src/main/java/net/minecraft/world/item/SaddleItem.java
 @@ -0,0 +0,0 @@ public class SaddleItem extends Item {
-         if (entity instanceof Saddleable saddleable) {
-             if (entity.isAlive() && !saddleable.isSaddled() && saddleable.isSaddleable()) {
-                 if (!user.level().isClientSide) {
--                    saddleable.equipSaddle(SoundSource.NEUTRAL);
-+                    saddleable.equipSaddle(SoundSource.NEUTRAL, stack.copyWithCount(1)); // Paper - Fix saddles losing nbt data - MC-191591
-                     entity.level().gameEvent(entity, GameEvent.EQUIP, entity.position());
-                     stack.shrink(1);
-                 }
+     public InteractionResult interactLivingEntity(ItemStack stack, Player user, LivingEntity entity, InteractionHand hand) {
+         if (entity instanceof Saddleable saddleable && entity.isAlive() && !saddleable.isSaddled() && saddleable.isSaddleable()) {
+             if (!user.level().isClientSide) {
+-                saddleable.equipSaddle(SoundSource.NEUTRAL);
++                saddleable.equipSaddle(SoundSource.NEUTRAL, stack.copyWithCount(1)); // Paper - Fix saddles losing nbt data - MC-191591
+                 entity.level().gameEvent(entity, GameEvent.EQUIP, entity.position());
+                 stack.shrink(1);
+             }
 diff --git a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java

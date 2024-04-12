@@ -135,9 +135,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      protected void doTick(ServerLevel world, LivingEntity entity) {
--        List<Player> list = world.players().stream().filter(EntitySelector.NO_SPECTATORS).filter((player) -> {
--            return entity.closerThan(player, 16.0D);
--        }).sorted(Comparator.comparingDouble(entity::distanceToSqr)).collect(Collectors.toList());
+-        List<Player> list = world.players()
+-            .stream()
+-            .filter(EntitySelector.NO_SPECTATORS)
+-            .filter(player -> entity.closerThan(player, 16.0))
+-            .sorted(Comparator.comparingDouble(entity::distanceToSqr))
+-            .collect(Collectors.toList());
 +        // Paper start - Perf: optimise nearby player retrieval & remove streams from hot code
 +        io.papermc.paper.util.player.NearbyPlayers nearbyPlayers = world.chunkSource.chunkMap.getNearbyPlayers();
 +        net.minecraft.world.phys.Vec3 entityPos = entity.position();
@@ -164,13 +167,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        players.sort(Comparator.comparingDouble(entity::distanceToSqr));
          Brain<?> brain = entity.getBrain();
 -        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, list);
--        List<Player> list2 = list.stream().filter((player) -> {
--            return isEntityTargetable(entity, player);
--        }).collect(Collectors.toList());
+-        List<Player> list2 = list.stream().filter(player -> isEntityTargetable(entity, player)).collect(Collectors.toList());
 -        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, list2.isEmpty() ? null : list2.get(0));
--        Optional<Player> optional = list2.stream().filter((player) -> {
--            return isEntityAttackable(entity, player);
--        }).findFirst();
+-        Optional<Player> optional = list2.stream().filter(player -> isEntityAttackable(entity, player)).findFirst();
 -        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, optional);
 +
 +        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, players);
@@ -200,10 +199,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
 @@ -0,0 +0,0 @@ public class TargetingConditions {
      public static final TargetingConditions DEFAULT = forCombat();
-     private static final double MIN_VISIBILITY_DISTANCE_FOR_INVISIBLE_TARGET = 2.0D;
+     private static final double MIN_VISIBILITY_DISTANCE_FOR_INVISIBLE_TARGET = 2.0;
      private final boolean isCombat;
--    private double range = -1.0D;
-+    public double range = -1.0D; // Paper - public
+-    private double range = -1.0;
++    public double range = -1.0; // Paper - public
      private boolean checkLineOfSight = true;
      private boolean testInvisible = true;
      @Nullable
@@ -214,15 +213,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public interface EntityGetter {
          T livingEntity = null;
  
-         for(T livingEntity2 : entityList) {
+         for (T livingEntity2 : entityList) {
 +            // Paper start - optimise nearby player retrieval; move up
 +            // don't check entities outside closest range
 +            double e = livingEntity2.distanceToSqr(x, y, z);
-+            if (d == -1.0D || e < d) {
++            if (d == -1.0 || e < d) {
 +            // Paper end - move up
              if (targetPredicate.test(entity, livingEntity2)) {
 -                double e = livingEntity2.distanceToSqr(x, y, z);
--                if (d == -1.0D || e < d) {
+-                if (d == -1.0 || e < d) {
 +                // Paper - optimise nearby player retrieval; move up
                      d = e;
                      livingEntity = livingEntity2;

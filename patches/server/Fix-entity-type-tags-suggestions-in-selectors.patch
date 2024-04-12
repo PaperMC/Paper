@@ -122,9 +122,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
 +++ b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
 @@ -0,0 +0,0 @@ public class EntitySelectorOptions {
-     public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType((entity) -> {
-         return Component.translatableEscape("argument.entity.options.type.invalid", entity);
-     });
+     public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType(
+         entity -> Component.translatableEscape("argument.entity.options.type.invalid", entity)
+     );
 +    // Paper start - tell clients to ask server for suggestions for EntityArguments
 +    public static final DynamicCommandExceptionType ERROR_ENTITY_TAG_INVALID = new DynamicCommandExceptionType((object) -> {
 +        return io.papermc.paper.adventure.PaperAdventure
@@ -143,14 +143,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          OPTIONS.put(id, new EntitySelectorOptions.Option(handler, condition, description));
 @@ -0,0 +0,0 @@ public class EntitySelectorOptions {
  
-                     if (reader.isTag()) {
-                         TagKey<EntityType<?>> tagKey = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.read(reader.getReader()));
-+                        // Paper start - tell clients to ask server for suggestions for EntityArguments; throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
-+                        if (reader.parsingEntityArgumentSuggestions && io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tagKey).isEmpty()) {
-+                            reader.getReader().setCursor(i);
-+                            throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagKey);
-+                        }
-+                        // Paper end - tell clients to ask server for suggestions for EntityArguments
-                         reader.addPredicate((entity) -> {
-                             return entity.getType().is(tagKey) != bl;
-                         });
+                         if (reader.isTag()) {
+                             TagKey<EntityType<?>> tagKey = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.read(reader.getReader()));
++                            // Paper start - tell clients to ask server for suggestions for EntityArguments; throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
++                            if (reader.parsingEntityArgumentSuggestions && io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tagKey).isEmpty()) {
++                                reader.getReader().setCursor(i);
++                                throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagKey);
++                            }
++                            // Paper end - tell clients to ask server for suggestions for EntityArguments
+                             reader.addPredicate(entity -> entity.getType().is(tagKey) != bl);
+                         } else {
+                             ResourceLocation resourceLocation = ResourceLocation.read(reader.getReader());

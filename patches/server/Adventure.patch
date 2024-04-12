@@ -2139,11 +2139,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          MinecraftServer minecraftServer = source.getServer();
          CompletableFuture<FilteredText> completableFuture = filterPlainText(source, message);
 -        Component component = minecraftServer.getChatDecorator().decorate(source.getPlayer(), message.decoratedContent());
--        source.getChatMessageChainer().append(completableFuture, (filtered) -> {
+-        source.getChatMessageChainer().append(completableFuture, filtered -> {
 -            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(component).filter(filtered.mask());
 +        // Paper start - support asynchronous chat decoration
 +        CompletableFuture<ChatDecorator.Result> componentFuture = minecraftServer.getChatDecorator().decorate(source.getPlayer(), source, message.decoratedContent());
-+        source.getChatMessageChainer().append(CompletableFuture.allOf(completableFuture, componentFuture), (filtered) -> {
++        source.getChatMessageChainer().append(CompletableFuture.allOf(completableFuture, componentFuture), filtered -> {
 +            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(componentFuture.join().component()).filter(completableFuture.join().mask());
 +            // Paper end - support asynchronous chat decoration
              callback.accept(playerChatMessage2);
@@ -2248,10 +2248,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
  @FunctionalInterface
  public interface ChatDecorator {
-     ChatDecorator PLAIN = (sender, message) -> {
--        return message;
-+        return CompletableFuture.completedFuture(message); // Paper - adventure; support async chat decoration events
-     };
+-    ChatDecorator PLAIN = (sender, message) -> message;
++    ChatDecorator PLAIN = (sender, message) -> CompletableFuture.completedFuture(message); // Paper - adventure; support async chat decoration events;
  
 -    Component decorate(@Nullable ServerPlayer sender, Component message);
 +    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - adventure; support chat decoration events
@@ -2342,11 +2340,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static Codec<Component> createCodec(Codec<Component> selfCodec, @javax.annotation.Nullable java.util.Locale locale) {
 +        // Paper end - adventure; create separate codec for each locale
-         ComponentContents.Type<?>[] types = new ComponentContents.Type[]{PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE};
-         MapCodec<ComponentContents> mapCodec = createLegacyComponentMatcher(types, ComponentContents.Type::codec, ComponentContents::type, "type");
-         Codec<Component> codec = RecordCodecBuilder.create((instance) -> {
-             return instance.group(mapCodec.forGetter(Component::getContents), ExtraCodecs.strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::getSiblings), Style.Serializer.MAP_CODEC.forGetter(Component::getStyle)).apply(instance, MutableComponent::new);
-         });
+         ComponentContents.Type<?>[] types = new ComponentContents.Type[]{
+             PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE
+         };
+@@ -0,0 +0,0 @@ public class ComponentSerialization {
+                     )
+                     .apply(instance, MutableComponent::new)
+         );
 +        // Paper start - adventure; create separate codec for each locale
 +        final Codec<Component> origCodec = codec;
 +        codec = new Codec<>() {
@@ -2375,9 +2375,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        };
 +        // Paper end - adventure; create separate codec for each locale
-         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec).xmap((either) -> {
-             return either.map((either2) -> {
-                 return either2.map(Component::literal, ComponentSerialization::createFromList);
+         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec)
+             .xmap(either -> either.map(either2 -> either2.map(Component::literal, ComponentSerialization::createFromList), text -> (Component)text), text -> {
+                 String string = text.tryCollapseToString();
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
@@ -2393,7 +2393,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end - adventure; pass actual vanilla component
              MutableComponent mutableComponent = text.getContents().resolve(source, sender, depth + 1);
  
-             for(Component component : text.getSiblings()) {
+             for (Component component : text.getSiblings()) {
 diff --git a/src/main/java/net/minecraft/network/chat/MessageSignature.java b/src/main/java/net/minecraft/network/chat/MessageSignature.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/MessageSignature.java
@@ -2406,12 +2406,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final Codec<MessageSignature> CODEC = ExtraCodecs.BASE64_STRING.xmap(MessageSignature::new, MessageSignature::bytes);
      public static final int BYTES = 256;
  
-     public MessageSignature {
--        Preconditions.checkState(bs.length == 256, "Invalid message signature size");
-+        Preconditions.checkState(bytes.length == 256, "Invalid message signature size"); // Paper - decompile fix
-     }
- 
-     public static MessageSignature read(FriendlyByteBuf buf) {
 diff --git a/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java b/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java
@@ -2427,10 +2421,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      static OutgoingChatMessage create(PlayerChatMessage message) {
-         return (OutgoingChatMessage)(message.isSystem() ? new OutgoingChatMessage.Disguised(message.decoratedContent()) : new OutgoingChatMessage.Player(message));
-     }
+         return (OutgoingChatMessage)(message.isSystem()
+             ? new OutgoingChatMessage.Disguised(message.decoratedContent())
 @@ -0,0 +0,0 @@ public interface OutgoingChatMessage {
-     public static record Disguised(Component content) implements OutgoingChatMessage {
+     public static record Disguised(@Override Component content) implements OutgoingChatMessage {
          @Override
          public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params) {
 -            sender.connection.sendDisguisedChatMessage(this.content, params);
@@ -2461,13 +2455,14 @@ diff --git a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java b/s
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
-@@ -0,0 +0,0 @@ import net.minecraft.Util;
- import net.minecraft.util.SignatureUpdater;
+@@ -0,0 +0,0 @@ import net.minecraft.util.SignatureUpdater;
  import net.minecraft.util.SignatureValidator;
  
--public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask) {
-+// Paper start - adventure; support signed messages
-+public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask, @Nullable net.minecraft.network.chat.ChatDecorator.Result result) {
+ public record PlayerChatMessage(
+-    SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask
++    SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask, @Nullable net.minecraft.network.chat.ChatDecorator.Result result // Paper - adventure; support signed messages
+ ) {
++    // Paper start - adventure; support signed messages
 +    public PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask) {
 +        this(link, signature, signedBody, unsignedContent, filterMask, null);
 +    }
@@ -2513,10 +2508,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return new AdventureView();
 +    }
 +    // Paper end - adventure; support signed messages
-     public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
-         return instance.group(SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link), MessageSignature.CODEC.optionalFieldOf("signature").forGetter((message) -> {
-             return Optional.ofNullable(message.signature);
-@@ -0,0 +0,0 @@ public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignatu
+     public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec(
+         instance -> instance.group(
+                     SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link),
+@@ -0,0 +0,0 @@ public record PlayerChatMessage(
      }
  
      public PlayerChatMessage withUnsignedContent(Component unsignedContent) {

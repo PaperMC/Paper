@@ -25,7 +25,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - Add Listing API for Player
  
      public static ClientboundPlayerInfoUpdatePacket createPlayerInitializing(Collection<ServerPlayer> players) {
-         EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME);
+         EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(
+@@ -0,0 +0,0 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
          return new ClientboundPlayerInfoUpdatePacket(enumSet, players);
      }
  
@@ -54,21 +55,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      public ClientboundPlayerInfoUpdatePacket(FriendlyByteBuf buf) {
          this.actions = buf.readEnumSet(ClientboundPlayerInfoUpdatePacket.Action.class);
-         this.entries = buf.readList((buf2) -> {
+         this.entries = buf.readList(buf2 -> {
 @@ -0,0 +0,0 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
- 
-     public static record Entry(UUID profileId, @Nullable GameProfile profile, boolean listed, int latency, GameType gameMode, @Nullable Component displayName, @Nullable RemoteChatSession.Data chatSession) {
+         @Nullable RemoteChatSession.Data chatSession
+     ) {
          Entry(ServerPlayer player) {
--            this(player.getUUID(), player.getGameProfile(), true, player.connection.latency(), player.gameMode.getGameModeForPlayer(), player.getTabListDisplayName(), Optionull.map(player.getChatSession(), RemoteChatSession::asData));
 +            // Paper start - Add Listing API for Player
 +            this(player, true);
 +        }
 +        Entry(ServerPlayer player, boolean listed) {
-+            this(player.getUUID(), player.getGameProfile(), listed, player.connection.latency(), player.gameMode.getGameModeForPlayer(), player.getTabListDisplayName(), Optionull.map(player.getChatSession(), RemoteChatSession::asData));
-+        }
+             this(
+                 player.getUUID(),
+                 player.getGameProfile(),
+-                true,
++                listed,
+                 player.connection.latency(),
+                 player.gameMode.getGameModeForPlayer(),
+                 player.getTabListDisplayName(),
+                 Optionull.map(player.getChatSession(), RemoteChatSession::asData)
+             );
+         }
 +        Entry(UUID profileId, boolean listed) {
 +            this(profileId, null, listed, 0, GameType.DEFAULT_MODE, null, null);
-         }
++        }
 +        // Paper end - Add Listing API for Player
      }
  
