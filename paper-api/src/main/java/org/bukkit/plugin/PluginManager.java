@@ -90,6 +90,15 @@ public interface PluginManager {
     public Plugin[] loadPlugins(@NotNull File directory);
 
     /**
+     * Loads the plugins in the list of the files
+     *
+     * @param files List of files containing plugins to load
+     * @return A list of all plugins loaded
+     */
+    @NotNull
+    public Plugin[] loadPlugins(@NotNull File[] files);
+
+    /**
      * Disables all the loaded plugins
      */
     public void disablePlugins();
