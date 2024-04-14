@@ -42,19 +42,15 @@ public interface TextDisplay extends Display {
      * Gets the text background color.
      *
      * @return the background color
-     * @deprecated API subject to change
      */
     @Nullable
-    @Deprecated
     Color getBackgroundColor();
 
     /**
      * Sets the text background color.
      *
      * @param color new background color
-     * @deprecated API subject to change
      */
-    @Deprecated
     void setBackgroundColor(@Nullable Color color);
 
     /**
