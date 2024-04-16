@@ -69,7 +69,7 @@ repositories {
 dependencies {
     paramMappings("net.fabricmc:yarn:1.20.4+build.1:mergedv2")
     remapper("net.fabricmc:tiny-remapper:0.10.1:fat")
-    decompiler("org.vineflower:vineflower:1.11.0-20240412.144930-14")
+    decompiler("org.vineflower:vineflower:1.10.1")
     spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.6")
     paperclip("io.papermc:paperclip:3.0.3")
 }
@@ -80,7 +80,7 @@ paperweight {
 
     paramMappingsRepo = paperMavenPublicUrl
     remapRepo = paperMavenPublicUrl
-    decompileRepo = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+    decompileRepo = paperMavenPublicUrl
 
     craftBukkit {
         fernFlowerJar = layout.file(spigotDecompiler.elements.map { it.single().asFile })
