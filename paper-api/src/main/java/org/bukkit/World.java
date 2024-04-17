@@ -1089,6 +1089,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Creates explosion at given coordinates with given power and optionally
      * setting blocks on fire or breaking blocks.
+     * <p>
+     * Note that if a non-null {@code source} Entity is provided and {@code
+     * breakBlocks} is {@code true}, the value of {@code breakBlocks} will be
+     * ignored if {@link GameRule#MOB_GRIEFING} is {@code false} in the world
+     * in which the explosion occurs. In other words, the mob griefing gamerule
+     * will take priority over {@code breakBlocks} if explosions are not allowed.
      *
      * @param x X coordinate
      * @param y Y coordinate
@@ -1136,6 +1142,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Creates explosion at given coordinates with given power and optionally
      * setting blocks on fire or breaking blocks.
+     * <p>
+     * Note that if a non-null {@code source} Entity is provided and {@code
+     * breakBlocks} is {@code true}, the value of {@code breakBlocks} will be
+     * ignored if {@link GameRule#MOB_GRIEFING} is {@code false} in the world
+     * in which the explosion occurs. In other words, the mob griefing gamerule
+     * will take priority over {@code breakBlocks} if explosions are not allowed.
      *
      * @param loc Location to blow up
      * @param power The power of explosion, where 4F is TNT
