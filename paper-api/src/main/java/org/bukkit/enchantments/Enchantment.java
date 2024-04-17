@@ -337,7 +337,7 @@ public abstract class Enchantment implements Keyed, Translatable {
      * Gets an array of all the registered {@link Enchantment}s
      *
      * @return Array of enchantments
-     * @deprecated use {@link Registry#iterator()}
+     * @deprecated use {@link Registry#iterator() Registry.ENCHANTMENT.iterator()}
      */
     @NotNull
     @Deprecated
