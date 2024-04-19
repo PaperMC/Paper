@@ -14,7 +14,7 @@ Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..215ccf169d4e8522da5495768d33cf3e5cd92690
+index 0000000000000000000000000000000000000000..9090b0ebcd3ceecb14f83b274ad364d6ea17d1f4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/AdventureCodecs.java
 @@ -0,0 +1,418 @@
@@ -416,7 +416,7 @@ index 0000000000000000000000000000000000000000..215ccf169d4e8522da5495768d33cf3e
 +        });
 +    }
 +
-+    static @Nullable String tryCollapseToString(final Component component) {
++    public static @Nullable String tryCollapseToString(final Component component) {
 +        if (component instanceof final TextComponent textComponent) {
 +            if (component.children().isEmpty() && component.style().isEmpty()) {
 +                return textComponent.content();
@@ -613,10 +613,10 @@ index 0000000000000000000000000000000000000000..23bd6d2d8fed5a3491e856f8b875456d
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7a2e7a55a3f6b24c7a3b8c838b66151a820f5261
+index 0000000000000000000000000000000000000000..65ad76dd43c9a8f96333572f795967dc603064c1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,391 @@
+@@ -0,0 +1,379 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatRenderer;
@@ -638,6 +638,7 @@ index 0000000000000000000000000000000000000000..7a2e7a55a3f6b24c7a3b8c838b66151a
 +import net.kyori.adventure.audience.ForwardingAudience;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.minecraft.Optionull;
 +import net.minecraft.Util;
 +import net.minecraft.core.registries.Registries;
@@ -683,23 +684,10 @@ index 0000000000000000000000000000000000000000..7a2e7a55a3f6b24c7a3b8c838b66151a
 +    public ChatProcessor(final MinecraftServer server, final ServerPlayer player, final PlayerChatMessage message, final boolean async) {
 +        this.server = server;
 +        this.player = player;
-+        /*
-+        CraftBukkit's preview/decoration system relies on both the "decorate" and chat event making the same modifications. If
-+        there is unsigned content in the legacyMessage, that is because the player sent the legacyMessage without it being
-+        previewed (probably by sending it too quickly). We can just ignore that because the same changes will
-+        happen in the chat event.
-+
-+        If unsigned content is present, it will be the same as `this.legacyMessage.signedContent().previewResult().component()`.
-+         */
 +        this.message = message;
 +        this.async = async;
-+        this.craftbukkit$originalMessage = message.signedContent();
-+        /*
-+        this.paper$originalMessage is the input to paper's chat events. This should be the decorated message component.
-+        Even if the legacy preview event modified the format, and the client signed the formatted message, this should
-+        still just be the message component.
-+         */
-+        this.paper$originalMessage = PaperAdventure.asAdventure(this.message.unsignedContent());
++        this.craftbukkit$originalMessage = message.unsignedContent() != null ? LegacyComponentSerializer.legacySection().serialize(PaperAdventure.asAdventure(message.unsignedContent())) : message.signedContent();
++        this.paper$originalMessage = PaperAdventure.asAdventure(this.message.decoratedContent());
 +        this.outgoing = OutgoingChatMessage.create(this.message);
 +    }
 +
@@ -1041,42 +1029,41 @@ index 0000000000000000000000000000000000000000..d496a9a6ad229e42f1c44e31eafa6974
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ImprovedChatDecorator.java b/src/main/java/io/papermc/paper/adventure/ImprovedChatDecorator.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7d3daf9cb15cf4c637406d7a77cd0240782343a8
+index 0000000000000000000000000000000000000000..0848ad9c7a6d386f0219b75df1ae4d08ba23aa59
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ImprovedChatDecorator.java
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,55 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.event.player.AsyncChatCommandDecorateEvent;
 +import io.papermc.paper.event.player.AsyncChatDecorateEvent;
++import java.util.concurrent.CompletableFuture;
 +import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.network.chat.ChatDecorator;
-+import net.minecraft.server.MinecraftServer;
 +import net.minecraft.network.chat.Component;
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerPlayer;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+
-+import javax.annotation.Nullable;
-+import java.util.concurrent.CompletableFuture;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class ImprovedChatDecorator implements ChatDecorator {
 +    private final MinecraftServer server;
 +
-+    public ImprovedChatDecorator(MinecraftServer server) {
++    public ImprovedChatDecorator(final MinecraftServer server) {
 +        this.server = server;
 +    }
 +
 +    @Override
-+    public CompletableFuture<Component> decorate(@Nullable ServerPlayer sender, Component message) {
-+        return decorate(server, sender, null, message);
++    public CompletableFuture<Component> decorate(final @Nullable ServerPlayer sender, final Component message) {
++        return decorate(this.server, sender, null, message);
 +    }
 +
 +    @Override
-+    public CompletableFuture<Component> decorate(@Nullable ServerPlayer sender, @Nullable CommandSourceStack commandSourceStack, Component message) {
-+        return decorate(server, sender, commandSourceStack, message);
++    public CompletableFuture<Component> decorate(final @Nullable ServerPlayer sender, final @Nullable CommandSourceStack commandSourceStack, final Component message) {
++        return decorate(this.server, sender, commandSourceStack, message);
 +    }
 +
 +    private static CompletableFuture<Component> decorate(final MinecraftServer server, final @Nullable ServerPlayer player, final @Nullable CommandSourceStack commandSourceStack, final Component originalMessage) {
@@ -1093,9 +1080,7 @@ index 0000000000000000000000000000000000000000..7d3daf9cb15cf4c637406d7a77cd0240
 +                event = new AsyncChatDecorateEvent(craftPlayer, initialResult);
 +            }
 +
-+            server.server.getPluginManager().callEvent(event);
-+
-+            if (!event.isCancelled()) {
++            if (event.callEvent()) {
 +                return PaperAdventure.asVanilla(event.result());
 +            }
 +
@@ -2290,7 +2275,7 @@ index e2def0ca552343143e495736d533b3334686fd62..c87b708c368713a23a10ad97704575ee
                  sender.connection.sendPlayerChatMessage(playerChatMessage, params);
              }
 diff --git a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
-index d89049328641faa889b7c567123ab3a2c63b8df0..a08b23afc3f3c2df5be6338776c3bc7679a0a685 100644
+index d89049328641faa889b7c567123ab3a2c63b8df0..76b304560c2b631a18f20e656a65ac75af7b4e63 100644
 --- a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 @@ -17,6 +17,42 @@ import net.minecraft.util.SignatureValidator;
@@ -2336,12 +2321,19 @@ index d89049328641faa889b7c567123ab3a2c63b8df0..a08b23afc3f3c2df5be6338776c3bc76
      public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec(
          instance -> instance.group(
                      SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link),
-@@ -47,7 +83,7 @@ public record PlayerChatMessage(
+@@ -47,7 +83,14 @@ public record PlayerChatMessage(
      }
  
      public PlayerChatMessage withUnsignedContent(Component unsignedContent) {
 -        Component component = !unsignedContent.equals(Component.literal(this.signedContent())) ? unsignedContent : null;
-+        Component component = !(unsignedContent instanceof io.papermc.paper.adventure.AdventureComponent advComponent ? advComponent.deepConverted() : unsignedContent).equals(Component.literal(this.signedContent())) ? unsignedContent : null; // Paper - adventure; convert adventure component wraps
++        // Paper start - adventure
++        final Component component;
++        if (unsignedContent instanceof io.papermc.paper.adventure.AdventureComponent advComponent) {
++            component = this.signedContent().equals(io.papermc.paper.adventure.AdventureCodecs.tryCollapseToString(advComponent.adventure$component())) ? null : unsignedContent;
++        } else {
++            component = !unsignedContent.equals(Component.literal(this.signedContent())) ? unsignedContent : null;
++        }
++        // Paper end - adventure
          return new PlayerChatMessage(this.link, this.signature, this.signedBody, component, this.filterMask);
      }
  
@@ -2487,7 +2479,7 @@ index a5578cbce2d1d39ba3315e53425d5323e6823a65..7a036c08fa67504d06c8f72a32c22814
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4035faedd9f5f72f262822a9f050178d99be06e4..f9f23ea83638f60e54eeba5acabef53029329d59 100644
+index 4035faedd9f5f72f262822a9f050178d99be06e4..6f73025377c21b9db52d5f74699b49862f878ab9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -191,6 +191,7 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
@@ -2547,7 +2539,7 @@ index 4035faedd9f5f72f262822a9f050178d99be06e4..f9f23ea83638f60e54eeba5acabef530
          this.motd = motd;
      }
  
-@@ -2434,23 +2445,25 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2434,23 +2445,26 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
@@ -2572,10 +2564,11 @@ index 4035faedd9f5f72f262822a9f050178d99be06e4..f9f23ea83638f60e54eeba5acabef530
 -    // CraftBukkit end
 +            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
  
++    public final ChatDecorator improvedChatDecorator = new io.papermc.paper.adventure.ImprovedChatDecorator(this);
      public ChatDecorator getChatDecorator() {
 -        return ChatDecorator.PLAIN;
 +        // Paper start - support async chat decoration events
-+        return new io.papermc.paper.adventure.ImprovedChatDecorator(this);
++        return this.improvedChatDecorator;
 +        // Paper end
      }
  
@@ -2769,7 +2762,7 @@ index a60fef571c94858998a91711b17d3670c28a81bd..04a728a16bb629adbae1cd8586764a6d
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 58872976048a1162602d5f11a85eaead837cd805..10a7446890e5bc2d9211a862b2328f297ceb1c79 100644
+index 58872976048a1162602d5f11a85eaead837cd805..c51e38bb683d239d6116075b5a613b5ef709056a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -44,6 +44,7 @@ import net.minecraft.nbt.ListTag;
@@ -2809,12 +2802,12 @@ index 58872976048a1162602d5f11a85eaead837cd805..10a7446890e5bc2d9211a862b2328f29
  
                      CompletableFuture<FilteredText> completablefuture = this.filterTextPacket(playerchatmessage.signedContent()).thenApplyAsync(Function.identity(), this.server.chatExecutor); // CraftBukkit - async chat
 -                    Component ichatbasecomponent = this.server.getChatDecorator().decorate(this.player, playerchatmessage.decoratedContent());
-+                    CompletableFuture<Component> componentFuture = this.server.getChatDecorator().decorate(this.player, null, playerchatmessage.decoratedContent()); // Paper
++                    CompletableFuture<Component> componentFuture = this.server.getChatDecorator().decorate(this.player, null, playerchatmessage.decoratedContent()); // Paper - Adventure
  
 -                    this.chatMessageChain.append(completablefuture, (filteredtext) -> {
 -                        PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(ichatbasecomponent).filter(filteredtext.mask());
-+                    this.chatMessageChain.append(CompletableFuture.allOf(completablefuture, componentFuture), (filteredtext) -> {
-+                        PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(componentFuture.join()).filter(completablefuture.join().mask()); // Paper
++                    this.chatMessageChain.append(CompletableFuture.allOf(completablefuture, componentFuture), (filteredtext) -> { // Paper - Adventure
++                        PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(componentFuture.join()).filter(completablefuture.join().mask()); // Paper - Adventure
  
                          this.broadcastChatMessage(playerchatmessage1);
                      });
