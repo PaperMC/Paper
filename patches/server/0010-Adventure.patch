@@ -613,10 +613,10 @@ index 0000000000000000000000000000000000000000..23bd6d2d8fed5a3491e856f8b875456d
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..65ad76dd43c9a8f96333572f795967dc603064c1
+index 0000000000000000000000000000000000000000..bfb1904be53112cdff62001c3307c7d5ef89704c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,379 @@
+@@ -0,0 +1,376 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatRenderer;
@@ -661,6 +661,7 @@ index 0000000000000000000000000000000000000000..65ad76dd43c9a8f96333572f795967dc
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
++import org.intellij.lang.annotations.Subst;
 +
 +import static net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection;
 +
@@ -785,11 +786,7 @@ index 0000000000000000000000000000000000000000..65ad76dd43c9a8f96333572f795967dc
 +    }
 +
 +    private void readModernModifications(final AbstractChatEvent chatEvent, final ChatRenderer originalRenderer) {
-+        if (this.message.unsignedContent() != null) {
-+            this.flags.set(MESSAGE_CHANGED, !chatEvent.message().equals(this.message.unsignedContent()));
-+        } else {
-+            this.flags.set(MESSAGE_CHANGED, !chatEvent.message().equals(this.paper$originalMessage));
-+        }
++        this.flags.set(MESSAGE_CHANGED, !chatEvent.message().equals(this.paper$originalMessage));
 +        if (originalRenderer != chatEvent.renderer()) { // don't set to false if it hasn't changed
 +            this.flags.set(FORMAT_CHANGED, true);
 +        }
@@ -818,7 +815,7 @@ index 0000000000000000000000000000000000000000..65ad76dd43c9a8f96333572f795967dc
 +            }
 +        } else if (this.flags.get(MESSAGE_CHANGED)) {
 +            if (!(renderer instanceof ChatRenderer.ViewerUnaware unaware)) {
-+                throw new IllegalStateException("BUG: There should not be a non-legacy renderer at this point");
++                throw new IllegalStateException("BUG: This should be a ViewerUnaware renderer at this point");
 +            }
 +            final Component renderedComponent = chatTypeKey == ChatType.CHAT ? message : unaware.render(player, displayName, message);
 +            outgoingChat.sendMessageChanged(player, PaperAdventure.asVanilla(renderedComponent), viewers, chatType);
@@ -899,7 +896,7 @@ index 0000000000000000000000000000000000000000..65ad76dd43c9a8f96333572f795967dc
 +        });
 +
 +        private net.kyori.adventure.chat.ChatType.Bound adventure(ChatType.Bound chatType) {
-+            final String stringKey = Objects.requireNonNull(
++            @Subst("key:value") final String stringKey = Objects.requireNonNull(
 +                ChatProcessor.this.server.registryAccess().registryOrThrow(Registries.CHAT_TYPE).getKey(chatType.chatType()),
 +                () -> "No key for '%s' in CHAT_TYPE registry.".formatted(chatType)
 +            ).toString();
@@ -2479,7 +2476,7 @@ index a5578cbce2d1d39ba3315e53425d5323e6823a65..7a036c08fa67504d06c8f72a32c22814
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4035faedd9f5f72f262822a9f050178d99be06e4..6f73025377c21b9db52d5f74699b49862f878ab9 100644
+index 4035faedd9f5f72f262822a9f050178d99be06e4..00a1806720e67eb747061e0a6c2ea334dd4453ce 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -191,6 +191,7 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
@@ -2539,7 +2536,7 @@ index 4035faedd9f5f72f262822a9f050178d99be06e4..6f73025377c21b9db52d5f74699b4986
          this.motd = motd;
      }
  
-@@ -2434,23 +2445,26 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2434,23 +2445,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
@@ -2564,12 +2561,10 @@ index 4035faedd9f5f72f262822a9f050178d99be06e4..6f73025377c21b9db52d5f74699b4986
 -    // CraftBukkit end
 +            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
  
-+    public final ChatDecorator improvedChatDecorator = new io.papermc.paper.adventure.ImprovedChatDecorator(this);
++    public final ChatDecorator improvedChatDecorator = new io.papermc.paper.adventure.ImprovedChatDecorator(this); // Paper - adventure
      public ChatDecorator getChatDecorator() {
 -        return ChatDecorator.PLAIN;
-+        // Paper start - support async chat decoration events
-+        return this.improvedChatDecorator;
-+        // Paper end
++        return this.improvedChatDecorator; // Paper - support async chat decoration events
      }
  
      public boolean logIPs() {
