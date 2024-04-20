@@ -314,7 +314,14 @@ public abstract class Command {
      * command
      *
      * @return Permission check failed message
+     * @deprecated permission messages have not worked for player-executed
+     * commands since 1.13 as clients without permission to execute a command
+     * are unaware of its existence and therefore will not send an unknown
+     * command execution to the server. This message will only ever be shown to
+     * consoles or when this command is executed with
+     * {@link Bukkit#dispatchCommand(CommandSender, String)}.
      */
+    @Deprecated
     @Nullable
     public String getPermissionMessage() {
         return permissionMessage;
@@ -378,7 +385,14 @@ public abstract class Command {
      * @param permissionMessage new permission message, null to indicate
      *     default message, or an empty string to indicate no message
      * @return this command object, for chaining
+     * @deprecated permission messages have not worked for player-executed
+     * commands since 1.13 as clients without permission to execute a command
+     * are unaware of its existence and therefore will not send an unknown
+     * command execution to the server. This message will only ever be shown to
+     * consoles or when this command is executed with
+     * {@link Bukkit#dispatchCommand(CommandSender, String)}.
      */
+    @Deprecated
     @NotNull
     public Command setPermissionMessage(@Nullable String permissionMessage) {
         this.permissionMessage = permissionMessage;
