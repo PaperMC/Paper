@@ -113,7 +113,7 @@ index 636100a1095ee6bbe14804ee15aa8a8a7c4aec61..dae8b0fdf85a98f50db0f413561c5042
          this.drops = new ArrayList<>();
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index e2473366a12eeb87b137874c8e15dd9a0a86d263..98db76231e0368adc4b8e66aa8b248eed8afdd71 100644
+index e2473366a12eeb87b137874c8e15dd9a0a86d263..1d490a21b70853745e6daf54aca69c3b92ed24d5 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -625,7 +625,7 @@ public class ArmorStand extends LivingEntity {
@@ -134,33 +134,23 @@ index e2473366a12eeb87b137874c8e15dd9a0a86d263..98db76231e0368adc4b8e66aa8b248ee
                  this.armorItems.set(i, ItemStack.EMPTY);
              }
          }
-@@ -770,7 +770,7 @@ public class ArmorStand extends LivingEntity {
- 
-     public void kill(boolean callEvent, final DamageSource damageSource) {
-         if (callEvent) {
--        org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.drops, damageSource); // CraftBukkit - call event
-+        org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.drops, damageSource, com.google.common.util.concurrent.Runnables.doNothing()); // CraftBukkit - call event
-         if (event.isCancelled()) return;
-         }
-         // Paper end - improve death events
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index ffebab8f1c6b2239602952572072581447352e61..52b5fdccd90eea70cf67a22affbe52bb11716f23 100644
+index 0ea666f5ceee06c5f7c6825a496c709e6926cdaf..41b0d38812b88dc11f6d7730936dbe9d5c2f6b64 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -891,10 +891,10 @@ public class CraftEventFactory {
+@@ -895,6 +895,11 @@ public class CraftEventFactory {
      }
  
-     public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource) { // Paper - improve death events
--        return CraftEventFactory.callEntityDeathEvent(victim, new ArrayList<org.bukkit.inventory.ItemStack>(0), damageSource); // Paper - improve death events
-+        return CraftEventFactory.callEntityDeathEvent(victim, new ArrayList<org.bukkit.inventory.ItemStack>(0), damageSource, com.google.common.util.concurrent.Runnables.doNothing()); // Paper - improve death events
-     }
- 
--    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops, final DamageSource damageSource) { // Paper - improve death events
+     public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops, final DamageSource damageSource) { // Paper - improve death events
++        // Paper start - fix item duplication issues
++        return CraftEventFactory.callEntityDeathEvent(victim, drops, damageSource, com.google.common.util.concurrent.Runnables.doNothing());
++    }
 +    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops, final DamageSource damageSource, Runnable lootCheck) { // Paper - improve death events
++        // Paper end - fix item duplication issues
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
          EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward(), new org.bukkit.craftbukkit.damage.CraftDamageSource(damageSource)); // Paper - improve death events
          populateFields(victim, event); // Paper - make cancellable
-@@ -908,11 +908,13 @@ public class CraftEventFactory {
+@@ -908,11 +913,13 @@ public class CraftEventFactory {
          playDeathSound(victim, event);
          // Paper end
          victim.expToDrop = event.getDroppedExp();
