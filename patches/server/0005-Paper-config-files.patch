@@ -15,17 +15,17 @@ public net.minecraft.server.dedicated.DedicatedServerProperties reload(Lnet/mine
 public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 69155f6badcd79b3479654363ca1f1d8a138a7ad..8332781de54d73cb5803828e98882a731daed81f 100644
+index e5f1c91937af872109e478b99a6037332994e717..2fb082175529e52604d7e2f4a272fc58d0ec2eb1 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -11,6 +11,7 @@ dependencies {
      implementation("jline:jline:2.12.1")
-     implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") // Paper - remove exclusion
      implementation("org.ow2.asm:asm-commons:9.7")
 +    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
-     runtimeOnly("com.mysql:mysql-connector-j:8.2.0")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.45.3.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.3.0")
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..ef41cf3a7d1e6f2bfe81e0fb865d2f969bbc77c1
@@ -4824,11 +4824,11 @@ index 0000000000000000000000000000000000000000..614aba60bb07946a144650fd3aedb316
 +    protected abstract boolean belowZero(O value);
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 602964d92ddf9e4ec47ed3cb45787fdd061a881e..66550ce5cc83534af8dcac338db5cd4cfb1c46c4 100644
+index b334265d4015fec13d7fedbffba2b6c22f4c8bc8..5b4ac7b4fd0077e900e9f788963f1613bbc9a5d0 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -126,6 +126,10 @@ public class Main {
-             dedicatedserversettings.forceSave();
+@@ -129,6 +129,10 @@ public class Main {
+             RegionFileVersion.configure(dedicatedserversettings.getProperties().regionFileComression);
              Path path2 = Paths.get("eula.txt");
              Eula eula = new Eula(path2);
 +            // Paper start - load config files early for access below if needed
@@ -4838,7 +4838,7 @@ index 602964d92ddf9e4ec47ed3cb45787fdd061a881e..66550ce5cc83534af8dcac338db5cd4c
  
              if (optionset.has("initSettings")) { // CraftBukkit
                  // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
-@@ -160,7 +164,7 @@ public class Main {
+@@ -163,7 +167,7 @@ public class Main {
              }
  
              File file = (File) optionset.valueOf("universe"); // CraftBukkit
@@ -4848,10 +4848,10 @@ index 602964d92ddf9e4ec47ed3cb45787fdd061a881e..66550ce5cc83534af8dcac338db5cd4c
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 42da710d18063aed6fd450fe31277d7daf0542c1..62e096c9cc05c387ca2413a490f44c6c66a5c41e 100644
+index c54979d2509ce30f2ba0d956b5c6d48342e1a0fc..254e362cd54359512285bab632dbae3cec0f03e0 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -295,6 +295,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -302,6 +302,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private static final int SAMPLE_INTERVAL = 100;
      public final double[] recentTps = new double[ 3 ];
      // Spigot end
@@ -4859,7 +4859,7 @@ index 42da710d18063aed6fd450fe31277d7daf0542c1..62e096c9cc05c387ca2413a490f44c6c
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -388,6 +389,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -398,6 +399,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
          // CraftBukkit end
@@ -4908,10 +4908,10 @@ index dfbb04800d6f1dcbb909fcdfeb1ebf1a5efa6a48..5928e5f1934b8e247ba516595018ed5c
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 57fdf24730d93e4dc48bacfa8f034fc99a48f0e4..8ddfd4a148c95d0d9e93edf03ddac46332936d9a 100644
+index 277a66863f76d9a7bf59ca87553fc1d335fc73ca..1b5e2e07a7723f61d4c4d4e3141c60b2f63e2b69 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -183,6 +183,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -196,6 +196,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
@@ -4923,7 +4923,7 @@ index 57fdf24730d93e4dc48bacfa8f034fc99a48f0e4..8ddfd4a148c95d0d9e93edf03ddac463
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
 diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/main/java/net/minecraft/server/dedicated/Settings.java
-index 397c978c71f36c8abe1c52e545699fc7928a6917..fc45c2c4ecdf3906df6bceaf3e019c462fe62186 100644
+index 6d89a5414f46a0c30badb4fcd25bc6cb6d18db3a..0ec3b546db0cf3858dd9cd9ea067d1d6713a8491 100644
 --- a/src/main/java/net/minecraft/server/dedicated/Settings.java
 +++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
 @@ -119,6 +119,7 @@ public abstract class Settings<T extends Settings<T>> {
@@ -4935,10 +4935,10 @@ index 397c978c71f36c8abe1c52e545699fc7928a6917..fc45c2c4ecdf3906df6bceaf3e019c46
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 50b79de15571ef30f202bae5952a9f825902e11a..aac9513ff4d3d494860bd06607cf8af5e466fd5b 100644
+index d7c5e872136d0452311b316c5703050c45960230..cc5e1076bdf7b4794ee79934fb70234ba61efe15 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -236,7 +236,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -241,7 +241,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
          // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
@@ -4948,10 +4948,10 @@ index 50b79de15571ef30f202bae5952a9f825902e11a..aac9513ff4d3d494860bd06607cf8af5
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index f7e8cabd6ef7d31b785b69db1d5b24d55563dbe4..bd9ea2bd012cdcf07ac322b3e0360c6c336ab1f9 100644
+index ecbb926986bbc0ad6fe108b782cdc17ee8a9f035..b06ffa8d5953c8f0a47daf056495cd424d9ac843 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -158,6 +158,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -155,6 +155,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
      public boolean populating;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
@@ -4964,7 +4964,7 @@ index f7e8cabd6ef7d31b785b69db1d5b24d55563dbe4..bd9ea2bd012cdcf07ac322b3e0360c6c
  
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      public static BlockPos lastPhysicsProblem; // Spigot
-@@ -175,8 +181,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -172,8 +178,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public abstract ResourceKey<LevelStem> getTypeKey();
  
@@ -4976,7 +4976,7 @@ index f7e8cabd6ef7d31b785b69db1d5b24d55563dbe4..bd9ea2bd012cdcf07ac322b3e0360c6c
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 680a308c466c0056d4213e61f69cf13ee3ff5c61..cd39509d383c47319b71797e5d1df41c2b8c7ab6 100644
+index 332d4e0771cf5a4eddd44b9a380df52fb8ab5d42..02ddd4e200a86d720297dbec508480fc0cd270d1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -927,6 +927,7 @@ public final class CraftServer implements Server {
@@ -4988,10 +4988,10 @@ index 680a308c466c0056d4213e61f69cf13ee3ff5c61..cd39509d383c47319b71797e5d1df41c
              world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 67d347741db1c5a9a6568ee084388a59e35b16ea..cc6d96c5015b4e5614e8091dc9113e82e9babc25 100644
+index 4b8602b168f9dd386aa72b4e5d189c441c93542e..1e3ca7ca98abfd5be233a7eeb6dad201776d2d6a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -141,6 +141,19 @@ public class Main {
+@@ -142,6 +142,19 @@ public class Main {
                          .defaultsTo(new File("spigot.yml"))
                          .describedAs("Yml file");
                  // Spigot End
@@ -5012,7 +5012,7 @@ index 67d347741db1c5a9a6568ee084388a59e35b16ea..cc6d96c5015b4e5614e8091dc9113e82
          };
  
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 6b778bed6d61f941c839dec01b8733a9b1fbefec..df29015e3d5ca49297fe87090fd6446962e59adb 100644
+index 9658f2961d9b5632ad1abdba26a2443642624f69..38219af7d0ba2d871711102b6a29139a49678f6b 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -96,7 +96,7 @@ public class SpigotConfig
@@ -5072,7 +5072,7 @@ index 0000000000000000000000000000000000000000..0396589795da1f83ddf62426236dde9a
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index 0619361adf57fdc41c4ecb09d1d6a5c862a85f89..b786ed8e620feb51baceae41dd2d1538dc298705 100644
+index 544307fe34cbcfa286a7d7b30900ebea127d189e..1b1d51a68c0abe7d8f0aa1172064192c71ae645e 100644
 --- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
 +++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
 @@ -63,6 +63,7 @@ public abstract class AbstractTestingBase {

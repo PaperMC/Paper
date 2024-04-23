@@ -17,10 +17,10 @@ Subject: [PATCH] CB fixes
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index aac9513ff4d3d494860bd06607cf8af5e466fd5b..30fc222c384938fb4fdd4c6715295aeea57094bc 100644
+index cc5e1076bdf7b4794ee79934fb70234ba61efe15..b3caf69f9627ba2114dc9d06551ccf182debfb04 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -296,7 +296,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -302,7 +302,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
          long l = minecraftserver.getWorldData().worldGenOptions().seed();
  
@@ -30,21 +30,21 @@ index aac9513ff4d3d494860bd06607cf8af5e466fd5b..30fc222c384938fb4fdd4c6715295aee
          if ((this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
              this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-index b2f37e3caf305f7f2c19c59848717bf73bd2ef5d..87c8460324ff2d2a14e1404fcfa3adb2d336a089 100644
+index 85e0a68d85fe62df19ad9809b1869a3eee6d5465..09aa76ec6f89163c1221721008ccb541eaf420ca 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-@@ -462,15 +462,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
+@@ -451,15 +451,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
      }
  
      @Override
 -    // CraftBukkit start - void -> boolean
--    protected boolean actuallyHurt(DamageSource damagesource, float f) {
+-    public boolean actuallyHurt(DamageSource damagesource, float f) {
 -        boolean hurt = super.actuallyHurt(damagesource, f);
 -        if (!hurt) {
 -            return hurt;
 -        }
 -        // CraftBukkit end
-+    protected boolean actuallyHurt(DamageSource damagesource, float f) { // Paper - change return type to boolean
++    public boolean actuallyHurt(DamageSource damagesource, float f) { // Paper - change return type to boolean
          this.standUpInstantly();
 -        return hurt; // CraftBukkit
 +        return super.actuallyHurt(damagesource, f); // Paper - change return type to boolean
@@ -52,19 +52,19 @@ index b2f37e3caf305f7f2c19c59848717bf73bd2ef5d..87c8460324ff2d2a14e1404fcfa3adb2
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index 3f5bedc49f249888cf435f5511f5ce1da921910b..a63eaec77251a7f6660d17d7210c639b71751c45 100644
+index 0dc7f88877020bddd5a84db51d349f52b673048e..aae73586265593ee7830fb8dd5c2e3d7560057f0 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -42,7 +42,7 @@ public class StructureCheck {
-     private final Registry<Biome> biomes;
-     private final Registry<Structure> structureConfigs;
+@@ -40,7 +40,7 @@ public class StructureCheck {
+     private final ChunkScanAccess storageAccess;
+     private final RegistryAccess registryAccess;
      private final StructureTemplateManager structureTemplateManager;
 -    private final ResourceKey<Level> dimension;
 +    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
      private final ChunkGenerator chunkGenerator;
      private final RandomState randomState;
      private final LevelHeightAccessor heightAccessor;
-@@ -56,7 +56,7 @@ public class StructureCheck {
+@@ -54,7 +54,7 @@ public class StructureCheck {
          ChunkScanAccess chunkIoWorker,
          RegistryAccess registryManager,
          StructureTemplateManager structureTemplateManager,
@@ -74,10 +74,10 @@ index 3f5bedc49f249888cf435f5511f5ce1da921910b..a63eaec77251a7f6660d17d7210c639b
          RandomState noiseConfig,
          LevelHeightAccessor world,
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
-index 809fdf2da78293391aa5c60c04f4ad652b152eec..955b0abd4019fc45df84719eee6bf413e59d941a 100644
+index 9b90649f71849b3830ca9b6a3c5a722c66b02f1f..209c6b64e79c29ea3bb84ddbe89a8bff66f81d0f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
-@@ -172,4 +172,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
+@@ -197,4 +197,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
          org.bukkit.loot.LootTable table = (org.bukkit.loot.LootTable) obj;
          return table.getKey().equals(this.getKey());
      }
@@ -90,30 +90,32 @@ index 809fdf2da78293391aa5c60c04f4ad652b152eec..955b0abd4019fc45df84719eee6bf413
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index cd39509d383c47319b71797e5d1df41c2b8c7ab6..2cc1871c81056acd0582184bb684e672d14d3b6f 100644
+index 02ddd4e200a86d720297dbec508480fc0cd270d1..080c0cf84d959e1acdde088f367bd005ea9c3bbd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2466,7 +2466,11 @@ public final class CraftServer implements Server {
+@@ -2482,7 +2482,13 @@ public final class CraftServer implements Server {
          Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
  
-         LootDataManager registry = this.getServer().getLootData();
--        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
+         ReloadableServerRegistries.Holder registry = this.getServer().reloadableRegistries();
+-        return new CraftLootTable(key, registry.getLootTable(CraftLootTable.bukkitKeyToMinecraft(key)));
 +        // Paper start - honor method contract
-+        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
-+        final Optional<net.minecraft.world.level.storage.loot.LootTable> table = registry.getElementOptional(net.minecraft.world.level.storage.loot.LootDataType.TABLE, lootTableKey);
++        final ResourceKey<net.minecraft.world.level.storage.loot.LootTable> lootTableKey = CraftLootTable.bukkitKeyToMinecraft(key);
++        final Optional<net.minecraft.world.level.storage.loot.LootTable> table = registry.get().lookup(Registries.LOOT_TABLE)
++            .flatMap(registryEntryLookup -> registryEntryLookup.get(lootTableKey))
++            .map(net.minecraft.core.Holder::value);
 +        return table.map(lootTable -> new CraftLootTable(key, lootTable)).orElse(null);
 +        // Paper end
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index cc6d96c5015b4e5614e8091dc9113e82e9babc25..6f9196120177104c6e689ff1d39a06f91d04b0c8 100644
+index 1e3ca7ca98abfd5be233a7eeb6dad201776d2d6a..9ec50bbb262b25fea157ae48e8395f5cd38f8906 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -122,6 +122,7 @@ public class Main {
- 
+@@ -123,6 +123,7 @@ public class Main {
                  this.acceptsAll(Main.asList("forceUpgrade"), "Whether to force a world upgrade");
                  this.acceptsAll(Main.asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                 this.acceptsAll(Main.asList("recreateRegionFiles"), "Whether to recreate region files during world upgrade");
 +                this.accepts("safeMode", "Loads level with vanilla datapack only"); // Paper
                  this.acceptsAll(Main.asList("nogui"), "Disables the graphical console");
  
