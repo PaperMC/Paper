@@ -5,39 +5,43 @@ Subject: [PATCH] Add BeaconEffectEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-index 9fb27f93a7ccbf64f9babf19f626d1f45b1c7103..25ec3ab534872500a2eb51cd44062e2754c404bb 100644
+index c731730abe50c521e5ce22b5fd8844ea1caed7ac..d3ef3d9a67bc54a4c82a39718f01201201dfc44c 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-@@ -43,6 +43,10 @@ import net.minecraft.world.phys.AABB;
+@@ -1,5 +1,6 @@
+ package net.minecraft.world.level.block.entity;
+ 
++import com.destroystokyo.paper.event.block.BeaconEffectEvent;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.Lists;
+ import java.util.Arrays;
+@@ -46,6 +47,7 @@ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.levelgen.Heightmap;
+ import net.minecraft.world.phys.AABB;
+ // CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
  import org.bukkit.craftbukkit.potion.CraftPotionUtil;
  import org.bukkit.potion.PotionEffect;
  // CraftBukkit end
-+// Paper start
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import com.destroystokyo.paper.event.block.BeaconEffectEvent;
-+// Paper end
- 
- public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Nameable {
- 
-@@ -289,15 +293,23 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+@@ -295,15 +297,23 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
          }
      }
  
--    private static void applyEffect(List list, MobEffect mobeffectlist, int j, int b0) {
+-    private static void applyEffect(List list, @Nullable Holder<MobEffect> holder, int j, int b0) {
 -        {
-+    private static void applyEffect(List list, MobEffect effects, int i, int b0, boolean isPrimary, BlockPos worldPosition) { // Paper - BeaconEffectEvent
++    private static void applyEffect(List list, @Nullable Holder<MobEffect> holder, int j, int b0, boolean isPrimary, BlockPos worldPosition) { // Paper - BeaconEffectEvent
 +        if (!list.isEmpty()) { // Paper - BeaconEffectEvent
              Iterator iterator = list.iterator();
  
              Player entityhuman;
 +            // Paper start - BeaconEffectEvent
 +            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(((Player) list.get(0)).level(), worldPosition);
-+            PotionEffect effect = CraftPotionUtil.toBukkit(new MobEffectInstance(effects, i, b0, true, true));
++            PotionEffect effect = CraftPotionUtil.toBukkit(new MobEffectInstance(holder, j, b0, true, true));
 +            // Paper end - BeaconEffectEvent
  
              while (iterator.hasNext()) {
 -                entityhuman = (Player) iterator.next();
--                entityhuman.addEffect(new MobEffectInstance(mobeffectlist, j, b0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
+-                entityhuman.addEffect(new MobEffectInstance(holder, j, b0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
 +                // Paper start - BeaconEffectEvent
 +                entityhuman = (ServerPlayer) iterator.next();
 +                BeaconEffectEvent event = new BeaconEffectEvent(block, effect, (org.bukkit.entity.Player) entityhuman.getBukkitEntity(), isPrimary);
@@ -47,7 +51,7 @@ index 9fb27f93a7ccbf64f9babf19f626d1f45b1c7103..25ec3ab534872500a2eb51cd44062e27
              }
          }
      }
-@@ -320,10 +332,10 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+@@ -326,10 +336,10 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
              int j = BeaconBlockEntity.getLevel(beaconLevel);
              List list = BeaconBlockEntity.getHumansInRange(world, pos, beaconLevel);
  

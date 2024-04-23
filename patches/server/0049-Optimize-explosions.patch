@@ -10,10 +10,10 @@ This patch adds a per-tick cache that is used for storing and retrieving
 an entity's exposure during an explosion.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 01a1d2af6b4cf66cff8eb6d14116343a121deed2..638ab8ee2a44445baee91ee7e63b96ce6c098ad0 100644
+index de18627c6f09ef911c9cb6d6aec9a5f3bfe5a72b..b5f305c7d0972438a686d9b3a022156e39b130a2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1489,6 +1489,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1554,6 +1554,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
              this.profiler.pop();
              this.profiler.pop();
@@ -22,19 +22,19 @@ index 01a1d2af6b4cf66cff8eb6d14116343a121deed2..638ab8ee2a44445baee91ee7e63b96ce
  
          this.profiler.popPush("connection");
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index b600abae1c17e1196ff2b171e054db95cca5c9ff..df17b8cddd7f8bd3f13641c99ad0d25e8a596675 100644
+index cd6d831d8519b406571e6f626053afb662799ad9..8a4c086d7ac4bf59f39ab37e583b0e8d6dba6bf4 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
-@@ -277,7 +277,7 @@ public class Explosion {
+@@ -278,7 +278,7 @@ public class Explosion {
                              // CraftBukkit end
                          }
  
--                        double d12 = (1.0D - d7) * (double) Explosion.getSeenPercent(vec3d, entity);
-+                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity); // Paper - Optimize explosions
+-                        double d12 = (1.0D - d7) * (double) Explosion.getSeenPercent(vec3d, entity) * (double) this.damageCalculator.getKnockbackMultiplier(entity);
++                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity) * (double) this.damageCalculator.getKnockbackMultiplier(entity); // Paper - Optimize explosions
                          double d13;
  
                          if (entity instanceof LivingEntity) {
-@@ -526,4 +526,84 @@ public class Explosion {
+@@ -529,4 +529,84 @@ public class Explosion {
  
          private BlockInteraction() {}
      }
@@ -120,10 +120,10 @@ index b600abae1c17e1196ff2b171e054db95cca5c9ff..df17b8cddd7f8bd3f13641c99ad0d25e
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index eb6bf467c92cb04c9f1ffcde0b5df64e9a160d59..673141ab586057b2d05b3921cc4d42b4f5e049ab 100644
+index d878203f7d013ab5648bca82c9a71cceeda1f11f..b638e223c9ac1019fac9d1a8203feac90cfcc724 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -170,6 +170,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -167,6 +167,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
