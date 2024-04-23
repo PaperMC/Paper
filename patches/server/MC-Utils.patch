@@ -6000,15 +6000,15 @@ diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
-@@ -0,0 +0,0 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+@@ -0,0 +0,0 @@ public class PacketEncoder<T extends PacketListener> extends MessageToByteEncode
  
-                     JvmProfiler.INSTANCE.onPacketSent(codecData.protocol(), i, channelHandlerContext.channel().remoteAddress(), k);
-                 } catch (Throwable var13) {
--                    LOGGER.error("Error receiving packet {}", i, var13);
-+                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", i, packet.isSkippable(), var13); // Paper - Give proper error message
-                     if (packet.isSkippable()) {
-                         throw new SkipPacketException(var13);
-                     }
+             JvmProfiler.INSTANCE.onPacketSent(this.protocolInfo.id(), packetType, channelHandlerContext.channel().remoteAddress(), i);
+         } catch (Throwable var9) {
+-            LOGGER.error("Error sending packet {}", packetType, var9);
++            LOGGER.error("Error sending packet {} (skippable? {})", packetType, packet.isSkippable(), var9);
+             if (packet.isSkippable()) {
+                 throw new SkipPacketException(var9);
+             }
 diff --git a/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java b/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java
@@ -6130,14 +6130,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -0,0 +0,0 @@ public class ChunkHolder {
      private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
-     private final AtomicReferenceArray<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> futures;
+     private final AtomicReferenceArray<CompletableFuture<ChunkResult<ChunkAccess>>> futures;
      private final LevelHeightAccessor levelHeightAccessor;
--    private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> fullChunkFuture;
--    private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> tickingChunkFuture;
--    private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> entityTickingChunkFuture;
-+    private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
-+    private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> tickingChunkFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage
-+    private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> entityTickingChunkFuture; private volatile boolean isEntityTickingReady; // Paper - cache chunk ticking stage
+-    private volatile CompletableFuture<ChunkResult<LevelChunk>> fullChunkFuture;
+-    private volatile CompletableFuture<ChunkResult<LevelChunk>> tickingChunkFuture;
+-    private volatile CompletableFuture<ChunkResult<LevelChunk>> entityTickingChunkFuture;
++    private volatile CompletableFuture<ChunkResult<LevelChunk>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
++    private volatile CompletableFuture<ChunkResult<LevelChunk>> tickingChunkFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage
++    private volatile CompletableFuture<ChunkResult<LevelChunk>> entityTickingChunkFuture; private volatile boolean isEntityTickingReady; // Paper - cache chunk ticking stage
      private CompletableFuture<ChunkAccess> chunkToSave;
      @Nullable
      private final DebugBuffer<ChunkHolder.ChunkSaveDebug> chunkToSaveHistory;
@@ -6188,35 +6188,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return ChunkLevel.generationStatus(this.ticketLevel).isOrAfter(leastStatus) ? this.getFutureIfPresentUnchecked(leastStatus) : ChunkHolder.UNLOADED_CHUNK_FUTURE;
      }
  
--    public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getTickingChunkFuture() {
-+    public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getTickingChunkFuture() { // Paper - final for inline
+-    public CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() {
++    public final CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() { // Paper - final for inline
          return this.tickingChunkFuture;
      }
  
--    public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getEntityTickingChunkFuture() {
-+    public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getEntityTickingChunkFuture() { // Paper - final for inline
+-    public CompletableFuture<ChunkResult<LevelChunk>> getEntityTickingChunkFuture() {
++    public final CompletableFuture<ChunkResult<LevelChunk>> getEntityTickingChunkFuture() { // Paper - final for inline
          return this.entityTickingChunkFuture;
      }
  
--    public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getFullChunkFuture() {
-+    public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getFullChunkFuture() { // Paper - final for inline
+-    public CompletableFuture<ChunkResult<LevelChunk>> getFullChunkFuture() {
++    public final CompletableFuture<ChunkResult<LevelChunk>> getFullChunkFuture() { // Paper - final for inline
          return this.fullChunkFuture;
      }
  
      @Nullable
 -    public LevelChunk getTickingChunk() {
 +    public final LevelChunk getTickingChunk() { // Paper - final for inline
-         CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getTickingChunkFuture();
-         Either<LevelChunk, ChunkHolder.ChunkLoadingFailure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
- 
-@@ -0,0 +0,0 @@ public class ChunkHolder {
+         return (LevelChunk) ((ChunkResult) this.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).orElse(null); // CraftBukkit - decompile error
      }
- 
-     @Nullable
--    public LevelChunk getFullChunk() {
-+    public final LevelChunk getFullChunk() { // Paper - final for inline
-         CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getFullChunkFuture();
-         Either<LevelChunk, ChunkHolder.ChunkLoadingFailure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
  
 @@ -0,0 +0,0 @@ public class ChunkHolder {
          return null;
@@ -6349,8 +6340,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-             }
-         };
+     private static record ChunkSaveDebug(Thread thread, CompletableFuture<?> future, String source) {
+ 
      }
 +
 +    // Paper start
@@ -6432,12 +6423,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
-         super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
+         super(new RegionStorageInfo(session.getLevelId(), world.dimension(), "chunk"), session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
          this.visibleChunkMap = this.updatingChunkMap.clone();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.overworldDataStorage = persistentStateManagerFactory;
-         this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
+         this.poiManager = new PoiManager(new RegionStorageInfo(session.getLevelId(), world.dimension(), "poi"), path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
          this.setServerViewDistance(viewDistance);
+         this.worldGenContext = new WorldGenContext(world, chunkGenerator, structureTemplateManager, this.lightEngine);
 +        // Paper start
 +        this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
 +        this.regionManagers.add(this.dataRegionManager);
@@ -6531,8 +6522,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          int l = 0;
--        ObjectIterator objectiterator = this.visibleChunkMap.values().iterator();
-+        Iterator objectiterator = io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).iterator(); // Paper
+-        ObjectIterator<ChunkHolder> objectiterator = this.visibleChunkMap.values().iterator();
++        Iterator<ChunkHolder> objectiterator = io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).iterator(); // Paper
  
          while (l < 20 && shouldKeepTicking.getAsBoolean() && objectiterator.hasNext()) {
              if (this.saveChunkIfNeeded((ChunkHolder) objectiterator.next())) {
@@ -6643,9 +6634,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private class ChunkDistanceManager extends DistanceManager {
 +    public class ChunkDistanceManager extends DistanceManager { // Paper - public
  
-         protected ChunkDistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
+         protected ChunkDistanceManager(final Executor workerExecutor, final Executor mainThreadExecutor) {
 -            super(workerExecutor, mainThreadExecutor);
-+            super(workerExecutor, mainThreadExecutor, ChunkMap.this);
++            super(workerExecutor, mainThreadExecutor, ChunkMap.this); // Paper
          }
  
          @Override
@@ -6678,7 +6669,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void removeTicketsOnClosing() {
 -        ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT);
 +        ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT, TicketType.FUTURE_AWAIT); // Paper - add additional tickets to preserve
-         ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
+         ObjectIterator<Entry<SortedArraySet<Ticket<?>>>> objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
@@ -6972,8 +6963,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
-         this.fudgeSpawnLocation(world);
          this.updateOptions(clientOptions);
+         this.object = null;
  
 +        this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
 +
@@ -7034,7 +7025,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        player.isRealPlayer = true; // Paper
          GameProfile gameprofile = player.getGameProfile();
          GameProfileCache usercache = this.server.getProfileCache();
-         String s;
+         // Optional optional; // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
@@ -7057,7 +7048,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          return this.level.hasChunk((int) Math.floor(this.getX()) >> 4, (int) Math.floor(this.getZ()) >> 4);
      }
      // CraftBukkit end
@@ -7085,14 +7076,15 @@ diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/n
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
          return this.target;
      }
  
 +    public org.bukkit.craftbukkit.entity.CraftMob getBukkitMob() { return (org.bukkit.craftbukkit.entity.CraftMob) super.getBukkitEntity(); } // Paper
-     public void setTarget(@Nullable LivingEntity target) {
-         // CraftBukkit start - fire event
-         this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
++
+     @Nullable
+     protected final LivingEntity getTargetFromBrain() {
+         return (LivingEntity) this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/world/entity/PathfinderMob.java b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/PathfinderMob.java
@@ -7122,8 +7114,8 @@ diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -0,0 +0,0 @@ public final class ItemStack {
-         return this.tag != null ? this.tag.getList("Enchantments", 10) : new ListTag();
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
+         }
      }
  
 +    // Paper start - (this is just a good no conflict location)
@@ -7145,10 +7137,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     public void setTag(@Nullable CompoundTag nbt) {
-         this.tag = nbt;
-         if (this.getItem().canBeDepleted()) {
-@@ -0,0 +0,0 @@ public final class ItemStack {
+     public void applyComponents(DataComponentPatch changes) {
+         this.components.applyPatch(changes);
+         this.getItem().verifyComponentsAfterLoad(this);
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
      // CraftBukkit start
      @Deprecated
      public void setItem(Item item) {
@@ -7259,7 +7251,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.craftbukkit.block.CraftBlockState;
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
  import org.bukkit.craftbukkit.util.CraftSpawnCategory;
- import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.entity.SpawnCategory;
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return null;
      }
@@ -8179,8 +8171,8 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.ticks.LevelTickAccess;
- import net.minecraft.world.ticks.ScheduledTick;
+@@ -0,0 +0,0 @@ import net.minecraft.world.phys.shapes.VoxelShape;
+ import net.minecraft.world.ticks.LevelTickAccess;
  import net.minecraft.world.ticks.TickPriority;
  import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.jetbrains.annotations.Nullable;

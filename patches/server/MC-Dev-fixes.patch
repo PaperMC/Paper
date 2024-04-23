@@ -34,8 +34,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Bootstrap.checkBootstrapCalled(() -> "registry " + key);
          ResourceLocation resourceLocation = key.location();
          LOADERS.put(resourceLocation, () -> initializer.run(registry));
--        WRITABLE_REGISTRY.register((ResourceKey<WritableRegistry<?>>)key, registry, lifecycle);
-+        WRITABLE_REGISTRY.register((ResourceKey)key, registry, lifecycle); // Paper - decompile fix
+-        WRITABLE_REGISTRY.register((ResourceKey<WritableRegistry<?>>)key, registry, RegistrationInfo.BUILT_IN);
++        WRITABLE_REGISTRY.register((ResourceKey)key, registry, RegistrationInfo.BUILT_IN); // Paper - decompile fix
          return registry;
      }
  
@@ -58,28 +58,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              if (!this.hasElementSeparator()) {
-diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
-+++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
-@@ -0,0 +0,0 @@ public enum ConnectionProtocol {
-         protocol()
-             .addFlow(
-                 PacketFlow.CLIENTBOUND,
--                new ConnectionProtocol.PacketSet<ClientCommonPacketListener>()
-+                new ConnectionProtocol.PacketSet<net.minecraft.network.protocol.configuration.ClientConfigurationPacketListener>() // Paper - decompile fix
-                     .addPacket(ClientboundCustomPayloadPacket.class, ClientboundCustomPayloadPacket::new)
-                     .addPacket(ClientboundDisconnectPacket.class, ClientboundDisconnectPacket::new)
-                     .addPacket(ClientboundFinishConfigurationPacket.class, ClientboundFinishConfigurationPacket::new)
-@@ -0,0 +0,0 @@ public enum ConnectionProtocol {
-             )
-             .addFlow(
-                 PacketFlow.SERVERBOUND,
--                new ConnectionProtocol.PacketSet<ServerCommonPacketListener>()
-+                new ConnectionProtocol.PacketSet<net.minecraft.network.protocol.configuration.ServerConfigurationPacketListener>() // Paper - decompile fix
-                     .addPacket(ServerboundClientInformationPacket.class, ServerboundClientInformationPacket::new)
-                     .addPacket(ServerboundCustomPayloadPacket.class, ServerboundCustomPayloadPacket::new)
-                     .addPacket(ServerboundFinishConfigurationPacket.class, ServerboundFinishConfigurationPacket::new)
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -106,16 +84,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static <T> SortedArraySet<T> create(Comparator<T> comparator) {
-diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-+++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-@@ -0,0 +0,0 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
-         }
- 
-         this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
--            return (entry1.getValue()); // CraftBukkit
-+            return entry1.getValue(); // CraftBukkit // Paper - decompile fix - *shrugs internally* // todo: is this needed anymore?
-         }));
-         this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
-         RecipeManager.LOGGER.info("Loaded {} recipes", map1.size());

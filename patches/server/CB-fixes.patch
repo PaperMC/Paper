@@ -38,13 +38,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 -    // CraftBukkit start - void -> boolean
--    protected boolean actuallyHurt(DamageSource damagesource, float f) {
+-    public boolean actuallyHurt(DamageSource damagesource, float f) {
 -        boolean hurt = super.actuallyHurt(damagesource, f);
 -        if (!hurt) {
 -            return hurt;
 -        }
 -        // CraftBukkit end
-+    protected boolean actuallyHurt(DamageSource damagesource, float f) { // Paper - change return type to boolean
++    public boolean actuallyHurt(DamageSource damagesource, float f) { // Paper - change return type to boolean
          this.standUpInstantly();
 -        return hurt; // CraftBukkit
 +        return super.actuallyHurt(damagesource, f); // Paper - change return type to boolean
@@ -56,8 +56,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 @@ -0,0 +0,0 @@ public class StructureCheck {
-     private final Registry<Biome> biomes;
-     private final Registry<Structure> structureConfigs;
+     private final ChunkScanAccess storageAccess;
+     private final RegistryAccess registryAccess;
      private final StructureTemplateManager structureTemplateManager;
 -    private final ResourceKey<Level> dimension;
 +    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
@@ -96,11 +96,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
  
-         LootDataManager registry = this.getServer().getLootData();
--        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
+         ReloadableServerRegistries.Holder registry = this.getServer().reloadableRegistries();
+-        return new CraftLootTable(key, registry.getLootTable(CraftLootTable.bukkitKeyToMinecraft(key)));
 +        // Paper start - honor method contract
-+        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
-+        final Optional<net.minecraft.world.level.storage.loot.LootTable> table = registry.getElementOptional(net.minecraft.world.level.storage.loot.LootDataType.TABLE, lootTableKey);
++        final ResourceKey<net.minecraft.world.level.storage.loot.LootTable> lootTableKey = CraftLootTable.bukkitKeyToMinecraft(key);
++        final Optional<net.minecraft.world.level.storage.loot.LootTable> table = registry.get().lookup(Registries.LOOT_TABLE)
++            .flatMap(registryEntryLookup -> registryEntryLookup.get(lootTableKey))
++            .map(net.minecraft.core.Holder::value);
 +        return table.map(lootTable -> new CraftLootTable(key, lootTable)).orElse(null);
 +        // Paper end
      }
@@ -111,9 +113,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -0,0 +0,0 @@ public class Main {
- 
                  this.acceptsAll(Main.asList("forceUpgrade"), "Whether to force a world upgrade");
                  this.acceptsAll(Main.asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                 this.acceptsAll(Main.asList("recreateRegionFiles"), "Whether to recreate region files during world upgrade");
 +                this.accepts("safeMode", "Loads level with vanilla datapack only"); // Paper
                  this.acceptsAll(Main.asList("nogui"), "Disables the graphical console");
  
