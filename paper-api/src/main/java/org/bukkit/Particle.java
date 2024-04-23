@@ -3,7 +3,6 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 
 public enum Particle implements Keyed {
@@ -167,20 +166,7 @@ public enum Particle implements Keyed {
     /**
      * Uses {@link BlockData} as DataType
      */
-    BLOCK_MARKER("block_marker", BlockData.class),
-    // ----- Legacy Separator -----
-    /**
-     * Uses {@link MaterialData} as DataType
-     */
-    LEGACY_BLOCK_CRACK(null, MaterialData.class, false),
-    /**
-     * Uses {@link MaterialData} as DataType
-     */
-    LEGACY_BLOCK_DUST(null, MaterialData.class, false),
-    /**
-     * Uses {@link MaterialData} as DataType
-     */
-    LEGACY_FALLING_DUST(null, MaterialData.class, false);
+    BLOCK_MARKER("block_marker", BlockData.class);
 
     private final NamespacedKey key;
     private final Class<?> dataType;
