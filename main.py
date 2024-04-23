@@ -25,7 +25,7 @@ for file in files:
         description = match.group(2)
 
         # Calculate the new number
-        new_number = current_number + 4
+        new_number = current_number + 1
 
         # Construct the new file name
         new_file_name = f'{str(new_number).zfill(4)}-{description}'

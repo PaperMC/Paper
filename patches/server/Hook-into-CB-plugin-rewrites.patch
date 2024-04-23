@@ -27,16 +27,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import joptsimple.OptionParser;
  import joptsimple.OptionSet;
  import joptsimple.OptionSpec;
-@@ -0,0 +0,0 @@ import org.bukkit.plugin.AuthorNagException;
- import org.objectweb.asm.ClassReader;
- import org.objectweb.asm.ClassVisitor;
- import org.objectweb.asm.ClassWriter;
-+import org.objectweb.asm.FieldVisitor;
- import org.objectweb.asm.Handle;
-+import org.objectweb.asm.Label;
- import org.objectweb.asm.MethodVisitor;
- import org.objectweb.asm.Opcodes;
- import org.objectweb.asm.Type;
 @@ -0,0 +0,0 @@ public class Commodore {
              "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
      );
@@ -75,31 +65,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - Plugin rewrites
 +
-     public static void main(String[] args) {
-         OptionParser parser = new OptionParser();
-         OptionSpec<File> inputFlag = parser.acceptsAll(Arrays.asList("i", "input")).withRequiredArg().ofType(File.class).required();
-@@ -0,0 +0,0 @@ public class Commodore {
-         ClassWriter cw = new ClassWriter(cr, 0);
+     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = RerouteBuilder.buildFromClass(FieldRename.class);
  
-         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
-+
-+            // Paper start - Rewrite plugins
-+            @Override
-+            public FieldVisitor visitField(int access, String name, String desc, String signature, Object value)
-+            {
-+                desc = getOriginalOrRewrite(desc);
-+                if ( signature != null ) {
-+                    signature = getOriginalOrRewrite(signature);
-+                }
-+
-+                return super.visitField( access, name, desc, signature, value) ;
-+            }
-+            // Paper end
-+
+     public static void main(String[] args) {
+@@ -0,0 +0,0 @@ public class Commodore {
              @Override
              public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                  return new MethodVisitor(this.api, super.visitMethod(access, name, desc, signature, exceptions)) {
- 
 +                    // Paper start - Plugin rewrites
 +                    @Override
 +                    public void visitTypeInsn(int opcode, String type) {
@@ -133,8 +105,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                        super.visitLocalVariable(name, descriptor, signature, start, end, index);
 +                    }
-+                    // Paper end
-+
++                    // Paper end - Plugin rewrites
+ 
                      @Override
                      public void visitFieldInsn(int opcode, String owner, String name, String desc) {
 +                        // Paper start - Rewrite plugins
@@ -143,20 +115,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                            desc = getOriginalOrRewrite(desc);
 +                        }
 +                        // Paper end
-                         if (owner.equals("org/bukkit/block/Biome")) {
-                             switch (name) {
-                                 case "NETHER":
+                         name = FieldRename.rename(pluginVersion, owner, name);
+ 
+                         if (modern) {
 @@ -0,0 +0,0 @@ public class Commodore {
+                             return;
                          }
  
-                         // Paper start - Rewrite plugins
++                        // Paper start - Rewrite plugins
 +                        owner = getOriginalOrRewrite(owner) ;
 +                        if (desc != null) {
 +                            desc = getOriginalOrRewrite(desc);
 +                        }
-                         if ((owner.equals("org/bukkit/OfflinePlayer") || owner.equals("org/bukkit/entity/Player")) && name.equals("getPlayerProfile") && desc.equals("()Lorg/bukkit/profile/PlayerProfile;")) {
-                             super.visitMethodInsn(opcode, owner, name, "()Lcom/destroystokyo/paper/profile/PlayerProfile;", itf);
-                             return;
++                        // Paper end - Rewrite plugins
++
+                         if (modern) {
+                             if (owner.equals("org/bukkit/Material") || (instantiatedMethodType != null && instantiatedMethodType.getDescriptor().startsWith("(Lorg/bukkit/Material;)"))) {
+                                 switch (name) {
 @@ -0,0 +0,0 @@ public class Commodore {
  
                      @Override
@@ -195,3 +170,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              }, implMethod.getTag(), implMethod.getOwner(), implMethod.getName(), implMethod.getDesc(), implMethod.isInterface(), samMethodType, instantiatedMethodType);
                              return;
                          }
+@@ -0,0 +0,0 @@ public class Commodore {
+ 
+             @Override
+             public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
++                // Paper start - Rewrite plugins
++                descriptor = getOriginalOrRewrite(descriptor);
++                if ( signature != null ) {
++                    signature = getOriginalOrRewrite(signature);
++                }
++                // Paper end
+                 return new FieldVisitor(this.api, super.visitField(access, name, descriptor, signature, value)) {
+                     @Override
+                     public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
