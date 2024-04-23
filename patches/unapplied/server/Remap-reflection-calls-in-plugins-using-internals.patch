@@ -1,0 +1,763 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Sun, 30 Oct 2022 23:47:26 +0100
+Subject: [PATCH] Remap reflection calls in plugins using internals
+
+Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -0,0 +0,0 @@ dependencies {
+     implementation("org.ow2.asm:asm-commons:9.7")
+     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
+     implementation("commons-lang:commons-lang:2.6")
+-    implementation("net.fabricmc:mapping-io:0.5.0") // Paper - needed to read mappings for stacktrace deobfuscation
+     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
+     runtimeOnly("com.mysql:mysql-connector-j:8.2.0")
+     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
+@@ -0,0 +0,0 @@ dependencies {
+     testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
+     implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
+     implementation("net.neoforged:srgutils:1.0.9") // Paper - remap plugins - bump transitive of ART
++    // Paper start - Remap reflection
++    val reflectionRewriterVersion = "0.0.1-SNAPSHOT"
++    implementation("io.papermc:reflection-rewriter:$reflectionRewriterVersion")
++    implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
++    implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
++    // Paper end - Remap reflection
+ }
+ 
+ paperweight {
+diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
++++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
+@@ -0,0 +0,0 @@ import com.destroystokyo.paper.entity.RangedEntity;
+ import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet;
+ import com.google.common.collect.BiMap;
+ import com.google.common.collect.HashBiMap;
++import io.papermc.paper.util.MappingEnvironment;
+ import io.papermc.paper.util.ObfHelper;
+ import java.lang.reflect.Constructor;
+ import java.util.EnumSet;
+@@ -0,0 +0,0 @@ public class MobGoalHelper {
+     }
+ 
+     public static String getUsableName(Class<?> clazz) {
+-        String name = ObfHelper.INSTANCE.deobfClassName(clazz.getName());
++        String name = MappingEnvironment.reobf() ? ObfHelper.INSTANCE.deobfClassName(clazz.getName()) : clazz.getName();
+         name = name.substring(name.lastIndexOf(".") + 1);
+         boolean flag = false;
+         // inner classes
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
++++ b/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
+@@ -0,0 +0,0 @@ import com.google.common.collect.ImmutableBiMap;
+ import com.mojang.logging.LogUtils;
+ import io.leangen.geantyref.TypeToken;
+ import io.papermc.paper.configuration.serializer.collections.MapSerializer;
++import io.papermc.paper.util.MappingEnvironment;
+ import io.papermc.paper.util.ObfHelper;
+ import net.minecraft.network.protocol.Packet;
+ import org.checkerframework.checker.nullness.qual.Nullable;
+@@ -0,0 +0,0 @@ public final class PacketClassSerializer extends ScalarSerializer<Class<? extend
+     @Override
+     protected @Nullable Object serialize(final Class<? extends Packet<?>> packetClass, final Predicate<Class<?>> typeSupported) {
+         final String name = packetClass.getName();
+-        @Nullable String mojName = ObfHelper.INSTANCE.mappingsByMojangName() == null ? name : MOJANG_TO_OBF.inverse().get(name); // if the mappings are null, running on moj-mapped server
++        @Nullable String mojName = ObfHelper.INSTANCE.mappingsByMojangName() == null || !MappingEnvironment.reobf() ? name : MOJANG_TO_OBF.inverse().get(name); // if the mappings are null, running on moj-mapped server
+         if (mojName == null && MOJANG_TO_OBF.containsKey(name)) {
+             mojName = name;
+         }
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java
+@@ -0,0 +0,0 @@
+ package io.papermc.paper.plugin.entrypoint.classloader;
+ 
+ import io.papermc.paper.plugin.configuration.PluginMeta;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.ClassWriter;
+ 
+ // Stub, implement in future.
+ public class PaperClassloaderBytecodeModifier implements ClassloaderBytecodeModifier {
+ 
+     @Override
+     public byte[] modify(PluginMeta configuration, byte[] bytecode) {
+-        return bytecode;
++        ClassReader classReader = new ClassReader(bytecode);
++        ClassWriter classWriter = new ClassWriter(classReader, 0);
++        classReader.accept(io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(classWriter), 0);
++        return classWriter.toByteArray();
+     }
+ }
+diff --git a/src/main/java/io/papermc/paper/pluginremap/reflect/PaperReflection.java b/src/main/java/io/papermc/paper/pluginremap/reflect/PaperReflection.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/pluginremap/reflect/PaperReflection.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.pluginremap.reflect;
++
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.util.MappingEnvironment;
++import io.papermc.paper.util.ObfHelper;
++import io.papermc.reflectionrewriter.runtime.AbstractDefaultRulesReflectionProxy;
++import io.papermc.reflectionrewriter.runtime.DefineClassReflectionProxy;
++import java.lang.invoke.MethodHandles;
++import java.nio.ByteBuffer;
++import java.security.CodeSource;
++import java.security.ProtectionDomain;
++import java.util.Map;
++import java.util.Objects;
++import java.util.stream.Collectors;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.ClassWriter;
++import org.slf4j.Logger;
++
++// todo proper inheritance handling
++@SuppressWarnings("unused")
++@DefaultQualifier(NonNull.class)
++public final class PaperReflection extends AbstractDefaultRulesReflectionProxy implements DefineClassReflectionProxy {
++    // concat to avoid being rewritten by shadow
++    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final String CB_PACKAGE_PREFIX = "org.bukkit.".concat("craftbukkit.");
++    private static final String LEGACY_CB_PACKAGE_PREFIX = "org.bukkit.".concat("craftbukkit.") + MappingEnvironment.LEGACY_CB_VERSION + ".";
++
++    private final DefineClassReflectionProxy defineClassProxy;
++    private final Map<String, ObfHelper.ClassMapping> mappingsByMojangName;
++    private final Map<String, ObfHelper.ClassMapping> mappingsByObfName;
++    // Reflection does not care about method return values, so this map removes the return value descriptor from the key
++    private final Map<String, Map<String, String>> strippedMethodMappings;
++
++    PaperReflection() {
++        this.defineClassProxy = DefineClassReflectionProxy.create(PaperReflection::processClass);
++        if (!MappingEnvironment.hasMappings()) {
++            this.mappingsByMojangName = Map.of();
++            this.mappingsByObfName = Map.of();
++            this.strippedMethodMappings = Map.of();
++            return;
++        }
++        final ObfHelper obfHelper = ObfHelper.INSTANCE;
++        this.mappingsByMojangName = Objects.requireNonNull(obfHelper.mappingsByMojangName(), "mappingsByMojangName");
++        this.mappingsByObfName = Objects.requireNonNull(obfHelper.mappingsByObfName(), "mappingsByObfName");
++        this.strippedMethodMappings = this.mappingsByMojangName.entrySet().stream().collect(Collectors.toUnmodifiableMap(
++            Map.Entry::getKey,
++            entry -> entry.getValue().strippedMethods()
++        ));
++    }
++
++    @Override
++    protected String mapClassName(final String name) {
++        final ObfHelper.@Nullable ClassMapping mapping = this.mappingsByObfName.get(name);
++        return mapping != null ? mapping.mojangName() : removeCraftBukkitRelocation(name);
++    }
++
++    @Override
++    protected String mapDeclaredMethodName(final Class<?> clazz, final String name, final Class<?>... parameterTypes) {
++        final @Nullable Map<String, String> mapping = this.strippedMethodMappings.get(clazz.getName());
++        if (mapping == null) {
++            return name;
++        }
++        return mapping.getOrDefault(strippedMethodKey(name, parameterTypes), name);
++    }
++
++    @Override
++    protected String mapMethodName(final Class<?> clazz, final String name, final Class<?>... parameterTypes) {
++        final @Nullable String mapped = this.findMappedMethodName(clazz, name, parameterTypes);
++        return mapped != null ? mapped : name;
++    }
++
++    @Override
++    protected String mapDeclaredFieldName(final Class<?> clazz, final String name) {
++        final ObfHelper.@Nullable ClassMapping mapping = this.mappingsByMojangName.get(clazz.getName());
++        if (mapping == null) {
++            return name;
++        }
++        return mapping.fieldsByObf().getOrDefault(name, name);
++    }
++
++    @Override
++    protected String mapFieldName(final Class<?> clazz, final String name) {
++        final @Nullable String mapped = this.findMappedFieldName(clazz, name);
++        return mapped != null ? mapped : name;
++    }
++
++    private @Nullable String findMappedMethodName(final Class<?> clazz, final String name, final Class<?>... parameterTypes) {
++        final Map<String, String> map = this.strippedMethodMappings.get(clazz.getName());
++        @Nullable String mapped = null;
++        if (map != null) {
++            mapped = map.get(strippedMethodKey(name, parameterTypes));
++            if (mapped != null) {
++                return mapped;
++            }
++        }
++        // JVM checks super before interfaces
++        final Class<?> superClass = clazz.getSuperclass();
++        if (superClass != null) {
++            mapped = this.findMappedMethodName(superClass, name, parameterTypes);
++        }
++        if (mapped == null) {
++            for (final Class<?> i : clazz.getInterfaces()) {
++                mapped = this.findMappedMethodName(i, name, parameterTypes);
++                if (mapped != null) {
++                    break;
++                }
++            }
++        }
++        return mapped;
++    }
++
++    private @Nullable String findMappedFieldName(final Class<?> clazz, final String name) {
++        final ObfHelper.ClassMapping mapping = this.mappingsByMojangName.get(clazz.getName());
++        @Nullable String mapped = null;
++        if (mapping != null) {
++            mapped = mapping.fieldsByObf().get(name);
++            if (mapped != null) {
++                return mapped;
++            }
++        }
++        // The JVM checks super before interfaces
++        final Class<?> superClass = clazz.getSuperclass();
++        if (superClass != null) {
++            mapped = this.findMappedFieldName(superClass, name);
++        }
++        if (mapped == null) {
++            for (final Class<?> i : clazz.getInterfaces()) {
++                mapped = this.findMappedFieldName(i, name);
++                if (mapped != null) {
++                    break;
++                }
++            }
++        }
++        return mapped;
++    }
++
++    private static String strippedMethodKey(final String methodName, final Class<?>... parameterTypes) {
++        return methodName + parameterDescriptor(parameterTypes);
++    }
++
++    private static String parameterDescriptor(final Class<?>... parameterTypes) {
++        final StringBuilder builder = new StringBuilder();
++        builder.append('(');
++        for (final Class<?> parameterType : parameterTypes) {
++            builder.append(parameterType.descriptorString());
++        }
++        builder.append(')');
++        return builder.toString();
++    }
++
++    private static String removeCraftBukkitRelocation(final String name) {
++        if (MappingEnvironment.hasMappings()) {
++            // Relocation is applied in reobf, and when mappings are present they handle the relocation
++            return name;
++        }
++        if (name.startsWith(LEGACY_CB_PACKAGE_PREFIX)) {
++            return CB_PACKAGE_PREFIX + name.substring(LEGACY_CB_PACKAGE_PREFIX.length());
++        }
++        return name;
++    }
++
++    @Override
++    public Class<?> defineClass(final Object loader, final byte[] b, final int off, final int len) throws ClassFormatError {
++        return this.defineClassProxy.defineClass(loader, b, off, len);
++    }
++
++    @Override
++    public Class<?> defineClass(final Object loader, final String name, final byte[] b, final int off, final int len) throws ClassFormatError {
++        return this.defineClassProxy.defineClass(loader, name, b, off, len);
++    }
++
++    @Override
++    public Class<?> defineClass(final Object loader, final @Nullable String name, final byte[] b, final int off, final int len, final @Nullable ProtectionDomain protectionDomain) throws ClassFormatError {
++        return this.defineClassProxy.defineClass(loader, name, b, off, len, protectionDomain);
++    }
++
++    @Override
++    public Class<?> defineClass(final Object loader, final String name, final ByteBuffer b, final ProtectionDomain protectionDomain) throws ClassFormatError {
++        return this.defineClassProxy.defineClass(loader, name, b, protectionDomain);
++    }
++
++    @Override
++    public Class<?> defineClass(final Object secureLoader, final String name, final byte[] b, final int off, final int len, final CodeSource cs) {
++        return this.defineClassProxy.defineClass(secureLoader, name, b, off, len, cs);
++    }
++
++    @Override
++    public Class<?> defineClass(final Object secureLoader, final String name, final ByteBuffer b, final CodeSource cs) {
++        return this.defineClassProxy.defineClass(secureLoader, name, b, cs);
++    }
++
++    @Override
++    public Class<?> defineClass(final MethodHandles.Lookup lookup, final byte[] bytes) throws IllegalAccessException {
++        return this.defineClassProxy.defineClass(lookup, bytes);
++    }
++
++    // todo apply bytecode remap here as well
++    private static byte[] processClass(final byte[] bytes) {
++        try {
++            final ClassReader reader = new ClassReader(bytes);
++            final ClassWriter writer = new ClassWriter(reader, 0);
++            reader.accept(ReflectionRemapper.visitor(writer), 0);
++            return writer.toByteArray();
++        } catch (final Exception ex) {
++            LOGGER.warn("Failed to process class bytes", ex);
++            return bytes;
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/pluginremap/reflect/ReflectionRemapper.java b/src/main/java/io/papermc/paper/pluginremap/reflect/ReflectionRemapper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/pluginremap/reflect/ReflectionRemapper.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.pluginremap.reflect;
++
++import io.papermc.asm.ClassInfoProvider;
++import io.papermc.asm.RewriteRuleVisitorFactory;
++import io.papermc.paper.util.MappingEnvironment;
++import io.papermc.reflectionrewriter.BaseReflectionRules;
++import io.papermc.reflectionrewriter.DefineClassRule;
++import io.papermc.reflectionrewriter.proxygenerator.ProxyGenerator;
++import java.lang.invoke.MethodHandles;
++import java.lang.reflect.Method;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.objectweb.asm.ClassVisitor;
++import org.objectweb.asm.Opcodes;
++
++@DefaultQualifier(NonNull.class)
++public final class ReflectionRemapper {
++    private static final String PAPER_REFLECTION_HOLDER = "io.papermc.paper.pluginremap.reflect.PaperReflectionHolder";
++    private static final String PAPER_REFLECTION_HOLDER_DESC = PAPER_REFLECTION_HOLDER.replace('.', '/');
++    private static final RewriteRuleVisitorFactory VISITOR_FACTORY = RewriteRuleVisitorFactory.create(
++        Opcodes.ASM9,
++        chain -> chain.then(new BaseReflectionRules(PAPER_REFLECTION_HOLDER).rules())
++            .then(DefineClassRule.create(PAPER_REFLECTION_HOLDER_DESC, true)),
++        ClassInfoProvider.basic()
++    );
++
++    static {
++        if (!MappingEnvironment.reobf()) {
++            setupProxy();
++        }
++    }
++
++    private ReflectionRemapper() {
++    }
++
++    public static ClassVisitor visitor(final ClassVisitor parent) {
++        if (MappingEnvironment.reobf()) {
++            return parent;
++        }
++        return VISITOR_FACTORY.createVisitor(parent);
++    }
++
++    private static void setupProxy() {
++        try {
++            final byte[] bytes = ProxyGenerator.generateProxy(PaperReflection.class, PAPER_REFLECTION_HOLDER_DESC);
++            final MethodHandles.Lookup lookup = MethodHandles.lookup();
++            final Class<?> generated = lookup.defineClass(bytes);
++            final Method init = generated.getDeclaredMethod("init", PaperReflection.class);
++            init.invoke(null, new PaperReflection());
++        } catch (final ReflectiveOperationException ex) {
++            throw new RuntimeException(ex);
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/MappingEnvironment.java b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/util/MappingEnvironment.java
++++ b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
+@@ -0,0 +0,0 @@ import org.checkerframework.framework.qual.DefaultQualifier;
+ 
+ @DefaultQualifier(NonNull.class)
+ public final class MappingEnvironment {
++    public static final String LEGACY_CB_VERSION = "v1_20_R3";
+     private static final @Nullable String MAPPINGS_HASH = readMappingsHash();
+     private static final boolean REOBF = checkReobf();
+ 
+diff --git a/src/main/java/io/papermc/paper/util/ObfHelper.java b/src/main/java/io/papermc/paper/util/ObfHelper.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/util/ObfHelper.java
++++ b/src/main/java/io/papermc/paper/util/ObfHelper.java
+@@ -0,0 +0,0 @@ package io.papermc.paper.util;
+ 
+ import java.io.IOException;
+ import java.io.InputStream;
+-import java.io.InputStreamReader;
+-import java.nio.charset.StandardCharsets;
+ import java.util.HashMap;
+ import java.util.HashSet;
+ import java.util.Map;
+ import java.util.Objects;
+ import java.util.Set;
+-import java.util.function.Function;
+ import java.util.stream.Collectors;
+-import net.fabricmc.mappingio.MappingReader;
+-import net.fabricmc.mappingio.format.MappingFormat;
+-import net.fabricmc.mappingio.tree.MappingTree;
+-import net.fabricmc.mappingio.tree.MemoryMappingTree;
++import net.neoforged.srgutils.IMappingFile;
+ import org.checkerframework.checker.nullness.qual.NonNull;
+ import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.checkerframework.framework.qual.DefaultQualifier;
+@@ -0,0 +0,0 @@ import org.checkerframework.framework.qual.DefaultQualifier;
+ public enum ObfHelper {
+     INSTANCE;
+ 
+-    public static final String MOJANG_PLUS_YARN_NAMESPACE = "mojang+yarn";
+-    public static final String SPIGOT_NAMESPACE = "spigot";
+-
+     private final @Nullable Map<String, ClassMapping> mappingsByObfName;
+     private final @Nullable Map<String, ClassMapping> mappingsByMojangName;
+ 
+@@ -0,0 +0,0 @@ public enum ObfHelper {
+             return null;
+         }
+         try (final InputStream mappingsInputStream = MappingEnvironment.mappingsStream()) {
+-            final MemoryMappingTree tree = new MemoryMappingTree();
+-            MappingReader.read(new InputStreamReader(mappingsInputStream, StandardCharsets.UTF_8), MappingFormat.TINY_2_FILE, tree);
++            final IMappingFile mappings = IMappingFile.load(mappingsInputStream); // Mappings are mojang->spigot
+             final Set<ClassMapping> classes = new HashSet<>();
+ 
+             final StringPool pool = new StringPool();
+-            for (final MappingTree.ClassMapping cls : tree.getClasses()) {
++            for (final IMappingFile.IClass cls : mappings.getClasses()) {
+                 final Map<String, String> methods = new HashMap<>();
++                final Map<String, String> fields = new HashMap<>();
++                final Map<String, String> strippedMethods = new HashMap<>();
+ 
+-                for (final MappingTree.MethodMapping methodMapping : cls.getMethods()) {
++                for (final IMappingFile.IMethod methodMapping : cls.getMethods()) {
+                     methods.put(
+                         pool.string(methodKey(
+-                            Objects.requireNonNull(methodMapping.getName(SPIGOT_NAMESPACE)),
+-                            Objects.requireNonNull(methodMapping.getDesc(SPIGOT_NAMESPACE))
++                            Objects.requireNonNull(methodMapping.getMapped()),
++                            Objects.requireNonNull(methodMapping.getMappedDescriptor())
+                         )),
+-                        pool.string(Objects.requireNonNull(methodMapping.getName(MOJANG_PLUS_YARN_NAMESPACE)))
++                        pool.string(Objects.requireNonNull(methodMapping.getOriginal()))
++                    );
++
++                    strippedMethods.put(
++                        pool.string(pool.string(strippedMethodKey(
++                            methodMapping.getMapped(),
++                            methodMapping.getDescriptor()
++                        ))),
++                        pool.string(methodMapping.getOriginal())
++                    );
++                }
++                for (final IMappingFile.IField field : cls.getFields()) {
++                    fields.put(
++                        pool.string(field.getMapped()),
++                        pool.string(field.getOriginal())
+                     );
+                 }
+ 
+                 final ClassMapping map = new ClassMapping(
+-                    Objects.requireNonNull(cls.getName(SPIGOT_NAMESPACE)).replace('/', '.'),
+-                    Objects.requireNonNull(cls.getName(MOJANG_PLUS_YARN_NAMESPACE)).replace('/', '.'),
+-                    Map.copyOf(methods)
++                    Objects.requireNonNull(cls.getMapped()).replace('/', '.'),
++                    Objects.requireNonNull(cls.getOriginal()).replace('/', '.'),
++                    Map.copyOf(methods),
++                    Map.copyOf(fields),
++                    Map.copyOf(strippedMethods)
+                 );
+                 classes.add(map);
+             }
+ 
+             return Set.copyOf(classes);
+         } catch (final IOException ex) {
+-            System.err.println("Failed to load mappings for stacktrace deobfuscation.");
++            System.err.println("Failed to load mappings.");
+             ex.printStackTrace();
+             return null;
+         }
+     }
+ 
+-    public static String methodKey(final String obfName, final String obfDescriptor) {
+-        return obfName + obfDescriptor;
++    public static String strippedMethodKey(final String methodName, final String methodDescriptor) {
++        final String methodKey = methodKey(methodName, methodDescriptor);
++        final int returnDescriptorEnd = methodKey.indexOf(')');
++        return methodKey.substring(0, returnDescriptorEnd + 1);
+     }
+ 
+-    private static final class StringPool {
+-        private final Map<String, String> pool = new HashMap<>();
+-
+-        public String string(final String string) {
+-            return this.pool.computeIfAbsent(string, Function.identity());
+-        }
++    public static String methodKey(final String methodName, final String methodDescriptor) {
++        return methodName + methodDescriptor;
+     }
+ 
+     public record ClassMapping(
+         String obfName,
+         String mojangName,
+-        Map<String, String> methodsByObf
++        Map<String, String> methodsByObf,
++        Map<String, String> fieldsByObf,
++        // obf name with mapped desc to mapped name. return value is excluded from desc as reflection doesn't use it
++        Map<String, String> strippedMethods
+     ) {}
+ }
+diff --git a/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
++++ b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
+@@ -0,0 +0,0 @@
+ package io.papermc.paper.util;
+ 
+ import io.papermc.paper.configuration.GlobalConfiguration;
+-import it.unimi.dsi.fastutil.ints.IntArrayList;
+-import it.unimi.dsi.fastutil.ints.IntList;
++import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.util.Collections;
+-import java.util.HashMap;
+ import java.util.LinkedHashMap;
+ import java.util.Map;
+ import org.checkerframework.checker.nullness.qual.NonNull;
+@@ -0,0 +0,0 @@ import org.objectweb.asm.Opcodes;
+ public enum StacktraceDeobfuscator {
+     INSTANCE;
+ 
+-    private final Map<Class<?>, Map<String, IntList>> lineMapCache = Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
++    private final Map<Class<?>, Int2ObjectMap<String>> lineMapCache = Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
+         @Override
+-        protected boolean removeEldestEntry(final Map.Entry<Class<?>, Map<String, IntList>> eldest) {
++        protected boolean removeEldestEntry(final Map.Entry<Class<?>, Int2ObjectMap<String>> eldest) {
+             return this.size() > 127;
+         }
+     });
+ 
+     public void deobfuscateThrowable(final Throwable throwable) {
++        if (!MappingEnvironment.reobf()) {
++            return;
++        }
+         if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
+             return;
+         }
+@@ -0,0 +0,0 @@ public enum StacktraceDeobfuscator {
+     }
+ 
+     public StackTraceElement[] deobfuscateStacktrace(final StackTraceElement[] traceElements) {
++        if (!MappingEnvironment.reobf()) {
++            return traceElements;
++        }
+         if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
+             return traceElements;
+         }
+@@ -0,0 +0,0 @@ public enum StacktraceDeobfuscator {
+     }
+ 
+     private @Nullable String determineMethodForLine(final Class<?> clazz, final int lineNumber) {
+-        final Map<String, IntList> lineMap = this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscator::buildLineMap);
+-        for (final var entry : lineMap.entrySet()) {
+-            final String methodKey = entry.getKey();
+-            final IntList lines = entry.getValue();
+-            for (int i = 0, linesSize = lines.size(); i < linesSize; i++) {
+-                final int num = lines.getInt(i);
+-                if (num == lineNumber) {
+-                    return methodKey;
+-                }
+-            }
+-        }
+-        return null;
++        return this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscator::buildLineMap).get(lineNumber);
+     }
+ 
+     private static String sourceFileName(final String fullClassName) {
+@@ -0,0 +0,0 @@ public enum StacktraceDeobfuscator {
+         return rootClassName + ".java";
+     }
+ 
+-    private static Map<String, IntList> buildLineMap(final Class<?> key) {
+-        final Map<String, IntList> lineMap = new HashMap<>();
++    private static Int2ObjectMap<String> buildLineMap(final Class<?> key) {
++        final StringPool pool = new StringPool();
++        final Int2ObjectMap<String> lineMap = new Int2ObjectOpenHashMap<>();
+         final class LineCollectingMethodVisitor extends MethodVisitor {
+-            private final IntList lines = new IntArrayList();
+             private final String name;
+             private final String descriptor;
+ 
+-            LineCollectingMethodVisitor(String name, String descriptor) {
++            LineCollectingMethodVisitor(final String name, final String descriptor) {
+                 super(Opcodes.ASM9);
+                 this.name = name;
+                 this.descriptor = descriptor;
+             }
+ 
+             @Override
+-            public void visitLineNumber(int line, Label start) {
+-                super.visitLineNumber(line, start);
+-                this.lines.add(line);
+-            }
+-
+-            @Override
+-            public void visitEnd() {
+-                super.visitEnd();
+-                lineMap.put(ObfHelper.methodKey(this.name, this.descriptor), this.lines);
++            public void visitLineNumber(final int line, final Label start) {
++                lineMap.put(line, pool.string(ObfHelper.methodKey(this.name, this.descriptor)));
+             }
+         }
+         final ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9) {
+             @Override
+-            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
++            public MethodVisitor visitMethod(final int access, final String name, final String descriptor, final String signature, final String[] exceptions) {
+                 return new LineCollectingMethodVisitor(name, descriptor);
+             }
+         };
+diff --git a/src/main/java/io/papermc/paper/util/StringPool.java b/src/main/java/io/papermc/paper/util/StringPool.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/StringPool.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.util;
++
++import java.util.HashMap;
++import java.util.Map;
++import java.util.function.Function;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++/**
++ * De-duplicates {@link String} instances without using {@link String#intern()}.
++ *
++ * <p>Interning may not be desired as we may want to use the heap for our pool,
++ * so it can be garbage collected as normal, etc.</p>
++ *
++ * <p>Additionally, interning can be slow due to the potentially large size of the
++ * pool (as it is shared for the entire JVM), and because most JVMs implement
++ * it using JNI.</p>
++ */
++@DefaultQualifier(NonNull.class)
++public final class StringPool {
++    private final Map<String, String> pool;
++
++    public StringPool() {
++        this(new HashMap<>());
++    }
++
++    public StringPool(final Map<String, String> map) {
++        this.pool = map;
++    }
++
++    public String string(final String string) {
++        return this.pool.computeIfAbsent(string, Function.identity());
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
+@@ -0,0 +0,0 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+         this.maxDuration = maxRunTime;
+         this.entryCondition = requiredMemoryState;
+         // Paper start - configurable behavior tick rate and timings
+-        String key = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName());
++        String key = io.papermc.paper.util.MappingEnvironment.reobf() ? io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName()) : this.getClass().getName();
+         int lastSeparator = key.lastIndexOf('.');
+         if (lastSeparator != -1) {
+             key = key.substring(lastSeparator + 1);
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+@@ -0,0 +0,0 @@ public abstract class Sensor<E extends LivingEntity> {
+ 
+     public Sensor(int senseInterval) {
+         // Paper start - configurable sensor tick rate and timings
+-        String key = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName());
++        String key = io.papermc.paper.util.MappingEnvironment.reobf() ? io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName()) : this.getClass().getName();
+         int lastSeparator = key.lastIndexOf('.');
+         if (lastSeparator != -1) {
+             key = key.substring(lastSeparator + 1);
+diff --git a/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java b/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
++++ b/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
+@@ -0,0 +0,0 @@ public class CollectingNeighborUpdater implements NeighborUpdater {
+         }
+     }
+ 
+-    interface NeighborUpdates {
++    public interface NeighborUpdates { // Paper - TODO make package-private again (it is just made public for testing LambdaMetafactory remapping)
+         boolean runNext(Level world);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -0,0 +0,0 @@ public class Commodore {
+ 
+     // Paper start - Plugin rewrites
+     private static final String CB_PACKAGE = org.bukkit.Bukkit.getServer().getClass().getPackageName().replace('.', '/');
+-    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
+-    private static Map<String, String> initReplacementsMap() {
+-        Map<String, String> getAndRemove = new HashMap<>();
+-        // Be wary of maven shade's relocations
+-
+-        final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
+-        if (Boolean.getBoolean( "debug.rewriteForIde") && manifest != null)
+-        {
+-            // unversion incoming calls for pre-relocate debug work
+-            final String NMS_REVISION_PACKAGE = "v" + manifest.getMainAttributes().getValue("CraftBukkit-Package-Version") + "/";
+-
+-            getAndRemove.put("org/bukkit/".concat("craftbukkit/" + NMS_REVISION_PACKAGE), NMS_REVISION_PACKAGE);
+-        }
+-
+-        return getAndRemove;
+-    }
++    private static final String CB_PACKAGE_PREFIX = "org/bukkit/".concat("craftbukkit/");
++    private static final String LEGACY_CB_PACKAGE_PREFIX = CB_PACKAGE_PREFIX + io.papermc.paper.util.MappingEnvironment.LEGACY_CB_VERSION + "/";
+ 
+     @Nonnull
+     private static String getOriginalOrRewrite(@Nonnull String original)
+     {
+-        String rewrite = null;
+-        for ( Map.Entry<String, String> entry : SEARCH_AND_REMOVE.entrySet() )
+-        {
+-            if ( original.contains( entry.getKey() ) )
+-            {
+-                rewrite = original.replace( entry.getValue(), "" );
++        // Relocation is applied in reobf, and when mappings are present they handle the relocation
++        if (!io.papermc.paper.util.MappingEnvironment.reobf() && !io.papermc.paper.util.MappingEnvironment.hasMappings()) {
++            if (original.contains(LEGACY_CB_PACKAGE_PREFIX)) {
++                original = original.replace(LEGACY_CB_PACKAGE_PREFIX, CB_PACKAGE_PREFIX);
+             }
+         }
+ 
+-        return rewrite != null ? rewrite : original;
++        return original;
+     }
+     // Paper end - Plugin rewrites
+ 
+@@ -0,0 +0,0 @@ public class Commodore {
+         ClassReader cr = new ClassReader(b);
+         ClassWriter cw = new ClassWriter(cr, 0);
+ 
+-        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
++        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(cw)) { // Paper
+ 
+             // Paper start - Rewrite plugins
+             @Override

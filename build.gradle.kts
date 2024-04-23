@@ -11,7 +11,7 @@ plugins {
     java
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
-    id("io.papermc.paperweight.core") version "1.5.15"
+    id("io.papermc.paperweight.core") version "1.6.0-SNAPSHOT"
 }
 
 allprojects {
@@ -166,6 +166,7 @@ if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()
         appliedPatches = file("patches/server")
         unappliedPatches = file("patches/unapplied/server")
         applyTaskName = "applyServerPatches"
+        patchedDir = "Paper-Server"
     }
 }
 
@@ -182,6 +183,9 @@ abstract class RebasePatches : BaseTask() {
 
     @get:Input
     abstract val applyTaskName: Property<String>
+
+    @get:Input
+    abstract val patchedDir: Property<String>
 
     private fun unapplied(): List<Path> =
         unappliedPatches.path.listDirectoryEntries("*.patch").sortedBy { it.name }
@@ -245,6 +249,8 @@ abstract class RebasePatches : BaseTask() {
                 }
             }
 
+            // Delete the build file before resetting the AM session in case it has compilation errors
+            projectDir.path.resolve(patchedDir.get()).resolve("build.gradle.kts").deleteIfExists()
             // Apply again to reset the am session (so it ends on the failed patch, to allow us to rebuild after fixing it)
             val apply2 = ProcessBuilder()
                 .directory(projectDir.path)
