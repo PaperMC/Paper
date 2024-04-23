@@ -173,7 +173,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
     public static final PotionEffectType DOLPHINS_GRACE = getPotionEffectType(30, "dolphins_grace");
 
     /**
-     * Triggers a raid when the player enters a village.<br>
+     * Triggers an ominous event when the player enters a village or trial chambers.<br>
      * oof.
      */
     public static final PotionEffectType BAD_OMEN = getPotionEffectType(31, "bad_omen");
@@ -188,6 +188,36 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      * Causes the player's vision to dim occasionally.
      */
     public static final PotionEffectType DARKNESS = getPotionEffectType(33, "darkness");
+
+    /**
+     * Causes trial spawners to become ominous.
+     */
+    public static final PotionEffectType TRIAL_OMEN = getPotionEffectType(34, "trial_omen");
+
+    /**
+     * Triggers a raid when a player enters a village.
+     */
+    public static final PotionEffectType RAID_OMEN = getPotionEffectType(35, "raid_omen");
+
+    /**
+     * Emits a wind burst upon death.
+     */
+    public static final PotionEffectType WIND_CHARGED = getPotionEffectType(36, "wind_charged");
+
+    /**
+     * Creates cobwebs upon death.
+     */
+    public static final PotionEffectType WEAVING = getPotionEffectType(37, "weaving");
+
+    /**
+     * Causes slimes to spawn upon death.
+     */
+    public static final PotionEffectType OOZING = getPotionEffectType(38, "oozing");
+
+    /**
+     * Chance of spawning silverfish when hurt.
+     */
+    public static final PotionEffectType INFESTED = getPotionEffectType(39, "infested");
 
     @NotNull
     private static PotionEffectType getPotionEffectType(int typeId, @NotNull String key) {

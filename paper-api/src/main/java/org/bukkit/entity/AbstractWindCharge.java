@@ -8,6 +8,11 @@ import org.jetbrains.annotations.ApiStatus;
  */
 @MinecraftExperimental
 @ApiStatus.Experimental
-public interface WindCharge extends AbstractWindCharge {
+public interface AbstractWindCharge extends Fireball {
+
+    /**
+     * Immediately explode this WindCharge.
+     */
+    public void explode();
 
 }

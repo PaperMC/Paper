@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.util.NumberConversions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,17 +21,21 @@ public class AttributeModifier implements ConfigurationSerializable {
     private final String name;
     private final double amount;
     private final Operation operation;
-    private final EquipmentSlot slot;
+    private final EquipmentSlotGroup slot;
 
     public AttributeModifier(@NotNull String name, double amount, @NotNull Operation operation) {
         this(UUID.randomUUID(), name, amount, operation);
     }
 
     public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation) {
-        this(uuid, name, amount, operation, null);
+        this(uuid, name, amount, operation, (EquipmentSlotGroup) null);
     }
 
     public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation, @Nullable EquipmentSlot slot) {
+        this(uuid, name, amount, operation, (slot) == null ? EquipmentSlotGroup.ANY : slot.getGroup());
+    }
+
+    public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation, @NotNull EquipmentSlotGroup slot) {
         Preconditions.checkArgument(uuid != null, "UUID cannot be null");
         Preconditions.checkArgument(name != null, "Name cannot be null");
         Preconditions.checkArgument(operation != null, "Operation cannot be null");
@@ -85,9 +90,22 @@ public class AttributeModifier implements ConfigurationSerializable {
      * or null if this modifier is applicable for any slot.
      *
      * @return the slot
+     * @deprecated use {@link #getSlotGroup()}
      */
     @Nullable
+    @Deprecated
     public EquipmentSlot getSlot() {
+        return slot.getExample();
+    }
+
+    /**
+     * Get the {@link EquipmentSlot} this AttributeModifier is active on,
+     * or null if this modifier is applicable for any slot.
+     *
+     * @return the slot
+     */
+    @NotNull
+    public EquipmentSlotGroup getSlotGroup() {
         return slot;
     }
 
@@ -99,8 +117,8 @@ public class AttributeModifier implements ConfigurationSerializable {
         data.put("name", name);
         data.put("operation", operation.ordinal());
         data.put("amount", amount);
-        if (slot != null) {
-            data.put("slot", slot.name());
+        if (slot != null && slot != EquipmentSlotGroup.ANY) {
+            data.put("slot", slot.toString());
         }
         return data;
     }
@@ -133,14 +151,24 @@ public class AttributeModifier implements ConfigurationSerializable {
                 + ", name=" + this.name
                 + ", operation=" + this.operation.name()
                 + ", amount=" + this.amount
-                + ", slot=" + (this.slot != null ? this.slot.name() : "")
+                + ", slot=" + (this.slot != null ? this.slot.toString() : "")
                 + "}";
     }
 
     @NotNull
     public static AttributeModifier deserialize(@NotNull Map<String, Object> args) {
         if (args.containsKey("slot")) {
-            return new AttributeModifier(UUID.fromString((String) args.get("uuid")), (String) args.get("name"), NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))], EquipmentSlot.valueOf((args.get("slot").toString().toUpperCase())));
+            EquipmentSlotGroup slotGroup = EquipmentSlotGroup.getByName(args.get("slot").toString().toLowerCase());
+            if (slotGroup == null) {
+                slotGroup = EquipmentSlotGroup.ANY;
+
+                EquipmentSlot slot = EquipmentSlot.valueOf((args.get("slot").toString().toUpperCase()));
+                if (slot != null) {
+                    slotGroup = slot.getGroup();
+                }
+            }
+
+            return new AttributeModifier(UUID.fromString((String) args.get("uuid")), (String) args.get("name"), NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))], slotGroup);
         }
         return new AttributeModifier(UUID.fromString((String) args.get("uuid")), (String) args.get("name"), NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))]);
     }

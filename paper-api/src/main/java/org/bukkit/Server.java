@@ -999,6 +999,14 @@ public interface Server extends PluginMessageRecipient {
     public boolean isEnforcingSecureProfiles();
 
     /**
+     * Gets whether this server is allowing connections transferred from other
+     * servers.
+     *
+     * @return true if the server accepts transfers, false otherwise
+     */
+    public boolean isAcceptingTransfers();
+
+    /**
      * Gets whether the Server hide online players in server status.
      *
      * @return true if the server hide online players, false otherwise

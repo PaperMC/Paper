@@ -1,13 +1,12 @@
-package org.bukkit.entity;
+package org.bukkit.block;
 
 import org.bukkit.MinecraftExperimental;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Represents a Wind Charge.
+ * Represents a captured state of a trial spawner.
  */
 @MinecraftExperimental
 @ApiStatus.Experimental
-public interface WindCharge extends AbstractWindCharge {
-
+public interface Vault extends TileState {
 }

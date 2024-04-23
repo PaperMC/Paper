@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +16,6 @@ import org.jetbrains.annotations.Nullable;
  * the Creative mode inventory
  */
 public enum PotionType implements Keyed {
-    UNCRAFTABLE("empty"),
     WATER("water"),
     MUNDANE("mundane"),
     THICK("thick"),
@@ -58,6 +58,14 @@ public enum PotionType implements Keyed {
     STRONG_TURTLE_MASTER("strong_turtle_master"),
     SLOW_FALLING("slow_falling"),
     LONG_SLOW_FALLING("long_slow_falling"),
+    @MinecraftExperimental
+    WIND_CHARGED("wind_charged"),
+    @MinecraftExperimental
+    WEAVING("weaving"),
+    @MinecraftExperimental
+    OOZING("oozing"),
+    @MinecraftExperimental
+    INFESTED("infested"),
     ;
 
     private final NamespacedKey key;

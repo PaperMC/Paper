@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
@@ -15,6 +16,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Note;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
@@ -164,6 +166,48 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Nullable
     public InetSocketAddress getAddress();
+
+    /**
+     * Gets if this connection has been transferred from another server.
+     *
+     * @return true if the connection has been transferred
+     */
+    public boolean isTransferred();
+
+    /**
+     * Retrieves a cookie from this player.
+     *
+     * @param key the key identifying the cookie cookie
+     * @return a {@link CompletableFuture} that will be completed when the
+     * Cookie response is received or otherwise available. If the cookie is not
+     * set in the client, the {@link CompletableFuture} will complete with a
+     * null value.
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    CompletableFuture<byte[]> retrieveCookie(@NotNull NamespacedKey key);
+
+    /**
+     * Stores a cookie in this player's client.
+     *
+     * @param key the key identifying the cookie cookie
+     * @param value the data to store in the cookie
+     * @throws IllegalStateException if a cookie cannot be stored at this time
+     */
+    @ApiStatus.Experimental
+    void storeCookie(@NotNull NamespacedKey key, @NotNull byte[] value);
+
+    /**
+     * Requests this player to connect to a different server specified by host
+     * and port.
+     *
+     * @param host the host of the server to transfer to
+     * @param port the port of the server to transfer to
+     * @throws IllegalStateException if a transfer cannot take place at this
+     * time
+     */
+    @ApiStatus.Experimental
+    void transfer(@NotNull String host, int port);
 
     /**
      * Sends this sender a message raw

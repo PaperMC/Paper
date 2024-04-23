@@ -4,10 +4,9 @@ import org.bukkit.MinecraftExperimental;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Represents a Wind Charge.
+ * Represents a Bogged Skeleton.
  */
 @MinecraftExperimental
 @ApiStatus.Experimental
-public interface WindCharge extends AbstractWindCharge {
-
+public interface Bogged extends AbstractSkeleton {
 }

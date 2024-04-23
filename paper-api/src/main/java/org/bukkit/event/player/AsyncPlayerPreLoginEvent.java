@@ -18,19 +18,26 @@ public class AsyncPlayerPreLoginEvent extends Event {
     private final String name;
     private final InetAddress ipAddress;
     private final UUID uniqueId;
+    private final boolean transferred;
 
     @Deprecated
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
         this(name, ipAddress, null);
     }
 
+    @Deprecated
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
+        this(name, ipAddress, uniqueId, false);
+    }
+
+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred) {
         super(true);
         this.result = Result.ALLOWED;
         this.message = "";
         this.name = name;
         this.ipAddress = ipAddress;
         this.uniqueId = uniqueId;
+        this.transferred = transferred;
     }
 
     /**
@@ -161,6 +168,15 @@ public class AsyncPlayerPreLoginEvent extends Event {
     @NotNull
     public UUID getUniqueId() {
         return uniqueId;
+    }
+
+    /**
+     * Gets if this connection has been transferred from another server.
+     *
+     * @return true if the connection has been transferred
+     */
+    public boolean isTransferred() {
+        return transferred;
     }
 
     @NotNull

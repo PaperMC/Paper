@@ -3,6 +3,7 @@ package org.bukkit.enchantments;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import org.bukkit.Keyed;
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
@@ -103,7 +104,7 @@ public abstract class Enchantment implements Keyed, Translatable {
     /**
      * Increases damage against targets when using a sweep attack
      */
-    public static final Enchantment SWEEPING_EDGE = getEnchantment("sweeping");
+    public static final Enchantment SWEEPING_EDGE = getEnchantment("sweeping_edge");
 
     /**
      * Increases the rate at which you mine/dig
@@ -193,6 +194,24 @@ public abstract class Enchantment implements Keyed, Translatable {
     public static final Enchantment PIERCING = getEnchantment("piercing");
 
     /**
+     * Increases fall damage of maces
+     */
+    @MinecraftExperimental
+    public static final Enchantment DENSITY = getEnchantment("density");
+
+    /**
+     * Reduces armor effectiveness against maces
+     */
+    @MinecraftExperimental
+    public static final Enchantment BREACH = getEnchantment("breach");
+
+    /**
+     * Emits wind burst upon hitting enemy
+     */
+    @MinecraftExperimental
+    public static final Enchantment WIND_BURST = getEnchantment("wind_burst");
+
+    /**
      * Allows mending the item using experience orbs
      */
     public static final Enchantment MENDING = getEnchantment("mending");
@@ -250,8 +269,10 @@ public abstract class Enchantment implements Keyed, Translatable {
      * Gets the type of {@link ItemStack} that may fit this Enchantment.
      *
      * @return Target type of the Enchantment
+     * @deprecated enchantment groupings are now managed by tags, not categories
      */
     @NotNull
+    @Deprecated
     public abstract EnchantmentTarget getItemTarget();
 
     /**
@@ -373,8 +394,8 @@ public abstract class Enchantment implements Keyed, Translatable {
                 return "bane_of_arthropods";
             case "loot_bonus_mobs":
                 return "looting";
-            case "sweeping_edge":
-                return "sweeping";
+            case "sweeping":
+                return "sweeping_edge";
             case "dig_speed":
                 return "efficiency";
             case "durability":

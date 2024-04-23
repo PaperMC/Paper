@@ -758,8 +758,10 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * debuffs.
      *
      * @return the entity category
+     * @deprecated entity groupings are now managed by tags, not categories
      */
     @NotNull
+    @Deprecated
     public EntityCategory getCategory();
 
     /**

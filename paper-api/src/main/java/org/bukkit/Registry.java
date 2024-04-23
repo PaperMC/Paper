@@ -20,12 +20,14 @@ import org.bukkit.entity.Cat;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Villager;
+import org.bukkit.entity.Wolf;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.loot.LootTables;
+import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
@@ -264,6 +266,19 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Frog.Variant
      */
     Registry<Frog.Variant> FROG_VARIANT = new SimpleRegistry<>(Frog.Variant.class);
+    /**
+     * Wolf variants.
+     *
+     * @see Wolf.Variant
+     */
+    Registry<Wolf.Variant> WOLF_VARIANT = new SimpleRegistry<>(Wolf.Variant.class);
+    /**
+     * Map cursor types.
+     *
+     * @see MapCursor.Type
+     */
+    @ApiStatus.Internal
+    Registry<MapCursor.Type> MAP_DECORATION_TYPE = new SimpleRegistry<>(MapCursor.Type.class);
     /**
      * Game events.
      *

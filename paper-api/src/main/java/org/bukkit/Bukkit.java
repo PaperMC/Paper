@@ -1168,6 +1168,16 @@ public final class Bukkit {
     }
 
     /**
+     * Gets whether this server is allowing connections transferred from other
+     * servers.
+     *
+     * @return true if the server accepts transfers, false otherwise
+     */
+    public static boolean isAcceptingTransfers() {
+        return server.isAcceptingTransfers();
+    }
+
+    /**
      * Gets whether the Server hide online players in server status.
      *
      * @return true if the server hide online players, false otherwise

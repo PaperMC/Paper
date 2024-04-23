@@ -1556,7 +1556,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * or not.
      *
      * @return true if the world's spawn area will be kept loaded into memory.
+     * @deprecated use {@link GameRule#SPAWN_CHUNK_RADIUS} for finer control
      */
+    @Deprecated
     public boolean getKeepSpawnInMemory();
 
     /**
@@ -1565,7 +1567,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param keepLoaded if true then the world's spawn area will be kept
      *     loaded into memory.
+     * @deprecated use {@link GameRule#SPAWN_CHUNK_RADIUS} for finer control
      */
+    @Deprecated
     public void setKeepSpawnInMemory(boolean keepLoaded);
 
     /**

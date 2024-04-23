@@ -8,6 +8,6 @@ import org.jetbrains.annotations.ApiStatus;
  */
 @MinecraftExperimental
 @ApiStatus.Experimental
-public interface WindCharge extends AbstractWindCharge {
+public interface BreezeWindCharge extends AbstractWindCharge {
 
 }

@@ -203,6 +203,11 @@ public enum Sound implements Keyed {
     BLOCK_CHISELED_BOOKSHELF_STEP("block.chiseled_bookshelf.step"),
     BLOCK_CHORUS_FLOWER_DEATH("block.chorus_flower.death"),
     BLOCK_CHORUS_FLOWER_GROW("block.chorus_flower.grow"),
+    BLOCK_COBWEB_BREAK("block.cobweb.break"),
+    BLOCK_COBWEB_FALL("block.cobweb.fall"),
+    BLOCK_COBWEB_HIT("block.cobweb.hit"),
+    BLOCK_COBWEB_PLACE("block.cobweb.place"),
+    BLOCK_COBWEB_STEP("block.cobweb.step"),
     BLOCK_COMPARATOR_CLICK("block.comparator.click"),
     BLOCK_COMPOSTER_EMPTY("block.composter.empty"),
     BLOCK_COMPOSTER_FILL("block.composter.fill"),
@@ -354,6 +359,16 @@ public enum Sound implements Keyed {
     BLOCK_HANGING_SIGN_PLACE("block.hanging_sign.place"),
     BLOCK_HANGING_SIGN_STEP("block.hanging_sign.step"),
     BLOCK_HANGING_SIGN_WAXED_INTERACT_FAIL("block.hanging_sign.waxed_interact_fail"),
+    @MinecraftExperimental
+    BLOCK_HEAVY_CORE_BREAK("block.heavy_core.break"),
+    @MinecraftExperimental
+    BLOCK_HEAVY_CORE_FALL("block.heavy_core.fall"),
+    @MinecraftExperimental
+    BLOCK_HEAVY_CORE_HIT("block.heavy_core.hit"),
+    @MinecraftExperimental
+    BLOCK_HEAVY_CORE_PLACE("block.heavy_core.place"),
+    @MinecraftExperimental
+    BLOCK_HEAVY_CORE_STEP("block.heavy_core.step"),
     BLOCK_HONEY_BLOCK_BREAK("block.honey_block.break"),
     BLOCK_HONEY_BLOCK_FALL("block.honey_block.fall"),
     BLOCK_HONEY_BLOCK_HIT("block.honey_block.hit"),
@@ -684,9 +699,15 @@ public enum Sound implements Keyed {
     BLOCK_SWEET_BERRY_BUSH_PICK_BERRIES("block.sweet_berry_bush.pick_berries"),
     BLOCK_SWEET_BERRY_BUSH_PLACE("block.sweet_berry_bush.place"),
     @MinecraftExperimental
+    BLOCK_TRIAL_SPAWNER_ABOUT_TO_SPAWN_ITEM("block.trial_spawner.about_to_spawn_item"),
+    @MinecraftExperimental
     BLOCK_TRIAL_SPAWNER_AMBIENT("block.trial_spawner.ambient"),
     @MinecraftExperimental
+    BLOCK_TRIAL_SPAWNER_AMBIENT_CHARGED("block.trial_spawner.ambient_charged"),
+    @MinecraftExperimental
     BLOCK_TRIAL_SPAWNER_BREAK("block.trial_spawner.break"),
+    @MinecraftExperimental
+    BLOCK_TRIAL_SPAWNER_CHARGE_ACTIVATE("block.trial_spawner.charge_activate"),
     @MinecraftExperimental
     BLOCK_TRIAL_SPAWNER_CLOSE_SHUTTER("block.trial_spawner.close_shutter"),
     @MinecraftExperimental
@@ -701,6 +722,10 @@ public enum Sound implements Keyed {
     BLOCK_TRIAL_SPAWNER_OPEN_SHUTTER("block.trial_spawner.open_shutter"),
     @MinecraftExperimental
     BLOCK_TRIAL_SPAWNER_PLACE("block.trial_spawner.place"),
+    @MinecraftExperimental
+    BLOCK_TRIAL_SPAWNER_SPAWN_ITEM("block.trial_spawner.spawn_item"),
+    @MinecraftExperimental
+    BLOCK_TRIAL_SPAWNER_SPAWN_ITEM_BEGIN("block.trial_spawner.spawn_item_begin"),
     @MinecraftExperimental
     BLOCK_TRIAL_SPAWNER_SPAWN_MOB("block.trial_spawner.spawn_mob"),
     @MinecraftExperimental
@@ -724,6 +749,32 @@ public enum Sound implements Keyed {
     BLOCK_TUFF_HIT("block.tuff.hit"),
     BLOCK_TUFF_PLACE("block.tuff.place"),
     BLOCK_TUFF_STEP("block.tuff.step"),
+    @MinecraftExperimental
+    BLOCK_VAULT_ACTIVATE("block.vault.activate"),
+    @MinecraftExperimental
+    BLOCK_VAULT_AMBIENT("block.vault.ambient"),
+    @MinecraftExperimental
+    BLOCK_VAULT_BREAK("block.vault.break"),
+    @MinecraftExperimental
+    BLOCK_VAULT_CLOSE_SHUTTER("block.vault.close_shutter"),
+    @MinecraftExperimental
+    BLOCK_VAULT_DEACTIVATE("block.vault.deactivate"),
+    @MinecraftExperimental
+    BLOCK_VAULT_EJECT_ITEM("block.vault.eject_item"),
+    @MinecraftExperimental
+    BLOCK_VAULT_FALL("block.vault.fall"),
+    @MinecraftExperimental
+    BLOCK_VAULT_HIT("block.vault.hit"),
+    @MinecraftExperimental
+    BLOCK_VAULT_INSERT_ITEM("block.vault.insert_item"),
+    @MinecraftExperimental
+    BLOCK_VAULT_INSERT_ITEM_FAIL("block.vault.insert_item_fail"),
+    @MinecraftExperimental
+    BLOCK_VAULT_OPEN_SHUTTER("block.vault.open_shutter"),
+    @MinecraftExperimental
+    BLOCK_VAULT_PLACE("block.vault.place"),
+    @MinecraftExperimental
+    BLOCK_VAULT_STEP("block.vault.step"),
     BLOCK_VINE_BREAK("block.vine.break"),
     BLOCK_VINE_FALL("block.vine.fall"),
     BLOCK_VINE_HIT("block.vine.hit"),
@@ -746,6 +797,7 @@ public enum Sound implements Keyed {
     BLOCK_WET_GRASS_PLACE("block.wet_grass.place"),
     BLOCK_WET_GRASS_STEP("block.wet_grass.step"),
     BLOCK_WET_SPONGE_BREAK("block.wet_sponge.break"),
+    BLOCK_WET_SPONGE_DRIES("block.wet_sponge.dries"),
     BLOCK_WET_SPONGE_FALL("block.wet_sponge.fall"),
     BLOCK_WET_SPONGE_HIT("block.wet_sponge.hit"),
     BLOCK_WET_SPONGE_PLACE("block.wet_sponge.place"),
@@ -776,6 +828,19 @@ public enum Sound implements Keyed {
     ENTITY_ALLAY_ITEM_GIVEN("entity.allay.item_given"),
     ENTITY_ALLAY_ITEM_TAKEN("entity.allay.item_taken"),
     ENTITY_ALLAY_ITEM_THROWN("entity.allay.item_thrown"),
+    ENTITY_ARMADILLO_AMBIENT("entity.armadillo.ambient"),
+    ENTITY_ARMADILLO_BRUSH("entity.armadillo.brush"),
+    ENTITY_ARMADILLO_DEATH("entity.armadillo.death"),
+    ENTITY_ARMADILLO_EAT("entity.armadillo.eat"),
+    ENTITY_ARMADILLO_HURT("entity.armadillo.hurt"),
+    ENTITY_ARMADILLO_HURT_REDUCED("entity.armadillo.hurt_reduced"),
+    ENTITY_ARMADILLO_LAND("entity.armadillo.land"),
+    ENTITY_ARMADILLO_PEEK("entity.armadillo.peek"),
+    ENTITY_ARMADILLO_ROLL("entity.armadillo.roll"),
+    ENTITY_ARMADILLO_SCUTE_DROP("entity.armadillo.scute_drop"),
+    ENTITY_ARMADILLO_STEP("entity.armadillo.step"),
+    ENTITY_ARMADILLO_UNROLL_FINISH("entity.armadillo.unroll_finish"),
+    ENTITY_ARMADILLO_UNROLL_START("entity.armadillo.unroll_start"),
     ENTITY_ARMOR_STAND_BREAK("entity.armor_stand.break"),
     ENTITY_ARMOR_STAND_FALL("entity.armor_stand.fall"),
     ENTITY_ARMOR_STAND_HIT("entity.armor_stand.hit"),
@@ -809,7 +874,21 @@ public enum Sound implements Keyed {
     ENTITY_BOAT_PADDLE_LAND("entity.boat.paddle_land"),
     ENTITY_BOAT_PADDLE_WATER("entity.boat.paddle_water"),
     @MinecraftExperimental
+    ENTITY_BOGGED_AMBIENT("entity.bogged.ambient"),
+    @MinecraftExperimental
+    ENTITY_BOGGED_DEATH("entity.bogged.death"),
+    @MinecraftExperimental
+    ENTITY_BOGGED_HURT("entity.bogged.hurt"),
+    @MinecraftExperimental
+    ENTITY_BOGGED_SHEAR("entity.bogged.shear"),
+    @MinecraftExperimental
+    ENTITY_BOGGED_STEP("entity.bogged.step"),
+    @MinecraftExperimental
+    ENTITY_BREEZE_CHARGE("entity.breeze.charge"),
+    @MinecraftExperimental
     ENTITY_BREEZE_DEATH("entity.breeze.death"),
+    @MinecraftExperimental
+    ENTITY_BREEZE_DEFLECT("entity.breeze.deflect"),
     @MinecraftExperimental
     ENTITY_BREEZE_HURT("entity.breeze.hurt"),
     @MinecraftExperimental
@@ -826,6 +905,10 @@ public enum Sound implements Keyed {
     ENTITY_BREEZE_SHOOT("entity.breeze.shoot"),
     @MinecraftExperimental
     ENTITY_BREEZE_SLIDE("entity.breeze.slide"),
+    @MinecraftExperimental
+    ENTITY_BREEZE_WHIRL("entity.breeze.whirl"),
+    @MinecraftExperimental
+    ENTITY_BREEZE_WIND_BURST("entity.breeze.wind_burst"),
     ENTITY_CAMEL_AMBIENT("entity.camel.ambient"),
     ENTITY_CAMEL_DASH("entity.camel.dash"),
     ENTITY_CAMEL_DASH_READY("entity.camel.dash_ready"),
@@ -879,6 +962,7 @@ public enum Sound implements Keyed {
     ENTITY_DONKEY_DEATH("entity.donkey.death"),
     ENTITY_DONKEY_EAT("entity.donkey.eat"),
     ENTITY_DONKEY_HURT("entity.donkey.hurt"),
+    ENTITY_DONKEY_JUMP("entity.donkey.jump"),
     ENTITY_DRAGON_FIREBALL_EXPLODE("entity.dragon_fireball.explode"),
     ENTITY_DROWNED_AMBIENT("entity.drowned.ambient"),
     ENTITY_DROWNED_AMBIENT_WATER("entity.drowned.ambient_water"),
@@ -970,8 +1054,6 @@ public enum Sound implements Keyed {
     ENTITY_GENERIC_SMALL_FALL("entity.generic.small_fall"),
     ENTITY_GENERIC_SPLASH("entity.generic.splash"),
     ENTITY_GENERIC_SWIM("entity.generic.swim"),
-    @MinecraftExperimental
-    ENTITY_GENERIC_WIND_BURST("entity.generic.wind_burst"),
     ENTITY_GHAST_AMBIENT("entity.ghast.ambient"),
     ENTITY_GHAST_DEATH("entity.ghast.death"),
     ENTITY_GHAST_HURT("entity.ghast.hurt"),
@@ -1101,6 +1183,7 @@ public enum Sound implements Keyed {
     ENTITY_MULE_DEATH("entity.mule.death"),
     ENTITY_MULE_EAT("entity.mule.eat"),
     ENTITY_MULE_HURT("entity.mule.hurt"),
+    ENTITY_MULE_JUMP("entity.mule.jump"),
     ENTITY_OCELOT_AMBIENT("entity.ocelot.ambient"),
     ENTITY_OCELOT_DEATH("entity.ocelot.death"),
     ENTITY_OCELOT_HURT("entity.ocelot.hurt"),
@@ -1123,6 +1206,8 @@ public enum Sound implements Keyed {
     ENTITY_PARROT_FLY("entity.parrot.fly"),
     ENTITY_PARROT_HURT("entity.parrot.hurt"),
     ENTITY_PARROT_IMITATE_BLAZE("entity.parrot.imitate.blaze"),
+    @MinecraftExperimental
+    ENTITY_PARROT_IMITATE_BOGGED("entity.parrot.imitate.bogged"),
     @MinecraftExperimental
     ENTITY_PARROT_IMITATE_BREEZE("entity.parrot.imitate.breeze"),
     ENTITY_PARROT_IMITATE_CREEPER("entity.parrot.imitate.creeper"),
@@ -1402,6 +1487,10 @@ public enum Sound implements Keyed {
     ENTITY_WARDEN_SONIC_CHARGE("entity.warden.sonic_charge"),
     ENTITY_WARDEN_STEP("entity.warden.step"),
     ENTITY_WARDEN_TENDRIL_CLICKS("entity.warden.tendril_clicks"),
+    @MinecraftExperimental
+    ENTITY_WIND_CHARGE_THROW("entity.wind_charge.throw"),
+    @MinecraftExperimental
+    ENTITY_WIND_CHARGE_WIND_BURST("entity.wind_charge.wind_burst"),
     ENTITY_WITCH_AMBIENT("entity.witch.ambient"),
     ENTITY_WITCH_CELEBRATE("entity.witch.celebrate"),
     ENTITY_WITCH_DEATH("entity.witch.death"),
@@ -1456,6 +1545,12 @@ public enum Sound implements Keyed {
     ENTITY_ZOMBIFIED_PIGLIN_ANGRY("entity.zombified_piglin.angry"),
     ENTITY_ZOMBIFIED_PIGLIN_DEATH("entity.zombified_piglin.death"),
     ENTITY_ZOMBIFIED_PIGLIN_HURT("entity.zombified_piglin.hurt"),
+    @MinecraftExperimental
+    EVENT_MOB_EFFECT_BAD_OMEN("event.mob_effect.bad_omen"),
+    @MinecraftExperimental
+    EVENT_MOB_EFFECT_RAID_OMEN("event.mob_effect.raid_omen"),
+    @MinecraftExperimental
+    EVENT_MOB_EFFECT_TRIAL_OMEN("event.mob_effect.trial_omen"),
     EVENT_RAID_HORN("event.raid.horn"),
     INTENTIONALLY_EMPTY("intentionally_empty"),
     ITEM_ARMOR_EQUIP_CHAIN("item.armor.equip_chain"),
@@ -1467,6 +1562,8 @@ public enum Sound implements Keyed {
     ITEM_ARMOR_EQUIP_LEATHER("item.armor.equip_leather"),
     ITEM_ARMOR_EQUIP_NETHERITE("item.armor.equip_netherite"),
     ITEM_ARMOR_EQUIP_TURTLE("item.armor.equip_turtle"),
+    ITEM_ARMOR_EQUIP_WOLF("item.armor.equip_wolf"),
+    ITEM_ARMOR_UNEQUIP_WOLF("item.armor.unequip_wolf"),
     ITEM_AXE_SCRAPE("item.axe.scrape"),
     ITEM_AXE_STRIP("item.axe.strip"),
     ITEM_AXE_WAX_OFF("item.axe.wax_off"),
@@ -1528,7 +1625,15 @@ public enum Sound implements Keyed {
     ITEM_HONEY_BOTTLE_DRINK("item.honey_bottle.drink"),
     ITEM_INK_SAC_USE("item.ink_sac.use"),
     ITEM_LODESTONE_COMPASS_LOCK("item.lodestone_compass.lock"),
+    @MinecraftExperimental
+    ITEM_MACE_SMASH_AIR("item.mace.smash_air"),
+    @MinecraftExperimental
+    ITEM_MACE_SMASH_GROUND("item.mace.smash_ground"),
+    @MinecraftExperimental
+    ITEM_MACE_SMASH_GROUND_HEAVY("item.mace.smash_ground_heavy"),
     ITEM_NETHER_WART_PLANT("item.nether_wart.plant"),
+    @MinecraftExperimental
+    ITEM_OMINOUS_BOTTLE_DISPOSE("item.ominous_bottle.dispose"),
     ITEM_SHIELD_BLOCK("item.shield.block"),
     ITEM_SHIELD_BREAK("item.shield.break"),
     ITEM_SHOVEL_FLATTEN("item.shovel.flatten"),
@@ -1543,6 +1648,14 @@ public enum Sound implements Keyed {
     ITEM_TRIDENT_RIPTIDE_3("item.trident.riptide_3"),
     ITEM_TRIDENT_THROW("item.trident.throw"),
     ITEM_TRIDENT_THUNDER("item.trident.thunder"),
+    @MinecraftExperimental
+    ITEM_WOLF_ARMOR_BREAK("item.wolf_armor.break"),
+    @MinecraftExperimental
+    ITEM_WOLF_ARMOR_CRACK("item.wolf_armor.crack"),
+    @MinecraftExperimental
+    ITEM_WOLF_ARMOR_DAMAGE("item.wolf_armor.damage"),
+    @MinecraftExperimental
+    ITEM_WOLF_ARMOR_REPAIR("item.wolf_armor.repair"),
     MUSIC_CREATIVE("music.creative"),
     MUSIC_CREDITS("music.credits"),
     MUSIC_DISC_11("music_disc.11"),

@@ -292,6 +292,16 @@ public enum EntityType implements Keyed, Translatable {
     @MinecraftExperimental
     @ApiStatus.Experimental
     WIND_CHARGE("wind_charge", WindCharge.class, -1),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
+    BREEZE_WIND_CHARGE("breeze_wind_charge", BreezeWindCharge.class, -1),
+    ARMADILLO("armadillo", Armadillo.class, -1),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
+    BOGGED("bogged", Bogged.class, -1),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
+    OMINOUS_ITEM_SPAWNER("ominous_item_spawner", OminousItemSpawner.class, -1),
     /**
      * A fishing line and bobber.
      */

@@ -278,6 +278,11 @@ public final class GameRule<T> {
      */
     public static final GameRule<Integer> PLAYERS_NETHER_PORTAL_CREATIVE_DELAY = new GameRule<>("playersNetherPortalCreativeDelay", Integer.class);
 
+    /**
+     * The number of chunks around spawn which will be kept loaded at all times.
+     */
+    public static final GameRule<Integer> SPAWN_CHUNK_RADIUS = new GameRule<>("spawnChunkRadius", Integer.class);
+
     // All GameRules instantiated above this for organizational purposes
     private final String name;
     private final Class<T> type;

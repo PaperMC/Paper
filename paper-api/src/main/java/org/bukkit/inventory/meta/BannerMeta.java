@@ -1,31 +1,10 @@
 package org.bukkit.inventory.meta;
 
 import java.util.List;
-import org.bukkit.DyeColor;
 import org.bukkit.block.banner.Pattern;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public interface BannerMeta extends ItemMeta {
-
-    /**
-     * Returns the base color for this banner
-     *
-     * @return the base color
-     * @deprecated banner color is now stored as the data value, not meta.
-     */
-    @Deprecated
-    @Nullable
-    DyeColor getBaseColor();
-
-    /**
-     * Sets the base color for this banner
-     *
-     * @param color the base color
-     * @deprecated banner color is now stored as the data value, not meta.
-     */
-    @Deprecated
-    void setBaseColor(@Nullable DyeColor color);
 
     /**
      * Returns a list of patterns on this banner

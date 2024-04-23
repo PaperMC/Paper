@@ -22,8 +22,10 @@ public enum Particle implements Keyed {
     SMOKE_LARGE("large_smoke"),
     SPELL("effect"),
     SPELL_INSTANT("instant_effect"),
-    SPELL_MOB("entity_effect"),
-    SPELL_MOB_AMBIENT("ambient_entity_effect"),
+    /**
+     * Uses {@link Color} as DataType
+     */
+    SPELL_MOB("entity_effect", Color.class),
     SPELL_WITCH("witch"),
     DRIP_WATER("dripping_water"),
     DRIP_LAVA("dripping_lava"),
@@ -136,11 +138,32 @@ public enum Particle implements Keyed {
     @MinecraftExperimental
     GUST("gust"),
     @MinecraftExperimental
-    GUST_EMITTER("gust_emitter"),
+    SMALL_GUST("small_gust"),
     @MinecraftExperimental
-    GUST_DUST("gust_dust"),
+    GUST_EMITTER_LARGE("gust_emitter_large"),
+    @MinecraftExperimental
+    GUST_EMITTER_SMALL("gust_emitter_small"),
     @MinecraftExperimental
     TRIAL_SPAWNER_DETECTION("trial_spawner_detection"),
+    @MinecraftExperimental
+    TRIAL_SPAWNER_DETECTION_OMINOUS("trial_spawner_detection_ominous"),
+    @MinecraftExperimental
+    VAULT_CONNECTION("vault_connection"),
+    @MinecraftExperimental
+    INFESTED("infested"),
+    @MinecraftExperimental
+    ITEM_COBWEB("item_cobweb"),
+    /**
+     * Uses {@link BlockData} as DataType
+     */
+    @MinecraftExperimental
+    DUST_PILLAR("dust_pillar", BlockData.class),
+    @MinecraftExperimental
+    OMINOUS_SPAWNING("ominous_spawning"),
+    @MinecraftExperimental
+    RAID_OMEN("raid_omen"),
+    @MinecraftExperimental
+    TRIAL_OMEN("trial_omen"),
     /**
      * Uses {@link BlockData} as DataType
      */

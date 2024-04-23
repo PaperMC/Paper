@@ -52,6 +52,10 @@ public enum Attribute implements Keyed, Translatable {
      */
     GENERIC_ARMOR_TOUGHNESS("generic.armor_toughness"),
     /**
+     * The fall damage multiplier of an Entity.
+     */
+    GENERIC_FALL_DAMAGE_MULTIPLIER("generic.fall_damage_multiplier"),
+    /**
      * Luck bonus of an Entity.
      */
     GENERIC_LUCK("generic.luck"),
@@ -60,9 +64,37 @@ public enum Attribute implements Keyed, Translatable {
      */
     GENERIC_MAX_ABSORPTION("generic.max_absorption"),
     /**
-     * Strength with which a horse will jump.
+     * The distance which an Entity can fall without damage.
      */
-    HORSE_JUMP_STRENGTH("horse.jump_strength"),
+    GENERIC_SAFE_FALL_DISTANCE("generic.safe_fall_distance"),
+    /**
+     * The relative scale of an Entity.
+     */
+    GENERIC_SCALE("generic.scale"),
+    /**
+     * The height which an Entity can walk over.
+     */
+    GENERIC_STEP_HEIGHT("generic.step_height"),
+    /**
+     * The gravity applied to an Entity.
+     */
+    GENERIC_GRAVITY("generic.gravity"),
+    /**
+     * Strength with which an Entity will jump.
+     */
+    GENERIC_JUMP_STRENGTH("generic.jump_strength"),
+    /**
+     * The block reach distance of a Player.
+     */
+    PLAYER_BLOCK_INTERACTION_RANGE("player.block_interaction_range"),
+    /**
+     * The entity reach distance of a Player.
+     */
+    PLAYER_ENTITY_INTERACTION_RANGE("player.entity_interaction_range"),
+    /**
+     * Block break speed of a Player.
+     */
+    PLAYER_BLOCK_BREAK_SPEED("player.block_break_speed"),
     /**
      * Chance of a zombie to spawn reinforcements.
      */

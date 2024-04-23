@@ -3,6 +3,7 @@ package org.bukkit.block.banner;
 import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.Keyed;
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.Contract;
@@ -50,7 +51,11 @@ public enum PatternType implements Keyed {
     FLOWER("flo", "flower"),
     MOJANG("moj", "mojang"),
     GLOBE("glb", "globe"),
-    PIGLIN("pig", "piglin");
+    PIGLIN("pig", "piglin"),
+    @MinecraftExperimental
+    FLOW("flw", "flow"),
+    @MinecraftExperimental
+    GUSTER("gus", "guster");
 
     private final String identifier;
     private final NamespacedKey key;
@@ -82,7 +87,7 @@ public enum PatternType implements Keyed {
      * @deprecated magic value
      */
     @NotNull
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public String getIdentifier() {
         return identifier;
     }
@@ -98,7 +103,7 @@ public enum PatternType implements Keyed {
      */
     @Contract("null -> null")
     @Nullable
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static PatternType getByIdentifier(@Nullable String identifier) {
         return byString.get(identifier);
     }

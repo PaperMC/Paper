@@ -51,6 +51,7 @@ public interface DamageType extends Keyed, Translatable {
     public static final DamageType ARROW = getDamageType("arrow");
     public static final DamageType TRIDENT = getDamageType("trident");
     public static final DamageType MOB_PROJECTILE = getDamageType("mob_projectile");
+    public static final DamageType SPIT = getDamageType("spit");
     public static final DamageType FIREWORKS = getDamageType("fireworks");
     public static final DamageType FIREBALL = getDamageType("fireball");
     public static final DamageType UNATTRIBUTED_FIREBALL = getDamageType("unattributed_fireball");
