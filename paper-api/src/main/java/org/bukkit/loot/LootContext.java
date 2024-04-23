@@ -54,7 +54,7 @@ public final class LootContext {
 
     /**
      * Represents the
-     * {@link org.bukkit.enchantments.Enchantment#LOOT_BONUS_MOBS} the
+     * {@link org.bukkit.enchantments.Enchantment#LOOTING} the
      * {@link #getKiller()} entity has on their equipped item.
      *
      * This value is only set via
@@ -124,7 +124,7 @@ public final class LootContext {
         }
 
         /**
-         * Set the {@link org.bukkit.enchantments.Enchantment#LOOT_BONUS_MOBS}
+         * Set the {@link org.bukkit.enchantments.Enchantment#LOOTING}
          * level equivalent to use when generating loot. Values less than or
          * equal to 0 will force the {@link LootTable} to only return a single
          * {@link org.bukkit.inventory.ItemStack} per pool.

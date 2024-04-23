@@ -23,7 +23,7 @@ public enum EntityCategory {
      *   <li>Are subject to burning in daylight (though not all).
      *   <li>Sink in water (except {@link Drowned}, {@link Phantom Phantoms}
      *   and {@link Wither Withers}).
-     *   <li>Take additional damage from {@link Enchantment#DAMAGE_UNDEAD}.
+     *   <li>Take additional damage from {@link Enchantment#SMITE}.
      *   <li>Are ignored by {@link Wither Withers}.
      * </ul>
      */
@@ -31,8 +31,8 @@ public enum EntityCategory {
     /**
      * Entities of the arthropod family. These creatures:
      * <ul>
-     *   <li>Take additional damage and receive {@link PotionEffectType#SLOW}
-     *   from {@link Enchantment#DAMAGE_ARTHROPODS}.
+     *   <li>Take additional damage and receive {@link PotionEffectType#SLOWNESS}
+     *   from {@link Enchantment#BANE_OF_ARTHROPODS}.
      *   <li>Are immune to {@link PotionEffectType#POISON} if they are spiders.
      * </ul>
      */

@@ -139,7 +139,7 @@ public interface ItemFactory {
      * The input should match the same input as expected by Minecraft's {@code /give}
      * command. For example, "minecraft:diamond_sword{Enchantments:[{id:"minecraft:sharpness", lvl:3}]}"
      * would yield an ItemStack of {@link Material#DIAMOND_SWORD} with an {@link ItemMeta}
-     * containing a level 3 {@link Enchantment#DAMAGE_ALL}
+     * containing a level 3 {@link Enchantment#SHARPNESS}
      * enchantment.
      *
      * @param input the item input string
