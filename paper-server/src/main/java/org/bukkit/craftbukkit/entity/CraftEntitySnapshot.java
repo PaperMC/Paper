@@ -42,6 +42,11 @@ public class CraftEntitySnapshot implements EntitySnapshot {
         return location.getWorld().addEntity(internal.getBukkitEntity());
     }
 
+    @Override
+    public String getAsString() {
+        return data.getAsString();
+    }
+
     private net.minecraft.world.entity.Entity createInternal(World world) {
         net.minecraft.world.level.World nms = ((CraftWorld) world).getHandle();
         net.minecraft.world.entity.Entity internal = EntityTypes.loadEntityRecursive(data, nms, Function.identity());

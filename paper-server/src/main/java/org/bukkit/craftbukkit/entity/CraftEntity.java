@@ -781,6 +781,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public String getAsString() {
+        NBTTagCompound tag = new NBTTagCompound();
+        if (!getHandle().saveAsPassenger(tag, false)) {
+            return null;
+        }
+
+        return tag.getAsString();
+    }
+
+    @Override
     public EntitySnapshot createSnapshot() {
         return CraftEntitySnapshot.create(this);
     }

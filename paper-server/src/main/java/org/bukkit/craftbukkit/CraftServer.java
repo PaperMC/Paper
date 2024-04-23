@@ -157,6 +157,7 @@ import org.bukkit.craftbukkit.boss.CraftKeyedBossbar;
 import org.bukkit.craftbukkit.command.BukkitCommandWrapper;
 import org.bukkit.craftbukkit.command.CraftCommandMap;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
+import org.bukkit.craftbukkit.entity.CraftEntityFactory;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.generator.CraftWorldInfo;
@@ -305,6 +306,7 @@ public final class CraftServer implements Server {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
         ConfigurationSerialization.registerClass(CraftPlayerProfile.class);
         CraftItemFactory.instance();
+        CraftEntityFactory.instance();
     }
 
     public CraftServer(DedicatedServer console, PlayerList playerList) {
@@ -2177,6 +2179,11 @@ public final class CraftServer implements Server {
     @Override
     public CraftItemFactory getItemFactory() {
         return CraftItemFactory.instance();
+    }
+
+    @Override
+    public CraftEntityFactory getEntityFactory() {
+        return CraftEntityFactory.instance();
     }
 
     @Override
