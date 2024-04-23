@@ -31,14 +31,14 @@ public interface FoodComponent extends ConfigurationSerializable {
      *
      * @return saturation value
      */
-    float getSaturationModifier();
+    float getSaturation();
 
     /**
      * Sets the saturation restored by this item when eaten.
      *
-     * @param saturationModifier new saturation value
+     * @param saturation new saturation value
      */
-    void setSaturationModifier(float saturationModifier);
+    void setSaturation(float saturation);
 
     /**
      * Gets if this item can be eaten even when not hungry.
