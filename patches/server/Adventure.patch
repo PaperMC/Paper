@@ -20,18 +20,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.adventure;
 +
++import com.google.gson.JsonElement;
++import com.google.gson.JsonParser;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import com.mojang.datafixers.util.Either;
++import com.mojang.datafixers.util.Pair;
 +import com.mojang.serialization.Codec;
 +import com.mojang.serialization.DataResult;
++import com.mojang.serialization.DynamicOps;
 +import com.mojang.serialization.Encoder;
++import com.mojang.serialization.JsonOps;
 +import com.mojang.serialization.MapCodec;
 +import com.mojang.serialization.codecs.RecordCodecBuilder;
++import io.netty.buffer.ByteBuf;
++import io.netty.handler.codec.DecoderException;
++import io.netty.handler.codec.EncoderException;
 +import java.io.IOException;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.Optional;
 +import java.util.UUID;
++import java.util.function.BiFunction;
 +import java.util.function.Consumer;
 +import java.util.function.Function;
 +import java.util.function.Predicate;
@@ -61,15 +70,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.core.UUIDUtil;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.NbtAccounter;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.Tag;
 +import net.minecraft.nbt.TagParser;
++import net.minecraft.network.RegistryFriendlyByteBuf;
 +import net.minecraft.network.chat.ComponentSerialization;
 +import net.minecraft.network.chat.contents.KeybindContents;
 +import net.minecraft.network.chat.contents.ScoreContents;
 +import net.minecraft.network.chat.contents.TranslatableContents;
++import net.minecraft.network.codec.ByteBufCodecs;
++import net.minecraft.network.codec.StreamCodec;
++import net.minecraft.resources.RegistryOps;
 +import net.minecraft.util.ExtraCodecs;
 +import net.minecraft.util.StringRepresentable;
 +import net.minecraft.world.item.Item;
 +import net.minecraft.world.item.ItemStack;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -81,13 +98,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import static net.kyori.adventure.text.TranslationArgument.bool;
 +import static net.kyori.adventure.text.TranslationArgument.component;
 +import static net.kyori.adventure.text.TranslationArgument.numeric;
-+import static net.minecraft.util.ExtraCodecs.recursive;
-+import static net.minecraft.util.ExtraCodecs.strictOptionalField;
++import static com.mojang.serialization.Codec.recursive;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class AdventureCodecs {
 +
 +    public static final Codec<Component> COMPONENT_CODEC = recursive("adventure Component",  AdventureCodecs::createCodec);
++    public static final StreamCodec<RegistryFriendlyByteBuf, Component> STREAM_COMPONENT_CODEC = ByteBufCodecs.fromCodecWithRegistriesTrusted(COMPONENT_CODEC);
 +
 +    static final Codec<TextColor> TEXT_COLOR_CODEC = Codec.STRING.comapFlatMap(s -> {
 +        if (s.startsWith("#")) {
@@ -125,7 +142,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return instance.group(
 +                KEY_CODEC.fieldOf("type").forGetter(HoverEvent.ShowEntity::type),
 +                UUIDUtil.LENIENT_CODEC.fieldOf("id").forGetter(HoverEvent.ShowEntity::id),
-+                strictOptionalField(componentCodec, "name").forGetter(he -> Optional.ofNullable(he.name()))
++                componentCodec.lenientOptionalFieldOf("name").forGetter(he -> Optional.ofNullable(he.name()))
 +            ).apply(instance, (key, uuid, component) -> {
 +                return HoverEvent.ShowEntity.showEntity(key, uuid, component.orElse(null));
 +            });
@@ -134,7 +151,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    static Codec<HoverEvent.ShowItem> showItemCodec(final Codec<Component> componentCodec) {
 +        return net.minecraft.network.chat.HoverEvent.ItemStackInfo.CODEC.xmap(isi -> {
-+            @Subst("key") final String typeKey = BuiltInRegistries.ITEM.getKey(isi.item).toString();
++            @Subst("key") final String typeKey = isi.item.unwrapKey().orElseThrow().toString();
 +            return HoverEvent.ShowItem.showItem(Key.key(typeKey), isi.count, PaperAdventure.asBinaryTagHolder(isi.tag.orElse(null)));
 +        }, si -> {
 +            final Item itemType = BuiltInRegistries.ITEM.get(PaperAdventure.asVanilla(si.item()));
@@ -154,36 +171,59 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final HoverEventType<Component> SHOW_TEXT_HOVER_EVENT_TYPE = new HoverEventType<>(identity(), HoverEvent.Action.SHOW_TEXT, "show_text", DataResult::success);
 +    static final Codec<HoverEventType<?>> HOVER_EVENT_TYPE_CODEC = StringRepresentable.fromValues(() -> new HoverEventType<?>[]{ SHOW_ENTITY_HOVER_EVENT_TYPE, SHOW_ITEM_HOVER_EVENT_TYPE, SHOW_TEXT_HOVER_EVENT_TYPE });
 +
-+    static DataResult<HoverEvent.ShowEntity> legacyDeserializeEntity(final Component text) {
++    static DataResult<HoverEvent.ShowEntity> legacyDeserializeEntity(final Component component, final @Nullable RegistryOps<?> ops, final Codec<Component> componentCodec) {
 +        try {
-+            final CompoundTag tag = TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(text));
-+            final @Nullable Component entityName = GsonComponentSerializer.gson().deserializeOrNull(tag.getString("name"));
++            final CompoundTag tag = TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(component));
++            final DynamicOps<JsonElement> dynamicOps = ops != null ? ops.withParent(JsonOps.INSTANCE) : JsonOps.INSTANCE;
++            final DataResult<Component> entityNameResult = componentCodec.parse(dynamicOps, JsonParser.parseString(tag.getString("name")));
 +            @Subst("key") final String keyString = tag.getString("type");
 +            final UUID entityUUID = UUID.fromString(tag.getString("id"));
-+            return DataResult.success(HoverEvent.ShowEntity.showEntity(Key.key(keyString), entityUUID, entityName));
++            return entityNameResult.map(name -> HoverEvent.ShowEntity.showEntity(Key.key(keyString), entityUUID, name));
 +        } catch (final Exception ex) {
 +            return DataResult.error(() -> "Failed to parse tooltip: " + ex.getMessage());
 +        }
 +    }
 +
-+    static DataResult<HoverEvent.ShowItem> legacyDeserializeItem(final Component text) {
++    static DataResult<HoverEvent.ShowItem> legacyDeserializeItem(final Component component, final @Nullable RegistryOps<?> ops, final Codec<Component> componentCodec) {
 +        try {
-+            final ItemStack stack = ItemStack.of(TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(text)));
-+            @Subst("key") final String keyString = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
-+            return DataResult.success(HoverEvent.ShowItem.showItem(Key.key(keyString), stack.getCount(), stack.getTag() != null ? BinaryTagHolder.encode(stack.getTag(), PaperAdventure.NBT_CODEC) : null));
++            final CompoundTag tag = TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(component));
++            final DynamicOps<Tag> dynamicOps = ops != null ? ops.withParent(NbtOps.INSTANCE) : NbtOps.INSTANCE;
++            final DataResult<org.bukkit.inventory.ItemStack> stackResult = ItemStack.CODEC.parse(dynamicOps, tag).map(CraftItemStack::asCraftMirror);
++            return stackResult.map(stack -> {
++                return HoverEvent.ShowItem.showItem(stack.getType().key(), stack.getAmount(), /* TODO */);
++            });
 +        } catch (final CommandSyntaxException | IOException ex) {
 +            return DataResult.error(() -> "Failed to parse item tag: " + ex.getMessage());
 +        }
 +    }
 +
-+    record HoverEventType<V>(Function<Codec<Component>, Codec<HoverEvent<V>>> codec, String id, Function<Codec<Component>, Codec<HoverEvent<V>>> legacyCodec) implements StringRepresentable {
-+        HoverEventType(final Function<Codec<Component>, Codec<V>> contentCodec, final HoverEvent.Action<V> action, final String id, final Function<Component, DataResult<V>> legacyDeserializer) {
-+            this(cc -> contentCodec.apply(cc).xmap(v -> HoverEvent.hoverEvent(action, v), HoverEvent::value).fieldOf("contents").codec(),
++    @FunctionalInterface
++    interface LegacyDeserializer<T> {
++        DataResult<T> apply(Component component, @Nullable RegistryOps<?> ops, Codec<Component> componentCodec);
++    }
++
++    record HoverEventType<V>(Function<Codec<Component>, MapCodec<HoverEvent<V>>> codec, String id, Function<Codec<Component>, MapCodec<HoverEvent<V>>> legacyCodec) implements StringRepresentable {
++        HoverEventType(final Function<Codec<Component>, Codec<V>> contentCodec, final HoverEvent.Action<V> action, final String id, final LegacyDeserializer<V> legacyDeserializer) {
++            this(cc -> contentCodec.apply(cc).xmap(v -> HoverEvent.hoverEvent(action, v), HoverEvent::value).fieldOf("contents"),
 +                id,
-+                codec -> Codec.of(
-+                    Encoder.error("Can't encode in legacy format"),
-+                    codec.flatMap(legacyDeserializer).map(text -> HoverEvent.hoverEvent(action, text))
-+                )
++                codec -> (new Codec<HoverEvent<V>>() {
++                    public <D> DataResult<Pair<HoverEvent<V>, D>> decode(final DynamicOps<D> dynamicOps, final D object) {
++                        return codec.decode(dynamicOps, object).flatMap(pair -> {
++                            final DataResult<V> dataResult;
++                            if (dynamicOps instanceof final RegistryOps<D> registryOps) {
++                                dataResult = legacyDeserializer.apply(pair.getFirst(), registryOps, codec);
++                            } else {
++                                dataResult = legacyDeserializer.apply(pair.getFirst(), null, codec);
++                            }
++
++                            return dataResult.map(value -> Pair.of(HoverEvent.hoverEvent(action, value), pair.getSecond()));
++                        });
++                    }
++
++                    public <D> DataResult<D> encode(final HoverEvent<V> hoverEvent, final DynamicOps<D> dynamicOps, final D object) {
++                        return DataResult.error(() -> "Can't encode in legacy format");
++                    }
++                }).fieldOf("value")
 +            );
 +        }
 +        @Override
@@ -203,23 +243,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            throw new IllegalStateException();
 +        }
 +    };
-+    static final Codec<HoverEvent<?>> HOVER_EVENT_CODEC = Codec.either(
++    static final Codec<HoverEvent<?>> HOVER_EVENT_CODEC = Codec.withAlternative(
 +        HOVER_EVENT_TYPE_CODEC.<HoverEvent<?>>dispatchMap("action", GET_HOVER_EVENT_TYPE, het -> het.codec.apply(COMPONENT_CODEC)).codec(),
 +        HOVER_EVENT_TYPE_CODEC.<HoverEvent<?>>dispatchMap("action", GET_HOVER_EVENT_TYPE, het -> het.legacyCodec.apply(COMPONENT_CODEC)).codec()
-+    ).xmap(either -> either.map(identity(), identity()), Either::left);
++    );
 +
 +    public static final MapCodec<Style> STYLE_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
-+            strictOptionalField(TEXT_COLOR_CODEC, "color").forGetter(nullableGetter(Style::color)),
-+            strictOptionalField(Codec.BOOL, "bold").forGetter(decorationGetter(TextDecoration.BOLD)),
-+            strictOptionalField(Codec.BOOL, "italic").forGetter(decorationGetter(TextDecoration.ITALIC)),
-+            strictOptionalField(Codec.BOOL, "underlined").forGetter(decorationGetter(TextDecoration.UNDERLINED)),
-+            strictOptionalField(Codec.BOOL, "strikethrough").forGetter(decorationGetter(TextDecoration.STRIKETHROUGH)),
-+            strictOptionalField(Codec.BOOL, "obfuscated").forGetter(decorationGetter(TextDecoration.OBFUSCATED)),
-+            strictOptionalField(CLICK_EVENT_CODEC, "clickEvent").forGetter(nullableGetter(Style::clickEvent)),
-+            strictOptionalField(HOVER_EVENT_CODEC, "hoverEvent").forGetter(nullableGetter(Style::hoverEvent)),
-+            strictOptionalField(Codec.STRING, "insertion").forGetter(nullableGetter(Style::insertion)),
-+            strictOptionalField(KEY_CODEC, "font").forGetter(nullableGetter(Style::font))
++            TEXT_COLOR_CODEC.optionalFieldOf("color").forGetter(nullableGetter(Style::color)),
++            Codec.BOOL.optionalFieldOf("bold").forGetter(decorationGetter(TextDecoration.BOLD)),
++            Codec.BOOL.optionalFieldOf("italic").forGetter(decorationGetter(TextDecoration.ITALIC)),
++            Codec.BOOL.optionalFieldOf("underlined").forGetter(decorationGetter(TextDecoration.UNDERLINED)),
++            Codec.BOOL.optionalFieldOf("strikethrough").forGetter(decorationGetter(TextDecoration.STRIKETHROUGH)),
++            Codec.BOOL.optionalFieldOf("obfuscated").forGetter(decorationGetter(TextDecoration.OBFUSCATED)),
++            CLICK_EVENT_CODEC.optionalFieldOf("clickEvent").forGetter(nullableGetter(Style::clickEvent)),
++            HOVER_EVENT_CODEC.optionalFieldOf("hoverEvent").forGetter(nullableGetter(Style::hoverEvent)),
++            Codec.STRING.optionalFieldOf("insertion").forGetter(nullableGetter(Style::insertion)),
++            KEY_CODEC.optionalFieldOf("font").forGetter(nullableGetter(Style::font))
 +        ).apply(instance, (textColor, bold, italic, underlined, strikethrough, obfuscated, clickEvent, hoverEvent, insertion, font) -> {
 +            return Style.style(builder -> {
 +                textColor.ifPresent(builder::color);
@@ -250,7 +290,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final MapCodec<TextComponent> TEXT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(Codec.STRING.fieldOf("text").forGetter(TextComponent::content)).apply(instance, Component::text);
 +    });
-+    static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.validate(ExtraCodecs.JAVA, TranslatableContents::filterAllowedArguments);
++    static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.JAVA.validate(TranslatableContents::filterAllowedArguments);
 +    static final Codec<TranslationArgument> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).flatXmap((primitiveOrComponent) -> {
 +        return primitiveOrComponent.map(o -> {
 +            final TranslationArgument arg;
@@ -279,8 +319,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final MapCodec<TranslatableComponent> TRANSLATABLE_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
 +            Codec.STRING.fieldOf("translate").forGetter(TranslatableComponent::key),
-+            Codec.STRING.optionalFieldOf("fallback").forGetter(nullableGetter(TranslatableComponent::fallback)),
-+            strictOptionalField(ARG_CODEC.listOf(), "with").forGetter(c -> c.arguments().isEmpty() ? Optional.empty() : Optional.of(c.arguments()))
++            Codec.STRING.lenientOptionalFieldOf("fallback").forGetter(nullableGetter(TranslatableComponent::fallback)),
++            ARG_CODEC.listOf().optionalFieldOf("with").forGetter(c -> c.arguments().isEmpty() ? Optional.empty() : Optional.of(c.arguments()))
 +        ).apply(instance, (key, fallback, components) -> {
 +            return Component.translatable(key, components.orElse(Collections.emptyList())).fallback(fallback.orElse(null));
 +        });
@@ -292,7 +332,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final MapCodec<SelectorComponent> SELECTOR_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
 +            Codec.STRING.fieldOf("selector").forGetter(SelectorComponent::pattern),
-+            strictOptionalField(COMPONENT_CODEC, "separator").forGetter(nullableGetter(SelectorComponent::separator))
++            COMPONENT_CODEC.optionalFieldOf("separator").forGetter(nullableGetter(SelectorComponent::separator))
 +        ).apply(instance, (selector, component) -> Component.selector(selector, component.orElse(null)));
 +    });
 +
@@ -354,8 +394,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final MapCodec<NBTComponent<?, ?>> NBT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
 +            Codec.STRING.fieldOf("nbt").forGetter(NBTComponent::nbtPath),
-+            Codec.BOOL.optionalFieldOf("interpret", false).forGetter(NBTComponent::interpret),
-+            COMPONENT_CODEC.optionalFieldOf("separator").forGetter(nullableGetter(NBTComponent::separator)),
++            Codec.BOOL.lenientOptionalFieldOf("interpret", false).forGetter(NBTComponent::interpret),
++            COMPONENT_CODEC.lenientOptionalFieldOf("separator").forGetter(nullableGetter(NBTComponent::separator)),
 +            NBT_COMPONENT_DATA_SOURCE_CODEC.forGetter(nbtComponent -> {
 +                if (nbtComponent instanceof final EntityNBTComponent entityNBTComponent) {
 +                    return new EntityDataSource(entityNBTComponent.selector());
@@ -401,7 +441,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final Codec<Component> directCodec = RecordCodecBuilder.create((instance) -> {
 +            return instance.group(
 +                legacyCodec.forGetter(identity()),
-+                strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::children),
++                ExtraCodecs.nonEmptyList(selfCodec.listOf()).optionalFieldOf("extra", List.of()).forGetter(Component::children),
 +                STYLE_MAP_CODEC.forGetter(Component::style)
 +            ).apply(instance, (component, children, style) -> {
 +                return component.style(style).children(children);
@@ -2055,7 +2095,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final int DEFAULT_NBT_QUOTA = 2097152;
      private final ByteBuf source;
 +    public java.util.Locale adventure$locale; // Paper - track player's locale for server-side translations
-     public static final short MAX_STRING_LENGTH = 32767;
+     public static final short MAX_STRING_LENGTH = Short.MAX_VALUE;
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
      private static final int PUBLIC_KEY_SIZE = 256;
 @@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
@@ -2069,45 +2109,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - Adventure; add max length parameter
          DataResult<JsonElement> dataresult = codec.encodeStart(JsonOps.INSTANCE, value);
  
-         this.writeUtf(FriendlyByteBuf.GSON.toJson((JsonElement) Util.getOrThrow(dataresult, (s) -> {
-             return new EncoderException("Failed to encode: " + s + " " + value);
+         this.writeUtf(FriendlyByteBuf.GSON.toJson((JsonElement) dataresult.getOrThrow((s) -> {
+             return new EncoderException("Failed to encode: " + s + " " + String.valueOf(value));
 -        })));
 +        })), maxLength); // Paper - Adventure; add max length parameter
      }
  
-     public <T> void writeId(IdMap<T> registry, T value) {
-@@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
-         return (Component) this.readWithCodecTrusted(NbtOps.INSTANCE, ComponentSerialization.CODEC);
-     }
- 
-+    // Paper start - adventure; support writing adventure components directly and server-side translations
-+    public FriendlyByteBuf writeComponent(final net.kyori.adventure.text.Component component) {
-+        return this.writeWithCodec(NbtOps.INSTANCE, io.papermc.paper.adventure.PaperAdventure.localizedCodec(this.adventure$locale), component);
-+    }
-+
-     public FriendlyByteBuf writeComponent(Component text) {
--        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, text);
-+        if (text instanceof io.papermc.paper.adventure.AdventureComponent adv) {
-+            return this.writeComponent(adv.adventure$component());
-+        }
-+
-+        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.localizedCodec(this.adventure$locale), text);
-+        // Paper end - adventure; support writing adventure components directly and server-side translations
-     }
- 
-     public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
+     public static <T> IntFunction<T> limitValue(IntFunction<T> applier, int max) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
-@@ -0,0 +0,0 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
-             } else {
-                 FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(byteBuf);
-                 friendlyByteBuf.writeVarInt(i);
-+                friendlyByteBuf.adventure$locale = channelHandlerContext.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get(); // Paper - adventure; set player's locale
+@@ -0,0 +0,0 @@ public class PacketEncoder<T extends PacketListener> extends MessageToByteEncode
+     protected void encode(ChannelHandlerContext channelHandlerContext, Packet<T> packet, ByteBuf byteBuf) throws Exception {
+         PacketType<? extends Packet<? super T>> packetType = packet.type();
  
-                 try {
-                     int j = friendlyByteBuf.writerIndex();
++        if (byteBuf instanceof FriendlyByteBuf friendlyByteBuf) friendlyByteBuf.adventure$locale = channelHandlerContext.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get(); // Paper - adventure; set player's locale
+         try {
+             this.protocolInfo.codec().encode(byteBuf, packet);
+             int i = byteBuf.readableBytes();
 diff --git a/src/main/java/net/minecraft/network/chat/ChatDecorator.java b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/ChatDecorator.java
@@ -2138,6 +2158,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 @@ -0,0 +0,0 @@ public class ComponentSerialization {
+     public static final Codec<Component> CODEC = Codec.recursive("Component", ComponentSerialization::createCodec);
+     public static final StreamCodec<RegistryFriendlyByteBuf, Component> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
+     public static final StreamCodec<RegistryFriendlyByteBuf, Optional<Component>> OPTIONAL_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs::optional);
+-    public static final StreamCodec<RegistryFriendlyByteBuf, Component> TRUSTED_STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistriesTrusted(CODEC);
++    // Paper start - adventure; use locale from bytebuf for translation
++    public static final StreamCodec<RegistryFriendlyByteBuf, Component> TRUSTED_STREAM_CODEC = new StreamCodec<>() {
++        final StreamCodec<ByteBuf, net.minecraft.nbt.Tag> streamCodec = ByteBufCodecs.tagCodec(net.minecraft.nbt.NbtAccounter::unlimitedHeap);
++        @Override
++        public Component decode(RegistryFriendlyByteBuf registryFriendlyByteBuf) {
++            net.minecraft.nbt.Tag tag = this.streamCodec.decode(registryFriendlyByteBuf);
++            RegistryOps<net.minecraft.nbt.Tag> registryOps = registryFriendlyByteBuf.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
++            return CODEC.parse(registryOps, tag).getOrThrow(error -> new io.netty.handler.codec.DecoderException("Failed to decode: " + error + " " + tag));
++        }
++
++        @Override
++        public void encode(RegistryFriendlyByteBuf registryFriendlyByteBuf, Component object) {
++            RegistryOps<net.minecraft.nbt.Tag> registryOps = registryFriendlyByteBuf.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
++            net.minecraft.nbt.Tag tag = ComponentSerialization.localizedCodec(registryFriendlyByteBuf.adventure$locale).encodeStart(registryOps, object).getOrThrow(error -> new io.netty.handler.codec.EncoderException("Failed to encode: " + error + " " + object));
++            this.streamCodec.encode(registryFriendlyByteBuf, tag);
++        }
++    };
++    // Paper end - adventure; use locale from bytebuf for translation
+     public static final StreamCodec<RegistryFriendlyByteBuf, Optional<Component>> TRUSTED_OPTIONAL_STREAM_CODEC = TRUSTED_STREAM_CODEC.apply(
+         ByteBufCodecs::optional
+     );
+@@ -0,0 +0,0 @@ public class ComponentSerialization {
          return ExtraCodecs.orCompressed(mapCodec3, mapCodec2);
      }
  
@@ -2149,8 +2195,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return CODEC;
 +        }
 +        return LOCALIZED_CODECS.computeIfAbsent(locale,
-+            loc -> ExtraCodecs.recursive("Component", selfCodec -> createCodec(selfCodec, loc)));
++            loc -> Codec.recursive("Component", selfCodec -> createCodec(selfCodec, loc)));
 +    }
++
++
 +    // Paper end - adventure; create separate codec for each locale
 +
      private static Codec<Component> createCodec(Codec<Component> selfCodec) {
@@ -2334,84 +2382,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return new PlayerChatMessage(this.link, this.signature, this.signedBody, component, this.filterMask);
      }
  
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.Packet;
- 
- public class ClientboundSetActionBarTextPacket implements Packet<ClientGamePacketListener> {
-     private final Component text;
-+    public net.kyori.adventure.text.Component adventure$text; // Paper
- 
-     public ClientboundSetActionBarTextPacket(Component message) {
-         this.text = message;
-@@ -0,0 +0,0 @@ public class ClientboundSetActionBarTextPacket implements Packet<ClientGamePacke
- 
-     @Override
-     public void write(FriendlyByteBuf buf) {
-+        // Paper start
-+        if (this.adventure$text != null) {
-+            buf.writeComponent(this.adventure$text);
-+        } else
-+        // Paper end
-         buf.writeComponent(this.text);
-     }
- 
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetSubtitleTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetSubtitleTextPacket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetSubtitleTextPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetSubtitleTextPacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.Packet;
- 
- public class ClientboundSetSubtitleTextPacket implements Packet<ClientGamePacketListener> {
-     private final Component text;
-+    public net.kyori.adventure.text.Component adventure$text; // Paper
- 
-     public ClientboundSetSubtitleTextPacket(Component subtitle) {
-         this.text = subtitle;
-@@ -0,0 +0,0 @@ public class ClientboundSetSubtitleTextPacket implements Packet<ClientGamePacket
- 
-     @Override
-     public void write(FriendlyByteBuf buf) {
-+        // Paper start
-+        if (this.adventure$text != null) {
-+            buf.writeComponent(this.adventure$text);
-+        } else
-+        // Paper end
-         buf.writeComponent(this.text);
-     }
- 
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitleTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitleTextPacket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitleTextPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitleTextPacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.Packet;
- 
- public class ClientboundSetTitleTextPacket implements Packet<ClientGamePacketListener> {
-     private final Component text;
-+    public net.kyori.adventure.text.Component adventure$text; // Paper
- 
-     public ClientboundSetTitleTextPacket(Component title) {
-         this.text = title;
-@@ -0,0 +0,0 @@ public class ClientboundSetTitleTextPacket implements Packet<ClientGamePacketLis
- 
-     @Override
-     public void write(FriendlyByteBuf buf) {
-+        // Paper start
-+        if (this.adventure$text != null) {
-+            buf.writeComponent(this.adventure$text);
-+        } else
-+        // Paper end
-         buf.writeComponent(this.text);
-     }
- 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
 @@ -0,0 +0,0 @@ public record ClientboundSystemChatPacket(Component content, boolean overlay) im
-         this(Component.Serializer.fromJson(net.md_5.bungee.chat.ComponentSerializer.toString(content)), overlay);
+         this(org.bukkit.craftbukkit.util.CraftChatMessage.fromJSON(net.md_5.bungee.chat.ComponentSerializer.toString(content)), overlay);
      }
      // Spigot end
 +    // Paper start
@@ -2420,37 +2396,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  
-     public ClientboundSystemChatPacket(FriendlyByteBuf buf) {
-         this(buf.readComponentTrusted(), buf.readBoolean());
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.Packet;
- public class ClientboundTabListPacket implements Packet<ClientGamePacketListener> {
-     public final Component header;
-     public final Component footer;
-+    // Paper start
-+    public net.kyori.adventure.text.Component adventure$header;
-+    public net.kyori.adventure.text.Component adventure$footer;
-+    // Paper end
- 
-     public ClientboundTabListPacket(Component header, Component footer) {
-         this.header = header;
-@@ -0,0 +0,0 @@ public class ClientboundTabListPacket implements Packet<ClientGamePacketListener
- 
      @Override
-     public void write(FriendlyByteBuf buf) {
-+        // Paper start
-+        if (this.adventure$header != null && this.adventure$footer != null) {
-+            buf.writeComponent(this.adventure$header);
-+            buf.writeComponent(this.adventure$footer);
-+            return;
-+        }
-+        // Paper end
-         buf.writeComponent(this.header);
-         buf.writeComponent(this.footer);
-     }
+     public PacketType<ClientboundSystemChatPacket> type() {
 diff --git a/src/main/java/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java b/src/main/java/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
@@ -2458,17 +2405,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ClientboundLoginDisconnectPacket implements Packet<ClientLoginPacke
      }
  
-     public ClientboundLoginDisconnectPacket(FriendlyByteBuf buf) {
--        this.reason = Component.Serializer.fromJsonLenient(buf.readUtf(262144));
-+        this.reason = Component.Serializer.fromJsonLenient(buf.readUtf(FriendlyByteBuf.MAX_COMPONENT_STRING_LENGTH)); // Paper - diff on change
+     private ClientboundLoginDisconnectPacket(FriendlyByteBuf buf) {
+-        this.reason = Component.Serializer.fromJsonLenient(buf.readUtf(262144), RegistryAccess.EMPTY);
++        this.reason = Component.Serializer.fromJsonLenient(buf.readUtf(FriendlyByteBuf.MAX_COMPONENT_STRING_LENGTH), RegistryAccess.EMPTY); // Paper - diff on change
      }
  
-     @Override
-     public void write(FriendlyByteBuf buf) {
--        buf.writeUtf(Component.Serializer.toJson(this.reason));
+     private void write(FriendlyByteBuf buf) {
+-        buf.writeUtf(Component.Serializer.toJson(this.reason, RegistryAccess.EMPTY));
 +        // Paper start - Adventure
-+        //buf.writeUtf(Component.Serializer.toJson(this.reason));
-+
++        // buf.writeUtf(Component.Serializer.toJson(this.reason, RegistryAccess.EMPTY));
 +        // In the login phase, buf.adventure$locale field is always null
 +        buf.writeJsonWithCodec(net.minecraft.network.chat.ComponentSerialization.localizedCodec(java.util.Locale.US), this.reason, FriendlyByteBuf.MAX_COMPONENT_STRING_LENGTH);
 +        // Paper end - Adventure
@@ -2589,8 +2534,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private Vec3 startingToFallPosition;
      @Nullable
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
- 
      // CraftBukkit start
+     public CraftPlayer.TransferCookieConnection transferCookieConnection;
      public String displayName;
 +    public net.kyori.adventure.text.Component adventure$displayName; // Paper
      public Component listName;
@@ -2659,14 +2604,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
-     public static final int LATENCY_CHECK_INTERVAL = 15000;
      private static final Component TIMEOUT_DISCONNECTION_MESSAGE = Component.translatable("disconnect.timeout");
+     static final Component DISCONNECT_UNEXPECTED_QUERY = Component.translatable("multiplayer.disconnect.unexpected_query_response");
      protected final MinecraftServer server;
 -    protected final Connection connection;
 +    public final Connection connection; // Paper
+     private final boolean transferred;
      private long keepAliveTime;
      private boolean keepAlivePending;
-     private long keepAliveChallenge;
+@@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     private boolean closed = false;
      private int latency;
      private volatile boolean suspendFlushingOnServerThread = false;
 +    public final java.util.Map<java.util.UUID, net.kyori.adventure.resource.ResourcePackCallback> packCallbacks = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - adventure resource pack callbacks
@@ -2760,9 +2707,9 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ import net.minecraft.nbt.ListTag;
- import net.minecraft.nbt.StringTag;
+@@ -0,0 +0,0 @@ import net.minecraft.nbt.CompoundTag;
  import net.minecraft.network.Connection;
+ import net.minecraft.network.ConnectionProtocol;
  import net.minecraft.network.TickablePacketListener;
 +import net.minecraft.network.chat.ChatDecorator;
  import net.minecraft.network.chat.ChatType;
@@ -2793,19 +2740,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit end
          this.player.getTextFilter().leave();
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                     }
+                 }
  
-                     CompletableFuture<FilteredText> completablefuture = this.filterTextPacket(playerchatmessage.signedContent()).thenApplyAsync(Function.identity(), this.server.chatExecutor); // CraftBukkit - async chat
--                    Component ichatbasecomponent = this.server.getChatDecorator().decorate(this.player, playerchatmessage.decoratedContent());
-+                    CompletableFuture<Component> componentFuture = this.server.getChatDecorator().decorate(this.player, null, playerchatmessage.decoratedContent()); // Paper - Adventure
+                 CompletableFuture<FilteredText> completablefuture = this.filterTextPacket(playerchatmessage.signedContent()).thenApplyAsync(Function.identity(), this.server.chatExecutor); // CraftBukkit - async chat
+-                Component ichatbasecomponent = this.server.getChatDecorator().decorate(this.player, playerchatmessage.decoratedContent());
++                CompletableFuture<Component> componentFuture = this.server.getChatDecorator().decorate(this.player, null, playerchatmessage.decoratedContent()); // Paper - Adventure
  
--                    this.chatMessageChain.append(completablefuture, (filteredtext) -> {
--                        PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(ichatbasecomponent).filter(filteredtext.mask());
-+                    this.chatMessageChain.append(CompletableFuture.allOf(completablefuture, componentFuture), (filteredtext) -> { // Paper - Adventure
-+                        PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(componentFuture.join()).filter(completablefuture.join().mask()); // Paper - Adventure
+-                this.chatMessageChain.append(completablefuture, (filteredtext) -> {
+-                    PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(ichatbasecomponent).filter(filteredtext.mask());
++                this.chatMessageChain.append(CompletableFuture.allOf(completablefuture, componentFuture), (filteredtext) -> { // Paper - Adventure
++                    PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(componentFuture.join()).filter(completablefuture.join().mask()); // Paper - Adventure
  
-                         this.broadcastChatMessage(playerchatmessage1);
-                     });
+                     this.broadcastChatMessage(playerchatmessage1);
+                 });
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              this.handleCommand(s);
          } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
@@ -3187,8 +3134,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  for (org.bukkit.map.MapCursor cursor : render.cursors) {
                      if (cursor.isVisible()) {
--                        icons.add(new MapDecoration(MapDecoration.Type.byIcon(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), CraftChatMessage.fromStringOrNull(cursor.getCaption())));
-+                        icons.add(new MapDecoration(MapDecoration.Type.byIcon(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), PaperAdventure.asVanilla(cursor.caption()))); // Paper - Adventure
+-                        icons.add(new MapDecoration(CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()), cursor.getX(), cursor.getY(), cursor.getDirection(), CraftChatMessage.fromStringOrOptional(cursor.getCaption())));
++                        icons.add(new MapDecoration(CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()), cursor.getX(), cursor.getY(), cursor.getDirection(), Optional.ofNullable(PaperAdventure.asVanilla(cursor.caption()))));
                      }
                  }
                  collection = icons;
@@ -3477,7 +3424,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
 @@ -0,0 +0,0 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
-         this.getSnapshot().secondaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraft(effect) : null;
+         this.getSnapshot().secondaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraftHolder(effect) : null;
      }
  
 +    // Paper start
@@ -3501,8 +3448,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java
 @@ -0,0 +0,0 @@ public class CraftCommandBlock extends CraftBlockEntityState<CommandBlockEntity>
-     public CraftCommandBlock copy() {
-         return new CraftCommandBlock(this);
+     public CraftCommandBlock copy(Location location) {
+         return new CraftCommandBlock(this, location);
      }
 +
 +    // Paper start
@@ -3545,8 +3492,8 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java
-@@ -0,0 +0,0 @@ public class CraftEnchantingTable extends CraftBlockEntityState<EnchantmentTable
-         super(state);
+@@ -0,0 +0,0 @@ public class CraftEnchantingTable extends CraftBlockEntityState<EnchantingTableB
+         super(state, location);
      }
  
 +    // Paper start
@@ -3564,7 +3511,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public String getCustomName() {
-         EnchantmentTableBlockEntity enchant = this.getSnapshot();
+         EnchantingTableBlockEntity enchant = this.getSnapshot();
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
@@ -4170,7 +4117,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         this.handlePushResourcePack(new ClientboundResourcePackPushPacket(id, url, hashStr, force, CraftChatMessage.fromStringOrNull(prompt, true)), false);
+         this.handlePushResourcePack(new ClientboundResourcePackPushPacket(id, url, hashStr, force, CraftChatMessage.fromStringOrOptional(prompt, true)), false);
      }
  
 +    // Paper start - adventure
@@ -4667,7 +4614,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -0,0 +0,0 @@ public final class CraftItemFactory implements ItemFactory {
          CraftItemStack craft = (CraftItemStack) itemStack;
-         return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, allowTreasures));
+         return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(MinecraftServer.getServer().getWorldData().enabledFeatures(), source, craft.handle, level, allowTreasures));
      }
 +
 +    // Paper start - Adventure
@@ -4738,8 +4685,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.List;
-@@ -0,0 +0,0 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
-         this.generation = (generation == null) ? null : generation.ordinal();
+@@ -0,0 +0,0 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
+     public void setGeneration(Generation generation) {
      }
  
 +    // Paper start
@@ -4823,7 +4770,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    protected static final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.builder()
++    public static final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.builder()
 +        .character(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.SECTION_CHAR)
 +        .build();
 +    private CraftMetaBook(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, List<net.kyori.adventure.text.Component> pages) {
@@ -4887,7 +4834,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public String getPage(final int page) {
          Preconditions.checkArgument(this.isValidPage(page), "Invalid page number (%s)", page);
-@@ -0,0 +0,0 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -0,0 +0,0 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
+     }
+ 
+     @Override
+-    Builder<String, Object> serialize(Builder<String, Object> builder) {
++    ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
+         super.serialize(builder);
+ 
+         if (this.pages != null) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+@@ -0,0 +0,0 @@ package org.bukkit.craftbukkit.inventory;
+ 
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableList;
+-import com.google.common.collect.ImmutableMap.Builder;
++import com.google.common.collect.ImmutableMap; // Paper
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.List;
+@@ -0,0 +0,0 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
      }
  
      @Override
@@ -4896,37 +4865,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          super.serialize(builder);
  
          if (this.hasTitle()) {
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-@@ -0,0 +0,0 @@
- package org.bukkit.craftbukkit.inventory;
- 
--import com.google.common.collect.ImmutableMap.Builder;
-+import com.google.common.collect.ImmutableMap; // Paper
- import java.util.Map;
- import net.minecraft.nbt.CompoundTag;
- import org.bukkit.Material;
-@@ -0,0 +0,0 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
+@@ -0,0 +0,0 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
+         return this.spigot;
      }
- 
-     @Override
--    Builder<String, Object> serialize(Builder<String, Object> builder) {
-+    ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
-         super.serialize(builder);
-         return builder;
-     }
+     // Spigot end
 +
 +    // Paper start - adventure
 +    private CraftMetaBookSigned(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
 +        super((org.bukkit.craftbukkit.inventory.CraftMetaItem) org.bukkit.Bukkit.getItemFactory().getItemMeta(Material.WRITABLE_BOOK));
-+        this.title = title == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(title);
-+        this.author = author == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(author);
-+        this.pages = io.papermc.paper.adventure.PaperAdventure.asJson(pages.subList(0, Math.min(MAX_PAGES, pages.size())));
++        this.title = title == null ? null : CraftMetaBook.LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(title);
++        this.author = author == null ? null : CraftMetaBook.LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(author);
++        this.pages = io.papermc.paper.adventure.PaperAdventure.asVanilla(pages.subList(0, Math.min(MAX_PAGES, pages.size())));
 +    }
 +
-+    static final class CraftMetaBookSignedBuilder extends CraftMetaBookBuilder {
++    static final class CraftMetaBookSignedBuilder extends CraftMetaBook.CraftMetaBookBuilder {
 +        @Override
 +        protected BookMeta build(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
 +            return new CraftMetaBookSigned(title, author, pages);
@@ -4944,7 +4896,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         return !(this.hasDisplayName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isUnbreakable() || this.hasDamage() || this.hasAttributeModifiers());
+         return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null);
      }
  
 +    // Paper start
@@ -4961,7 +4913,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public String getDisplayName() {
-         return CraftChatMessage.fromJSONComponent(this.displayName);
+         return CraftChatMessage.fromComponent(this.displayName);
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return this.lore != null && !this.lore.isEmpty();
      }
@@ -5157,8 +5109,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              MapDecoration decoration = this.worldMap.decorations.get(key);
--            cursors.addCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), decoration.type().getIcon(), true, CraftChatMessage.fromComponent(decoration.name()));
-+            cursors.addCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), decoration.type().getIcon(), true, decoration.name() == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(decoration.name())); // Paper
+-            cursors.addCursor(new MapCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), CraftMapCursor.CraftType.minecraftHolderToBukkit(decoration.type()), true, CraftChatMessage.fromComponent(decoration.name().orElse(null))));
++            cursors.addCursor(new MapCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), CraftMapCursor.CraftType.minecraftHolderToBukkit(decoration.type()), true, decoration.name().isEmpty() ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(decoration.name().get()))); // Paper
          }
      }
  
