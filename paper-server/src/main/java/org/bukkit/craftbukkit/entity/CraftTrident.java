@@ -6,7 +6,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Trident;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftTrident extends CraftArrow implements Trident {
+public class CraftTrident extends CraftAbstractArrow implements Trident {
 
     public CraftTrident(CraftServer server, EntityThrownTrident entity) {
         super(server, entity);
