@@ -6,10 +6,10 @@ Subject: [PATCH] Plugin remapping
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index bcfe59b6efb628ee1e7f9d60667360d4d885fb6a..69f6e6aa7f71c155651826400c6d41f075eb9ea3 100644
+index 4e24a9dcad6c8b3f52c3039f2ba80dfedb911e03..ddd9bf846c7e918a1a36a6035b220db201c42440 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -56,9 +56,14 @@ dependencies {
+@@ -46,9 +46,14 @@ dependencies {
      testImplementation("org.mockito:mockito-core:5.11.0")
      testImplementation("org.ow2.asm:asm-tree:9.7")
      testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
@@ -18,14 +18,14 @@ index bcfe59b6efb628ee1e7f9d60667360d4d885fb6a..69f6e6aa7f71c155651826400c6d41f0
 +}
 +
 +paperweight {
-+    craftBukkitPackageVersion.set("v1_20_R3") // also needs to be updated in MappingEnvironment
++    craftBukkitPackageVersion.set("v1_20_R4") // also needs to be updated in MappingEnvironment
  }
  
--val craftbukkitPackageVersion = "1_20_R3" // Paper
+-val craftbukkitPackageVersion = "1_20_R4" // Paper
  tasks.jar {
      archiveClassifier.set("dev")
  
-@@ -78,7 +83,7 @@ tasks.jar {
+@@ -68,7 +73,7 @@ tasks.jar {
              "Specification-Vendor" to "Bukkit Team",
              "Git-Branch" to gitBranch, // Paper
              "Git-Commit" to gitHash, // Paper
@@ -34,55 +34,7 @@ index bcfe59b6efb628ee1e7f9d60667360d4d885fb6a..69f6e6aa7f71c155651826400c6d41f0
          )
          for (tld in setOf("net", "com", "org")) {
              attributes("$tld/bukkit", "Sealed" to true)
-@@ -94,28 +99,11 @@ tasks.compileTestJava {
- 
- publishing {
-     publications.create<MavenPublication>("maven") {
--        artifact(tasks.shadowJar)
--    }
--}
--
--relocation {
--    // Order matters here - e.g. craftbukkit proper must be relocated before any of the libs are relocated into the cb package
--    relocate("org.bukkit.craftbukkit" to "org.bukkit.craftbukkit.v$craftbukkitPackageVersion") {
--        exclude("org.bukkit.craftbukkit.Main*")
-     }
- }
- 
- tasks.shadowJar {
-     configurations = listOf(project.configurations.vanillaServer.get(), alsoShade)
--    archiveClassifier.set("mojang-mapped")
--
--    for (relocation in relocation.relocations.get()) {
--        relocate(relocation.fromPackage, relocation.toPackage) {
--            for (exclude in relocation.excludes) {
--                exclude(exclude)
--            }
--        }
--    }
- }
- 
- // Paper start
-@@ -129,18 +117,6 @@ tasks.check {
- }
- // Paper end
- 
--// Paper start - include reobf mappings in jar for stacktrace deobfuscation
--val includeMappings = tasks.register<io.papermc.paperweight.tasks.IncludeMappings>("includeMappings") {
--    inputJar.set(tasks.fixJarForReobf.flatMap { it.outputJar })
--    mappings.set(tasks.reobfJar.flatMap { it.mappingsFile })
--    mappingsDest.set("META-INF/mappings/reobf.tiny")
--}
--
--tasks.reobfJar {
--    inputJar.set(includeMappings.flatMap { it.outputJar })
--}
--// Paper end - include reobf mappings in jar for stacktrace deobfuscation
--
- tasks.test {
-     exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
-     useJUnitPlatform()
-@@ -187,20 +163,41 @@ val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatM
+@@ -148,20 +153,41 @@ val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatM
          runtime.filterNot { it.asFile.absolutePath == vanilla }
      }
  
@@ -1521,10 +1473,10 @@ index 0000000000000000000000000000000000000000..badff5d6ae6dd8d209c82bc7e8afe370
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 27db614d46dffc2d10f18d79cc5a084f3421d86b..58234db42c54ce32f1a8e0cd755ca350e87f3696 100644
+index 7b5d3fac1b5f4d22340a620a5edd5a8fba6be584..e021ac312127e0544606ab466cab781915e027d2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -670,6 +670,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -637,6 +637,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
          this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
@@ -1532,8 +1484,8 @@ index 27db614d46dffc2d10f18d79cc5a084f3421d86b..58234db42c54ce32f1a8e0cd755ca350
          this.connection.acceptConnections();
      }
  
-@@ -975,6 +976,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.server.waitForAsyncTasksShutdown(); // Paper - Wait for Async Tasks during shutdown
+@@ -909,6 +910,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.server.disablePlugins();
          }
          // CraftBukkit end
 +        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.shutdown(); // Paper - Plugin remapping
@@ -1541,10 +1493,10 @@ index 27db614d46dffc2d10f18d79cc5a084f3421d86b..58234db42c54ce32f1a8e0cd755ca350
          this.isSaving = true;
          if (this.playerList != null) {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 68d268b6fff126e8645b6deec3fb549ea2286b77..dd24112604d2dc99809d78f2dbc70eebd90aabc0 100644
+index 0d6688e9da81453e64daacfb81e4a13cc37b3e66..98cba55466d6798e5de33d8dcbf03e205e5199d8 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -343,6 +343,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -315,6 +315,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          }
      }
  
@@ -1872,31 +1824,22 @@ index 0000000000000000000000000000000000000000..73b20a92f330311e3fef8f03b51a0985
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c490a29bcf7410bc54959ee71375605964379ed5..f3eeeef09c41b14c04f33787b9a7927b4c16bf88 100644
+index 45160b93a24dc74f6368441e2a4fe659ceaf5bf5..6573e72d041714ccc2bf0e3c8734bc212caf534e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -510,7 +510,7 @@ public final class CraftServer implements Server {
-     // Paper start
-     @Override
-     public File getPluginsFolder() {
--        return (File) this.console.options.valueOf("plugins");
-+        return this.console.getPluginsFolder();
-     }
- 
-     private List<File> extraPluginJars() {
-@@ -1113,6 +1113,7 @@ public final class CraftServer implements Server {
+@@ -966,6 +966,7 @@ public final class CraftServer implements Server {
          this.enablePlugins(PluginLoadOrder.STARTUP);
          this.enablePlugins(PluginLoadOrder.POSTWORLD);
          this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
 +        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
-         org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
      }
  
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 3c7a771c48cc2732cc038ca11bb93ec5f8c2d667..183d8abcaa968117553601a0e9a27e8144737247 100644
+index adf28b8e77d42267ce41713e031ee316366202e8..29698be6e4990769cbe1c00088dfb9cfc73d966a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -74,6 +74,7 @@ import org.bukkit.potion.PotionType;
+@@ -72,6 +72,7 @@ import org.bukkit.potion.PotionType;
  
  @SuppressWarnings("deprecation")
  public final class CraftMagicNumbers implements UnsafeValues {
@@ -1904,22 +1847,20 @@ index 3c7a771c48cc2732cc038ca11bb93ec5f8c2d667..183d8abcaa968117553601a0e9a27e81
      public static final UnsafeValues INSTANCE = new CraftMagicNumbers();
  
      private CraftMagicNumbers() {}
-@@ -392,7 +393,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
-             if (pluginIndex < minimumIndex) {
-                 throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
-             }
--        } else {
-+        } else if (!DISABLE_PLUGIN_REWRITING) {
-             if (minimumIndex == -1) {
-                 CraftLegacy.init();
-                 Bukkit.getLogger().log(Level.WARNING, "Legacy plugin " + pdf.getFullName() + " does not specify an api-version.");
-@@ -408,6 +409,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -356,7 +357,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+             throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
+         }
+ 
+-        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
++        if (!DISABLE_PLUGIN_REWRITING && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
+             CraftLegacy.init();
+         }
+ 
+@@ -371,6 +372,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      @Override
      public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
-+        if (DISABLE_PLUGIN_REWRITING) {
-+            return clazz;
-+        }
++        if (DISABLE_PLUGIN_REWRITING) return clazz; // Paper
          try {
-             clazz = Commodore.convert(clazz, !CraftMagicNumbers.isLegacy(pdf));
+             clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()));
          } catch (Exception ex) {

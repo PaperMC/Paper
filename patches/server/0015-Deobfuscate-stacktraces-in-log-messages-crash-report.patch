@@ -6,36 +6,17 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 9cd80bc7f2b47e1044eef2592274e38d1988ff5d..2b3da4b69e89a6b98ec98820e55044fefdafc061 100644
+index 4eec2a9aace7bca8383c893eedf0c27e06ba71c6..4e24a9dcad6c8b3f52c3039f2ba80dfedb911e03 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -35,6 +35,7 @@ dependencies {
+@@ -34,6 +34,7 @@ dependencies {
      implementation("org.ow2.asm:asm-commons:9.7")
      implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
 +    implementation("net.fabricmc:mapping-io:0.5.0") // Paper - needed to read mappings for stacktrace deobfuscation
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
-     runtimeOnly("com.mysql:mysql-connector-j:8.2.0")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
-@@ -121,6 +122,18 @@ tasks.check {
- }
- // Paper end
  
-+// Paper start - include reobf mappings in jar for stacktrace deobfuscation
-+val includeMappings = tasks.register<io.papermc.paperweight.tasks.IncludeMappings>("includeMappings") {
-+    inputJar.set(tasks.fixJarForReobf.flatMap { it.outputJar })
-+    mappings.set(tasks.reobfJar.flatMap { it.mappingsFile })
-+    mappingsDest.set("META-INF/mappings/reobf.tiny")
-+}
-+
-+tasks.reobfJar {
-+    inputJar.set(includeMappings.flatMap { it.outputJar })
-+}
-+// Paper end - include reobf mappings in jar for stacktrace deobfuscation
-+
- tasks.test {
-     exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
-     useJUnitPlatform()
+     runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
 diff --git a/src/log4jPlugins/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java b/src/log4jPlugins/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..66b6011ee3684695b2ab9292961c80bf2a420ee9
@@ -108,19 +89,6 @@ index 0000000000000000000000000000000000000000..66b6011ee3684695b2ab9292961c80bf
 +        return new StacktraceDeobfuscatingRewritePolicy();
 +    }
 +}
-diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
-index 404a8fd128043527d23f22ee26f7c8c739f09089..9f24003fffee14592e5ef22e75ec9826428438e6 100644
---- a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
-+++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
-@@ -91,7 +91,7 @@ public class SyncLoadFinder {
- 
-                 final JsonArray traces = new JsonArray();
- 
--                for (StackTraceElement element : pair.getFirst().stacktrace) {
-+                for (StackTraceElement element : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(pair.getFirst().stacktrace)) {
-                     traces.add(String.valueOf(element));
-                 }
- 
 diff --git a/src/main/java/io/papermc/paper/util/ObfHelper.java b/src/main/java/io/papermc/paper/util/ObfHelper.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..e8ff684d8bd994c64ff34f20e1e0601b678244c1
@@ -443,35 +411,8 @@ index 0000000000000000000000000000000000000000..eb910d4abf91488fa7cf1f5d47e0ee91
 +        return lineMap;
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/util/TraceUtil.java b/src/main/java/io/papermc/paper/util/TraceUtil.java
-index 2d5494d2813b773e60ddba6790b750a9a08f21f8..0b210bdf7c1f5962afbd44195af6f84f625635e3 100644
---- a/src/main/java/io/papermc/paper/util/TraceUtil.java
-+++ b/src/main/java/io/papermc/paper/util/TraceUtil.java
-@@ -6,13 +6,20 @@ public final class TraceUtil {
- 
-     public static void dumpTraceForThread(Thread thread, String reason) {
-         Bukkit.getLogger().warning(thread.getName() + ": " + reason);
--        StackTraceElement[] trace = thread.getStackTrace();
-+        StackTraceElement[] trace = StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace());
-         for (StackTraceElement traceElement : trace) {
-             Bukkit.getLogger().warning("\tat " + traceElement);
-         }
-     }
- 
-     public static void dumpTraceForThread(String reason) {
--        new Throwable(reason).printStackTrace();
-+        final Throwable throwable = new Throwable(reason);
-+        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(throwable);
-+        throwable.printStackTrace();
-+    }
-+
-+    public static void printStackTrace(Throwable thr) {
-+        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
-+        thr.printStackTrace();
-     }
- }
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
-index a9a0248b1bd1ac454064e977b61f9b7d80962ff8..6f2452de76e8f5fcc1367066e0e753740764eb98 100644
+index a23407fa1b906743890cff74f5051ad55d59c85e..06c514b2d0674cd7df6692981f020437ea0f2f91 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
 +++ b/src/main/java/net/minecraft/CrashReport.java
 @@ -34,6 +34,7 @@ public class CrashReport {
@@ -495,12 +436,12 @@ index f367ba058018074bfe6e4fe88bcc875ea9794d9e..2176171954609fd88f97f93408e14e01
          }
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 7648b889bc488197f32545e8c3671a54102c01ec..44e62675a2d612a8d727d9ce6db5fb85d1a0bcc8 100644
+index 256a983c7345902600d52d7b7e3056162275f4c7..0ccfdceea8e211c595be2dad2392876109b4eeef 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -75,13 +75,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     public static final AttributeKey<ConnectionProtocol.CodecData<?>> ATTRIBUTE_SERVERBOUND_PROTOCOL = AttributeKey.valueOf("serverbound_protocol");
-     public static final AttributeKey<ConnectionProtocol.CodecData<?>> ATTRIBUTE_CLIENTBOUND_PROTOCOL = AttributeKey.valueOf("clientbound_protocol");
+@@ -82,13 +82,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         marker.add(Connection.PACKET_MARKER);
+     });
      public static final Supplier<NioEventLoopGroup> NETWORK_WORKER_GROUP = Suppliers.memoize(() -> {
 -        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).build());
 +        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
@@ -513,9 +454,9 @@ index 7648b889bc488197f32545e8c3671a54102c01ec..44e62675a2d612a8d727d9ce6db5fb85
 -        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).build());
 +        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
      });
+     private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
-     private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
-@@ -207,7 +207,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -189,7 +189,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
              }
          }
@@ -524,31 +465,11 @@ index 7648b889bc488197f32545e8c3671a54102c01ec..44e62675a2d612a8d727d9ce6db5fb85
      }
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
-diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
-index 061eada043325142d33a0cec02e9e484d14a7fca..96d5448019d53ac3575e209c1c5c223a62a2638d 100644
---- a/src/main/java/net/minecraft/network/PacketEncoder.java
-+++ b/src/main/java/net/minecraft/network/PacketEncoder.java
-@@ -47,7 +47,14 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
- 
-                     JvmProfiler.INSTANCE.onPacketSent(codecData.protocol(), i, channelHandlerContext.channel().remoteAddress(), k);
-                 } catch (Throwable var13) {
--                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", i, packet.isSkippable(), var13); // Paper - Give proper error message
-+                    // Paper start - Give proper error message
-+                    String packetName = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(packet.getClass().getName());
-+                    if (packetName.contains(".")) {
-+                        packetName = packetName.substring(packetName.lastIndexOf(".") + 1);
-+                    }
-+
-+                    LOGGER.error("Packet encoding of packet {} (ID: {}) threw (skippable? {})", packetName, i, packet.isSkippable(), var13);
-+                    // Paper end
-                     if (packet.isSkippable()) {
-                         throw new SkipPacketException(var13);
-                     }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 28fe088d97bd5fbfcc29dcc7d2a657d54578b2be..c41c53ee3b1a8b5c2c41fc9846f557eeb4d10f9b 100644
+index 9249122da7282929f87613f41984b8085d7b53ec..21b8f1913ff54d2b1553826269355da8bdb7f702 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -194,6 +194,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -206,6 +206,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
@@ -556,21 +477,8 @@ index 28fe088d97bd5fbfcc29dcc7d2a657d54578b2be..c41c53ee3b1a8b5c2c41fc9846f557ee
          // Paper start - initialize global and world-defaults configuration
          this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
          this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
-diff --git a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-index e2537760becdd5b3f3561f7159ed7fc2755e6260..87c5690774363edc1b7ebff10b041e48c0a6d56d 100644
---- a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-@@ -137,7 +137,7 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
-             ServerConfigurationPacketListenerImpl.LOGGER.error("Couldn't place player in world", exception);
-             // Paper start - Debugging
-             if (MinecraftServer.getServer().isDebugging()) {
--                exception.printStackTrace();
-+                io.papermc.paper.util.TraceUtil.printStackTrace(exception);
-             }
-             // Paper end - Debugging
-             this.connection.send(new ClientboundDisconnectPacket(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA));
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index 187b2cf175ba5cea94158d29b53993dc5a7c5b94..3b6bafb242d2623c15f26acdacd036478c7dc214 100644
+index 987360a266a5a870f06929b00c9f451901188fd6..2cf3e79ec5e8706b71d27ebad4668773f0b91195 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 @@ -52,10 +52,10 @@ public class ServerConnectionListener {
@@ -587,70 +495,32 @@ index 187b2cf175ba5cea94158d29b53993dc5a7c5b94..3b6bafb242d2623c15f26acdacd03647
      final MinecraftServer server;
      public volatile boolean running;
 diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
-index 86c88e81e275d52576122a5083b419e64cb011fc..45d4638d568ea2aee805aa1b0542533019e5870d 100644
+index 8d06e8d286da2573e40794adab695ff77e5afd86..68551947f5b7d3471f15bd74ccd86519ab34c1c1 100644
 --- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
 +++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
-@@ -357,7 +357,7 @@ public class OldUsersConverter {
+@@ -356,7 +356,7 @@ public class OldUsersConverter {
                          try {
                              root = NbtIo.readCompressed(new java.io.FileInputStream(file5), NbtAccounter.unlimitedHeap());
                          } catch (Exception exception) {
 -                            exception.printStackTrace();
 +                            io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
-                             com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                          }
  
-@@ -371,7 +371,7 @@ public class OldUsersConverter {
+                         if (root != null) {
+@@ -369,7 +369,7 @@ public class OldUsersConverter {
                              try {
                                  NbtIo.writeCompressed(root, new java.io.FileOutputStream(file2));
                              } catch (Exception exception) {
 -                                exception.printStackTrace();
 +                                io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
-                                 com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                              }
                         }
-diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 5403fc4fa2ed2526d2e67c230a46dd2a75e017be..af757309cb46af6df07872f7596b66df6d6f18d7 100644
---- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -592,7 +592,7 @@ public class LevelChunk extends ChunkAccess {
-                     + " (" + getBlockState(blockposition) + ") where there was no entity tile!\n" +
-                     "Chunk coordinates: " + (this.chunkPos.x * 16) + "," + (this.chunkPos.z * 16) +
-                     "\nWorld: " + level.getLevel().dimension().location());
--            e.printStackTrace();
-+            io.papermc.paper.util.TraceUtil.printStackTrace(e);
-             ServerInternalException.reportInternalException(e);
-             // Paper end - ServerExceptionEvent
-             // CraftBukkit end
-diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
-index 3c1992e212a6d6f1db4d5b807b38d71913619fc0..9c1aff17aabd062640e3f451a2ef8c50a7c62f10 100644
---- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
-+++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
-@@ -40,9 +40,9 @@ public class CraftAsyncScheduler extends CraftScheduler {
- 
-     private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
-             4, Integer.MAX_VALUE,30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
--            new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").build());
-+            new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
-     private final Executor management = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
--            .setNameFormat("Craft Async Scheduler Management Thread").build());
-+            .setNameFormat("Craft Async Scheduler Management Thread").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
-     private final List<CraftTask> temp = new ArrayList<>();
- 
-     CraftAsyncScheduler() {
+                         // CraftBukkit end
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 017c2eadbc5dfec155c21b5d8a80f0b1e380398e..b1ac7338fa632611ea8332044b09070f78f8f5f1 100644
+index c4bf7053d83d207caca0e13e19f5c1afa7062de3..f697d45e0ac4e9cdc8a46121510a04c0f294d91f 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
-@@ -102,7 +102,7 @@ public class WatchdogThread extends Thread
-                     log.log(Level.SEVERE, "During the run of the server, a plugin set an excessive velocity on an entity");
-                     log.log(Level.SEVERE, "This may be the cause of the issue, or it may be entirely unrelated");
-                     log.log(Level.SEVERE, org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getMessage());
--                    for (StackTraceElement stack : org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getStackTrace()) {
-+                    for (StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getStackTrace())) { // Paper
-                         log.log( Level.SEVERE, "\t\t" + stack );
-                     }
-                 }
-@@ -172,7 +172,7 @@ public class WatchdogThread extends Thread
+@@ -130,7 +130,7 @@ public class WatchdogThread extends Thread
          }
          log.log( Level.SEVERE, "\tStack:" );
          //
@@ -660,7 +530,7 @@ index 017c2eadbc5dfec155c21b5d8a80f0b1e380398e..b1ac7338fa632611ea8332044b09070f
              log.log( Level.SEVERE, "\t\t" + stack );
          }
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
-index ea4e2161c0bd43884055cc6b8d70b2139f70e720..4e2ca9162450c1f54b7ab95a63c1bad8efe81a06 100644
+index 18e961a37b2830da6e5dab7aa35116b2f5215898..128fa1376f22d3429a23d79a2772abf2e7fec2bc 100644
 --- a/src/main/resources/log4j2.xml
 +++ b/src/main/resources/log4j2.xml
 @@ -30,10 +30,14 @@
