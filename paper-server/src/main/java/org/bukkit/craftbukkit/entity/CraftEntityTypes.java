@@ -50,6 +50,7 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.AreaEffectCloud;
+import org.bukkit.entity.Armadillo;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Axolotl;
@@ -58,7 +59,9 @@ import org.bukkit.entity.Bee;
 import org.bukkit.entity.Blaze;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Boat;
+import org.bukkit.entity.Bogged;
 import org.bukkit.entity.Breeze;
+import org.bukkit.entity.BreezeWindCharge;
 import org.bukkit.entity.Camel;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.CaveSpider;
@@ -115,6 +118,7 @@ import org.bukkit.entity.Marker;
 import org.bukkit.entity.Mule;
 import org.bukkit.entity.MushroomCow;
 import org.bukkit.entity.Ocelot;
+import org.bukkit.entity.OminousItemSpawner;
 import org.bukkit.entity.Painting;
 import org.bukkit.entity.Panda;
 import org.bukkit.entity.Parrot;
@@ -223,7 +227,7 @@ public final class CraftEntityTypes {
     private static final BiConsumer<SpawnData, net.minecraft.world.entity.Entity> MOVE_EMPTY_ROT = (spawnData, entity) -> entity.moveTo(spawnData.x(), spawnData.y(), spawnData.z(), 0, 0);
     private static final BiConsumer<SpawnData, EntityFireball> DIRECTION = (spawnData, entity) -> {
         Vector direction = spawnData.location().getDirection().multiply(10);
-        entity.setDirection(direction.getX(), direction.getY(), direction.getZ());
+        entity.assignPower(direction.getX(), direction.getY(), direction.getZ());
     };
     private static final Map<Class<?>, EntityTypeData<?, ?>> CLASS_TYPE_DATA = new HashMap<>();
     private static final Map<EntityType, EntityTypeData<?, ?>> ENTITY_TYPE_DATA = new HashMap<>();
@@ -233,6 +237,7 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.ELDER_GUARDIAN, ElderGuardian.class, CraftElderGuardian::new, createLiving(EntityTypes.ELDER_GUARDIAN)));
         register(new EntityTypeData<>(EntityType.WITHER_SKELETON, WitherSkeleton.class, CraftWitherSkeleton::new, createLiving(EntityTypes.WITHER_SKELETON)));
         register(new EntityTypeData<>(EntityType.STRAY, Stray.class, CraftStray::new, createLiving(EntityTypes.STRAY)));
+        register(new EntityTypeData<>(EntityType.BOGGED, Bogged.class, CraftBogged::new, createLiving(EntityTypes.BOGGED)));
         register(new EntityTypeData<>(EntityType.HUSK, Husk.class, CraftHusk::new, createLiving(EntityTypes.HUSK)));
         register(new EntityTypeData<>(EntityType.ZOMBIE_VILLAGER, ZombieVillager.class, CraftVillagerZombie::new, createLiving(EntityTypes.ZOMBIE_VILLAGER)));
         register(new EntityTypeData<>(EntityType.SKELETON_HORSE, SkeletonHorse.class, CraftSkeletonHorse::new, createLiving(EntityTypes.SKELETON_HORSE)));
@@ -310,6 +315,7 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.CAMEL, Camel.class, CraftCamel::new, createLiving(EntityTypes.CAMEL)));
         register(new EntityTypeData<>(EntityType.SNIFFER, Sniffer.class, CraftSniffer::new, createLiving(EntityTypes.SNIFFER)));
         register(new EntityTypeData<>(EntityType.BREEZE, Breeze.class, CraftBreeze::new, createLiving(EntityTypes.BREEZE)));
+        register(new EntityTypeData<>(EntityType.ARMADILLO, Armadillo.class, CraftArmadillo::new, createLiving(EntityTypes.ARMADILLO)));
 
         Function<SpawnData, EntityEnderDragon> dragonFunction = createLiving(EntityTypes.ENDER_DRAGON);
         register(new EntityTypeData<>(EntityType.ENDER_DRAGON, EnderDragon.class, CraftEnderDragon::new, spawnData -> {
@@ -323,6 +329,7 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.WITHER_SKULL, WitherSkull.class, CraftWitherSkull::new, createFireball(EntityTypes.WITHER_SKULL)));
         register(new EntityTypeData<>(EntityType.DRAGON_FIREBALL, DragonFireball.class, CraftDragonFireball::new, createFireball(EntityTypes.DRAGON_FIREBALL)));
         register(new EntityTypeData<>(EntityType.WIND_CHARGE, WindCharge.class, CraftWindCharge::new, createFireball(EntityTypes.WIND_CHARGE)));
+        register(new EntityTypeData<>(EntityType.BREEZE_WIND_CHARGE, BreezeWindCharge.class, CraftBreezeWindCharge::new, createFireball(EntityTypes.BREEZE_WIND_CHARGE)));
 
         // Hanging
         register(new EntityTypeData<>(EntityType.PAINTING, Painting.class, CraftPainting::new, createHanging(Painting.class, (spawnData, hangingData) -> {
@@ -353,6 +360,7 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.BOAT, Boat.class, CraftBoat::new, createAndMove(EntityTypes.BOAT)));
         register(new EntityTypeData<>(EntityType.LLAMA_SPIT, LlamaSpit.class, CraftLlamaSpit::new, createAndMove(EntityTypes.LLAMA_SPIT)));
         register(new EntityTypeData<>(EntityType.CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(EntityTypes.CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.OMINOUS_ITEM_SPAWNER, OminousItemSpawner.class, CraftOminousItemSpawner::new, createAndMove(EntityTypes.OMINOUS_ITEM_SPAWNER)));
 
         // Set pos
         register(new EntityTypeData<>(EntityType.MARKER, Marker.class, CraftMarker::new, createAndSetPos(EntityTypes.MARKER)));

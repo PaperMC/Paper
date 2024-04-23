@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.IRegistryCustom;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.ChunkCoordIntPair;
@@ -42,9 +43,11 @@ import org.bukkit.util.EntityTransformer;
 public class CraftStructure implements Structure {
 
     private final DefinedStructure structure;
+    private final IRegistryCustom registry;
 
-    public CraftStructure(DefinedStructure structure) {
+    public CraftStructure(DefinedStructure structure, IRegistryCustom registry) {
         this.structure = structure;
+        this.registry = registry;
     }
 
     @Override
@@ -145,7 +148,7 @@ public class CraftStructure implements Structure {
 
     @Override
     public List<Palette> getPalettes() {
-        return structure.palettes.stream().map(CraftPalette::new).collect(Collectors.toList());
+        return structure.palettes.stream().map((palette) -> new CraftPalette(palette, registry)).collect(Collectors.toList());
     }
 
     @Override

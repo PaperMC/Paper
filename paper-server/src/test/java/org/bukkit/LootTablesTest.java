@@ -1,8 +1,8 @@
 package org.bukkit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import net.minecraft.resources.MinecraftKey;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import net.minecraft.resources.ResourceKey;
+import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.loot.LootTable;
 import org.bukkit.loot.LootTables;
 import org.bukkit.support.AbstractTestingBase;
@@ -24,8 +24,8 @@ public class LootTablesTest extends AbstractTestingBase {
 
     @Test
     public void testNMS() {
-        for (MinecraftKey key : net.minecraft.world.level.storage.loot.LootTables.all()) {
-            NamespacedKey bukkitKey = CraftNamespacedKey.fromMinecraft(key);
+        for (ResourceKey<net.minecraft.world.level.storage.loot.LootTable> key : net.minecraft.world.level.storage.loot.LootTables.all()) {
+            NamespacedKey bukkitKey = CraftLootTable.minecraftToBukkitKey(key);
             LootTables lootTable = Registry.LOOT_TABLES.get(bukkitKey);
 
             assertNotNull(lootTable, "Unknown LootTable " + key);

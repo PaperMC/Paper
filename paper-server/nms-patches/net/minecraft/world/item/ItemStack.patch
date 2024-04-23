@@ -1,20 +1,17 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -81,6 +81,44 @@
- import net.minecraft.world.level.block.state.pattern.ShapeDetectorBlock;
+@@ -92,6 +92,40 @@
+ import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
-+import com.mojang.serialization.Dynamic;
 +import java.util.Map;
 +import java.util.Objects;
 +import net.minecraft.core.EnumDirection;
 +import net.minecraft.nbt.DynamicOpsNBT;
 +import net.minecraft.network.protocol.game.PacketPlayOutBlockChange;
-+import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.WorldServer;
 +import net.minecraft.sounds.SoundCategory;
-+import net.minecraft.util.datafix.fixes.DataConverterTypes;
 +import net.minecraft.world.level.block.BlockBed;
 +import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.BlockSapling;
@@ -35,55 +32,78 @@
 +import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.block.BlockFertilizeEvent;
 +import org.bukkit.event.player.PlayerItemDamageEvent;
 +import org.bukkit.event.world.StructureGrowEvent;
 +// CraftBukkit end
 +
- public final class ItemStack {
+ public final class ItemStack implements DataComponentHolder {
  
-     public static final Codec<ItemStack> CODEC = RecordCodecBuilder.create((instance) -> {
-@@ -175,7 +213,18 @@
-         this.item = null;
-     }
+     public static final Codec<Holder<Item>> ITEM_NON_AIR_CODEC = BuiltInRegistries.ITEM.holderByNameCodec().validate((holder) -> {
+@@ -100,14 +134,14 @@
+         }) : DataResult.success(holder);
+     });
+     public static final Codec<ItemStack> CODEC = Codec.lazyInitialized(() -> {
+-        return RecordCodecBuilder.create((instance) -> {
++        return RecordCodecBuilder.<ItemStack>create((instance) -> { // CraftBukkit - decompile error
+             return instance.group(ItemStack.ITEM_NON_AIR_CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder), ExtraCodecs.POSITIVE_INT.fieldOf("count").orElse(1).forGetter(ItemStack::getCount), DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter((itemstack) -> {
+                 return itemstack.components.asPatch();
+             })).apply(instance, ItemStack::new);
+         });
+     });
+     public static final Codec<ItemStack> SINGLE_ITEM_CODEC = Codec.lazyInitialized(() -> {
+-        return RecordCodecBuilder.create((instance) -> {
++        return RecordCodecBuilder.<ItemStack>create((instance) -> { // CraftBukkit - decompile error
+             return instance.group(ItemStack.ITEM_NON_AIR_CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder), DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter((itemstack) -> {
+                 return itemstack.components.asPatch();
+             })).apply(instance, (holder, datacomponentpatch) -> {
+@@ -132,19 +166,25 @@
+             if (i <= 0) {
+                 return ItemStack.EMPTY;
+             } else {
+-                Holder<Item> holder = (Holder) null.ITEM_STREAM_CODEC.decode(registryfriendlybytebuf);
++                Holder<Item> holder = (Holder) ITEM_STREAM_CODEC.decode(registryfriendlybytebuf); // CraftBukkit - decompile error
+                 DataComponentPatch datacomponentpatch = (DataComponentPatch) DataComponentPatch.STREAM_CODEC.decode(registryfriendlybytebuf);
  
--    private ItemStack(NBTTagCompound nbttagcompound) {
-+    // Called to run this stack through the data converter to handle older storage methods and serialized items
-+    public void convertStack(int version) {
-+        if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion()) {
-+            NBTTagCompound savedStack = new NBTTagCompound();
-+            this.save(savedStack);
-+            savedStack = (NBTTagCompound) MinecraftServer.getServer().fixerUpper.update(DataConverterTypes.ITEM_STACK, new Dynamic(DynamicOpsNBT.INSTANCE, savedStack), version, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
-+            this.load(savedStack);
-+        }
-+    }
-+
-+    // CraftBukkit - break into own method
-+    private void load(NBTTagCompound nbttagcompound) {
-         this.item = (Item) BuiltInRegistries.ITEM.get(new MinecraftKey(nbttagcompound.getString("id")));
-         this.count = nbttagcompound.getByte("Count");
-         if (nbttagcompound.contains("tag", 10)) {
-@@ -189,6 +238,11 @@
+-                return new ItemStack(holder, i, datacomponentpatch);
++                // CraftBukkit start
++                ItemStack itemstack = new ItemStack(holder, i, datacomponentpatch);
++                if (!datacomponentpatch.isEmpty()) {
++                    CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++                }
++                return itemstack;
++                // CraftBukkit end
+             }
+         }
  
-     }
+         public void encode(RegistryFriendlyByteBuf registryfriendlybytebuf, ItemStack itemstack) {
+-            if (itemstack.isEmpty()) {
++            if (itemstack.isEmpty() || itemstack.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
+                 registryfriendlybytebuf.writeVarInt(0);
+             } else {
+                 registryfriendlybytebuf.writeVarInt(itemstack.getCount());
+-                null.ITEM_STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.getItemHolder());
++                ITEM_STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.getItemHolder()); // CraftBukkit - decompile error
+                 DataComponentPatch.STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.components.asPatch());
+             }
+         }
+@@ -188,7 +228,7 @@
  
-+    private ItemStack(NBTTagCompound nbttagcompound) {
-+        this.load(nbttagcompound);
-+        // CraftBukkit end
-+    }
-+
-     public static ItemStack of(NBTTagCompound nbttagcompound) {
-         try {
-             return new ItemStack(nbttagcompound);
-@@ -266,11 +320,191 @@
+         return dataresult.isError() ? dataresult.map((unit) -> {
+             return itemstack;
+-        }) : (itemstack.getCount() > itemstack.getMaxStackSize() ? DataResult.error(() -> {
++        }) : (itemstack.getCount() > itemstack.getMaxStackSize() ? DataResult.<ItemStack>error(() -> { // CraftBukkit - decompile error
+             int i = itemstack.getCount();
+ 
+             return "Item stack with stack size of " + i + " was larger than maximum: " + itemstack.getMaxStackSize();
+@@ -347,11 +387,191 @@
              return EnumInteractionResult.PASS;
          } else {
              Item item = this.getItem();
 -            EnumInteractionResult enuminteractionresult = item.useOn(itemactioncontext);
 +            // CraftBukkit start - handle all block place event logic here
-+            NBTTagCompound oldData = this.getTagClone();
++            PatchedDataComponentMap oldData = this.getComponentsClone();
 +            int oldCount = this.getCount();
 +            WorldServer world = (WorldServer) itemactioncontext.getLevel();
 +
@@ -100,10 +120,10 @@
 +            } finally {
 +                world.captureBlockStates = false;
 +            }
-+            NBTTagCompound newData = this.getTagClone();
++            PatchedDataComponentMap newData = this.getComponentsClone();
 +            int newCount = this.getCount();
 +            this.setCount(oldCount);
-+            this.setTagClone(oldData);
++            this.setComponentsClone(oldData);
 +            if (enuminteractionresult.consumesAction() && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
 +                world.captureTreeGeneration = false;
 +                Location location = CraftLocation.toBukkit(blockposition, world.getWorld());
@@ -124,8 +144,8 @@
 +
 +                if (!fertilizeEvent.isCancelled()) {
 +                    // Change the stack to its new contents if it hasn't been tampered with.
-+                    if (this.getCount() == oldCount && Objects.equals(this.tag, oldData)) {
-+                        this.setTag(newData);
++                    if (this.getCount() == oldCount && Objects.equals(this.components, oldData)) {
++                        this.applyComponents(newData);
 +                        this.setCount(newCount);
 +                    }
 +                    for (CraftBlockState blockstate : blocks) {
@@ -140,7 +160,7 @@
 +            }
 +            world.captureTreeGeneration = false;
  
-             if (entityhuman != null && enuminteractionresult.shouldAwardStats()) {
+             if (entityhuman != null && enuminteractionresult.indicateItemUse()) {
 -                entityhuman.awardStat(StatisticList.ITEM_USED.get(item));
 +                EnumHand enumhand = itemactioncontext.getHand();
 +                org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
@@ -171,8 +191,8 @@
 +                    ItemSign.openSign = null; // SPIGOT-6758 - Reset on early return
 +                } else {
 +                    // Change the stack to its new contents if it hasn't been tampered with.
-+                    if (this.getCount() == oldCount && Objects.equals(this.tag, oldData)) {
-+                        this.setTag(newData);
++                    if (this.getCount() == oldCount && Objects.equals(this.components, oldData)) {
++                        this.applyComponents(newData);
 +                        this.setCount(newCount);
 +                    }
 +
@@ -187,7 +207,7 @@
 +                        IBlockData block = world.getBlockState(newblockposition);
 +
 +                        if (!(block.getBlock() instanceof BlockTileEntity)) { // Containers get placed automatically
-+                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true);
++                            block.onPlace(world, newblockposition, oldBlock, true);
 +                        }
 +
 +                        world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getBlockState(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
@@ -271,7 +291,7 @@
  
              return enuminteractionresult;
          }
-@@ -351,6 +585,21 @@
+@@ -432,6 +652,21 @@
                  }
  
                  i -= k;
@@ -284,47 +304,56 @@
 +                        event.getPlayer().updateInventory();
 +                    }
 +                    if (event.isCancelled()) {
-+                        return false;
++                        return;
 +                    }
 +
 +                    i = event.getDamage();
 +                }
 +                // CraftBukkit end
                  if (i <= 0) {
-                     return false;
+                     return;
                  }
-@@ -372,6 +621,11 @@
-                 if (this.hurt(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
-                     consumer.accept(t0);
-                     Item item = this.getItem();
-+                    // CraftBukkit start - Check for item breaking
-+                    if (this.count == 1 && t0 instanceof EntityHuman) {
-+                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) t0, this);
-+                    }
-+                    // CraftBukkit end
+@@ -474,6 +709,11 @@
+             this.hurtAndBreak(i, randomsource, entityplayer, () -> {
+                 entityliving.broadcastBreakEvent(enumitemslot);
+                 Item item = this.getItem();
++                // CraftBukkit start - Check for item breaking
++                if (this.count == 1 && entityliving instanceof EntityHuman) {
++                    org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) entityliving, this);
++                }
++                // CraftBukkit end
  
-                     this.shrink(1);
-                     if (t0 instanceof EntityHuman) {
-@@ -524,6 +778,17 @@
-         return this.tag;
+                 this.shrink(1);
+                 if (entityliving instanceof EntityHuman) {
+@@ -669,6 +909,17 @@
+         return this.getItem().useOnRelease(this);
      }
  
 +    // CraftBukkit start
 +    @Nullable
-+    private NBTTagCompound getTagClone() {
-+        return this.tag == null ? null : this.tag.copy();
++    private PatchedDataComponentMap getComponentsClone() {
++        return this.components.isEmpty() ? null : this.components.copy();
 +    }
 +
-+    private void setTagClone(@Nullable NBTTagCompound nbtttagcompound) {
-+        this.setTag(nbtttagcompound == null ? null : nbtttagcompound.copy());
++    private void setComponentsClone(@Nullable PatchedDataComponentMap patchedDataComponentMap) {
++        this.applyComponents(patchedDataComponentMap == null ? null : patchedDataComponentMap.copy());
 +    }
 +    // CraftBukkit end
 +
-     public NBTTagCompound getOrCreateTag() {
-         if (this.tag == null) {
-             this.setTag(new NBTTagCompound());
-@@ -948,6 +1213,13 @@
-         nbttaglist.add(nbttagcompound);
+     @Nullable
+     public <T> T set(DataComponentType<? super T> datacomponenttype, @Nullable T t0) {
+         return this.components.set(datacomponenttype, t0);
+@@ -728,7 +979,7 @@
+     }
+ 
+     private <T extends TooltipProvider> void addToTooltip(DataComponentType<T> datacomponenttype, Item.b item_b, Consumer<IChatBaseComponent> consumer, TooltipFlag tooltipflag) {
+-        T t0 = (TooltipProvider) this.get(datacomponenttype);
++        T t0 = (T) this.get(datacomponenttype); // CraftBukkit - decompile error
+ 
+         if (t0 != null) {
+             t0.addToTooltip(item_b, consumer, tooltipflag);
+@@ -955,6 +1206,13 @@
+ 
      }
  
 +    // CraftBukkit start
@@ -336,4 +365,13 @@
 +
      public IChatBaseComponent getDisplayName() {
          IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.empty().append(this.getHoverName());
+ 
+@@ -1017,7 +1275,7 @@
+     }
+ 
+     public void consume(int i, @Nullable EntityLiving entityliving) {
+-        if (entityliving == null || !entityliving.hasInfiniteMaterials()) {
++        if ((entityliving == null || !entityliving.hasInfiniteMaterials()) && this != ItemStack.EMPTY) { // CraftBukkit
+             this.shrink(i);
+         }
  

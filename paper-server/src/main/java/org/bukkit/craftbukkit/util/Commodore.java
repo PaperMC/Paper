@@ -173,6 +173,14 @@ public class Commodore {
                             }
                         }
 
+                        if (owner.equals("org/bukkit/attribute/Attribute")) {
+                            switch (name) {
+                                case "HORSE_JUMP_STRENGTH":
+                                    super.visitFieldInsn(opcode, owner, "GENERIC_JUMP_STRENGTH", desc);
+                                    return;
+                            }
+                        }
+
                         if (owner.equals("org/bukkit/loot/LootTables")) {
                             switch (name) {
                                 case "ZOMBIE_PIGMAN":
@@ -207,6 +215,9 @@ public class Commodore {
                                         break;
                                     case "GRASS":
                                         name = "SHORT_GRASS";
+                                        break;
+                                    case "SCUTE":
+                                        name = "TURTLE_SCUTE";
                                         break;
                                 }
                             }
@@ -247,6 +258,9 @@ public class Commodore {
 
                         if (owner.equals("org/bukkit/Particle")) {
                             switch (name) {
+                                case "SPELL_MOB_AMBIENT":
+                                    super.visitFieldInsn(opcode, owner, "SPELL_MOB", desc);
+                                    return;
                                 case "BLOCK_CRACK":
                                 case "BLOCK_DUST":
                                 case "FALLING_DUST":

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/IProjectile.java
 +++ b/net/minecraft/world/entity/projectile/IProjectile.java
-@@ -25,6 +25,10 @@
+@@ -26,6 +26,10 @@
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  import net.minecraft.world.phys.Vec3D;
  
@@ -11,7 +11,7 @@
  public abstract class IProjectile extends Entity implements TraceableEntity {
  
      @Nullable
-@@ -34,6 +38,10 @@
+@@ -35,6 +39,10 @@
      private boolean leftOwner;
      private boolean hasBeenShot;
  
@@ -22,7 +22,7 @@
      IProjectile(EntityTypes<? extends IProjectile> entitytypes, World world) {
          super(entitytypes, world);
      }
-@@ -43,6 +51,7 @@
+@@ -44,6 +52,7 @@
              this.ownerUUID = entity.getUUID();
              this.cachedOwner = entity;
          }
@@ -30,24 +30,25 @@
  
      }
  
-@@ -167,6 +176,16 @@
+@@ -170,6 +179,17 @@
          this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, entity.onGround() ? 0.0D : vec3d.y, vec3d.z));
      }
  
 +    // CraftBukkit start - call projectile hit event
-+    protected void preOnHit(MovingObjectPosition movingobjectposition) {
++    protected ProjectileDeflection preHitTargetOrDeflectSelf(MovingObjectPosition movingobjectposition) {
 +        org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition);
 +        this.hitCancelled = event != null && event.isCancelled();
 +        if (movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK || !this.hitCancelled) {
-+            this.onHit(movingobjectposition);
++            return this.hitTargetOrDeflectSelf(movingobjectposition);
 +        }
++        return ProjectileDeflection.NONE;
 +    }
 +    // CraftBukkit end
 +
-     protected void onHit(MovingObjectPosition movingobjectposition) {
-         MovingObjectPosition.EnumMovingObjectType movingobjectposition_enummovingobjecttype = movingobjectposition.getType();
- 
-@@ -187,6 +206,11 @@
+     protected ProjectileDeflection hitTargetOrDeflectSelf(MovingObjectPosition movingobjectposition) {
+         if (movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
+             MovingObjectPositionEntity movingobjectpositionentity = (MovingObjectPositionEntity) movingobjectposition;
+@@ -225,6 +245,11 @@
      protected void onHitEntity(MovingObjectPositionEntity movingobjectpositionentity) {}
  
      protected void onHitBlock(MovingObjectPositionBlock movingobjectpositionblock) {

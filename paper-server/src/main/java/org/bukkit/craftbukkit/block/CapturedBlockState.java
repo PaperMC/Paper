@@ -2,8 +2,6 @@ package org.bukkit.craftbukkit.block;
 
 import net.minecraft.core.BlockPosition;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.animal.EntityBee;
 import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.World;
 import net.minecraft.world.level.block.entity.TileEntity;
@@ -63,9 +61,7 @@ public final class CapturedBlockState extends CraftBlockState {
                 int j = 2 + random.nextInt(2);
 
                 for (int k = 0; k < j; ++k) {
-                    EntityBee entitybee = new EntityBee(EntityTypes.BEE, generatoraccessseed.getMinecraftWorld());
-
-                    tileentitybeehive.addOccupantWithPresetTicks(entitybee, false, random.nextInt(599));
+                    tileentitybeehive.storeBee(TileEntityBeehive.c.create(random.nextInt(599)));
                 }
             }
             // End copied block

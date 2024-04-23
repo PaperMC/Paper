@@ -61,9 +61,9 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.RayTrace;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.Climate;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunkExtension;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.SavedFile;
 import net.minecraft.world.phys.AxisAlignedBB;
@@ -334,7 +334,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (playerChunk == null) return false;
 
         playerChunk.getTickingChunkFuture().thenAccept(either -> {
-            either.left().ifPresent(chunk -> {
+            either.ifSuccess(chunk -> {
                 List<EntityPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
                 if (playersInRange.isEmpty()) return;
 
@@ -1318,19 +1318,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean getKeepSpawnInMemory() {
-        return world.keepSpawnInMemory;
+        return getGameRuleValue(GameRule.SPAWN_RADIUS) > 0;
     }
 
     @Override
     public void setKeepSpawnInMemory(boolean keepLoaded) {
-        world.keepSpawnInMemory = keepLoaded;
-        // Grab the worlds spawn chunk
-        BlockPosition chunkcoordinates = this.world.getSharedSpawnPos();
         if (keepLoaded) {
-            world.getChunkSource().addRegionTicket(TicketType.START, new ChunkCoordIntPair(chunkcoordinates), 11, Unit.INSTANCE);
+            setGameRule(GameRule.SPAWN_CHUNK_RADIUS, getGameRuleDefault(GameRule.SPAWN_CHUNK_RADIUS));
         } else {
-            // TODO: doesn't work well if spawn changed....
-            world.getChunkSource().removeRegionTicket(TicketType.START, new ChunkCoordIntPair(chunkcoordinates), 11, Unit.INSTANCE);
+            setGameRule(GameRule.SPAWN_CHUNK_RADIUS, 0);
         }
     }
 

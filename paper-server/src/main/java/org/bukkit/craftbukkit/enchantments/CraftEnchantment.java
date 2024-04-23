@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.enchantments;
 
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.enchantment.EnchantmentBinding;
@@ -18,6 +19,10 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
 
     public static Enchantment minecraftToBukkit(net.minecraft.world.item.enchantment.Enchantment minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.ENCHANTMENT, Registry.ENCHANTMENT);
+    }
+
+    public static Enchantment minecraftHolderToBukkit(Holder<net.minecraft.world.item.enchantment.Enchantment> minecraft) {
+        return minecraftToBukkit(minecraft.value());
     }
 
     public static net.minecraft.world.item.enchantment.Enchantment bukkitToMinecraft(Enchantment bukkit) {
@@ -56,22 +61,7 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
 
     @Override
     public EnchantmentTarget getItemTarget() {
-        return switch (handle.category) {
-            case ARMOR -> EnchantmentTarget.ARMOR;
-            case ARMOR_FEET -> EnchantmentTarget.ARMOR_FEET;
-            case ARMOR_HEAD -> EnchantmentTarget.ARMOR_HEAD;
-            case ARMOR_LEGS -> EnchantmentTarget.ARMOR_LEGS;
-            case ARMOR_CHEST -> EnchantmentTarget.ARMOR_TORSO;
-            case DIGGER -> EnchantmentTarget.TOOL;
-            case WEAPON -> EnchantmentTarget.WEAPON;
-            case BOW -> EnchantmentTarget.BOW;
-            case FISHING_ROD -> EnchantmentTarget.FISHING_ROD;
-            case BREAKABLE -> EnchantmentTarget.BREAKABLE;
-            case WEARABLE -> EnchantmentTarget.WEARABLE;
-            case TRIDENT -> EnchantmentTarget.TRIDENT;
-            case CROSSBOW -> EnchantmentTarget.CROSSBOW;
-            case VANISHABLE -> EnchantmentTarget.VANISHABLE;
-        };
+        throw new UnsupportedOperationException("Method longer applicable. Use Tags instead.");
     }
 
     @Override
@@ -130,8 +120,11 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
             case 34 -> "MULTISHOT";
             case 35 -> "QUICK_CHARGE";
             case 36 -> "PIERCING";
-            case 37 -> "MENDING";
-            case 38 -> "VANISHING_CURSE";
+            case 37 -> "DENSITY";
+            case 38 -> "BREACH";
+            case 39 -> "WIND_BURST";
+            case 40 -> "MENDING";
+            case 41 -> "VANISHING_CURSE";
             default -> getKey().toString();
         };
     }

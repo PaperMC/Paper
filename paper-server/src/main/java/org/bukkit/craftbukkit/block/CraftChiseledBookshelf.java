@@ -70,7 +70,14 @@ public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookSh
             return -1;
         }
 
-        return ChiseledBookShelfBlock.getHitSlot(faceVector);
+        return getHitSlot(faceVector);
+    }
+
+    private static int getHitSlot(Vec2F vec2f) {
+        int i = vec2f.y >= 0.5F ? 0 : 1;
+        int j = ChiseledBookShelfBlock.getSection(vec2f.x);
+
+        return j + i * 3;
     }
 
     @Override

@@ -10,7 +10,6 @@ import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
-import org.bukkit.potion.Potion;
 
 public class CraftEffect {
     public static <T> int getDataValue(Effect effect, T data) {
@@ -20,8 +19,6 @@ public class CraftEffect {
             datavalue = (Integer) data;
             break;
         case POTION_BREAK:
-            datavalue = ((Potion) data).toDamageValue() & 0x3F;
-            break;
         case INSTANT_POTION_BREAK:
             datavalue = ((Color) data).asRGB();
             break;

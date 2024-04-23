@@ -18,8 +18,6 @@ public class EnchantmentTest extends AbstractTestingBase {
             Enchantment bukkitById = Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(key));
 
             assertFalse(bukkitById.getName().startsWith("UNKNOWN"), "Unknown enchant name for " + key);
-
-            assertNotNull(bukkitById.getItemTarget(), "Unknown target for " + key);
         }
     }
 }

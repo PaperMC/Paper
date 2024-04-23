@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockSweetBerryBush.java
 +++ b/net/minecraft/world/level/block/BlockSweetBerryBush.java
-@@ -28,6 +28,13 @@
+@@ -30,6 +30,13 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  
@@ -14,16 +14,16 @@
  public class BlockSweetBerryBush extends BlockPlant implements IBlockFragilePlantElement {
  
      public static final MapCodec<BlockSweetBerryBush> CODEC = simpleCodec(BlockSweetBerryBush::new);
-@@ -69,7 +76,7 @@
+@@ -71,7 +78,7 @@
          if (i < 3 && randomsource.nextInt(5) == 0 && worldserver.getRawBrightness(blockposition.above(), 0) >= 9) {
              IBlockData iblockdata1 = (IBlockData) iblockdata.setValue(BlockSweetBerryBush.AGE, i + 1);
  
 -            worldserver.setBlock(blockposition, iblockdata1, 2);
 +            if (!CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, iblockdata1, 2)) return; // CraftBukkit
-             worldserver.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.a.of(iblockdata1));
+             worldserver.gameEvent((Holder) GameEvent.BLOCK_CHANGE, blockposition, GameEvent.a.of(iblockdata1));
          }
  
-@@ -84,7 +91,7 @@
+@@ -86,7 +93,7 @@
                  double d1 = Math.abs(entity.getZ() - entity.zOld);
  
                  if (d0 >= 0.003000000026077032D || d1 >= 0.003000000026077032D) {
@@ -32,13 +32,13 @@
                  }
              }
  
-@@ -101,7 +108,15 @@
-         } else if (i > 1) {
+@@ -109,7 +116,15 @@
+         if (i > 1) {
              int j = 1 + world.random.nextInt(2);
  
 -            popResource(world, blockposition, new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0)));
-+            // CraftBukkit start
-+            PlayerHarvestBlockEvent event = CraftEventFactory.callPlayerHarvestBlockEvent(world, blockposition, entityhuman, enumhand, Collections.singletonList(new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0))));
++            // CraftBukkit start - useWithoutItem is always MAIN_HAND
++            PlayerHarvestBlockEvent event = CraftEventFactory.callPlayerHarvestBlockEvent(world, blockposition, entityhuman, EnumHand.MAIN_HAND, Collections.singletonList(new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0))));
 +            if (event.isCancelled()) {
 +                return EnumInteractionResult.SUCCESS; // We need to return a success either way, because making it PASS or FAIL will result in a bug where cancelling while harvesting w/ block in hand places block
 +            }

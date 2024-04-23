@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/trading/MerchantRecipe.java
 +++ b/net/minecraft/world/item/trading/MerchantRecipe.java
-@@ -5,6 +5,8 @@
+@@ -8,6 +8,8 @@
  import net.minecraft.util.MathHelper;
  import net.minecraft.world.item.ItemStack;
  
@@ -8,8 +8,8 @@
 +
  public class MerchantRecipe {
  
-     public ItemStack baseCostA;
-@@ -17,6 +19,22 @@
+     public static final Codec<MerchantRecipe> CODEC = RecordCodecBuilder.create((instance) -> {
+@@ -44,6 +46,18 @@
      public int demand;
      public float priceMultiplier;
      public int xp;
@@ -20,27 +20,15 @@
 +        return (bukkitHandle == null) ? bukkitHandle = new CraftMerchantRecipe(this) : bukkitHandle;
 +    }
 +
-+    public MerchantRecipe(ItemStack itemstack, ItemStack itemstack1, ItemStack itemstack2, int uses, int maxUses, int experience, float priceMultiplier, CraftMerchantRecipe bukkit) {
-+        this(itemstack, itemstack1, itemstack2, uses, maxUses, experience, priceMultiplier, 0, bukkit);
-+    }
-+
-+    public MerchantRecipe(ItemStack itemstack, ItemStack itemstack1, ItemStack itemstack2, int uses, int maxUses, int experience, float priceMultiplier, int demand, CraftMerchantRecipe bukkit) {
-+        this(itemstack, itemstack1, itemstack2, uses, maxUses, experience, priceMultiplier, demand);
++    public MerchantRecipe(ItemCost baseCostA, Optional<ItemCost> costB, ItemStack result, int uses, int maxUses, int experience, float priceMultiplier, int demand, CraftMerchantRecipe bukkit) {
++        this(baseCostA, costB, result, uses, maxUses, experience, priceMultiplier, demand);
 +        this.bukkitHandle = bukkit;
 +    }
 +    // CraftBukkit end
  
-     public MerchantRecipe(NBTTagCompound nbttagcompound) {
-         this.rewardExp = true;
-@@ -96,6 +114,7 @@
-             return ItemStack.EMPTY;
-         } else {
-             int i = this.baseCostA.getCount();
-+            if (i <= 0) return ItemStack.EMPTY; // CraftBukkit - SPIGOT-5476
-             int j = Math.max(0, MathHelper.floor((float) (i * this.demand) * this.priceMultiplier));
- 
-             return this.baseCostA.copyWithCount(MathHelper.clamp(i + j + this.specialPriceDiff, 1, this.baseCostA.getItem().getMaxStackSize()));
-@@ -216,7 +235,11 @@
+     private MerchantRecipe(ItemCost itemcost, Optional<ItemCost> optional, ItemStack itemstack, int i, int j, boolean flag, int k, int l, float f, int i1) {
+         this.baseCostA = itemcost;
+@@ -185,7 +199,11 @@
          if (!this.satisfiedBy(itemstack, itemstack1)) {
              return false;
          } else {

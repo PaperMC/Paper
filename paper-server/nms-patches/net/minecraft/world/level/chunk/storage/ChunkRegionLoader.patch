@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java
 +++ b/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java
-@@ -102,7 +102,7 @@
+@@ -104,7 +104,7 @@
          ChunkProviderServer chunkproviderserver = worldserver.getChunkSource();
          LevelLightEngine levellightengine = chunkproviderserver.getLightEngine();
          IRegistry<BiomeBase> iregistry = worldserver.registryAccess().registryOrThrow(Registries.BIOME);
@@ -8,14 +8,8 @@
 +        Codec<DataPaletteBlock<Holder<BiomeBase>>> codec = makeBiomeCodecRW(iregistry); // CraftBukkit - read/write
          boolean flag2 = false;
  
-         DataResult dataresult;
-@@ -122,12 +122,12 @@
-                     });
-                     logger = ChunkRegionLoader.LOGGER;
-                     Objects.requireNonNull(logger);
--                    datapaletteblock = (DataPaletteBlock) dataresult.getOrThrow(false, logger::error);
-+                    datapaletteblock = (DataPaletteBlock) ((DataResult<DataPaletteBlock<IBlockData>>) dataresult).getOrThrow(false, logger::error); // CraftBukkit - decompile error
-                 } else {
+         for (int j = 0; j < nbttaglist.size(); ++j) {
+@@ -123,17 +123,17 @@
                      datapaletteblock = new DataPaletteBlock<>(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), DataPaletteBlock.d.SECTION_STATES);
                  }
  
@@ -23,13 +17,10 @@
 +                DataPaletteBlock object; // CraftBukkit - read/write
  
                  if (nbttagcompound1.contains("biomes", 10)) {
-                     dataresult = codec.parse(DynamicOpsNBT.INSTANCE, nbttagcompound1.getCompound("biomes")).promotePartial((s) -> {
-@@ -135,12 +135,12 @@
-                     });
-                     logger = ChunkRegionLoader.LOGGER;
-                     Objects.requireNonNull(logger);
--                    object = (PalettedContainerRO) dataresult.getOrThrow(false, logger::error);
-+                    object = ((DataResult<DataPaletteBlock<Holder<BiomeBase>>>) dataresult).getOrThrow(false, logger::error); // CraftBukkit - decompile error
+-                    object = (PalettedContainerRO) codec.parse(DynamicOpsNBT.INSTANCE, nbttagcompound1.getCompound("biomes")).promotePartial((s) -> {
++                    object = codec.parse(DynamicOpsNBT.INSTANCE, nbttagcompound1.getCompound("biomes")).promotePartial((s) -> { // CraftBukkit - decompile error
+                         logErrors(chunkcoordintpair, b0, s);
+                     }).getOrThrow(ChunkRegionLoader.a::new);
                  } else {
                      object = new DataPaletteBlock<>(iregistry.asHolderIdMap(), iregistry.getHolderOrThrow(Biomes.PLAINS), DataPaletteBlock.d.SECTION_BIOMES);
                  }
@@ -39,25 +30,25 @@
  
                  achunksection[k] = chunksection;
                  SectionPosition sectionposition = SectionPosition.of(chunkcoordintpair, b0);
-@@ -176,7 +176,7 @@
+@@ -170,7 +170,7 @@
              dataresult = BlendingData.CODEC.parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("blending_data")));
-             logger1 = ChunkRegionLoader.LOGGER;
-             Objects.requireNonNull(logger1);
--            blendingdata = (BlendingData) dataresult.resultOrPartial(logger1::error).orElse((Object) null);
-+            blendingdata = (BlendingData) ((DataResult<BlendingData>) dataresult).resultOrPartial(logger1::error).orElse(null); // CraftBukkit - decompile error
+             logger = ChunkRegionLoader.LOGGER;
+             Objects.requireNonNull(logger);
+-            blendingdata = (BlendingData) dataresult.resultOrPartial(logger::error).orElse((Object) null);
++            blendingdata = (BlendingData) ((DataResult<BlendingData>) dataresult).resultOrPartial(logger::error).orElse(null); // CraftBukkit - decompile error
          } else {
              blendingdata = null;
          }
-@@ -207,7 +207,7 @@
+@@ -201,7 +201,7 @@
                  dataresult = BelowZeroRetrogen.CODEC.parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("below_zero_retrogen")));
-                 logger1 = ChunkRegionLoader.LOGGER;
-                 Objects.requireNonNull(logger1);
--                Optional optional = dataresult.resultOrPartial(logger1::error);
-+                Optional<BelowZeroRetrogen> optional = ((DataResult<BelowZeroRetrogen>) dataresult).resultOrPartial(logger1::error); // CraftBukkit - decompile error
+                 logger = ChunkRegionLoader.LOGGER;
+                 Objects.requireNonNull(logger);
+-                Optional optional = dataresult.resultOrPartial(logger::error);
++                Optional<BelowZeroRetrogen> optional = ((DataResult<BelowZeroRetrogen>) dataresult).resultOrPartial(logger::error); // CraftBukkit - decompile error
  
                  Objects.requireNonNull(protochunk);
                  optional.ifPresent(protochunk::setBelowZeroRetrogen);
-@@ -221,6 +221,13 @@
+@@ -215,6 +215,13 @@
              }
          }
  
@@ -71,7 +62,7 @@
          ((IChunkAccess) object1).setLightCorrect(flag);
          NBTTagCompound nbttagcompound2 = nbttagcompound.getCompound("Heightmaps");
          EnumSet<HeightMap.Type> enumset = EnumSet.noneOf(HeightMap.Type.class);
-@@ -300,6 +307,12 @@
+@@ -294,6 +301,12 @@
          return DataPaletteBlock.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), DataPaletteBlock.d.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS));
      }
  
@@ -84,7 +75,7 @@
      public static NBTTagCompound write(WorldServer worldserver, IChunkAccess ichunkaccess) {
          ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
          NBTTagCompound nbttagcompound = GameProfileSerializer.addCurrentDataVersion(new NBTTagCompound());
-@@ -311,7 +324,7 @@
+@@ -305,7 +318,7 @@
          nbttagcompound.putLong("InhabitedTime", ichunkaccess.getInhabitedTime());
          nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(ichunkaccess.getStatus()).toString());
          BlendingData blendingdata = ichunkaccess.getBlendingData();
@@ -93,16 +84,7 @@
          Logger logger;
  
          if (blendingdata != null) {
-@@ -358,7 +371,7 @@
- 
-                 if (flag1) {
-                     ChunkSection chunksection = achunksection[j];
--                    DataResult dataresult1 = ChunkRegionLoader.BLOCK_STATE_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, chunksection.getStates());
-+                    DataResult<NBTBase> dataresult1 = ChunkRegionLoader.BLOCK_STATE_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, chunksection.getStates()); // CraftBukkit - decompile error
-                     Logger logger1 = ChunkRegionLoader.LOGGER;
- 
-                     Objects.requireNonNull(logger1);
-@@ -441,6 +454,11 @@
+@@ -429,6 +442,11 @@
  
          nbttagcompound.put("Heightmaps", nbttagcompound3);
          nbttagcompound.put("structures", packStructureData(StructurePieceSerializationContext.fromLevel(worldserver), chunkcoordintpair, ichunkaccess.getAllStarts(), ichunkaccess.getAllReferences()));
@@ -114,7 +96,7 @@
          return nbttagcompound;
      }
  
-@@ -545,6 +563,12 @@
+@@ -533,6 +551,12 @@
                  StructureStart structurestart = StructureStart.loadStaticStart(structurepieceserializationcontext, nbttagcompound1.getCompound(s), i);
  
                  if (structurestart != null) {

@@ -1,27 +1,79 @@
 --- a/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
 +++ b/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
-@@ -79,6 +79,12 @@
+@@ -79,6 +79,18 @@
  import net.minecraft.world.phys.Vec3D;
- import org.joml.Vector3f;
+ import net.minecraft.world.ticks.ContainerSingleItem;
  
 +// CraftBukkit start
++import java.util.Arrays;
++import java.util.List;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.AbstractHorse;
++import org.bukkit.entity.HumanEntity;
 +import org.bukkit.event.entity.EntityRegainHealthEvent;
++import org.bukkit.inventory.InventoryHolder;
 +// CraftBukkit end
 +
  public abstract class EntityHorseAbstract extends EntityAnimal implements IInventoryListener, HasCustomInventoryScreen, OwnableEntity, IJumpable, ISaddleable {
  
      public static final int EQUIPMENT_SLOT_OFFSET = 400;
-@@ -140,6 +146,7 @@
-     protected int gallopSoundCounter;
-     @Nullable
-     private UUID owner;
+@@ -156,7 +168,53 @@
+         public boolean stillValid(EntityHuman entityhuman) {
+             return entityhuman.getVehicle() == EntityHorseAbstract.this || entityhuman.canInteractWithEntity((Entity) EntityHorseAbstract.this, 4.0D);
+         }
++
++        // CraftBukkit start - add fields and methods
++        public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++        private int maxStack = MAX_STACK;
++
++        @Override
++        public List<ItemStack> getContents() {
++            return Arrays.asList(this.getTheItem());
++        }
++
++        @Override
++        public void onOpen(CraftHumanEntity who) {
++            transaction.add(who);
++        }
++
++        @Override
++        public void onClose(CraftHumanEntity who) {
++            transaction.remove(who);
++        }
++
++        @Override
++        public List<HumanEntity> getViewers() {
++            return transaction;
++        }
++
++        @Override
++        public int getMaxStackSize() {
++            return maxStack;
++        }
++
++        @Override
++        public void setMaxStackSize(int size) {
++            maxStack = size;
++        }
++
++        @Override
++        public InventoryHolder getOwner() {
++            return (AbstractHorse) EntityHorseAbstract.this.getBukkitEntity();
++        }
++
++        @Override
++        public Location getLocation() {
++            return EntityHorseAbstract.this.getBukkitEntity().getLocation();
++        }
++        // CraftBukkit end
+     };
 +    public int maxDomestication = 100; // CraftBukkit - store max domestication value
  
      protected EntityHorseAbstract(EntityTypes<? extends EntityHorseAbstract> entitytypes, World world) {
          super(entitytypes, world);
-@@ -335,7 +342,7 @@
+@@ -346,7 +404,7 @@
      public void createInventory() {
          InventorySubcontainer inventorysubcontainer = this.inventory;
  
@@ -30,7 +82,7 @@
          if (inventorysubcontainer != null) {
              inventorysubcontainer.removeListener(this);
              int i = Math.min(inventorysubcontainer.getContainerSize(), this.inventory.getContainerSize());
-@@ -443,7 +450,7 @@
+@@ -450,7 +508,7 @@
      }
  
      public int getMaxTemper() {
@@ -39,7 +91,7 @@
      }
  
      @Override
-@@ -514,7 +521,7 @@
+@@ -521,7 +579,7 @@
          }
  
          if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
@@ -48,7 +100,7 @@
              flag = true;
          }
  
-@@ -588,7 +595,7 @@
+@@ -595,7 +653,7 @@
          super.aiStep();
          if (!this.level().isClientSide && this.isAlive()) {
              if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
@@ -57,15 +109,15 @@
              }
  
              if (this.canEatGrass()) {
-@@ -855,6 +862,7 @@
+@@ -857,6 +915,7 @@
          if (this.getOwnerUUID() != null) {
              nbttagcompound.putUUID("Owner", this.getOwnerUUID());
          }
 +        nbttagcompound.putInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
  
          if (!this.inventory.getItem(0).isEmpty()) {
-             nbttagcompound.put("SaddleItem", this.inventory.getItem(0).save(new NBTTagCompound()));
-@@ -882,6 +890,11 @@
+             nbttagcompound.put("SaddleItem", this.inventory.getItem(0).save(this.registryAccess()));
+@@ -884,6 +943,11 @@
          if (uuid != null) {
              this.setOwnerUUID(uuid);
          }
@@ -76,8 +128,8 @@
 +        // CraftBukkit end
  
          if (nbttagcompound.contains("SaddleItem", 10)) {
-             ItemStack itemstack = ItemStack.of(nbttagcompound.getCompound("SaddleItem"));
-@@ -984,6 +997,17 @@
+             ItemStack itemstack = (ItemStack) ItemStack.parse(this.registryAccess(), nbttagcompound.getCompound("SaddleItem")).orElse(ItemStack.EMPTY);
+@@ -986,6 +1050,17 @@
  
      @Override
      public void handleStartJump(int i) {

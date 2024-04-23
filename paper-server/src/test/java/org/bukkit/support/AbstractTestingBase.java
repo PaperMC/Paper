@@ -55,9 +55,9 @@ public abstract class AbstractTestingBase {
         layers = WorldLoader.loadAndReplaceLayer(resourceManager, layers, RegistryLayer.WORLDGEN, RegistryDataLoader.WORLDGEN_REGISTRIES);
         REGISTRY_CUSTOM = layers.compositeAccess().freeze();
         // Register vanilla pack
-        DATA_PACK = DataPackResources.loadResources(resourceManager, REGISTRY_CUSTOM, FeatureFlags.REGISTRY.allFlags(), CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        DATA_PACK = DataPackResources.loadResources(resourceManager, layers, FeatureFlags.REGISTRY.allFlags(), CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
         // Bind tags
-        DATA_PACK.updateRegistryTags(REGISTRY_CUSTOM);
+        DATA_PACK.updateRegistryTags();
         // Biome shortcut
         BIOMES = REGISTRY_CUSTOM.registryOrThrow(Registries.BIOME);
 

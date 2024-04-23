@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.IInventory;
 import net.minecraft.world.entity.Entity;
@@ -16,6 +19,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParameter;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParameterSet;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
 import net.minecraft.world.phys.Vec3D;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -23,11 +27,32 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftLocation;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootContext;
 
 public class CraftLootTable implements org.bukkit.loot.LootTable {
+
+    public static org.bukkit.loot.LootTable minecraftToBukkit(MinecraftKey minecraft) {
+        return (minecraft == null) ? null : Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(minecraft));
+    }
+
+    public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceKey<LootTable> minecraft) {
+        return (minecraft == null) ? null : Bukkit.getLootTable(minecraftToBukkitKey(minecraft));
+    }
+
+    public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {
+        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft.location());
+    }
+
+    public static ResourceKey<LootTable> bukkitToMinecraft(org.bukkit.loot.LootTable table) {
+        return (table == null) ? null : bukkitKeyToMinecraft(table.getKey());
+    }
+
+    public static ResourceKey<LootTable> bukkitKeyToMinecraft(NamespacedKey key) {
+        return (key == null) ? null : ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(key));
+    }
 
     private final LootTable handle;
     private final NamespacedKey key;

@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/network/HandshakeListener.java
 +++ b/net/minecraft/server/network/HandshakeListener.java
-@@ -11,8 +11,17 @@
- import net.minecraft.network.protocol.status.ServerPing;
+@@ -12,8 +12,17 @@
+ import net.minecraft.network.protocol.status.StatusProtocols;
  import net.minecraft.server.MinecraftServer;
  
 +// CraftBukkit start
@@ -18,48 +18,52 @@
      private static final IChatBaseComponent IGNORE_STATUS_REASON = IChatBaseComponent.translatable("disconnect.ignoring_status_request");
      private final MinecraftServer server;
      private final NetworkManager connection;
-@@ -24,9 +33,44 @@
+@@ -25,6 +34,7 @@
  
      @Override
      public void handleIntention(PacketHandshakingInSetProtocol packethandshakinginsetprotocol) {
 +        this.connection.hostname = packethandshakinginsetprotocol.hostName() + ":" + packethandshakinginsetprotocol.port(); // CraftBukkit  - set hostname
          switch (packethandshakinginsetprotocol.intention()) {
              case LOGIN:
-                 this.connection.setClientboundProtocolAfterHandshake(ClientIntent.LOGIN);
-+                // CraftBukkit start - Connection throttle
-+                try {
-+                    long currentTime = System.currentTimeMillis();
-+                    long connectionThrottle = this.server.server.getConnectionThrottle();
-+                    InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
+                 this.beginLogin(packethandshakinginsetprotocol, false);
+@@ -58,6 +68,40 @@
+ 
+     private void beginLogin(PacketHandshakingInSetProtocol packethandshakinginsetprotocol, boolean flag) {
+         this.connection.setupOutboundProtocol(LoginProtocols.CLIENTBOUND);
++        // CraftBukkit start - Connection throttle
++        try {
++            long currentTime = System.currentTimeMillis();
++            long connectionThrottle = this.server.server.getConnectionThrottle();
++            InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
 +
-+                    synchronized (throttleTracker) {
-+                        if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
-+                            throttleTracker.put(address, currentTime);
-+                            IChatMutableComponent chatmessage = IChatBaseComponent.literal("Connection throttled! Please wait before reconnecting.");
-+                            this.connection.send(new PacketLoginOutDisconnect(chatmessage));
-+                            this.connection.disconnect(chatmessage);
-+                            return;
-+                        }
++            synchronized (throttleTracker) {
++                if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
++                    throttleTracker.put(address, currentTime);
++                    IChatMutableComponent chatmessage = IChatBaseComponent.literal("Connection throttled! Please wait before reconnecting.");
++                    this.connection.send(new PacketLoginOutDisconnect(chatmessage));
++                    this.connection.disconnect(chatmessage);
++                    return;
++                }
 +
-+                        throttleTracker.put(address, currentTime);
-+                        throttleCounter++;
-+                        if (throttleCounter > 200) {
-+                            throttleCounter = 0;
++                throttleTracker.put(address, currentTime);
++                throttleCounter++;
++                if (throttleCounter > 200) {
++                    throttleCounter = 0;
 +
-+                            // Cleanup stale entries
-+                            java.util.Iterator iter = throttleTracker.entrySet().iterator();
-+                            while (iter.hasNext()) {
-+                                java.util.Map.Entry<InetAddress, Long> entry = (java.util.Map.Entry) iter.next();
-+                                if (entry.getValue() > connectionThrottle) {
-+                                    iter.remove();
-+                                }
-+                            }
++                    // Cleanup stale entries
++                    java.util.Iterator iter = throttleTracker.entrySet().iterator();
++                    while (iter.hasNext()) {
++                        java.util.Map.Entry<InetAddress, Long> entry = (java.util.Map.Entry) iter.next();
++                        if (entry.getValue() > connectionThrottle) {
++                            iter.remove();
 +                        }
 +                    }
-+                } catch (Throwable t) {
-+                    org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
 +                }
-+                // CraftBukkit end
-                 if (packethandshakinginsetprotocol.protocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
-                     IChatMutableComponent ichatmutablecomponent;
++            }
++        } catch (Throwable t) {
++            org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
++        }
++        // CraftBukkit end
+         if (packethandshakinginsetprotocol.protocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
+             IChatMutableComponent ichatmutablecomponent;
  

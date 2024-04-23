@@ -51,7 +51,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public double getJumpStrength() {
-        return getHandle().getCustomJump();
+        return getHandle().getAttributeValue(GenericAttributes.JUMP_STRENGTH);
     }
 
     @Override

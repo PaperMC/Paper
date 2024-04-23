@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/EntityBee.java
 +++ b/net/minecraft/world/entity/animal/EntityBee.java
-@@ -90,6 +90,12 @@
+@@ -86,6 +86,12 @@
  import net.minecraft.world.level.pathfinder.PathType;
  import net.minecraft.world.phys.Vec3D;
  
@@ -13,7 +13,7 @@
  public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityBird {
  
      public static final float FLAP_DEGREES_PER_TICK = 120.32113F;
-@@ -187,12 +193,19 @@
+@@ -185,12 +191,19 @@
  
      @Override
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
@@ -27,15 +27,26 @@
          super.addAdditionalSaveData(nbttagcompound);
 -        if (this.hasHive()) {
 +        if (includeAll && this.hasHive()) { // CraftBukkit - selectively save hive
-             nbttagcompound.put("HivePos", GameProfileSerializer.writeBlockPos(this.getHivePos()));
+             nbttagcompound.put("hive_pos", GameProfileSerializer.writeBlockPos(this.getHivePos()));
          }
  
 -        if (this.hasSavedFlowerPos()) {
 +        if (includeAll && this.hasSavedFlowerPos()) { // CraftBukkit - selectively save flower
-             nbttagcompound.put("FlowerPos", GameProfileSerializer.writeBlockPos(this.getSavedFlowerPos()));
+             nbttagcompound.put("flower_pos", GameProfileSerializer.writeBlockPos(this.getSavedFlowerPos()));
          }
  
-@@ -242,7 +255,7 @@
+@@ -204,8 +217,8 @@
+ 
+     @Override
+     public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
+-        this.hivePos = (BlockPosition) GameProfileSerializer.readBlockPos(nbttagcompound, "hive_pos").orElse((Object) null);
+-        this.savedFlowerPos = (BlockPosition) GameProfileSerializer.readBlockPos(nbttagcompound, "flower_pos").orElse((Object) null);
++        this.hivePos = (BlockPosition) GameProfileSerializer.readBlockPos(nbttagcompound, "hive_pos").orElse(null); // CraftBukkit - decompile error
++        this.savedFlowerPos = (BlockPosition) GameProfileSerializer.readBlockPos(nbttagcompound, "flower_pos").orElse(null); // CraftBukkit - decompile error
+         super.readAdditionalSaveData(nbttagcompound);
+         this.setHasNectar(nbttagcompound.getBoolean("HasNectar"));
+         this.setHasStung(nbttagcompound.getBoolean("HasStung"));
+@@ -232,7 +245,7 @@
                  }
  
                  if (b0 > 0) {
@@ -44,7 +55,7 @@
                  }
              }
  
-@@ -640,11 +653,14 @@
+@@ -625,11 +638,14 @@
          if (this.isInvulnerableTo(damagesource)) {
              return false;
          } else {
@@ -61,7 +72,7 @@
          }
      }
  
-@@ -999,7 +1015,7 @@
+@@ -981,7 +997,7 @@
  
          e() {
              super();
@@ -70,7 +81,7 @@
              this.blacklistedTargets = Lists.newArrayList();
              this.setFlags(EnumSet.of(PathfinderGoal.Type.MOVE));
          }
-@@ -1116,7 +1132,7 @@
+@@ -1098,7 +1114,7 @@
  
          f() {
              super();
@@ -79,16 +90,16 @@
              this.setFlags(EnumSet.of(PathfinderGoal.Type.MOVE));
          }
  
-@@ -1216,7 +1232,7 @@
+@@ -1198,7 +1214,7 @@
                              }
                          }
  
 -                        if (iblockdata1 != null) {
 +                        if (iblockdata1 != null && CraftEventFactory.callEntityChangeBlockEvent(EntityBee.this, blockposition, iblockdata1)) { // CraftBukkit
-                             EntityBee.this.level().levelEvent(2005, blockposition, 0);
+                             EntityBee.this.level().levelEvent(2011, blockposition, 15);
                              EntityBee.this.level().setBlockAndUpdate(blockposition, iblockdata1);
                              EntityBee.this.incrementNumCropsGrownSincePollination();
-@@ -1289,7 +1305,7 @@
+@@ -1271,7 +1287,7 @@
          @Override
          protected void alertOther(EntityInsentient entityinsentient, EntityLiving entityliving) {
              if (entityinsentient instanceof EntityBee && this.mob.hasLineOfSight(entityliving)) {
@@ -97,7 +108,7 @@
              }
  
          }
-@@ -1298,7 +1314,7 @@
+@@ -1280,7 +1296,7 @@
      private static class c extends PathfinderGoalNearestAttackableTarget<EntityHuman> {
  
          c(EntityBee entitybee) {

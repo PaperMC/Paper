@@ -6,17 +6,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
+import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 
-@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
+@DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
 
     private static final Set<Material> ARMOR_MATERIALS = Sets.newHashSet(
@@ -47,7 +51,7 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
             Material.TURTLE_HELMET
     );
 
-    static final ItemMetaKey TRIM = new ItemMetaKey("Trim", "trim");
+    static final ItemMetaKeyType<net.minecraft.world.item.armortrim.ArmorTrim> TRIM = new ItemMetaKeyType<>(DataComponents.TRIM, "trim");
     static final ItemMetaKey TRIM_MATERIAL = new ItemMetaKey("material");
     static final ItemMetaKey TRIM_PATTERN = new ItemMetaKey("pattern");
 
@@ -61,19 +65,19 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         }
     }
 
-    CraftMetaArmor(NBTTagCompound tag) {
+    CraftMetaArmor(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(TRIM.NBT)) {
-            NBTTagCompound trimCompound = tag.getCompound(TRIM.NBT);
+        getOrEmpty(tag, TRIM).ifPresent((trimCompound) -> {
+            TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(trimCompound.material());
+            TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(trimCompound.pattern());
 
-            if (trimCompound.contains(TRIM_MATERIAL.NBT) && trimCompound.contains(TRIM_PATTERN.NBT)) {
-                TrimMaterial trimMaterial = Registry.TRIM_MATERIAL.get(NamespacedKey.fromString(trimCompound.getString(TRIM_MATERIAL.NBT)));
-                TrimPattern trimPattern = Registry.TRIM_PATTERN.get(NamespacedKey.fromString(trimCompound.getString(TRIM_PATTERN.NBT)));
+            this.trim = new ArmorTrim(trimMaterial, trimPattern);
 
-                this.trim = new ArmorTrim(trimMaterial, trimPattern);
+            if (!trimCompound.showInTooltip) {
+                addItemFlags(ItemFlag.HIDE_ARMOR_TRIM);
             }
-        }
+        });
     }
 
     CraftMetaArmor(Map<String, Object> map) {
@@ -101,14 +105,11 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
     }
 
     @Override
-    void applyToItem(NBTTagCompound itemTag) {
+    void applyToItem(CraftMetaItem.Applicator itemTag) {
         super.applyToItem(itemTag);
 
         if (hasTrim()) {
-            NBTTagCompound trimCompound = new NBTTagCompound();
-            trimCompound.putString(TRIM_MATERIAL.NBT, trim.getMaterial().getKey().toString());
-            trimCompound.putString(TRIM_PATTERN.NBT, trim.getPattern().getKey().toString());
-            itemTag.put(TRIM.NBT, trimCompound);
+            itemTag.put(TRIM, new net.minecraft.world.item.armortrim.ArmorTrim(CraftTrimMaterial.bukkitToMinecraftHolder(trim.getMaterial()), CraftTrimPattern.bukkitToMinecraftHolder(trim.getPattern()), !hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM)));
         }
     }
 

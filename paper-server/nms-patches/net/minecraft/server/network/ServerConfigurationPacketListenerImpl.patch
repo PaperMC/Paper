@@ -1,17 +1,35 @@
 --- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-@@ -44,8 +44,8 @@
-     private ConfigurationTask currentTask;
-     private ClientInformation clientInformation;
+@@ -35,6 +35,10 @@
+ import net.minecraft.world.flag.FeatureFlags;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import net.minecraft.network.EnumProtocol;
++// CraftBukkit end
++
+ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerConfigurationPacketListener, TickablePacketListener {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -47,8 +51,15 @@
+     @Nullable
+     private SynchronizeRegistriesTask synchronizeRegistriesTask;
  
 -    public ServerConfigurationPacketListenerImpl(MinecraftServer minecraftserver, NetworkManager networkmanager, CommonListenerCookie commonlistenercookie) {
 -        super(minecraftserver, networkmanager, commonlistenercookie);
-+    public ServerConfigurationPacketListenerImpl(MinecraftServer minecraftserver, NetworkManager networkmanager, CommonListenerCookie commonlistenercookie, EntityPlayer player) { // CraftBukkit
-+        super(minecraftserver, networkmanager, commonlistenercookie, player); // CraftBukkit
++    // CraftBukkit start
++    @Override
++    public EnumProtocol protocol() {
++        return ServerConfigurationPacketListener.super.protocol();
++    }
++
++    public ServerConfigurationPacketListenerImpl(MinecraftServer minecraftserver, NetworkManager networkmanager, CommonListenerCookie commonlistenercookie, EntityPlayer player) {
++        super(minecraftserver, networkmanager, commonlistenercookie, player);
++        // CraftBukkit end
          this.gameProfile = commonlistenercookie.gameProfile();
          this.clientInformation = commonlistenercookie.clientInformation();
      }
-@@ -117,14 +117,14 @@
+@@ -134,14 +145,14 @@
                  return;
              }
  
@@ -27,4 +45,4 @@
 +            EntityPlayer entityplayer = playerlist.getPlayerForLogin(this.gameProfile, this.clientInformation, this.player); // CraftBukkit
  
              playerlist.placeNewPlayer(this.connection, entityplayer, this.createCookie(this.clientInformation));
-             this.connection.resumeInboundAfterProtocolChange();
+         } catch (Exception exception) {

@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/item/ItemProjectileWeapon.java
++++ b/net/minecraft/world/item/ItemProjectileWeapon.java
+@@ -59,11 +59,28 @@
+                 float f6 = f4 + f5 * (float) ((i + 1) / 2) * f3;
+ 
+                 f5 = -f5;
+-                itemstack.hurtAndBreak(this.getDurabilityUse(itemstack1), entityliving, EntityLiving.getSlotForHand(enumhand));
++                // itemstack.hurtAndBreak(this.getDurabilityUse(itemstack1), entityliving, EntityLiving.getSlotForHand(enumhand)); // CraftBukkit - moved down
+                 IProjectile iprojectile = this.createProjectile(world, entityliving, itemstack, itemstack1, flag);
+ 
+                 this.shootProjectile(entityliving, iprojectile, i, f, f1, f6, entityliving1);
+-                world.addFreshEntity(iprojectile);
++                // CraftBukkit start
++                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(entityliving, itemstack, itemstack1, iprojectile, enumhand, f, true);
++                if (event.isCancelled()) {
++                    event.getProjectile().remove();
++                    return;
++                }
++
++                itemstack.hurtAndBreak(this.getDurabilityUse(itemstack1), entityliving, EntityLiving.getSlotForHand(enumhand));
++
++                if (event.getProjectile() == iprojectile.getBukkitEntity()) {
++                    if (!world.addFreshEntity(iprojectile)) {
++                        if (entityliving instanceof net.minecraft.server.level.EntityPlayer) {
++                            ((net.minecraft.server.level.EntityPlayer) entityliving).getBukkitEntity().updateInventory();
++                        }
++                        return;
++                    }
++                }
++                // CraftBukkit end
+             }
+         }
+ 

@@ -4,6 +4,8 @@ import static org.mockito.Mockito.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
@@ -41,7 +43,7 @@ public final class DummyServer {
             when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.newData(mock.getArgument(0), null));
 
             when(instance.getLootTable(any())).then(mock -> new CraftLootTable(mock.getArgument(0),
-                    AbstractTestingBase.DATA_PACK.getLootData().getLootTable(CraftNamespacedKey.toMinecraft(mock.getArgument(0)))));
+                    AbstractTestingBase.DATA_PACK.fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));
 
             when(instance.getRegistry(any())).then((Answer<Registry<?>>) mock -> {
                 Class<? extends Keyed> aClass = mock.getArgument(0);

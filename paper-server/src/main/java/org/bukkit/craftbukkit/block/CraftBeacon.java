@@ -59,7 +59,7 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     @Override
     public void setPrimaryEffect(PotionEffectType effect) {
-        this.getSnapshot().primaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraft(effect) : null;
+        this.getSnapshot().primaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraftHolder(effect) : null;
     }
 
     @Override
@@ -69,7 +69,7 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     @Override
     public void setSecondaryEffect(PotionEffectType effect) {
-        this.getSnapshot().secondaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraft(effect) : null;
+        this.getSnapshot().secondaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraftHolder(effect) : null;
     }
 
     @Override
@@ -85,12 +85,12 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     @Override
     public boolean isLocked() {
-        return !this.getSnapshot().lockKey.key.isEmpty();
+        return !this.getSnapshot().lockKey.key().isEmpty();
     }
 
     @Override
     public String getLock() {
-        return this.getSnapshot().lockKey.key;
+        return this.getSnapshot().lockKey.key();
     }
 
     @Override

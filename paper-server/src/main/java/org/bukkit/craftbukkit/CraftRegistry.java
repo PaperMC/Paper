@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -83,6 +84,19 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         Preconditions.checkArgument(bukkit != null);
 
         return ((Handleable<M>) bukkit).getHandle();
+    }
+
+    public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(B bukkit, ResourceKey<IRegistry<M>> registryKey) {
+        Preconditions.checkArgument(bukkit != null);
+
+        IRegistry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
+
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<M> holder) {
+            return holder;
+        }
+
+        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                + ", this can happen if a plugin creates its own registry entry with out properly registering it.");
     }
 
     /**

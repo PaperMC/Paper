@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/Explosion.java
 +++ b/net/minecraft/world/level/Explosion.java
-@@ -39,6 +39,16 @@
+@@ -40,6 +40,16 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.Vec3D;
  
@@ -17,8 +17,8 @@
  public class Explosion {
  
      private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
-@@ -60,6 +70,10 @@
-     private final SoundEffect explosionSound;
+@@ -61,6 +71,10 @@
+     private final Holder<SoundEffect> explosionSound;
      private final ObjectArrayList<BlockPosition> toBlow;
      private final Map<EntityHuman, Vec3D> hitPlayers;
 +    // CraftBukkit - add field
@@ -28,7 +28,7 @@
  
      public static DamageSource getDefaultDamageSource(World world, @Nullable Entity entity) {
          return world.damageSources().explosion(entity, getIndirectSourceEntityInternal(entity));
-@@ -85,17 +99,18 @@
+@@ -86,17 +100,18 @@
          this.hitPlayers = Maps.newHashMap();
          this.level = world;
          this.source = entity;
@@ -44,12 +44,12 @@
          this.damageCalculator = explosiondamagecalculator == null ? this.makeDamageCalculator(entity) : explosiondamagecalculator;
          this.smallExplosionParticles = particleparam;
          this.largeExplosionParticles = particleparam1;
-         this.explosionSound = soundeffect;
+         this.explosionSound = holder;
 +        this.yield = this.blockInteraction == Explosion.Effect.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F; // CraftBukkit
      }
  
      private ExplosionDamageCalculator makeDamageCalculator(@Nullable Entity entity) {
-@@ -146,6 +161,11 @@
+@@ -147,6 +162,11 @@
      }
  
      public void explode() {
@@ -58,10 +58,10 @@
 +            return;
 +        }
 +        // CraftBukkit end
-         this.level.gameEvent(this.source, GameEvent.EXPLODE, new Vec3D(this.x, this.y, this.z));
+         this.level.gameEvent(this.source, (Holder) GameEvent.EXPLODE, new Vec3D(this.x, this.y, this.z));
          Set<BlockPosition> set = Sets.newHashSet();
          boolean flag = true;
-@@ -228,7 +248,35 @@
+@@ -229,7 +249,35 @@
                          d9 /= d11;
                          d10 /= d11;
                          if (this.damageCalculator.shouldDamageEntity(this, entity)) {
@@ -97,8 +97,8 @@
 +                            // CraftBukkit end
                          }
  
-                         double d12 = (1.0D - d7) * (double) getSeenPercent(vec3d, entity);
-@@ -247,6 +295,14 @@
+                         double d12 = (1.0D - d7) * (double) getSeenPercent(vec3d, entity) * (double) this.damageCalculator.getKnockbackMultiplier(entity);
+@@ -248,6 +296,14 @@
                          d10 *= d13;
                          Vec3D vec3d1 = new Vec3D(d8, d9, d10);
  
@@ -113,7 +113,7 @@
                          entity.setDeltaMovement(entity.getDeltaMovement().add(vec3d1));
                          if (entity instanceof EntityHuman) {
                              EntityHuman entityhuman = (EntityHuman) entity;
-@@ -287,9 +343,63 @@
+@@ -290,9 +346,63 @@
  
              SystemUtils.shuffle(this.toBlow, this.level.random);
              ObjectListIterator objectlistiterator = this.toBlow.iterator();
@@ -177,7 +177,7 @@
  
                  this.level.getBlockState(blockposition).onExplosionHit(this.level, blockposition, this, (itemstack, blockposition1) -> {
                      addOrAppendStack(list, itemstack, blockposition1);
-@@ -314,7 +424,11 @@
+@@ -317,7 +427,11 @@
                  BlockPosition blockposition1 = (BlockPosition) objectlistiterator1.next();
  
                  if (this.random.nextInt(3) == 0 && this.level.getBlockState(blockposition1).isAir() && this.level.getBlockState(blockposition1.below()).isSolidRender(this.level, blockposition1.below())) {
@@ -190,7 +190,7 @@
                  }
              }
          }
-@@ -322,6 +436,7 @@
+@@ -325,6 +439,7 @@
      }
  
      private static void addOrAppendStack(List<Pair<ItemStack, BlockPosition>> list, ItemStack itemstack, BlockPosition blockposition) {

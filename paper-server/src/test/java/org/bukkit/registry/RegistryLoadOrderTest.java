@@ -2,10 +2,12 @@ package org.bukkit.registry;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.mojang.serialization.Lifecycle;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import net.minecraft.core.IRegistry;
+import net.minecraft.core.RegistrationInfo;
 import net.minecraft.core.RegistryMaterials;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.resources.ResourceKey;
@@ -52,8 +54,8 @@ public class RegistryLoadOrderTest extends AbstractTestingBase {
         ResourceKey<IRegistry<MinecraftTestType>> resourceKey = ResourceKey.createRegistryKey(MinecraftKey.tryBuild("bukkit", "test-registry"));
         RegistryMaterials<MinecraftTestType> minecraftRegistry = new RegistryMaterials<>(resourceKey, Lifecycle.experimental());
 
-        minecraftRegistry.register(ResourceKey.create(resourceKey, MinecraftKey.tryBuild("bukkit", "test-one")), new MinecraftTestType(), Lifecycle.experimental());
-        minecraftRegistry.register(ResourceKey.create(resourceKey, MinecraftKey.tryBuild("bukkit", "test-two")), new MinecraftTestType(), Lifecycle.experimental());
+        minecraftRegistry.register(ResourceKey.create(resourceKey, MinecraftKey.tryBuild("bukkit", "test-one")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
+        minecraftRegistry.register(ResourceKey.create(resourceKey, MinecraftKey.tryBuild("bukkit", "test-two")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
         minecraftRegistry.freeze();
 
         registry = new CraftRegistry<>(keyedClass, minecraftRegistry, minecraftToBukkit);

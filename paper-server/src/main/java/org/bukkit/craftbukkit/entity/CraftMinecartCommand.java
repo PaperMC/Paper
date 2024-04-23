@@ -38,7 +38,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
 
     @Override
     public void setName(String name) {
-        getHandle().getCommandBlock().setName(CraftChatMessage.fromStringOrNull(name));
+        getHandle().getCommandBlock().setCustomName(CraftChatMessage.fromStringOrNull(name));
     }
 
     @Override

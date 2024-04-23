@@ -3,12 +3,15 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap.Builder;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.FireworkExplosion;
+import net.minecraft.world.item.component.Fireworks;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.FireworkEffect.Type;
@@ -16,8 +19,6 @@ import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific.To;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.FireworkMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -38,22 +39,12 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      */
 
     @Specific(To.NBT)
-    static final ItemMetaKey FIREWORKS = new ItemMetaKey("Fireworks");
-    static final ItemMetaKey FLIGHT = new ItemMetaKey("Flight", "power");
-    static final ItemMetaKey EXPLOSIONS = new ItemMetaKey("Explosions", "firework-effects");
-    @Specific(To.NBT)
-    static final ItemMetaKey EXPLOSION_COLORS = new ItemMetaKey("Colors");
-    @Specific(To.NBT)
-    static final ItemMetaKey EXPLOSION_TYPE = new ItemMetaKey("Type");
-    @Specific(To.NBT)
-    static final ItemMetaKey EXPLOSION_TRAIL = new ItemMetaKey("Trail");
-    @Specific(To.NBT)
-    static final ItemMetaKey EXPLOSION_FLICKER = new ItemMetaKey("Flicker");
-    @Specific(To.NBT)
-    static final ItemMetaKey EXPLOSION_FADE = new ItemMetaKey("FadeColors");
+    static final ItemMetaKeyType<Fireworks> FIREWORKS = new ItemMetaKeyType<>(DataComponents.FIREWORKS, "Fireworks");
+    static final ItemMetaKey FLIGHT = new ItemMetaKey("power");
+    static final ItemMetaKey EXPLOSIONS = new ItemMetaKey("firework-effects");
 
     private List<FireworkEffect> effects;
-    private Integer power;
+    private int power;
 
     CraftMetaFirework(CraftMetaItem meta) {
         super(meta);
@@ -69,44 +60,36 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         }
     }
 
-    CraftMetaFirework(NBTTagCompound tag) {
+    CraftMetaFirework(DataComponentPatch tag) {
         super(tag);
 
-        if (!tag.contains(FIREWORKS.NBT)) {
-            return;
-        }
+        getOrEmpty(tag, FIREWORKS).ifPresent((fireworks) -> {
+            power = fireworks.flightDuration();
 
-        NBTTagCompound fireworks = tag.getCompound(FIREWORKS.NBT);
+            List<FireworkExplosion> fireworkEffects = fireworks.explosions();
+            List<FireworkEffect> effects = this.effects = new ArrayList<FireworkEffect>(fireworkEffects.size());
 
-        power = (int) fireworks.getByte(FLIGHT.NBT);
-
-        if (!fireworks.contains(EXPLOSIONS.NBT)) {
-            return;
-        }
-
-        NBTTagList fireworkEffects = fireworks.getList(EXPLOSIONS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
-        List<FireworkEffect> effects = this.effects = new ArrayList<FireworkEffect>(fireworkEffects.size());
-
-        for (int i = 0; i < fireworkEffects.size(); i++) {
-            try {
-                effects.add(getEffect((NBTTagCompound) fireworkEffects.get(i)));
-            } catch (IllegalArgumentException ex) {
-                // Ignore invalid effects
+            for (int i = 0; i < fireworkEffects.size(); i++) {
+                try {
+                    effects.add(getEffect(fireworkEffects.get(i)));
+                } catch (IllegalArgumentException ex) {
+                    // Ignore invalid effects
+                }
             }
-        }
+        });
     }
 
-    static FireworkEffect getEffect(NBTTagCompound explosion) {
+    static FireworkEffect getEffect(FireworkExplosion explosion) {
         FireworkEffect.Builder effect = FireworkEffect.builder()
-                .flicker(explosion.getBoolean(EXPLOSION_FLICKER.NBT))
-                .trail(explosion.getBoolean(EXPLOSION_TRAIL.NBT))
-                .with(getEffectType(0xff & explosion.getByte(EXPLOSION_TYPE.NBT)));
+                .flicker(explosion.hasTwinkle())
+                .trail(explosion.hasTrail())
+                .with(getEffectType(explosion.shape()));
 
-        int[] colors = explosion.getIntArray(EXPLOSION_COLORS.NBT);
+        IntList colors = explosion.colors();
         // People using buggy command generators specify a list rather than an int here, so recover with dummy data.
         // Wrong: Colors: [1234]
         // Right: Colors: [I;1234]
-        if (colors.length == 0) {
+        if (colors.isEmpty()) {
             effect.withColor(Color.WHITE);
         }
 
@@ -114,60 +97,48 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
             effect.withColor(Color.fromRGB(color));
         }
 
-        for (int color : explosion.getIntArray(EXPLOSION_FADE.NBT)) {
+        for (int color : explosion.fadeColors()) {
             effect.withFade(Color.fromRGB(color));
         }
 
         return effect.build();
     }
 
-    static NBTTagCompound getExplosion(FireworkEffect effect) {
-        NBTTagCompound explosion = new NBTTagCompound();
+    static FireworkExplosion getExplosion(FireworkEffect effect) {
+        IntList colors = addColors(effect.getColors());
+        IntList fadeColors = addColors(effect.getFadeColors());
 
-        if (effect.hasFlicker()) {
-            explosion.putBoolean(EXPLOSION_FLICKER.NBT, true);
-        }
-
-        if (effect.hasTrail()) {
-            explosion.putBoolean(EXPLOSION_TRAIL.NBT, true);
-        }
-
-        addColors(explosion, EXPLOSION_COLORS, effect.getColors());
-        addColors(explosion, EXPLOSION_FADE, effect.getFadeColors());
-
-        explosion.putByte(EXPLOSION_TYPE.NBT, (byte) getNBT(effect.getType()));
-
-        return explosion;
+        return new FireworkExplosion(getNBT(effect.getType()), colors, fadeColors, effect.hasTrail(), effect.hasFlicker());
     }
 
-    static int getNBT(Type type) {
+    static FireworkExplosion.a getNBT(Type type) {
         switch (type) {
             case BALL:
-                return 0;
+                return FireworkExplosion.a.SMALL_BALL;
             case BALL_LARGE:
-                return 1;
+                return FireworkExplosion.a.LARGE_BALL;
             case STAR:
-                return 2;
+                return FireworkExplosion.a.STAR;
             case CREEPER:
-                return 3;
+                return FireworkExplosion.a.CREEPER;
             case BURST:
-                return 4;
+                return FireworkExplosion.a.BURST;
             default:
                 throw new IllegalArgumentException("Unknown effect type " + type);
         }
     }
 
-    static Type getEffectType(int nbt) {
+    static Type getEffectType(FireworkExplosion.a nbt) {
         switch (nbt) {
-            case 0:
+            case SMALL_BALL:
                 return Type.BALL;
-            case 1:
+            case LARGE_BALL:
                 return Type.BALL_LARGE;
-            case 2:
+            case STAR:
                 return Type.STAR;
-            case 3:
+            case CREEPER:
                 return Type.CREEPER;
-            case 4:
+            case BURST:
                 return Type.BURST;
             default:
                 throw new IllegalArgumentException("Unknown effect type " + nbt);
@@ -208,34 +179,23 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
     }
 
     @Override
-    void applyToItem(NBTTagCompound itemTag) {
+    void applyToItem(CraftMetaItem.Applicator itemTag) {
         super.applyToItem(itemTag);
         if (isFireworkEmpty()) {
             return;
         }
 
-        NBTTagCompound fireworks = itemTag.getCompound(FIREWORKS.NBT);
-        itemTag.put(FIREWORKS.NBT, fireworks);
-
-        if (hasEffects()) {
-            NBTTagList effects = new NBTTagList();
-            for (FireworkEffect effect : this.effects) {
-                effects.add(getExplosion(effect));
-            }
-
-            if (effects.size() > 0) {
-                fireworks.put(EXPLOSIONS.NBT, effects);
-            }
+        List<FireworkExplosion> effects = new ArrayList<>();
+        for (FireworkEffect effect : this.effects) {
+            effects.add(getExplosion(effect));
         }
 
-        if (hasPower()) {
-            fireworks.putByte(FLIGHT.NBT, power.byteValue());
-        }
+        itemTag.put(FIREWORKS, new Fireworks(power, effects));
     }
 
-    static void addColors(NBTTagCompound compound, ItemMetaKey key, List<Color> colors) {
+    static IntList addColors(List<Color> colors) {
         if (colors.isEmpty()) {
-            return;
+            return IntList.of();
         }
 
         final int[] colorArray = new int[colors.size()];
@@ -244,7 +204,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
             colorArray[i++] = color.asRGB();
         }
 
-        compound.putIntArray(key.NBT, colorArray);
+        return IntList.of(colorArray);
     }
 
     @Override
@@ -262,7 +222,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
     }
 
     boolean hasPower() {
-        return power != null && power != 0;
+        return power != 0;
     }
 
     @Override

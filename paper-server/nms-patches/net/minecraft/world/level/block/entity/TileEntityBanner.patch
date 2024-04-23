@@ -1,14 +1,45 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityBanner.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityBanner.java
-@@ -102,6 +102,11 @@
+@@ -19,6 +19,10 @@
+ import net.minecraft.world.level.block.state.IBlockData;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import java.util.List;
++// CraftBukkit end
++
+ public class TileEntityBanner extends TileEntity implements INamableTileEntity {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -80,7 +84,7 @@
+             BannerPatternLayers.CODEC.parse(holderlookup_a.createSerializationContext(DynamicOpsNBT.INSTANCE), nbttagcompound.get("patterns")).resultOrPartial((s) -> {
+                 TileEntityBanner.LOGGER.error("Failed to parse banner patterns: '{}'", s);
+             }).ifPresent((bannerpatternlayers) -> {
+-                this.patterns = bannerpatternlayers;
++                this.setPatterns(bannerpatternlayers); // CraftBukkit - apply limits
+             });
          }
  
-         this.itemPatterns = nbttagcompound.getList("Patterns", 10);
-+        // CraftBukkit start
-+        while (this.itemPatterns.size() > 20) {
-+            this.itemPatterns.remove(20);
-+        }
-+        // CraftBukkit end
-         this.patterns = null;
+@@ -114,7 +118,7 @@
+     @Override
+     protected void applyImplicitComponents(TileEntity.b tileentity_b) {
+         super.applyImplicitComponents(tileentity_b);
+-        this.patterns = (BannerPatternLayers) tileentity_b.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY);
++        this.setPatterns((BannerPatternLayers) tileentity_b.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY)); // CraftBukkit - apply limits
+         this.name = (IChatBaseComponent) tileentity_b.get(DataComponents.CUSTOM_NAME);
      }
  
+@@ -130,4 +134,13 @@
+         nbttagcompound.remove("patterns");
+         nbttagcompound.remove("CustomName");
+     }
++
++    // CraftBukkit start
++    public void setPatterns(BannerPatternLayers bannerpatternlayers) {
++        if (bannerpatternlayers.layers().size() > 20) {
++            bannerpatternlayers = new BannerPatternLayers(List.copyOf(bannerpatternlayers.layers().subList(0, 20)));
++        }
++        this.patterns = bannerpatternlayers;
++    }
++    // CraftBukkit end
+ }

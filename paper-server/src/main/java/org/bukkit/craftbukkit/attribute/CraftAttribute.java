@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.attribute;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
@@ -23,6 +24,10 @@ public class CraftAttribute {
         return bukkit;
     }
 
+    public static Attribute minecraftHolderToBukkit(Holder<AttributeBase> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
+
     public static Attribute stringToBukkit(String bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
@@ -34,5 +39,18 @@ public class CraftAttribute {
 
         return CraftRegistry.getMinecraftRegistry(Registries.ATTRIBUTE)
                 .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+    }
+
+    public static Holder<AttributeBase> bukkitToMinecraftHolder(Attribute bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        IRegistry<AttributeBase> registry = CraftRegistry.getMinecraftRegistry(Registries.ATTRIBUTE);
+
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<AttributeBase> holder) {
+            return holder;
+        }
+
+        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
     }
 }

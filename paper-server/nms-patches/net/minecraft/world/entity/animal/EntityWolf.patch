@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/entity/animal/EntityWolf.java
 +++ b/net/minecraft/world/entity/animal/EntityWolf.java
-@@ -70,6 +70,12 @@
+@@ -88,6 +88,12 @@
+ import net.minecraft.world.level.pathfinder.PathType;
  import net.minecraft.world.phys.Vec3D;
- import org.joml.Vector3f;
  
 +// CraftBukkit start
 +import org.bukkit.event.entity.EntityRegainHealthEvent;
@@ -10,67 +10,77 @@
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +// CraftBukkit end
 +
- public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable {
+ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable, VariantHolder<Holder<WolfVariant>> {
  
      private static final DataWatcherObject<Boolean> DATA_INTERESTED_ID = DataWatcher.defineId(EntityWolf.class, DataWatcherRegistry.BOOLEAN);
-@@ -298,15 +304,19 @@
+@@ -350,18 +356,21 @@
+         if (this.isInvulnerableTo(damagesource)) {
+             return false;
          } else {
-             Entity entity = damagesource.getEntity();
- 
 -            if (!this.level().isClientSide) {
--                this.setOrderedToSit(false);
--            }
-+            // CraftBukkit - move diff down
- 
-             if (entity != null && !(entity instanceof EntityHuman) && !(entity instanceof EntityArrow)) {
-                 f = (f + 1.0F) / 2.0F;
-             }
- 
--            return super.hurt(damagesource, f);
 +            // CraftBukkit start
 +            boolean result = super.hurt(damagesource, f);
 +            if (!this.level().isClientSide && result) {
-+                this.setOrderedToSit(false);
-+            }
-+            return result;
-+            // CraftBukkit end
++                // CraftBukkit end
+                 this.setOrderedToSit(false);
+             }
+ 
+-            return super.hurt(damagesource, f);
++            return result; // CraftBukkit
          }
      }
  
-@@ -326,7 +336,7 @@
-         super.setTame(flag);
-         if (flag) {
-             this.getAttribute(GenericAttributes.MAX_HEALTH).setBaseValue(20.0D);
--            this.setHealth(20.0F);
-+            this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
+     @Override
+-    protected void actuallyHurt(DamageSource damagesource, float f) {
++    public boolean actuallyHurt(DamageSource damagesource, float f) { // CraftBukkit - void -> boolean
+         if (!this.canArmorAbsorb(damagesource)) {
+-            super.actuallyHurt(damagesource, f);
++            return super.actuallyHurt(damagesource, f); // CraftBukkit
+         } else {
+             ItemStack itemstack = this.getBodyArmorItem();
+             int i = itemstack.getDamageValue();
+@@ -380,6 +389,7 @@
+             }
+ 
+         }
++        return false; // CraftBukkit
+     }
+ 
+     private boolean canArmorAbsorb(DamageSource damagesource) {
+@@ -401,7 +411,7 @@
+     protected void applyTamingSideEffects() {
+         if (this.isTame()) {
+             this.getAttribute(GenericAttributes.MAX_HEALTH).setBaseValue(40.0D);
+-            this.setHealth(40.0F);
++            this.setHealth(this.getMaxHealth()); // CraftBukkit - 40.0 -> getMaxHealth()
          } else {
              this.getAttribute(GenericAttributes.MAX_HEALTH).setBaseValue(8.0D);
          }
-@@ -349,7 +359,7 @@
-                     itemstack.shrink(1);
-                 }
+@@ -428,7 +438,7 @@
+                 FoodInfo foodinfo = (FoodInfo) itemstack.get(DataComponents.FOOD);
+                 float f = foodinfo != null ? (float) foodinfo.nutrition() : 1.0F;
  
--                this.heal((float) item.getFoodProperties().getNutrition());
-+                this.heal((float) item.getFoodProperties().getNutrition(), EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
-                 return EnumInteractionResult.SUCCESS;
+-                this.heal(2.0F * f);
++                this.heal(2.0F * f, EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
+                 return EnumInteractionResult.sidedSuccess(this.level().isClientSide());
              } else {
                  if (item instanceof ItemDye) {
-@@ -377,7 +387,7 @@
-                     this.setOrderedToSit(!this.isOrderedToSit());
-                     this.jumping = false;
-                     this.navigation.stop();
--                    this.setTarget((EntityLiving) null);
-+                    this.setTarget((EntityLiving) null, EntityTargetEvent.TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
-                     return EnumInteractionResult.SUCCESS;
-                 } else {
-                     return enuminteractionresult;
-@@ -388,7 +398,8 @@
-                 itemstack.shrink(1);
-             }
+@@ -476,7 +486,7 @@
+                             this.setOrderedToSit(!this.isOrderedToSit());
+                             this.jumping = false;
+                             this.navigation.stop();
+-                            this.setTarget((EntityLiving) null);
++                            this.setTarget((EntityLiving) null, EntityTargetEvent.TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
+                             return EnumInteractionResult.SUCCESS_NO_ITEM_USED;
+                         } else {
+                             return enuminteractionresult;
+@@ -494,7 +504,8 @@
+     }
  
--            if (this.random.nextInt(3) == 0) {
-+            // CraftBukkit - added event call and isCancelled check.
-+            if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
-                 this.tame(entityhuman);
-                 this.navigation.stop();
-                 this.setTarget((EntityLiving) null);
+     private void tryToTame(EntityHuman entityhuman) {
+-        if (this.random.nextInt(3) == 0) {
++        // CraftBukkit - added event call and isCancelled check.
++        if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
+             this.tame(entityhuman);
+             this.navigation.stop();
+             this.setTarget((EntityLiving) null);

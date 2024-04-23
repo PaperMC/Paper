@@ -1,70 +1,38 @@
 --- a/net/minecraft/world/item/crafting/CraftingManager.java
 +++ b/net/minecraft/world/item/crafting/CraftingManager.java
-@@ -34,11 +34,16 @@
+@@ -34,6 +34,11 @@
  import net.minecraft.world.level.World;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
-+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
-+import net.minecraft.core.registries.BuiltInRegistries;
++import com.google.common.collect.LinkedHashMultimap;
++import com.google.common.collect.Maps;
 +// CraftBukkit end
 +
  public class CraftingManager extends ResourceDataJson {
  
      private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
-     private static final Logger LOGGER = LogUtils.getLogger();
--    public Map<Recipes<?>, Map<MinecraftKey, RecipeHolder<?>>> recipes = ImmutableMap.of();
-+    public Map<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, RecipeHolder<?>>> recipes = ImmutableMap.of(); // CraftBukkit
-     private Map<MinecraftKey, RecipeHolder<?>> byName = ImmutableMap.of();
-     private boolean hasErrors;
- 
-@@ -48,7 +53,12 @@
- 
-     protected void apply(Map<MinecraftKey, JsonElement> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {
-         this.hasErrors = false;
--        Map<Recipes<?>, Builder<MinecraftKey, RecipeHolder<?>>> map1 = Maps.newHashMap();
-+        // CraftBukkit start - SPIGOT-5667 make sure all types are populated and mutable
-+        Map<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, RecipeHolder<?>>> map1 = Maps.newHashMap();
-+        for (Recipes<?> recipeType : BuiltInRegistries.RECIPE_TYPE) {
-+            map1.put(recipeType, new Object2ObjectLinkedOpenHashMap<>());
-+        }
-+        // CraftBukkit end
-         Builder<MinecraftKey, RecipeHolder<?>> builder = ImmutableMap.builder();
-         Iterator iterator = map.entrySet().iterator();
- 
-@@ -59,8 +69,10 @@
-             try {
-                 RecipeHolder<?> recipeholder = fromJson(minecraftkey, ChatDeserializer.convertToJsonObject((JsonElement) entry.getValue(), "top element"));
- 
--                ((Builder) map1.computeIfAbsent(recipeholder.value().getType(), (recipes) -> {
--                    return ImmutableMap.builder();
-+                // CraftBukkit start
-+                (map1.computeIfAbsent(recipeholder.value().getType(), (recipes) -> {
-+                    return new Object2ObjectLinkedOpenHashMap<>();
-+                    // CraftBukkit end
-                 })).put(minecraftkey, recipeholder);
-                 builder.put(minecraftkey, recipeholder);
-             } catch (IllegalArgumentException | JsonParseException jsonparseexception) {
-@@ -69,20 +81,37 @@
+@@ -70,19 +75,39 @@
+             }
          }
  
-         this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
--            return ((Builder) entry1.getValue()).build();
-+            return (entry1.getValue()); // CraftBukkit
-         }));
--        this.byName = builder.build();
-+        this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
-         CraftingManager.LOGGER.info("Loaded {} recipes", map1.size());
+-        this.byType = builder.build();
+-        this.byName = com_google_common_collect_immutablemap_builder.build();
++        // CraftBukkit start - mutable
++        this.byType = LinkedHashMultimap.create(builder.build());
++        this.byName = Maps.newHashMap(com_google_common_collect_immutablemap_builder.build());
++        // CraftBukkit end
+         CraftingManager.LOGGER.info("Loaded {} recipes", this.byType.size());
      }
  
 +    // CraftBukkit start
 +    public void addRecipe(RecipeHolder<?> irecipe) {
-+        Object2ObjectLinkedOpenHashMap<MinecraftKey, RecipeHolder<?>> map = this.recipes.get(irecipe.value().getType()); // CraftBukkit
++        Collection<RecipeHolder<?>> map = this.byType.get(irecipe.value().getType()); // CraftBukkit
 +
-+        if (byName.containsKey(irecipe.id()) || map.containsKey(irecipe.id())) {
++        if (byName.containsKey(irecipe.id())) {
 +            throw new IllegalStateException("Duplicate recipe ignored with ID " + irecipe.id());
 +        } else {
-+            map.putAndMoveToFirst(irecipe.id(), irecipe); // CraftBukkit - SPIGOT-4638: last recipe gets priority
++            map.add(irecipe);
 +            byName.put(irecipe.id(), irecipe);
 +        }
 +    }
@@ -75,65 +43,81 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> Optional<RecipeHolder<T>> getRecipeFor(Recipes<T> recipes, C c0, World world) {
--        return this.byType(recipes).values().stream().filter((recipeholder) -> {
+-        return this.byType(recipes).stream().filter((recipeholder) -> {
 +        // CraftBukkit start
-+        Optional<RecipeHolder<T>> recipe = this.byType(recipes).values().stream().filter((recipeholder) -> {
++        List<RecipeHolder<T>> list = this.byType(recipes).stream().filter((recipeholder) -> {
              return recipeholder.value().matches(c0, world);
-         }).findFirst();
+-        }).findFirst();
++        }).toList();
++        Optional<RecipeHolder<T>> recipe = (list.isEmpty()) ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
 +        c0.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
 +        return recipe;
 +        // CraftBukkit end
      }
  
-     public <C extends IInventory, T extends IRecipe<C>> Optional<Pair<MinecraftKey, RecipeHolder<T>>> getRecipeFor(Recipes<T> recipes, C c0, World world, @Nullable MinecraftKey minecraftkey) {
-@@ -116,7 +145,7 @@
+     public <C extends IInventory, T extends IRecipe<C>> Optional<RecipeHolder<T>> getRecipeFor(Recipes<T> recipes, C c0, World world, @Nullable MinecraftKey minecraftkey) {
+@@ -94,9 +119,14 @@
+             }
+         }
+ 
+-        return this.byType(recipes).stream().filter((recipeholder1) -> {
++        // CraftBukkit start
++        List<RecipeHolder<T>> list = this.byType(recipes).stream().filter((recipeholder1) -> {
+             return recipeholder1.value().matches(c0, world);
+-        }).findFirst();
++        }).toList();
++        Optional<RecipeHolder<T>> recipe = (list.isEmpty()) ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
++        c0.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
++        return recipe;
++        // CraftBukkit end
      }
  
-     private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, RecipeHolder<T>> byType(Recipes<T> recipes) {
--        return (Map) this.recipes.getOrDefault(recipes, Collections.emptyMap());
-+        return (Map) this.recipes.getOrDefault(recipes, new Object2ObjectLinkedOpenHashMap<>()); // CraftBukkit
+     public <C extends IInventory, T extends IRecipe<C>> List<RecipeHolder<T>> getAllRecipesFor(Recipes<T> recipes) {
+@@ -112,7 +142,7 @@
+     }
+ 
+     private <C extends IInventory, T extends IRecipe<C>> Collection<RecipeHolder<T>> byType(Recipes<T> recipes) {
+-        return this.byType.get(recipes);
++        return (Collection) this.byType.get(recipes); // CraftBukkit - decompile error
      }
  
      public <C extends IInventory, T extends IRecipe<C>> NonNullList<ItemStack> getRemainingItemsFor(Recipes<T> recipes, C c0, World world) {
-@@ -159,12 +188,12 @@
+@@ -139,7 +169,7 @@
+     private <T extends IRecipe<?>> RecipeHolder<T> byKeyTyped(Recipes<T> recipes, MinecraftKey minecraftkey) {
+         RecipeHolder<?> recipeholder = (RecipeHolder) this.byName.get(minecraftkey);
  
-     public void replaceRecipes(Iterable<RecipeHolder<?>> iterable) {
-         this.hasErrors = false;
--        Map<Recipes<?>, Map<MinecraftKey, RecipeHolder<?>>> map = Maps.newHashMap();
-+        Map<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, RecipeHolder<?>>> map = Maps.newHashMap(); // CraftBukkit
-         Builder<MinecraftKey, RecipeHolder<?>> builder = ImmutableMap.builder();
+-        return recipeholder != null && recipeholder.value().getType().equals(recipes) ? recipeholder : null;
++        return recipeholder != null && recipeholder.value().getType().equals(recipes) ? (RecipeHolder) recipeholder : null; // CraftBukkit - decompile error
+     }
  
-         iterable.forEach((recipeholder) -> {
-             Map<MinecraftKey, RecipeHolder<?>> map1 = (Map) map.computeIfAbsent(recipeholder.value().getType(), (recipes) -> {
--                return Maps.newHashMap();
-+                return new Object2ObjectLinkedOpenHashMap<>(); // CraftBukkit
-             });
-             MinecraftKey minecraftkey = recipeholder.id();
-             RecipeHolder<?> recipeholder1 = (RecipeHolder) map1.put(minecraftkey, recipeholder);
-@@ -175,9 +204,29 @@
-             }
-         });
-         this.recipes = ImmutableMap.copyOf(map);
--        this.byName = builder.build();
-+        this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
+     public Collection<RecipeHolder<?>> getOrderedRecipes() {
+@@ -175,10 +205,31 @@
+             com_google_common_collect_immutablemap_builder.put(recipeholder.id(), recipeholder);
+         }
+ 
+-        this.byType = builder.build();
+-        this.byName = com_google_common_collect_immutablemap_builder.build();
++        // CraftBukkit start - mutable
++        this.byType = LinkedHashMultimap.create(builder.build());
++        this.byName = Maps.newHashMap(com_google_common_collect_immutablemap_builder.build());
++        // CraftBukkit end
      }
  
 +    // CraftBukkit start
 +    public boolean removeRecipe(MinecraftKey mcKey) {
-+        for (Object2ObjectLinkedOpenHashMap<MinecraftKey, RecipeHolder<?>> recipes : recipes.values()) {
-+            recipes.remove(mcKey);
++        Iterator<RecipeHolder<?>> iter = byType.values().iterator();
++        while (iter.hasNext()) {
++            RecipeHolder<?> recipe = iter.next();
++            if (recipe.id().equals(mcKey)) {
++                iter.remove();
++            }
 +        }
 +
 +        return byName.remove(mcKey) != null;
 +    }
 +
 +    public void clearRecipes() {
-+        this.recipes = Maps.newHashMap();
-+
-+        for (Recipes<?> recipeType : BuiltInRegistries.RECIPE_TYPE) {
-+            this.recipes.put(recipeType, new Object2ObjectLinkedOpenHashMap<>());
-+        }
-+
++        this.byType = LinkedHashMultimap.create();
 +        this.byName = Maps.newHashMap();
 +    }
 +    // CraftBukkit end

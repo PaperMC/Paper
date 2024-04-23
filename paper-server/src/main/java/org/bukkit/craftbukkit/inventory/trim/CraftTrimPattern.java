@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.inventory.trim;
 
+import com.google.common.base.Preconditions;
+import net.minecraft.core.Holder;
+import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import org.bukkit.NamespacedKey;
@@ -15,8 +18,25 @@ public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.w
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_PATTERN, Registry.TRIM_PATTERN);
     }
 
+    public static TrimPattern minecraftHolderToBukkit(Holder<net.minecraft.world.item.armortrim.TrimPattern> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
+
     public static net.minecraft.world.item.armortrim.TrimPattern bukkitToMinecraft(TrimPattern bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
+
+    public static Holder<net.minecraft.world.item.armortrim.TrimPattern> bukkitToMinecraftHolder(TrimPattern bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        IRegistry<net.minecraft.world.item.armortrim.TrimPattern> registry = CraftRegistry.getMinecraftRegistry(Registries.TRIM_PATTERN);
+
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<net.minecraft.world.item.armortrim.TrimPattern> holder) {
+            return holder;
+        }
+
+        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                + ", this can happen if a plugin creates its own trim pattern without properly registering it.");
     }
 
     private final NamespacedKey key;

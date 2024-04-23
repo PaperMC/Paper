@@ -24,9 +24,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.border.WorldBorder;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.IChunkProvider;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.dimension.DimensionManager;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -119,7 +119,7 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
     }
 
     @Override
-    public void gameEvent(GameEvent gameevent, Vec3D vec3d, GameEvent.a gameevent_a) {
+    public void gameEvent(Holder<GameEvent> gameevent, Vec3D vec3d, GameEvent.a gameevent_a) {
         // Used by BlockComposter
     }
 

@@ -5,6 +5,7 @@ import com.mojang.authlib.GameProfile;
 import net.minecraft.SystemUtils;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.block.entity.TileEntitySkull;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -40,24 +41,9 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
     public void load(TileEntitySkull skull) {
         super.load(skull);
 
-        profile = skull.owner;
-    }
-
-    static int getSkullType(SkullType type) {
-        switch (type) {
-            default:
-            case SKELETON:
-                return 0;
-            case WITHER:
-                return 1;
-            case ZOMBIE:
-                return 2;
-            case PLAYER:
-                return 3;
-            case CREEPER:
-                return 4;
-            case DRAGON:
-                return 5;
+        ResolvableProfile owner = skull.getOwnerProfile();
+        if (owner != null) {
+            profile = owner.gameProfile();
         }
     }
 
@@ -201,7 +187,7 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
         super.applyTo(skull);
 
         if (getSkullType() == SkullType.PLAYER) {
-            skull.setOwner(profile);
+            skull.setOwner(new ResolvableProfile(profile));
         }
     }
 

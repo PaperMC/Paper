@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.potion;
 
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffectList;
 import org.bukkit.Color;
@@ -13,12 +14,20 @@ import org.jetbrains.annotations.NotNull;
 
 public class CraftPotionEffectType extends PotionEffectType implements Handleable<MobEffectList> {
 
+    public static PotionEffectType minecraftHolderToBukkit(Holder<MobEffectList> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
+
     public static PotionEffectType minecraftToBukkit(MobEffectList minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.MOB_EFFECT, Registry.EFFECT);
     }
 
     public static MobEffectList bukkitToMinecraft(PotionEffectType bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
+
+    public static Holder<MobEffectList> bukkitToMinecraftHolder(PotionEffectType bukkit) {
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.MOB_EFFECT);
     }
 
     private final NamespacedKey key;

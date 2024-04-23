@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/ContainerAnvil.java
 +++ b/net/minecraft/world/inventory/ContainerAnvil.java
-@@ -19,6 +19,10 @@
+@@ -21,6 +21,10 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import org.slf4j.Logger;
  
@@ -11,7 +11,7 @@
  public class ContainerAnvil extends ContainerAnvilAbstract {
  
      public static final int INPUT_SLOT = 0;
-@@ -42,6 +46,11 @@
+@@ -44,6 +48,11 @@
      private static final int ADDITIONAL_SLOT_X_PLACEMENT = 76;
      private static final int RESULT_SLOT_X_PLACEMENT = 134;
      private static final int SLOT_Y_PLACEMENT = 47;
@@ -23,16 +23,16 @@
  
      public ContainerAnvil(int i, PlayerInventory playerinventory) {
          this(i, playerinventory, ContainerAccess.NULL);
-@@ -69,7 +78,7 @@
+@@ -71,7 +80,7 @@
  
      @Override
      protected boolean mayPickup(EntityHuman entityhuman, boolean flag) {
--        return (entityhuman.getAbilities().instabuild || entityhuman.experienceLevel >= this.cost.get()) && this.cost.get() > 0;
-+        return (entityhuman.getAbilities().instabuild || entityhuman.experienceLevel >= this.cost.get()) && this.cost.get() > ContainerAnvil.DEFAULT_DENIED_COST && flag; // CraftBukkit - allow cost 0 like a free item
+-        return (entityhuman.hasInfiniteMaterials() || entityhuman.experienceLevel >= this.cost.get()) && this.cost.get() > 0;
++        return (entityhuman.hasInfiniteMaterials() || entityhuman.experienceLevel >= this.cost.get()) && this.cost.get() > ContainerAnvil.DEFAULT_DENIED_COST && flag; // CraftBukkit - allow cost 0 like a free item
      }
  
      @Override
-@@ -92,7 +101,7 @@
+@@ -94,7 +103,7 @@
              this.inputSlots.setItem(1, ItemStack.EMPTY);
          }
  
@@ -41,17 +41,6 @@
          this.access.execute((world, blockposition) -> {
              IBlockData iblockdata = world.getBlockState(blockposition);
  
-@@ -123,8 +132,8 @@
-         byte b1 = 0;
- 
-         if (itemstack.isEmpty()) {
--            this.resultSlots.setItem(0, ItemStack.EMPTY);
--            this.cost.set(0);
-+            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
-+            this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
-         } else {
-             ItemStack itemstack1 = itemstack.copy();
-             ItemStack itemstack2 = this.inputSlots.getItem(1);
 @@ -141,8 +150,8 @@
                  if (itemstack1.isDamageableItem() && itemstack1.getItem().isValidRepairItem(itemstack, itemstack2)) {
                      k = Math.min(itemstack1.getDamageValue(), itemstack1.getMaxDamage() / 4);
@@ -74,7 +63,7 @@
                          return;
                      }
  
-@@ -246,8 +255,8 @@
+@@ -231,8 +240,8 @@
                      }
  
                      if (flag2 && !flag1) {
@@ -85,13 +74,13 @@
                          return;
                      }
                  }
-@@ -270,11 +279,11 @@
+@@ -257,11 +266,11 @@
                  itemstack1 = ItemStack.EMPTY;
              }
  
--            if (b1 == i && b1 > 0 && this.cost.get() >= 40) {
+-            if (b0 == i && b0 > 0 && this.cost.get() >= 40) {
 -                this.cost.set(39);
-+            if (b1 == i && b1 > 0 && this.cost.get() >= maximumRepairCost) { // CraftBukkit
++            if (b0 == i && b0 > 0 && this.cost.get() >= maximumRepairCost) { // CraftBukkit
 +                this.cost.set(maximumRepairCost - 1); // CraftBukkit
              }
  
@@ -100,17 +89,23 @@
                  itemstack1 = ItemStack.EMPTY;
              }
  
-@@ -293,7 +302,8 @@
-                 EnchantmentManager.setEnchantments(map, itemstack1);
+@@ -279,11 +288,12 @@
+                 EnchantmentManager.setEnchantments(itemstack1, itemenchantments_a.toImmutable());
              }
  
 -            this.resultSlots.setItem(0, itemstack1);
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), itemstack1); // CraftBukkit
 +            sendAllDataToRemote(); // CraftBukkit - SPIGOT-6686: Always send completed inventory to stay in sync with client
              this.broadcastChanges();
+         } else {
+-            this.resultSlots.setItem(0, ItemStack.EMPTY);
+-            this.cost.set(0);
++            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
++            this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
          }
      }
-@@ -334,4 +344,18 @@
+ 
+@@ -323,4 +333,18 @@
      public int getCost() {
          return this.cost.get();
      }

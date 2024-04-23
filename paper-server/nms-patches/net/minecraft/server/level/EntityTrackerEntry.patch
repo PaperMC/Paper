@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/EntityTrackerEntry.java
 +++ b/net/minecraft/server/level/EntityTrackerEntry.java
-@@ -42,6 +42,12 @@
+@@ -46,6 +46,12 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
@@ -13,10 +13,10 @@
  public class EntityTrackerEntry {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -66,8 +72,12 @@
+@@ -70,8 +76,12 @@
      private boolean wasOnGround;
      @Nullable
-     private List<DataWatcher.b<?>> trackedDataValues;
+     private List<DataWatcher.c<?>> trackedDataValues;
 +    // CraftBukkit start
 +    private final Set<ServerPlayerConnection> trackedPlayers;
  
@@ -27,27 +27,27 @@
          this.ap = Vec3D.ZERO;
          this.lastPassengers = Collections.emptyList();
          this.level = worldserver;
-@@ -87,7 +97,7 @@
+@@ -91,7 +101,7 @@
          List<Entity> list = this.entity.getPassengers();
  
          if (!list.equals(this.lastPassengers)) {
 -            this.broadcast.accept(new PacketPlayOutMount(this.entity));
 +            this.broadcastAndSend(new PacketPlayOutMount(this.entity)); // CraftBukkit
              removedPassengers(list, this.lastPassengers).forEach((entity) -> {
-                 if (entity instanceof EntityPlayer) {
-                     EntityPlayer entityplayer = (EntityPlayer) entity;
+                 if (entity instanceof EntityPlayer entityplayer) {
+                     entityplayer.connection.teleport(entityplayer.getX(), entityplayer.getY(), entityplayer.getZ(), entityplayer.getYRot(), entityplayer.getXRot());
 @@ -104,18 +114,18 @@
-         if (entity instanceof EntityItemFrame) {
-             EntityItemFrame entityitemframe = (EntityItemFrame) entity;
+         Entity entity = this.entity;
  
+         if (entity instanceof EntityItemFrame entityitemframe) {
 -            if (this.tickCount % 10 == 0) {
 +            if (true || this.tickCount % 10 == 0) { // CraftBukkit - Moved below, should always enter this block
                  ItemStack itemstack = entityitemframe.getItem();
  
 -                if (itemstack.getItem() instanceof ItemWorldMap) {
 +                if (this.tickCount % 10 == 0 && itemstack.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks
-                     Integer integer = ItemWorldMap.getMapId(itemstack);
-                     WorldMap worldmap = ItemWorldMap.getSavedData(integer, this.level);
+                     MapId mapid = (MapId) itemstack.get(DataComponents.MAP_ID);
+                     WorldMap worldmap = ItemWorldMap.getSavedData(mapid, this.level);
  
                      if (worldmap != null) {
 -                        Iterator iterator = this.level.players().iterator();
@@ -58,7 +58,7 @@
 +                            EntityPlayer entityplayer = iterator.next().getPlayer(); // CraftBukkit
  
                              worldmap.tickCarriedBy(entityplayer, itemstack);
-                             Packet<?> packet = worldmap.getUpdatePacket(integer, entityplayer);
+                             Packet<?> packet = worldmap.getUpdatePacket(mapid, entityplayer);
 @@ -228,7 +238,27 @@
  
          ++this.tickCount;
@@ -85,10 +85,10 @@
 +                this.broadcastAndSend(new PacketPlayOutEntityVelocity(this.entity));
 +            }
 +            // CraftBukkit end
-             this.entity.hurtMarked = false;
-         }
- 
-@@ -256,7 +286,10 @@
+             entity = this.entity;
+             if (entity instanceof EntityFireball) {
+                 EntityFireball entityfireball = (EntityFireball) entity;
+@@ -263,7 +293,10 @@
  
      public void sendPairingData(EntityPlayer entityplayer, Consumer<Packet<PacketListenerPlayOut>> consumer) {
          if (this.entity.isRemoved()) {
@@ -100,7 +100,7 @@
          }
  
          Packet<PacketListenerPlayOut> packet = this.entity.getAddEntityPacket();
-@@ -272,6 +305,12 @@
+@@ -279,6 +312,12 @@
          if (this.entity instanceof EntityLiving) {
              Collection<AttributeModifiable> collection = ((EntityLiving) this.entity).getAttributes().getSyncableAttributes();
  
@@ -113,7 +113,7 @@
              if (!collection.isEmpty()) {
                  consumer.accept(new PacketPlayOutUpdateAttributes(this.entity.getId(), collection));
              }
-@@ -303,6 +342,7 @@
+@@ -310,6 +349,7 @@
              if (!list.isEmpty()) {
                  consumer.accept(new PacketPlayOutEntityEquipment(this.entity.getId(), list));
              }
@@ -121,7 +121,7 @@
          }
  
          if (!this.entity.getPassengers().isEmpty()) {
-@@ -338,6 +378,11 @@
+@@ -343,6 +383,11 @@
              Set<AttributeModifiable> set = ((EntityLiving) this.entity).getAttributes().getDirtyAttributes();
  
              if (!set.isEmpty()) {

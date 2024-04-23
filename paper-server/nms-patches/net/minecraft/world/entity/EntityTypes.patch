@@ -1,24 +1,24 @@
 --- a/net/minecraft/world/entity/EntityTypes.java
 +++ b/net/minecraft/world/entity/EntityTypes.java
-@@ -160,6 +160,7 @@
- import net.minecraft.world.phys.AxisAlignedBB;
+@@ -168,6 +168,7 @@
+ import net.minecraft.world.phys.Vec3D;
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.phys.shapes.VoxelShapes;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
  import org.slf4j.Logger;
  
  public class EntityTypes<T extends Entity> implements FeatureElement, EntityTypeTest<Entity, T> {
-@@ -170,7 +171,7 @@
-     private static final float MAGIC_HORSE_WIDTH = 1.3964844F;
+@@ -178,7 +179,7 @@
      private static final int DISPLAY_TRACKING_RANGE = 10;
-     public static final EntityTypes<Allay> ALLAY = register("allay", EntityTypes.Builder.of(Allay::new, EnumCreatureType.CREATURE).sized(0.35F, 0.6F).clientTrackingRange(8).updateInterval(2));
--    public static final EntityTypes<EntityAreaEffectCloud> AREA_EFFECT_CLOUD = register("area_effect_cloud", EntityTypes.Builder.of(EntityAreaEffectCloud::new, EnumCreatureType.MISC).fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
-+    public static final EntityTypes<EntityAreaEffectCloud> AREA_EFFECT_CLOUD = register("area_effect_cloud", EntityTypes.Builder.of(EntityAreaEffectCloud::new, EnumCreatureType.MISC).fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(10)); // CraftBukkit - SPIGOT-3729: track area effect clouds
-     public static final EntityTypes<EntityArmorStand> ARMOR_STAND = register("armor_stand", EntityTypes.Builder.of(EntityArmorStand::new, EnumCreatureType.MISC).sized(0.5F, 1.975F).clientTrackingRange(10));
-     public static final EntityTypes<EntityTippedArrow> ARROW = register("arrow", EntityTypes.Builder.of(EntityTippedArrow::new, EnumCreatureType.MISC).sized(0.5F, 0.5F).clientTrackingRange(4).updateInterval(20));
-     public static final EntityTypes<Axolotl> AXOLOTL = register("axolotl", EntityTypes.Builder.of(Axolotl::new, EnumCreatureType.AXOLOTLS).sized(0.75F, 0.42F).clientTrackingRange(10));
-@@ -313,8 +314,8 @@
-     private final EntitySize dimensions;
+     public static final EntityTypes<Allay> ALLAY = register("allay", EntityTypes.Builder.of(Allay::new, EnumCreatureType.CREATURE).sized(0.35F, 0.6F).eyeHeight(0.36F).ridingOffset(0.04F).clientTrackingRange(8).updateInterval(2));
+     public static final EntityTypes<EntityAreaEffectCloud> AREA_EFFECT_CLOUD = register("area_effect_cloud", EntityTypes.Builder.of(EntityAreaEffectCloud::new, EnumCreatureType.MISC).fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
+-    public static final EntityTypes<Armadillo> ARMADILLO = register("armadillo", EntityTypes.Builder.of(Armadillo::new, EnumCreatureType.CREATURE).sized(0.7F, 0.65F).eyeHeight(0.26F).clientTrackingRange(10));
++    public static final EntityTypes<Armadillo> ARMADILLO = register("armadillo", EntityTypes.Builder.of(Armadillo::new, EnumCreatureType.CREATURE).sized(0.7F, 0.65F).eyeHeight(0.26F).clientTrackingRange(10).updateInterval(10)); // CraftBukkit - SPIGOT-3729: track area effect clouds
+     public static final EntityTypes<EntityArmorStand> ARMOR_STAND = register("armor_stand", EntityTypes.Builder.of(EntityArmorStand::new, EnumCreatureType.MISC).sized(0.5F, 1.975F).eyeHeight(1.7775F).clientTrackingRange(10));
+     public static final EntityTypes<EntityTippedArrow> ARROW = register("arrow", EntityTypes.Builder.of(EntityTippedArrow::new, EnumCreatureType.MISC).sized(0.5F, 0.5F).eyeHeight(0.13F).clientTrackingRange(4).updateInterval(20));
+     public static final EntityTypes<Axolotl> AXOLOTL = register("axolotl", EntityTypes.Builder.of(Axolotl::new, EnumCreatureType.AXOLOTLS).sized(0.75F, 0.42F).eyeHeight(0.2751F).clientTrackingRange(10));
+@@ -325,8 +326,8 @@
+     private final float spawnDimensionsScale;
      private final FeatureFlagSet requiredFeatures;
  
 -    private static <T extends Entity> EntityTypes<T> register(String s, EntityTypes.Builder<T> entitytypes_builder) {
@@ -28,10 +28,11 @@
      }
  
      public static MinecraftKey getKey(EntityTypes<?> entitytypes) {
-@@ -342,8 +343,15 @@
+@@ -355,7 +356,14 @@
  
      @Nullable
      public T spawn(WorldServer worldserver, @Nullable ItemStack itemstack, @Nullable EntityHuman entityhuman, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1) {
+-        Consumer consumer;
 +        // CraftBukkit start
 +        return this.spawn(worldserver, itemstack, entityhuman, blockposition, enummobspawn, flag, flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
 +    }
@@ -39,53 +40,51 @@
 +    @Nullable
 +    public T spawn(WorldServer worldserver, @Nullable ItemStack itemstack, @Nullable EntityHuman entityhuman, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        // CraftBukkit end
-         NBTTagCompound nbttagcompound;
--        Consumer consumer;
 +        Consumer<T> consumer; // CraftBukkit - decompile error
  
          if (itemstack != null) {
-             nbttagcompound = itemstack.getTag();
-@@ -354,7 +362,7 @@
-             nbttagcompound = null;
+             consumer = createDefaultStackConfig(worldserver, itemstack, entityhuman);
+@@ -364,7 +372,7 @@
+             };
          }
  
--        return this.spawn(worldserver, nbttagcompound, consumer, blockposition, enummobspawn, flag, flag1);
-+        return this.spawn(worldserver, nbttagcompound, consumer, blockposition, enummobspawn, flag, flag1, spawnReason); // CraftBukkit
+-        return this.spawn(worldserver, consumer, blockposition, enummobspawn, flag, flag1);
++        return this.spawn(worldserver, consumer, blockposition, enummobspawn, flag, flag1, spawnReason); // CraftBukkit
      }
  
      public static <T extends Entity> Consumer<T> createDefaultStackConfig(WorldServer worldserver, ItemStack itemstack, @Nullable EntityHuman entityhuman) {
-@@ -376,21 +384,37 @@
-         NBTTagCompound nbttagcompound = itemstack.getTag();
+@@ -388,21 +396,37 @@
+         CustomData customdata = (CustomData) itemstack.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
  
-         return nbttagcompound != null ? consumer.andThen((entity) -> {
--            updateCustomEntityTag(worldserver, entityhuman, entity, nbttagcompound);
-+            try { updateCustomEntityTag(worldserver, entityhuman, entity, nbttagcompound); } catch (Throwable t) { LOGGER.warn("Error loading spawn egg NBT", t); } // CraftBukkit - SPIGOT-5665
+         return !customdata.isEmpty() ? consumer.andThen((entity) -> {
+-            updateCustomEntityTag(worldserver, entityhuman, entity, customdata);
++            try { updateCustomEntityTag(worldserver, entityhuman, entity, customdata); } catch (Throwable t) { LOGGER.warn("Error loading spawn egg NBT", t); } // CraftBukkit - SPIGOT-5665
          }) : consumer;
      }
  
      @Nullable
      public T spawn(WorldServer worldserver, BlockPosition blockposition, EnumMobSpawn enummobspawn) {
--        return this.spawn(worldserver, (NBTTagCompound) null, (Consumer) null, blockposition, enummobspawn, false, false);
+-        return this.spawn(worldserver, (Consumer) null, blockposition, enummobspawn, false, false);
 +        // CraftBukkit start
 +        return this.spawn(worldserver, blockposition, enummobspawn, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
 +    public T spawn(WorldServer worldserver, BlockPosition blockposition, EnumMobSpawn enummobspawn, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
-+        return this.spawn(worldserver, (NBTTagCompound) null, null, blockposition, enummobspawn, false, false, spawnReason); // CraftBukkit - decompile error
++        return this.spawn(worldserver, (Consumer<T>) null, blockposition, enummobspawn, false, false, spawnReason); // CraftBukkit - decompile error
 +        // CraftBukkit end
      }
  
      @Nullable
-     public T spawn(WorldServer worldserver, @Nullable NBTTagCompound nbttagcompound, @Nullable Consumer<T> consumer, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1) {
+     public T spawn(WorldServer worldserver, @Nullable Consumer<T> consumer, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1) {
 +        // CraftBukkit start
-+        return this.spawn(worldserver, nbttagcompound, consumer, blockposition, enummobspawn, flag, flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return this.spawn(worldserver, consumer, blockposition, enummobspawn, flag, flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
-+    public T spawn(WorldServer worldserver, @Nullable NBTTagCompound nbttagcompound, @Nullable Consumer<T> consumer, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++    public T spawn(WorldServer worldserver, @Nullable Consumer<T> consumer, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        // CraftBukkit end
-         T t0 = this.create(worldserver, nbttagcompound, consumer, blockposition, enummobspawn, flag, flag1);
+         T t0 = this.create(worldserver, consumer, blockposition, enummobspawn, flag, flag1);
  
          if (t0 != null) {
 -            worldserver.addFreshEntityWithPassengers(t0);
@@ -95,7 +94,7 @@
          }
  
          return t0;
-@@ -577,7 +601,7 @@
+@@ -583,7 +607,7 @@
              }
  
              return entity;
@@ -104,7 +103,7 @@
      }
  
      public static Stream<Entity> loadEntitiesRecursive(final List<? extends NBTBase> list, final World world) {
-@@ -638,7 +662,7 @@
+@@ -644,7 +668,7 @@
  
      @Nullable
      public T tryCast(Entity entity) {
@@ -113,7 +112,7 @@
      }
  
      @Override
-@@ -673,7 +697,7 @@
+@@ -681,7 +705,7 @@
              this.canSpawnFarFromPlayer = enumcreaturetype == EnumCreatureType.CREATURE || enumcreaturetype == EnumCreatureType.MISC;
          }
  

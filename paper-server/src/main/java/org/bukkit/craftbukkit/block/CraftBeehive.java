@@ -83,7 +83,7 @@ public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> imple
     public void addEntity(Bee entity) {
         Preconditions.checkArgument(entity != null, "Entity must not be null");
 
-        getSnapshot().addOccupant(((CraftBee) entity).getHandle(), false);
+        getSnapshot().addOccupant(((CraftBee) entity).getHandle());
     }
 
     @Override

@@ -39,9 +39,9 @@ import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.entity.TileEntityTypes;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.border.WorldBorder;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.IChunkProvider;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.dimension.DimensionManager;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -56,7 +56,6 @@ import net.minecraft.world.phys.Vec3D;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.VoxelShapeCollision;
 import net.minecraft.world.ticks.LevelTickAccess;
-import net.minecraft.world.ticks.NextTickListEntry;
 import net.minecraft.world.ticks.TickListPriority;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 
@@ -188,16 +187,6 @@ public abstract class DelegatedGeneratorAccess implements GeneratorAccessSeed {
     }
 
     @Override
-    public <T> NextTickListEntry<T> createTick(BlockPosition arg0, T arg1, int arg2) {
-        return handle.createTick(arg0, arg1, arg2);
-    }
-
-    @Override
-    public <T> NextTickListEntry<T> createTick(BlockPosition arg0, T arg1, int arg2, TickListPriority arg3) {
-        return handle.createTick(arg0, arg1, arg2, arg3);
-    }
-
-    @Override
     public LevelTickAccess<FluidType> getFluidTicks() {
         return handle.getFluidTicks();
     }
@@ -228,22 +217,22 @@ public abstract class DelegatedGeneratorAccess implements GeneratorAccessSeed {
     }
 
     @Override
-    public void gameEvent(GameEvent arg0, Vec3D arg1, GameEvent.a arg2) {
+    public void gameEvent(Holder<GameEvent> arg0, Vec3D arg1, GameEvent.a arg2) {
         handle.gameEvent(arg0, arg1, arg2);
     }
 
     @Override
-    public void gameEvent(GameEvent arg0, BlockPosition arg1, GameEvent.a arg2) {
+    public void gameEvent(Holder<GameEvent> arg0, BlockPosition arg1, GameEvent.a arg2) {
         handle.gameEvent(arg0, arg1, arg2);
     }
 
     @Override
-    public void gameEvent(Entity arg0, GameEvent arg1, BlockPosition arg2) {
+    public void gameEvent(Entity arg0, Holder<GameEvent> arg1, BlockPosition arg2) {
         handle.gameEvent(arg0, arg1, arg2);
     }
 
     @Override
-    public void gameEvent(Entity arg0, GameEvent arg1, Vec3D arg2) {
+    public void gameEvent(Entity arg0, Holder<GameEvent> arg1, Vec3D arg2) {
         handle.gameEvent(arg0, arg1, arg2);
     }
 

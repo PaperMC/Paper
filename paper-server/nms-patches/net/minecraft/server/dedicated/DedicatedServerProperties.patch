@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/net/minecraft/server/dedicated/DedicatedServerProperties.java
-@@ -44,11 +44,16 @@
+@@ -43,11 +43,16 @@
  import net.minecraft.world.level.levelgen.presets.WorldPresets;
  import org.slf4j.Logger;
  
@@ -17,9 +17,9 @@
      public final boolean onlineMode = this.get("online-mode", true);
      public final boolean preventProxyConnections = this.get("prevent-proxy-connections", false);
      public final String serverIp = this.get("server-ip", "");
-@@ -103,8 +108,10 @@
-     private final DedicatedServerProperties.WorldDimensionData worldDimensionData;
+@@ -104,8 +109,10 @@
      public final WorldOptions worldOptions;
+     public boolean acceptsTransfers;
  
 -    public DedicatedServerProperties(Properties properties) {
 -        super(properties);
@@ -30,7 +30,7 @@
          this.difficulty = (EnumDifficulty) this.get("difficulty", dispatchNumberOrString(EnumDifficulty::byId, EnumDifficulty::byName), EnumDifficulty::getKey, EnumDifficulty.EASY);
          this.gamemode = (EnumGamemode) this.get("gamemode", dispatchNumberOrString(EnumGamemode::byId, EnumGamemode::byName), EnumGamemode::getName, EnumGamemode.SURVIVAL);
          this.levelName = this.get("level-name", "world");
-@@ -161,13 +168,15 @@
+@@ -164,13 +171,15 @@
          this.initialDataPackConfiguration = getDatapackConfig(this.get("initial-enabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getEnabled())), this.get("initial-disabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getDisabled())));
      }
  
@@ -50,7 +50,7 @@
      }
  
      @Nullable
-@@ -248,10 +257,10 @@
+@@ -251,10 +260,10 @@
              }).orElseThrow(() -> {
                  return new IllegalStateException("Invalid datapack contents: can't find default preset");
              });
@@ -63,10 +63,10 @@
              });
  
              Objects.requireNonNull(iregistry);
-@@ -263,7 +272,7 @@
+@@ -266,7 +275,7 @@
  
              if (holder.is(WorldPresets.FLAT)) {
-                 RegistryOps<JsonElement> registryops = RegistryOps.create(JsonOps.INSTANCE, (HolderLookup.b) iregistrycustom);
+                 RegistryOps<JsonElement> registryops = iregistrycustom.createSerializationContext(JsonOps.INSTANCE);
 -                DataResult dataresult = GeneratorSettingsFlat.CODEC.parse(new Dynamic(registryops, this.generatorSettings()));
 +                DataResult<GeneratorSettingsFlat> dataresult = GeneratorSettingsFlat.CODEC.parse(new Dynamic(registryops, this.generatorSettings())); // CraftBukkit - decompile error
                  Logger logger = DedicatedServerProperties.LOGGER;

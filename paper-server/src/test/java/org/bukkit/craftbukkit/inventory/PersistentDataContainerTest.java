@@ -1,8 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
 import static org.junit.jupiter.api.Assertions.*;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Array;
@@ -13,8 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
-import net.minecraft.nbt.NBTCompressedStreamTools;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.component.DataComponentPatch;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -129,10 +126,10 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
     public void testNBTTagStoring() {
         CraftMetaItem itemMeta = createComplexItemMeta();
 
-        NBTTagCompound compound = new NBTTagCompound();
+        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
         itemMeta.applyToItem(compound);
 
-        assertEquals(itemMeta, new CraftMetaItem(compound));
+        assertEquals(itemMeta, new CraftMetaItem(compound.build()));
     }
 
     @Test
@@ -465,7 +462,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
 
     @Test
     public void testEmptyListApplicationToAnyType() throws IOException {
-        final CraftMetaItem craftItem = new CraftMetaItem(new NBTTagCompound());
+        final CraftMetaItem craftItem = new CraftMetaItem(DataComponentPatch.EMPTY);
         final PersistentDataContainer container = craftItem.getPersistentDataContainer();
 
         container.set(requestKey("list"), PersistentDataType.LIST.strings(), List.of());
@@ -475,16 +472,10 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
         assertEquals(List.of(), container.get(requestKey("list"), PersistentDataType.LIST.strings()));
 
         // Write and read the entire container to NBT
-        final NBTTagCompound storage = new NBTTagCompound();
+        final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator();
         craftItem.applyToItem(storage);
 
-        final ByteArrayDataOutput writer = ByteStreams.newDataOutput();
-        NBTCompressedStreamTools.write(storage, writer);
-
-        final NBTTagCompound readStorage = NBTCompressedStreamTools.read(
-            ByteStreams.newDataInput(writer.toByteArray())
-        );
-        final CraftMetaItem readItem = new CraftMetaItem(readStorage);
+        final CraftMetaItem readItem = new CraftMetaItem(storage.build());
         final PersistentDataContainer readContainer = readItem.getPersistentDataContainer();
 
         assertTrue(readContainer.has(requestKey("list"), PersistentDataType.LIST.strings()));

@@ -18,6 +18,7 @@ import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.IChatMutableComponent;
 import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.ChatColor;
 
 public final class CraftChatMessage {
@@ -160,6 +161,14 @@ public final class CraftChatMessage {
         }
     }
 
+    public static Optional<IChatBaseComponent> fromStringOrOptional(String message) {
+        return Optional.ofNullable(fromStringOrNull(message));
+    }
+
+    public static Optional<IChatBaseComponent> fromStringOrOptional(String message, boolean keepNewlines) {
+        return Optional.ofNullable(fromStringOrNull(message, keepNewlines));
+    }
+
     public static IChatBaseComponent fromStringOrNull(String message) {
         return fromStringOrNull(message, false);
     }
@@ -181,7 +190,7 @@ public final class CraftChatMessage {
     }
 
     public static String toJSON(IChatBaseComponent component) {
-        return IChatBaseComponent.ChatSerializer.toJson(component);
+        return IChatBaseComponent.ChatSerializer.toJson(component, MinecraftServer.getDefaultRegistryAccess());
     }
 
     public static String toJSONOrNull(IChatBaseComponent component) {
@@ -192,7 +201,7 @@ public final class CraftChatMessage {
     public static IChatBaseComponent fromJSON(String jsonMessage) throws JsonParseException {
         // Note: This also parses plain Strings to text components.
         // Note: An empty message (empty, or only consisting of whitespace) results in null rather than a parse exception.
-        return IChatBaseComponent.ChatSerializer.fromJson(jsonMessage);
+        return IChatBaseComponent.ChatSerializer.fromJson(jsonMessage, MinecraftServer.getDefaultRegistryAccess());
     }
 
     public static IChatBaseComponent fromJSONOrNull(String jsonMessage) {

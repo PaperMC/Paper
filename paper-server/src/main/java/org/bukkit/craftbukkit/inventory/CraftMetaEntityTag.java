@@ -4,12 +4,15 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.component.CustomData;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 
-@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
+@DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaEntityTag extends CraftMetaItem {
 
     private static final Set<Material> ENTITY_TAGGABLE_MATERIALS = Sets.newHashSet(
@@ -21,7 +24,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
             Material.PAINTING
     );
 
-    static final ItemMetaKey ENTITY_TAG = new ItemMetaKey("EntityTag", "entity-tag");
+    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "EntityTag", "entity-tag");
     NBTTagCompound entityTag;
 
     CraftMetaEntityTag(CraftMetaItem meta) {
@@ -35,12 +38,12 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         this.entityTag = entity.entityTag;
     }
 
-    CraftMetaEntityTag(NBTTagCompound tag) {
+    CraftMetaEntityTag(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(ENTITY_TAG.NBT)) {
-            entityTag = tag.getCompound(ENTITY_TAG.NBT).copy();
-        }
+        getOrEmpty(tag, ENTITY_TAG).ifPresent((nbt) -> {
+            entityTag = nbt.copyTag();
+        });
     }
 
     CraftMetaEntityTag(Map<String, Object> map) {
@@ -64,11 +67,11 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     }
 
     @Override
-    void applyToItem(NBTTagCompound tag) {
+    void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
         if (entityTag != null) {
-            tag.put(ENTITY_TAG.NBT, entityTag);
+            tag.put(ENTITY_TAG, CustomData.of(entityTag));
         }
     }
 

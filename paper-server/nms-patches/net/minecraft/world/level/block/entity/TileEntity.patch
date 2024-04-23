@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntity.java
 +++ b/net/minecraft/world/level/block/entity/TileEntity.java
-@@ -15,8 +15,18 @@
+@@ -26,8 +26,18 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import org.slf4j.Logger;
  
@@ -19,13 +19,13 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private final TileEntityTypes<?> type;
      @Nullable
-@@ -48,7 +58,16 @@
+@@ -61,7 +71,16 @@
          return this.level != null;
      }
  
--    public void load(NBTTagCompound nbttagcompound) {}
+-    protected void loadAdditional(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {}
 +    // CraftBukkit start - read container
-+    public void load(NBTTagCompound nbttagcompound) {
++    protected void loadAdditional(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
 +        this.persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 +
 +        net.minecraft.nbt.NBTBase persistentDataTag = nbttagcompound.get("PublicBukkitValues");
@@ -35,12 +35,12 @@
 +    }
 +    // CraftBukkit end
  
-     protected void saveAdditional(NBTTagCompound nbttagcompound) {}
- 
-@@ -70,6 +89,11 @@
-         NBTTagCompound nbttagcompound = new NBTTagCompound();
- 
-         this.saveAdditional(nbttagcompound);
+     public final void loadWithComponents(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
+         this.loadAdditional(nbttagcompound, holderlookup_a);
+@@ -101,6 +120,11 @@
+         }).ifPresent((nbtbase) -> {
+             nbttagcompound.merge((NBTTagCompound) nbtbase);
+         });
 +        // CraftBukkit start - store container
 +        if (this.persistentDataContainer != null && !this.persistentDataContainer.isEmpty()) {
 +            nbttagcompound.put("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
@@ -49,11 +49,19 @@
          return nbttagcompound;
      }
  
-@@ -202,4 +226,13 @@
-     public void setBlockState(IBlockData iblockdata) {
-         this.blockState = iblockdata;
+@@ -264,7 +288,7 @@
+         set.add(DataComponents.BLOCK_ENTITY_DATA);
+         final PatchedDataComponentMap patcheddatacomponentmap = PatchedDataComponentMap.fromPatch(datacomponentmap, datacomponentpatch);
+ 
+-        this.applyImplicitComponents(new TileEntity.b(this) {
++        this.applyImplicitComponents(new TileEntity.b() { // CraftBukkit - decompile error
+             @Nullable
+             @Override
+             public <T> T get(DataComponentType<T> datacomponenttype) {
+@@ -306,6 +330,15 @@
+         this.components = datacomponentmap;
      }
-+
+ 
 +    // CraftBukkit start - add method
 +    public InventoryHolder getOwner() {
 +        if (level == null) return null;
@@ -62,4 +70,7 @@
 +        return null;
 +    }
 +    // CraftBukkit end
- }
++
+     private static class a {
+ 
+         public static final Codec<DataComponentMap> COMPONENTS_CODEC = DataComponentMap.CODEC.optionalFieldOf("components", DataComponentMap.EMPTY).codec();

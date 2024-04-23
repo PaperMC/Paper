@@ -8,17 +8,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.EnumColor;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.block.banner.CraftPatternType;
 import org.bukkit.inventory.meta.BannerMeta;
 
-@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
+@DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
 
     private static final Set<Material> BANNER_MATERIALS = Sets.newHashSet(
@@ -56,12 +58,8 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
             Material.YELLOW_WALL_BANNER
     );
 
-    static final ItemMetaKey BASE = new ItemMetaKey("Base", "base-color");
-    static final ItemMetaKey PATTERNS = new ItemMetaKey("Patterns", "patterns");
-    static final ItemMetaKey COLOR = new ItemMetaKey("Color", "color");
-    static final ItemMetaKey PATTERN = new ItemMetaKey("Pattern", "pattern");
+    static final ItemMetaKeyType<BannerPatternLayers> PATTERNS = new ItemMetaKeyType<>(DataComponents.BANNER_PATTERNS, "patterns");
 
-    private DyeColor base;
     private List<Pattern> patterns = new ArrayList<Pattern>();
 
     CraftMetaBanner(CraftMetaItem meta) {
@@ -72,42 +70,28 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
         }
 
         CraftMetaBanner banner = (CraftMetaBanner) meta;
-        base = banner.base;
         patterns = new ArrayList<Pattern>(banner.patterns);
     }
 
-    CraftMetaBanner(NBTTagCompound tag) {
+    CraftMetaBanner(DataComponentPatch tag) {
         super(tag);
 
-        if (!tag.contains("BlockEntityTag")) {
-            return;
-        }
-
-        NBTTagCompound entityTag = tag.getCompound("BlockEntityTag");
-
-        base = entityTag.contains(BASE.NBT) ? DyeColor.getByWoolData((byte) entityTag.getInt(BASE.NBT)) : null;
-
-        if (entityTag.contains(PATTERNS.NBT)) {
-            NBTTagList patterns = entityTag.getList(PATTERNS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
+        getOrEmpty(tag, PATTERNS).ifPresent((entityTag) -> {
+            List<BannerPatternLayers.b> patterns = entityTag.layers();
             for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
-                NBTTagCompound p = patterns.getCompound(i);
-                DyeColor color = DyeColor.getByWoolData((byte) p.getInt(COLOR.NBT));
-                PatternType pattern = PatternType.getByIdentifier(p.getString(PATTERN.NBT));
+                BannerPatternLayers.b p = patterns.get(i);
+                DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
+                PatternType pattern = CraftPatternType.minecraftHolderToBukkit(p.pattern());
 
                 if (color != null && pattern != null) {
                     this.patterns.add(new Pattern(color, pattern));
                 }
             }
-        }
+        });
     }
 
     CraftMetaBanner(Map<String, Object> map) {
         super(map);
-
-        String baseStr = SerializableMeta.getString(map, BASE.BUKKIT, true);
-        if (baseStr != null) {
-            base = DyeColor.legacyValueOf(baseStr);
-        }
 
         Iterable<?> rawPatternList = SerializableMeta.getObject(Iterable.class, map, PATTERNS.BUKKIT, true);
         if (rawPatternList == null) {
@@ -119,36 +103,18 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
             addPattern((Pattern) obj);
         }
     }
+
     @Override
-    void applyToItem(NBTTagCompound tag) {
+    void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
-        NBTTagCompound entityTag = new NBTTagCompound();
-        if (base != null) {
-            entityTag.putInt(BASE.NBT, base.getWoolData());
-        }
-
-        NBTTagList newPatterns = new NBTTagList();
+        List<BannerPatternLayers.b> newPatterns = new ArrayList<>();
 
         for (Pattern p : patterns) {
-            NBTTagCompound compound = new NBTTagCompound();
-            compound.putInt(COLOR.NBT, p.getColor().getWoolData());
-            compound.putString(PATTERN.NBT, p.getPattern().getIdentifier());
-            newPatterns.add(compound);
+            newPatterns.add(new BannerPatternLayers.b(CraftPatternType.bukkitToMinecraftHolder(p.getPattern()), EnumColor.byId(p.getColor().getWoolData())));
         }
-        entityTag.put(PATTERNS.NBT, newPatterns);
 
-        tag.put("BlockEntityTag", entityTag);
-    }
-
-    @Override
-    public DyeColor getBaseColor() {
-        return base;
-    }
-
-    @Override
-    public void setBaseColor(DyeColor color) {
-        base = color;
+        tag.put(PATTERNS, new BannerPatternLayers(newPatterns));
     }
 
     @Override
@@ -190,10 +156,6 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (base != null) {
-            builder.put(BASE.BUKKIT, base.toString());
-        }
-
         if (!patterns.isEmpty()) {
             builder.put(PATTERNS.BUKKIT, ImmutableList.copyOf(patterns));
         }
@@ -205,9 +167,6 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();
-        if (base != null) {
-            hash = 31 * hash + base.hashCode();
-        }
         if (!patterns.isEmpty()) {
             hash = 31 * hash + patterns.hashCode();
         }
@@ -222,19 +181,19 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
         if (meta instanceof CraftMetaBanner) {
             CraftMetaBanner that = (CraftMetaBanner) meta;
 
-            return base == that.base && patterns.equals(that.patterns);
+            return patterns.equals(that.patterns);
         }
         return true;
     }
 
     @Override
     boolean notUncommon(CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaBanner || (patterns.isEmpty() && base == null));
+        return super.notUncommon(meta) && (meta instanceof CraftMetaBanner || patterns.isEmpty());
     }
 
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && patterns.isEmpty() && base == null;
+        return super.isEmpty() && patterns.isEmpty();
     }
 
     @Override

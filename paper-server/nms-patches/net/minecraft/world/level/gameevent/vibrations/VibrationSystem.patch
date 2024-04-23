@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
 +++ b/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
-@@ -28,6 +28,12 @@
+@@ -31,6 +31,12 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.Vec3D;
  
@@ -12,8 +12,8 @@
 +
  public interface VibrationSystem {
  
-     GameEvent[] RESONANCE_EVENTS = new GameEvent[]{GameEvent.RESONATE_1, GameEvent.RESONATE_2, GameEvent.RESONATE_3, GameEvent.RESONATE_4, GameEvent.RESONATE_5, GameEvent.RESONATE_6, GameEvent.RESONATE_7, GameEvent.RESONATE_8, GameEvent.RESONATE_9, GameEvent.RESONATE_10, GameEvent.RESONATE_11, GameEvent.RESONATE_12, GameEvent.RESONATE_13, GameEvent.RESONATE_14, GameEvent.RESONATE_15};
-@@ -227,7 +233,8 @@
+     List<ResourceKey<GameEvent>> RESONANCE_EVENTS = List.of(GameEvent.RESONATE_1.key(), GameEvent.RESONATE_2.key(), GameEvent.RESONATE_3.key(), GameEvent.RESONATE_4.key(), GameEvent.RESONATE_5.key(), GameEvent.RESONATE_6.key(), GameEvent.RESONATE_7.key(), GameEvent.RESONATE_8.key(), GameEvent.RESONATE_9.key(), GameEvent.RESONATE_10.key(), GameEvent.RESONATE_11.key(), GameEvent.RESONATE_12.key(), GameEvent.RESONATE_13.key(), GameEvent.RESONATE_14.key(), GameEvent.RESONATE_15.key());
+@@ -233,7 +239,8 @@
              if (vibrationsystem_d.requiresAdjacentChunksToBeTicking() && !areAdjacentChunksTicking(worldserver, blockposition1)) {
                  return false;
              } else {
@@ -23,16 +23,16 @@
                  vibrationsystem_a.setCurrentVibration((VibrationInfo) null);
                  return true;
              }
-@@ -282,8 +289,14 @@
+@@ -288,8 +295,14 @@
                      return false;
                  } else {
                      Vec3D vec3d1 = (Vec3D) optional.get();
 -
--                    if (!vibrationsystem_d.canReceiveVibration(worldserver, BlockPosition.containing(vec3d), gameevent, gameevent_a)) {
+-                    if (!vibrationsystem_d.canReceiveVibration(worldserver, BlockPosition.containing(vec3d), holder, gameevent_a)) {
 +                    // CraftBukkit start
-+                    boolean defaultCancel = !vibrationsystem_d.canReceiveVibration(worldserver, BlockPosition.containing(vec3d), gameevent, gameevent_a);
++                    boolean defaultCancel = !vibrationsystem_d.canReceiveVibration(worldserver, BlockPosition.containing(vec3d), holder, gameevent_a);
 +                    Entity entity = gameevent_a.sourceEntity();
-+                    BlockReceiveGameEvent event = new BlockReceiveGameEvent(CraftGameEvent.minecraftToBukkit(gameevent), CraftBlock.at(worldserver, BlockPosition.containing(vec3d1)), (entity == null) ? null : entity.getBukkitEntity());
++                    BlockReceiveGameEvent event = new BlockReceiveGameEvent(CraftGameEvent.minecraftToBukkit(holder.value()), CraftBlock.at(worldserver, BlockPosition.containing(vec3d1)), (entity == null) ? null : entity.getBukkitEntity());
 +                    event.setCancelled(defaultCancel);
 +                    worldserver.getCraftServer().getPluginManager().callEvent(event);
 +                    if (event.isCancelled()) {
@@ -40,8 +40,8 @@
                          return false;
                      } else if (isOccluded(worldserver, vec3d, vec3d1)) {
                          return false;
-@@ -336,7 +349,7 @@
-             return instance.group(VibrationInfo.CODEC.optionalFieldOf("event").forGetter((vibrationsystem_a) -> {
+@@ -342,7 +355,7 @@
+             return instance.group(VibrationInfo.CODEC.lenientOptionalFieldOf("event").forGetter((vibrationsystem_a) -> {
                  return Optional.ofNullable(vibrationsystem_a.currentVibration);
              }), VibrationSelector.CODEC.fieldOf("selector").forGetter(VibrationSystem.a::getSelectionStrategy), ExtraCodecs.NON_NEGATIVE_INT.fieldOf("event_delay").orElse(0).forGetter(VibrationSystem.a::getTravelTimeInTicks)).apply(instance, (optional, vibrationselector, integer) -> {
 -                return new VibrationSystem.a((VibrationInfo) optional.orElse((Object) null), vibrationselector, integer, true);

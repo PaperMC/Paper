@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.CatVariant;
@@ -31,14 +32,14 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
 
     @Override
     public Type getCatType() {
-        return CraftType.minecraftToBukkit(getHandle().getVariant());
+        return CraftType.minecraftHolderToBukkit(getHandle().getVariant());
     }
 
     @Override
     public void setCatType(Type type) {
         Preconditions.checkArgument(type != null, "Cannot have null Type");
 
-        getHandle().setVariant(CraftType.bukkitToMinecraft(type));
+        getHandle().setVariant(CraftType.bukkitToMinecraftHolder(type));
     }
 
     @Override
@@ -61,12 +62,29 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
             return Registry.CAT_VARIANT.get(CraftNamespacedKey.fromMinecraft(registry.getKey(minecraft)));
         }
 
+        public static Type minecraftHolderToBukkit(Holder<CatVariant> minecraft) {
+            return minecraftToBukkit(minecraft.value());
+        }
+
         public static CatVariant bukkitToMinecraft(Type bukkit) {
             Preconditions.checkArgument(bukkit != null);
 
             IRegistry<CatVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.CAT_VARIANT);
 
             return registry.get(CraftNamespacedKey.toMinecraft(bukkit.getKey()));
+        }
+
+        public static Holder<CatVariant> bukkitToMinecraftHolder(Type bukkit) {
+            Preconditions.checkArgument(bukkit != null);
+
+            IRegistry<CatVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.CAT_VARIANT);
+
+            if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<CatVariant> holder) {
+                return holder;
+            }
+
+            throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                    + ", this can happen if a plugin creates its own cat variant with out properly registering it.");
         }
     }
 }

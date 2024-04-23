@@ -1,15 +1,15 @@
 --- a/net/minecraft/server/ScoreboardServer.java
 +++ b/net/minecraft/server/ScoreboardServer.java
-@@ -40,7 +40,7 @@
+@@ -42,7 +42,7 @@
      protected void onScoreChanged(ScoreHolder scoreholder, ScoreboardObjective scoreboardobjective, ScoreboardScore scoreboardscore) {
          super.onScoreChanged(scoreholder, scoreboardobjective, scoreboardscore);
          if (this.trackedObjectives.contains(scoreboardobjective)) {
--            this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardScore(scoreholder.getScoreboardName(), scoreboardobjective.getName(), scoreboardscore.value(), scoreboardscore.display(), scoreboardscore.numberFormat()));
-+            this.broadcastAll(new PacketPlayOutScoreboardScore(scoreholder.getScoreboardName(), scoreboardobjective.getName(), scoreboardscore.value(), scoreboardscore.display(), scoreboardscore.numberFormat())); // CraftBukkit
+-            this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardScore(scoreholder.getScoreboardName(), scoreboardobjective.getName(), scoreboardscore.value(), Optional.ofNullable(scoreboardscore.display()), Optional.ofNullable(scoreboardscore.numberFormat())));
++            this.broadcastAll(new PacketPlayOutScoreboardScore(scoreholder.getScoreboardName(), scoreboardobjective.getName(), scoreboardscore.value(), Optional.ofNullable(scoreboardscore.display()), Optional.ofNullable(scoreboardscore.numberFormat()))); // CraftBukkit
          }
  
          this.setDirty();
-@@ -55,7 +55,7 @@
+@@ -57,7 +57,7 @@
      @Override
      public void onPlayerRemoved(ScoreHolder scoreholder) {
          super.onPlayerRemoved(scoreholder);
@@ -18,7 +18,7 @@
          this.setDirty();
      }
  
-@@ -63,7 +63,7 @@
+@@ -65,7 +65,7 @@
      public void onPlayerScoreRemoved(ScoreHolder scoreholder, ScoreboardObjective scoreboardobjective) {
          super.onPlayerScoreRemoved(scoreholder, scoreboardobjective);
          if (this.trackedObjectives.contains(scoreboardobjective)) {
@@ -27,7 +27,7 @@
          }
  
          this.setDirty();
-@@ -76,7 +76,7 @@
+@@ -78,7 +78,7 @@
          super.setDisplayObjective(displayslot, scoreboardobjective);
          if (scoreboardobjective1 != scoreboardobjective && scoreboardobjective1 != null) {
              if (this.getObjectiveDisplaySlotCount(scoreboardobjective1) > 0) {
@@ -36,7 +36,7 @@
              } else {
                  this.stopTrackingObjective(scoreboardobjective1);
              }
-@@ -84,7 +84,7 @@
+@@ -86,7 +86,7 @@
  
          if (scoreboardobjective != null) {
              if (this.trackedObjectives.contains(scoreboardobjective)) {
@@ -45,7 +45,7 @@
              } else {
                  this.startTrackingObjective(scoreboardobjective);
              }
-@@ -96,7 +96,7 @@
+@@ -98,7 +98,7 @@
      @Override
      public boolean addPlayerToTeam(String s, ScoreboardTeam scoreboardteam) {
          if (super.addPlayerToTeam(s, scoreboardteam)) {
@@ -54,7 +54,7 @@
              this.setDirty();
              return true;
          } else {
-@@ -107,7 +107,7 @@
+@@ -109,7 +109,7 @@
      @Override
      public void removePlayerFromTeam(String s, ScoreboardTeam scoreboardteam) {
          super.removePlayerFromTeam(s, scoreboardteam);
@@ -63,7 +63,7 @@
          this.setDirty();
      }
  
-@@ -121,7 +121,7 @@
+@@ -123,7 +123,7 @@
      public void onObjectiveChanged(ScoreboardObjective scoreboardobjective) {
          super.onObjectiveChanged(scoreboardobjective);
          if (this.trackedObjectives.contains(scoreboardobjective)) {
@@ -72,7 +72,7 @@
          }
  
          this.setDirty();
-@@ -140,21 +140,21 @@
+@@ -142,21 +142,21 @@
      @Override
      public void onTeamAdded(ScoreboardTeam scoreboardteam) {
          super.onTeamAdded(scoreboardteam);
@@ -97,7 +97,7 @@
          this.setDirty();
      }
  
-@@ -205,6 +205,7 @@
+@@ -207,6 +207,7 @@
  
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
@@ -105,7 +105,7 @@
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -241,6 +242,7 @@
+@@ -243,6 +244,7 @@
  
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
@@ -113,8 +113,8 @@
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -285,6 +287,16 @@
-         return this.createData().load(nbttagcompound);
+@@ -287,6 +289,16 @@
+         return this.createData().load(nbttagcompound, holderlookup_a);
      }
  
 +    // CraftBukkit start - Send to players

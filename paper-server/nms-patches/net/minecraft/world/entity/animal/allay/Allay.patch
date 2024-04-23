@@ -9,7 +9,7 @@
      public Allay(EntityTypes<? extends Allay> entitytypes, World world) {
          super(entitytypes, world);
 @@ -110,6 +111,12 @@
-         this.dynamicJukeboxListener = new DynamicGameEventListener<>(new Allay.a(this.vibrationUser.getPositionSource(), GameEvent.JUKEBOX_PLAY.getNotificationRadius()));
+         this.dynamicJukeboxListener = new DynamicGameEventListener<>(new Allay.a(this.vibrationUser.getPositionSource(), ((GameEvent) GameEvent.JUKEBOX_PLAY.value()).notificationRadius()));
      }
  
 +    // CraftBukkit start
@@ -30,7 +30,7 @@
      }
  
      public static AttributeProvider.Builder createAttributes() {
-@@ -229,7 +236,7 @@
+@@ -223,7 +230,7 @@
      public void aiStep() {
          super.aiStep();
          if (!this.level().isClientSide && this.isAlive() && this.tickCount % 10 == 0) {
@@ -39,7 +39,7 @@
          }
  
          if (this.isDancing() && this.shouldStopDancing() && this.tickCount % 20 == 0) {
-@@ -299,7 +306,12 @@
+@@ -293,7 +300,12 @@
          ItemStack itemstack1 = this.getItemInHand(EnumHand.MAIN_HAND);
  
          if (this.isDancing() && this.isDuplicationItem(itemstack) && this.canDuplicate()) {
@@ -53,7 +53,7 @@
              this.level().broadcastEntityEvent(this, (byte) 18);
              this.level().playSound(entityhuman, (Entity) this, SoundEffects.AMETHYST_BLOCK_CHIME, SoundCategory.NEUTRAL, 2.0F, 1.0F);
              this.removeInteractionItem(entityhuman, itemstack);
-@@ -310,7 +322,7 @@
+@@ -304,7 +316,7 @@
              this.setItemInHand(EnumHand.MAIN_HAND, itemstack2);
              this.removeInteractionItem(entityhuman, itemstack);
              this.level().playSound(entityhuman, (Entity) this, SoundEffects.ALLAY_ITEM_GIVEN, SoundCategory.NEUTRAL, 2.0F, 1.0F);
@@ -62,33 +62,33 @@
              return EnumInteractionResult.SUCCESS;
          } else if (!itemstack1.isEmpty() && enumhand == EnumHand.MAIN_HAND && itemstack.isEmpty()) {
              this.setItemSlot(EnumItemSlot.MAINHAND, ItemStack.EMPTY);
-@@ -427,6 +439,7 @@
+@@ -405,6 +417,7 @@
      }
  
      private boolean shouldStopDancing() {
 +        if (this.forceDancing) {return false;} // CraftBukkit
-         return this.jukeboxPos == null || !this.jukeboxPos.closerToCenterThan(this.position(), (double) GameEvent.JUKEBOX_PLAY.getNotificationRadius()) || !this.level().getBlockState(this.jukeboxPos).is(Blocks.JUKEBOX);
+         return this.jukeboxPos == null || !this.jukeboxPos.closerToCenterThan(this.position(), (double) ((GameEvent) GameEvent.JUKEBOX_PLAY.value()).notificationRadius()) || !this.level().getBlockState(this.jukeboxPos).is(Blocks.JUKEBOX);
      }
  
-@@ -471,7 +484,7 @@
+@@ -449,7 +462,7 @@
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.addAdditionalSaveData(nbttagcompound);
-         this.writeInventoryToTag(nbttagcompound);
+         this.writeInventoryToTag(nbttagcompound, this.registryAccess());
 -        DataResult dataresult = VibrationSystem.a.CODEC.encodeStart(DynamicOpsNBT.INSTANCE, this.vibrationData);
 +        DataResult<net.minecraft.nbt.NBTBase> dataresult = VibrationSystem.a.CODEC.encodeStart(DynamicOpsNBT.INSTANCE, this.vibrationData); // CraftBukkit - decompile error
          Logger logger = Allay.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -487,7 +500,7 @@
+@@ -465,7 +478,7 @@
          super.readAdditionalSaveData(nbttagcompound);
-         this.readInventoryFromTag(nbttagcompound);
+         this.readInventoryFromTag(nbttagcompound, this.registryAccess());
          if (nbttagcompound.contains("listener", 10)) {
 -            DataResult dataresult = VibrationSystem.a.CODEC.parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("listener")));
 +            DataResult<VibrationSystem.a> dataresult = VibrationSystem.a.CODEC.parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("listener"))); // CraftBukkit - decompile error
              Logger logger = Allay.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -520,7 +533,7 @@
+@@ -498,7 +511,7 @@
          return Allay.DUPLICATION_ITEM.test(itemstack);
      }
  
@@ -97,7 +97,7 @@
          Allay allay = (Allay) EntityTypes.ALLAY.create(this.level());
  
          if (allay != null) {
-@@ -528,9 +541,9 @@
+@@ -506,9 +519,9 @@
              allay.setPersistenceRequired();
              allay.resetDuplicationCooldown();
              this.resetDuplicationCooldown();

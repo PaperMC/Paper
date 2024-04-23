@@ -3,14 +3,18 @@ package org.bukkit.craftbukkit.block;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.InclusiveRange;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.SimpleWeightedRandomList;
 import net.minecraft.util.random.WeightedEntry.b;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EquipmentTable;
 import net.minecraft.world.level.MobSpawnerData;
 import net.minecraft.world.level.block.entity.TileEntityMobSpawner;
 import org.bukkit.Location;
@@ -18,6 +22,8 @@ import org.bukkit.World;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.entity.CraftEntitySnapshot;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.entity.EntitySnapshot;
@@ -72,7 +78,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
         NBTTagCompound compoundTag = ((CraftEntitySnapshot) snapshot).getData();
 
         this.getSnapshot().getSpawner().spawnPotentials = SimpleWeightedRandomList.empty();
-        this.getSnapshot().getSpawner().nextSpawnData = new MobSpawnerData(compoundTag, Optional.empty());
+        this.getSnapshot().getSpawner().nextSpawnData = new MobSpawnerData(compoundTag, Optional.empty(), Optional.empty());
     }
 
     @Override
@@ -80,8 +86,8 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
         NBTTagCompound compoundTag = ((CraftEntitySnapshot) snapshot).getData();
 
         SimpleWeightedRandomList.a<MobSpawnerData> builder = SimpleWeightedRandomList.builder(); // PAIL rename Builder
-        this.getSnapshot().getSpawner().spawnPotentials.unwrap().forEach(entry -> builder.add(entry.getData(), entry.getWeight().asInt()));
-        builder.add(new MobSpawnerData(compoundTag, Optional.ofNullable(toMinecraftRule(spawnRule))), weight);
+        this.getSnapshot().getSpawner().spawnPotentials.unwrap().forEach(entry -> builder.add(entry.data(), entry.getWeight().asInt()));
+        builder.add(new MobSpawnerData(compoundTag, Optional.ofNullable(toMinecraftRule(spawnRule)), Optional.empty()), weight);
         this.getSnapshot().getSpawner().spawnPotentials = builder.build();
     }
 
@@ -95,7 +101,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
         SimpleWeightedRandomList.a<MobSpawnerData> builder = SimpleWeightedRandomList.builder();
         for (SpawnerEntry spawnerEntry : entries) {
             NBTTagCompound compoundTag = ((CraftEntitySnapshot) spawnerEntry.getSnapshot()).getData();
-            builder.add(new MobSpawnerData(compoundTag, Optional.ofNullable(toMinecraftRule(spawnerEntry.getSpawnRule()))), spawnerEntry.getSpawnWeight());
+            builder.add(new MobSpawnerData(compoundTag, Optional.ofNullable(toMinecraftRule(spawnerEntry.getSpawnRule())), getEquipment(spawnerEntry.getEquipment())), spawnerEntry.getSpawnWeight());
         }
         this.getSnapshot().getSpawner().spawnPotentials = builder.build();
     }
@@ -105,11 +111,11 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
         List<SpawnerEntry> entries = new ArrayList<>();
 
         for (b<MobSpawnerData> entry : this.getSnapshot().getSpawner().spawnPotentials.unwrap()) { // PAIL rename Wrapper
-            CraftEntitySnapshot snapshot = CraftEntitySnapshot.create(entry.getData().getEntityToSpawn());
+            CraftEntitySnapshot snapshot = CraftEntitySnapshot.create(entry.data().getEntityToSpawn());
 
             if (snapshot != null) {
-                SpawnRule rule = entry.getData().customSpawnRules().map(this::fromMinecraftRule).orElse(null);
-                entries.add(new SpawnerEntry(snapshot, entry.getWeight().asInt(), rule));
+                SpawnRule rule = entry.data().customSpawnRules().map(this::fromMinecraftRule).orElse(null);
+                entries.add(new SpawnerEntry(snapshot, entry.getWeight().asInt(), rule, getEquipment(entry.data().equipment())));
             }
         }
         return entries;
@@ -123,10 +129,10 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
     }
 
     private SpawnRule fromMinecraftRule(MobSpawnerData.a rule) {
-       InclusiveRange<Integer> blockLight = rule.blockLightLimit();
-       InclusiveRange<Integer> skyLight = rule.skyLightLimit();
+        InclusiveRange<Integer> blockLight = rule.blockLightLimit();
+        InclusiveRange<Integer> skyLight = rule.skyLightLimit();
 
-       return new SpawnRule(blockLight.maxInclusive(), blockLight.maxInclusive(), skyLight.minInclusive(), skyLight.maxInclusive());
+        return new SpawnRule(blockLight.maxInclusive(), blockLight.maxInclusive(), skyLight.minInclusive(), skyLight.maxInclusive());
     }
 
     @Override
@@ -232,5 +238,23 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
     @Override
     public CraftCreatureSpawner copy(Location location) {
         return new CraftCreatureSpawner(this, location);
+    }
+
+    private static Optional<EquipmentTable> getEquipment(SpawnerEntry.Equipment bukkit) {
+        if (bukkit == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new EquipmentTable(
+                CraftLootTable.bukkitToMinecraft(bukkit.getEquipmentLootTable()),
+                bukkit.getDropChances().entrySet().stream().collect(Collectors.toMap((entry) -> CraftEquipmentSlot.getNMS(entry.getKey()), Map.Entry::getValue)))
+        );
+    }
+
+    private static SpawnerEntry.Equipment getEquipment(Optional<EquipmentTable> optional) {
+        return optional.map((nms) -> new SpawnerEntry.Equipment(
+                CraftLootTable.minecraftToBukkit(nms.lootTable()),
+                new HashMap<>(nms.slotDropChances().entrySet().stream().collect(Collectors.toMap((entry) -> CraftEquipmentSlot.getSlot(entry.getKey()), Map.Entry::getValue)))
+        )).orElse(null);
     }
 }

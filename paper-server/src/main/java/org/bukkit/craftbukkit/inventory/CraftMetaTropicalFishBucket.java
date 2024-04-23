@@ -2,13 +2,15 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.component.CustomData;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftTropicalFish;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
@@ -16,7 +18,7 @@ import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishBucketMeta {
     static final ItemMetaKey VARIANT = new ItemMetaKey("BucketVariantTag", "fish-variant");
-    static final ItemMetaKey ENTITY_TAG = new ItemMetaKey("EntityTag", "entity-tag");
+    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
 
     private Integer variant;
     private NBTTagCompound entityTag;
@@ -33,16 +35,16 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         this.entityTag = bucket.entityTag;
     }
 
-    CraftMetaTropicalFishBucket(NBTTagCompound tag) {
+    CraftMetaTropicalFishBucket(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
-            this.variant = tag.getInt(VARIANT.NBT);
-        }
+        getOrEmpty(tag, ENTITY_TAG).ifPresent((nbt) -> {
+            entityTag = nbt.copyTag();
 
-        if (tag.contains(ENTITY_TAG.NBT)) {
-            entityTag = tag.getCompound(ENTITY_TAG.NBT).copy();
-        }
+            if (entityTag.contains(VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
+                this.variant = entityTag.getInt(VARIANT.NBT);
+            }
+        });
     }
 
     CraftMetaTropicalFishBucket(Map<String, Object> map) {
@@ -71,15 +73,18 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
     }
 
     @Override
-    void applyToItem(NBTTagCompound tag) {
+    void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
         if (hasVariant()) {
-            tag.putInt(VARIANT.NBT, variant);
+            if (entityTag == null) {
+                entityTag = new NBTTagCompound();
+            }
+            entityTag.putInt(VARIANT.NBT, variant);
         }
 
         if (entityTag != null) {
-            tag.put(ENTITY_TAG.NBT, entityTag);
+            tag.put(ENTITY_TAG, CustomData.of(entityTag));
         }
     }
 

@@ -33,7 +33,7 @@ public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand> 
 
     @Override
     public void setName(String name) {
-        getSnapshot().getCommandBlock().setName(CraftChatMessage.fromStringOrNull(name != null ? name : "@"));
+        getSnapshot().getCommandBlock().setCustomName(CraftChatMessage.fromStringOrNull(name != null ? name : "@"));
     }
 
     @Override

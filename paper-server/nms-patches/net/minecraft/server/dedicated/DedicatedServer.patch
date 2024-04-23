@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -53,6 +53,18 @@
+@@ -58,6 +58,18 @@
  import net.minecraft.world.level.storage.Convertable;
  import org.slf4j.Logger;
  
@@ -19,7 +19,7 @@
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
      static final Logger LOGGER = LogUtils.getLogger();
-@@ -61,7 +73,7 @@
+@@ -66,7 +78,7 @@
      private final List<ServerCommand> consoleInput = Collections.synchronizedList(Lists.newArrayList());
      @Nullable
      private RemoteStatusListener queryThreadGs4;
@@ -28,9 +28,9 @@
      @Nullable
      private RemoteControlListener rconThread;
      public DedicatedServerSettings settings;
-@@ -70,10 +82,12 @@
+@@ -79,10 +91,12 @@
      @Nullable
-     private final TextFilter textFilterClient;
+     private DebugSampleSubscriptionTracker debugSampleSubscriptionTracker;
  
 -    public DedicatedServer(Thread thread, Convertable.ConversionSession convertable_conversionsession, ResourcePackRepository resourcepackrepository, WorldStem worldstem, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, Services services, WorldLoadListenerFactory worldloadlistenerfactory) {
 -        super(thread, convertable_conversionsession, resourcepackrepository, worldstem, Proxy.NO_PROXY, datafixer, services, worldloadlistenerfactory);
@@ -44,7 +44,7 @@
          this.textFilterClient = TextFilter.createFromConfig(dedicatedserversettings.getProperties().textFilteringConfig);
      }
  
-@@ -81,13 +95,44 @@
+@@ -90,13 +104,44 @@
      public boolean initServer() throws IOException {
          Thread thread = new Thread("Server console handler") {
              public void run() {
@@ -92,7 +92,7 @@
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -96,6 +141,29 @@
+@@ -105,6 +150,29 @@
              }
          };
  
@@ -122,7 +122,7 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -120,7 +188,7 @@
+@@ -129,7 +197,7 @@
          this.setMotd(dedicatedserverproperties.motd);
          super.setPlayerIdleTimeout((Integer) dedicatedserverproperties.playerIdleTimeout.get());
          this.setEnforceWhitelist(dedicatedserverproperties.enforceWhitelist);
@@ -131,7 +131,7 @@
          DedicatedServer.LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
          InetAddress inetaddress = null;
  
-@@ -144,6 +212,12 @@
+@@ -153,6 +221,12 @@
              return false;
          }
  
@@ -144,14 +144,16 @@
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -158,19 +232,19 @@
+@@ -167,7 +241,7 @@
          if (!NameReferencingFileConverter.serverReadyAfterUserconversion(this)) {
              return false;
          } else {
 -            this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
 +            // this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage)); // CraftBukkit - moved up
+             this.debugSampleSubscriptionTracker = new DebugSampleSubscriptionTracker(this.getPlayerList());
+             this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSampleSubscriptionTracker, RemoteDebugSampleType.TICK_TIME);
              long i = SystemUtils.getNanos();
- 
+@@ -175,13 +249,13 @@
              TileEntitySkull.setup(this.services, this);
              UserCache.setUsesAuthentication(this.usesAuthentication());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
@@ -167,7 +169,7 @@
              }
  
              if (dedicatedserverproperties.enableQuery) {
-@@ -296,6 +370,7 @@
+@@ -307,6 +381,7 @@
              this.queryThreadGs4.stop();
          }
  
@@ -175,7 +177,7 @@
      }
  
      @Override
-@@ -317,7 +392,15 @@
+@@ -328,7 +403,15 @@
          while (!this.consoleInput.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.consoleInput.remove(0);
  
@@ -192,7 +194,7 @@
          }
  
      }
-@@ -544,16 +627,52 @@
+@@ -555,16 +638,52 @@
  
      @Override
      public String getPluginNames() {
@@ -249,9 +251,9 @@
      }
  
      public void storeUsingWhiteList(boolean flag) {
-@@ -604,4 +723,15 @@
-     public Optional<MinecraftServer.ServerResourcePackInfo> getServerResourcePack() {
-         return this.settings.getProperties().serverResourcePackInfo;
+@@ -641,4 +760,15 @@
+     public boolean acceptsTransfers() {
+         return this.settings.getProperties().acceptsTransfers;
      }
 +
 +    // CraftBukkit start

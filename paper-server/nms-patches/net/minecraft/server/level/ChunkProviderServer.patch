@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/net/minecraft/server/level/ChunkProviderServer.java
-@@ -83,6 +83,16 @@
+@@ -81,6 +81,16 @@
          this.clearCache();
      }
  
@@ -17,31 +17,40 @@
      @Override
      public LightEngineThreaded getLightEngine() {
          return this.lightEngine;
-@@ -127,7 +137,7 @@
-             for (int l = 0; l < 4; ++l) {
+@@ -124,7 +134,7 @@
                  if (k == this.lastChunkPos[l] && chunkstatus == this.lastChunkStatus[l]) {
-                     ichunkaccess = this.lastChunk[l];
+                     IChunkAccess ichunkaccess = this.lastChunk[l];
+ 
 -                    if (ichunkaccess != null || !flag) {
 +                    if (ichunkaccess != null) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
                          return ichunkaccess;
                      }
                  }
-@@ -175,12 +185,12 @@
+@@ -137,7 +147,7 @@
+             Objects.requireNonNull(completablefuture);
+             chunkproviderserver_b.managedBlock(completablefuture::isDone);
+             ChunkResult<IChunkAccess> chunkresult = (ChunkResult) completablefuture.join();
+-            IChunkAccess ichunkaccess1 = (IChunkAccess) chunkresult.orElse((Object) null);
++            IChunkAccess ichunkaccess1 = (IChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
+ 
+             if (ichunkaccess1 == null && flag) {
+                 throw (IllegalStateException) SystemUtils.pauseInIde(new IllegalStateException("Chunk not there when requested: " + chunkresult.getError()));
+@@ -170,12 +180,12 @@
              if (playerchunk == null) {
                  return null;
              } else {
--                Either<IChunkAccess, PlayerChunk.Failure> either = (Either) playerchunk.getFutureIfPresent(ChunkStatus.FULL).getNow((Object) null);
-+                Either<IChunkAccess, PlayerChunk.Failure> either = (Either) playerchunk.getFutureIfPresent(ChunkStatus.FULL).getNow(null); // CraftBukkit - decompile error
+-                ChunkResult<IChunkAccess> chunkresult = (ChunkResult) playerchunk.getFutureIfPresent(ChunkStatus.FULL).getNow((Object) null);
++                ChunkResult<IChunkAccess> chunkresult = (ChunkResult) playerchunk.getFutureIfPresent(ChunkStatus.FULL).getNow(null); // CraftBukkit - decompile error
  
-                 if (either == null) {
+                 if (chunkresult == null) {
                      return null;
                  } else {
--                    IChunkAccess ichunkaccess1 = (IChunkAccess) either.left().orElse((Object) null);
-+                    IChunkAccess ichunkaccess1 = (IChunkAccess) either.left().orElse(null); // CraftBukkit - decompile error
+-                    IChunkAccess ichunkaccess1 = (IChunkAccess) chunkresult.orElse((Object) null);
++                    IChunkAccess ichunkaccess1 = (IChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
  
                      if (ichunkaccess1 != null) {
                          this.storeInCache(k, ichunkaccess1, ChunkStatus.FULL);
-@@ -228,7 +238,15 @@
+@@ -223,7 +233,15 @@
          int l = ChunkLevel.byStatus(chunkstatus);
          PlayerChunk playerchunk = this.getVisibleChunkIfPresent(k);
  
@@ -58,7 +67,7 @@
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
              if (this.chunkAbsent(playerchunk, l)) {
                  GameProfilerFiller gameprofilerfiller = this.level.getProfiler();
-@@ -247,7 +265,7 @@
+@@ -242,7 +260,7 @@
      }
  
      private boolean chunkAbsent(@Nullable PlayerChunk playerchunk, int i) {
@@ -67,16 +76,7 @@
      }
  
      @Override
-@@ -315,7 +333,7 @@
-         } else if (!this.level.shouldTickBlocksAt(i)) {
-             return false;
-         } else {
--            Either<Chunk, PlayerChunk.Failure> either = (Either) playerchunk.getTickingChunkFuture().getNow((Object) null);
-+            Either<Chunk, PlayerChunk.Failure> either = (Either) playerchunk.getTickingChunkFuture().getNow(null); // CraftBukkit - decompile error
- 
-             return either != null && either.left().isPresent();
-         }
-@@ -328,11 +346,31 @@
+@@ -315,11 +333,31 @@
  
      @Override
      public void close() throws IOException {
@@ -109,7 +109,7 @@
      @Override
      public void tick(BooleanSupplier booleansupplier, boolean flag) {
          this.level.getProfiler().push("purge");
-@@ -379,11 +417,11 @@
+@@ -369,11 +407,11 @@
  
                  this.lastSpawnState = spawnercreature_d;
                  gameprofilerfiller.popPush("spawnAndTick");
@@ -123,7 +123,7 @@
                  Iterator iterator1 = list.iterator();
  
                  while (iterator1.hasNext()) {
-@@ -586,13 +624,19 @@
+@@ -576,13 +614,19 @@
          }
  
          @Override

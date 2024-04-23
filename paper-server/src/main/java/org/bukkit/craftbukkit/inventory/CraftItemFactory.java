@@ -4,8 +4,8 @@ import com.google.common.base.Preconditions;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.arguments.item.ArgumentParserItemStack;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
@@ -18,6 +18,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
+import org.bukkit.craftbukkit.inventory.components.CraftFoodComponent;
 import org.bukkit.craftbukkit.util.CraftLegacy;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -32,7 +33,9 @@ public final class CraftItemFactory implements ItemFactory {
 
     static {
         instance = new CraftItemFactory();
-        ConfigurationSerialization.registerClass(CraftMetaItem.SerializableMeta.class);
+        ConfigurationSerialization.registerClass(SerializableMeta.class);
+        ConfigurationSerialization.registerClass(CraftFoodComponent.class);
+        ConfigurationSerialization.registerClass(CraftFoodComponent.CraftFoodEffect.class);
     }
 
     private CraftItemFactory() {
@@ -114,6 +117,7 @@ public final class CraftItemFactory implements ItemFactory {
         case LEATHER_CHESTPLATE:
         case LEATHER_LEGGINGS:
         case LEATHER_BOOTS:
+        case WOLF_ARMOR:
             return meta instanceof CraftMetaColorableArmor ? meta : new CraftMetaColorableArmor(meta);
         case LEATHER_HORSE_ARMOR:
             return meta instanceof CraftMetaLeatherArmor ? meta : new CraftMetaLeatherArmor(meta);
@@ -163,11 +167,13 @@ public final class CraftItemFactory implements ItemFactory {
         case YELLOW_BANNER:
         case YELLOW_WALL_BANNER:
             return meta instanceof CraftMetaBanner ? meta : new CraftMetaBanner(meta);
+        case ARMADILLO_SPAWN_EGG:
         case ALLAY_SPAWN_EGG:
         case AXOLOTL_SPAWN_EGG:
         case BAT_SPAWN_EGG:
         case BEE_SPAWN_EGG:
         case BLAZE_SPAWN_EGG:
+        case BOGGED_SPAWN_EGG:
         case BREEZE_SPAWN_EGG:
         case CAT_SPAWN_EGG:
         case CAMEL_SPAWN_EGG:
@@ -346,6 +352,7 @@ public final class CraftItemFactory implements ItemFactory {
         case SUSPICIOUS_GRAVEL:
         case CRAFTER:
         case TRIAL_SPAWNER:
+        case VAULT:
             return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
             return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);
@@ -368,6 +375,8 @@ public final class CraftItemFactory implements ItemFactory {
             return meta instanceof CraftMetaBundle ? meta : new CraftMetaBundle(meta);
         case GOAT_HORN:
             return meta instanceof CraftMetaMusicInstrument ? meta : new CraftMetaMusicInstrument(meta);
+        case OMINOUS_BOTTLE:
+            return meta instanceof CraftMetaOminousBottle ? meta : new CraftMetaOminousBottle(meta);
         default:
             return new CraftMetaItem(meta);
         }
@@ -431,14 +440,14 @@ public final class CraftItemFactory implements ItemFactory {
     @Override
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
-            ArgumentParserItemStack.a arg = ArgumentParserItemStack.parseForItem(BuiltInRegistries.ITEM.asLookup(), new StringReader(input));
+            ArgumentParserItemStack.a arg = new ArgumentParserItemStack(MinecraftServer.getDefaultRegistryAccess()).parse(new StringReader(input));
 
             Item item = arg.item().value();
             net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(item);
 
-            NBTTagCompound nbt = arg.nbt();
+            DataComponentMap nbt = arg.components();
             if (nbt != null) {
-                nmsItemStack.setTag(nbt);
+                nmsItemStack.applyComponents(nbt);
             }
 
             return CraftItemStack.asCraftMirror(nmsItemStack);
@@ -491,6 +500,6 @@ public final class CraftItemFactory implements ItemFactory {
         Preconditions.checkArgument(!itemStack.getType().isAir(), "ItemStack must not be air");
         itemStack = CraftItemStack.asCraftCopy(itemStack);
         CraftItemStack craft = (CraftItemStack) itemStack;
-        return CraftItemStack.asCraftMirror(EnchantmentManager.enchantItem(source, craft.handle, level, allowTreasures));
+        return CraftItemStack.asCraftMirror(EnchantmentManager.enchantItem(MinecraftServer.getServer().getWorldData().enabledFeatures(), source, craft.handle, level, allowTreasures));
     }
 }

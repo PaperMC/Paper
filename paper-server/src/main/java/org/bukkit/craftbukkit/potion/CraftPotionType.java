@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.function.Supplier;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.alchemy.PotionRegistry;
@@ -16,6 +17,10 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
 public class CraftPotionType implements PotionType.InternalPotionData {
+
+    public static PotionType minecraftHolderToBukkit(Holder<PotionRegistry> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
 
     public static PotionType minecraftToBukkit(PotionRegistry minecraft) {
         Preconditions.checkArgument(minecraft != null);
@@ -33,6 +38,19 @@ public class CraftPotionType implements PotionType.InternalPotionData {
 
         return CraftRegistry.getMinecraftRegistry(Registries.POTION)
                 .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+    }
+
+    public static Holder<PotionRegistry> bukkitToMinecraftHolder(PotionType bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        IRegistry<PotionRegistry> registry = CraftRegistry.getMinecraftRegistry(Registries.POTION);
+
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<PotionRegistry> holder) {
+            return holder;
+        }
+
+        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
     }
 
     public static String bukkitToString(PotionType potionType) {

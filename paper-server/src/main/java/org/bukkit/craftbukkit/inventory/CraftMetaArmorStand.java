@@ -2,15 +2,18 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.component.CustomData;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 
-@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
+@DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaArmorStand extends CraftMetaItem {
 
-    static final ItemMetaKey ENTITY_TAG = new ItemMetaKey("EntityTag", "entity-tag");
+    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
     NBTTagCompound entityTag;
 
     CraftMetaArmorStand(CraftMetaItem meta) {
@@ -24,12 +27,12 @@ public class CraftMetaArmorStand extends CraftMetaItem {
         this.entityTag = armorStand.entityTag;
     }
 
-    CraftMetaArmorStand(NBTTagCompound tag) {
+    CraftMetaArmorStand(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(ENTITY_TAG.NBT)) {
-            entityTag = tag.getCompound(ENTITY_TAG.NBT).copy();
-        }
+        getOrEmpty(tag, ENTITY_TAG).ifPresent((nbt) -> {
+            entityTag = nbt.copyTag();
+        });
     }
 
     CraftMetaArmorStand(Map<String, Object> map) {
@@ -53,11 +56,11 @@ public class CraftMetaArmorStand extends CraftMetaItem {
     }
 
     @Override
-    void applyToItem(NBTTagCompound tag) {
+    void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
         if (entityTag != null) {
-            tag.put(ENTITY_TAG.NBT, entityTag);
+            tag.put(ENTITY_TAG, CustomData.of(entityTag));
         }
     }
 

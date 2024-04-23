@@ -20,7 +20,7 @@
  public class WorldDataServer implements IWorldDataServer, SaveData {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -81,6 +94,20 @@
+@@ -79,6 +92,20 @@
      private boolean wasModded;
      private final Set<String> removedFeatureFlags;
      private final CustomFunctionCallbackTimerQueue<MinecraftServer> scheduledEvents;
@@ -39,27 +39,27 @@
 +    }
 +    // CraftBukkit end
  
-     private WorldDataServer(@Nullable NBTTagCompound nbttagcompound, boolean flag, int i, int j, int k, float f, long l, long i1, int j1, int k1, int l1, boolean flag1, int i2, boolean flag2, boolean flag3, boolean flag4, WorldBorder.c worldborder_c, int j2, int k2, @Nullable UUID uuid, Set<String> set, Set<String> set1, CustomFunctionCallbackTimerQueue<MinecraftServer> customfunctioncallbacktimerqueue, @Nullable NBTTagCompound nbttagcompound1, EnderDragonBattle.a enderdragonbattle_a, WorldSettings worldsettings, WorldOptions worldoptions, WorldDataServer.a worlddataserver_a, Lifecycle lifecycle) {
+     private WorldDataServer(@Nullable NBTTagCompound nbttagcompound, boolean flag, BlockPosition blockposition, float f, long i, long j, int k, int l, int i1, boolean flag1, int j1, boolean flag2, boolean flag3, boolean flag4, WorldBorder.c worldborder_c, int k1, int l1, @Nullable UUID uuid, Set<String> set, Set<String> set1, CustomFunctionCallbackTimerQueue<MinecraftServer> customfunctioncallbacktimerqueue, @Nullable NBTTagCompound nbttagcompound1, EnderDragonBattle.a enderdragonbattle_a, WorldSettings worldsettings, WorldOptions worldoptions, WorldDataServer.a worlddataserver_a, Lifecycle lifecycle) {
          this.wasModded = flag;
-@@ -120,7 +147,7 @@
+@@ -116,7 +143,7 @@
  
      public static <T> WorldDataServer parse(Dynamic<T> dynamic, WorldSettings worldsettings, WorldDataServer.a worlddataserver_a, WorldOptions worldoptions, Lifecycle lifecycle) {
          long i = dynamic.get("Time").asLong(0L);
--        NBTTagCompound nbttagcompound = (NBTTagCompound) NBTTagCompound.CODEC.parse(dynamic.get("Player").orElseEmptyMap()).result().orElse((Object) null);
-+        NBTTagCompound nbttagcompound = (NBTTagCompound) NBTTagCompound.CODEC.parse(dynamic.get("Player").orElseEmptyMap()).result().orElse(null); // CraftBukkit - decompile error
-         boolean flag = dynamic.get("WasModded").asBoolean(false);
-         int j = dynamic.get("SpawnX").asInt(0);
-         int k = dynamic.get("SpawnY").asInt(0);
-@@ -138,7 +165,7 @@
+-        OptionalDynamic optionaldynamic = dynamic.get("Player");
++        OptionalDynamic<T> optionaldynamic = dynamic.get("Player"); // CraftBukkit - decompile error
+         Codec codec = NBTTagCompound.CODEC;
+ 
+         Objects.requireNonNull(codec);
+@@ -136,7 +163,7 @@
          WorldBorder.c worldborder_c = WorldBorder.c.read(dynamic, WorldBorder.DEFAULT_SETTINGS);
-         int j2 = dynamic.get("WanderingTraderSpawnDelay").asInt(0);
-         int k2 = dynamic.get("WanderingTraderSpawnChance").asInt(0);
+         int k1 = dynamic.get("WanderingTraderSpawnDelay").asInt(0);
+         int l1 = dynamic.get("WanderingTraderSpawnChance").asInt(0);
 -        UUID uuid = (UUID) dynamic.get("WanderingTraderId").read(UUIDUtil.CODEC).result().orElse((Object) null);
 +        UUID uuid = (UUID) dynamic.get("WanderingTraderId").read(UUIDUtil.CODEC).result().orElse(null); // CraftBukkit - decompile error
          Set set = (Set) dynamic.get("ServerBrands").asStream().flatMap((dynamic1) -> {
              return dynamic1.asString().result().stream();
          }).collect(Collectors.toCollection(Sets::newLinkedHashSet));
-@@ -147,7 +174,7 @@
+@@ -145,7 +172,7 @@
          }).collect(Collectors.toSet());
          CustomFunctionCallbackTimerQueue customfunctioncallbacktimerqueue = new CustomFunctionCallbackTimerQueue<>(CustomFunctionCallbackTimers.SERVER_CALLBACKS, dynamic.get("ScheduledEvents").asStream());
          NBTTagCompound nbttagcompound1 = (NBTTagCompound) dynamic.get("CustomBossEvents").orElseEmptyMap().getValue();
@@ -68,16 +68,16 @@
          Logger logger = WorldDataServer.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -182,7 +209,7 @@
+@@ -180,7 +207,7 @@
          nbttagcompound.put("Version", nbttagcompound2);
          GameProfileSerializer.addCurrentDataVersion(nbttagcompound);
-         DynamicOps<NBTBase> dynamicops = RegistryOps.create(DynamicOpsNBT.INSTANCE, (HolderLookup.b) iregistrycustom);
+         DynamicOps<NBTBase> dynamicops = iregistrycustom.createSerializationContext(DynamicOpsNBT.INSTANCE);
 -        DataResult dataresult = GeneratorSettings.encode(dynamicops, this.worldOptions, iregistrycustom);
 +        DataResult<NBTBase> dataresult = GeneratorSettings.encode(dynamicops, this.worldOptions, new WorldDimensions(this.customDimensions != null ? this.customDimensions : iregistrycustom.registryOrThrow(Registries.LEVEL_STEM))); // CraftBukkit
          Logger logger = WorldDataServer.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -234,11 +261,13 @@
+@@ -230,11 +257,13 @@
              nbttagcompound.putUUID("WanderingTraderId", this.wanderingTraderId);
          }
  
@@ -92,7 +92,7 @@
  
          Objects.requireNonNull(nbttaglist);
          stream.forEach(nbttaglist::add);
-@@ -346,6 +375,20 @@
+@@ -310,6 +339,20 @@
  
      @Override
      public void setThundering(boolean flag) {
@@ -113,7 +113,7 @@
          this.thundering = flag;
      }
  
-@@ -366,6 +409,20 @@
+@@ -330,6 +373,20 @@
  
      @Override
      public void setRaining(boolean flag) {
@@ -134,7 +134,7 @@
          this.raining = flag;
      }
  
-@@ -432,6 +489,12 @@
+@@ -396,6 +453,12 @@
      @Override
      public void setDifficulty(EnumDifficulty enumdifficulty) {
          this.settings = this.settings.withDifficulty(enumdifficulty);
@@ -147,7 +147,7 @@
      }
  
      @Override
-@@ -568,6 +631,14 @@
+@@ -532,6 +595,14 @@
          return this.settings.copy();
      }
  

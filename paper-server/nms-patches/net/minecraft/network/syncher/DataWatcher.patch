@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/syncher/DataWatcher.java
 +++ b/net/minecraft/network/syncher/DataWatcher.java
-@@ -24,6 +24,11 @@
+@@ -14,6 +14,11 @@
  import org.apache.commons.lang3.ObjectUtils;
  import org.slf4j.Logger;
  
@@ -12,7 +12,16 @@
  public class DataWatcher {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -146,6 +151,13 @@
+@@ -51,7 +56,7 @@
+     }
+ 
+     private <T> DataWatcher.Item<T> getItem(DataWatcherObject<T> datawatcherobject) {
+-        return this.itemsById[datawatcherobject.id()];
++        return (DataWatcher.Item<T>) this.itemsById[datawatcherobject.id()]; // CraftBukkit - decompile error
+     }
+ 
+     public <T> T get(DataWatcherObject<T> datawatcherobject) {
+@@ -74,6 +79,13 @@
  
      }
  
@@ -26,40 +35,12 @@
      public boolean isDirty() {
          return this.isDirty;
      }
-@@ -227,7 +239,7 @@
-         if (!Objects.equals(datawatcher_b.serializer(), datawatcher_item.accessor.getSerializer())) {
-             throw new IllegalStateException(String.format(Locale.ROOT, "Invalid entity data item type for field %d on entity %s: old=%s(%s), new=%s(%s)", datawatcher_item.accessor.getId(), this.entity, datawatcher_item.value, datawatcher_item.value.getClass(), datawatcher_b.value, datawatcher_b.value.getClass()));
+@@ -140,7 +152,7 @@
+         if (!Objects.equals(datawatcher_c.serializer(), datawatcher_item.accessor.serializer())) {
+             throw new IllegalStateException(String.format(Locale.ROOT, "Invalid entity data item type for field %d on entity %s: old=%s(%s), new=%s(%s)", datawatcher_item.accessor.id(), this.entity, datawatcher_item.value, datawatcher_item.value.getClass(), datawatcher_c.value, datawatcher_c.value.getClass()));
          } else {
--            datawatcher_item.setValue(datawatcher_b.value);
-+            datawatcher_item.setValue((T) datawatcher_b.value); // CraftBukkit - decompile error
+-            datawatcher_item.setValue(datawatcher_c.value);
++            datawatcher_item.setValue((T) datawatcher_c.value); // CraftBukkit - decompile error
          }
      }
  
-@@ -235,6 +247,18 @@
-         return this.itemsById.isEmpty();
-     }
- 
-+    // CraftBukkit start
-+    public void refresh(EntityPlayer to) {
-+        if (!this.isEmpty()) {
-+            List<DataWatcher.b<?>> list = this.getNonDefaultValues();
-+
-+            if (list != null) {
-+                to.connection.send(new PacketPlayOutEntityMetadata(this.entity.getId(), list));
-+            }
-+        }
-+    }
-+    // CraftBukkit end
-+
-     public static class Item<T> {
- 
-         final DataWatcherObject<T> accessor;
-@@ -277,7 +301,7 @@
-         }
-     }
- 
--    public static record b<T> (int id, DataWatcherSerializer<T> serializer, T value) {
-+    public static record b<T>(int id, DataWatcherSerializer<T> serializer, T value) { // CraftBukkit - decompile error
- 
-         public static <T> DataWatcher.b<T> create(DataWatcherObject<T> datawatcherobject, T t0) {
-             DataWatcherSerializer<T> datawatcherserializer = datawatcherobject.getSerializer();

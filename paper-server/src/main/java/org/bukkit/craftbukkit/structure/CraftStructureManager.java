@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import net.minecraft.core.IRegistryCustom;
 import net.minecraft.nbt.NBTCompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.resources.MinecraftKey;
@@ -26,16 +27,18 @@ import org.bukkit.structure.StructureManager;
 public class CraftStructureManager implements StructureManager {
 
     private final StructureTemplateManager structureManager;
+    private final IRegistryCustom registry;
 
-    public CraftStructureManager(StructureTemplateManager structureManager) {
+    public CraftStructureManager(StructureTemplateManager structureManager, IRegistryCustom registry) {
         this.structureManager = structureManager;
+        this.registry = registry;
     }
 
     @Override
     public Map<NamespacedKey, Structure> getStructures() {
         Map<NamespacedKey, Structure> cachedStructures = new HashMap<>();
         for (Map.Entry<MinecraftKey, Optional<DefinedStructure>> entry : structureManager.structureRepository.entrySet()) {
-            entry.getValue().ifPresent(definedStructure -> cachedStructures.put(CraftNamespacedKey.fromMinecraft(entry.getKey()), new CraftStructure(definedStructure)));
+            entry.getValue().ifPresent(definedStructure -> cachedStructures.put(CraftNamespacedKey.fromMinecraft(entry.getKey()), new CraftStructure(definedStructure, registry)));
         }
         return Collections.unmodifiableMap(cachedStructures);
     }
@@ -48,7 +51,7 @@ public class CraftStructureManager implements StructureManager {
         if (definedStructure == null) {
             return null;
         }
-        return definedStructure.map(CraftStructure::new).orElse(null);
+        return definedStructure.map((s) -> new CraftStructure(s, registry)).orElse(null);
     }
 
     @Override
@@ -64,7 +67,7 @@ public class CraftStructureManager implements StructureManager {
             structureManager.structureRepository.put(minecraftKey, structure);
         }
 
-        return structure.map(CraftStructure::new).orElse(null);
+        return structure.map((s) -> new CraftStructure(s, registry)).orElse(null);
     }
 
     @Override
@@ -97,7 +100,7 @@ public class CraftStructureManager implements StructureManager {
 
         final Optional<DefinedStructure> optionalDefinedStructure = Optional.of(((CraftStructure) structure).getHandle());
         final Optional<DefinedStructure> previousStructure = structureManager.structureRepository.put(minecraftKey, optionalDefinedStructure);
-        return previousStructure == null ? null : previousStructure.map(CraftStructure::new).orElse(null);
+        return previousStructure == null ? null : previousStructure.map((s) -> new CraftStructure(s, registry)).orElse(null);
     }
 
     @Override
@@ -106,7 +109,7 @@ public class CraftStructureManager implements StructureManager {
         MinecraftKey minecraftKey = createAndValidateMinecraftStructureKey(structureKey);
 
         final Optional<DefinedStructure> previousStructure = structureManager.structureRepository.remove(minecraftKey);
-        return previousStructure == null ? null : previousStructure.map(CraftStructure::new).orElse(null);
+        return previousStructure == null ? null : previousStructure.map((s) -> new CraftStructure(s, registry)).orElse(null);
     }
 
     @Override
@@ -143,7 +146,7 @@ public class CraftStructureManager implements StructureManager {
     public Structure loadStructure(InputStream inputStream) throws IOException {
         Preconditions.checkArgument(inputStream != null, "inputStream cannot be null");
 
-        return new CraftStructure(structureManager.readStructure(inputStream));
+        return new CraftStructure(structureManager.readStructure(inputStream), registry);
     }
 
     @Override
@@ -166,7 +169,7 @@ public class CraftStructureManager implements StructureManager {
 
     @Override
     public Structure createStructure() {
-        return new CraftStructure(new DefinedStructure());
+        return new CraftStructure(new DefinedStructure(), registry);
     }
 
     private MinecraftKey createAndValidateMinecraftStructureKey(NamespacedKey structureKey) {
@@ -180,6 +183,6 @@ public class CraftStructureManager implements StructureManager {
     @Override
     public Structure copy(Structure structure) {
         Preconditions.checkArgument(structure != null, "Structure cannot be null");
-        return new CraftStructure(structureManager.readStructure(((CraftStructure) structure).getHandle().save(new NBTTagCompound())));
+        return new CraftStructure(structureManager.readStructure(((CraftStructure) structure).getHandle().save(new NBTTagCompound())), registry);
     }
 }

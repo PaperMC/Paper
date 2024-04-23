@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
+import org.bukkit.map.MapCursor;
 import org.bukkit.map.MapCursorCollection;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
@@ -42,7 +43,7 @@ public class CraftMapRenderer extends MapRenderer {
             }
 
             MapIcon decoration = worldMap.decorations.get(key);
-            cursors.addCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), decoration.type().getIcon(), true, CraftChatMessage.fromComponent(decoration.name()));
+            cursors.addCursor(new MapCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), CraftMapCursor.CraftType.minecraftHolderToBukkit(decoration.type()), true, CraftChatMessage.fromComponent(decoration.name().orElse(null))));
         }
     }
 

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/player/EntityHuman.java
 +++ b/net/minecraft/world/entity/player/EntityHuman.java
-@@ -112,6 +112,22 @@
+@@ -116,6 +116,22 @@
  import net.minecraft.world.scores.ScoreboardTeam;
  import org.slf4j.Logger;
  
@@ -23,20 +23,20 @@
  public abstract class EntityHuman extends EntityLiving {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -127,7 +143,8 @@
-     public static final float SWIMMING_BB_HEIGHT = 0.6F;
+@@ -135,7 +151,8 @@
      public static final float DEFAULT_EYE_HEIGHT = 1.62F;
-     public static final EntitySize STANDING_DIMENSIONS = EntitySize.scalable(0.6F, 1.8F);
--    private static final Map<EntityPose, EntitySize> POSES = ImmutableMap.builder().put(EntityPose.STANDING, EntityHuman.STANDING_DIMENSIONS).put(EntityPose.SLEEPING, EntityHuman.SLEEPING_DIMENSIONS).put(EntityPose.FALL_FLYING, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.scalable(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.fixed(0.2F, 0.2F)).build();
+     public static final Vec3D DEFAULT_VEHICLE_ATTACHMENT = new Vec3D(0.0D, 0.6D, 0.0D);
+     public static final EntitySize STANDING_DIMENSIONS = EntitySize.scalable(0.6F, 1.8F).withEyeHeight(1.62F).withAttachments(EntityAttachments.builder().attach(EntityAttachment.VEHICLE, EntityHuman.DEFAULT_VEHICLE_ATTACHMENT));
+-    private static final Map<EntityPose, EntitySize> POSES = ImmutableMap.builder().put(EntityPose.STANDING, EntityHuman.STANDING_DIMENSIONS).put(EntityPose.SLEEPING, EntityHuman.SLEEPING_DIMENSIONS).put(EntityPose.FALL_FLYING, EntitySize.scalable(0.6F, 0.6F).withEyeHeight(0.4F)).put(EntityPose.SWIMMING, EntitySize.scalable(0.6F, 0.6F).withEyeHeight(0.4F)).put(EntityPose.SPIN_ATTACK, EntitySize.scalable(0.6F, 0.6F).withEyeHeight(0.4F)).put(EntityPose.CROUCHING, EntitySize.scalable(0.6F, 1.5F).withEyeHeight(1.27F).withAttachments(EntityAttachments.builder().attach(EntityAttachment.VEHICLE, EntityHuman.DEFAULT_VEHICLE_ATTACHMENT))).put(EntityPose.DYING, EntitySize.fixed(0.2F, 0.2F).withEyeHeight(1.62F)).build();
 +    // CraftBukkit - decompile error
-+    private static final Map<EntityPose, EntitySize> POSES = ImmutableMap.<EntityPose, EntitySize>builder().put(EntityPose.STANDING, EntityHuman.STANDING_DIMENSIONS).put(EntityPose.SLEEPING, EntityHuman.SLEEPING_DIMENSIONS).put(EntityPose.FALL_FLYING, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.scalable(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.fixed(0.2F, 0.2F)).build();
++    private static final Map<EntityPose, EntitySize> POSES = ImmutableMap.<EntityPose, EntitySize>builder().put(EntityPose.STANDING, EntityHuman.STANDING_DIMENSIONS).put(EntityPose.SLEEPING, EntityHuman.SLEEPING_DIMENSIONS).put(EntityPose.FALL_FLYING, EntitySize.scalable(0.6F, 0.6F).withEyeHeight(0.4F)).put(EntityPose.SWIMMING, EntitySize.scalable(0.6F, 0.6F).withEyeHeight(0.4F)).put(EntityPose.SPIN_ATTACK, EntitySize.scalable(0.6F, 0.6F).withEyeHeight(0.4F)).put(EntityPose.CROUCHING, EntitySize.scalable(0.6F, 1.5F).withEyeHeight(1.27F).withAttachments(EntityAttachments.builder().attach(EntityAttachment.VEHICLE, EntityHuman.DEFAULT_VEHICLE_ATTACHMENT))).put(EntityPose.DYING, EntitySize.fixed(0.2F, 0.2F).withEyeHeight(1.62F)).build();
      private static final DataWatcherObject<Float> DATA_PLAYER_ABSORPTION_ID = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.FLOAT);
      private static final DataWatcherObject<Integer> DATA_SCORE_ID = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.INT);
      protected static final DataWatcherObject<Byte> DATA_PLAYER_MODE_CUSTOMISATION = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.BYTE);
-@@ -136,10 +153,10 @@
+@@ -144,10 +161,10 @@
      protected static final DataWatcherObject<NBTTagCompound> DATA_SHOULDER_RIGHT = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.COMPOUND_TAG);
      private long timeEntitySatOnShoulder;
-     private final PlayerInventory inventory = new PlayerInventory(this);
+     final PlayerInventory inventory = new PlayerInventory(this);
 -    protected InventoryEnderChest enderChestInventory = new InventoryEnderChest();
 +    protected InventoryEnderChest enderChestInventory = new InventoryEnderChest(this); // CraftBukkit - add "this" to constructor
      public final ContainerPlayer inventoryMenu;
@@ -46,9 +46,9 @@
      protected int jumpTriggerTime;
      public float oBob;
      public float bob;
-@@ -168,6 +185,16 @@
-     public EntityFishingHook fishing;
-     protected float hurtDir;
+@@ -181,6 +198,16 @@
+     public Entity currentExplosionCause;
+     public boolean ignoreFallDamageFromCurrentImpulse;
  
 +    // CraftBukkit start
 +    public boolean fauxSleeping;
@@ -63,7 +63,7 @@
      public EntityHuman(World world, BlockPosition blockposition, float f, GameProfile gameprofile) {
          super(EntityTypes.PLAYER, world);
          this.lastItemInMainHand = ItemStack.EMPTY;
-@@ -312,7 +339,7 @@
+@@ -325,7 +352,7 @@
          ItemStack itemstack = this.getItemBySlot(EnumItemSlot.HEAD);
  
          if (itemstack.is(Items.TURTLE_HELMET) && !this.isEyeInFluid(TagsFluid.WATER)) {
@@ -147,7 +147,7 @@
              return entityitem;
          }
      }
-@@ -789,7 +857,7 @@
+@@ -790,7 +858,7 @@
          }
  
          if (nbttagcompound.contains("LastDeathLocation", 10)) {
@@ -156,7 +156,16 @@
              Logger logger = EntityHuman.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -822,7 +890,7 @@
+@@ -798,7 +866,7 @@
+         }
+ 
+         if (nbttagcompound.contains("current_explosion_impact_pos", 9)) {
+-            DataResult dataresult1 = Vec3D.CODEC.parse(DynamicOpsNBT.INSTANCE, nbttagcompound.get("current_explosion_impact_pos"));
++            DataResult<Vec3D> dataresult1 = Vec3D.CODEC.parse(DynamicOpsNBT.INSTANCE, nbttagcompound.get("current_explosion_impact_pos")); // CraftBukkit - decompile error
+             Logger logger1 = EntityHuman.LOGGER;
+ 
+             Objects.requireNonNull(logger1);
+@@ -834,7 +902,7 @@
          }
  
          this.getLastDeathLocation().flatMap((globalpos) -> {
@@ -165,7 +174,7 @@
              Logger logger = EntityHuman.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -849,12 +917,12 @@
+@@ -866,12 +934,12 @@
                  return false;
              } else {
                  if (!this.level().isClientSide) {
@@ -180,7 +189,7 @@
                      }
  
                      if (this.level().getDifficulty() == EnumDifficulty.EASY) {
-@@ -866,7 +934,13 @@
+@@ -883,7 +951,13 @@
                      }
                  }
  
@@ -195,7 +204,7 @@
              }
          }
      }
-@@ -886,10 +960,29 @@
+@@ -903,10 +977,29 @@
      }
  
      public boolean canHarmPlayer(EntityHuman entityhuman) {
@@ -228,7 +237,7 @@
      }
  
      @Override
-@@ -931,8 +1024,13 @@
+@@ -946,8 +1039,13 @@
          }
      }
  
@@ -243,7 +252,7 @@
          if (!this.isInvulnerableTo(damagesource)) {
              f = this.getDamageAfterArmorAbsorb(damagesource, f);
              f = this.getDamageAfterMagicAbsorb(damagesource, f);
-@@ -947,7 +1045,7 @@
+@@ -962,7 +1060,7 @@
              }
  
              if (f != 0.0F) {
@@ -252,7 +261,7 @@
                  this.getCombatTracker().recordDamage(damagesource, f);
                  this.setHealth(this.getHealth() - f);
                  if (f < 3.4028235E37F) {
-@@ -957,6 +1055,7 @@
+@@ -972,6 +1070,7 @@
                  this.gameEvent(GameEvent.ENTITY_DAMAGE);
              }
          }
@@ -260,119 +269,128 @@
      }
  
      @Override
-@@ -1121,7 +1220,7 @@
+@@ -1127,10 +1226,16 @@
  
                  f *= 0.2F + f2 * f2 * 0.8F;
                  f1 *= f2;
 -                this.resetAttackStrengthTicker();
-+                // this.resetAttackCooldown(); // CraftBukkit - Moved to EntityLiving to reset the cooldown after the damage is dealt
-                 if (f > 0.0F || f1 > 0.0F) {
-                     boolean flag = f2 > 0.9F;
-                     boolean flag1 = false;
-@@ -1160,8 +1259,15 @@
-                     if (entity instanceof EntityLiving) {
-                         f3 = ((EntityLiving) entity).getHealth();
-                         if (j > 0 && !entity.isOnFire()) {
--                            flag4 = true;
--                            entity.setSecondsOnFire(1);
-+                            // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
-+                            EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 1);
-+                            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
-+
-+                            if (!combustEvent.isCancelled()) {
-+                                flag4 = true;
-+                                entity.setSecondsOnFire(combustEvent.getDuration(), false);
-+                            }
-+                            // CraftBukkit end
-                         }
-                     }
++                // this.resetAttackStrengthTicker(); // CraftBukkit - Moved to EntityLiving to reset the cooldown after the damage is dealt
+                 if (entity.getType().is(TagsEntity.REDIRECTABLE_PROJECTILE) && entity instanceof IProjectile) {
+                     IProjectile iprojectile = (IProjectile) entity;
  
-@@ -1171,7 +1277,7 @@
-                     if (flag5) {
-                         if (i > 0) {
-                             if (entity instanceof EntityLiving) {
--                                ((EntityLiving) entity).knockback((double) ((float) i * 0.5F), (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)));
-+                                ((EntityLiving) entity).knockback((double) ((float) i * 0.5F), (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)), this, EntityKnockbackEvent.KnockbackCause.ENTITY_ATTACK); // CraftBukkit
-                             } else {
-                                 entity.push((double) (-MathHelper.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (MathHelper.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F));
-                             }
-@@ -1189,8 +1295,11 @@
-                                 EntityLiving entityliving = (EntityLiving) iterator.next();
- 
-                                 if (entityliving != this && entityliving != entity && !this.isAlliedTo((Entity) entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
--                                    entityliving.knockback(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)));
--                                    entityliving.hurt(this.damageSources().playerAttack(this), f4);
-+                                    // CraftBukkit start - Only apply knockback if the damage hits
-+                                    if (entityliving.hurt(this.damageSources().playerAttack(this).sweep(), f4)) {
-+                                        entityliving.knockback(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)), this, EntityKnockbackEvent.KnockbackCause.SWEEP_ATTACK); // CraftBukkit
-+                                    }
-+                                    // CraftBukkit end
-                                 }
-                             }
- 
-@@ -1199,9 +1308,26 @@
-                         }
- 
-                         if (entity instanceof EntityPlayer && entity.hurtMarked) {
-+                            // CraftBukkit start - Add Velocity Event
-+                            boolean cancelled = false;
-+                            Player player = (Player) entity.getBukkitEntity();
-+                            org.bukkit.util.Vector velocity = CraftVector.toBukkit(vec3d);
-+
-+                            PlayerVelocityEvent event = new PlayerVelocityEvent(player, velocity.clone());
-+                            this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+                            if (event.isCancelled()) {
-+                                cancelled = true;
-+                            } else if (!velocity.equals(event.getVelocity())) {
-+                                player.setVelocity(event.getVelocity());
-+                            }
-+
-+                            if (!cancelled) {
-                             ((EntityPlayer) entity).connection.send(new PacketPlayOutEntityVelocity(entity));
-                             entity.hurtMarked = false;
-                             entity.setDeltaMovement(vec3d);
-+                            }
-+                            // CraftBukkit end
-                         }
- 
-                         if (flag2) {
-@@ -1246,7 +1372,14 @@
- 
-                             this.awardStat(StatisticList.DAMAGE_DEALT, Math.round(f5 * 10.0F));
-                             if (j > 0) {
--                                entity.setSecondsOnFire(j * 4);
++                    // CraftBukkit start
++                    DamageSource damagesource = this.damageSources().playerAttack(this);
++                    if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f1, false)) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     iprojectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, this, true);
+                 } else {
+                     if (f > 0.0F || f1 > 0.0F) {
+@@ -1171,8 +1276,15 @@
+                         if (entity instanceof EntityLiving) {
+                             f3 = ((EntityLiving) entity).getHealth();
+                             if (j > 0 && !entity.isOnFire()) {
+-                                flag4 = true;
+-                                entity.igniteForSeconds(1);
 +                                // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
-+                                EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), j * 4);
++                                EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 1);
 +                                org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
 +
 +                                if (!combustEvent.isCancelled()) {
-+                                    entity.setSecondsOnFire(combustEvent.getDuration(), false);
++                                    flag4 = true;
++                                    entity.igniteForSeconds(combustEvent.getDuration(), false);
++                                }
++                                // CraftBukkit end
+                             }
+                         }
+ 
+@@ -1182,7 +1294,7 @@
+                         if (flag5) {
+                             if (i > 0) {
+                                 if (entity instanceof EntityLiving) {
+-                                    ((EntityLiving) entity).knockback((double) ((float) i * 0.5F), (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)));
++                                    ((EntityLiving) entity).knockback((double) ((float) i * 0.5F), (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)), this, EntityKnockbackEvent.KnockbackCause.ENTITY_ATTACK); // CraftBukkit
+                                 } else {
+                                     entity.push((double) (-MathHelper.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (MathHelper.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F));
+                                 }
+@@ -1200,8 +1312,11 @@
+                                     EntityLiving entityliving = (EntityLiving) iterator.next();
+ 
+                                     if (entityliving != this && entityliving != entity && !this.isAlliedTo((Entity) entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
+-                                        entityliving.knockback(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)));
+-                                        entityliving.hurt(this.damageSources().playerAttack(this), f4);
++                                        // CraftBukkit start - Only apply knockback if the damage hits
++                                        if (entityliving.hurt(this.damageSources().playerAttack(this).sweep(), f4)) {
++                                            entityliving.knockback(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)), this, EntityKnockbackEvent.KnockbackCause.SWEEP_ATTACK); // CraftBukkit
++                                        }
++                                        // CraftBukkit end
+                                     }
+                                 }
+ 
+@@ -1210,9 +1325,26 @@
+                             }
+ 
+                             if (entity instanceof EntityPlayer && entity.hurtMarked) {
++                                // CraftBukkit start - Add Velocity Event
++                                boolean cancelled = false;
++                                Player player = (Player) entity.getBukkitEntity();
++                                org.bukkit.util.Vector velocity = CraftVector.toBukkit(vec3d);
++
++                                PlayerVelocityEvent event = new PlayerVelocityEvent(player, velocity.clone());
++                                this.level().getCraftServer().getPluginManager().callEvent(event);
++
++                                if (event.isCancelled()) {
++                                    cancelled = true;
++                                } else if (!velocity.equals(event.getVelocity())) {
++                                    player.setVelocity(event.getVelocity());
++                                }
++
++                                if (!cancelled) {
+                                 ((EntityPlayer) entity).connection.send(new PacketPlayOutEntityVelocity(entity));
+                                 entity.hurtMarked = false;
+                                 entity.setDeltaMovement(vec3d);
 +                                }
 +                                // CraftBukkit end
                              }
  
-                             if (this.level() instanceof WorldServer && f5 > 2.0F) {
-@@ -1256,12 +1389,17 @@
+                             if (flag2) {
+@@ -1257,7 +1389,14 @@
+ 
+                                 this.awardStat(StatisticList.DAMAGE_DEALT, Math.round(f5 * 10.0F));
+                                 if (j > 0) {
+-                                    entity.igniteForSeconds(j * 4);
++                                    // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
++                                    EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), j * 4);
++                                    org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
++
++                                    if (!combustEvent.isCancelled()) {
++                                        entity.igniteForSeconds(combustEvent.getDuration(), false);
++                                    }
++                                    // CraftBukkit end
+                                 }
+ 
+                                 if (this.level() instanceof WorldServer && f5 > 2.0F) {
+@@ -1267,12 +1406,17 @@
+                                 }
                              }
-                         }
  
--                        this.causeFoodExhaustion(0.1F);
-+                        this.causeFoodExhaustion(0.1F, EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent
-                     } else {
-                         this.level().playSound((EntityHuman) null, this.getX(), this.getY(), this.getZ(), SoundEffects.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F);
-                         if (flag4) {
-                             entity.clearFire();
+-                            this.causeFoodExhaustion(0.1F);
++                            this.causeFoodExhaustion(0.1F, EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent
+                         } else {
+                             this.level().playSound((EntityHuman) null, this.getX(), this.getY(), this.getZ(), SoundEffects.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F);
+                             if (flag4) {
+                                 entity.clearFire();
+                             }
++                            // CraftBukkit start - resync on cancelled event
++                            if (this instanceof EntityPlayer) {
++                                ((EntityPlayer) this).getBukkitEntity().updateInventory();
++                            }
++                            // CraftBukkit end
                          }
-+                        // CraftBukkit start - resync on cancelled event
-+                        if (this instanceof EntityPlayer) {
-+                            ((EntityPlayer) this).getBukkitEntity().updateInventory();
-+                        }
-+                        // CraftBukkit end
                      }
-                 }
  
-@@ -1307,7 +1445,14 @@
+@@ -1310,7 +1454,14 @@
  
      @Override
      public void remove(Entity.RemovalReason entity_removalreason) {
@@ -388,7 +406,7 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1338,6 +1483,12 @@
+@@ -1346,6 +1497,12 @@
      }
  
      public Either<EntityHuman.EnumBedResult, Unit> startSleepInBed(BlockPosition blockposition) {
@@ -401,7 +419,7 @@
          this.startSleeping(blockposition);
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
-@@ -1425,9 +1576,9 @@
+@@ -1433,9 +1590,9 @@
          super.jumpFromGround();
          this.awardStat(StatisticList.JUMP);
          if (this.isSprinting()) {
@@ -413,7 +431,7 @@
          }
  
      }
-@@ -1454,7 +1605,11 @@
+@@ -1462,7 +1619,11 @@
  
              this.setDeltaMovement(vec3d2.x, d0 * 0.6D, vec3d2.z);
              this.resetFallDistance();
@@ -426,7 +444,7 @@
          } else {
              super.travel(vec3d);
          }
-@@ -1507,12 +1662,24 @@
+@@ -1522,12 +1683,24 @@
      }
  
      public void startFallFlying() {
@@ -452,7 +470,7 @@
      }
  
      @Override
-@@ -1626,10 +1793,21 @@
+@@ -1642,10 +1815,21 @@
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
  
@@ -475,7 +493,7 @@
              }
  
          }
-@@ -1715,13 +1893,20 @@
+@@ -1731,13 +1915,20 @@
  
      @Override
      public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
@@ -499,7 +517,7 @@
          }
  
      }
-@@ -1760,26 +1945,31 @@
+@@ -1781,26 +1972,31 @@
  
      protected void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {

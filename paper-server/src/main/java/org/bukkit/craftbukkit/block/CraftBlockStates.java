@@ -9,8 +9,11 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.IRegistryCustom;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.GeneratorAccess;
+import net.minecraft.world.level.IWorldReader;
 import net.minecraft.world.level.block.entity.BrushableBlockEntity;
 import net.minecraft.world.level.block.entity.CalibratedSculkSensorBlockEntity;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
@@ -54,6 +57,7 @@ import net.minecraft.world.level.block.entity.TileEntitySkull;
 import net.minecraft.world.level.block.entity.TileEntitySmoker;
 import net.minecraft.world.level.block.entity.TileEntityStructure;
 import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
+import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
 import net.minecraft.world.level.block.piston.TileEntityPiston;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
@@ -336,6 +340,7 @@ public final class CraftBlockStates {
         register(Material.TRAPPED_CHEST, CraftChest.class, CraftChest::new, TileEntityChestTrapped::new);
         register(Material.CRAFTER, CraftCrafter.class, CraftCrafter::new, CrafterBlockEntity::new);
         register(Material.TRIAL_SPAWNER, CraftTrialSpawner.class, CraftTrialSpawner::new, TrialSpawnerBlockEntity::new);
+        register(Material.VAULT, CraftVault.class, CraftVault::new, VaultBlockEntity::new);
     }
 
     private static void register(Material blockType, BlockStateFactory<?> factory) {
@@ -394,24 +399,34 @@ public final class CraftBlockStates {
         return blockState;
     }
 
+    @Deprecated
     public static BlockState getBlockState(Material material, @Nullable NBTTagCompound blockEntityTag) {
-        return getBlockState(BlockPosition.ZERO, material, blockEntityTag);
+        return getBlockState(MinecraftServer.getDefaultRegistryAccess(), BlockPosition.ZERO, material, blockEntityTag);
     }
 
-    public static BlockState getBlockState(BlockPosition blockPosition, Material material, @Nullable NBTTagCompound blockEntityTag) {
+    public static BlockState getBlockState(IWorldReader world, BlockPosition blockPosition, Material material, @Nullable NBTTagCompound blockEntityTag) {
+        return getBlockState(world.registryAccess(), blockPosition, material, blockEntityTag);
+    }
+
+    public static BlockState getBlockState(IRegistryCustom registry, BlockPosition blockPosition, Material material, @Nullable NBTTagCompound blockEntityTag) {
         Preconditions.checkNotNull(material, "material is null");
         IBlockData blockData = CraftBlockType.bukkitToMinecraft(material).defaultBlockState();
-        return getBlockState(blockPosition, blockData, blockEntityTag);
+        return getBlockState(registry, blockPosition, blockData, blockEntityTag);
     }
 
+    @Deprecated
     public static BlockState getBlockState(IBlockData blockData, @Nullable NBTTagCompound blockEntityTag) {
-        return getBlockState(BlockPosition.ZERO, blockData, blockEntityTag);
+        return getBlockState(MinecraftServer.getDefaultRegistryAccess(), BlockPosition.ZERO, blockData, blockEntityTag);
     }
 
-    public static BlockState getBlockState(BlockPosition blockPosition, IBlockData blockData, @Nullable NBTTagCompound blockEntityTag) {
+    public static BlockState getBlockState(IWorldReader world, BlockPosition blockPosition, IBlockData blockData, @Nullable NBTTagCompound blockEntityTag) {
+        return getBlockState(world.registryAccess(), blockPosition, blockData, blockEntityTag);
+    }
+
+    public static BlockState getBlockState(IRegistryCustom registry, BlockPosition blockPosition, IBlockData blockData, @Nullable NBTTagCompound blockEntityTag) {
         Preconditions.checkNotNull(blockPosition, "blockPosition is null");
         Preconditions.checkNotNull(blockData, "blockData is null");
-        TileEntity tileEntity = (blockEntityTag == null) ? null : TileEntity.loadStatic(blockPosition, blockData, blockEntityTag);
+        TileEntity tileEntity = (blockEntityTag == null) ? null : TileEntity.loadStatic(blockPosition, blockData, blockEntityTag, registry);
         return getBlockState(null, blockPosition, blockData, tileEntity);
     }
 

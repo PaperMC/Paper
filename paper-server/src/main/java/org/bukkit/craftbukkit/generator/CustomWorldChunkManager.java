@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.generator;
 
 import com.google.common.base.Preconditions;
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -39,7 +39,7 @@ public class CustomWorldChunkManager extends WorldChunkManager {
     }
 
     @Override
-    protected Codec<? extends WorldChunkManager> codec() {
+    protected MapCodec<? extends WorldChunkManager> codec() {
         throw new UnsupportedOperationException("Cannot serialize CustomWorldChunkManager");
     }
 

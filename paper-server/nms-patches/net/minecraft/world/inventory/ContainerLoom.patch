@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/inventory/ContainerLoom.java
 +++ b/net/minecraft/world/inventory/ContainerLoom.java
-@@ -24,8 +24,30 @@
+@@ -23,8 +23,30 @@
+ import net.minecraft.world.level.block.entity.BannerPatternLayers;
  import net.minecraft.world.level.block.entity.EnumBannerPatternType;
- import net.minecraft.world.level.block.entity.TileEntityTypes;
  
 +// CraftBukkit start
 +import org.bukkit.Location;
@@ -45,7 +45,7 @@
          };
          this.outputContainer = new InventorySubcontainer(1) {
              @Override
-@@ -67,6 +96,13 @@
+@@ -67,21 +96,28 @@
                  super.setChanged();
                  ContainerLoom.this.slotUpdateListener.run();
              }
@@ -58,11 +58,29 @@
 +            // CraftBukkit end
          };
          this.access = containeraccess;
-         this.bannerSlot = this.addSlot(new Slot(this.inputContainer, 0, 13, 26) {
-@@ -127,10 +163,12 @@
-         }
+-        this.bannerSlot = this.addSlot(new Slot(this, this.inputContainer, 0, 13, 26) {
++        this.bannerSlot = this.addSlot(new Slot(this.inputContainer, 0, 13, 26) { // CraftBukkit - decompile error
+             @Override
+             public boolean mayPlace(ItemStack itemstack) {
+                 return itemstack.getItem() instanceof ItemBanner;
+             }
+         });
+-        this.dyeSlot = this.addSlot(new Slot(this, this.inputContainer, 1, 33, 26) {
++        this.dyeSlot = this.addSlot(new Slot(this.inputContainer, 1, 33, 26) { // CraftBukkit - decompile error
+             @Override
+             public boolean mayPlace(ItemStack itemstack) {
+                 return itemstack.getItem() instanceof ItemDye;
+             }
+         });
+-        this.patternSlot = this.addSlot(new Slot(this, this.inputContainer, 2, 23, 45) {
++        this.patternSlot = this.addSlot(new Slot(this.inputContainer, 2, 23, 45) { // CraftBukkit - decompile error
+             @Override
+             public boolean mayPlace(ItemStack itemstack) {
+                 return itemstack.getItem() instanceof ItemBannerPattern;
+@@ -128,10 +164,12 @@
  
          this.addDataSlot(this.selectedBannerPatternIndex);
+         this.patternGetter = playerinventory.player.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN);
 +        player = (Player) playerinventory.player.getBukkitEntity(); // CraftBukkit
      }
  
@@ -72,15 +90,15 @@
          return stillValid(this.access, entityhuman, Blocks.LOOM);
      }
  
-@@ -308,6 +346,11 @@
+@@ -306,6 +344,11 @@
+             EnumColor enumcolor = ((ItemDye) itemstack1.getItem()).getDyeColor();
  
-             if (nbttagcompound != null && nbttagcompound.contains("Patterns", 9)) {
-                 nbttaglist = nbttagcompound.getList("Patterns", 10);
+             itemstack2.update(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY, (bannerpatternlayers) -> {
 +                // CraftBukkit start
-+                while (nbttaglist.size() > 20) {
-+                    nbttaglist.remove(20);
++                if (bannerpatternlayers.layers().size() > 20) {
++                    bannerpatternlayers = new BannerPatternLayers(List.copyOf(bannerpatternlayers.layers().subList(0, 20)));
 +                }
 +                // CraftBukkit end
-             } else {
-                 nbttaglist = new NBTTagList();
-                 if (nbttagcompound == null) {
+                 return (new BannerPatternLayers.a()).addAll(bannerpatternlayers).add(holder, enumcolor).build();
+             });
+         }

@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/monster/EntityZombieVillager.java
 +++ b/net/minecraft/world/entity/monster/EntityZombieVillager.java
-@@ -50,6 +50,13 @@
- import org.joml.Vector3f;
+@@ -48,6 +48,13 @@
+ import net.minecraft.world.level.block.state.IBlockData;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -14,15 +14,15 @@
  public class EntityZombieVillager extends EntityZombie implements VillagerDataHolder {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -67,6 +74,7 @@
+@@ -65,6 +72,7 @@
      @Nullable
-     private NBTTagCompound tradeOffers;
+     private MerchantRecipeList tradeOffers;
      private int villagerXp;
 +    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
  
      public EntityZombieVillager(EntityTypes<? extends EntityZombieVillager> entitytypes, World world) {
          super(entitytypes, world);
-@@ -85,7 +93,7 @@
+@@ -83,7 +91,7 @@
      @Override
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.addAdditionalSaveData(nbttagcompound);
@@ -31,7 +31,16 @@
          Logger logger = EntityZombieVillager.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -141,6 +149,10 @@
+@@ -118,7 +126,7 @@
+         }
+ 
+         if (nbttagcompound.contains("Offers")) {
+-            DataResult dataresult1 = MerchantRecipeList.CODEC.parse(this.registryAccess().createSerializationContext(DynamicOpsNBT.INSTANCE), nbttagcompound.get("Offers"));
++            DataResult<MerchantRecipeList> dataresult1 = MerchantRecipeList.CODEC.parse(this.registryAccess().createSerializationContext(DynamicOpsNBT.INSTANCE), nbttagcompound.get("Offers")); // CraftBukkit - decompile error
+             Logger logger1 = EntityZombieVillager.LOGGER;
+ 
+             Objects.requireNonNull(logger1);
+@@ -145,6 +153,10 @@
      public void tick() {
          if (!this.level().isClientSide && this.isAlive() && this.isConverting()) {
              int i = this.getConversionProgress();
@@ -42,7 +51,7 @@
  
              this.villagerConversionTime -= i;
              if (this.villagerConversionTime <= 0) {
-@@ -149,6 +161,7 @@
+@@ -153,6 +165,7 @@
          }
  
          super.tick();
@@ -50,7 +59,7 @@
      }
  
      @Override
-@@ -192,8 +205,10 @@
+@@ -193,8 +206,10 @@
          this.conversionStarter = uuid;
          this.villagerConversionTime = i;
          this.getEntityData().set(EntityZombieVillager.DATA_CONVERTING_ID, true);
@@ -63,7 +72,7 @@
          this.level().broadcastEntityEvent(this, (byte) 16);
      }
  
-@@ -210,7 +225,13 @@
+@@ -211,7 +226,13 @@
      }
  
      private void finishConversion(WorldServer worldserver) {
@@ -78,7 +87,7 @@
          EnumItemSlot[] aenumitemslot = EnumItemSlot.values();
          int i = aenumitemslot.length;
  
-@@ -225,7 +246,9 @@
+@@ -226,7 +247,9 @@
                      double d0 = (double) this.getEquipmentDropChance(enumitemslot);
  
                      if (d0 > 1.0D) {
@@ -88,7 +97,7 @@
                      }
                  }
              }
-@@ -252,7 +275,7 @@
+@@ -253,7 +276,7 @@
              }
          }
  

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
+import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import java.io.ByteArrayOutputStream;
@@ -22,12 +23,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -36,13 +40,18 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPosition;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.PacketDataSerializer;
+import net.minecraft.network.EnumProtocol;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.common.ClientboundStoreCookiePacket;
+import net.minecraft.network.protocol.common.ClientboundTransferPacket;
+import net.minecraft.network.protocol.common.custom.DiscardedPayload;
+import net.minecraft.network.protocol.cookie.ClientboundCookieRequestPacket;
+import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket;
 import net.minecraft.network.protocol.game.ClientboundCustomChatCompletionsPacket;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
@@ -99,6 +108,7 @@ import net.minecraft.world.level.block.entity.TileEntitySign;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.border.IWorldBorderListener;
 import net.minecraft.world.level.saveddata.maps.MapIcon;
+import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.WorldMap;
 import net.minecraft.world.phys.Vec3D;
 import org.bukkit.BanEntry;
@@ -148,6 +158,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.map.CraftMapCursor;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
@@ -244,7 +255,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public InetSocketAddress getAddress() {
-        if (getHandle().connection == null) return null;
+        if (getHandle().connection.protocol() == null) return null;
 
         SocketAddress addr = getHandle().connection.getRemoteAddress();
         if (addr instanceof InetSocketAddress) {
@@ -252,6 +263,74 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         } else {
             return null;
         }
+    }
+
+    public interface TransferCookieConnection {
+
+        boolean isTransferred();
+
+        EnumProtocol protocol();
+
+        void send(Packet<?> packet);
+    }
+
+    public record CookieFuture(MinecraftKey key, CompletableFuture<byte[]> future) {
+
+    }
+    private final Queue<CookieFuture> requestedCookies = new LinkedList<>();
+
+    public boolean isAwaitingCookies() {
+        return !requestedCookies.isEmpty();
+    }
+
+    public boolean handleCookieResponse(ServerboundCookieResponsePacket response) {
+        CookieFuture future = requestedCookies.peek();
+        if (future != null) {
+            if (future.key.equals(response.key())) {
+                Preconditions.checkState(future == requestedCookies.poll(), "requestedCookies queue mismatch");
+
+                future.future().complete(response.payload());
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean isTransferred() {
+        return getHandle().transferCookieConnection.isTransferred();
+    }
+
+    @Override
+    public CompletableFuture<byte[]> retrieveCookie(NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "Cookie key cannot be null");
+
+        CompletableFuture<byte[]> future = new CompletableFuture<>();
+        MinecraftKey nms = CraftNamespacedKey.toMinecraft(key);
+        requestedCookies.add(new CookieFuture(nms, future));
+
+        getHandle().transferCookieConnection.send(new ClientboundCookieRequestPacket(nms));
+
+        return future;
+    }
+
+    @Override
+    public void storeCookie(NamespacedKey key, byte[] value) {
+        Preconditions.checkArgument(key != null, "Cookie key cannot be null");
+        Preconditions.checkArgument(value != null, "Cookie value cannot be null");
+        Preconditions.checkArgument(value.length <= 5120, "Cookie value too large, must be smaller than 5120 bytes");
+        Preconditions.checkState(getHandle().transferCookieConnection.protocol() == EnumProtocol.CONFIGURATION || getHandle().transferCookieConnection.protocol() == EnumProtocol.PLAY, "Can only store cookie in CONFIGURATION or PLAY protocol.");
+
+        getHandle().transferCookieConnection.send(new ClientboundStoreCookiePacket(CraftNamespacedKey.toMinecraft(key), value));
+    }
+
+    @Override
+    public void transfer(String host, int port) {
+        Preconditions.checkArgument(host != null, "Host cannot be null");
+        Preconditions.checkState(getHandle().transferCookieConnection.protocol() == EnumProtocol.CONFIGURATION || getHandle().transferCookieConnection.protocol() == EnumProtocol.PLAY, "Can only transfer in CONFIGURATION or PLAY protocol.");
+
+        getHandle().transferCookieConnection.send(new ClientboundTransferPacket(host, port));
     }
 
     @Override
@@ -777,7 +856,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return;
         }
 
-        getHandle().connection.send(new PacketPlayOutEntityEffect(entity.getEntityId(), CraftPotionUtil.fromBukkit(effect)));
+        getHandle().connection.send(new PacketPlayOutEntityEffect(entity.getEntityId(), CraftPotionUtil.fromBukkit(effect), true));
     }
 
     @Override
@@ -789,7 +868,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return;
         }
 
-        getHandle().connection.send(new PacketPlayOutRemoveEntityEffect(entity.getEntityId(), CraftPotionEffectType.bukkitToMinecraft(type)));
+        getHandle().connection.send(new PacketPlayOutRemoveEntityEffect(entity.getEntityId(), CraftPotionEffectType.bukkitToMinecraftHolder(type)));
     }
 
     @Override
@@ -876,11 +955,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Collection<MapIcon> icons = new ArrayList<MapIcon>();
         for (MapCursor cursor : data.cursors) {
             if (cursor.isVisible()) {
-                icons.add(new MapIcon(MapIcon.Type.byIcon(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), CraftChatMessage.fromStringOrNull(cursor.getCaption())));
+                icons.add(new MapIcon(CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()), cursor.getX(), cursor.getY(), cursor.getDirection(), CraftChatMessage.fromStringOrOptional(cursor.getCaption())));
             }
         }
 
-        PacketPlayOutMap packet = new PacketPlayOutMap(map.getId(), map.getScale().getValue(), map.isLocked(), icons, new WorldMap.b(0, 0, 128, 128, data.buffer));
+        PacketPlayOutMap packet = new PacketPlayOutMap(new MapId(map.getId()), map.getScale().getValue(), map.isLocked(), icons, new WorldMap.b(0, 0, 128, 128, data.buffer));
         getHandle().connection.send(packet);
     }
 
@@ -1716,17 +1795,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     private void sendCustomPayload(MinecraftKey id, byte[] message) {
-        ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new CustomPacketPayload() {
-            @Override
-            public void write(PacketDataSerializer pds) {
-                pds.writeBytes(message);
-            }
-
-            @Override
-            public MinecraftKey id() {
-                return id;
-            }
-        });
+        ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, Unpooled.wrappedBuffer(message)));
         getHandle().connection.send(packet);
     }
 
@@ -1773,7 +1842,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             hashStr = BaseEncoding.base16().lowerCase().encode(hash);
         }
 
-        this.handlePushResourcePack(new ClientboundResourcePackPushPacket(id, url, hashStr, force, CraftChatMessage.fromStringOrNull(prompt, true)), true);
+        this.handlePushResourcePack(new ClientboundResourcePackPushPacket(id, url, hashStr, force, CraftChatMessage.fromStringOrOptional(prompt, true)), true);
     }
 
     @Override
@@ -1786,7 +1855,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             hashStr = BaseEncoding.base16().lowerCase().encode(hash);
         }
 
-        this.handlePushResourcePack(new ClientboundResourcePackPushPacket(id, url, hashStr, force, CraftChatMessage.fromStringOrNull(prompt, true)), false);
+        this.handlePushResourcePack(new ClientboundResourcePackPushPacket(id, url, hashStr, force, CraftChatMessage.fromStringOrOptional(prompt, true)), false);
     }
 
     @Override

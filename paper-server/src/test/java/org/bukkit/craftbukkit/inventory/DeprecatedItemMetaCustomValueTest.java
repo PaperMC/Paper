@@ -6,8 +6,6 @@ import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagString;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -94,10 +92,10 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
     public void testNBTTagStoring() {
         CraftMetaItem itemMeta = createComplexItemMeta();
 
-        NBTTagCompound compound = new NBTTagCompound();
+        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
         itemMeta.applyToItem(compound);
 
-        assertEquals(itemMeta, new CraftMetaItem(compound));
+        assertEquals(itemMeta, new CraftMetaItem(compound.build()));
     }
 
     @Test
@@ -149,7 +147,6 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
 
     private CraftMetaItem createComplexItemMeta() {
         CraftMetaItem itemMeta = (CraftMetaItem) createNewItemMeta();
-        itemMeta.unhandledTags.put("unhandled-test", NBTTagString.valueOf("test"));
         itemMeta.setDisplayName("Item Display Name");
 
         itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-long"), ItemTagType.LONG, 4L); //Add random primitive values

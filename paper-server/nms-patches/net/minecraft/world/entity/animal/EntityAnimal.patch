@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/EntityAnimal.java
 +++ b/net/minecraft/world/entity/animal/EntityAnimal.java
-@@ -30,12 +30,19 @@
+@@ -29,12 +29,19 @@
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.pathfinder.PathType;
  
@@ -20,22 +20,25 @@
  
      protected EntityAnimal(EntityTypes<? extends EntityAnimal> entitytypes, World world) {
          super(entitytypes, world);
-@@ -77,8 +84,13 @@
-         if (this.isInvulnerableTo(damagesource)) {
-             return false;
-         } else {
-+            // CraftBukkit start
-+            boolean result = super.hurt(damagesource, f);
-+            if (result) {
-             this.inLove = 0;
--            return super.hurt(damagesource, f);
-+            }
-+            return result;
-+            // CraftBukkit end
-         }
+@@ -72,9 +79,15 @@
      }
  
-@@ -172,10 +184,17 @@
+     @Override
+-    protected void actuallyHurt(DamageSource damagesource, float f) {
++    // CraftBukkit start - void -> boolean
++    public boolean actuallyHurt(DamageSource damagesource, float f) {
++        boolean result = super.actuallyHurt(damagesource, f);
++        if (!result) {
++            return result;
++        }
+         this.resetLove();
+-        super.actuallyHurt(damagesource, f);
++        return result;
++        // CraftBukkit end
+     }
+ 
+     @Override
+@@ -162,10 +175,17 @@
      }
  
      public void setInLove(@Nullable EntityHuman entityhuman) {
@@ -54,7 +57,7 @@
  
          this.level().broadcastEntityEvent(this, (byte) 18);
      }
-@@ -217,12 +236,29 @@
+@@ -207,12 +227,29 @@
          if (entityageable != null) {
              entityageable.setBaby(true);
              entityageable.moveTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
@@ -86,7 +89,7 @@
          Optional.ofNullable(this.getLoveCause()).or(() -> {
              return Optional.ofNullable(entityanimal.getLoveCause());
          }).ifPresent((entityplayer) -> {
-@@ -235,7 +271,11 @@
+@@ -225,7 +262,11 @@
          entityanimal.resetLove();
          worldserver.broadcastEntityEvent(this, (byte) 18);
          if (worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {

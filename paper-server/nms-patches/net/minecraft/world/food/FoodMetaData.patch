@@ -33,20 +33,20 @@
 +    }
 +    // CraftBukkit end
  
-     public void eat(int i, float f) {
+     private void add(int i, float f) {
          this.foodLevel = Math.min(i + this.foodLevel, 20);
-@@ -25,8 +43,17 @@
-     public void eat(Item item, ItemStack itemstack) {
-         if (item.isEdible()) {
-             FoodInfo foodinfo = item.getFoodProperties();
+@@ -30,7 +48,17 @@
+         FoodInfo foodinfo = (FoodInfo) itemstack.get(DataComponents.FOOD);
+ 
+         if (foodinfo != null) {
+-            this.add(foodinfo.nutrition(), foodinfo.saturation());
 +            // CraftBukkit start
 +            int oldFoodLevel = foodLevel;
- 
--            this.eat(foodinfo.getNutrition(), foodinfo.getSaturationModifier());
-+            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, foodinfo.getNutrition() + oldFoodLevel, itemstack);
++
++            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, foodinfo.nutrition() + oldFoodLevel, itemstack);
 +
 +            if (!event.isCancelled()) {
-+                this.eat(event.getFoodLevel() - oldFoodLevel, foodinfo.getSaturationModifier());
++                this.add(event.getFoodLevel() - oldFoodLevel, foodinfo.saturation());
 +            }
 +
 +            ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate();
@@ -54,7 +54,7 @@
          }
  
      }
-@@ -40,7 +67,15 @@
+@@ -44,7 +72,15 @@
              if (this.saturationLevel > 0.0F) {
                  this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
              } else if (enumdifficulty != EnumDifficulty.PEACEFUL) {
@@ -71,7 +71,7 @@
              }
          }
  
-@@ -48,23 +83,25 @@
+@@ -52,23 +88,25 @@
  
          if (flag && this.saturationLevel > 0.0F && entityhuman.isHurt() && this.foodLevel >= 20) {
              ++this.tickTimer;

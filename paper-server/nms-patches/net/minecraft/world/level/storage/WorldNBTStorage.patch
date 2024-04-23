@@ -1,62 +1,101 @@
 --- a/net/minecraft/world/level/storage/WorldNBTStorage.java
 +++ b/net/minecraft/world/level/storage/WorldNBTStorage.java
-@@ -15,6 +15,13 @@
+@@ -15,8 +15,10 @@
+ import net.minecraft.nbt.NBTCompressedStreamTools;
+ import net.minecraft.nbt.NBTReadLimiter;
+ import net.minecraft.nbt.NBTTagCompound;
++import net.minecraft.server.level.EntityPlayer;
+ import net.minecraft.util.datafix.DataFixTypes;
  import net.minecraft.world.entity.player.EntityHuman;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
  import org.slf4j.Logger;
  
-+// CraftBukkit start
-+import java.io.FileInputStream;
-+import java.io.InputStream;
-+import net.minecraft.server.level.EntityPlayer;
-+import org.bukkit.craftbukkit.entity.CraftPlayer;
-+// CraftBukkit end
-+
  public class WorldNBTStorage {
+@@ -49,34 +51,36 @@
  
-     private static final Logger LOGGER = LogUtils.getLogger();
-@@ -59,6 +66,16 @@
+     }
+ 
+-    private void backup(EntityHuman entityhuman, String s) {
++    private void backup(String name, String s1, String s) { // name, uuid, extension
+         Path path = this.playerDir.toPath();
+-        String s1 = entityhuman.getStringUUID();
++        // String s1 = entityhuman.getStringUUID(); // CraftBukkit - used above
+         Path path1 = path.resolve(s1 + s);
+ 
+-        s1 = entityhuman.getStringUUID();
++        // s1 = entityhuman.getStringUUID(); // CraftBukkit - used above
+         Path path2 = path.resolve(s1 + "_corrupted_" + LocalDateTime.now().format(WorldNBTStorage.FORMATTER) + s);
+ 
+         if (Files.isRegularFile(path1, new LinkOption[0])) {
+             try {
+                 Files.copy(path1, path2, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+             } catch (Exception exception) {
+-                WorldNBTStorage.LOGGER.warn("Failed to copy the player.dat file for {}", entityhuman.getName().getString(), exception);
++                WorldNBTStorage.LOGGER.warn("Failed to copy the player.dat file for {}", name, exception); // CraftBukkit
+             }
+ 
+         }
+     }
+ 
+-    private Optional<NBTTagCompound> load(EntityHuman entityhuman, String s) {
++    // CraftBukkit start
++    private Optional<NBTTagCompound> load(String name, String s1, String s) { // name, uuid, extension
++        // CraftBukkit end
+         File file = this.playerDir;
+-        String s1 = entityhuman.getStringUUID();
++        // String s1 = entityhuman.getStringUUID(); // CraftBukkit - used above
+         File file1 = new File(file, s1 + s);
+ 
+         if (file1.exists() && file1.isFile()) {
+             try {
+                 return Optional.of(NBTCompressedStreamTools.readCompressed(file1.toPath(), NBTReadLimiter.unlimitedHeap()));
+             } catch (Exception exception) {
+-                WorldNBTStorage.LOGGER.warn("Failed to load player data for {}", entityhuman.getName().getString());
++                WorldNBTStorage.LOGGER.warn("Failed to load player data for {}", name); // CraftBukkit
+             }
          }
  
-         if (nbttagcompound != null) {
-+            // CraftBukkit start
+@@ -84,20 +88,44 @@
+     }
+ 
+     public Optional<NBTTagCompound> load(EntityHuman entityhuman) {
+-        Optional<NBTTagCompound> optional = this.load(entityhuman, ".dat");
++        // CraftBukkit start
++        return load(entityhuman.getName().getString(), entityhuman.getStringUUID()).map((nbttagcompound) -> {
 +            if (entityhuman instanceof EntityPlayer) {
 +                CraftPlayer player = (CraftPlayer) entityhuman.getBukkitEntity();
 +                // Only update first played if it is older than the one we have
-+                long modified = new File(this.playerDir, entityhuman.getUUID().toString() + ".dat").lastModified();
++                long modified = new File(this.playerDir, entityhuman.getStringUUID() + ".dat").lastModified();
 +                if (modified < player.getFirstPlayed()) {
 +                    player.setFirstPlayed(modified);
 +                }
 +            }
-+            // CraftBukkit end
++
++            entityhuman.load(nbttagcompound); // From below
++            return nbttagcompound;
++        });
++    }
++
++    public Optional<NBTTagCompound> load(String name, String uuid) {
++        // CraftBukkit end
++        Optional<NBTTagCompound> optional = this.load(name, uuid, ".dat"); // CraftBukkit
+ 
+         if (optional.isEmpty()) {
+-            this.backup(entityhuman, ".dat");
++            this.backup(name, uuid, ".dat"); // CraftBukkit
+         }
+ 
+         return optional.or(() -> {
+-            return this.load(entityhuman, ".dat_old");
++            return this.load(name, uuid, ".dat_old"); // CraftBukkit
+         }).map((nbttagcompound) -> {
              int i = GameProfileSerializer.getDataVersion(nbttagcompound, -1);
  
              nbttagcompound = DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, nbttagcompound, i);
-@@ -68,6 +85,22 @@
-         return nbttagcompound;
-     }
- 
-+    // CraftBukkit start
-+    public NBTTagCompound getPlayerData(String s) {
-+        try {
-+            File file1 = new File(this.playerDir, s + ".dat");
-+
-+            if (file1.exists()) {
-+                return NBTCompressedStreamTools.readCompressed(file1.toPath(), NBTReadLimiter.unlimitedHeap());
-+            }
-+        } catch (Exception exception) {
-+            LOGGER.warn("Failed to load player data for " + s);
-+        }
-+
-+        return null;
-+    }
-+    // CraftBukkit end
-+
-     public String[] getSeenPlayers() {
-         String[] astring = this.playerDir.list();
- 
-@@ -83,4 +116,10 @@
- 
-         return astring;
+-            entityhuman.load(nbttagcompound);
++            // entityhuman.load(nbttagcompound); // CraftBukkit - handled above
+             return nbttagcompound;
+         });
      }
 +
 +    // CraftBukkit start

@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.generator;
 
 import com.google.common.base.Preconditions;
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -334,7 +334,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    protected Codec<? extends net.minecraft.world.level.chunk.ChunkGenerator> codec() {
-        return Codec.unit(null);
+    protected MapCodec<? extends net.minecraft.world.level.chunk.ChunkGenerator> codec() {
+        return MapCodec.unit(null);
     }
 }

@@ -2,16 +2,17 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.FireworkExplosion;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
-    static final ItemMetaKey EXPLOSION = new ItemMetaKey("Explosion", "firework-effect");
+    static final ItemMetaKeyType<FireworkExplosion> EXPLOSION = new ItemMetaKeyType<>(DataComponents.FIREWORK_EXPLOSION, "firework-effect");
 
     private FireworkEffect effect;
 
@@ -29,16 +30,16 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
         setEffect(SerializableMeta.getObject(FireworkEffect.class, map, EXPLOSION.BUKKIT, true));
     }
 
-    CraftMetaCharge(NBTTagCompound tag) {
+    CraftMetaCharge(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(EXPLOSION.NBT)) {
+        getOrEmpty(tag, EXPLOSION).ifPresent((f) -> {
             try {
-                effect = CraftMetaFirework.getEffect(tag.getCompound(EXPLOSION.NBT));
+                effect = CraftMetaFirework.getEffect(f);
             } catch (IllegalArgumentException ex) {
                 // Ignore invalid effects
             }
-        }
+        });
     }
 
     @Override
@@ -57,11 +58,11 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
     }
 
     @Override
-    void applyToItem(NBTTagCompound itemTag) {
+    void applyToItem(CraftMetaItem.Applicator itemTag) {
         super.applyToItem(itemTag);
 
         if (hasEffect()) {
-            itemTag.put(EXPLOSION.NBT, CraftMetaFirework.getExplosion(effect));
+            itemTag.put(EXPLOSION, CraftMetaFirework.getExplosion(effect));
         }
     }
 

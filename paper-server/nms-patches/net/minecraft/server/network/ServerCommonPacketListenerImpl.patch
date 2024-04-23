@@ -1,13 +1,15 @@
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -26,6 +26,21 @@
+@@ -27,8 +27,28 @@
  import net.minecraft.util.thread.IAsyncTaskHandler;
  import org.slf4j.Logger;
  
+-public abstract class ServerCommonPacketListenerImpl implements ServerCommonPacketListener {
 +// CraftBukkit start
 +import io.netty.buffer.ByteBuf;
 +import java.util.concurrent.ExecutionException;
 +import net.minecraft.EnumChatFormat;
++import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 +import net.minecraft.network.protocol.game.PacketPlayOutSpawnPosition;
 +import net.minecraft.resources.MinecraftKey;
 +import net.minecraft.server.level.EntityPlayer;
@@ -17,12 +19,18 @@
 +import org.bukkit.craftbukkit.util.Waitable;
 +import org.bukkit.event.player.PlayerKickEvent;
 +import org.bukkit.event.player.PlayerResourcePackStatusEvent;
-+// CraftBukkit end
-+
- public abstract class ServerCommonPacketListenerImpl implements ServerCommonPacketListener {
  
++public abstract class ServerCommonPacketListenerImpl implements ServerCommonPacketListener, CraftPlayer.TransferCookieConnection {
++
++    @Override
++    public boolean isTransferred() {
++        return this.transferred;
++    }
++    // CraftBukkit end
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -39,11 +54,22 @@
+     public static final int LATENCY_CHECK_INTERVAL = 15000;
+     private static final int CLOSED_LISTENER_TIMEOUT = 15000;
+@@ -45,12 +65,24 @@
      private int latency;
      private volatile boolean suspendFlushingOnServerThread = false;
  
@@ -32,8 +40,10 @@
          this.connection = networkmanager;
          this.keepAliveTime = SystemUtils.getMillis();
          this.latency = commonlistenercookie.latency();
+         this.transferred = commonlistenercookie.transferred();
 +        // CraftBukkit start - add fields and methods
 +        this.player = player;
++        this.player.transferCookieConnection = this;
 +        this.cserver = minecraftserver.server;
 +    }
 +    protected final EntityPlayer player;
@@ -45,8 +55,8 @@
 +        // CraftBukkit end
      }
  
-     @Override
-@@ -57,6 +83,7 @@
+     private void close() {
+@@ -72,6 +104,7 @@
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket serverboundkeepalivepacket) {
@@ -54,7 +64,7 @@
          if (this.keepAlivePending && serverboundkeepalivepacket.getId() == this.keepAliveChallenge) {
              int i = (int) (SystemUtils.getMillis() - this.keepAliveTime);
  
-@@ -71,8 +98,56 @@
+@@ -86,8 +119,56 @@
      @Override
      public void handlePong(ServerboundPongPacket serverboundpongpacket) {}
  
@@ -65,12 +75,12 @@
      @Override
 -    public void handleCustomPayload(ServerboundCustomPayloadPacket serverboundcustompayloadpacket) {}
 +    public void handleCustomPayload(ServerboundCustomPayloadPacket serverboundcustompayloadpacket) {
-+        if (!(serverboundcustompayloadpacket.payload() instanceof ServerboundCustomPayloadPacket.UnknownPayload)) {
++        if (!(serverboundcustompayloadpacket.payload() instanceof DiscardedPayload)) {
 +            return;
 +        }
 +        PlayerConnectionUtils.ensureRunningOnSameThread(serverboundcustompayloadpacket, this, this.player.serverLevel());
-+        MinecraftKey identifier = serverboundcustompayloadpacket.payload().id();
-+        ByteBuf payload = ((ServerboundCustomPayloadPacket.UnknownPayload)serverboundcustompayloadpacket.payload()).data();
++        MinecraftKey identifier = serverboundcustompayloadpacket.payload().type().id();
++        ByteBuf payload = ((DiscardedPayload)serverboundcustompayloadpacket.payload()).data();
 +
 +        if (identifier.equals(CUSTOM_REGISTER)) {
 +            try {
@@ -112,7 +122,7 @@
  
      @Override
      public void handleResourcePackResponse(ServerboundResourcePackPacket serverboundresourcepackpacket) {
-@@ -81,6 +156,7 @@
+@@ -96,11 +177,18 @@
              ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), serverboundresourcepackpacket.id());
              this.disconnect(IChatBaseComponent.translatable("multiplayer.requiredTexturePrompt.disconnect"));
          }
@@ -120,16 +130,27 @@
  
      }
  
-@@ -88,7 +164,7 @@
+     @Override
+     public void handleCookieResponse(ServerboundCookieResponsePacket serverboundcookieresponsepacket) {
++        // CraftBukkit start
++        PlayerConnectionUtils.ensureRunningOnSameThread(serverboundcookieresponsepacket, this, (IAsyncTaskHandler) this.server);
++        if (this.player.getBukkitEntity().handleCookieResponse(serverboundcookieresponsepacket)) {
++            return;
++        }
++        // CraftBukkit end
+         this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
+     }
+ 
+@@ -108,7 +196,7 @@
          this.server.getProfiler().push("keepAlive");
          long i = SystemUtils.getMillis();
  
--        if (i - this.keepAliveTime >= 15000L) {
-+        if (i - this.keepAliveTime >= 25000L) { // CraftBukkit
+-        if (!this.isSingleplayerOwner() && i - this.keepAliveTime >= 15000L) {
++        if (!this.isSingleplayerOwner() && i - this.keepAliveTime >= 25000L) { // CraftBukkit
              if (this.keepAlivePending) {
                  this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
-             } else {
-@@ -116,6 +192,14 @@
+             } else if (this.checkIfClosed(i)) {
+@@ -148,6 +236,14 @@
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) {
@@ -141,10 +162,10 @@
 +            this.player.compassTarget = CraftLocation.toBukkit(packet6.pos, this.getCraftPlayer().getWorld());
 +        }
 +        // CraftBukkit end
-         boolean flag = !this.suspendFlushingOnServerThread || !this.server.isSameThread();
- 
-         try {
-@@ -131,16 +215,67 @@
+         if (packet.isTerminal()) {
+             this.close();
+         }
+@@ -167,16 +263,67 @@
          }
      }
  

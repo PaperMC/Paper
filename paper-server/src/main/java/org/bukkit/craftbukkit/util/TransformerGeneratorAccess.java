@@ -72,7 +72,7 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         }
         TileEntity tileEntity = getBlockEntity(position);
         if (tileEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {
-            tileEntity.load(craftEntityState.getSnapshotNBT());
+            tileEntity.loadWithComponents(craftEntityState.getSnapshotNBT(), this.registryAccess());
         }
         return result;
     }
@@ -86,7 +86,7 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         if (structureTransformer == null || !structureTransformer.canTransformBlocks()) {
             return super.setBlock(position, iblockdata, i, j);
         }
-        return setCraftBlock(position, (CraftBlockState) CraftBlockStates.getBlockState(position, iblockdata, null), i, j);
+        return setCraftBlock(position, (CraftBlockState) CraftBlockStates.getBlockState(this, position, iblockdata, null), i, j);
     }
 
     @Override

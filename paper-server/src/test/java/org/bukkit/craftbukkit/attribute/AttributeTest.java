@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.attribute;
 
 import static org.junit.jupiter.api.Assertions.*;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import org.bukkit.attribute.Attribute;
@@ -21,7 +22,7 @@ public class AttributeTest extends AbstractTestingBase {
     @Test
     public void testToNMS() {
         for (Attribute attribute : Attribute.values()) {
-            AttributeBase nms = CraftAttribute.bukkitToMinecraft(attribute);
+            Holder<AttributeBase> nms = CraftAttribute.bukkitToMinecraftHolder(attribute);
 
             assertNotNull(nms, attribute.name());
         }

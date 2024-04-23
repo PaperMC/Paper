@@ -17,7 +17,7 @@ public class CraftAttributeMap implements Attributable {
     @Override
     public AttributeInstance getAttribute(Attribute attribute) {
         Preconditions.checkArgument(attribute != null, "attribute");
-        net.minecraft.world.entity.ai.attributes.AttributeModifiable nms = handle.getInstance(CraftAttribute.bukkitToMinecraft(attribute));
+        net.minecraft.world.entity.ai.attributes.AttributeModifiable nms = handle.getInstance(CraftAttribute.bukkitToMinecraftHolder(attribute));
 
         return (nms == null) ? null : new CraftAttributeInstance(nms, attribute);
     }

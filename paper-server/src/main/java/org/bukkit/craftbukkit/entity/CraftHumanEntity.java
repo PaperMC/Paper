@@ -26,8 +26,6 @@ import net.minecraft.world.item.crafting.CraftingManager;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.trading.IMerchant;
 import net.minecraft.world.level.block.BlockBed;
-import net.minecraft.world.level.block.BlockEnchantmentTable;
-import net.minecraft.world.level.block.BlockWorkbench;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.state.IBlockData;
@@ -342,7 +340,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 return null;
             }
         }
-        getHandle().openMenu(((BlockWorkbench) Blocks.CRAFTING_TABLE).getMenuProvider(null, getHandle().level(), CraftLocation.toBlockPosition(location)));
+        getHandle().openMenu(Blocks.CRAFTING_TABLE.defaultBlockState().getMenuProvider(getHandle().level(), CraftLocation.toBlockPosition(location)));
         if (force) {
             getHandle().containerMenu.checkReachable = false;
         }
@@ -363,7 +361,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         // If there isn't an enchant table we can force create one, won't be very useful though.
         BlockPosition pos = CraftLocation.toBlockPosition(location);
-        getHandle().openMenu(((BlockEnchantmentTable) Blocks.ENCHANTING_TABLE).getMenuProvider(null, getHandle().level(), pos));
+        getHandle().openMenu(Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(getHandle().level(), pos));
 
         if (force) {
             getHandle().containerMenu.checkReachable = false;

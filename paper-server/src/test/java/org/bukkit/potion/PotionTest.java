@@ -20,7 +20,7 @@ public class PotionTest extends AbstractTestingBase {
         for (PotionRegistry reg : BuiltInRegistries.POTION) {
             List<MobEffect> eff = reg.getEffects();
             if (eff.size() != 1) continue;
-            PotionEffectType type = CraftPotionEffectType.minecraftToBukkit(eff.get(0).getEffect());
+            PotionEffectType type = CraftPotionEffectType.minecraftHolderToBukkit(eff.get(0).getEffect());
             assertNotNull(type, String.valueOf(reg));
 
             PotionType enumType = PotionType.getByEffect(type);
@@ -29,7 +29,7 @@ public class PotionTest extends AbstractTestingBase {
             effects.put(enumType, enumType.name());
         }
 
-        assertEquals(effects.entrySet().size(), PotionType.values().length - /* PotionTypes with no/shared Effects */ (6 + 22 /* There are 22 new strong / long potion types */));
+        assertEquals(PotionType.values().length - /* PotionTypes with no/shared Effects */ (5 + 22 /* There are 22 new strong / long potion types */), effects.entrySet().size());
     }
 
     @Test

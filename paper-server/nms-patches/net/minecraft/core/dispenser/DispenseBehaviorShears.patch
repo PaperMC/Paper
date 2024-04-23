@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/DispenseBehaviorShears.java
 +++ b/net/minecraft/core/dispenser/DispenseBehaviorShears.java
-@@ -22,6 +22,13 @@
+@@ -23,6 +23,13 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.AxisAlignedBB;
  
@@ -14,7 +14,7 @@
  public class DispenseBehaviorShears extends DispenseBehaviorMaybe {
  
      public DispenseBehaviorShears() {}
-@@ -29,11 +36,34 @@
+@@ -30,11 +37,34 @@
      @Override
      protected ItemStack execute(SourceBlock sourceblock, ItemStack itemstack) {
          WorldServer worldserver = sourceblock.level();
@@ -47,10 +47,10 @@
  
 -            this.setSuccess(tryShearBeehive(worldserver, blockposition) || tryShearLivingEntity(worldserver, blockposition));
 +            this.setSuccess(tryShearBeehive(worldserver, blockposition) || tryShearLivingEntity(worldserver, blockposition, bukkitBlock, craftItem)); // CraftBukkit
-             if (this.isSuccess() && itemstack.hurt(1, worldserver.getRandom(), (EntityPlayer) null)) {
-                 itemstack.setCount(0);
-             }
-@@ -62,7 +92,7 @@
+             if (this.isSuccess()) {
+                 itemstack.hurtAndBreak(1, worldserver.getRandom(), (EntityPlayer) null, () -> {
+                     itemstack.setCount(0);
+@@ -65,7 +95,7 @@
          return false;
      }
  
@@ -59,9 +59,9 @@
          List<EntityLiving> list = worldserver.getEntitiesOfClass(EntityLiving.class, new AxisAlignedBB(blockposition), IEntitySelector.NO_SPECTATORS);
          Iterator iterator = list.iterator();
  
-@@ -73,6 +103,11 @@
-                 IShearable ishearable = (IShearable) entityliving;
+@@ -74,6 +104,11 @@
  
+             if (entityliving instanceof IShearable ishearable) {
                  if (ishearable.readyForShearing()) {
 +                    // CraftBukkit start
 +                    if (CraftEventFactory.callBlockShearEntityEvent(entityliving, bukkitBlock, craftItem).isCancelled()) {
@@ -69,5 +69,5 @@
 +                    }
 +                    // CraftBukkit end
                      ishearable.shear(SoundCategory.BLOCKS);
-                     worldserver.gameEvent((Entity) null, GameEvent.SHEAR, blockposition);
+                     worldserver.gameEvent((Entity) null, (Holder) GameEvent.SHEAR, blockposition);
                      return true;

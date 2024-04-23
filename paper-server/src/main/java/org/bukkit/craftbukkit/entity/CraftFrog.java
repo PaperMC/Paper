@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.FrogVariant;
@@ -43,14 +44,14 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
 
     @Override
     public Variant getVariant() {
-        return CraftVariant.minecraftToBukkit(getHandle().getVariant());
+        return CraftVariant.minecraftHolderToBukkit(getHandle().getVariant());
     }
 
     @Override
     public void setVariant(Variant variant) {
         Preconditions.checkArgument(variant != null, "variant");
 
-        getHandle().setVariant(CraftVariant.bukkitToMinecraft(variant));
+        getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
     public static class CraftVariant {
@@ -66,11 +67,28 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
             return bukkit;
         }
 
+        public static Variant minecraftHolderToBukkit(Holder<FrogVariant> minecraft) {
+            return minecraftToBukkit(minecraft.value());
+        }
+
         public static FrogVariant bukkitToMinecraft(Variant bukkit) {
             Preconditions.checkArgument(bukkit != null);
 
             return CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT)
                     .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+        }
+
+        public static Holder<FrogVariant> bukkitToMinecraftHolder(Variant bukkit) {
+            Preconditions.checkArgument(bukkit != null);
+
+            IRegistry<FrogVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT);
+
+            if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<FrogVariant> holder) {
+                return holder;
+            }
+
+            throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                    + ", this can happen if a plugin creates its own frog variant with out properly registering it.");
         }
     }
 }

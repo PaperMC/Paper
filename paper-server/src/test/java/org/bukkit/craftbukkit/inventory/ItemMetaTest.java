@@ -57,7 +57,6 @@ import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
-import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.support.AbstractTestingBase;
@@ -276,7 +275,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(Material.POTION) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
-                    meta.setBasePotionData(new PotionData(PotionType.UNCRAFTABLE, false, false));
+                    meta.setBasePotionType(PotionType.WATER);
                     meta.addCustomEffect(PotionEffectType.CONFUSION.createEffect(1, 1), false);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
@@ -309,7 +308,6 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(Material.WHITE_BANNER) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final BannerMeta meta = (BannerMeta) cleanStack.getItemMeta();
-                    meta.setBaseColor(DyeColor.CYAN);
                     meta.addPattern(new Pattern(DyeColor.WHITE, PatternType.BRICKS));
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
@@ -388,7 +386,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(Material.COMPASS) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaCompass meta = ((CraftMetaCompass) cleanStack.getItemMeta());
-                    meta.setLodestoneTracked(true);
+                    meta.setLodestoneTracked(false);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
@@ -405,6 +403,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaMusicInstrument meta = (CraftMetaMusicInstrument) cleanStack.getItemMeta();
                     meta.setInstrument(MusicInstrument.ADMIRE);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
+            new StackProvider(Material.OMINOUS_BOTTLE) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final CraftMetaOminousBottle meta = (CraftMetaOminousBottle) cleanStack.getItemMeta();
+                    meta.setAmplifier(3);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }

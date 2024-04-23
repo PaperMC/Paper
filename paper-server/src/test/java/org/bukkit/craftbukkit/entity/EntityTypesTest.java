@@ -14,6 +14,7 @@ import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.AbstractVillager;
+import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Ambient;
 import org.bukkit.entity.Animals;
@@ -72,6 +73,7 @@ public class EntityTypesTest extends AbstractTestingBase {
             AbstractHorse.class,
             AbstractSkeleton.class,
             AbstractVillager.class,
+            AbstractWindCharge.class,
             Ageable.class,
             Ambient.class,
             Animals.class,

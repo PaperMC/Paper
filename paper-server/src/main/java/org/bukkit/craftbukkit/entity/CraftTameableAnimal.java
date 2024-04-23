@@ -62,7 +62,7 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
 
     @Override
     public void setTamed(boolean tame) {
-        getHandle().setTame(tame);
+        getHandle().setTame(tame, true);
         if (!tame) {
             setOwnerUUID(null);
         }

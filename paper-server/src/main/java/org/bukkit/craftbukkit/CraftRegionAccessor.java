@@ -432,7 +432,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
 
         if (randomizeData && entity instanceof EntityInsentient) {
-            ((EntityInsentient) entity).finalizeSpawn(getHandle(), getHandle().getCurrentDifficultyAt(entity.blockPosition()), EnumMobSpawn.COMMAND, (GroupDataEntity) null, null);
+            ((EntityInsentient) entity).finalizeSpawn(getHandle(), getHandle().getCurrentDifficultyAt(entity.blockPosition()), EnumMobSpawn.COMMAND, (GroupDataEntity) null);
         }
 
         if (!isNormalWorld()) {

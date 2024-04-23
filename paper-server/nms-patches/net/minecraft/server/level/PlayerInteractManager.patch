@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/level/PlayerInteractManager.java
 +++ b/net/minecraft/server/level/PlayerInteractManager.java
-@@ -26,6 +26,27 @@
- import net.minecraft.world.phys.Vec3D;
+@@ -25,6 +25,27 @@
+ import net.minecraft.world.phys.MovingObjectPositionBlock;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -28,7 +28,7 @@
  public class PlayerInteractManager {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -56,9 +77,16 @@
+@@ -55,9 +76,16 @@
          if (enumgamemode == this.gameModeForPlayer) {
              return false;
          } else {
@@ -44,9 +44,9 @@
 -            this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.a.UPDATE_GAME_MODE, this.player));
 +            this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.a.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
              this.level.updateSleepingPlayerList();
-             return true;
-         }
-@@ -88,7 +116,7 @@
+             if (enumgamemode == EnumGamemode.CREATIVE) {
+                 this.player.resetCurrentImpulseContext();
+@@ -91,7 +119,7 @@
      }
  
      public void tick() {
@@ -55,7 +55,7 @@
          IBlockData iblockdata;
  
          if (this.hasDelayedDestroy) {
-@@ -142,11 +170,33 @@
+@@ -145,11 +173,33 @@
  
              if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.START_DESTROY_BLOCK) {
                  if (!this.level.mayInteract(this.player, blockposition)) {
@@ -89,7 +89,7 @@
                  if (this.isCreative()) {
                      this.destroyAndAck(blockposition, j, "creative destroy");
                      return;
-@@ -162,11 +212,43 @@
+@@ -165,11 +215,43 @@
                  float f = 1.0F;
  
                  iblockdata = this.level.getBlockState(blockposition);
@@ -134,7 +134,7 @@
                  if (!iblockdata.isAir() && f >= 1.0F) {
                      this.destroyAndAck(blockposition, j, "insta mine");
                  } else {
-@@ -211,13 +293,15 @@
+@@ -214,13 +296,15 @@
              } else if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
                  if (!Objects.equals(this.destroyPos, blockposition)) {
@@ -151,7 +151,7 @@
              }
  
          }
-@@ -235,10 +319,65 @@
+@@ -238,10 +322,65 @@
  
      public boolean destroyBlock(BlockPosition blockposition) {
          IBlockData iblockdata = this.level.getBlockState(blockposition);
@@ -218,7 +218,7 @@
              TileEntity tileentity = this.level.getBlockEntity(blockposition);
              Block block = iblockdata.getBlock();
  
-@@ -248,6 +387,10 @@
+@@ -251,6 +390,10 @@
              } else if (this.player.blockActionRestricted(this.level, blockposition, this.gameModeForPlayer)) {
                  return false;
              } else {
@@ -229,7 +229,7 @@
                  IBlockData iblockdata1 = block.playerWillDestroy(this.level, blockposition, iblockdata, this.player);
                  boolean flag = this.level.removeBlock(blockposition, false);
  
-@@ -256,19 +399,32 @@
+@@ -259,19 +402,32 @@
                  }
  
                  if (this.isCreative()) {
@@ -265,7 +265,7 @@
              }
          }
      }
-@@ -313,14 +469,54 @@
+@@ -309,14 +465,53 @@
          }
      }
  
@@ -278,7 +278,6 @@
      public EnumInteractionResult useItemOn(EntityPlayer entityplayer, World world, ItemStack itemstack, EnumHand enumhand, MovingObjectPositionBlock movingobjectpositionblock) {
          BlockPosition blockposition = movingobjectpositionblock.getBlockPos();
          IBlockData iblockdata = world.getBlockState(blockposition);
-+        EnumInteractionResult enuminteractionresult = EnumInteractionResult.PASS;
 +        boolean cancelledBlock = false;
  
          if (!iblockdata.getBlock().isEnabled(world.enabledFeatures())) {
@@ -314,40 +313,18 @@
 +                entityplayer.connection.send(new PacketPlayOutBlockChange(world, blockposition.above()));
 +            }
 +            entityplayer.getBukkitEntity().updateInventory(); // SPIGOT-2867
-+            enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.PASS;
++            return (event.useItemInHand() != Event.Result.ALLOW) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.PASS;
 +        } else if (this.gameModeForPlayer == EnumGamemode.SPECTATOR) {
 +            ITileInventory itileinventory = iblockdata.getMenuProvider(world, blockposition);
  
              if (itileinventory != null) {
                  entityplayer.openMenu(itileinventory);
-@@ -334,7 +530,7 @@
-             ItemStack itemstack1 = itemstack.copy();
- 
-             if (!flag1) {
--                EnumInteractionResult enuminteractionresult = iblockdata.use(world, entityplayer, enumhand, movingobjectpositionblock);
-+                enuminteractionresult = iblockdata.use(world, entityplayer, enumhand, movingobjectpositionblock);
- 
-                 if (enuminteractionresult.consumesAction()) {
-                     CriterionTriggers.ITEM_USED_ON_BLOCK.trigger(entityplayer, blockposition, itemstack1);
-@@ -342,7 +538,7 @@
+@@ -347,7 +542,7 @@
                  }
              }
  
 -            if (!itemstack.isEmpty() && !entityplayer.getCooldowns().isOnCooldown(itemstack.getItem())) {
-+            if (!itemstack.isEmpty() && enuminteractionresult != EnumInteractionResult.SUCCESS && !interactResult) { // add !interactResult SPIGOT-764
++            if (!itemstack.isEmpty() && !interactResult) { // add !interactResult SPIGOT-764
                  ItemActionContext itemactioncontext = new ItemActionContext(entityplayer, enumhand, movingobjectpositionblock);
-                 EnumInteractionResult enuminteractionresult1;
  
-@@ -360,10 +556,10 @@
-                 }
- 
-                 return enuminteractionresult1;
--            } else {
--                return EnumInteractionResult.PASS;
-             }
-         }
-+        return enuminteractionresult;
-+        // CraftBukkit end
-     }
- 
-     public void setLevel(WorldServer worldserver) {
+                 if (this.isCreative()) {

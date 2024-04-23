@@ -3,10 +3,13 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import java.util.Optional;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
 import net.minecraft.world.entity.EntityLiving;
+import net.minecraft.world.item.alchemy.PotionContents;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.craftbukkit.CraftParticle;
@@ -16,12 +19,10 @@ import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.projectiles.ProjectileSource;
-import org.jetbrains.annotations.NotNull;
 
 public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud {
 
@@ -131,28 +132,22 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public Color getColor() {
-        return Color.fromRGB(getHandle().getColor());
+        return Color.fromRGB(getHandle().potionContents.getColor());
     }
 
     @Override
     public void setColor(Color color) {
-        getHandle().setFixedColor(color.asRGB());
+        PotionContents old = getHandle().potionContents;
+        getHandle().setPotionContents(new PotionContents(old.potion(), Optional.of(color.asRGB()), old.customEffects()));
     }
 
     @Override
     public boolean addCustomEffect(PotionEffect effect, boolean override) {
-        MobEffectList minecraft = CraftPotionEffectType.bukkitToMinecraft(effect.getType());
-        MobEffect existing = null;
-        for (MobEffect mobEffect : getHandle().effects) {
-            if (mobEffect.getEffect() == minecraft) {
-                existing = mobEffect;
-            }
-        }
-        if (existing != null) {
+        if (hasCustomEffect(effect.getType())) {
             if (!override) {
                 return false;
             }
-            getHandle().effects.remove(existing);
+            removeCustomEffect(effect.getType());
         }
         getHandle().addEffect(CraftPotionUtil.fromBukkit(effect));
         getHandle().updateColor();
@@ -161,14 +156,15 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public void clearCustomEffects() {
-        getHandle().effects.clear();
+        PotionContents old = getHandle().potionContents;
+        getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of()));
         getHandle().updateColor();
     }
 
     @Override
     public List<PotionEffect> getCustomEffects() {
         ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
-        for (MobEffect effect : getHandle().effects) {
+        for (MobEffect effect : getHandle().potionContents.customEffects()) {
             builder.add(CraftPotionUtil.toBukkit(effect));
         }
         return builder.build();
@@ -176,7 +172,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public boolean hasCustomEffect(PotionEffectType type) {
-        for (MobEffect effect : getHandle().effects) {
+        for (MobEffect effect : getHandle().potionContents.customEffects()) {
             if (CraftPotionUtil.equals(effect.getEffect(), type)) {
                 return true;
             }
@@ -186,50 +182,34 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public boolean hasCustomEffects() {
-        return !getHandle().effects.isEmpty();
+        return !getHandle().potionContents.customEffects().isEmpty();
     }
 
     @Override
     public boolean removeCustomEffect(PotionEffectType effect) {
-        MobEffectList minecraft = CraftPotionEffectType.bukkitToMinecraft(effect);
-        MobEffect existing = null;
-        for (MobEffect mobEffect : getHandle().effects) {
-            if (mobEffect.getEffect() == minecraft) {
-                existing = mobEffect;
-            }
-        }
-        if (existing == null) {
+        if (!hasCustomEffect(effect)) {
             return false;
         }
-        getHandle().effects.remove(existing);
-        getHandle().updateColor();
+        Holder<MobEffectList> minecraft = CraftPotionEffectType.bukkitToMinecraftHolder(effect);
+
+        PotionContents old = getHandle().potionContents;
+        getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), old.customEffects().stream().filter((mobEffect) -> !mobEffect.getEffect().equals(minecraft)).toList()));
         return true;
     }
 
     @Override
-    public void setBasePotionData(PotionData data) {
-        Preconditions.checkArgument(data != null, "PotionData cannot be null");
-
-        getHandle().setPotion(CraftPotionType.bukkitToMinecraft(CraftPotionUtil.fromBukkit(data)));
+    public void setBasePotionType(PotionType potionType) {
+        if (potionType != null) {
+            getHandle().setPotionContents(getHandle().potionContents.withPotion(CraftPotionType.bukkitToMinecraftHolder(potionType)));
+        } else {
+            PotionContents old = getHandle().potionContents;
+            getHandle().setPotionContents(new PotionContents(Optional.empty(), old.customColor(), old.customEffects()));
+        }
     }
 
-    @Override
-    public PotionData getBasePotionData() {
-        return CraftPotionUtil.toBukkit(CraftPotionType.minecraftToBukkit(getHandle().getPotion()));
-    }
-
-    @Override
-    public void setBasePotionType(@NotNull PotionType potionType) {
-        // TODO: 10/6/23 Change PotionType.UNCRAFTABLE to PotionType.EMPTY in error message
-        Preconditions.checkArgument(potionType != null, "PotionType cannot be null use PotionType.UNCRAFTABLE to represent no effect instead.");
-
-        getHandle().setPotion(CraftPotionType.bukkitToMinecraft(potionType));
-    }
-
-    @NotNull
     @Override
     public PotionType getBasePotionType() {
-        return CraftPotionType.minecraftToBukkit(getHandle().getPotion());
+        return getHandle().potionContents.potion().map(CraftPotionType::minecraftHolderToBukkit).orElse(null);
     }
 
     @Override

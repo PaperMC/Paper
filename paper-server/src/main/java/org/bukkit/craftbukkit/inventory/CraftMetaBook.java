@@ -9,177 +9,94 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
-import net.minecraft.network.chat.IChatBaseComponent;
-import net.minecraft.world.item.ItemWrittenBook;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.network.Filterable;
+import net.minecraft.server.network.FilteredText;
+import net.minecraft.world.item.component.WritableBookContent;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.inventory.meta.WritableBookMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
-public class CraftMetaBook extends CraftMetaItem implements BookMeta {
-    static final ItemMetaKey BOOK_TITLE = new ItemMetaKey("title");
-    static final ItemMetaKey BOOK_AUTHOR = new ItemMetaKey("author");
+public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBookMeta {
+    @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
+    static final ItemMetaKeyType<WritableBookContent> BOOK_CONTENT = new ItemMetaKeyType<>(DataComponents.WRITABLE_BOOK_CONTENT);
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
-    static final ItemMetaKey RESOLVED = new ItemMetaKey("resolved");
-    static final ItemMetaKey GENERATION = new ItemMetaKey("generation");
-    static final int MAX_PAGES = ItemWrittenBook.MAX_PAGES; // SPIGOT-6911: Use Minecraft limits
-    static final int MAX_PAGE_LENGTH = ItemWrittenBook.PAGE_EDIT_LENGTH; // SPIGOT-6911: Use Minecraft limits
-    static final int MAX_TITLE_LENGTH = ItemWrittenBook.TITLE_MAX_LENGTH; // SPIGOT-6911: Use Minecraft limits
+    static final int MAX_PAGES = Integer.MAX_VALUE; // SPIGOT-6911: Use Minecraft limits
+    static final int MAX_PAGE_LENGTH = WritableBookContent.PAGE_EDIT_LENGTH; // SPIGOT-6911: Use Minecraft limits
 
-    protected String title;
-    protected String author;
     // We store the pages in their raw original text representation. See SPIGOT-5063, SPIGOT-5350, SPIGOT-3206
     // For writable books (CraftMetaBook) the pages are stored as plain Strings.
-    // For written books (CraftMetaBookSigned) the pages are stored in Minecraft's JSON format.
     protected List<String> pages; // null and empty are two different states internally
-    protected Boolean resolved = null;
-    protected Integer generation;
 
     CraftMetaBook(CraftMetaItem meta) {
         super(meta);
 
         if (meta instanceof CraftMetaBook) {
             CraftMetaBook bookMeta = (CraftMetaBook) meta;
-            this.title = bookMeta.title;
-            this.author = bookMeta.author;
-            this.resolved = bookMeta.resolved;
-            this.generation = bookMeta.generation;
 
             if (bookMeta.pages != null) {
                 this.pages = new ArrayList<String>(bookMeta.pages.size());
-                if (meta instanceof CraftMetaBookSigned) {
-                    if (this instanceof CraftMetaBookSigned) {
-                        pages.addAll(bookMeta.pages);
-                    } else {
-                        // Convert from JSON to plain Strings:
-                        pages.addAll(Lists.transform(bookMeta.pages, CraftChatMessage::fromJSONComponent));
-                    }
-                } else {
-                    if (this instanceof CraftMetaBookSigned) {
-                        // Convert from plain Strings to JSON:
-                        // This happens for example during book signing.
-                        for (String page : bookMeta.pages) {
-                            // We don't insert any non-plain text features (such as clickable links) during this conversion.
-                            IChatBaseComponent component = CraftChatMessage.fromString(page, true, true)[0];
-                            pages.add(CraftChatMessage.toJSON(component));
-                        }
-                    } else {
-                        pages.addAll(bookMeta.pages);
-                    }
-                }
+
+                pages.addAll(bookMeta.pages);
+            }
+        } else if (meta instanceof CraftMetaBookSigned) {
+            CraftMetaBookSigned bookMeta = (CraftMetaBookSigned) meta;
+
+            if (bookMeta.pages != null) {
+                this.pages = new ArrayList<String>(bookMeta.pages.size());
+
+                // Convert from JSON to plain Strings:
+                pages.addAll(Lists.transform(bookMeta.pages, CraftChatMessage::fromComponent));
             }
         }
     }
 
-    CraftMetaBook(NBTTagCompound tag) {
+    CraftMetaBook(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(BOOK_TITLE.NBT)) {
-            this.title = tag.getString(BOOK_TITLE.NBT);
-        }
-
-        if (tag.contains(BOOK_AUTHOR.NBT)) {
-            this.author = tag.getString(BOOK_AUTHOR.NBT);
-        }
-
-        if (tag.contains(RESOLVED.NBT)) {
-            this.resolved = tag.getBoolean(RESOLVED.NBT);
-        }
-
-        if (tag.contains(GENERATION.NBT)) {
-            generation = tag.getInt(GENERATION.NBT);
-        }
-
-        if (tag.contains(BOOK_PAGES.NBT)) {
-            NBTTagList pages = tag.getList(BOOK_PAGES.NBT, CraftMagicNumbers.NBT.TAG_STRING);
+        getOrEmpty(tag, BOOK_CONTENT).ifPresent((writable) -> {
+            List<Filterable<String>> pages = writable.pages();
             this.pages = new ArrayList<String>(pages.size());
 
-            boolean expectJson = (this instanceof CraftMetaBookSigned);
             // Note: We explicitly check for and truncate oversized books and pages,
             // because they can come directly from clients when handling book edits.
             for (int i = 0; i < Math.min(pages.size(), MAX_PAGES); i++) {
-                String page = pages.getString(i);
-                // There was an issue on previous Spigot versions which would
-                // result in book items with pages in the wrong text
-                // representation. See SPIGOT-182, SPIGOT-164
-                if (expectJson) {
-                    page = CraftChatMessage.fromJSONOrStringToJSON(page, false, true, MAX_PAGE_LENGTH, false);
-                } else {
-                    page = validatePage(page);
-                }
+                String page = pages.get(i).raw();
+                page = validatePage(page);
+
                 this.pages.add(page);
             }
-        }
+        });
     }
 
     CraftMetaBook(Map<String, Object> map) {
         super(map);
-
-        setAuthor(SerializableMeta.getString(map, BOOK_AUTHOR.BUKKIT, true));
-
-        setTitle(SerializableMeta.getString(map, BOOK_TITLE.BUKKIT, true));
 
         Iterable<?> pages = SerializableMeta.getObject(Iterable.class, map, BOOK_PAGES.BUKKIT, true);
         if (pages != null) {
             this.pages = new ArrayList<String>();
             for (Object page : pages) {
                 if (page instanceof String) {
-                    internalAddPage(deserializePage((String) page));
+                    internalAddPage(validatePage((String) page));
                 }
             }
         }
-
-        resolved = SerializableMeta.getObject(Boolean.class, map, RESOLVED.BUKKIT, true);
-        generation = SerializableMeta.getObject(Integer.class, map, GENERATION.BUKKIT, true);
-    }
-
-    protected String deserializePage(String pageData) {
-        // We expect the page data to already be a plain String.
-        return validatePage(pageData);
-    }
-
-    protected String convertPlainPageToData(String page) {
-        // Writable books store their data as plain Strings, so we don't need to convert anything.
-        return page;
-    }
-
-    protected String convertDataToPlainPage(String pageData) {
-        // pageData is expected to already be a plain String.
-        return pageData;
     }
 
     @Override
-    void applyToItem(NBTTagCompound itemData) {
+    void applyToItem(CraftMetaItem.Applicator itemData) {
         super.applyToItem(itemData);
 
-        if (hasTitle()) {
-            itemData.putString(BOOK_TITLE.NBT, this.title);
-        }
-
-        if (hasAuthor()) {
-            itemData.putString(BOOK_AUTHOR.NBT, this.author);
-        }
-
         if (pages != null) {
-            NBTTagList list = new NBTTagList();
+            List<Filterable<String>> list = new ArrayList<>();
             for (String page : pages) {
-                list.add(NBTTagString.valueOf(page));
+                list.add(Filterable.from(FilteredText.passThrough(page)));
             }
-            itemData.put(BOOK_PAGES.NBT, list);
-        }
-
-        if (resolved != null) {
-            itemData.putBoolean(RESOLVED.NBT, resolved);
-        }
-
-        if (generation != null) {
-            itemData.putInt(GENERATION.NBT, generation);
+            itemData.put(BOOK_CONTENT, new WritableBookContent(list));
         }
     }
 
@@ -189,22 +106,22 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     }
 
     boolean isBookEmpty() {
-        return !((pages != null) || hasAuthor() || hasTitle() || hasGeneration() || (resolved != null));
+        return !(pages != null);
     }
 
     @Override
     boolean applicableTo(Material type) {
-        return type == Material.WRITTEN_BOOK || type == Material.WRITABLE_BOOK;
+        return type == Material.WRITABLE_BOOK;
     }
 
     @Override
     public boolean hasAuthor() {
-        return this.author != null;
+        return false;
     }
 
     @Override
     public boolean hasTitle() {
-        return this.title != null;
+        return false;
     }
 
     @Override
@@ -214,52 +131,42 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
 
     @Override
     public boolean hasGeneration() {
-        return generation != null;
+        return false;
     }
 
     @Override
     public String getTitle() {
-        return this.title;
+        return null;
     }
 
     @Override
     public boolean setTitle(final String title) {
-        if (title == null) {
-            this.title = null;
-            return true;
-        } else if (title.length() > MAX_TITLE_LENGTH) {
-            return false;
-        }
-
-        this.title = title;
-        return true;
+        return false;
     }
 
     @Override
     public String getAuthor() {
-        return this.author;
+        return null;
     }
 
     @Override
     public void setAuthor(final String author) {
-        this.author = author;
     }
 
     @Override
     public Generation getGeneration() {
-        return (generation == null) ? null : Generation.values()[generation];
+        return null;
     }
 
     @Override
     public void setGeneration(Generation generation) {
-        this.generation = (generation == null) ? null : generation.ordinal();
     }
 
     @Override
     public String getPage(final int page) {
         Preconditions.checkArgument(isValidPage(page), "Invalid page number (%s)", page);
         // assert: pages != null
-        return convertDataToPlainPage(pages.get(page - 1));
+        return pages.get(page - 1);
     }
 
     @Override
@@ -268,7 +175,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
         // assert: pages != null
 
         String newText = validatePage(text);
-        pages.set(page - 1, convertPlainPageToData(newText));
+        pages.set(page - 1, newText);
     }
 
     @Override
@@ -280,7 +187,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     public void addPage(final String... pages) {
         for (String page : pages) {
             page = validatePage(page);
-            internalAddPage(convertPlainPageToData(page));
+            internalAddPage(page);
         }
     }
 
@@ -311,7 +218,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     @Override
     public List<String> getPages() {
         if (pages == null) return ImmutableList.of();
-        return pages.stream().map(this::convertDataToPlainPage).collect(ImmutableList.toImmutableList());
+        return pages.stream().collect(ImmutableList.toImmutableList());
     }
 
     @Override
@@ -333,15 +240,6 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
         return page > 0 && page <= getPageCount();
     }
 
-    // TODO Expose this attribute in Bukkit?
-    public boolean isResolved() {
-        return (resolved == null) ? false : resolved;
-    }
-
-    public void setResolved(boolean resolved) {
-        this.resolved = resolved;
-    }
-
     @Override
     public CraftMetaBook clone() {
         CraftMetaBook meta = (CraftMetaBook) super.clone();
@@ -355,20 +253,8 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();
-        if (hasTitle()) {
-            hash = 61 * hash + this.title.hashCode();
-        }
-        if (hasAuthor()) {
-            hash = 61 * hash + 13 * this.author.hashCode();
-        }
         if (this.pages != null) {
             hash = 61 * hash + 17 * this.pages.hashCode();
-        }
-        if (this.resolved != null) {
-            hash = 61 * hash + 17 * this.resolved.hashCode();
-        }
-        if (hasGeneration()) {
-            hash = 61 * hash + 19 * this.generation.hashCode();
         }
         return original != hash ? CraftMetaBook.class.hashCode() ^ hash : hash;
     }
@@ -380,11 +266,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
         }
         if (meta instanceof CraftMetaBook that) {
 
-            return (hasTitle() ? that.hasTitle() && this.title.equals(that.title) : !that.hasTitle())
-                    && (hasAuthor() ? that.hasAuthor() && this.author.equals(that.author) : !that.hasAuthor())
-                    && (Objects.equals(this.pages, that.pages))
-                    && (Objects.equals(this.resolved, that.resolved))
-                    && (hasGeneration() ? that.hasGeneration() && this.generation.equals(that.generation) : !that.hasGeneration());
+            return (Objects.equals(this.pages, that.pages));
         }
         return true;
     }
@@ -398,24 +280,8 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (hasTitle()) {
-            builder.put(BOOK_TITLE.BUKKIT, title);
-        }
-
-        if (hasAuthor()) {
-            builder.put(BOOK_AUTHOR.BUKKIT, author);
-        }
-
         if (pages != null) {
             builder.put(BOOK_PAGES.BUKKIT, ImmutableList.copyOf(pages));
-        }
-
-        if (resolved != null) {
-            builder.put(RESOLVED.BUKKIT, resolved);
-        }
-
-        if (generation != null) {
-            builder.put(GENERATION.BUKKIT, generation);
         }
 
         return builder;

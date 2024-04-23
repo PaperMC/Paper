@@ -1,15 +1,28 @@
 --- a/net/minecraft/world/entity/animal/EntityCat.java
 +++ b/net/minecraft/world/entity/animal/EntityCat.java
-@@ -413,7 +413,7 @@
-                 }
-             } else if (this.isFood(itemstack)) {
-                 this.usePlayerItem(entityhuman, enumhand, itemstack);
--                if (this.random.nextInt(3) == 0) {
-+                if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) { // CraftBukkit
-                     this.tame(entityhuman);
-                     this.setOrderedToSit(true);
-                     this.level().broadcastEntityEvent(this, (byte) 7);
-@@ -475,7 +475,7 @@
+@@ -182,10 +182,10 @@
+     @Override
+     public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
+         super.readAdditionalSaveData(nbttagcompound);
+-        Optional optional = Optional.ofNullable(MinecraftKey.tryParse(nbttagcompound.getString("variant"))).map((minecraftkey) -> {
++        Optional<ResourceKey<CatVariant>> optional = Optional.ofNullable(MinecraftKey.tryParse(nbttagcompound.getString("variant"))).map((minecraftkey) -> { // CraftBukkit - decompile error
+             return ResourceKey.create(Registries.CAT_VARIANT, minecraftkey);
+         });
+-        IRegistry iregistry = BuiltInRegistries.CAT_VARIANT;
++        IRegistry<CatVariant> iregistry = BuiltInRegistries.CAT_VARIANT; // CraftBukkit - decompile error
+ 
+         Objects.requireNonNull(iregistry);
+         optional.flatMap(iregistry::getHolder).ifPresent(this::setVariant);
+@@ -462,7 +462,7 @@
+     }
+ 
+     private void tryToTame(EntityHuman entityhuman) {
+-        if (this.random.nextInt(3) == 0) {
++        if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) { // CraftBukkit
+             this.tame(entityhuman);
+             this.setOrderedToSit(true);
+             this.level().broadcastEntityEvent(this, (byte) 7);
+@@ -480,7 +480,7 @@
      private static class PathfinderGoalTemptChance extends PathfinderGoalTempt {
  
          @Nullable
@@ -17,8 +30,8 @@
 +        private EntityLiving selectedPlayer; // CraftBukkit
          private final EntityCat cat;
  
-         public PathfinderGoalTemptChance(EntityCat entitycat, double d0, RecipeItemStack recipeitemstack, boolean flag) {
-@@ -616,7 +616,15 @@
+         public PathfinderGoalTemptChance(EntityCat entitycat, double d0, Predicate<ItemStack> predicate, boolean flag) {
+@@ -621,7 +621,15 @@
              while (iterator.hasNext()) {
                  ItemStack itemstack = (ItemStack) iterator.next();
  
@@ -35,7 +48,7 @@
              }
  
          }
-@@ -648,10 +656,10 @@
+@@ -653,10 +661,10 @@
          private final EntityCat cat;
  
          public a(EntityCat entitycat, Class<T> oclass, float f, double d0, double d1) {

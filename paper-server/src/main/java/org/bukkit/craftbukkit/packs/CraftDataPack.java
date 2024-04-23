@@ -23,7 +23,7 @@ public class CraftDataPack implements DataPack {
 
     public CraftDataPack(ResourcePackLoader handler) {
         this.handle = handler;
-        try (IResourcePack iresourcepack = this.handle.resources.openPrimary(this.handle.getId())) {
+        try (IResourcePack iresourcepack = this.handle.resources.openPrimary(this.handle.location())) {
             this.resourcePackInfo = iresourcepack.getMetadataSection(ResourcePackInfo.TYPE);
         } catch (IOException e) { // This is already called in NMS then if in NMS not happen is secure this not throw here
             throw new RuntimeException(e);

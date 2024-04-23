@@ -25,12 +25,12 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.chunk.ChunkSection;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.DataPaletteBlock;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.NibbleArray;
 import net.minecraft.world.level.chunk.PalettedContainerRO;
 import net.minecraft.world.level.chunk.ProtoChunkExtension;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.storage.ChunkRegionLoader;
 import net.minecraft.world.level.chunk.storage.EntityStorage;
 import net.minecraft.world.level.entity.PersistentEntitySectionManager;
@@ -315,8 +315,8 @@ public class CraftChunk implements Chunk {
         for (int i = 0; i < cs.length; i++) {
             NBTTagCompound data = new NBTTagCompound();
 
-            data.put("block_states", ChunkRegionLoader.BLOCK_STATE_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, cs[i].getStates()).get().left().get());
-            sectionBlockIDs[i] = ChunkRegionLoader.BLOCK_STATE_CODEC.parse(DynamicOpsNBT.INSTANCE, data.getCompound("block_states")).get().left().get();
+            data.put("block_states", ChunkRegionLoader.BLOCK_STATE_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, cs[i].getStates()).getOrThrow());
+            sectionBlockIDs[i] = ChunkRegionLoader.BLOCK_STATE_CODEC.parse(DynamicOpsNBT.INSTANCE, data.getCompound("block_states")).getOrThrow(ChunkRegionLoader.a::new);
 
             LevelLightEngine lightengine = worldServer.getLightEngine();
             NibbleArray skyLightArray = lightengine.getLayerListener(EnumSkyBlock.SKY).getDataLayerData(SectionPosition.of(x, chunk.getSectionYFromSectionIndex(i), z)); // SPIGOT-7498: Convert section index
@@ -335,8 +335,8 @@ public class CraftChunk implements Chunk {
             }
 
             if (biome != null) {
-                data.put("biomes", biomeCodec.encodeStart(DynamicOpsNBT.INSTANCE, cs[i].getBiomes()).get().left().get());
-                biome[i] = biomeCodec.parse(DynamicOpsNBT.INSTANCE, data.getCompound("biomes")).get().left().get();
+                data.put("biomes", biomeCodec.encodeStart(DynamicOpsNBT.INSTANCE, cs[i].getBiomes()).getOrThrow());
+                biome[i] = biomeCodec.parse(DynamicOpsNBT.INSTANCE, data.getCompound("biomes")).getOrThrow(ChunkRegionLoader.a::new);
             }
         }
 
@@ -415,7 +415,7 @@ public class CraftChunk implements Chunk {
             empty[i] = true;
 
             if (biome != null) {
-                biome[i] = (DataPaletteBlock<Holder<BiomeBase>>) biomeCodec.parse(DynamicOpsNBT.INSTANCE, biomeCodec.encodeStart(DynamicOpsNBT.INSTANCE, actual.getSection(i).getBiomes()).get().left().get()).get().left().get();
+                biome[i] = (DataPaletteBlock<Holder<BiomeBase>>) biomeCodec.parse(DynamicOpsNBT.INSTANCE, biomeCodec.encodeStart(DynamicOpsNBT.INSTANCE, actual.getSection(i).getBiomes()).getOrThrow()).getOrThrow(ChunkRegionLoader.a::new);
             }
         }
 

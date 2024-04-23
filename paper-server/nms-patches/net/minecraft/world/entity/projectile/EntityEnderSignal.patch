@@ -11,16 +11,7 @@
  public class EntityEnderSignal extends Entity implements ItemSupplier {
  
      private static final DataWatcherObject<ItemStack> DATA_ITEM_STACK = DataWatcher.defineId(EntityEnderSignal.class, DataWatcherRegistry.ITEM_STACK);
-@@ -35,7 +39,7 @@
-     }
- 
-     public void setItem(ItemStack itemstack) {
--        if (!itemstack.is(Items.ENDER_EYE) || itemstack.hasTag()) {
-+        if (true || !itemstack.is(Items.ENDER_EYE) || itemstack.hasTag()) { // CraftBukkit - always allow item changing
-             this.getEntityData().set(EntityEnderSignal.DATA_ITEM_STACK, itemstack.copyWithCount(1));
-         }
- 
-@@ -150,7 +154,7 @@
+@@ -146,7 +150,7 @@
              ++this.life;
              if (this.life > 80 && !this.level().isClientSide) {
                  this.playSound(SoundEffects.ENDER_EYE_DEATH, 1.0F, 1.0F);
@@ -29,12 +20,17 @@
                  if (this.surviveAfterDeath) {
                      this.level().addFreshEntity(new EntityItem(this.level(), this.getX(), this.getY(), this.getZ(), this.getItem()));
                  } else {
-@@ -177,7 +181,7 @@
-     public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
-         ItemStack itemstack = ItemStack.of(nbttagcompound.getCompound("Item"));
- 
--        this.setItem(itemstack);
-+        if (!itemstack.isEmpty()) this.setItem(itemstack); // CraftBukkit - SPIGOT-6103 summon, see also SPIGOT-5474
-     }
- 
+@@ -167,7 +171,12 @@
      @Override
+     public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
+         if (nbttagcompound.contains("Item", 10)) {
+-            this.setItem((ItemStack) ItemStack.parse(this.registryAccess(), nbttagcompound.getCompound("Item")).orElse(this.getDefaultItem()));
++            // CraftBukkit start - SPIGOT-6103 summon, see also SPIGOT-5474
++            ItemStack itemstack = (ItemStack) ItemStack.parse(this.registryAccess(), nbttagcompound.getCompound("Item")).orElse(this.getDefaultItem());
++            if (!itemstack.isEmpty()) {
++                this.setItem(itemstack);
++            }
++            // CraftBukkit end
+         } else {
+             this.setItem(this.getDefaultItem());
+         }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.mojang.serialization.DataResult;
 import java.util.Optional;
 import java.util.stream.Stream;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.ParticleParam;
 import net.minecraft.core.particles.ParticleParamBlock;
@@ -27,6 +28,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.support.AbstractTestingBase;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -106,6 +108,11 @@ public class ParticleTest extends AbstractTestingBase {
             return;
         }
 
+        if (bukkit.getDataType().equals(Color.class)) {
+            testColor(bukkit, minecraft);
+            return;
+        }
+
         fail(String.format("""
                 No test found for particle %s.
                 Please add a test case for it here.
@@ -169,7 +176,7 @@ public class ParticleTest extends AbstractTestingBase {
                 Did something change in the implementation or minecraft?
                 Expected: %s.
                 Got: %s.
-                """, bukkit.getKey(), expectedFrom, param.getColor())); // Print expected and got since we use assert true
+                """, bukkit.getKey(), expectedFrom, param.getFromColor())); // Print expected and got since we use assert true
 
         Vector3f expectedTo = new Vector3f(0.4196f, 0.6235294f, 0.7098f);
         assertTrue(expectedTo.equals(param.getToColor(), 0.001f), String.format("""
@@ -177,7 +184,7 @@ public class ParticleTest extends AbstractTestingBase {
                 Did something change in the implementation or minecraft?
                 Expected: %s.
                 Got: %s.
-                """, bukkit.getKey(), expectedTo, param.getColor())); // Print expected and got since we use assert true
+                """, bukkit.getKey(), expectedTo, param.getToColor())); // Print expected and got since we use assert true
     }
 
     private <T extends ParticleParam> void testVibration(Particle bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
@@ -222,6 +229,20 @@ public class ParticleTest extends AbstractTestingBase {
                 """, bukkit.getKey()));
     }
 
+    private <T extends ParticleParam> void testColor(Particle bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+        Color color = Color.fromARGB(107, 236, 28, 36);
+        ColorParticleOption param = createAndTest(bukkit, minecraft, color, ColorParticleOption.class);
+
+        Vector4f actual = new Vector4f(param.getAlpha(), param.getRed(), param.getGreen(), param.getBlue());
+        Vector4f expected = new Vector4f(0.4196f, 0.92549f, 0.1098f, 0.14117647f);
+        assertTrue(expected.equals(actual, 0.001f), String.format("""
+                Dust transition to color for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), expected, actual)); // Print expected and got since we use assert true
+    }
+
     private <D extends ParticleParam, T extends ParticleParam> D createAndTest(Particle bukkit, net.minecraft.core.particles.Particle<T> minecraft, Object data, Class<D> paramClass) {
         @SuppressWarnings("unchecked")
         T particleParam = (T) assertDoesNotThrow(() -> CraftParticle.createParticleParam(bukkit, data), String.format("""
@@ -231,14 +252,14 @@ public class ParticleTest extends AbstractTestingBase {
                 Check in CraftParticle if the conversion is still correct.
                 """, bukkit.getKey()));
 
-        DataResult<NBTBase> encoded = assertDoesNotThrow(() -> minecraft.codec().encodeStart(DynamicOpsNBT.INSTANCE, particleParam),
+        DataResult<NBTBase> encoded = assertDoesNotThrow(() -> minecraft.codec().codec().encodeStart(DynamicOpsNBT.INSTANCE, particleParam),
                 String.format("""
                         Could not encoded particle param for particle %s.
                         This can indicated, that the wrong particle param is created in CraftParticle.
                         Particle param is of type %s.
                         """, bukkit.getKey(), particleParam.getClass()));
 
-        Optional<DataResult.PartialResult<NBTBase>> encodeError = encoded.error();
+        Optional<DataResult.Error<NBTBase>> encodeError = encoded.error();
         assertTrue(encodeError.isEmpty(), () -> String.format("""
                 Could not encoded particle param for particle %s.
                 This is possible because the wrong particle param is created in CraftParticle.
@@ -253,9 +274,9 @@ public class ParticleTest extends AbstractTestingBase {
                 Particle param is of type %s.
                 """, bukkit.getKey(), particleParam.getClass()));
 
-        DataResult<T> decoded = minecraft.codec().parse(DynamicOpsNBT.INSTANCE, encodeResult.get());
+        DataResult<T> decoded = minecraft.codec().codec().parse(DynamicOpsNBT.INSTANCE, encodeResult.get());
 
-        Optional<DataResult.PartialResult<T>> decodeError = decoded.error();
+        Optional<DataResult.Error<T>> decodeError = decoded.error();
         assertTrue(decodeError.isEmpty(), () -> String.format("""
                 Could not decoded particle param for particle %s.
                 This is possible because the wrong particle param is created in CraftParticle.

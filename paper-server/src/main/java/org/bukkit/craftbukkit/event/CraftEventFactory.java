@@ -103,7 +103,6 @@ import org.bukkit.craftbukkit.entity.CraftSpellcaster;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
-import org.bukkit.craftbukkit.inventory.CraftMetaBook;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftVector;
@@ -1422,7 +1421,7 @@ public class CraftEventFactory {
                 if (editBookEvent.isSigning()) {
                     itemInHand.setItem(Items.WRITTEN_BOOK);
                 }
-                CraftMetaBook meta = (CraftMetaBook) editBookEvent.getNewBookMeta();
+                BookMeta meta = editBookEvent.getNewBookMeta();
                 CraftItemStack.setItemMeta(itemInHand, meta);
             } else {
                 player.getBukkitEntity().updateInventory(); // SPIGOT-7484

@@ -1,28 +1,62 @@
 --- a/net/minecraft/server/network/LoginListener.java
 +++ b/net/minecraft/server/network/LoginListener.java
-@@ -40,6 +40,13 @@
+@@ -42,8 +42,33 @@
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
  
+-public class LoginListener implements PacketLoginInListener, TickablePacketListener {
 +// CraftBukkit start
++import net.minecraft.network.EnumProtocol;
++import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.PlayerConnectionUtils;
 +import net.minecraft.server.level.EntityPlayer;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.util.Waitable;
 +import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 +import org.bukkit.event.player.PlayerPreLoginEvent;
-+// CraftBukkit end
 +
- public class LoginListener implements PacketLoginInListener, TickablePacketListener {
++public class LoginListener implements PacketLoginInListener, TickablePacketListener, CraftPlayer.TransferCookieConnection {
++
++    @Override
++    public boolean isTransferred() {
++        return this.transferred;
++    }
++
++    @Override
++    public EnumProtocol protocol() {
++        return EnumProtocol.LOGIN;
++    }
  
++    @Override
++    public void send(Packet<?> packet) {
++        this.connection.send(packet);
++    }
++    // CraftBukkit end
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
-@@ -56,6 +63,7 @@
-     @Nullable
+     static final Logger LOGGER = LogUtils.getLogger();
+     private static final int MAX_TICKS_BEFORE_LOGIN = 600;
+@@ -58,6 +83,7 @@
      private GameProfile authenticatedProfile;
      private final String serverId;
+     private final boolean transferred;
 +    private EntityPlayer player; // CraftBukkit
  
-     public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
+     public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager, boolean flag) {
          this.state = LoginListener.EnumProtocolState.HELLO;
-@@ -81,6 +89,13 @@
+@@ -74,6 +100,12 @@
+             this.verifyLoginAndFinishConnectionSetup((GameProfile) Objects.requireNonNull(this.authenticatedProfile));
+         }
+ 
++        // CraftBukkit start
++        if (this.state == LoginListener.EnumProtocolState.WAITING_FOR_COOKIES && !this.player.getBukkitEntity().isAwaitingCookies()) {
++            this.postCookies(this.authenticatedProfile);
++        }
++        // CraftBukkit end
++
+         if (this.state == LoginListener.EnumProtocolState.WAITING_FOR_DUPE_DISCONNECT && !this.isPlayerAlreadyInWorld((GameProfile) Objects.requireNonNull(this.authenticatedProfile))) {
+             this.finishLoginAndWaitForClient(this.authenticatedProfile);
+         }
+@@ -84,6 +116,13 @@
  
      }
  
@@ -36,9 +70,9 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -126,7 +141,27 @@
+@@ -129,7 +168,27 @@
                  this.state = LoginListener.EnumProtocolState.KEY;
-                 this.connection.send(new PacketLoginOutEncryptionBegin("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge));
+                 this.connection.send(new PacketLoginOutEncryptionBegin("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge, true));
              } else {
 -                this.startClientVerification(UUIDUtil.createOfflineProfile(this.requestedUsername));
 +                // CraftBukkit start
@@ -65,7 +99,7 @@
              }
  
          }
-@@ -139,10 +174,12 @@
+@@ -142,10 +201,24 @@
  
      private void verifyLoginAndFinishConnectionSetup(GameProfile gameprofile) {
          PlayerList playerlist = this.server.getPlayerList();
@@ -75,13 +109,25 @@
  
 -        if (ichatbasecomponent != null) {
 -            this.disconnect(ichatbasecomponent);
++        if (this.player != null) {
++            if (this.player.getBukkitEntity().isAwaitingCookies()) {
++                this.state = LoginListener.EnumProtocolState.WAITING_FOR_COOKIES;
++            } else {
++                this.postCookies(gameprofile);
++            }
++        }
++    }
++
++    private void postCookies(GameProfile gameprofile) {
++        PlayerList playerlist = this.server.getPlayerList();
++
 +        if (this.player == null) {
 +            // this.disconnect(ichatbasecomponent);
 +            // CraftBukkit end
          } else {
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
                  this.connection.send(new PacketLoginOutSetCompression(this.server.getCompressionThreshold()), PacketSendListener.thenRun(() -> {
-@@ -150,7 +187,7 @@
+@@ -153,7 +226,7 @@
                  }));
              }
  
@@ -90,7 +136,7 @@
  
              if (flag) {
                  this.state = LoginListener.EnumProtocolState.WAITING_FOR_DUPE_DISCONNECT;
-@@ -200,6 +237,12 @@
+@@ -203,6 +276,12 @@
                      if (profileresult != null) {
                          GameProfile gameprofile = profileresult.profile();
  
@@ -103,7 +149,7 @@
                          LoginListener.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
                          LoginListener.this.startClientVerification(gameprofile);
                      } else if (LoginListener.this.server.isSingleplayer()) {
-@@ -217,6 +260,11 @@
+@@ -220,6 +299,11 @@
                          LoginListener.this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.authservers_down"));
                          LoginListener.LOGGER.error("Couldn't verify username because servers are unavailable");
                      }
@@ -115,7 +161,7 @@
                  }
  
              }
-@@ -233,6 +281,43 @@
+@@ -236,6 +320,43 @@
          thread.start();
      }
  
@@ -126,7 +172,7 @@
 +        java.util.UUID uniqueId = gameprofile.getId();
 +        final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
 +
-+        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
++        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, this.transferred);
 +        server.getPluginManager().callEvent(asyncEvent);
 +
 +        if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
@@ -158,13 +204,33 @@
 +
      @Override
      public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket serverboundcustomqueryanswerpacket) {
-         this.disconnect(LoginListener.DISCONNECT_UNEXPECTED_QUERY);
-@@ -242,7 +327,7 @@
-     public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket serverboundloginacknowledgedpacket) {
+         this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
+@@ -246,7 +367,7 @@
          Validate.validState(this.state == LoginListener.EnumProtocolState.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet", new Object[0]);
-         CommonListenerCookie commonlistenercookie = CommonListenerCookie.createInitial((GameProfile) Objects.requireNonNull(this.authenticatedProfile));
+         this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
+         CommonListenerCookie commonlistenercookie = CommonListenerCookie.createInitial((GameProfile) Objects.requireNonNull(this.authenticatedProfile), this.transferred);
 -        ServerConfigurationPacketListenerImpl serverconfigurationpacketlistenerimpl = new ServerConfigurationPacketListenerImpl(this.server, this.connection, commonlistenercookie);
 +        ServerConfigurationPacketListenerImpl serverconfigurationpacketlistenerimpl = new ServerConfigurationPacketListenerImpl(this.server, this.connection, commonlistenercookie, this.player); // CraftBukkit
  
-         this.connection.setListener(serverconfigurationpacketlistenerimpl);
+         this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverconfigurationpacketlistenerimpl);
          serverconfigurationpacketlistenerimpl.startConfiguration();
+@@ -262,12 +383,18 @@
+ 
+     @Override
+     public void handleCookieResponse(ServerboundCookieResponsePacket serverboundcookieresponsepacket) {
++        // CraftBukkit start
++        PlayerConnectionUtils.ensureRunningOnSameThread(serverboundcookieresponsepacket, this, this.server);
++        if (this.player != null && this.player.getBukkitEntity().handleCookieResponse(serverboundcookieresponsepacket)) {
++            return;
++        }
++        // CraftBukkit end
+         this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
+     }
+ 
+     private static enum EnumProtocolState {
+ 
+-        HELLO, KEY, AUTHENTICATING, NEGOTIATING, VERIFYING, WAITING_FOR_DUPE_DISCONNECT, PROTOCOL_SWITCHING, ACCEPTED;
++        HELLO, KEY, AUTHENTICATING, NEGOTIATING, VERIFYING, WAITING_FOR_COOKIES, WAITING_FOR_DUPE_DISCONNECT, PROTOCOL_SWITCHING, ACCEPTED; // CraftBukkit
+ 
+         private EnumProtocolState() {}
+     }
