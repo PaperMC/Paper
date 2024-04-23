@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -36,4 +37,15 @@ public interface EntitySnapshot {
      */
     @NotNull
     EntityType getEntityType();
+
+    /**
+     * Get this EntitySnapshot as an NBT string.
+     * <p>
+     * This string should not be relied upon as a serializable value.
+     *
+     * @return the NBT string
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    String getAsString();
 }
