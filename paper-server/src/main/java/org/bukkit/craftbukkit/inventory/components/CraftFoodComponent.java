@@ -30,7 +30,7 @@ public final class CraftFoodComponent implements FoodComponent {
 
     public CraftFoodComponent(Map<String, Object> map) {
         Integer nutrition = SerializableMeta.getObject(Integer.class, map, "nutrition", false);
-        Float saturationModifier = SerializableMeta.getObject(Float.class, map, "saturation-modifier", false);
+        Float saturationModifier = SerializableMeta.getObject(Float.class, map, "saturation", false);
         Boolean canAlwaysEat = SerializableMeta.getBoolean(map, "can-always-eat");
 
         Float eatSeconds = SerializableMeta.getObject(Float.class, map, "eat-seconds", true);
@@ -54,7 +54,7 @@ public final class CraftFoodComponent implements FoodComponent {
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("nutrition", getNutrition());
-        result.put("saturation-modifier", getSaturationModifier());
+        result.put("saturation", getSaturation());
         result.put("can-always-eat", canAlwaysEat());
         result.put("eat-seconds", getEatSeconds());
         result.put("effects", getEffects());
@@ -77,13 +77,13 @@ public final class CraftFoodComponent implements FoodComponent {
     }
 
     @Override
-    public float getSaturationModifier() {
+    public float getSaturation() {
         return handle.saturation();
     }
 
     @Override
-    public void setSaturationModifier(float saturationModifier) {
-        handle = new FoodInfo(handle.nutrition(), saturationModifier, handle.canAlwaysEat(), handle.eatSeconds(), handle.effects());
+    public void setSaturation(float saturation) {
+        handle = new FoodInfo(handle.nutrition(), saturation, handle.canAlwaysEat(), handle.eatSeconds(), handle.effects());
     }
 
     @Override
