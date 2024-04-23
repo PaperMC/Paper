@@ -5,12 +5,15 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
 
 /**
  * @deprecated do not use for any reason
@@ -102,5 +105,15 @@ public final class CraftEvil {
 
     public static int getId(Material material) {
         return CraftLegacy.toLegacy(material).getId();
+    }
+
+    public static Class<?> getDataType(Particle particle) {
+        Class<?> clazz = particle.getDataType();
+
+        if (clazz == BlockData.class) {
+            return MaterialData.class;
+        }
+
+        return clazz;
     }
 }

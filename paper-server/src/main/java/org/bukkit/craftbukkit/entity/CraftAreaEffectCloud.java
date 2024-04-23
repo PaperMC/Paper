@@ -122,7 +122,6 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public <T> void setParticle(Particle particle, T data) {
-        particle = CraftParticle.convertLegacy(particle);
         data = CraftParticle.convertLegacy(data);
         if (data != null) {
             Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());

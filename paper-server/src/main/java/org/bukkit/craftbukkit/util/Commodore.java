@@ -261,11 +261,6 @@ public class Commodore {
                                 case "SPELL_MOB_AMBIENT":
                                     super.visitFieldInsn(opcode, owner, "SPELL_MOB", desc);
                                     return;
-                                case "BLOCK_CRACK":
-                                case "BLOCK_DUST":
-                                case "FALLING_DUST":
-                                    super.visitFieldInsn(opcode, owner, "LEGACY_" + name, desc);
-                                    return;
                             }
                         }
 
@@ -304,6 +299,12 @@ public class Commodore {
                             }
 
                             visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
+                            return;
+                        }
+
+                        // Change Particle#getDataType() from BlockData to MaterialData for legacy plugins and particle
+                        if (owner.equals("org/bukkit/Particle") && name.equals("getDataType") && desc.equals("()Ljava/lang/Class;")) {
+                            visitor.visit(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftEvil", name, "(Lorg/bukkit/Particle;)Ljava/lang/Class;", false, samMethodType, instantiatedMethodType);
                             return;
                         }
 

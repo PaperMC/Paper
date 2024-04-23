@@ -78,15 +78,6 @@ public abstract class CraftParticle<D> implements Keyed {
         return object;
     }
 
-    public static Particle convertLegacy(Particle particle) {
-        return switch (particle) {
-            case LEGACY_BLOCK_DUST -> Particle.BLOCK_DUST;
-            case LEGACY_FALLING_DUST -> Particle.FALLING_DUST;
-            case LEGACY_BLOCK_CRACK -> Particle.BLOCK_CRACK;
-            default -> particle;
-        };
-    }
-
     private final NamespacedKey key;
     private final net.minecraft.core.particles.Particle<?> particle;
     private final Class<D> clazz;
