@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -19,18 +20,28 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.legacy.FieldRename;
+import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
+import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
+import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
 import org.bukkit.plugin.AuthorNagException;
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.RecordComponentVisitor;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.TypePath;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.SimpleRemapper;
 
 public class Commodore {
+    private static final String BUKKIT_GENERATED_METHOD_PREFIX = "BUKKIT_CUSTOM_METHOD_";
 
     private static final Set<String> EVIL = new HashSet<>(Arrays.asList(
             "org/bukkit/World (III)I getBlockTypeIdAt",
@@ -50,6 +61,8 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityMountEvent", "org/bukkit/event/entity/EntityMountEvent",
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
     );
+
+    private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = RerouteBuilder.buildFromClass(FieldRename.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -95,7 +108,7 @@ public class Commodore {
                             byte[] b = ByteStreams.toByteArray(is);
 
                             if (entry.getName().endsWith(".class")) {
-                                b = convert(b, false);
+                                b = convert(b, "dummy", ApiVersion.NONE);
                                 entry = new JarEntry(entry.getName());
                             }
 
@@ -113,81 +126,74 @@ public class Commodore {
         }
     }
 
-    public static byte[] convert(byte[] b, final boolean modern) {
+    public static byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion) {
+        final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
         ClassReader cr = new ClassReader(b);
         ClassWriter cw = new ClassWriter(cr, 0);
 
         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
+            final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
+            String className;
+            boolean isInterface;
+
+            @Override
+            public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                className = name;
+                isInterface = (access & Opcodes.ACC_INTERFACE) != 0;
+                super.visit(version, access, name, signature, superName, interfaces);
+            }
+
+            @Override
+            public void visitEnd() {
+                for (RerouteMethodData rerouteMethodData : rerouteMethodData) {
+                    MethodVisitor methodVisitor = super.visitMethod(Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PUBLIC, buildMethodName(rerouteMethodData), buildMethodDesc(rerouteMethodData), null, null);
+                    methodVisitor.visitCode();
+                    int index = 0;
+                    int extraSize = 0;
+                    for (RerouteArgument argument : rerouteMethodData.arguments()) {
+                        if (argument.injectPluginName()) {
+                            methodVisitor.visitLdcInsn(pluginName);
+                        } else if (argument.injectPluginVersion()) {
+                            methodVisitor.visitLdcInsn(pluginVersion.getVersionString());
+                            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(ApiVersion.class), "getOrCreateVersion", "(Ljava/lang/String;)L" + Type.getInternalName(ApiVersion.class) + ";", false);
+                        } else {
+                            methodVisitor.visitIntInsn(argument.instruction(), index);
+                            index++;
+
+                            // Long and double need two space
+                            // https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-4.html#jvms-4.7.3
+                            // https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-2.html#jvms-2.6.1
+                            // https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-2.html#jvms-2.6.2
+                            extraSize += argument.type().getSize() - 1;
+                        }
+                    }
+
+                    methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, rerouteMethodData.targetOwner(), rerouteMethodData.targetName(), rerouteMethodData.targetType().getDescriptor(), false);
+                    methodVisitor.visitInsn(rerouteMethodData.rerouteReturn().instruction());
+                    methodVisitor.visitMaxs(rerouteMethodData.arguments().size() + extraSize, index + extraSize);
+                    methodVisitor.visitEnd();
+                }
+
+                super.visitEnd();
+            }
+
+            @Override
+            public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
+                return createAnnotationVisitor(pluginVersion, api, super.visitAnnotation(descriptor, visible));
+            }
+
+            @Override
+            public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+                return createAnnotationVisitor(pluginVersion, api, super.visitTypeAnnotation(typeRef, typePath, descriptor, visible));
+            }
+
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                 return new MethodVisitor(api, super.visitMethod(access, name, desc, signature, exceptions)) {
 
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-                        if (owner.equals("org/bukkit/block/Biome")) {
-                            switch (name) {
-                                case "NETHER":
-                                    super.visitFieldInsn(opcode, owner, "NETHER_WASTES", desc);
-                                    return;
-                                case "TALL_BIRCH_FOREST":
-                                    super.visitFieldInsn(opcode, owner, "OLD_GROWTH_BIRCH_FOREST", desc);
-                                    return;
-                                case "GIANT_TREE_TAIGA":
-                                    super.visitFieldInsn(opcode, owner, "OLD_GROWTH_PINE_TAIGA", desc);
-                                    return;
-                                case "GIANT_SPRUCE_TAIGA":
-                                    super.visitFieldInsn(opcode, owner, "OLD_GROWTH_SPRUCE_TAIGA", desc);
-                                    return;
-                                case "SNOWY_TUNDRA":
-                                    super.visitFieldInsn(opcode, owner, "SNOWY_PLAINS", desc);
-                                    return;
-                                case "JUNGLE_EDGE":
-                                    super.visitFieldInsn(opcode, owner, "SPARSE_JUNGLE", desc);
-                                    return;
-                                case "STONE_SHORE":
-                                    super.visitFieldInsn(opcode, owner, "STONY_SHORE", desc);
-                                    return;
-                                case "MOUNTAINS":
-                                    super.visitFieldInsn(opcode, owner, "WINDSWEPT_HILLS", desc);
-                                    return;
-                                case "WOODED_MOUNTAINS":
-                                    super.visitFieldInsn(opcode, owner, "WINDSWEPT_FOREST", desc);
-                                    return;
-                                case "GRAVELLY_MOUNTAINS":
-                                    super.visitFieldInsn(opcode, owner, "WINDSWEPT_GRAVELLY_HILLS", desc);
-                                    return;
-                                case "SHATTERED_SAVANNA":
-                                    super.visitFieldInsn(opcode, owner, "WINDSWEPT_SAVANNA", desc);
-                                    return;
-                                case "WOODED_BADLANDS_PLATEAU":
-                                    super.visitFieldInsn(opcode, owner, "WOODED_BADLANDS", desc);
-                                    return;
-                            }
-                        }
-
-                        if (owner.equals("org/bukkit/entity/EntityType")) {
-                            switch (name) {
-                                case "PIG_ZOMBIE":
-                                    super.visitFieldInsn(opcode, owner, "ZOMBIFIED_PIGLIN", desc);
-                                    return;
-                            }
-                        }
-
-                        if (owner.equals("org/bukkit/attribute/Attribute")) {
-                            switch (name) {
-                                case "HORSE_JUMP_STRENGTH":
-                                    super.visitFieldInsn(opcode, owner, "GENERIC_JUMP_STRENGTH", desc);
-                                    return;
-                            }
-                        }
-
-                        if (owner.equals("org/bukkit/loot/LootTables")) {
-                            switch (name) {
-                                case "ZOMBIE_PIGMAN":
-                                    super.visitFieldInsn(opcode, owner, "ZOMBIFIED_PIGLIN", desc);
-                                    return;
-                            }
-                        }
+                        name = FieldRename.rename(pluginVersion, owner, name);
 
                         if (modern) {
                             if (owner.equals("org/bukkit/Material")) {
@@ -268,6 +274,10 @@ public class Commodore {
                     }
 
                     private void handleMethod(MethodPrinter visitor, int opcode, String owner, String name, String desc, boolean itf, Type samMethodType, Type instantiatedMethodType) {
+                        if (checkReroute(visitor, FIELD_RENAME_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+
                         // SPIGOT-4496
                         if (owner.equals("org/bukkit/map/MapView") && name.equals("getId") && desc.equals("()S")) {
                             // Should be same size on stack so just call other method
@@ -373,6 +383,13 @@ public class Commodore {
                         visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
                     }
 
+                    private boolean checkReroute(MethodPrinter visitor, Map<String, RerouteMethodData> rerouteMethodDataMap, int opcode, String owner, String name, String desc, Type samMethodType, Type instantiatedMethodType) {
+                        return rerouteMethods(rerouteMethodDataMap, opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.H_INVOKESTATIC, owner, name, desc, data -> {
+                            visitor.visit(Opcodes.INVOKESTATIC, className, buildMethodName(data), buildMethodDesc(data), isInterface, samMethodType, instantiatedMethodType);
+                            rerouteMethodData.add(data);
+                        });
+                    }
+
                     @Override
                     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
                         handleMethod((newOpcode, newOwner, newName, newDescription, newItf, newSam, newInstantiated) -> {
@@ -419,11 +436,160 @@ public class Commodore {
                         // But as with the todo above, I encourage everyone who is reading this to to give it a shot
                         super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
                     }
+
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitAnnotation(descriptor, visible));
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitAnnotationDefault() {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitAnnotationDefault());
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitInsnAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitInsnAnnotation(typeRef, typePath, descriptor, visible));
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, descriptor, visible));
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitParameterAnnotation(int parameter, String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitParameterAnnotation(parameter, descriptor, visible));
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitTryCatchAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitTryCatchAnnotation(typeRef, typePath, descriptor, visible));
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitTypeAnnotation(typeRef, typePath, descriptor, visible));
+                    }
+                };
+            }
+
+            @Override
+            public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
+                return new FieldVisitor(api, super.visitField(access, name, descriptor, signature, value)) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitAnnotation(descriptor, visible));
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitTypeAnnotation(typeRef, typePath, descriptor, visible));
+                    }
+                };
+            }
+
+            @Override
+            public RecordComponentVisitor visitRecordComponent(String name, String descriptor, String signature) {
+                return new RecordComponentVisitor(api, super.visitRecordComponent(name, descriptor, signature)) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitAnnotation(descriptor, visible));
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+                        return createAnnotationVisitor(pluginVersion, api, super.visitTypeAnnotation(typeRef, typePath, descriptor, visible));
+                    }
                 };
             }
         }, new SimpleRemapper(RENAMES)), 0);
 
         return cw.toByteArray();
+    }
+
+    private static AnnotationVisitor createAnnotationVisitor(ApiVersion apiVersion, int api, AnnotationVisitor delegate) {
+        return new AnnotationVisitor(api, delegate) {
+            @Override
+            public void visitEnum(String name, String descriptor, String value) {
+                super.visitEnum(name, descriptor, FieldRename.rename(apiVersion, Type.getType(descriptor).getInternalName(), value));
+            }
+
+            @Override
+            public AnnotationVisitor visitArray(String name) {
+                return createAnnotationVisitor(apiVersion, api, super.visitArray(name));
+            }
+
+            @Override
+            public AnnotationVisitor visitAnnotation(String name, String descriptor) {
+                return createAnnotationVisitor(apiVersion, api, super.visitAnnotation(name, descriptor));
+            }
+        };
+    }
+
+    /*
+    This method looks (and probably is) overengineered, but it gives the most flexible when it comes to remapping normal methods to static one.
+    The problem with normal owner and desc replacement is that child classes have them as an owner, instead there parents for there parents methods
+
+    For example, if we have following two interfaces org.bukkit.BlockData and org.bukkit.Orientable extents BlockData
+    and BlockData has the method org.bukkit.Material getType which we want to reroute to the static method
+    org.bukkit.Material org.bukkit.craftbukkit.legacy.EnumEvil#getType(org.bukkit.BlockData)
+
+    If we now call BlockData#getType we get as the owner org/bukkit/BlockData and as desc ()Lorg/bukkit/Material;
+    Which we can nicely reroute by checking if the owner is BlockData and the name getType
+    The problem, starts if we use Orientable#getType no we get as owner org/bukkit/Orientable and as desc ()Lorg/bukkit/Material;
+    Now we can now longer safely say to which getType method we need to reroute (assume there are multiple getType methods from different classes,
+    which are not related to BlockData), simple using the owner class will not work, since would reroute to
+    EnumEvil#getType(org.bukkit.Orientable) which is not EnumEvil#getType(org.bukkit.BlockData) and will throw a method not found error
+    at runtime.
+
+    Meaning we would need to add checks for each subclass, which would be pur insanity.
+
+    To solve this, we go through each super class and interfaces (and their super class and interfaces etc.) and try to get an owner
+    which matches with one of our replacement methods. Based on how inheritance works in java, this method should be safe to use.
+
+    As a site note: This method could also be used for the other method reroute, e.g. legacy method rerouting, where only the replacement
+    method needs to be written, and this method figures out the rest, which could reduce the size and complexity of the Commodore class.
+    The question then becomes one about performance (since this is not the most performance way) and convenience.
+    But since it is only applied for each class and method call once when they get first loaded, it should not be that bad.
+    (Although some load time testing could be done)
+     */
+    public static boolean rerouteMethods(Map<String, RerouteMethodData> rerouteMethodDataMap, boolean staticCall, String owner, String name, String desc, Consumer<RerouteMethodData> consumer) {
+        Type ownerType = Type.getObjectType(owner);
+        Class<?> ownerClass;
+        try {
+            ownerClass = Class.forName(ownerType.getClassName());
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+
+        ClassTraverser it = new ClassTraverser(ownerClass);
+        while (it.hasNext()) {
+            Class<?> clazz = it.next();
+
+            String methodKey = Type.getInternalName(clazz) + " " + desc + " " + name;
+
+            RerouteMethodData data = rerouteMethodDataMap.get(methodKey);
+            if (data == null) {
+                if (staticCall) {
+                    return false;
+                }
+                continue;
+            }
+
+            consumer.accept(data);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static String buildMethodName(RerouteMethodData rerouteMethodData) {
+        return BUKKIT_GENERATED_METHOD_PREFIX + rerouteMethodData.targetOwner().replace('/', '_') + "_" + rerouteMethodData.targetName();
+    }
+
+    private static String buildMethodDesc(RerouteMethodData rerouteMethodData) {
+        return Type.getMethodDescriptor(rerouteMethodData.sourceDesc().getReturnType(), rerouteMethodData.arguments().stream().filter(a -> !a.injectPluginName()).filter(a -> !a.injectPluginVersion()).map(RerouteArgument::type).toArray(Type[]::new));
     }
 
     @FunctionalInterface

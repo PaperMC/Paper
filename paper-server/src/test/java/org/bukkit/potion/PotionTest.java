@@ -9,6 +9,7 @@ import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.item.alchemy.PotionRegistry;
+import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ public class PotionTest extends AbstractTestingBase {
             assertNotNull(bukkit, "No Bukkit type for " + key);
             assertFalse(bukkit.getName().contains("UNKNOWN"), "No name for " + key);
 
-            PotionEffectType byName = PotionEffectType.getByName(bukkit.getName());
+            PotionEffectType byName = FieldRename.getByName_PotionEffectType(bukkit.getName());
             assertEquals(bukkit, byName, "Same type not returned by name " + key);
         }
     }

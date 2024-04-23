@@ -29,7 +29,7 @@ public class ItemStackEnchantStorageTest extends ItemStackTest {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
-                            meta.addStoredEnchant(Enchantment.DURABILITY, 1, true);
+                            meta.addStoredEnchant(Enchantment.UNBREAKING, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
@@ -67,7 +67,7 @@ public class ItemStackEnchantStorageTest extends ItemStackTest {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
-                            meta.addStoredEnchant(Enchantment.DAMAGE_UNDEAD, 1, true);
+                            meta.addStoredEnchant(Enchantment.SMITE, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
@@ -76,7 +76,7 @@ public class ItemStackEnchantStorageTest extends ItemStackTest {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
-                            meta.addStoredEnchant(Enchantment.DAMAGE_UNDEAD, 1, true);
+                            meta.addStoredEnchant(Enchantment.SMITE, 1, true);
                             meta.addStoredEnchant(Enchantment.FIRE_ASPECT, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
@@ -89,7 +89,7 @@ public class ItemStackEnchantStorageTest extends ItemStackTest {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
-                            meta.addStoredEnchant(Enchantment.PROTECTION_FIRE, 1, true);
+                            meta.addStoredEnchant(Enchantment.FIRE_PROTECTION, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
@@ -98,7 +98,7 @@ public class ItemStackEnchantStorageTest extends ItemStackTest {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
-                            meta.addEnchant(Enchantment.PROTECTION_FIRE, 2, true);
+                            meta.addEnchant(Enchantment.FIRE_PROTECTION, 2, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }

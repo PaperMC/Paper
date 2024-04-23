@@ -195,6 +195,7 @@ import org.bukkit.craftbukkit.tag.CraftBlockTag;
 import org.bukkit.craftbukkit.tag.CraftEntityTag;
 import org.bukkit.craftbukkit.tag.CraftFluidTag;
 import org.bukkit.craftbukkit.tag.CraftItemTag;
+import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftIconCache;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -288,7 +289,7 @@ public final class CraftServer implements Server {
     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
     private File container;
     private WarningState warningState = WarningState.DEFAULT;
-    public String minimumAPI;
+    public ApiVersion minimumAPI;
     public CraftScoreboardManager scoreboardManager;
     public CraftDataPackManager dataPackManager;
     private CraftServerTickManager serverTickManager;
@@ -371,7 +372,7 @@ public final class CraftServer implements Server {
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
         TicketType.PLUGIN.timeout = configuration.getInt("chunk-gc.period-in-ticks");
-        minimumAPI = configuration.getString("settings.minimum-api");
+        minimumAPI = ApiVersion.getOrCreateVersion(configuration.getString("settings.minimum-api"));
         loadIcon();
 
         // Set map color cache
@@ -888,7 +889,7 @@ public final class CraftServer implements Server {
         overrideSpawnLimits();
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
         TicketType.PLUGIN.timeout = configuration.getInt("chunk-gc.period-in-ticks");
-        minimumAPI = configuration.getString("settings.minimum-api");
+        minimumAPI = ApiVersion.getOrCreateVersion(configuration.getString("settings.minimum-api"));
         printSaveWarning = false;
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
         loadIcon();

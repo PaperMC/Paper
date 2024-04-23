@@ -1362,10 +1362,10 @@ public class CraftEventFactory {
         org.bukkit.entity.Entity bukkitIgniter = igniter.getBukkitEntity();
         IgniteCause cause;
         switch (bukkitIgniter.getType()) {
-            case ENDER_CRYSTAL:
+            case END_CRYSTAL:
                 cause = IgniteCause.ENDER_CRYSTAL;
                 break;
-            case LIGHTNING:
+            case LIGHTNING_BOLT:
                 cause = IgniteCause.LIGHTNING;
                 break;
             case SMALL_FIREBALL:

@@ -35,14 +35,14 @@ public class CompositeSerialization extends AbstractTestingBase {
         stacks.add(new ItemStack(Material.OAK_LEAVES, 32, (short) 2));
 
         ItemStack item7 = new ItemStack(Material.IRON_SHOVEL);
-        item7.addUnsafeEnchantment(Enchantment.PROTECTION_FIRE, 1);
+        item7.addUnsafeEnchantment(Enchantment.FIRE_PROTECTION, 1);
         stacks.add(item7);
 
         ItemStack item8 = new ItemStack(Material.IRON_PICKAXE);
-        item8.addUnsafeEnchantment(Enchantment.PROTECTION_FALL, 2);
-        item8.addUnsafeEnchantment(Enchantment.PROTECTION_EXPLOSIONS, 1);
-        item8.addUnsafeEnchantment(Enchantment.PROTECTION_PROJECTILE, 5);
-        item8.addUnsafeEnchantment(Enchantment.OXYGEN, 4);
+        item8.addUnsafeEnchantment(Enchantment.FEATHER_FALLING, 2);
+        item8.addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, 1);
+        item8.addUnsafeEnchantment(Enchantment.PROJECTILE_PROTECTION, 5);
+        item8.addUnsafeEnchantment(Enchantment.RESPIRATION, 4);
         stacks.add(item8);
 
         ItemStack item9 = new ItemStack(Material.APPLE);

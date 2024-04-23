@@ -13,9 +13,7 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
@@ -290,30 +288,27 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return file.delete();
     }
 
-    private static final List<String> SUPPORTED_API = Arrays.asList("1.13", "1.14", "1.15", "1.16", "1.17", "1.18", "1.19", "1.20");
-
     @Override
     public void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException {
-        String minimumVersion = MinecraftServer.getServer().server.minimumAPI;
-        int minimumIndex = SUPPORTED_API.indexOf(minimumVersion);
+        ApiVersion toCheck = ApiVersion.getOrCreateVersion(pdf.getAPIVersion());
+        ApiVersion minimumVersion = MinecraftServer.getServer().server.minimumAPI;
 
-        if (pdf.getAPIVersion() != null) {
-            int pluginIndex = SUPPORTED_API.indexOf(pdf.getAPIVersion());
+        if (toCheck.isNewerThan(ApiVersion.CURRENT)) {
+            // Newer than supported
+            throw new InvalidPluginException("Unsupported API version " + pdf.getAPIVersion());
+        }
 
-            if (pluginIndex == -1) {
-                throw new InvalidPluginException("Unsupported API version " + pdf.getAPIVersion());
-            }
+        if (toCheck.isOlderThan(minimumVersion)) {
+            // Older than supported
+            throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
+        }
 
-            if (pluginIndex < minimumIndex) {
-                throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
-            }
-        } else {
-            if (minimumIndex == -1) {
-                CraftLegacy.init();
-                Bukkit.getLogger().log(Level.WARNING, "Legacy plugin " + pdf.getFullName() + " does not specify an api-version.");
-            } else {
-                throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
-            }
+        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
+            CraftLegacy.init();
+        }
+
+        if (toCheck == ApiVersion.NONE) {
+            Bukkit.getLogger().log(Level.WARNING, "Legacy plugin " + pdf.getFullName() + " does not specify an api-version.");
         }
     }
 
@@ -324,7 +319,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
         try {
-            clazz = Commodore.convert(clazz, !isLegacy(pdf));
+            clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()));
         } catch (Exception ex) {
             Bukkit.getLogger().log(Level.SEVERE, "Fatal error trying to convert " + pdf.getFullName() + ":" + path, ex);
         }

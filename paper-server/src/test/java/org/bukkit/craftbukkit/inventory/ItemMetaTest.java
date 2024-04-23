@@ -98,46 +98,46 @@ public class ItemMetaTest extends AbstractTestingBase {
     @Test
     public void testConflictingEnchantment() {
         ItemMeta itemMeta = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        assertThat(itemMeta.hasConflictingEnchant(Enchantment.DURABILITY), is(false));
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.UNBREAKING), is(false));
 
         itemMeta.addEnchant(Enchantment.SILK_TOUCH, 1, false);
-        assertThat(itemMeta.hasConflictingEnchant(Enchantment.DURABILITY), is(false));
-        assertThat(itemMeta.hasConflictingEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(true));
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.UNBREAKING), is(false));
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.FORTUNE), is(true));
         assertThat(itemMeta.hasConflictingEnchant(null), is(false));
     }
 
     @Test
     public void testConflictingStoredEnchantment() {
         EnchantmentStorageMeta itemMeta = (EnchantmentStorageMeta) Bukkit.getItemFactory().getItemMeta(Material.ENCHANTED_BOOK);
-        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.DURABILITY), is(false));
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.UNBREAKING), is(false));
 
         itemMeta.addStoredEnchant(Enchantment.SILK_TOUCH, 1, false);
-        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.DURABILITY), is(false));
-        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(true));
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.UNBREAKING), is(false));
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.FORTUNE), is(true));
         assertThat(itemMeta.hasConflictingStoredEnchant(null), is(false));
     }
 
     @Test
     public void testConflictingEnchantments() {
         ItemMeta itemMeta = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        itemMeta.addEnchant(Enchantment.DURABILITY, 6, true);
-        itemMeta.addEnchant(Enchantment.DIG_SPEED, 6, true);
-        assertThat(itemMeta.hasConflictingEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(false));
+        itemMeta.addEnchant(Enchantment.UNBREAKING, 6, true);
+        itemMeta.addEnchant(Enchantment.EFFICIENCY, 6, true);
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.FORTUNE), is(false));
 
         itemMeta.addEnchant(Enchantment.SILK_TOUCH, 1, false);
-        assertThat(itemMeta.hasConflictingEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(true));
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.FORTUNE), is(true));
         assertThat(itemMeta.hasConflictingEnchant(null), is(false));
     }
 
     @Test
     public void testConflictingStoredEnchantments() {
         EnchantmentStorageMeta itemMeta = (EnchantmentStorageMeta) Bukkit.getItemFactory().getItemMeta(Material.ENCHANTED_BOOK);
-        itemMeta.addStoredEnchant(Enchantment.DURABILITY, 6, true);
-        itemMeta.addStoredEnchant(Enchantment.DIG_SPEED, 6, true);
-        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(false));
+        itemMeta.addStoredEnchant(Enchantment.UNBREAKING, 6, true);
+        itemMeta.addStoredEnchant(Enchantment.EFFICIENCY, 6, true);
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.FORTUNE), is(false));
 
         itemMeta.addStoredEnchant(Enchantment.SILK_TOUCH, 1, false);
-        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(true));
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.FORTUNE), is(true));
         assertThat(itemMeta.hasConflictingStoredEnchant(null), is(false));
     }
 
@@ -276,7 +276,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                     meta.setBasePotionType(PotionType.WATER);
-                    meta.addCustomEffect(PotionEffectType.CONFUSION.createEffect(1, 1), false);
+                    meta.addCustomEffect(PotionEffectType.NAUSEA.createEffect(1, 1), false);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
@@ -292,7 +292,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(Material.ENCHANTED_BOOK) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
-                    meta.addStoredEnchant(Enchantment.ARROW_FIRE, 1, true);
+                    meta.addStoredEnchant(Enchantment.FLAME, 1, true);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
@@ -369,7 +369,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(Material.SUSPICIOUS_STEW) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaSuspiciousStew meta = ((CraftMetaSuspiciousStew) cleanStack.getItemMeta());
-                    meta.addCustomEffect(PotionEffectType.CONFUSION.createEffect(1, 0), false);
+                    meta.addCustomEffect(PotionEffectType.NAUSEA.createEffect(1, 0), false);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
@@ -402,7 +402,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(Material.GOAT_HORN) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaMusicInstrument meta = (CraftMetaMusicInstrument) cleanStack.getItemMeta();
-                    meta.setInstrument(MusicInstrument.ADMIRE);
+                    meta.setInstrument(MusicInstrument.ADMIRE_GOAT_HORN);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
