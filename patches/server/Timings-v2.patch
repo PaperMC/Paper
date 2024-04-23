@@ -712,7 +712,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    try (co.aikar.timings.Timing ignored = timing.startTiming()) { // Paper - timings
                          packet.handle(listener);
                      } catch (Exception exception) {
-                         label25:
+                         if (exception instanceof ReportedException) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -809,7 +809,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          long j = Util.getNanos() - i;
          int k = this.tickCount % 100;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         this.logTickTime(l - i);
+         this.logTickMethodTime(i);
          this.profiler.pop();
          org.spigotmc.WatchdogThread.tick(); // Spigot
 -        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
@@ -817,7 +817,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
      }
  
-     private int computeNextAutosaveInterval() {
+     private void logTickMethodTime(long tickStartTime) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
@@ -902,6 +902,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.bukkit.command.CommandSender;
 -import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 +import co.aikar.timings.MinecraftTimings; // Paper
+ import org.bukkit.craftbukkit.util.TerminalCompletionHandler;
+ import org.bukkit.craftbukkit.util.TerminalConsoleWriterThread;
  import org.bukkit.event.server.ServerCommandEvent;
 +import org.bukkit.craftbukkit.util.Waitable; // Paper
  import org.bukkit.event.server.RemoteServerCommandEvent;
@@ -991,22 +993,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import com.google.common.collect.Queues;
  import com.google.common.collect.Sets;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             ChunkStatus chunkstatus = ChunkLevel.generationStatus(chunkHolder.getTicketLevel());
- 
-             return !chunkstatus.isOrAfter(ChunkStatus.FULL) ? ChunkHolder.UNLOADED_CHUNK : either.mapLeft((ichunkaccess) -> {
-+                try (Timing ignored = level.timings.chunkPostLoad.startTimingIfSync()) { // Paper
-                 ChunkPos chunkcoordintpair = chunkHolder.getPos();
-                 ProtoChunk protochunk = (ProtoChunk) ichunkaccess;
-                 LevelChunk chunk;
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 }
- 
-                 return chunk;
-+                } // Paper
-             });
-         }, (runnable) -> {
-             ProcessorHandle mailbox = this.mainThreadMailbox;
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
          ObjectIterator objectiterator = this.entityMap.values().iterator();
@@ -1041,7 +1027,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              gameprofilerfiller.incrementCounter("getChunkCacheMiss");
 -            this.level.timings.syncChunkLoadTimer.startTiming(); // Spigot
-             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkFutureMainThread(x, z, leastStatus, create);
+             CompletableFuture<ChunkResult<ChunkAccess>> completablefuture = this.getChunkFutureMainThread(x, z, leastStatus, create);
              ServerChunkCache.MainThreadExecutor chunkproviderserver_b = this.mainThreadProcessor;
  
              Objects.requireNonNull(completablefuture);
@@ -1051,9 +1037,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.level.timings.syncChunkLoadTimer.stopTiming(); // Spigot
 +                this.level.timings.syncChunkLoad.stopTiming(); // Paper
 +            } // Paper
-             ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
-                 return ichunkaccess1;
-             }, (playerchunk_failure) -> {
+             ChunkResult<ChunkAccess> chunkresult = (ChunkResult) completablefuture.join();
+             ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
+ 
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
  
      public void save(boolean flush) {
@@ -1087,7 +1073,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  ChunkHolder playerchunk = (ChunkHolder) iterator.next();
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
  
-             if (this.level.getServer().tickRateManager().runsNormally()) {
+             if (this.level.tickRateManager().runsNormally()) {
                  gameprofilerfiller.popPush("naturalSpawnCount");
 +                this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
                  int k = this.distanceManager.getNaturalSpawnChunkCount();
@@ -1137,14 +1123,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import com.google.common.collect.Lists;
  import com.mojang.datafixers.DataFixer;
  import com.mojang.datafixers.util.Pair;
-@@ -0,0 +0,0 @@ import org.slf4j.Logger;
+@@ -0,0 +0,0 @@ import net.minecraft.world.ticks.LevelTicks;
+ import org.slf4j.Logger;
  import org.bukkit.Bukkit;
- import org.bukkit.Location;
  import org.bukkit.WeatherType;
 -import org.bukkit.craftbukkit.SpigotTimings; // Spigot
  import org.bukkit.craftbukkit.event.CraftEventFactory;
  import org.bukkit.craftbukkit.generator.CustomWorldChunkManager;
- import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.craftbukkit.util.WorldUUID;
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
          }
  
@@ -1326,7 +1312,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.bukkit.event.entity.EntityCombustByEntityEvent;
  import org.bukkit.event.hanging.HangingBreakByEntityEvent;
  import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      // Marks an entity, that it was removed by a plugin via Entity#remove
      // Main use case currently is for SPIGOT-7487, preventing dropping of leash when leash is removed
      public boolean pluginRemoved = false;
@@ -1334,7 +1320,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot start
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public void move(MoverType movementType, Vec3 movement) {
@@ -1342,7 +1328,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.noPhysics) {
              this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
          } else {
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  this.level().getProfiler().pop();
              }
          }
@@ -1357,11 +1343,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
      }
  
-     public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval, FeatureFlagSet requiredFeatures) {
+     public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, float spawnBoxScale, int maxTrackDistance, int trackTickInterval, FeatureFlagSet requiredFeatures) {
 +       // Paper start
-+        this(factory, spawnGroup, saveable, summonable, fireImmune, spawnableFarFromPlayer, canSpawnInside, dimensions, maxTrackDistance, trackTickInterval, requiredFeatures, "custom");
++        this(factory, spawnGroup, saveable, summonable, fireImmune, spawnableFarFromPlayer, canSpawnInside, dimensions, spawnBoxScale, maxTrackDistance, trackTickInterval, requiredFeatures, "custom");
 +    }
-+    public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval, FeatureFlagSet requiredFeatures, String id) {
++    public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, float spawnBoxScale, int maxTrackDistance, int trackTickInterval, FeatureFlagSet requiredFeatures, String id) {
 +        this.tickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "tick");
 +        this.inactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "inactiveTick");
 +        this.passengerTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerTick");
@@ -1387,8 +1373,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  Util.fetchChoiceType(References.ENTITY_TREE, id);
              }
  
--            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions, this.clientTrackingRange, this.updateInterval, this.requiredFeatures);
-+            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions, this.clientTrackingRange, this.updateInterval, this.requiredFeatures, id); // Paper - add id
+-            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions.withAttachments(this.attachments), this.spawnDimensionsScale, this.clientTrackingRange, this.updateInterval, this.requiredFeatures);
++            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions.withAttachments(this.attachments), this.spawnDimensionsScale, this.clientTrackingRange, this.updateInterval, this.requiredFeatures, id); // Paper - add id
          }
      }
  
@@ -1424,9 +1410,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          double d0 = this.getX() - this.xo;
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             this.refreshDimensions();
          }
  
-         this.refreshDirtyAttributes();
 -        SpigotTimings.timerEntityTickRest.stopTiming(); // Spigot
      }
  
@@ -1477,8 +1463,8 @@ diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -0,0 +0,0 @@ import org.bukkit.Bukkit;
- import org.bukkit.Location;
+@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePa
+ import org.bukkit.Bukkit;
  import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.craftbukkit.CraftWorld;
 -import org.bukkit.craftbukkit.SpigotTimings; // Spigot
