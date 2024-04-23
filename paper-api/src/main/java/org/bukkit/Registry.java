@@ -271,7 +271,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Wolf.Variant
      */
-    Registry<Wolf.Variant> WOLF_VARIANT = new SimpleRegistry<>(Wolf.Variant.class);
+    Registry<Wolf.Variant> WOLF_VARIANT = Objects.requireNonNull(Bukkit.getRegistry(Wolf.Variant.class), "No registry present for Wolf Variant. This is a bug.");
     /**
      * Map cursor types.
      *

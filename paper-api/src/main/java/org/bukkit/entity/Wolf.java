@@ -1,9 +1,10 @@
 package org.bukkit.entity;
 
-import java.util.Locale;
+import com.google.common.base.Preconditions;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -89,27 +90,24 @@ public interface Wolf extends Tameable, Sittable {
     /**
      * Represents the variant of a wolf.
      */
-    public enum Variant implements Keyed {
+    interface Variant extends Keyed {
 
-        PALE,
-        SPOTTED,
-        SNOWY,
-        BLACK,
-        ASHEN,
-        RUSTY,
-        WOODS,
-        CHESTNUT,
-        STRIPED;
-        private final NamespacedKey key;
-
-        private Variant() {
-            this.key = NamespacedKey.minecraft(name().toLowerCase(Locale.ROOT));
-        }
+        Variant PALE = getVariant("pale");
+        Variant SPOTTED = getVariant("spotted");
+        Variant SNOWY = getVariant("snowy");
+        Variant BLACK = getVariant("black");
+        Variant ASHEN = getVariant("ashen");
+        Variant RUSTY = getVariant("rusty");
+        Variant WOODS = getVariant("woods");
+        Variant CHESTNUT = getVariant("chestnut");
+        Variant STRIPED = getVariant("striped");
 
         @NotNull
-        @Override
-        public NamespacedKey getKey() {
-            return key;
+        private static Variant getVariant(@NotNull String key) {
+            NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
+            Variant variant = Registry.WOLF_VARIANT.get(namespacedKey);
+            Preconditions.checkNotNull(variant, "No Wolf Variant found for %s. This is a bug.", namespacedKey);
+            return variant;
         }
     }
 }
