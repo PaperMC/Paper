@@ -39,19 +39,22 @@
      public PlayerChunkMap(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, StructureTemplateManager structuretemplatemanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator chunkgenerator, WorldLoadListener worldloadlistener, ChunkStatusUpdateListener chunkstatusupdatelistener, Supplier<WorldPersistentData> supplier, int i, boolean flag) {
          super(new RegionStorageInfo(convertable_conversionsession.getLevelId(), worldserver.dimension(), "chunk"), convertable_conversionsession.getDimensionPath(worldserver.dimension()).resolve("region"), datafixer, flag);
          this.visibleChunkMap = this.updatingChunkMap.clone();
-@@ -163,6 +188,11 @@
-         this.storageName = path.getFileName().toString();
-         this.level = worldserver;
-         this.generator = chunkgenerator;
-+        // CraftBukkit start - SPIGOT-7051: It's a rigged game! Use delegate for random state creation, otherwise it is not so random.
-+        if (chunkgenerator instanceof CustomChunkGenerator) {
-+            chunkgenerator = ((CustomChunkGenerator) chunkgenerator).getDelegate();
-+        }
-+        // CraftBukkit end
+@@ -166,7 +191,13 @@
          IRegistryCustom iregistrycustom = worldserver.registryAccess();
          long j = worldserver.getSeed();
  
-@@ -332,16 +362,19 @@
+-        if (chunkgenerator instanceof ChunkGeneratorAbstract chunkgeneratorabstract) {
++        // CraftBukkit start - SPIGOT-7051: It's a rigged game! Use delegate for random state creation, otherwise it is not so random.
++        ChunkGenerator randomGenerator = chunkgenerator;
++        if (randomGenerator instanceof CustomChunkGenerator customChunkGenerator) {
++            randomGenerator = customChunkGenerator.getDelegate();
++        }
++        if (randomGenerator instanceof ChunkGeneratorAbstract chunkgeneratorabstract) {
++            // CraftBukkit end
+             this.randomState = RandomState.create((GeneratorSettingBase) chunkgeneratorabstract.generatorSettings().value(), (HolderGetter) iregistrycustom.lookupOrThrow(Registries.NOISE), j);
+         } else {
+             this.randomState = RandomState.create(GeneratorSettingBase.dummy(), (HolderGetter) iregistrycustom.lookupOrThrow(Registries.NOISE), j);
+@@ -332,16 +363,19 @@
              CompletableFuture<List<ChunkResult<IChunkAccess>>> completablefuture1 = SystemUtils.sequence(list);
              CompletableFuture<ChunkResult<List<IChunkAccess>>> completablefuture2 = completablefuture1.thenApply((list2) -> {
                  List<IChunkAccess> list3 = Lists.newArrayList();
@@ -74,7 +77,7 @@
  
                      if (ichunkaccess == null) {
                          return ChunkResult.error(() -> {
-@@ -538,7 +571,7 @@
+@@ -538,7 +572,7 @@
  
      private void scheduleUnload(long i, PlayerChunk playerchunk) {
          CompletableFuture<IChunkAccess> completablefuture = playerchunk.getChunkToSave();
@@ -83,7 +86,7 @@
              CompletableFuture<IChunkAccess> completablefuture1 = playerchunk.getChunkToSave();
  
              if (completablefuture1 != completablefuture) {
-@@ -708,7 +741,7 @@
+@@ -708,7 +742,7 @@
          };
  
          return completablefuture.thenComposeAsync((chunkresult) -> {
@@ -92,7 +95,7 @@
  
              if (list == null) {
                  this.releaseLightTicket(chunkcoordintpair);
-@@ -773,7 +806,21 @@
+@@ -773,7 +807,21 @@
  
      private static void postLoadProtoChunk(WorldServer worldserver, List<NBTTagCompound> list) {
          if (!list.isEmpty()) {
@@ -115,7 +118,7 @@
          }
  
      }
-@@ -879,7 +926,7 @@
+@@ -879,7 +927,7 @@
          if (!playerchunk.wasAccessibleSinceLastSave()) {
              return false;
          } else {
@@ -124,7 +127,7 @@
  
              if (!(ichunkaccess instanceof ProtoChunkExtension) && !(ichunkaccess instanceof Chunk)) {
                  return false;
-@@ -1040,7 +1087,8 @@
+@@ -1040,7 +1088,8 @@
                  return ichunkaccess instanceof Chunk ? Optional.of((Chunk) ichunkaccess) : Optional.empty();
              });
  
@@ -134,7 +137,7 @@
                  return chunk.getBlockEntities().size();
              }).orElse(0), tickingtracker.getTicketDebugString(i), tickingtracker.getLevel(i), optional1.map((chunk) -> {
                  return chunk.getBlockTicks().count();
-@@ -1053,7 +1101,7 @@
+@@ -1053,7 +1102,7 @@
  
      private static String printFuture(CompletableFuture<ChunkResult<Chunk>> completablefuture) {
          try {
@@ -143,7 +146,7 @@
  
              return chunkresult != null ? (chunkresult.isSuccess() ? "done" : "unloaded") : "not completed";
          } catch (CompletionException completionexception) {
-@@ -1065,12 +1113,14 @@
+@@ -1065,12 +1114,14 @@
  
      private CompletableFuture<Optional<NBTTagCompound>> readChunk(ChunkCoordIntPair chunkcoordintpair) {
          return this.read(chunkcoordintpair).thenApplyAsync((optional) -> {
@@ -161,7 +164,7 @@
      }
  
      boolean anyPlayerCloseEnoughForSpawning(ChunkCoordIntPair chunkcoordintpair) {
-@@ -1473,7 +1523,7 @@
+@@ -1473,7 +1524,7 @@
          public final Set<ServerPlayerConnection> seenBy = Sets.newIdentityHashSet();
  
          public EntityTracker(final Entity entity, final int i, final int j, final boolean flag) {
@@ -170,7 +173,7 @@
              this.entity = entity;
              this.range = i;
              this.lastSectionPos = SectionPosition.of((EntityAccess) entity);
-@@ -1533,6 +1583,11 @@
+@@ -1533,6 +1584,11 @@
                  double d2 = d0 * d0;
                  boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(entityplayer) && PlayerChunkMap.this.isChunkTracked(entityplayer, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
  
