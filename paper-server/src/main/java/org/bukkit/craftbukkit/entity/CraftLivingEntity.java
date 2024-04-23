@@ -794,7 +794,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public EntityCategory getCategory() {
-        throw new UnsupportedOperationException("Method longer applicable. Use Tags instead.");
+        throw new UnsupportedOperationException("Method no longer applicable. Use Tags instead.");
     }
 
     @Override

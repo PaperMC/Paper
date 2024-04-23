@@ -61,7 +61,7 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
 
     @Override
     public EnchantmentTarget getItemTarget() {
-        throw new UnsupportedOperationException("Method longer applicable. Use Tags instead.");
+        throw new UnsupportedOperationException("Method no longer applicable. Use Tags instead.");
     }
 
     @Override
