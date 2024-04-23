@@ -8,10 +8,11 @@ import net.minecraft.world.entity.animal.EntityWolf;
 import net.minecraft.world.entity.animal.WolfVariant;
 import net.minecraft.world.item.EnumColor;
 import org.bukkit.DyeColor;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Wolf;
 
 public class CraftWolf extends CraftTameableAnimal implements Wolf {
@@ -80,17 +81,10 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
         getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant {
+    public static class CraftVariant implements Variant, Handleable<WolfVariant> {
 
         public static Variant minecraftToBukkit(WolfVariant minecraft) {
-            Preconditions.checkArgument(minecraft != null);
-
-            IRegistry<WolfVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.WOLF_VARIANT);
-            Variant bukkit = Registry.WOLF_VARIANT.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-            Preconditions.checkArgument(bukkit != null);
-
-            return bukkit;
+            return CraftRegistry.minecraftToBukkit(minecraft, Registries.WOLF_VARIANT, Registry.WOLF_VARIANT);
         }
 
         public static Variant minecraftHolderToBukkit(Holder<WolfVariant> minecraft) {
@@ -98,10 +92,7 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
         }
 
         public static WolfVariant bukkitToMinecraft(Variant bukkit) {
-            Preconditions.checkArgument(bukkit != null);
-
-            return CraftRegistry.getMinecraftRegistry(Registries.WOLF_VARIANT)
-                    .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<WolfVariant> bukkitToMinecraftHolder(Variant bukkit) {
@@ -115,6 +106,47 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
 
             throw new IllegalArgumentException("No Reference holder found for " + bukkit
                     + ", this can happen if a plugin creates its own wolf variant with out properly registering it.");
+        }
+
+        private final NamespacedKey key;
+        private final WolfVariant variant;
+
+        public CraftVariant(NamespacedKey key, WolfVariant variant) {
+            this.key = key;
+            this.variant = variant;
+        }
+
+        @Override
+        public WolfVariant getHandle() {
+            return variant;
+        }
+
+        @Override
+        public NamespacedKey getKey() {
+            return key;
+        }
+
+        @Override
+        public String toString() {
+            return key.toString();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+
+            if (!(other instanceof CraftVariant otherVariant)) {
+                return false;
+            }
+
+            return getKey().equals(otherVariant.getKey());
+        }
+
+        @Override
+        public int hashCode() {
+            return getKey().hashCode();
         }
     }
 }
