@@ -10,15 +10,6 @@ diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 +++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
-@@ -0,0 +0,0 @@ package org.bukkit.event.player;
- 
- import java.net.InetAddress;
- import java.util.UUID;
-+import com.destroystokyo.paper.profile.PlayerProfile;
-+import org.bukkit.Bukkit;
- import org.bukkit.event.Event;
- import org.bukkit.event.HandlerList;
- import org.jetbrains.annotations.NotNull;
 @@ -0,0 +0,0 @@ public class AsyncPlayerPreLoginEvent extends Event {
      private static final HandlerList handlers = new HandlerList();
      private Result result;
@@ -26,31 +17,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private final String name;
      private final InetAddress ipAddress;
 -    private final UUID uniqueId;
-+    private PlayerProfile profile; // Paper
++    private com.destroystokyo.paper.profile.PlayerProfile profile; // Paper
 +    private final InetAddress rawAddress; // Paper
 +    private final String hostname; // Paper
+     private final boolean transferred;
  
      @Deprecated
-     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
 @@ -0,0 +0,0 @@ public class AsyncPlayerPreLoginEvent extends Event {
      }
  
-     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
+     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred) {
 +        // Paper start
-+        this(name, ipAddress, uniqueId, Bukkit.createProfile(uniqueId, name));
++        this(name, ipAddress, uniqueId, transferred, org.bukkit.Bukkit.createProfile(uniqueId, name));
 +    }
 +
 +    @Deprecated(forRemoval = true)
-+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
-+        this(name, ipAddress, ipAddress, uniqueId, profile);
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
++        this(name, ipAddress, ipAddress, uniqueId, transferred, profile);
 +    }
 +
 +    @Deprecated(forRemoval = true)
-+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
-+        this(name, ipAddress, rawAddress, uniqueId, profile, "");
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
++        this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "");
 +    }
 +
-+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile, @NotNull String hostname) {
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname) {
++        // Paper end
          super(true);
          this.result = Result.ALLOWED;
          this.message = net.kyori.adventure.text.Component.empty(); // Paper
@@ -58,12 +51,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.profile = profile;
          this.ipAddress = ipAddress;
 -        this.uniqueId = uniqueId;
-+        this.rawAddress = rawAddress;
-+        this.hostname = hostname;
-+        // Paper end
++        this.rawAddress = rawAddress; // Paper
++        this.hostname = hostname; // Paper
+         this.transferred = transferred;
      }
  
-     /**
 @@ -0,0 +0,0 @@ public class AsyncPlayerPreLoginEvent extends Event {
       */
      @NotNull
@@ -87,7 +79,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return The Profile
 +     */
 +    @NotNull
-+    public PlayerProfile getPlayerProfile() {
++    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
 +        return profile;
 +    }
 +
@@ -95,7 +87,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Changes the PlayerProfile the player will login as
 +     * @param profile The profile to use
 +     */
-+    public void setPlayerProfile(@NotNull PlayerProfile profile) {
++    public void setPlayerProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
 +        this.profile = profile;
 +    }
 +
@@ -120,6 +112,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     @NotNull
-     @Override
-     public HandlerList getHandlers() {
+     /**
+      * Gets if this connection has been transferred from another server.
+      *

@@ -20,7 +20,7 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
+            languageVersion = JavaLanguageVersion.of(21)
         }
     }
 }
@@ -30,7 +30,7 @@ val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 subprojects {
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
-        options.release = 17
+        options.release = 21
     }
     tasks.withType<Javadoc> {
         options.encoding = Charsets.UTF_8.name()
@@ -67,10 +67,10 @@ repositories {
 }
 
 dependencies {
-    paramMappings("net.fabricmc:yarn:1.20.4+build.1:mergedv2")
+    paramMappings("net.fabricmc:yarn:1.20.5+build.1:mergedv2")
     remapper("net.fabricmc:tiny-remapper:0.10.1:fat")
     decompiler("org.vineflower:vineflower:1.10.1")
-    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.6")
+    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.12")
     paperclip("io.papermc:paperclip:3.0.3")
 }
 
