@@ -1643,11 +1643,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 addTo.add(IChatBaseComponent.empty());
             } else {
                 String entry = object.toString();
+                IChatBaseComponent component = (possiblyJsonInput) ? CraftChatMessage.fromJSONOrString(entry) : CraftChatMessage.fromStringOrNull(entry);
 
-                if (possiblyJsonInput) {
-                    addTo.add(CraftChatMessage.fromJSONOrString(entry));
+                if (component != null) {
+                    addTo.add(component);
                 } else {
-                    addTo.add(CraftChatMessage.fromStringOrNull(entry));
+                    addTo.add(IChatBaseComponent.empty());
                 }
             }
         }
