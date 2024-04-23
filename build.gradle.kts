@@ -194,6 +194,7 @@ abstract class RebasePatches : BaseTask() {
 
     companion object {
         val regex = Pattern.compile("Patch failed at ([0-9]{4}) (.*)")
+        val continuationRegex = Pattern.compile("^\\s{1}.+\$")
         const val subjectPrefix = "Subject: [PATCH] "
     }
 
@@ -223,8 +224,19 @@ abstract class RebasePatches : BaseTask() {
             val failedSubjectFragment = matcher.group(2)
             val failed = unapplied.single { p ->
                 p.useLines { lines ->
-                    val subjectLine = lines.single { it.startsWith(subjectPrefix) }
-                        .substringAfter(subjectPrefix)
+                    val collect = mutableListOf<String>()
+                    for (line in lines) {
+                        if (line.startsWith(subjectPrefix)) {
+                            collect += line
+                        } else if (collect.size == 1) {
+                            if (continuationRegex.matcher(line).matches()) {
+                                collect += line
+                            } else {
+                                break
+                            }
+                        }
+                    }
+                    val subjectLine = collect.joinToString("").substringAfter(subjectPrefix)
                     subjectLine.startsWith(failedSubjectFragment)
                 }
             }
