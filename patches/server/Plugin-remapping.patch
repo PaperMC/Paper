@@ -18,10 +18,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +}
 +
 +paperweight {
-+    craftBukkitPackageVersion.set("v1_20_R3") // also needs to be updated in MappingEnvironment
++    craftBukkitPackageVersion.set("v1_20_R4") // also needs to be updated in MappingEnvironment
  }
  
--val craftbukkitPackageVersion = "1_20_R3" // Paper
+-val craftbukkitPackageVersion = "1_20_R4" // Paper
  tasks.jar {
      archiveClassifier.set("dev")
  
@@ -34,54 +34,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          )
          for (tld in setOf("net", "com", "org")) {
              attributes("$tld/bukkit", "Sealed" to true)
-@@ -0,0 +0,0 @@ tasks.compileTestJava {
- 
- publishing {
-     publications.create<MavenPublication>("maven") {
--        artifact(tasks.shadowJar)
--    }
--}
--
--relocation {
--    // Order matters here - e.g. craftbukkit proper must be relocated before any of the libs are relocated into the cb package
--    relocate("org.bukkit.craftbukkit" to "org.bukkit.craftbukkit.v$craftbukkitPackageVersion") {
--        exclude("org.bukkit.craftbukkit.Main*")
-     }
- }
- 
- tasks.shadowJar {
-     configurations = listOf(project.configurations.vanillaServer.get(), alsoShade)
--    archiveClassifier.set("mojang-mapped")
--
--    for (relocation in relocation.relocations.get()) {
--        relocate(relocation.fromPackage, relocation.toPackage) {
--            for (exclude in relocation.excludes) {
--                exclude(exclude)
--            }
--        }
--    }
- }
- 
- // Paper start
-@@ -0,0 +0,0 @@ tasks.check {
- }
- // Paper end
- 
--// Paper start - include reobf mappings in jar for stacktrace deobfuscation
--val includeMappings = tasks.register<io.papermc.paperweight.tasks.IncludeMappings>("includeMappings") {
--    inputJar.set(tasks.fixJarForReobf.flatMap { it.outputJar })
--    mappings.set(tasks.reobfJar.flatMap { it.mappingsFile })
--    mappingsDest.set("META-INF/mappings/reobf.tiny")
--}
--
--tasks.reobfJar {
--    inputJar.set(includeMappings.flatMap { it.outputJar })
--}
--// Paper end - include reobf mappings in jar for stacktrace deobfuscation
--
- tasks.test {
-     exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
-     useJUnitPlatform()
 @@ -0,0 +0,0 @@ val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatM
          runtime.filterNot { it.asFile.absolutePath == vanilla }
      }
@@ -1533,7 +1485,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.server.waitForAsyncTasksShutdown(); // Paper - Wait for Async Tasks during shutdown
+             this.server.disablePlugins();
          }
          // CraftBukkit end
 +        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.shutdown(); // Paper - Plugin remapping
@@ -1876,22 +1828,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-     // Paper start
-     @Override
-     public File getPluginsFolder() {
--        return (File) this.console.options.valueOf("plugins");
-+        return this.console.getPluginsFolder();
-     }
- 
-     private List<File> extraPluginJars() {
-@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          this.enablePlugins(PluginLoadOrder.STARTUP);
          this.enablePlugins(PluginLoadOrder.POSTWORLD);
          this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
 +        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
-         org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
      }
  
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
@@ -1905,21 +1848,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private CraftMagicNumbers() {}
 @@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
-             if (pluginIndex < minimumIndex) {
-                 throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
-             }
--        } else {
-+        } else if (!DISABLE_PLUGIN_REWRITING) {
-             if (minimumIndex == -1) {
-                 CraftLegacy.init();
-                 Bukkit.getLogger().log(Level.WARNING, "Legacy plugin " + pdf.getFullName() + " does not specify an api-version.");
+             throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
+         }
+ 
+-        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
++        if (!DISABLE_PLUGIN_REWRITING && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
+             CraftLegacy.init();
+         }
+ 
 @@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      @Override
      public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
-+        if (DISABLE_PLUGIN_REWRITING) {
-+            return clazz;
-+        }
++        if (DISABLE_PLUGIN_REWRITING) return clazz; // Paper
          try {
-             clazz = Commodore.convert(clazz, !CraftMagicNumbers.isLegacy(pdf));
+             clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()));
          } catch (Exception ex) {

@@ -14,9 +14,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
 -    implementation("net.fabricmc:mapping-io:0.5.0") // Paper - needed to read mappings for stacktrace deobfuscation
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
-     runtimeOnly("com.mysql:mysql-connector-j:8.2.0")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
+ 
+     runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
 @@ -0,0 +0,0 @@ dependencies {
      testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
      implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
@@ -30,27 +30,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  }
  
  paperweight {
-diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
-+++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
-@@ -0,0 +0,0 @@ import com.destroystokyo.paper.entity.RangedEntity;
- import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet;
- import com.google.common.collect.BiMap;
- import com.google.common.collect.HashBiMap;
-+import io.papermc.paper.util.MappingEnvironment;
- import io.papermc.paper.util.ObfHelper;
- import java.lang.reflect.Constructor;
- import java.util.EnumSet;
-@@ -0,0 +0,0 @@ public class MobGoalHelper {
-     }
- 
-     public static String getUsableName(Class<?> clazz) {
--        String name = ObfHelper.INSTANCE.deobfClassName(clazz.getName());
-+        String name = MappingEnvironment.reobf() ? ObfHelper.INSTANCE.deobfClassName(clazz.getName()) : clazz.getName();
-         name = name.substring(name.lastIndexOf(".") + 1);
-         boolean flag = false;
-         // inner classes
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
@@ -665,32 +644,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.pool.computeIfAbsent(string, Function.identity());
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-@@ -0,0 +0,0 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
-         this.maxDuration = maxRunTime;
-         this.entryCondition = requiredMemoryState;
-         // Paper start - configurable behavior tick rate and timings
--        String key = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName());
-+        String key = io.papermc.paper.util.MappingEnvironment.reobf() ? io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName()) : this.getClass().getName();
-         int lastSeparator = key.lastIndexOf('.');
-         if (lastSeparator != -1) {
-             key = key.substring(lastSeparator + 1);
-diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
-@@ -0,0 +0,0 @@ public abstract class Sensor<E extends LivingEntity> {
- 
-     public Sensor(int senseInterval) {
-         // Paper start - configurable sensor tick rate and timings
--        String key = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName());
-+        String key = io.papermc.paper.util.MappingEnvironment.reobf() ? io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName()) : this.getClass().getName();
-         int lastSeparator = key.lastIndexOf('.');
-         if (lastSeparator != -1) {
-             key = key.substring(lastSeparator + 1);
 diff --git a/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java b/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
@@ -704,60 +657,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          boolean runNext(Level world);
      }
  
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-@@ -0,0 +0,0 @@ public class Commodore {
- 
-     // Paper start - Plugin rewrites
-     private static final String CB_PACKAGE = org.bukkit.Bukkit.getServer().getClass().getPackageName().replace('.', '/');
--    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
--    private static Map<String, String> initReplacementsMap() {
--        Map<String, String> getAndRemove = new HashMap<>();
--        // Be wary of maven shade's relocations
--
--        final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
--        if (Boolean.getBoolean( "debug.rewriteForIde") && manifest != null)
--        {
--            // unversion incoming calls for pre-relocate debug work
--            final String NMS_REVISION_PACKAGE = "v" + manifest.getMainAttributes().getValue("CraftBukkit-Package-Version") + "/";
--
--            getAndRemove.put("org/bukkit/".concat("craftbukkit/" + NMS_REVISION_PACKAGE), NMS_REVISION_PACKAGE);
--        }
--
--        return getAndRemove;
--    }
-+    private static final String CB_PACKAGE_PREFIX = "org/bukkit/".concat("craftbukkit/");
-+    private static final String LEGACY_CB_PACKAGE_PREFIX = CB_PACKAGE_PREFIX + io.papermc.paper.util.MappingEnvironment.LEGACY_CB_VERSION + "/";
- 
-     @Nonnull
-     private static String getOriginalOrRewrite(@Nonnull String original)
-     {
--        String rewrite = null;
--        for ( Map.Entry<String, String> entry : SEARCH_AND_REMOVE.entrySet() )
--        {
--            if ( original.contains( entry.getKey() ) )
--            {
--                rewrite = original.replace( entry.getValue(), "" );
-+        // Relocation is applied in reobf, and when mappings are present they handle the relocation
-+        if (!io.papermc.paper.util.MappingEnvironment.reobf() && !io.papermc.paper.util.MappingEnvironment.hasMappings()) {
-+            if (original.contains(LEGACY_CB_PACKAGE_PREFIX)) {
-+                original = original.replace(LEGACY_CB_PACKAGE_PREFIX, CB_PACKAGE_PREFIX);
-             }
-         }
- 
--        return rewrite != null ? rewrite : original;
-+        return original;
-     }
-     // Paper end - Plugin rewrites
- 
-@@ -0,0 +0,0 @@ public class Commodore {
-         ClassReader cr = new ClassReader(b);
-         ClassWriter cw = new ClassWriter(cr, 0);
- 
--        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
-+        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(cw)) { // Paper
- 
-             // Paper start - Rewrite plugins
-             @Override
