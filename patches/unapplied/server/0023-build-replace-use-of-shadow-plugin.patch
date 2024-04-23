@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Thu, 18 Apr 2024 13:39:18 -0700
+Subject: [PATCH] build: replace use of shadow plugin
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 73b3e61cbbdf5025c24d289597648f01f632a5e3..c7210eb94000eaac8be6e127a9eb9867daec303b 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -4,7 +4,6 @@ import xyz.jpenilla.runpaper.task.RunServer
+ plugins {
+     java
+     `maven-publish`
+-    id("com.github.johnrengelman.shadow")
+     id("xyz.jpenilla.run-paper") version "2.2.3" apply false
+ }
+ 
+@@ -109,14 +108,22 @@ publishing {
+     }
+ }
+ 
+-tasks.shadowJar {
+-    configurations = listOf(project.configurations.vanillaServer.get(), alsoShade)
++tasks.serverJar {
++    from(alsoShade.elements.map {
++        it.map { f ->
++            if (f.asFile.isFile) {
++                zipTree(f.asFile)
++            } else {
++                f.asFile
++            }
++        }
++    })
+ }
+ 
+ // Paper start
+ val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
+-    jarToScan.set(tasks.shadowJar.flatMap { it.archiveFile })
++    jarToScan.set(tasks.serverJar.flatMap { it.archiveFile })
+     classpath.from(configurations.compileClasspath)
+ }
+ tasks.check {
