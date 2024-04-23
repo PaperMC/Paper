@@ -27,42 +27,42 @@ public abstract class PotionEffectType implements Keyed, Translatable {
     /**
      * Decreases movement speed.
      */
-    public static final PotionEffectType SLOW = getPotionEffectType(2, "slowness");
+    public static final PotionEffectType SLOWNESS = getPotionEffectType(2, "slowness");
 
     /**
      * Increases dig speed.
      */
-    public static final PotionEffectType FAST_DIGGING = getPotionEffectType(3, "haste");
+    public static final PotionEffectType HASTE = getPotionEffectType(3, "haste");
 
     /**
      * Decreases dig speed.
      */
-    public static final PotionEffectType SLOW_DIGGING = getPotionEffectType(4, "mining_fatigue");
+    public static final PotionEffectType MINING_FATIGUE = getPotionEffectType(4, "mining_fatigue");
 
     /**
      * Increases damage dealt.
      */
-    public static final PotionEffectType INCREASE_DAMAGE = getPotionEffectType(5, "strength");
+    public static final PotionEffectType STRENGTH = getPotionEffectType(5, "strength");
 
     /**
      * Heals an entity.
      */
-    public static final PotionEffectType HEAL = getPotionEffectType(6, "instant_health");
+    public static final PotionEffectType INSTANT_HEALTH = getPotionEffectType(6, "instant_health");
 
     /**
      * Hurts an entity.
      */
-    public static final PotionEffectType HARM = getPotionEffectType(7, "instant_damage");
+    public static final PotionEffectType INSTANT_DAMAGE = getPotionEffectType(7, "instant_damage");
 
     /**
      * Increases jump height.
      */
-    public static final PotionEffectType JUMP = getPotionEffectType(8, "jump_boost");
+    public static final PotionEffectType JUMP_BOOST = getPotionEffectType(8, "jump_boost");
 
     /**
      * Warps vision on the client.
      */
-    public static final PotionEffectType CONFUSION = getPotionEffectType(9, "nausea");
+    public static final PotionEffectType NAUSEA = getPotionEffectType(9, "nausea");
 
     /**
      * Regenerates health.
@@ -72,7 +72,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
     /**
      * Decreases damage dealt to an entity.
      */
-    public static final PotionEffectType DAMAGE_RESISTANCE = getPotionEffectType(11, "resistance");
+    public static final PotionEffectType RESISTANCE = getPotionEffectType(11, "resistance");
 
     /**
      * Stops fire damage.
@@ -340,7 +340,6 @@ public abstract class PotionEffectType implements Keyed, Translatable {
     @Deprecated
     public static PotionEffectType getByName(@NotNull String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
-        name = convertLegacy(name);
         return Registry.EFFECT.get(NamespacedKey.fromString(name.toLowerCase(java.util.Locale.ENGLISH)));
     }
 
@@ -352,34 +351,5 @@ public abstract class PotionEffectType implements Keyed, Translatable {
     @Deprecated
     public static PotionEffectType[] values() {
         return Lists.newArrayList(Registry.EFFECT).toArray(new PotionEffectType[0]);
-    }
-
-    private static String convertLegacy(String from) {
-        if (from == null) {
-            return null;
-        }
-
-        switch (from.toLowerCase()) {
-            case "slow":
-                return "slowness";
-            case "fast_digging":
-                return "haste";
-            case "slow_digging":
-                return "mining_fatigue";
-            case "increase_damage":
-                return "strength";
-            case "heal":
-                return "instant_health";
-            case "harm":
-                return "instant_damage";
-            case "jump":
-                return "jump_boost";
-            case "confusion":
-                return "nausea";
-            case "damage_resistance":
-                return "resistance";
-        }
-
-        return from;
     }
 }
