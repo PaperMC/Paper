@@ -19951,7 +19951,7 @@ index ced67cf88c91c5270a0060a7307f36739237cbb2..dab86988686cf7c926b7432b8a4afffd
      @Nullable default ChunkAccess getChunkIfLoadedImmediately(BlockPos pos) { return this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);}
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-index b26a4eb4951e87f891b59028d98b8ffba8e103a8..b8b78494449c0cd638f9706a803dc54e184d981f 100644
+index 84a2a5384a8a31eff5363e6391c9a5187212ff36..4c03297fb523ef59cd9d11edbed437398e562a00 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 @@ -114,7 +114,7 @@ public abstract class ChunkGenerator {
@@ -20225,10 +20225,10 @@ index 73e682bb3ef3b2e450ec8c594b5365c7a340615e..6a5756bd333d9b221e7770842e5114d2
  
      public void setFullStatus(Supplier<FullChunkStatus> levelTypeProvider) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942dded3241 100644
+index c6115477cc94bf47a5f459418a232412b7c358ba..1d7b9705996e0095839034d7c9fe9938b1965c08 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -110,6 +110,17 @@ public class ChunkSerializer {
+@@ -110,7 +110,25 @@ public class ChunkSerializer {
          }
      }
      // Paper end - guard against serializing mismatching coordinates
@@ -20243,23 +20243,18 @@ index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942
 +            this.protoChunk = protoChunk;
 +        }
 +    }
++    // Paper end - rewrite chunk system
      public static ProtoChunk read(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
-         // Paper start - Do not let the server load chunks from newer versions
-         if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
-@@ -120,6 +131,12 @@ public class ChunkSerializer {
-             }
-         }
-         // Paper end - Do not let the server load chunks from newer versions
++        // Paper start - rewrite chunk system
 +        InProgressChunkHolder holder = readInProgressChunkHolder(world, poiStorage, chunkPos, nbt);
 +        return holder.protoChunk;
 +    }
-+
 +    public static InProgressChunkHolder readInProgressChunkHolder(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
 +        // Paper end - rewrite chunk system
-         ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
- 
-         if (!Objects.equals(chunkPos, chunkcoordintpair1)) {
-@@ -185,7 +202,7 @@ public class ChunkSerializer {
+         // Paper start - Do not let the server load chunks from newer versions
+         if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
+             final int dataVersion = nbt.getInt("DataVersion");
+@@ -185,7 +203,7 @@ public class ChunkSerializer {
                  achunksection[k] = chunksection;
                  SectionPos sectionposition = SectionPos.of(chunkPos, b0);
  
@@ -20268,7 +20263,7 @@ index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942
              }
  
              boolean flag3 = nbttagcompound1.contains("BlockLight", 7);
-@@ -331,7 +348,7 @@ public class ChunkSerializer {
+@@ -331,7 +349,7 @@ public class ChunkSerializer {
          }
  
          if (chunkstatus_type == ChunkStatus.ChunkType.LEVELCHUNK) {
@@ -20277,15 +20272,15 @@ index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942
          } else {
              ProtoChunk protochunk1 = (ProtoChunk) object1;
  
-@@ -366,9 +383,41 @@ public class ChunkSerializer {
+@@ -366,10 +384,42 @@ public class ChunkSerializer {
                  protochunk1.setCarvingMask(worldgenstage_features, new CarvingMask(nbttagcompound5.getLongArray(s1), ((ChunkAccess) object1).getMinBuildHeight()));
              }
  
 -            return protochunk1;
 +            return new InProgressChunkHolder(protochunk1); // Paper - Async chunk loading
-+        }
-+    }
-+
+         }
+     }
+ 
 +    // Paper start - async chunk save for unload
 +    public record AsyncSaveData(
 +        Tag blockTickList, // non-null if we had to go to the server's tick list
@@ -20307,7 +20302,7 @@ index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942
 +            if (blockEntityNbt != null) {
 +                blockEntitiesSerialized.add(blockEntityNbt);
 +            }
-         }
++        }
 +
 +        return new AsyncSaveData(
 +            tickLists.get(BLOCK_TICKS_TAG),
@@ -20315,12 +20310,13 @@ index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942
 +            blockEntitiesSerialized,
 +            world.getGameTime()
 +        );
-     }
++    }
 +    // Paper end
- 
++
      private static void logErrors(ChunkPos chunkPos, int y, String message) {
          ChunkSerializer.LOGGER.error("Recoverable errors when loading section [" + chunkPos.x + ", " + y + ", " + chunkPos.z + "]: " + message);
-@@ -385,6 +434,11 @@ public class ChunkSerializer {
+     }
+@@ -385,6 +435,11 @@ public class ChunkSerializer {
      // CraftBukkit end
  
      public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
@@ -20332,7 +20328,7 @@ index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942
          // Paper start - rewrite light impl
          final int minSection = io.papermc.paper.util.WorldUtil.getMinLightSection(world);
          final int maxSection = io.papermc.paper.util.WorldUtil.getMaxLightSection(world);
-@@ -397,7 +451,7 @@ public class ChunkSerializer {
+@@ -397,7 +452,7 @@ public class ChunkSerializer {
          nbttagcompound.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound.putInt("yPos", chunk.getMinSection());
          nbttagcompound.putInt("zPos", chunkcoordintpair.z);
@@ -20341,7 +20337,7 @@ index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942
          nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
          nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(chunk.getStatus()).toString());
          BlendingData blendingdata = chunk.getBlendingData();
-@@ -497,8 +551,17 @@ public class ChunkSerializer {
+@@ -497,8 +552,17 @@ public class ChunkSerializer {
              nbttagcompound.putBoolean("isLightOn", false); // Paper - set to false but still store, this allows us to detect --eraseCache (as eraseCache _removes_)
          }
  
@@ -20361,7 +20357,7 @@ index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942
  
          CompoundTag nbttagcompound2;
  
-@@ -534,7 +597,14 @@ public class ChunkSerializer {
+@@ -534,7 +598,14 @@ public class ChunkSerializer {
              nbttagcompound.put("CarvingMasks", nbttagcompound2);
          }
  
@@ -20376,7 +20372,7 @@ index c6115477cc94bf47a5f459418a232412b7c358ba..e67ebc8517a1afb0c7fe23f19a781942
          nbttagcompound.put("PostProcessing", ChunkSerializer.packOffsets(chunk.getPostProcessing()));
          CompoundTag nbttagcompound3 = new CompoundTag();
          Iterator iterator1 = chunk.getHeightmaps().iterator();
-@@ -590,7 +660,7 @@ public class ChunkSerializer {
+@@ -590,7 +661,7 @@ public class ChunkSerializer {
  
          return nbttaglist == null && nbttaglist1 == null ? null : (chunk) -> {
              if (nbttaglist != null) {
