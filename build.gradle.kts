@@ -27,6 +27,10 @@ allprojects {
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
+tasks.remapSpigotSources {
+    sourceCompatibility = 21 // TODO change default in paperweight
+}
+
 subprojects {
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
