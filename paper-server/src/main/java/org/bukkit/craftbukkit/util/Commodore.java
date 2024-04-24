@@ -25,6 +25,7 @@ import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
 import org.bukkit.plugin.AuthorNagException;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -62,7 +63,15 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
     );
 
-    private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = RerouteBuilder.buildFromClass(FieldRename.class);
+    private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
+        Map<String, RerouteMethodData> reroutes = RerouteBuilder.buildFromClass(clazz);
+        REROUTES.add(reroutes);
+        return reroutes;
+    }
+
+    @VisibleForTesting
+    public static final List<Map<String, RerouteMethodData>> REROUTES = new ArrayList<>(); // Only used for testing
+    private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();

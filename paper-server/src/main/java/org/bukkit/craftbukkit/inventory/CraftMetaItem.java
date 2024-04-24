@@ -332,7 +332,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         });
 
         getOrEmpty(tag, HIDE_ADDITIONAL_TOOLTIP).ifPresent((h) -> {
-            addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+            addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         });
         getOrEmpty(tag, HIDE_TOOLTIP).ifPresent((u) -> {
             hideTooltip = true;
@@ -724,7 +724,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         if (hideFlag != 0) {
-            if (hasItemFlag(ItemFlag.HIDE_POTION_EFFECTS)) {
+            if (hasItemFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)) {
                 itemTag.put(HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
             }
         }

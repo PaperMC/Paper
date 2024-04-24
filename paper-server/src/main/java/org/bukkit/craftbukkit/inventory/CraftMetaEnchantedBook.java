@@ -39,7 +39,7 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
         getOrEmpty(tag, STORED_ENCHANTMENTS).ifPresent((itemEnchantments) -> {
             enchantments = buildEnchantments(itemEnchantments);
             if (!itemEnchantments.showInTooltip) {
-                addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+                addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
             }
         });
     }
@@ -54,7 +54,7 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
     void applyToItem(CraftMetaItem.Applicator itemTag) {
         super.applyToItem(itemTag);
 
-        applyEnchantments(enchantments, itemTag, STORED_ENCHANTMENTS, ItemFlag.HIDE_POTION_EFFECTS);
+        applyEnchantments(enchantments, itemTag, STORED_ENCHANTMENTS, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
     }
 
     @Override

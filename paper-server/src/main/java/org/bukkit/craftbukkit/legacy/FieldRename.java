@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.legacy;
 
 import org.bukkit.Particle;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.legacy.fieldrename.FieldRenameData;
@@ -11,7 +12,9 @@ import org.bukkit.craftbukkit.legacy.reroute.RerouteStatic;
 import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.loot.LootTables;
+import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
@@ -34,6 +37,8 @@ public class FieldRename {
             case "org/bukkit/Particle" -> convertParticleName(apiVersion, from);
             case "org/bukkit/loot/LootTables" -> convertLootTablesName(apiVersion, from);
             case "org/bukkit/attribute/Attribute" -> convertAttributeName(apiVersion, from);
+            case "org/bukkit/map/MapCursor$Type" -> convertMapCursorTypeName(apiVersion, from);
+            case "org/bukkit/inventory/ItemFlag" -> convertItemFlagName(apiVersion, from);
             default -> from;
         };
     }
@@ -320,7 +325,7 @@ public class FieldRename {
         return LootTables.valueOf(convertLootTablesName(ApiVersion.CURRENT, name));
     }
 
-    // LootTables
+    // Attribute
     private static final FieldRenameData ATTRIBUTE_DATA = FieldRenameData.Builder.newBuilder()
             .forAllVersions()
             .change("HORSE_JUMP_STRENGTH", "GENERIC_JUMP_STRENGTH")
@@ -333,8 +338,57 @@ public class FieldRename {
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/attribute/Attribute")
-    public static LootTables valueOf_Attribute(String name) {
+    public static Attribute valueOf_Attribute(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return LootTables.valueOf(convertAttributeName(ApiVersion.CURRENT, name));
+        return Attribute.valueOf(convertAttributeName(ApiVersion.CURRENT, name));
+    }
+
+    // MapCursor Type
+    private static final FieldRenameData MAP_CURSOR_TYPE_DATA = FieldRenameData.Builder.newBuilder()
+            .forVersionsBefore(ApiVersion.FIELD_NAME_PARITY)
+            .change("RED_MARKER", "TARGET_POINT")
+            .forAllVersions()
+            .change("WHITE_POINTER", "PLAYER")
+            .change("GREEN_POINTER", "FRAME")
+            .change("RED_POINTER", "RED_MARKER")
+            .change("BLUE_POINTER", "BLUE_MARKER")
+            .change("WHITE_CROSS", "TARGET_X")
+            .change("WHITE_CIRCLE", "PLAYER_OFF_MAP")
+            .change("SMALL_WHITE_CIRCLE", "PLAYER_OFF_LIMITS")
+            .change("TEMPLE", "MONUMENT")
+            .change("DESERT_VILLAGE", "VILLAGE_DESERT")
+            .change("PLAINS_VILLAGE", "VILLAGE_PLAINS")
+            .change("SAVANNA_VILLAGE", "VILLAGE_SAVANNA")
+            .change("SNOWY_VILLAGE", "VILLAGE_SNOWY")
+            .change("TAIGA_VILLAGE", "VILLAGE_TAIGA")
+            .build();
+
+    @DoNotReroute
+    public static String convertMapCursorTypeName(ApiVersion version, String from) {
+        return MAP_CURSOR_TYPE_DATA.getReplacement(version, from);
+    }
+
+    @RerouteMethodName("valueOf")
+    @RerouteStatic("org/bukkit/map/MapCursor$Type")
+    public static MapCursor.Type valueOf_MapCursorType(String name, @InjectPluginVersion ApiVersion version) {
+        return MapCursor.Type.valueOf(convertMapCursorTypeName(version, name));
+    }
+
+    // ItemFlag
+    private static final FieldRenameData ITEM_FLAG_DATA = FieldRenameData.Builder.newBuilder()
+            .forAllVersions()
+            .change("HIDE_POTION_EFFECTS", "HIDE_ADDITIONAL_TOOLTIP")
+            .build();
+
+    @DoNotReroute
+    public static String convertItemFlagName(ApiVersion version, String from) {
+        return ITEM_FLAG_DATA.getReplacement(version, from);
+    }
+
+    @RerouteMethodName("valueOf")
+    @RerouteStatic("org/bukkit/inventory/ItemFlag")
+    public static ItemFlag valueOf_ItemFlag(String name) {
+        // We don't have version-specific changes, so just use current, and don't inject a version
+        return ItemFlag.valueOf(convertItemFlagName(ApiVersion.CURRENT, name));
     }
 }

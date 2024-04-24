@@ -110,6 +110,8 @@ public class RerouteBuilder {
 
         Type targetType = Type.getType(method);
 
-        return new RerouteMethodData(methodKey, sourceDesc, sourceOwner, methodName, rerouteStatic != null, targetType, Type.getInternalName(method.getDeclaringClass()), method.getName(), arguments, rerouteReturn);
+        boolean inBukkit = !method.isAnnotationPresent(NotInBukkit.class);
+
+        return new RerouteMethodData(methodKey, sourceDesc, sourceOwner, methodName, rerouteStatic != null, targetType, Type.getInternalName(method.getDeclaringClass()), method.getName(), arguments, rerouteReturn, inBukkit);
     }
 }
