@@ -20,10 +20,10 @@ seeds/salts to the frequency reducer which has a similar effect.
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-index d09d5192f0a571e9758e95dd5e1392a9caa88bde..a7ac9a0c4966c2f9d2b325fa59e8792850d376e8 100644
+index 748caca458eb4eec6ece22d8362e36de252f07dd..c4972e5767488878f7929226258c41c1cc30a47f 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -568,7 +568,7 @@ public abstract class ChunkGenerator {
+@@ -574,7 +574,7 @@ public abstract class ChunkGenerator {
                  }
              }
  
@@ -33,7 +33,7 @@ index d09d5192f0a571e9758e95dd5e1392a9caa88bde..a7ac9a0c4966c2f9d2b325fa59e87928
                      this.tryGenerateStructure((StructureSet.StructureSelectionEntry) list.get(0), structureAccessor, registryManager, randomstate, structureTemplateManager, placementCalculator.getLevelSeed(), chunk, chunkcoordintpair, sectionposition);
                  } else {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
-index a310bfbf0d08187375ea17f4b04b276a0b7d0b9f..798e22fb4d685b5845ebf687e8004e94f13a9751 100644
+index e6c59f986ae89022bd76463209dfa550a3d4fb59..a6b6e5ea191c0e2cd7a2e4f01b89d8af40a83c1b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
 @@ -50,13 +50,14 @@ public class ChunkGeneratorStructureState {
@@ -135,7 +135,7 @@ index a310bfbf0d08187375ea17f4b04b276a0b7d0b9f..798e22fb4d685b5845ebf687e8004e94
 +            // Paper end - Add missing structure set seed configs
              randomsource.setSeed(this.concentricRingsSeed);
 +            } // Paper - Add missing structure set seed configs
-             double d0 = randomsource.nextDouble() * 3.141592653589793D * 2.0D;
+             double d0 = randomsource.nextDouble() * Math.PI * 2.0D;
              int l = 0;
              int i1 = 0;
 @@ -275,7 +309,7 @@ public class ChunkGeneratorStructureState {
@@ -148,10 +148,10 @@ index a310bfbf0d08187375ea17f4b04b276a0b7d0b9f..798e22fb4d685b5845ebf687e8004e94
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java b/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
-index 5e7c0d5a31156b75ac4895bd13c8b7138894a576..dc44ae806dc2779e5f0ec0de3fdb4b53da806a5b 100644
+index a4c34e9415632354d33668a38d06453ada4d3c77..cbf13e4f2da6a27619e9bc9a7cd73bb6e69cad2a 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
-@@ -79,9 +79,23 @@ public abstract class StructurePlacement {
+@@ -79,14 +79,30 @@ public abstract class StructurePlacement {
          return this.exclusionZone;
      }
  
@@ -171,12 +171,21 @@ index 5e7c0d5a31156b75ac4895bd13c8b7138894a576..dc44ae806dc2779e5f0ec0de3fdb4b53
 +        }
 +        // Paper end - Add missing structure set seed configs
          return this.isPlacementChunk(calculator, chunkX, chunkZ)
--            && (!(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(calculator.getLevelSeed(), this.salt, chunkX, chunkZ, this.frequency))
-+            && (!(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(calculator.getLevelSeed(), this.salt, chunkX, chunkZ, this.frequency, saltOverride)) // Paper - Add missing structure set seed configs
-             && (!this.exclusionZone.isPresent() || !this.exclusionZone.get().isPlacementForbidden(calculator, chunkX, chunkZ));
+-            && this.applyAdditionalChunkRestrictions(chunkX, chunkZ, calculator.getLevelSeed())
++            && this.applyAdditionalChunkRestrictions(chunkX, chunkZ, calculator.getLevelSeed(), saltOverride) // Paper - Add missing structure set seed configs
+             && this.applyInteractionsWithOtherStructures(calculator, chunkX, chunkZ);
      }
  
-@@ -93,25 +107,31 @@ public abstract class StructurePlacement {
+-    public boolean applyAdditionalChunkRestrictions(int chunkX, int chunkZ, long seed) {
+-        return !(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(seed, this.salt, chunkX, chunkZ, this.frequency);
++    // Paper start - Add missing structure set seed configs
++    public boolean applyAdditionalChunkRestrictions(int chunkX, int chunkZ, long seed, @org.jetbrains.annotations.Nullable Integer saltOverride) {
++        return !(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(seed, this.salt, chunkX, chunkZ, this.frequency, saltOverride);
++        // Paper end - Add missing structure set seed configs
+     }
+ 
+     public boolean applyInteractionsWithOtherStructures(ChunkGeneratorStructureState calculator, int centerChunkX, int centerChunkZ) {
+@@ -101,25 +117,31 @@ public abstract class StructurePlacement {
  
      public abstract StructurePlacementType<?> type();
  
@@ -213,7 +222,7 @@ index 5e7c0d5a31156b75ac4895bd13c8b7138894a576..dc44ae806dc2779e5f0ec0de3fdb4b53
          int i = chunkX >> 4;
          int j = chunkZ >> 4;
          WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
-@@ -139,7 +159,7 @@ public abstract class StructurePlacement {
+@@ -147,7 +169,7 @@ public abstract class StructurePlacement {
  
      @FunctionalInterface
      public interface FrequencyReducer {
@@ -222,7 +231,7 @@ index 5e7c0d5a31156b75ac4895bd13c8b7138894a576..dc44ae806dc2779e5f0ec0de3fdb4b53
      }
  
      public static enum FrequencyReductionMethod implements StringRepresentable {
-@@ -159,8 +179,8 @@ public abstract class StructurePlacement {
+@@ -167,8 +189,8 @@ public abstract class StructurePlacement {
              this.reducer = generationPredicate;
          }
  
