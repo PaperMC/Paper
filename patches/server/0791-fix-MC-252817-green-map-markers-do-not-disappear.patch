@@ -6,34 +6,31 @@ Subject: [PATCH] fix MC-252817 (green map markers do not disappear).
 this bug is caused by the fact that the itemframe's item is set to empty before the green marker is requested to be removed. this is fixed by getting the mapid from this method's parameter, rather than the air block now stored by the item frame.
 
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
-index cb3de05dba7daa925b6fa7e0c7bbb8e3c53b51f4..ef6d63cdc823280c9db491c744af598b94b6922e 100644
+index cb3de05dba7daa925b6fa7e0c7bbb8e3c53b51f4..6bf89686ce5cf700ac06ec1e38f53af745098fa3 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
-@@ -277,8 +277,7 @@ public class ItemFrame extends HangingEntity {
+@@ -277,7 +277,7 @@ public class ItemFrame extends HangingEntity {
      }
  
      private void removeFramedMap(ItemStack stack) {
 -        MapId mapid = this.getFramedMapId();
--
 +        MapId mapid = this.getFramedMapIdForItem(stack); // Paper - fix MC-252817 (green map markers do not disappear)
+ 
          if (mapid != null) {
              MapItemSavedData worldmap = MapItem.getSavedData(mapid, this.level());
- 
-@@ -305,9 +304,16 @@ public class ItemFrame extends HangingEntity {
+@@ -305,7 +305,14 @@ public class ItemFrame extends HangingEntity {
  
      @Nullable
      public MapId getFramedMapId() {
 -        return (MapId) this.getItem().get(DataComponents.MAP_ID);
 +        // Paper start
 +        return this.getFramedMapIdForItem(this.getItem());
-     }
- 
++    }
++
 +    @Nullable
 +    public MapId getFramedMapIdForItem(ItemStack item) {
 +        return (MapId) item.get(DataComponents.MAP_ID);
-+    }
-+    // Paper end
-+
-     public boolean hasFramedMap() {
-         return this.getItem().has(DataComponents.MAP_ID);
++        // Paper end
      }
+ 
+     public boolean hasFramedMap() {
