@@ -144,23 +144,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.getCommand());
 +            suggestEvent.setCancelled(suggestions.isEmpty());
 +            if (suggestEvent.callEvent()) {
-+                this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
++                this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), limitTo(suggestEvent.getSuggestions(), ServerGamePacketListenerImpl.MAX_COMMAND_SUGGESTIONS)));
 +            }
 +            // Paper end - Brigadier API
          }
      }
++    // Paper start - brig API
++    private static Suggestions limitTo(final Suggestions suggestions, final int size) {
++        return suggestions.getList().size() <= size ? suggestions : new Suggestions(suggestions.getRange(), suggestions.getList().subList(0, size));
++    }
++    // Paper end - brig API
  
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     private void sendServerSuggestions(final ServerboundCommandSuggestionPacket packet, final StringReader stringreader) {
+         // Paper end - AsyncTabCompleteEvent
          ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
  
          this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
 -            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
--            this.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
+-            Suggestions suggestions1 = suggestions.getList().size() <= 1000 ? suggestions : new Suggestions(suggestions.getRange(), suggestions.getList().subList(0, 1000));
+-
+-            this.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions1));
 +            // Paper start - Brigadier API
 +            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.getCommand());
 +            suggestEvent.setCancelled(suggestions.isEmpty());
 +            if (suggestEvent.callEvent()) {
-+                this.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
++                this.send(new ClientboundCommandSuggestionsPacket(packet.getId(), limitTo(suggestEvent.getSuggestions(), ServerGamePacketListenerImpl.MAX_COMMAND_SUGGESTIONS)));
 +            }
 +            // Paper end - Brigadier API
          });

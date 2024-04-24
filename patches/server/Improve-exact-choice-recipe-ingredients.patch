@@ -93,7 +93,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    final IntList idList = new IntArrayList(items.length);
 +                    for (final ItemStack item : items) {
 +                        idList.add(this.registerExact(item)); // I think not copying the stack here is safe because cb copies the stack when creating the ingredient
-+                        if (!item.hasTag()) {
++                        if (item.getComponentsPatch().isEmpty()) {
 +                            // add regular index if it's a plain itemstack but still registered as exact
 +                            idList.add(StackedContents.getStackingIndex(item));
 +                        }
@@ -158,11 +158,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              int l = k;
  
              for (int m : intList) {
--                int n = StackedContents.fromStackingIndex(m).getMaxStackSize();
-+                int n = StackedContents.maxStackSizeFromStackingIndex(m, this.stackedContents); // Paper - Improve exact choice recipe ingredients
-                 if (n < l) {
-                     l = n;
-                 }
+-                ItemStack itemStack2 = StackedContents.fromStackingIndex(m);
++                ItemStack itemStack2 = StackedContents.fromStackingIndexWithExtras(m, this.stackedContents); // Paper - Improve exact choice recipe ingredients
+                 if (!itemStack2.isEmpty()) {
+                     int n = itemStack2.getMaxStackSize();
+                     if (n < l) {
 @@ -0,0 +0,0 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
      @Override
      public void addItemToSlot(Iterator<Integer> inputs, int slot, int amount, int gridX, int gridY) {
@@ -214,15 +214,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Nullable public io.papermc.paper.inventory.recipe.StackedContentsExtraMap extrasMap = null; // Paper - Improve exact choice recipe ingredients
  
      public void accountSimpleStack(ItemStack stack) {
-+        if (this.extrasMap != null && stack.hasTag() && this.extrasMap.accountStack(stack, Math.min(64, stack.getCount()))) return; // Paper - Improve exact choice recipe ingredients; max of 64 due to accountStack method below
-         if (!stack.isDamaged() && !stack.isEnchanted() && !stack.hasCustomHoverName()) {
++        if (this.extrasMap != null && !stack.getComponentsPatch().isEmpty() && this.extrasMap.accountStack(stack, Math.min(64, stack.getCount()))) return; // Paper - Improve exact choice recipe ingredients; max of 64 due to accountStack method below
+         if (!stack.isDamaged() && !stack.isEnchanted() && !stack.has(DataComponents.CUSTOM_NAME)) {
              this.accountStack(stack);
          }
 @@ -0,0 +0,0 @@ public class StackedContents {
          if (!stack.isEmpty()) {
              int i = getStackingIndex(stack);
              int j = Math.min(maxCount, stack.getCount());
-+            if (this.extrasMap != null && stack.hasTag() && this.extrasMap.accountStack(stack, j)) return; // Paper - Improve exact choice recipe ingredients; if an exact ingredient, don't include it
++            if (this.extrasMap != null && !stack.getComponentsPatch().isEmpty() && this.extrasMap.accountStack(stack, j)) return; // Paper - Improve exact choice recipe ingredients; if an exact ingredient, don't include it
              this.put(i, j);
          }
      }
@@ -235,11 +235,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.extrasMap = new io.papermc.paper.inventory.recipe.StackedContentsExtraMap(this, recipe);
 +    }
 +
-+    public static int maxStackSizeFromStackingIndex(final int itemId, @Nullable final StackedContents contents) {
++    public static ItemStack fromStackingIndexWithExtras(final int itemId, @Nullable final StackedContents contents) {
 +        if (contents != null && contents.extrasMap != null && itemId >= BuiltInRegistries.ITEM.size()) {
-+            return fromStackingIndexExtras(itemId, contents.extrasMap).getMaxStackSize();
++            return fromStackingIndexExtras(itemId, contents.extrasMap);
 +        }
-+        return fromStackingIndex(itemId).getMaxStackSize();
++        return fromStackingIndex(itemId);
 +    }
 +
 +    public static ItemStack fromStackingIndexExtras(final int itemId, final io.papermc.paper.inventory.recipe.StackedContentsExtraMap extrasMap) {

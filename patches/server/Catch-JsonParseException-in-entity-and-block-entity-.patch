@@ -22,13 +22,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +
 +    @Nullable
-+    public static net.minecraft.network.chat.Component getBaseComponentFromNbt(String key, net.minecraft.nbt.CompoundTag compound) {
++    public static net.minecraft.network.chat.Component getBaseComponentFromNbt(final String key, final net.minecraft.nbt.CompoundTag compound, final net.minecraft.core.HolderLookup.Provider lookupProvider) {
 +        if (!compound.contains(key)) {
 +            return null;
 +        }
-+        String string = compound.getString(key);
++        final String string = compound.getString(key);
 +        try {
-+            return net.minecraft.network.chat.Component.Serializer.fromJson(string);
++            return net.minecraft.network.chat.Component.Serializer.fromJson(string, lookupProvider);
 +        } catch (com.google.gson.JsonParseException e) {
 +            org.bukkit.Bukkit.getLogger().warning("Unable to parse " + key + " from " + compound +": " + e.getMessage());
 +        }
@@ -44,34 +44,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.command = nbt.getString("Command");
          this.successCount = nbt.getInt("SuccessCount");
          if (nbt.contains("CustomName", 8)) {
--            this.setName(Component.Serializer.fromJson(nbt.getString("CustomName")));
-+            this.setName(io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt)); // Paper - Catch ParseException
+-            this.setCustomName(Component.Serializer.fromJson(nbt.getString("CustomName"), registries));
++            this.setCustomName(io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registries)); // Paper - Catch ParseException
+         } else {
+             this.setCustomName((Component) null);
          }
- 
-         if (nbt.contains("TrackOutput", 1)) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
 @@ -0,0 +0,0 @@ public class BannerBlockEntity extends BlockEntity implements Nameable {
-     public void load(CompoundTag nbt) {
-         super.load(nbt);
+     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+         super.loadAdditional(nbt, registryLookup);
          if (nbt.contains("CustomName", 8)) {
--            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"));
-+            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"), registryLookup);
++            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registryLookup); // Paper - Catch ParseException
          }
  
-         this.itemPatterns = nbt.getList("Patterns", 10);
+         if (nbt.contains("patterns")) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
 @@ -0,0 +0,0 @@ public abstract class BaseContainerBlockEntity extends BlockEntity implements Co
-         super.load(nbt);
+         super.loadAdditional(nbt, registryLookup);
          this.lockKey = LockCode.fromTag(nbt);
          if (nbt.contains("CustomName", 8)) {
--            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"));
-+            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"), registryLookup);
++            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registryLookup); // Paper - Catch ParseException
          }
  
      }
@@ -83,21 +83,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.secondaryPower = BeaconBlockEntity.loadEffect(nbt, "secondary_effect");
          this.levels = nbt.getInt("Levels"); // CraftBukkit - SPIGOT-5053, use where available
          if (nbt.contains("CustomName", 8)) {
--            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"));
-+            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"), registryLookup);
++            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registryLookup); // Paper - Catch ParseException
          }
  
          this.lockKey = LockCode.fromTag(nbt);
-diff --git a/src/main/java/net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/EnchantingTableBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/EnchantingTableBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java
-+++ b/src/main/java/net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java
-@@ -0,0 +0,0 @@ public class EnchantmentTableBlockEntity extends BlockEntity implements Nameable
-     public void load(CompoundTag nbt) {
-         super.load(nbt);
+--- a/src/main/java/net/minecraft/world/level/block/entity/EnchantingTableBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/EnchantingTableBlockEntity.java
+@@ -0,0 +0,0 @@ public class EnchantingTableBlockEntity extends BlockEntity implements Nameable
+     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+         super.loadAdditional(nbt, registryLookup);
          if (nbt.contains("CustomName", 8)) {
--            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"));
-+            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"), registryLookup);
++            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registryLookup); // Paper - Catch ParseException
          }
      }
  
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+@@ -0,0 +0,0 @@ public class SkullBlockEntity extends BlockEntity {
+         }
+ 
+         if (nbt.contains("custom_name", 8)) {
+-            this.customName = Component.Serializer.fromJson(nbt.getString("custom_name"), registryLookup);
++            this.customName = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("custom_name", nbt, registryLookup); // Paper - Catch ParseException
+         } else {
+             this.customName = null;
+         }
