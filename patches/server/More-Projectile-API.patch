@@ -34,10 +34,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - More projectile API
          if (!this.level().isClientSide) {
              ItemStack itemstack = this.getItem();
-             Potion potionregistry = PotionUtils.getPotion(itemstack);
+             PotionContents potioncontents = (PotionContents) itemstack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
 @@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
                  if (this.isLingering()) {
-                     showParticles = this.makeAreaOfEffectCloud(itemstack, potionregistry, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
+                     showParticles = this.makeAreaOfEffectCloud(itemstack, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
                  } else {
 -                    showParticles = this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
 +                    showParticles = this.applySplash(list, hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper - More projectile API
@@ -48,17 +48,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
--    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events
-+    private boolean applySplash(List<MobEffectInstance> list, @Nullable Entity entity, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events & More projectile API
+-    private boolean applySplash(Iterable<MobEffectInstance> iterable, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events
++    private boolean applySplash(Iterable<MobEffectInstance> iterable, @Nullable Entity entity, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events & More projectile API
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
-         List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
+         List<net.minecraft.world.entity.LivingEntity> list = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
          Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
 @@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
  
      }
  
--    private boolean makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean
-+    private boolean makeAreaOfEffectCloud(ItemStack itemstack, Potion potionregistry, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - return boolean & More projectile API
+-    private boolean makeAreaOfEffectCloud(PotionContents potioncontents, HitResult position) { // CraftBukkit - Pass MovingObjectPosition
++    private boolean makeAreaOfEffectCloud(PotionContents potioncontents, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - More projectile API
          AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
          Entity entity = this.getOwner();
  
@@ -136,30 +136,8 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
-@@ -0,0 +0,0 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
-         this.getHandle().setCritArrow(critical);
-     }
- 
--    @Override
--    public ProjectileSource getShooter() {
--        return this.getHandle().projectileSource;
--    }
--
--    @Override
--    public void setShooter(ProjectileSource shooter) {
--        if (shooter instanceof Entity) {
--            this.getHandle().setOwner(((CraftEntity) shooter).getHandle());
--        } else {
--            this.getHandle().setOwner(null);
--        }
--        this.getHandle().projectileSource = shooter;
--    }
-+    // Paper - moved to AbstractProjectile
- 
-     @Override
-     public boolean isInBlock() {
-@@ -0,0 +0,0 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
-         this.getHandle().pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.byOrdinal(status.ordinal());
+@@ -0,0 +0,0 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
+         return false;
      }
  
 +    // Paper start
@@ -192,8 +170,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      @Override
-     public void setTicksLived(int value) {
-         super.setTicksLived(value);
+     public boolean hasCustomEffects() {
+         return !this.getHandle().getPotionContents().customEffects().isEmpty();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
@@ -500,7 +478,7 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
-@@ -0,0 +0,0 @@ public class CraftTrident extends CraftArrow implements Trident {
+@@ -0,0 +0,0 @@ public class CraftTrident extends CraftAbstractArrow implements Trident {
          com.google.common.base.Preconditions.checkArgument(loyaltyLevel >= 0 && loyaltyLevel <= 127, "The loyalty level has to be between 0 and 127");
          this.getHandle().setLoyalty((byte) loyaltyLevel);
      }
@@ -592,5 +570,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        switch (CraftItemStack.getType(item)) {
 +        switch (material) {  // Paper
              case WRITTEN_BOOK:
-                 return new CraftMetaBookSigned(item.getTag());
+                 return new CraftMetaBookSigned(item.getComponentsPatch());
              case WRITABLE_BOOK:

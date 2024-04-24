@@ -13,13 +13,13 @@ diff --git a/src/main/java/net/minecraft/world/entity/animal/Cat.java b/src/main
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Cat.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Cat.java
-@@ -0,0 +0,0 @@ public class Cat extends TamableAnimal implements VariantHolder<CatVariant> {
-         });
+@@ -0,0 +0,0 @@ public class Cat extends TamableAnimal implements VariantHolder<Holder<CatVarian
+         BuiltInRegistries.CAT_VARIANT.getRandomElementOf(tagkey, world.getRandom()).ifPresent(this::setVariant);
          ServerLevel worldserver = world.getLevel();
  
 -        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
 +        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - Fix swamp hut cat generation deadlock
-             this.setVariant((CatVariant) BuiltInRegistries.CAT_VARIANT.getOrThrow(CatVariant.ALL_BLACK));
+             this.setVariant((Holder) BuiltInRegistries.CAT_VARIANT.getHolderOrThrow(CatVariant.ALL_BLACK));
              this.setPersistenceRequired();
          }
 diff --git a/src/main/java/net/minecraft/world/level/StructureManager.java b/src/main/java/net/minecraft/world/level/StructureManager.java
@@ -43,17 +43,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class StructureManager {
      }
  
-     public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> structureTag) {
+     public StructureStart getStructureWithPieceAt(BlockPos pos, Predicate<Holder<Structure>> predicate) {
 +        // Paper start - Fix swamp hut cat generation deadlock
-+        return this.getStructureWithPieceAt(pos, structureTag, null);
++        return this.getStructureWithPieceAt(pos, predicate, null);
 +    }
-+    public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> structureTag, @Nullable ServerLevelAccessor levelAccessor) {
++
++    public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> tag, @Nullable ServerLevelAccessor levelAccessor) {
++        return this.getStructureWithPieceAt(pos, structure -> structure.is(tag), levelAccessor);
++    }
++
++    public StructureStart getStructureWithPieceAt(BlockPos pos, Predicate<Holder<Structure>> predicate, @Nullable ServerLevelAccessor levelAccessor) {
 +        // Paper end - Fix swamp hut cat generation deadlock
          Registry<Structure> registry = this.registryAccess().registryOrThrow(Registries.STRUCTURE);
  
          for (StructureStart structureStart : this.startsForStructure(
--            new ChunkPos(pos), structure -> registry.getHolder(registry.getId(structure)).map(reference -> reference.is(structureTag)).orElse(false)
-+            new ChunkPos(pos), structure -> registry.getHolder(registry.getId(structure)).map(reference -> reference.is(structureTag)).orElse(false), levelAccessor // Paper - Fix swamp hut cat generation deadlock
+-            new ChunkPos(pos), structure -> registry.getHolder(registry.getId(structure)).map(predicate::test).orElse(false)
++            new ChunkPos(pos), structure -> registry.getHolder(registry.getId(structure)).map(predicate::test).orElse(false), levelAccessor // Paper - Fix swamp hut cat generation deadlock
          )) {
              if (this.structureHasPieceAt(pos, structureStart)) {
                  return structureStart;
