@@ -171,6 +171,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     final Material material;
     private CraftBlockEntityState<?> blockEntityTag;
+    private NBTTagCompound internalTag;
 
     CraftMetaBlockState(CraftMetaItem meta, Material material) {
         super(meta);
@@ -222,7 +223,8 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         } else {
             material = Material.AIR;
         }
-        blockEntityTag = getBlockState(material, null);
+        blockEntityTag = getBlockState(material, internalTag);
+        internalTag = null;
     }
 
     @Override
@@ -243,7 +245,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         super.deserializeInternal(tag, context);
 
         if (tag.contains(BLOCK_ENTITY_TAG.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
-            blockEntityTag = getBlockState(material, tag.getCompound(BLOCK_ENTITY_TAG.NBT));
+            internalTag = tag.getCompound(BLOCK_ENTITY_TAG.NBT);
         }
     }
 
