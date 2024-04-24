@@ -12,6 +12,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
+import org.bukkit.support.condition.EnableIfMojangServerAvailable;
 import org.junit.jupiter.api.Test;
 
 public class PlayerProfileTest {
@@ -60,6 +61,7 @@ public class PlayerProfileTest {
     }
 
     @Test
+    @EnableIfMojangServerAvailable
     public void testProvidedValues() {
         Property property = new Property(CraftPlayerTextures.PROPERTY_NAME, VALUE, SIGNATURE);
         assertTrue(CraftProfileProperty.hasValidSignature(property), "Invalid test property signature, has the public key changed?");
@@ -117,6 +119,7 @@ public class PlayerProfileTest {
     }
 
     @Test
+    @EnableIfMojangServerAvailable
     public void testBuildGameProfile() {
         CraftPlayerProfile profile = buildPlayerProfile();
         GameProfile gameProfile = profile.buildGameProfile();
@@ -140,6 +143,7 @@ public class PlayerProfileTest {
     }
 
     @Test
+    @EnableIfMojangServerAvailable
     public void testSignatureValidation() {
         CraftPlayerProfile profile = buildPlayerProfile();
         assertTrue(profile.getTextures().isSigned(), "Signature is not valid");
