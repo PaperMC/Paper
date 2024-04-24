@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public boolean addPotionEffect(PotionEffect effect, boolean force) {
--        this.getHandle().addEffect(new MobEffectInstance(CraftPotionEffectType.bukkitToMinecraft(effect.getType()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()), EntityPotionEffectEvent.Cause.PLUGIN);
+-        this.getHandle().addEffect(new MobEffectInstance(CraftPotionEffectType.bukkitToMinecraftHolder(effect.getType()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()), EntityPotionEffectEvent.Cause.PLUGIN);
 +        this.getHandle().addEffect(org.bukkit.craftbukkit.potion.CraftPotionUtil.fromBukkit(effect), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
          return true;
      }
@@ -21,8 +21,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
      @Override
      public PotionEffect getPotionEffect(PotionEffectType type) {
-         MobEffectInstance handle = this.getHandle().getEffect(CraftPotionEffectType.bukkitToMinecraft(type));
--        return (handle == null) ? null : new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible());
+         MobEffectInstance handle = this.getHandle().getEffect(CraftPotionEffectType.bukkitToMinecraftHolder(type));
+-        return (handle == null) ? null : new PotionEffect(CraftPotionEffectType.minecraftHolderToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible());
 +        return (handle == null) ? null : org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(handle); // Paper
      }
  
@@ -31,7 +31,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Collection<PotionEffect> getActivePotionEffects() {
          List<PotionEffect> effects = new ArrayList<PotionEffect>();
          for (MobEffectInstance handle : this.getHandle().activeEffects.values()) {
--            effects.add(new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible()));
+-            effects.add(new PotionEffect(CraftPotionEffectType.minecraftHolderToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible()));
 +            effects.add(org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(handle)); // Paper
          }
          return effects;
@@ -43,7 +43,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class CraftPotionUtil {
  
      public static MobEffectInstance fromBukkit(PotionEffect effect) {
-         MobEffect type = CraftPotionEffectType.bukkitToMinecraft(effect.getType());
+         Holder<MobEffect> type = CraftPotionEffectType.bukkitToMinecraftHolder(effect.getType());
 -        return new MobEffectInstance(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles());
 +        return new MobEffectInstance(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles(), effect.hasIcon()); // Paper
      }
@@ -57,4 +57,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return new PotionEffect(type, duration, amp, ambient, particles, effect.showIcon()); // Paper
      }
  
-     public static boolean equals(MobEffect mobEffect, PotionEffectType type) {
+     public static boolean equals(Holder<MobEffect> mobEffect, PotionEffectType type) {
