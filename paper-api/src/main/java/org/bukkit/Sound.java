@@ -1055,8 +1055,6 @@ public enum Sound implements Keyed {
     ENTITY_GENERIC_SMALL_FALL("entity.generic.small_fall"),
     ENTITY_GENERIC_SPLASH("entity.generic.splash"),
     ENTITY_GENERIC_SWIM("entity.generic.swim"),
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    ENTITY_GENERIC_WIND_BURST("entity.generic.wind_burst"),
     ENTITY_GHAST_AMBIENT("entity.ghast.ambient"),
     ENTITY_GHAST_DEATH("entity.ghast.death"),
     ENTITY_GHAST_HURT("entity.ghast.hurt"),
