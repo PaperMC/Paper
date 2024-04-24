@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MisterVector <whizkid3000@hotmail.com>
+Date: Tue, 13 Aug 2019 19:45:06 -0700
+Subject: [PATCH] Add PlayerFlowerPotManipulateEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/FlowerPotBlock.java b/src/main/java/net/minecraft/world/level/block/FlowerPotBlock.java
+index b0c950fa7426dc762b99080d98831b961fc19da2..7194565ad1a910fe300d8664a30b35c4eff18cb7 100644
+--- a/src/main/java/net/minecraft/world/level/block/FlowerPotBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FlowerPotBlock.java
+@@ -63,6 +63,18 @@ public class FlowerPotBlock extends Block {
+         } else if (!this.isEmpty()) {
+             return ItemInteractionResult.CONSUME;
+         } else {
++            // Paper start - Add PlayerFlowerPotManipulateEvent
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
++            org.bukkit.inventory.ItemStack placedStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack);
++
++            io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent event = new io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent((org.bukkit.entity.Player) player.getBukkitEntity(), block, placedStack, true);
++            if (!event.callEvent()) {
++                // Update client
++                player.containerMenu.sendAllDataToRemote();
++
++                return ItemInteractionResult.CONSUME;
++            }
++            // Paper end - Add PlayerFlowerPotManipulateEvent
+             world.setBlock(pos, blockState, 3);
+             world.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
+             player.awardStat(Stats.POT_FLOWER);
+@@ -77,6 +89,18 @@ public class FlowerPotBlock extends Block {
+             return InteractionResult.CONSUME;
+         } else {
+             ItemStack itemStack = new ItemStack(this.potted);
++            // Paper start - Add PlayerFlowerPotManipulateEvent
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
++            org.bukkit.inventory.ItemStack pottedStack = new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.block.CraftBlockType.minecraftToBukkit(this.potted));
++
++            io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent event = new io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent((org.bukkit.entity.Player) player.getBukkitEntity(), block, pottedStack, false);
++            if (!event.callEvent()) {
++                // Update client
++                player.containerMenu.sendAllDataToRemote();
++
++                return InteractionResult.PASS;
++            }
++            // Paper end - Add PlayerFlowerPotManipulateEvent
+             if (!player.addItem(itemStack)) {
+                 player.drop(itemStack, false);
+             }

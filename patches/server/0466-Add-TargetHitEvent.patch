@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 25 Nov 2020 23:20:44 -0800
+Subject: [PATCH] Add TargetHitEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/TargetBlock.java b/src/main/java/net/minecraft/world/level/block/TargetBlock.java
+index 549ca8e9b265635bd3d5863682fe240f3f9f3f58..ee4eb863b6c02f2bcbb03ca413fc98811d409ac5 100644
+--- a/src/main/java/net/minecraft/world/level/block/TargetBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TargetBlock.java
+@@ -42,6 +42,10 @@ public class TargetBlock extends Block {
+     @Override
+     protected void onProjectileHit(Level world, BlockState state, BlockHitResult hit, Projectile projectile) {
+         int i = updateRedstoneOutput(world, state, hit, projectile);
++        // Paper start - Add TargetHitEvent
++    }
++    private static void awardTargetHitCriteria(Projectile projectile, BlockHitResult hit, int i) {
++        // Paper end - Add TargetHitEvent
+         if (projectile.getOwner() instanceof ServerPlayer serverPlayer) {
+             serverPlayer.awardStat(Stats.TARGET_HIT);
+             CriteriaTriggers.TARGET_BLOCK_HIT.trigger(serverPlayer, projectile, hit.getLocation(), i);
+@@ -51,10 +55,31 @@ public class TargetBlock extends Block {
+     private static int updateRedstoneOutput(LevelAccessor world, BlockState state, BlockHitResult hitResult, Entity entity) {
+         int i = getRedstoneStrength(hitResult, hitResult.getLocation());
+         int j = entity instanceof AbstractArrow ? 20 : 8;
++        // Paper start - Add TargetHitEvent
++        boolean shouldAward = false;
++        if (entity instanceof Projectile) {
++            final Projectile projectile = (Projectile) entity;
++            final org.bukkit.craftbukkit.block.CraftBlock craftBlock = org.bukkit.craftbukkit.block.CraftBlock.at(world, hitResult.getBlockPos());
++            final org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(hitResult.getDirection());
++            final io.papermc.paper.event.block.TargetHitEvent targetHitEvent = new io.papermc.paper.event.block.TargetHitEvent((org.bukkit.entity.Projectile) projectile.getBukkitEntity(), craftBlock, blockFace, i);
++            if (targetHitEvent.callEvent()) {
++                i = targetHitEvent.getSignalStrength();
++                shouldAward = true;
++            } else {
++                return i;
++            }
++        }
++        // Paper end - Add TargetHitEvent
+         if (!world.getBlockTicks().hasScheduledTick(hitResult.getBlockPos(), state.getBlock())) {
+             setOutputPower(world, state, i, hitResult.getBlockPos(), j);
+         }
+ 
++        // Paper start - Award Hit Criteria after Block Update
++        if (shouldAward) {
++            awardTargetHitCriteria((Projectile) entity, hitResult, i);
++        }
++        // Paper end - Award Hit Criteria after Block Update
++
+         return i;
+     }
+ 
