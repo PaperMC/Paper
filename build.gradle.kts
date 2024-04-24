@@ -1,3 +1,4 @@
+import io.papermc.paperweight.PaperweightException
 import io.papermc.paperweight.tasks.BaseTask
 import io.papermc.paperweight.util.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
@@ -204,6 +205,14 @@ abstract class RebasePatches : BaseTask() {
 
     @TaskAction
     fun run() {
+        val patchedDirPath = projectDir.path.resolve(patchedDir.get())
+        if (patchedDirPath.isDirectory()) {
+            val status = Git(patchedDirPath)("status").getText()
+            if (status.contains("You are in the middle of an am session.")) {
+                throw PaperweightException("Cannot continue update when $patchedDirPath is in the middle of an am session.")
+            }
+        }
+
         val unapplied = unapplied()
         for (patch in unapplied) {
             patch.copyTo(appliedLoc(patch))
@@ -266,7 +275,7 @@ abstract class RebasePatches : BaseTask() {
             }
 
             // Delete the build file before resetting the AM session in case it has compilation errors
-            projectDir.path.resolve(patchedDir.get()).resolve("build.gradle.kts").deleteIfExists()
+            patchedDirPath.resolve("build.gradle.kts").deleteIfExists()
             // Apply again to reset the am session (so it ends on the failed patch, to allow us to rebuild after fixing it)
             val apply2 = ProcessBuilder()
                 .directory(projectDir.path)
