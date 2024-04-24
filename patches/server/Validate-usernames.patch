@@ -9,19 +9,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-     public GameProfile authenticatedProfile; // Paper - public
      private final String serverId;
+     private final boolean transferred;
      private ServerPlayer player; // CraftBukkit
 +    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
  
-     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
+     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection, boolean transferred) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
      @Override
      public void handleHello(ServerboundHelloPacket packet) {
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
--        Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
-+        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]); // Paper - config username validation
+-        Validate.validState(StringUtil.isValidPlayerName(packet.name()), "Invalid characters in username", new Object[0]);
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(StringUtil.isValidPlayerName(packet.name()), "Invalid characters in username", new Object[0]); // Paper - config username validation
          this.requestedUsername = packet.name();
          GameProfile gameprofile = this.server.getSingleplayerProfile();
  
@@ -38,17 +38,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  list.add(entityplayer);
              }
          }
-diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+diff --git a/src/main/java/net/minecraft/util/StringUtil.java b/src/main/java/net/minecraft/util/StringUtil.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/player/Player.java
-+++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
+--- a/src/main/java/net/minecraft/util/StringUtil.java
++++ b/src/main/java/net/minecraft/util/StringUtil.java
+@@ -0,0 +0,0 @@ public class StringUtil {
      }
  
-     public static boolean isValidUsername(String name) {
--        return name.length() > 16 ? false : name.chars().filter((i) -> {
--            return i <= 32 || i >= 127;
--        }).findAny().isEmpty();
+     public static boolean isValidPlayerName(String name) {
+-        return name.length() <= 16 && name.chars().filter(c -> c <= 32 || c >= 127).findAny().isEmpty();
 +        // Paper start - username validation overriding
 +        if (name == null || name.isEmpty() || name.length() > 16) {
 +            return false;
@@ -68,4 +66,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - username validation overriding
      }
  
-     public static float getPickRange(boolean creative) {
+     public static String filterText(String string) {
