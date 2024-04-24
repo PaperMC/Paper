@@ -1481,8 +1481,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             builder.put(ITEM_NAME.BUKKIT, CraftChatMessage.toJSON(itemName));
         }
 
-        if (lore != null) {
-            builder.put(LORE.BUKKIT, ImmutableList.copyOf(lore));
+        if (hasLore()) {
+            // SPIGOT-7625: Convert lore to json before serializing it
+            List<String> jsonLore = new ArrayList<>();
+
+            for (IChatBaseComponent component : lore) {
+                jsonLore.add(CraftChatMessage.toJSON(component));
+            }
+
+            builder.put(LORE.BUKKIT, jsonLore);
         }
 
         if (hasCustomModelData()) {
