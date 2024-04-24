@@ -5,32 +5,32 @@ Subject: [PATCH] PortalCreateEvent needs to know its entity
 
 
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 4a6e128c62c890c34b62f826d586ae6a424e7f01..9d2d305a5e66b9f3d94f6464736f5bb40adae591 100644
+index 86aae218fb760d12e254dcf252c9f78c0ba856d5..a80f09d61b3b0d8bc5c5bec7c9df17327bd94b57 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -480,7 +480,7 @@ public final class ItemStack {
+@@ -493,7 +493,7 @@ public final class ItemStack implements DataComponentHolder {
                          net.minecraft.world.level.block.state.BlockState block = world.getBlockState(newblockposition);
  
                          if (!(block.getBlock() instanceof BaseEntityBlock)) { // Containers get placed automatically
--                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true);
-+                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true, context); // Paper - pass context
+-                            block.onPlace(world, newblockposition, oldBlock, true);
++                            block.onPlace(world, newblockposition, oldBlock, true, context); // Paper - pass context
                          }
  
                          world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getBlockState(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
 diff --git a/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java b/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
-index e707553bbddf84bc48ec7186da00c3eb0632946d..839469c1249829b42e752e5a1b613550c3f65bba 100644
+index 233236733537e036d3a37a3102f3ca6b887d076f..da4fd07f75aefb53b03e40c668f6c4a23693ffcb 100644
 --- a/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
 @@ -144,12 +144,19 @@ public abstract class BaseFireBlock extends Block {
  
      @Override
-     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+     protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
 +        // Paper start - UseOnContext param
 +        this.onPlace(state, world, pos, oldState, notify, null);
 +    }
 +
 +    @Override
-+    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
++    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
 +        // Paper end - UseOnContext param
          if (!oldState.is(state.getBlock())) {
              if (BaseFireBlock.inPortalDimension(world)) {
@@ -43,42 +43,54 @@ index e707553bbddf84bc48ec7186da00c3eb0632946d..839469c1249829b42e752e5a1b613550
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/level/block/FireBlock.java b/src/main/java/net/minecraft/world/level/block/FireBlock.java
-index 65b2873ca8032a64a4968b7587637644df1aeca5..c5116d12f3c073f0a8695a8cd00545e6d947644d 100644
+index ceaa2a7048afc4955d3695af5291e83a79d83c5d..5dad1aa26a8908cba6a08398a4bad27f31d4c2c0 100644
 --- a/src/main/java/net/minecraft/world/level/block/FireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/FireBlock.java
 @@ -368,8 +368,10 @@ public class FireBlock extends BaseFireBlock {
      }
  
      @Override
--    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+-    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
 -        super.onPlace(state, world, pos, oldState, notify);
 +    // Paper start - UseOnContext param
-+    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
++    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
 +        super.onPlace(state, world, pos, oldState, notify, context);
-+        // Paper end - UseOnContext param
++    // Paper end - UseOnContext param
          world.scheduleTick(pos, (Block) this, FireBlock.getFireTickDelay(world.random));
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 6f60622f2dad5f82fb24505612e7e3a32722ab93..c7b6377aafd32f67eb8ba4dedd7cce5841b2d58d 100644
+index da8b97c590fb38f65dee2e8a881a2f7ad658b5e7..939d116ea940d52b319e08a11f08d1ccc406cb76 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -163,6 +163,13 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -155,6 +155,12 @@ public abstract class BlockBehaviour implements FeatureElement {
          DebugPackets.sendNeighborsUpdatePacket(world, pos);
      }
  
 +    // Paper start - UseOnContext param
-+    @Deprecated
-+    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
++    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
 +        this.onPlace(state, world, pos, oldState, notify);
 +    }
 +    // Paper end - UseOnContext param
 +
-     /** @deprecated */
-     @Deprecated
-     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+     protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+         org.spigotmc.AsyncCatcher.catchOp("block onPlace"); // Spigot
+     }
+@@ -1080,6 +1086,12 @@ public abstract class BlockBehaviour implements FeatureElement {
+             this.getBlock().updateIndirectNeighbourShapes(this.asState(), world, pos, flags, maxUpdateDepth);
+         }
+ 
++        // Paper start
++        public void onPlace(Level world, BlockPos pos, BlockState state, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
++            this.getBlock().onPlace(this.asState(), world, pos, state, notify, context);
++        }
++        // Paper end
++
+         public void onPlace(Level world, BlockPos pos, BlockState state, boolean notify) {
+             this.getBlock().onPlace(this.asState(), world, pos, state, notify);
+         }
 diff --git a/src/main/java/net/minecraft/world/level/portal/PortalShape.java b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
-index 9fc4997277dd199cf6cffccceb3a9735398c5356..912cee9ec45876f831ca230b59a1be3b48ce6aa5 100644
+index 766884046e2c22da4cb99712ff09d1f439394523..935ae100d3672cf493ebb6a3e6f70442ea22219b 100644
 --- a/src/main/java/net/minecraft/world/level/portal/PortalShape.java
 +++ b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
 @@ -190,7 +190,14 @@ public class PortalShape {

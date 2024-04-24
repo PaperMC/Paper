@@ -5,23 +5,21 @@ Subject: [PATCH] Fix SpawnChangeEvent not firing for all use-cases
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 9af1877321356348ad96b92ae8c5f4811bef50ac..2e42e09d3fa19e5a16374ee6ac1677dd2b2004f1 100644
+index 6a30ae257158267918c7114494005be528ac05dc..ccc5e57bfaaa51b05c66349475212f2079a4428c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1726,9 +1726,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
-     public void setDefaultSpawnPos(BlockPos pos, float angle) {
-         // Paper start - Configurable Keep Spawn Loaded range per world
-         BlockPos prevSpawn = this.getSharedSpawnPos();
-+        Location prevSpawnLoc = this.getWorld().getSpawnLocation(); // Paper - Call SpawnChangeEvent
-         //ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
+@@ -1668,7 +1668,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         float f1 = this.levelData.getSpawnAngle();
  
-         this.levelData.setSpawn(pos, angle);
-+        new org.bukkit.event.world.SpawnChangeEvent(this.getWorld(), prevSpawnLoc).callEvent(); // Paper - Call SpawnChangeEvent
-         if (this.keepSpawnInMemory) {
-             // if this keepSpawnInMemory is false a plugin has already removed our tickets, do not re-add
-             this.removeTicketsForSpawn(this.paperConfig().spawn.keepSpawnLoadedRange * 16, prevSpawn);
+         if (!blockposition1.equals(pos) || f1 != angle) {
++            org.bukkit.Location prevSpawnLoc = this.getWorld().getSpawnLocation(); // Paper - Call SpawnChangeEvent
+             this.levelData.setSpawn(pos, angle);
++            new org.bukkit.event.world.SpawnChangeEvent(this.getWorld(), prevSpawnLoc).callEvent(); // Paper - Call SpawnChangeEvent
+             this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
+         }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b437f582c36ab9a5b06129ef1b36dd14432c0c31..afb65de5fbff44b4ca455c778030c3387c2dafc8 100644
+index d4697f2f4c71001dba2cc3a69d54f27809766595..4d75cf0ec9e835b4274297275d52f08a6a65aeca 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -269,12 +269,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
