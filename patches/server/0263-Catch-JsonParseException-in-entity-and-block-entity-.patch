@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 22 Sep 2018 15:56:59 -0400
+Subject: [PATCH] Catch JsonParseException in entity and block entity names
+
+As a result, data that no longer parses correctly will not crash the server
+instead just logging the exception and continuing (and in most cases should
+fix the data)
+
+Player data is fixed pretty much immediately but some block data (like
+Shulkers) may need to be changed in order for it to re-save properly
+
+No more crashing though.
+
+diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
+index c57e8b6458800fe9bb27050eecc42bd3e5cf5a15..cdb514137797f4265dea5edb094caada5cee46a3 100644
+--- a/src/main/java/io/papermc/paper/util/MCUtil.java
++++ b/src/main/java/io/papermc/paper/util/MCUtil.java
+@@ -558,4 +558,19 @@ public final class MCUtil {
+ 
+         return builder.build();
+     }
++
++    @Nullable
++    public static net.minecraft.network.chat.Component getBaseComponentFromNbt(final String key, final net.minecraft.nbt.CompoundTag compound, final net.minecraft.core.HolderLookup.Provider lookupProvider) {
++        if (!compound.contains(key)) {
++            return null;
++        }
++        final String string = compound.getString(key);
++        try {
++            return net.minecraft.network.chat.Component.Serializer.fromJson(string, lookupProvider);
++        } catch (com.google.gson.JsonParseException e) {
++            org.bukkit.Bukkit.getLogger().warning("Unable to parse " + key + " from " + compound +": " + e.getMessage());
++        }
++
++        return null;
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
+index 626e4fe03dea008907823b49f0dd936bbf7e4e04..2d0eac7a8aa94ed6c4ec024bc6024440cbeac702 100644
+--- a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
++++ b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
+@@ -75,7 +75,7 @@ public abstract class BaseCommandBlock implements CommandSource {
+         this.command = nbt.getString("Command");
+         this.successCount = nbt.getInt("SuccessCount");
+         if (nbt.contains("CustomName", 8)) {
+-            this.setCustomName(Component.Serializer.fromJson(nbt.getString("CustomName"), registries));
++            this.setCustomName(io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registries)); // Paper - Catch ParseException
+         } else {
+             this.setCustomName((Component) null);
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+index df4cd333ecd5c90e910df0c7c5ab5aa44c182903..2656e06ab2269141a13011eaa906f601887ca3e2 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+@@ -77,7 +77,7 @@ public class BannerBlockEntity extends BlockEntity implements Nameable {
+     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+         super.loadAdditional(nbt, registryLookup);
+         if (nbt.contains("CustomName", 8)) {
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"), registryLookup);
++            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registryLookup); // Paper - Catch ParseException
+         }
+ 
+         if (nbt.contains("patterns")) {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
+index ee3b370b6b36914146db33a3211b6bbd2f8f16b7..ff3f26c31bd11b48f48e354ea6b33aa55dcbff5d 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
+@@ -39,7 +39,7 @@ public abstract class BaseContainerBlockEntity extends BlockEntity implements Co
+         super.loadAdditional(nbt, registryLookup);
+         this.lockKey = LockCode.fromTag(nbt);
+         if (nbt.contains("CustomName", 8)) {
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"), registryLookup);
++            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registryLookup); // Paper - Catch ParseException
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index d3ef3d9a67bc54a4c82a39718f01201201dfc44c..18450017bc3df2f0b1a5715e6021e8e5defa24a1 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -391,7 +391,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         this.secondaryPower = BeaconBlockEntity.loadEffect(nbt, "secondary_effect");
+         this.levels = nbt.getInt("Levels"); // CraftBukkit - SPIGOT-5053, use where available
+         if (nbt.contains("CustomName", 8)) {
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"), registryLookup);
++            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registryLookup); // Paper - Catch ParseException
+         }
+ 
+         this.lockKey = LockCode.fromTag(nbt);
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/EnchantingTableBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/EnchantingTableBlockEntity.java
+index 767994f493fb0a0e4bf097cd7cc178c10e79e937..c3503eaec5c5ece6e27a52fb703d06ec7c767383 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/EnchantingTableBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/EnchantingTableBlockEntity.java
+@@ -45,7 +45,7 @@ public class EnchantingTableBlockEntity extends BlockEntity implements Nameable
+     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+         super.loadAdditional(nbt, registryLookup);
+         if (nbt.contains("CustomName", 8)) {
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"), registryLookup);
++            this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt, registryLookup); // Paper - Catch ParseException
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+index ebba6bc5b337d19e32be5a78294501ed8300f2bd..adc87c2da5a4a4a89eb9708850376eaed49cf20a 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+@@ -145,7 +145,7 @@ public class SkullBlockEntity extends BlockEntity {
+         }
+ 
+         if (nbt.contains("custom_name", 8)) {
+-            this.customName = Component.Serializer.fromJson(nbt.getString("custom_name"), registryLookup);
++            this.customName = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("custom_name", nbt, registryLookup); // Paper - Catch ParseException
+         } else {
+             this.customName = null;
+         }
