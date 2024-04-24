@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mezz <tehgeek@gmail.com>
+Date: Wed, 9 Aug 2017 17:51:22 -0500
+Subject: [PATCH] Fix MC-117075: Block entity unload lag spike
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index e78f39ce95e587b84afccae0e4635171370b7323..b650a3c8c141c8848dd3c88991f1cad7b0606adb 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -722,6 +722,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         boolean flag = this.tickRateManager().runsNormally();
+ 
+         int tilesThisCycle = 0;
++        var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
++        toRemove.add(null); // Paper - Fix MC-117075
+         for (tileTickPosition = 0; tileTickPosition < this.blockEntityTickers.size(); tileTickPosition++) { // Paper - Disable tick limiters
+             this.tileTickPosition = (this.tileTickPosition < this.blockEntityTickers.size()) ? this.tileTickPosition : 0;
+             TickingBlockEntity tickingblockentity = (TickingBlockEntity) this.blockEntityTickers.get(this.tileTickPosition);
+@@ -730,12 +732,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             if (tickingblockentity.isRemoved()) {
+                 // Spigot start
+                 tilesThisCycle--;
+-                this.blockEntityTickers.remove(this.tileTickPosition--);
++                toRemove.add(tickingblockentity); // Paper - Fix MC-117075; use removeAll
+                 // Spigot end
+             } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
+                 tickingblockentity.tick();
+             }
+         }
++        this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
+ 
+         this.timings.tileEntityTick.stopTiming(); // Spigot
+         this.tickingBlockEntities = false;
