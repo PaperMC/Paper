@@ -7,10 +7,10 @@ Subject: [PATCH] Configurable sculk sensor listener range
 public-f net.minecraft.world.level.gameevent.vibrations.VibrationListener listenerRange
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/CalibratedSculkSensorBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CalibratedSculkSensorBlockEntity.java
-index 4c9c35131e9bd37a48f6c4beb2bbcaf7988069c5..cf865dcfde2ae6c0ae72a8e7469be2dd3e1bc679 100644
+index 41ccbee5fc7767a7d5e1cdca0ec7d9a17ee80a90..1d28f117965da22694b12018923a5f1347905085 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/CalibratedSculkSensorBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/CalibratedSculkSensorBlockEntity.java
-@@ -19,6 +19,12 @@ public class CalibratedSculkSensorBlockEntity extends SculkSensorBlockEntity {
+@@ -20,6 +20,12 @@ public class CalibratedSculkSensorBlockEntity extends SculkSensorBlockEntity {
      public VibrationSystem.User createVibrationUser() {
          return new CalibratedSculkSensorBlockEntity.VibrationUser(this.getBlockPos());
      }
@@ -22,8 +22,8 @@ index 4c9c35131e9bd37a48f6c4beb2bbcaf7988069c5..cf865dcfde2ae6c0ae72a8e7469be2dd
 +    // Paper end - Configurable sculk sensor listener range
  
      protected class VibrationUser extends SculkSensorBlockEntity.VibrationUser {
-         public VibrationUser(BlockPos pos) {
-@@ -27,6 +33,7 @@ public class CalibratedSculkSensorBlockEntity extends SculkSensorBlockEntity {
+         public VibrationUser(final BlockPos pos) {
+@@ -28,6 +34,7 @@ public class CalibratedSculkSensorBlockEntity extends SculkSensorBlockEntity {
  
          @Override
          public int getListenerRadius() {
@@ -32,10 +32,10 @@ index 4c9c35131e9bd37a48f6c4beb2bbcaf7988069c5..cf865dcfde2ae6c0ae72a8e7469be2dd
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
-index fd791916336032e29aae83a2ff5d956bc18f2938..a08a59192cd01789b4aff9af6d0f1d4c27bb4fe1 100644
+index afef108d11b4ed9ad9ce6069dd0d549720f3cb27..0c25d8b107b95e36e25f48dd82321b0961e468ea 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
-@@ -23,6 +23,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+@@ -25,6 +25,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
      private final VibrationSystem.Listener vibrationListener;
      private final VibrationSystem.User vibrationUser = this.createVibrationUser();
      public int lastVibrationFrequency;
@@ -43,7 +43,7 @@ index fd791916336032e29aae83a2ff5d956bc18f2938..a08a59192cd01789b4aff9af6d0f1d4c
  
      protected SculkSensorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
          super(type, pos, state);
-@@ -48,8 +49,16 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+@@ -50,8 +51,16 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
                  .resultOrPartial(LOGGER::error)
                  .ifPresent(listener -> this.vibrationData = listener);
          }
@@ -58,9 +58,9 @@ index fd791916336032e29aae83a2ff5d956bc18f2938..a08a59192cd01789b4aff9af6d0f1d4c
  
 +    protected static final String PAPER_LISTENER_RANGE_NBT_KEY = "Paper.ListenerRange"; // Paper - Configurable sculk sensor listener range
      @Override
-     protected void saveAdditional(CompoundTag nbt) {
-         super.saveAdditional(nbt);
-@@ -58,7 +67,13 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+     protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+         super.saveAdditional(nbt, registryLookup);
+@@ -60,7 +69,13 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
              .encodeStart(NbtOps.INSTANCE, this.vibrationData)
              .resultOrPartial(LOGGER::error)
              .ifPresent(listenerNbt -> nbt.put("listener", listenerNbt));
@@ -74,7 +74,7 @@ index fd791916336032e29aae83a2ff5d956bc18f2938..a08a59192cd01789b4aff9af6d0f1d4c
  
      @Override
      public VibrationSystem.Data getVibrationData() {
-@@ -95,6 +110,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+@@ -97,6 +112,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
  
          @Override
          public int getListenerRadius() {
@@ -83,12 +83,12 @@ index fd791916336032e29aae83a2ff5d956bc18f2938..a08a59192cd01789b4aff9af6d0f1d4c
          }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
-index 0e5e316b6c76c3929cca037eddf52120767862ff..c796a1754385edabe115088ebb5aa2f44cfa657a 100644
+index 70d85dbfcaae7ee632a4f541334302b46615a254..6ba229afb0219ff229fd794c59d7585f010742ee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
-@@ -30,4 +30,17 @@ public class CraftSculkSensor<T extends SculkSensorBlockEntity> extends CraftBlo
-     public CraftSculkSensor<T> copy() {
-         return new CraftSculkSensor<>(this);
+@@ -36,4 +36,17 @@ public class CraftSculkSensor<T extends SculkSensorBlockEntity> extends CraftBlo
+     public CraftSculkSensor<T> copy(Location location) {
+         return new CraftSculkSensor<>(this, location);
      }
 +
 +    // Paper start
