@@ -62,6 +62,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
 
     public void applyComponents(DataComponentMap datacomponentmap, DataComponentPatch datacomponentpatch) {
         snapshot.applyComponents(datacomponentmap, datacomponentpatch);
+        load(snapshot);
     }
 
     public DataComponentMap collectComponents() {
