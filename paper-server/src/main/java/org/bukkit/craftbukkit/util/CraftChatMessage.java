@@ -221,7 +221,7 @@ public final class CraftChatMessage {
         return fromJSONOrString(message, false, keepNewlines);
     }
 
-    private static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines) {
+    public static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines) {
         if (message == null) message = "";
         if (nullable && message.isEmpty()) return null;
         IChatBaseComponent component = fromJSONOrNull(message);
