@@ -25,19 +25,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.base = base;
          this.addition = addition;
 @@ -0,0 +0,0 @@ public class SmithingTransformRecipe implements SmithingRecipe {
-     @Override
-     public ItemStack assemble(Container inventory, RegistryAccess registryManager) {
-         ItemStack itemstack = this.result.copy();
+     public ItemStack assemble(Container inventory, HolderLookup.Provider lookup) {
+         ItemStack itemstack = inventory.getItem(1).transmuteCopy(this.result.getItem(), this.result.getCount());
+ 
 +        if (this.copyNBT) { // Paper - Option to prevent NBT copy
-         CompoundTag nbttagcompound = inventory.getItem(1).getTag();
- 
-         if (nbttagcompound != null) {
-             itemstack.setTag(nbttagcompound.copy());
-         }
+         itemstack.applyComponents(this.result.getComponentsPatch());
 +        } // Paper - Option to prevent NBT copy
- 
          return itemstack;
      }
+ 
 @@ -0,0 +0,0 @@ public class SmithingTransformRecipe implements SmithingRecipe {
      public Recipe toBukkitRecipe(NamespacedKey id) {
          CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
@@ -71,11 +67,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      return ItemStack.EMPTY;
                  }
  
--                ItemStack itemstack1 = itemstack.copy();
-+                ItemStack itemstack1 = this.copyNbt ? itemstack.copy() : new ItemStack(itemstack.getItem(), itemstack.getCount()); // Paper - Option to prevent NBT copy
+-                ItemStack itemstack1 = itemstack.copyWithCount(1);
++                ItemStack itemstack1 = this.copyNbt ? itemstack.copyWithCount(1) : new ItemStack(itemstack.getItem(), 1); // Paper - Option to prevent NBT copy
  
-                 itemstack1.setCount(1);
-                 ArmorTrim armortrim = new ArmorTrim((Holder) optional.get(), (Holder) optional1.get());
+                 itemstack1.set(DataComponents.TRIM, new ArmorTrim((Holder) optional.get(), (Holder) optional1.get()));
+                 return itemstack1;
 @@ -0,0 +0,0 @@ public class SmithingTrimRecipe implements SmithingRecipe {
      // CraftBukkit start
      @Override

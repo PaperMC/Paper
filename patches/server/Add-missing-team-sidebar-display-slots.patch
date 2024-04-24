@@ -8,6 +8,37 @@ public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations
 public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations toBukkitSlot(Lnet/minecraft/world/scores/DisplaySlot;)Lorg/bukkit/scoreboard/DisplaySlot;
 public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations fromBukkitSlot(Lorg/bukkit/scoreboard/DisplaySlot;)Lnet/minecraft/world/scores/DisplaySlot;
 
+diff --git a/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java b/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java
++++ b/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java
+@@ -0,0 +0,0 @@ public class FieldRename {
+         }
+ 
+         return switch (owner) {
++            case "org/bukkit/scoreboard/DisplaySlot" -> FieldRename.convertDisplaySlot(apiVersion, from); // Paper - DisplaySlot
+             case "org/bukkit/block/banner/PatternType" -> FieldRename.convertPatternTypeName(apiVersion, from);
+             case "org/bukkit/enchantments/Enchantment" -> FieldRename.convertEnchantmentName(apiVersion, from);
+             case "org/bukkit/block/Biome" -> FieldRename.convertBiomeName(apiVersion, from);
+@@ -0,0 +0,0 @@ public class FieldRename {
+         };
+     }
+ 
++    // Paper start - DisplaySlot
++    private static final FieldRenameData DISPLAY_SLOT_DATA = FieldRenameData.Builder.newBuilder()
++        .forAllVersions()
++        .change("SIDEBAR_TEAM_", "SIDEBAR_")
++        .build();
++
++    @DoNotReroute
++    public static String convertDisplaySlot(ApiVersion version, String from) {
++        return FieldRename.DISPLAY_SLOT_DATA.getReplacement(version, from);
++    }
++    // Paper end - DisplaySlot
++
+     // PatternType
+     private static final FieldRenameData PATTERN_TYPE_DATA = FieldRenameData.Builder.newBuilder()
+             .forVersionsBefore(ApiVersion.FIELD_NAME_PARITY)
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java
@@ -51,26 +82,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return net.minecraft.world.scores.DisplaySlot.CODEC.byName(CraftScoreboardTranslations.SLOTS.get(slot));
      }
  
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-@@ -0,0 +0,0 @@ public class Commodore {
-                             desc = getOriginalOrRewrite(desc);
-                         }
-                         // Paper end
-+
-+                        // Paper start - DisplaySlot
-+                        if (owner.equals("org/bukkit/scoreboard/DisplaySlot")) {
-+                            if (name.startsWith("SIDEBAR_") && !name.startsWith("SIDEBAR_TEAM_")) {
-+                                super.visitFieldInsn(opcode, owner, name.replace("SIDEBAR_", "SIDEBAR_TEAM_"), desc);
-+                                return;
-+                            }
-+                        }
-+                        // Paper end - DisplaySlot
-                         if (owner.equals("org/bukkit/block/Biome")) {
-                             switch (name) {
-                                 case "NETHER":
 diff --git a/src/test/java/io/papermc/paper/scoreboard/DisplaySlotTest.java b/src/test/java/io/papermc/paper/scoreboard/DisplaySlotTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000

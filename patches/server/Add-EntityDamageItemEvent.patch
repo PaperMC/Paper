@@ -8,16 +8,16 @@ diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -0,0 +0,0 @@ public final class ItemStack {
-         return this.getItem().getMaxDamage();
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
+         return (Integer) this.getOrDefault(DataComponents.MAX_DAMAGE, 0);
      }
  
--    public boolean hurt(int amount, RandomSource random, @Nullable ServerPlayer player) {
-+    public boolean hurt(int amount, RandomSource random, @Nullable LivingEntity player) { // Paper - Add EntityDamageItemEvent
-         if (!this.isDamageableItem()) {
-             return false;
-         } else {
-@@ -0,0 +0,0 @@ public final class ItemStack {
+-    public void hurtAndBreak(int amount, RandomSource random, @Nullable ServerPlayer player, Runnable breakCallback) {
++    public void hurtAndBreak(int amount, RandomSource random, @Nullable LivingEntity player, Runnable breakCallback) { // Paper - Add EntityDamageItemEvent
+         if (this.isDamageableItem()) {
+             int j;
+ 
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
  
                  amount -= k;
                  // CraftBukkit start
@@ -28,7 +28,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      event.getPlayer().getServer().getPluginManager().callEvent(event);
  
                      if (amount != event.getDamage() || event.isCancelled()) {
-@@ -0,0 +0,0 @@ public final class ItemStack {
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
                      }
  
                      amount = event.getDamage();
@@ -43,7 +43,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
                  // CraftBukkit end
                  if (amount <= 0) {
-@@ -0,0 +0,0 @@ public final class ItemStack {
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
                  }
              }
  
@@ -54,12 +54,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              j = this.getDamageValue() + amount;
-@@ -0,0 +0,0 @@ public final class ItemStack {
-     public <T extends LivingEntity> void hurtAndBreak(int amount, T entity, Consumer<T> breakCallback) {
-         if (!entity.level().isClientSide && (!(entity instanceof net.minecraft.world.entity.player.Player) || !((net.minecraft.world.entity.player.Player) entity).getAbilities().instabuild)) {
-             if (this.isDamageableItem()) {
--                if (this.hurt(amount, entity.getRandom(), entity instanceof ServerPlayer ? (ServerPlayer) entity : null)) {
-+                if (this.hurt(amount, entity.getRandom(), entity /*instanceof ServerPlayer ? (ServerPlayer) entity : null*/)) { // Paper - Add EntityDamageItemEvent
-                     breakCallback.accept(entity);
-                     Item item = this.getItem();
-                     // CraftBukkit start - Check for item breaking
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
+                 entityplayer = null;
+             }
+ 
+-            this.hurtAndBreak(amount, randomsource, entityplayer, () -> {
++            this.hurtAndBreak(amount, randomsource, entity, () -> { // Paper - Add EntityDamageItemEvent
+                 entity.broadcastBreakEvent(slot);
+                 Item item = this.getItem();
+                 // CraftBukkit start - Check for item breaking
