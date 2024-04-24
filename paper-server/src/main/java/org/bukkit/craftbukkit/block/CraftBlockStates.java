@@ -400,8 +400,8 @@ public final class CraftBlockStates {
     }
 
     @Deprecated
-    public static BlockState getBlockState(Material material, @Nullable NBTTagCompound blockEntityTag) {
-        return getBlockState(MinecraftServer.getDefaultRegistryAccess(), BlockPosition.ZERO, material, blockEntityTag);
+    public static BlockState getBlockState(BlockPosition blockPosition, Material material, @Nullable NBTTagCompound blockEntityTag) {
+        return getBlockState(MinecraftServer.getDefaultRegistryAccess(), blockPosition, material, blockEntityTag);
     }
 
     public static BlockState getBlockState(IWorldReader world, BlockPosition blockPosition, Material material, @Nullable NBTTagCompound blockEntityTag) {

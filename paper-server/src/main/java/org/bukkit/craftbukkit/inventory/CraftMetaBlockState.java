@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.core.BlockPosition;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
@@ -17,6 +18,7 @@ import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.block.entity.TileEntity;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -321,6 +323,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     }
 
     private static CraftBlockEntityState<?> getBlockState(Material material, NBTTagCompound blockEntityTag) {
+        BlockPosition pos = BlockPosition.ZERO;
         Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack(); // Only actually used for jigsaws
         if (blockEntityTag != null) {
             if (material == Material.SHIELD) {
@@ -330,10 +333,12 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             } else if (SHULKER_BOX_MATERIALS.contains(material)) {
                 blockEntityTag.putString("id", "minecraft:shulker_box");
             }
+
+            pos = TileEntity.getPosFromTag(blockEntityTag);
         }
 
         // This is expected to always return a CraftBlockEntityState for the passed material:
-        return (CraftBlockEntityState<?>) CraftBlockStates.getBlockState(stateMaterial, blockEntityTag);
+        return (CraftBlockEntityState<?>) CraftBlockStates.getBlockState(pos, stateMaterial, blockEntityTag);
     }
 
     @Override
