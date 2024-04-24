@@ -13,10 +13,10 @@ we'll also only gen a trace for the first one, I see no real pressing need
 to generate more, given that that would *massively* negate this patch otherwise
 
 diff --git a/src/main/java/net/minecraft/server/level/WorldGenRegion.java b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
-index d11741d2618976bdb51f75d823f260f32d5bafc9..ff94af5be8de374f5cde2607eebbb23e65705581 100644
+index 744efc6cdc99f653a1eb9d4f26af8a7c34627f5e..a343bb1b1ee2cd2ecd75be00aa91d5418dcdec76 100644
 --- a/src/main/java/net/minecraft/server/level/WorldGenRegion.java
 +++ b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
-@@ -275,6 +275,7 @@ public class WorldGenRegion implements WorldGenLevel {
+@@ -283,6 +283,7 @@ public class WorldGenRegion implements WorldGenLevel {
          }
      }
  
@@ -24,17 +24,18 @@ index d11741d2618976bdb51f75d823f260f32d5bafc9..ff94af5be8de374f5cde2607eebbb23e
      @Override
      public boolean ensureCanWrite(BlockPos pos) {
          int i = SectionPos.blockToSectionCoord(pos.getX());
-@@ -294,7 +295,15 @@ public class WorldGenRegion implements WorldGenLevel {
+@@ -302,7 +303,15 @@ public class WorldGenRegion implements WorldGenLevel {
  
              return true;
          } else {
+-            Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + String.valueOf(pos) + ", status: " + String.valueOf(this.generatingStatus) + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
 +            // Paper start - Buffer OOB setBlock calls
 +            if (!hasSetFarWarned) {
-             Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + pos + ", status: " + this.generatingStatus + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
-+            hasSetFarWarned = true;
-+            if (this.getServer() != null && this.getServer().isDebugging()) {
-+                io.papermc.paper.util.TraceUtil.dumpTraceForThread("far setBlock call");
-+            }
++                Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + String.valueOf(pos) + ", status: " + String.valueOf(this.generatingStatus) + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
++                hasSetFarWarned = true;
++                if (this.getServer() != null && this.getServer().isDebugging()) {
++                    io.papermc.paper.util.TraceUtil.dumpTraceForThread("far setBlock call");
++                }
 +            }
 +            // Paper end - Buffer OOB setBlock calls
              return false;
