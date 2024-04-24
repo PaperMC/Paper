@@ -9,7 +9,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
 +++ b/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
 @@ -0,0 +0,0 @@ public class ShearsDispenseItemBehavior extends OptionalDispenseItemBehavior {
- 
+             if (entityliving instanceof Shearable ishearable) {
                  if (ishearable.readyForShearing()) {
                      // CraftBukkit start
 -                    if (CraftEventFactory.callBlockShearEntityEvent(entityliving, bukkitBlock, craftItem).isCancelled()) {
@@ -22,7 +22,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      // CraftBukkit end
 -                    ishearable.shear(SoundSource.BLOCKS);
 +                    ishearable.shear(SoundSource.BLOCKS, CraftItemStack.asNMSCopy(event.getDrops())); // Paper - Add drops to shear events
-                     worldserver.gameEvent((Entity) null, GameEvent.SHEAR, blockposition);
+                     worldserver.gameEvent((Entity) null, (Holder) GameEvent.SHEAR, blockposition);
                      return true;
                  }
 diff --git a/src/main/java/net/minecraft/world/entity/Shearable.java b/src/main/java/net/minecraft/world/entity/Shearable.java
@@ -68,7 +68,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.shear(SoundSource.PLAYERS, drops); // Paper - custom shear drops
              this.gameEvent(GameEvent.SHEAR, player);
              if (!this.level().isClientSide) {
-                 itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
+                 itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
 @@ -0,0 +0,0 @@ public class MushroomCow extends Cow implements Shearable, VariantHolder<Mushroo
  
      @Override
@@ -139,8 +139,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                this.shear(SoundSource.PLAYERS);
 +                this.shear(SoundSource.PLAYERS, drops); // Paper
                  this.gameEvent(GameEvent.SHEAR, player);
-                 itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
-                     entityhuman1.broadcastBreakEvent(hand);
+                 itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
+                 return InteractionResult.SUCCESS;
 @@ -0,0 +0,0 @@ public class Sheep extends Animal implements Shearable {
  
      @Override
@@ -199,7 +199,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.shear(SoundSource.PLAYERS, drops); // Paper
              this.gameEvent(GameEvent.SHEAR, player);
              if (!this.level().isClientSide) {
-                 itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
+                 itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
 @@ -0,0 +0,0 @@ public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackM
  
      @Override
@@ -220,12 +220,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!this.level().isClientSide()) {
              this.setPumpkin(false);
 -            this.forceDrops = true; // CraftBukkit
--            this.spawnAtLocation(new ItemStack(Items.CARVED_PUMPKIN), 1.7F);
+-            this.spawnAtLocation(new ItemStack(Items.CARVED_PUMPKIN), this.getEyeHeight());
 -            this.forceDrops = false; // CraftBukkit
 +            // Paper start - custom shear drops (moved drop generation to separate method)
 +            for (final ItemStack drop : drops) {
 +                this.forceDrops = true;
-+                this.spawnAtLocation(drop, 1.7F);
++                this.spawnAtLocation(drop, this.getEyeHeight());
 +                this.forceDrops = false;
 +            }
 +            // Paper end - custom shear drops
