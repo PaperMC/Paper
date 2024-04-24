@@ -1,6 +1,7 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.MinecraftExperimental;
+import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
   * <br>
  * 'ominous' indicates if the block has ominous effects.
  */
-@MinecraftExperimental
+@MinecraftExperimental(Requires.UPDATE_1_21)
 @ApiStatus.Experimental
 public interface TrialSpawner extends BlockData {
 

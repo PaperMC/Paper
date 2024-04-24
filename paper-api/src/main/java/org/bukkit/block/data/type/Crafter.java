@@ -1,6 +1,7 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.MinecraftExperimental;
+import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.jetbrains.annotations.ApiStatus;
@@ -15,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
  * 'crafting' is whether crafter's mouth is open and top is glowing.
  */
 @ApiStatus.Experimental
-@MinecraftExperimental
+@MinecraftExperimental(Requires.UPDATE_1_21)
 public interface Crafter extends BlockData {
 
     /**

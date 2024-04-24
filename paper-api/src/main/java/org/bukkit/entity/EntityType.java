@@ -10,6 +10,7 @@ import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Translatable;
 import org.bukkit.World;
+import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 import org.bukkit.entity.minecart.HopperMinecart;
@@ -286,20 +287,20 @@ public enum EntityType implements Keyed, Translatable {
     ITEM_DISPLAY("item_display", ItemDisplay.class, -1),
     SNIFFER("sniffer", Sniffer.class, -1),
     TEXT_DISPLAY("text_display", TextDisplay.class, -1),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     @ApiStatus.Experimental
     BREEZE("breeze", Breeze.class, -1),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     @ApiStatus.Experimental
     WIND_CHARGE("wind_charge", WindCharge.class, -1),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     @ApiStatus.Experimental
     BREEZE_WIND_CHARGE("breeze_wind_charge", BreezeWindCharge.class, -1),
     ARMADILLO("armadillo", Armadillo.class, -1),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     @ApiStatus.Experimental
     BOGGED("bogged", Bogged.class, -1),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     @ApiStatus.Experimental
     OMINOUS_ITEM_SPAWNER("ominous_item_spawner", OminousItemSpawner.class, -1),
     /**

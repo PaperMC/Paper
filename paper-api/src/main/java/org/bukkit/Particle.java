@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -128,34 +129,34 @@ public enum Particle implements Keyed {
     EGG_CRACK("egg_crack"),
     DUST_PLUME("dust_plume"),
     WHITE_SMOKE("white_smoke"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     GUST("gust"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     SMALL_GUST("small_gust"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     GUST_EMITTER_LARGE("gust_emitter_large"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     GUST_EMITTER_SMALL("gust_emitter_small"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     TRIAL_SPAWNER_DETECTION("trial_spawner_detection"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     TRIAL_SPAWNER_DETECTION_OMINOUS("trial_spawner_detection_ominous"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     VAULT_CONNECTION("vault_connection"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     INFESTED("infested"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     ITEM_COBWEB("item_cobweb"),
     /**
      * Uses {@link BlockData} as DataType
      */
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     DUST_PILLAR("dust_pillar", BlockData.class),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     OMINOUS_SPAWNING("ominous_spawning"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     RAID_OMEN("raid_omen"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     TRIAL_OMEN("trial_omen"),
     /**
      * Uses {@link BlockData} as DataType

@@ -7,6 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
+import org.bukkit.MinecraftExperimental.Requires;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,13 +59,13 @@ public enum PotionType implements Keyed {
     STRONG_TURTLE_MASTER("strong_turtle_master"),
     SLOW_FALLING("slow_falling"),
     LONG_SLOW_FALLING("long_slow_falling"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     WIND_CHARGED("wind_charged"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     WEAVING("weaving"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     OOZING("oozing"),
-    @MinecraftExperimental
+    @MinecraftExperimental(Requires.UPDATE_1_21)
     INFESTED("infested"),
     ;
 
