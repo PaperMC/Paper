@@ -19,10 +19,10 @@ where generation happened directly to a ServerLevel and the
 entity still has the flag set.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 8235dace0f4a1090dfbd403db34231ccafe5f30e..9816913ad729fd39c173364b92e5db06a733bc55 100644
+index 7662bcb0e622acadb31b78a670807149779395d9..e7339dbd6a42b67eb65260200c5eba89c626a298 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1220,6 +1220,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1226,6 +1226,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
      // CraftBukkit start
      private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
          org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
@@ -31,10 +31,10 @@ index 8235dace0f4a1090dfbd403db34231ccafe5f30e..9816913ad729fd39c173364b92e5db06
          if (entity.valid) {
              MinecraftServer.LOGGER.error("Attempted Double World add on {}", entity, new Throwable());
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index ad3cdb1a3ab07c48bf6b2662b93ddad5974db1a6..2848be4604e08d0d651d16e960cda9a4d0234d41 100644
+index acf2cc8afaf4dee193ecf3bfc4a39b8c39ffc376..ee38f76e46c20e9fadfb5d4d602b7b82a8a22e51 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -637,7 +637,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -650,7 +650,11 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (pose == this.getPose()) {
              return;
          }
@@ -48,10 +48,10 @@ index ad3cdb1a3ab07c48bf6b2662b93ddad5974db1a6..2848be4604e08d0d651d16e960cda9a4
          this.entityData.set(Entity.DATA_POSE, pose);
      }
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
-index 656c68b37bc25d6b77f295f9efe0a81dd20b69c1..8ba573bb4099ee5b27b61f333e72d794c48d5f29 100644
+index c36b5aa3cf7ecff839f7115bf9be4776bcee13c3..066c7033fdd9506a0edc5f5a0ec3bb1f1fbae336 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -584,9 +584,15 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+@@ -592,9 +592,15 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
      }
  
      public static Optional<Entity> create(CompoundTag nbt, Level world) {
@@ -68,10 +68,10 @@ index 656c68b37bc25d6b77f295f9efe0a81dd20b69c1..8ba573bb4099ee5b27b61f333e72d794
          }, () -> {
              EntityType.LOGGER.warn("Skipping Entity with id {}", nbt.getString("id"));
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 6b591f8b484be20418e8a6ca09aba84cda398a3d..a648cc01f2cdfac46fd2e760705cf85e534e926f 100644
+index a8b168f56c74feeaca55335731b1d485289736cb..281d2f3df347e911eee459e06b917a0e075078e9 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -1142,6 +1142,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1163,6 +1163,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause) {
@@ -83,7 +83,7 @@ index 6b591f8b484be20418e8a6ca09aba84cda398a3d..a648cc01f2cdfac46fd2e760705cf85e
          // org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot // Paper - move to API
          if (this.isTickingEffects) {
              this.effectsToProcess.add(new ProcessableEffect(mobeffect, cause));
-@@ -1161,10 +1166,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1182,10 +1187,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  override = new MobEffectInstance(mobeffect1).update(mobeffect);
              }
  
@@ -97,9 +97,9 @@ index 6b591f8b484be20418e8a6ca09aba84cda398a3d..a648cc01f2cdfac46fd2e760705cf85e
              // CraftBukkit end
  
              if (mobeffect1 == null) {
-@@ -1172,7 +1180,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
-                 this.onEffectAdded(mobeffect, entity);
+@@ -1194,7 +1202,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  flag = true;
+                 mobeffect.onEffectAdded(this);
                  // CraftBukkit start
 -            } else if (event.isOverride()) {
 +            } else if (override) { // Paper - Don't fire sync event during generation
@@ -107,23 +107,23 @@ index 6b591f8b484be20418e8a6ca09aba84cda398a3d..a648cc01f2cdfac46fd2e760705cf85e
                  this.onEffectUpdated(mobeffect1, true, entity);
                  // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Spider.java b/src/main/java/net/minecraft/world/entity/monster/Spider.java
-index d90da2f9e4d6214577bc81bd6c70ba8593788898..ffa4f34d964fbcc53e2dfe11677832db21a6eb93 100644
+index 6006480d9f6d60bb7b5628eabe6740013066cde4..f0127f1b55999aa4a841341ad02cbcde45702b50 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Spider.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Spider.java
-@@ -182,7 +182,7 @@ public class Spider extends Monster {
-             MobEffect mobeffectlist = entityspider_groupdataspider.effect;
+@@ -172,7 +172,7 @@ public class Spider extends Monster {
+             Holder<MobEffect> holder = entityspider_groupdataspider.effect;
  
-             if (mobeffectlist != null) {
--                this.addEffect(new MobEffectInstance(mobeffectlist, -1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN); // CraftBukkit
-+                this.addEffect(new MobEffectInstance(mobeffectlist, -1), null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN, world instanceof net.minecraft.server.level.ServerLevel); // CraftBukkit // Paper - Don't fire sync event during generation; only if this is happening in a ServerLevel
+             if (holder != null) {
+-                this.addEffect(new MobEffectInstance(holder, -1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN); // CraftBukkit
++                this.addEffect(new MobEffectInstance(holder, -1), null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN, world instanceof net.minecraft.server.level.ServerLevel); // CraftBukkit
              }
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
-index ae8a42261337bf736d0cc1bbe18da2b773417ca4..471e8493622c89d44a82f42f135cb308c9e0fbfe 100644
+index b5365dce7882c98b5be4f5df877165eee80933dd..9b4e2f96299bb12af7090ef70ac158c825d49d19 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
-@@ -518,7 +518,7 @@ public class StructureTemplate {
+@@ -525,7 +525,7 @@ public class StructureTemplate {
      private static Optional<Entity> createEntityIgnoreException(ServerLevelAccessor world, CompoundTag nbt) {
          // CraftBukkit start
          // try {
@@ -133,10 +133,10 @@ index ae8a42261337bf736d0cc1bbe18da2b773417ca4..471e8493622c89d44a82f42f135cb308
              // return Optional.empty();
          // }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
-index e37c2d82ed606cbfe00c152b08c3ab99ac751f69..7ed861cd67889e525ab4987c0afed245aca08833 100644
+index 0794d92c42b0db6b367505ae28f09f1fd39fa312..cd7f1309cf01a5f01a28aded03a36fe15adb1756 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
-@@ -93,15 +93,17 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
+@@ -92,15 +92,17 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
          return this.handle.getLevel();
      }
  
@@ -164,7 +164,7 @@ index e37c2d82ed606cbfe00c152b08c3ab99ac751f69..7ed861cd67889e525ab4987c0afed245
      @Override
      public ServerLevel getMinecraftWorld() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java
-index b4b297945fb601701aac845d09e88fb74b09c3fa..7482dfe64458320d44089c0778591694202e9f70 100644
+index 35ecf6f824aca56a20280dd683123df1d0c7d66e..1d1fdcf10498c421f106158254e052da6d68d8a5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java
 @@ -39,21 +39,23 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {

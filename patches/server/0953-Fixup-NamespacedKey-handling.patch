@@ -31,10 +31,10 @@ index 9cfa5d36a6991067a3866e0d437749fafcc0158e..2ee4ee14ab3345486dad6b24fd9a4fcc
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
-index 8c9ce07f6a9c2799ce4d8b6a7d8eccd37cce6d43..f9e8c1f8416c4e5ae11e1d742cf3655faa480ce9 100644
+index 6fd032dfb50f6051d6a0b5fbd9d76f42c23354d6..c52f64bb608b67ac7e30fec0c3c9bdef080fa716 100644
 --- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
 +++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
-@@ -24,7 +24,10 @@ public class CraftAttribute {
+@@ -29,7 +29,10 @@ public class CraftAttribute {
      public static Attribute stringToBukkit(String bukkit) {
          Preconditions.checkArgument(bukkit != null);
  
@@ -47,57 +47,58 @@ index 8c9ce07f6a9c2799ce4d8b6a7d8eccd37cce6d43..f9e8c1f8416c4e5ae11e1d742cf3655f
  
      public static net.minecraft.world.entity.ai.attributes.Attribute bukkitToMinecraft(Attribute bukkit) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-index 24b87a1566b48be1367970a9ba887a6b3a785bb9..9f2626c8c5cb8e713f7263b73d6a31d39f024f31 100644
+index 12b95c4455e741b65b844eab362f02bce54eb525..ac9279f7acb7077c08d7741435126adfef9e17b8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-@@ -67,14 +67,22 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
-         if (tag.contains(CraftMetaArmor.TRIM.NBT)) {
-             CompoundTag trimCompound = tag.getCompound(CraftMetaArmor.TRIM.NBT);
+@@ -69,8 +69,9 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
+         super(tag);
  
--            if (trimCompound.contains(CraftMetaArmor.TRIM_MATERIAL.NBT) && trimCompound.contains(CraftMetaArmor.TRIM_PATTERN.NBT)) {
--                TrimMaterial trimMaterial = Registry.TRIM_MATERIAL.get(NamespacedKey.fromString(trimCompound.getString(CraftMetaArmor.TRIM_MATERIAL.NBT)));
--                TrimPattern trimPattern = Registry.TRIM_PATTERN.get(NamespacedKey.fromString(trimCompound.getString(CraftMetaArmor.TRIM_PATTERN.NBT)));
-+            // Paper start - Fixup NamedspacedKey handling
-+            if (trimCompound.contains(CraftMetaArmor.TRIM_MATERIAL.NBT, net.minecraft.nbt.Tag.TAG_STRING) && trimCompound.contains(CraftMetaArmor.TRIM_PATTERN.NBT, net.minecraft.nbt.Tag.TAG_STRING)) { // TODO Can also be inlined in a compound tag
-+                TrimMaterial trimMaterial = registryEntry(Registry.TRIM_MATERIAL, trimCompound.getString(TRIM_MATERIAL.NBT));
-+                TrimPattern trimPattern = registryEntry(Registry.TRIM_PATTERN, trimCompound.getString(TRIM_PATTERN.NBT));
+         getOrEmpty(tag, CraftMetaArmor.TRIM).ifPresent((trimCompound) -> {
+-            TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(trimCompound.material());
+-            TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(trimCompound.pattern());
++            TrimMaterial trimMaterial = this.unwrapAndConvertHolder(Registry.TRIM_MATERIAL, trimCompound.material()); // Paper - fix upstream not being correct
++            TrimPattern trimPattern = this.unwrapAndConvertHolder(Registry.TRIM_PATTERN, trimCompound.pattern()); // Paper - fix upstream not being correct
++            if (trimMaterial == null || trimPattern == null) return; // Paper - just delete the trim because upstream is not doing this right
  
--                this.trim = new ArmorTrim(trimMaterial, trimPattern);
-+                this.trim = trimMaterial != null && trimPattern != null ? new ArmorTrim(trimMaterial, trimPattern) : null;
-+                // Paper end - Fixup NamedspacedKey handling
+             this.trim = new ArmorTrim(trimMaterial, trimPattern);
+ 
+@@ -79,6 +80,11 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
              }
-         }
+         });
      }
-+    // Paper start - Fixup NamedspacedKey handling
-+    private <T extends org.bukkit.Keyed> T registryEntry(final Registry<T> registry, final String value) {
-+        final NamespacedKey key = NamespacedKey.fromString(value);
-+        return key != null ? registry.get(key) : null;
++    // Paper start - fixup upstream being dum
++    private <T extends org.bukkit.Keyed, M> T unwrapAndConvertHolder(final Registry<T> registry, final net.minecraft.core.Holder<M> value) {
++        return value.unwrap().map(key -> registry.get(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(key.location())), v -> null);
 +    }
-+    // Paper end - Fixup NamedspacedKey handling
++    // Paper end - fixup upstream being dum
  
      CraftMetaArmor(Map<String, Object> map) {
          super(map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
-index fad6295e75179edfc4e88d15c21b0b09f9156692..63e3c5c3f5aff273498d25db0fc9feb76ab27c2f 100644
+index e17093289884b904fc3720600ffa3e772e0935b3..7032f07e3872c65bbebb905e9d50057a113100d4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
-@@ -30,7 +30,10 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
+@@ -33,9 +33,14 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
+         super(tag);
  
-         if (tag.contains(CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.NBT)) {
-             String string = tag.getString(CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.NBT);
--            this.instrument = Registry.INSTRUMENT.get(NamespacedKey.fromString(string));
-+            // Paper start - Fixup NamespacedKey handling
-+            final NamespacedKey key = NamespacedKey.fromString(string);
-+            this.instrument = key != null ? Registry.INSTRUMENT.get(key) : null;
-+            // Paper end - Fixup NamespacedKey handling
-         }
+         getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
+-            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrument);
++            this.instrument = this.unwrapAndConvertHolder(Registry.INSTRUMENT, instrument); // Paper - fix upstream not handling custom instruments
+         });
      }
++    // Paper start - fixup upstream being dum
++    private <T extends org.bukkit.Keyed, M> T unwrapAndConvertHolder(final Registry<T> registry, final net.minecraft.core.Holder<M> value) {
++        return value.unwrap().map(key -> registry.get(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(key.location())), v -> null);
++    }
++    // Paper end - fixup upstream being dum
  
+     CraftMetaMusicInstrument(Map<String, Object> map) {
+         super(map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
-index 1ce2cf121c0768d06cbd4f9238286b02e139768b..afeb1f634a8d9e46136d8b425453e6c745132fbe 100644
+index 7dc83b02810490c21b68be962c5ef6eb45e32baf..71cc45c4ef9ab98d509b0f8bf7b033a2b32641db 100644
 --- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
 +++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
-@@ -43,7 +43,10 @@ public class CraftPotionType implements PotionType.InternalPotionData {
+@@ -61,7 +61,10 @@ public class CraftPotionType implements PotionType.InternalPotionData {
      public static PotionType stringToBukkit(String string) {
          Preconditions.checkArgument(string != null);
  

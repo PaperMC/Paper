@@ -8,10 +8,10 @@ In general, the client now has an acknowledgment system which will prevent block
 It should be noted that this system does not yet support block entities, so those still need to resynced when needed.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index d0ca98c3f9ea5c8cb1053da6b17e9a90c86b3ae7..5063eb6d4a24600262c32d2c9eb5fb5bf8fa354e 100644
+index cef3a64b5e6c4d34ed079078420078a7adfcd574..3dff328c5e4456aae291a8dec82766681f49af06 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -199,7 +199,7 @@ public class ServerPlayerGameMode {
+@@ -202,7 +202,7 @@ public class ServerPlayerGameMode {
                  PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, pos, direction, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
                  if (event.isCancelled()) {
                      // Let the client know the block still exists
@@ -20,7 +20,7 @@ index d0ca98c3f9ea5c8cb1053da6b17e9a90c86b3ae7..5063eb6d4a24600262c32d2c9eb5fb5b
                      // Update any tile entity data for this block
                      capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
                      return;
-@@ -214,7 +214,7 @@ public class ServerPlayerGameMode {
+@@ -217,7 +217,7 @@ public class ServerPlayerGameMode {
                  // Spigot start - handle debug stick left click for non-creative
                  if (this.player.getMainHandItem().is(net.minecraft.world.item.Items.DEBUG_STICK)
                          && ((net.minecraft.world.item.DebugStickItem) net.minecraft.world.item.Items.DEBUG_STICK).handleInteraction(this.player, this.level.getBlockState(pos), this.level, pos, false, this.player.getMainHandItem())) {
@@ -29,7 +29,7 @@ index d0ca98c3f9ea5c8cb1053da6b17e9a90c86b3ae7..5063eb6d4a24600262c32d2c9eb5fb5b
                      return;
                  }
                  // Spigot end
-@@ -232,15 +232,17 @@ public class ServerPlayerGameMode {
+@@ -235,15 +235,17 @@ public class ServerPlayerGameMode {
                  // CraftBukkit start - Swings at air do *NOT* exist.
                  if (event.useInteractedBlock() == Event.Result.DENY) {
                      // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
@@ -56,7 +56,7 @@ index d0ca98c3f9ea5c8cb1053da6b17e9a90c86b3ae7..5063eb6d4a24600262c32d2c9eb5fb5b
                  } else if (!iblockdata.isAir()) {
                      iblockdata.attack(this.level, pos, this.player);
                      f = iblockdata.getDestroyProgress(this.player, this.player.level(), pos);
-@@ -249,7 +251,7 @@ public class ServerPlayerGameMode {
+@@ -252,7 +254,7 @@ public class ServerPlayerGameMode {
                  if (event.useItemInHand() == Event.Result.DENY) {
                      // If we 'insta destroyed' then the client needs to be informed.
                      if (f > 1.0f) {
@@ -65,7 +65,7 @@ index d0ca98c3f9ea5c8cb1053da6b17e9a90c86b3ae7..5063eb6d4a24600262c32d2c9eb5fb5b
                      }
                      return;
                  }
-@@ -257,7 +259,7 @@ public class ServerPlayerGameMode {
+@@ -260,7 +262,7 @@ public class ServerPlayerGameMode {
  
                  if (blockEvent.isCancelled()) {
                      // Let the client know the block still exists
@@ -74,7 +74,7 @@ index d0ca98c3f9ea5c8cb1053da6b17e9a90c86b3ae7..5063eb6d4a24600262c32d2c9eb5fb5b
                      return;
                  }
  
-@@ -348,7 +350,7 @@ public class ServerPlayerGameMode {
+@@ -351,7 +353,7 @@ public class ServerPlayerGameMode {
  
              // Tell client the block is gone immediately then process events
              // Don't tell the client if its a creative sword break because its not broken!
@@ -83,7 +83,7 @@ index d0ca98c3f9ea5c8cb1053da6b17e9a90c86b3ae7..5063eb6d4a24600262c32d2c9eb5fb5b
                  ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(pos, Blocks.AIR.defaultBlockState());
                  this.player.connection.send(packet);
              }
-@@ -374,13 +376,15 @@ public class ServerPlayerGameMode {
+@@ -377,13 +379,15 @@ public class ServerPlayerGameMode {
                  if (isSwordNoBreak) {
                      return false;
                  }
@@ -103,7 +103,7 @@ index d0ca98c3f9ea5c8cb1053da6b17e9a90c86b3ae7..5063eb6d4a24600262c32d2c9eb5fb5b
  
                  // Update any tile entity data for this block
                  if (!captureSentBlockEntities) { // Paper - Send block entities after destroy prediction
-@@ -537,16 +541,18 @@ public class ServerPlayerGameMode {
+@@ -532,16 +536,18 @@ public class ServerPlayerGameMode {
          if (event.useInteractedBlock() == Event.Result.DENY) {
              // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
              if (iblockdata.getBlock() instanceof DoorBlock) {
@@ -127,10 +127,10 @@ index d0ca98c3f9ea5c8cb1053da6b17e9a90c86b3ae7..5063eb6d4a24600262c32d2c9eb5fb5b
              } else if (iblockdata.is(Blocks.STRUCTURE_BLOCK) || iblockdata.getBlock() instanceof net.minecraft.world.level.block.CommandBlock) {
                  player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
 diff --git a/src/main/java/net/minecraft/world/item/BucketItem.java b/src/main/java/net/minecraft/world/item/BucketItem.java
-index 4b9e726e6ac255e743479d5c2e0cdb98464399a4..6371f326fc86cfc53e39bf8ed13b646f7705fbbc 100644
+index 6d494b80ae002aea00afa44adf83dad1ae5bbbc1..49557d6f22c5725c663a231deab019d4f6fe95fa 100644
 --- a/src/main/java/net/minecraft/world/item/BucketItem.java
 +++ b/src/main/java/net/minecraft/world/item/BucketItem.java
-@@ -77,7 +77,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+@@ -78,7 +78,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
                          PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) world, user, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.getItem(), hand);
  
                          if (event.isCancelled()) {
@@ -139,7 +139,7 @@ index 4b9e726e6ac255e743479d5c2e0cdb98464399a4..6371f326fc86cfc53e39bf8ed13b646f
                              ((ServerPlayer) user).getBukkitEntity().updateInventory(); // SPIGOT-4541
                              return InteractionResultHolder.fail(itemstack);
                          }
-@@ -186,7 +186,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+@@ -185,7 +185,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
              if (flag2 && entityhuman != null) {
                  PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((ServerLevel) world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand);
                  if (event.isCancelled()) {
@@ -149,10 +149,10 @@ index 4b9e726e6ac255e743479d5c2e0cdb98464399a4..6371f326fc86cfc53e39bf8ed13b646f
                      return false;
                  }
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 9b4e20d4bfba2de08084f1d69cb2ebfff7455c14..06dc04a1fbb91a5a20d662aeee168b6a319551d0 100644
+index 789740cadc1b66531b465bb0a052e2392852c4a8..36ea5ec6d2d2b994dfdf581141132a423569e4a1 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -458,10 +458,12 @@ public final class ItemStack {
+@@ -471,10 +471,12 @@ public final class ItemStack implements DataComponentHolder {
                      world.preventPoiUpdated = false;
  
                      // Brute force all possible updates

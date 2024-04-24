@@ -9,10 +9,10 @@ on dropping the item instead of generalizing it for all dropped
 items like CB does.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 2bb82dcffd8fdc25d658ec36a34f959b25217396..bd6c60ebfc76d19313bf01048268f8ce7e6603c5 100644
+index b2bf086506ba7eda6ba6912ebf51a9da154cd414..bee8cc19d7912d2ab1b731c47cf7e31d21d61866 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -891,22 +891,20 @@ public class ServerPlayer extends Player {
+@@ -958,22 +958,20 @@ public class ServerPlayer extends Player {
          if (this.isRemoved()) {
              return;
          }
@@ -38,7 +38,7 @@ index 2bb82dcffd8fdc25d658ec36a34f959b25217396..bd6c60ebfc76d19313bf01048268f8ce
          this.drops.clear(); // SPIGOT-5188: make sure to clear
          } // Paper - fix player loottables running when mob loot gamerule is false
  
-@@ -2389,8 +2387,8 @@ public class ServerPlayer extends Player {
+@@ -2471,8 +2469,8 @@ public class ServerPlayer extends Player {
      }
  
      @Override
@@ -50,10 +50,10 @@ index 2bb82dcffd8fdc25d658ec36a34f959b25217396..bd6c60ebfc76d19313bf01048268f8ce
          if (entityitem == null) {
              return null;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 2848be4604e08d0d651d16e960cda9a4d0234d41..5275e7a34f86830d43edcab3a0e94f8d8e9cfae5 100644
+index ee38f76e46c20e9fadfb5d4d602b7b82a8a22e51..4e96b6c05bf8b8235e91bdd26e5615c5299fd9aa 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2496,6 +2496,25 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -2524,6 +2524,25 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      @Nullable
      public ItemEntity spawnAtLocation(ItemStack stack, float yOffset) {
@@ -79,7 +79,7 @@ index 2848be4604e08d0d651d16e960cda9a4d0234d41..5275e7a34f86830d43edcab3a0e94f8d
          if (stack.isEmpty()) {
              return null;
          } else if (this.level().isClientSide) {
-@@ -2503,14 +2522,21 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -2531,14 +2550,21 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          } else {
              // CraftBukkit start - Capture drops for death event
              if (this instanceof net.minecraft.world.entity.LivingEntity && !((net.minecraft.world.entity.LivingEntity) this).forceDrops) {
@@ -104,10 +104,10 @@ index 2848be4604e08d0d651d16e960cda9a4d0234d41..5275e7a34f86830d43edcab3a0e94f8d
              return this.spawnAtLocation(entityitem);
          }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index a648cc01f2cdfac46fd2e760705cf85e534e926f..d396201655fde7ff35cf2a342fa458e5ea3f80a8 100644
+index 281d2f3df347e911eee459e06b917a0e075078e9..f948f4051607611e7105790c3b6bacc5d3ec39db 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -255,7 +255,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -266,7 +266,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
      // CraftBukkit start
      public int expToDrop;
      public boolean forceDrops;
@@ -117,10 +117,10 @@ index a648cc01f2cdfac46fd2e760705cf85e534e926f..d396201655fde7ff35cf2a342fa458e5
      public boolean collides = true;
      public Set<UUID> collidableExemptions = new HashSet<>();
 diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
-index 6c215470ad05d59f903cbeff15088a03b42c3f66..12440ee2dccc0a697fb403765f2e1b987ccc0283 100644
+index aa22829c3d41118664a872540fdc8f716120c407..c23d4ee0a16d1ae7168b2496d97189a14256bdcc 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
 +++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
-@@ -535,10 +535,10 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -537,10 +537,10 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
      @Override
      protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
          super.dropCustomDeathLoot(source, lootingMultiplier, allowDrops);
@@ -134,19 +134,19 @@ index 6c215470ad05d59f903cbeff15088a03b42c3f66..12440ee2dccc0a697fb403765f2e1b98
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index f62b5976e307a69ca40d51ae76126005c801df0c..bbe299afd361a107e3936c8ea1a62067fcac9b7e 100644
+index b1b0b0554e0ad035463fd53aa440d9c079b7cfb4..2ed6845f16fab175e2e9e96e76391e63ab4a43e2 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-@@ -611,7 +611,7 @@ public class ArmorStand extends LivingEntity {
-             itemstack.setHoverName(this.getCustomName());
-         }
+@@ -614,7 +614,7 @@ public class ArmorStand extends LivingEntity {
+         ItemStack itemstack = new ItemStack(Items.ARMOR_STAND);
  
+         itemstack.set(DataComponents.CUSTOM_NAME, this.getCustomName());
 -        this.drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
 +        this.drops.add(new DefaultDrop(itemstack, stack -> Block.popResource(this.level(), this.blockPosition(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior
          return this.brokenByAnything(damageSource); // Paper
      }
  
-@@ -625,7 +625,7 @@ public class ArmorStand extends LivingEntity {
+@@ -628,7 +628,7 @@ public class ArmorStand extends LivingEntity {
          for (i = 0; i < this.handItems.size(); ++i) {
              itemstack = (ItemStack) this.handItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -155,7 +155,7 @@ index f62b5976e307a69ca40d51ae76126005c801df0c..bbe299afd361a107e3936c8ea1a62067
                  this.handItems.set(i, ItemStack.EMPTY);
              }
          }
-@@ -633,7 +633,7 @@ public class ArmorStand extends LivingEntity {
+@@ -636,7 +636,7 @@ public class ArmorStand extends LivingEntity {
          for (i = 0; i < this.armorItems.size(); ++i) {
              itemstack = (ItemStack) this.armorItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -165,10 +165,10 @@ index f62b5976e307a69ca40d51ae76126005c801df0c..bbe299afd361a107e3936c8ea1a62067
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 53c3b2123d6fa78367aef53d6949e58170cb9fce..99292a908b36e3c75d51c6877c7a0c01d9671aa6 100644
+index eefdb3da069d9615db7c663bcf8a72b78a0e6817..822bfebc779646dde655239ac217bad011a9eee4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -965,17 +965,23 @@ public class CraftEventFactory {
+@@ -964,17 +964,23 @@ public class CraftEventFactory {
      }
  
      public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim) {
@@ -196,7 +196,7 @@ index 53c3b2123d6fa78367aef53d6949e58170cb9fce..99292a908b36e3c75d51c6877c7a0c01
          populateFields(victim, event); // Paper - make cancellable
          CraftWorld world = (CraftWorld) entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
-@@ -989,19 +995,23 @@ public class CraftEventFactory {
+@@ -988,19 +994,23 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          lootCheck.run(); // Paper - advancement triggers before destroying items
  
@@ -224,7 +224,7 @@ index 53c3b2123d6fa78367aef53d6949e58170cb9fce..99292a908b36e3c75d51c6877c7a0c01
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
          populateFields(victim, event); // Paper - make cancellable
-@@ -1020,10 +1030,14 @@ public class CraftEventFactory {
+@@ -1019,10 +1029,14 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          victim.newExp = event.getNewExp();
  

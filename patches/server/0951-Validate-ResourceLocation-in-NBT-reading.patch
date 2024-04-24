@@ -5,10 +5,10 @@ Subject: [PATCH] Validate ResourceLocation in NBT reading
 
 
 diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
-index f3b11b08358fdd93464cd19b05047e10727a5799..c192ddee39afe1de0b5454bc94593b10fefbb24d 100644
+index 1d7c20fe14882fdeddf315a8923669e3385652f5..f88dd37783b3c155c23b547c360b8d3c16e030c0 100644
 --- a/src/main/java/net/minecraft/nbt/NbtUtils.java
 +++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
-@@ -222,8 +222,10 @@ public final class NbtUtils {
+@@ -149,8 +149,10 @@ public final class NbtUtils {
          if (!nbt.contains("Name", 8)) {
              return Blocks.AIR.defaultBlockState();
          } else {
@@ -22,10 +22,10 @@ index f3b11b08358fdd93464cd19b05047e10727a5799..c192ddee39afe1de0b5454bc94593b10
                  return Blocks.AIR.defaultBlockState();
              } else {
 diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
-index 3908f88959e43d2f485d5f239257e6564dbda6cd..b549f65d0e276a5ed5b8b2f6956268d05910724f 100644
+index d93b623ce973b63d4f3a77bfe459f51af7cb3c1c..2c4553312f2f37f8613ac813708b4b95f9675e9f 100644
 --- a/src/main/java/net/minecraft/resources/ResourceLocation.java
 +++ b/src/main/java/net/minecraft/resources/ResourceLocation.java
-@@ -33,6 +33,13 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+@@ -37,6 +37,13 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
      private final String path;
  
      protected ResourceLocation(String namespace, String path, @Nullable ResourceLocation.Dummy extraData) {
@@ -40,10 +40,10 @@ index 3908f88959e43d2f485d5f239257e6564dbda6cd..b549f65d0e276a5ed5b8b2f6956268d0
          this.path = path;
      }
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
-index 8ba573bb4099ee5b27b61f333e72d794c48d5f29..69bdf3f2ee731e59e8d454816a9ca72cb49c0fe0 100644
+index 066c7033fdd9506a0edc5f5a0ec3bb1f1fbae336..d2503224a1697636b3f9c26126d6bb201143076a 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -614,7 +614,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+@@ -623,7 +623,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
      }
  
      public static Optional<EntityType<?>> by(CompoundTag nbt) {
@@ -53,10 +53,10 @@ index 8ba573bb4099ee5b27b61f333e72d794c48d5f29..69bdf3f2ee731e59e8d454816a9ca72c
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index bb52d084637c97d9cc1ebaeec28358a0ddb3952b..40e21effc948b02874a6ed1d1c340c4dc87579d6 100644
+index 68c312dc39ef6fdb88e201ba096c9bd99aebddd7..0416af1342dad6a6789aa743aadf61b32b70f338 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -879,12 +879,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -911,12 +911,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
          if (nbt.contains("SleepingX", 99) && nbt.contains("SleepingY", 99) && nbt.contains("SleepingZ", 99)) {
              BlockPos blockposition = new BlockPos(nbt.getInt("SleepingX"), nbt.getInt("SleepingY"), nbt.getInt("SleepingZ"));
@@ -72,23 +72,23 @@ index bb52d084637c97d9cc1ebaeec28358a0ddb3952b..40e21effc948b02874a6ed1d1c340c4d
  
          if (nbt.contains("Brain", 10)) {
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index f7818fd5e59784554732c39ef5c56461ea0d62c4..11c933a662c2275e2ef239cb0b5dd2480cc55490 100644
+index 506101a692c73f6acf2e647c3ab18024ccdff866..4f2148d13fc26ad2c43460f46c376832c1bb8150 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -608,7 +608,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
+@@ -642,7 +642,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
  
          this.setLeftHanded(nbt.getBoolean("LeftHanded"));
          if (nbt.contains("DeathLootTable", 8)) {
--            this.lootTable = new ResourceLocation(nbt.getString("DeathLootTable"));
-+            this.lootTable = ResourceLocation.tryParse(nbt.getString("DeathLootTable")); // Paper - Validate ResourceLocation
+-            this.lootTable = ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("DeathLootTable")));
++            this.lootTable = net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("DeathLootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl)); // Paper - Validate ResourceLocation
              this.lootTableSeed = nbt.getLong("DeathLootTableSeed");
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index c30f19162e33dbe8f018b7dc66210681b6027389..e8faca6e443239968f0111519f9e5cd018ed3297 100644
+index 2df84bc367f650c3d468e0f09ed565e68de43a82..7ea5f496dc9ffab8311fcc79de47362a66c703e6 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-@@ -561,7 +561,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -556,7 +556,7 @@ public abstract class AbstractArrow extends Projectile {
          this.setCritArrow(nbt.getBoolean("crit"));
          this.setPierceLevel(nbt.getByte("PierceLevel"));
          if (nbt.contains("SoundEvent", 8)) {
@@ -98,23 +98,23 @@ index c30f19162e33dbe8f018b7dc66210681b6027389..e8faca6e443239968f0111519f9e5cd0
  
          this.setShotFromCrossbow(nbt.getBoolean("ShotFromCrossbow"));
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
-index f4ad1eea5bced6997edbc3a5ed1360b12b70f68f..648eefb973a4e5e543818c417a6ee39f283ea361 100644
+index f33e5cf6d456e615050047e924d9b24268a2c51e..c660e9b1e9635011b32fa19cf64118d64408f158 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
-@@ -66,7 +66,7 @@ public interface ContainerEntity extends Container, MenuProvider {
-     default void readChestVehicleSaveData(CompoundTag nbt) {
+@@ -72,7 +72,7 @@ public interface ContainerEntity extends Container, MenuProvider {
+     default void readChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registriesLookup) {
          this.clearItemStacks();
          if (nbt.contains("LootTable", 8)) {
--            this.setLootTable(new ResourceLocation(nbt.getString("LootTable")));
-+            this.setLootTable(ResourceLocation.tryParse(nbt.getString("LootTable"))); // Paper - Validate ResourceLocation
+-            this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("LootTable"))));
++            this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
              this.setLootTableSeed(nbt.getLong("LootTableSeed"));
          }
-         ContainerHelper.loadAllItems(nbt, this.getItemStacks()); // Paper - always load the items, table may still remain
+         ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registriesLookup); // Paper - always save the items, table may still remain
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-index d04fc84eef11adb5ea64077f48794b6ed7fb3ada..89d06253b00604114e543ebbe12a9993ae95dc41 100644
+index f40b2582d9087f9dbb5cab950304698f33fdd879..a99fe191c429bb528209dd0f31b509acf9cccbb5 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-@@ -290,7 +290,12 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -295,7 +295,12 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
          while (iterator.hasNext()) {
              String s = (String) iterator.next();
  
@@ -129,15 +129,15 @@ index d04fc84eef11adb5ea64077f48794b6ed7fb3ada..89d06253b00604114e543ebbe12a9993
  
          // Paper start - cook speed multiplier API
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
-index b5b1831631e233a96b6fd55972a8862b0f420da8..3f62e823bf9b5aa696e3c240613a0fb50340875e 100644
+index f78a9698afc87408fc46de2d3d00c923500885f4..dc02a3d84b397f634f77f4df9c06e245cc4dcb75 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
-@@ -199,7 +199,7 @@ public class BrushableBlockEntity extends BlockEntity {
+@@ -202,7 +202,7 @@ public class BrushableBlockEntity extends BlockEntity {
  
      private boolean tryLoadLootTable(CompoundTag nbt) {
          if (nbt.contains("LootTable", 8)) {
--            this.lootTable = new ResourceLocation(nbt.getString("LootTable"));
-+            this.lootTable = ResourceLocation.tryParse(nbt.getString("LootTable")); // Paper - Validate ResourceLocation
+-            this.lootTable = ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("LootTable")));
++            this.lootTable = net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl)); // Paper - Validate ResourceLocation
              this.lootTableSeed = nbt.getLong("LootTableSeed");
              return true;
          } else {
