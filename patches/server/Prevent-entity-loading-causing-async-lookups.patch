@@ -8,12 +8,12 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      public void baseTick() {
          this.level().getProfiler().push("entityBaseTick");
 +        if (firstTick && this instanceof net.minecraft.world.entity.NeutralMob neutralMob) neutralMob.tickInitialPersistentAnger(level); // Paper - Prevent entity loading causing async lookups
-         this.feetBlockState = null;
+         this.inBlockState = null;
          if (this.isPassenger() && this.getVehicle().isRemoved()) {
              this.stopRiding();
 diff --git a/src/main/java/net/minecraft/world/entity/NeutralMob.java b/src/main/java/net/minecraft/world/entity/NeutralMob.java
@@ -28,11 +28,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -                if (entity != null) {
 -                    if (entity instanceof Mob) {
--                        this.setLastHurtByMob((Mob) entity);
+-                        Mob entityinsentient = (Mob) entity;
+-
+-                        this.setTarget(entityinsentient);
+-                        this.setLastHurtByMob(entityinsentient);
 -                    }
 -
--                    if (entity.getType() == EntityType.PLAYER) {
--                        this.setLastHurtByPlayer((Player) entity);
+-                    if (entity instanceof Player) {
+-                        Player entityhuman = (Player) entity;
+-
+-                        this.setTarget(entityhuman);
+-                        this.setLastHurtByPlayer(entityhuman);
 -                    }
 -
 -                }
@@ -60,14 +66,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Entity entity = ((ServerLevel) level).getEntity(target);
 +
 +        if (entity != null) {
-+            if (entity instanceof Mob) {
-+                this.setLastHurtByMob((Mob) entity);
++            if (entity instanceof Mob mob) {
++                this.setTarget(mob);
++                this.setLastHurtByMob(mob);
 +            }
 +
-+            if (entity.getType() == EntityType.PLAYER) {
-+                this.setLastHurtByPlayer((Player) entity);
++            if (entity instanceof Player player) {
++                this.setTarget(player);
++                this.setLastHurtByPlayer(player);
 +            }
-+
 +        }
 +    }
 +    // Paper end - Prevent entity loading causing async lookups
