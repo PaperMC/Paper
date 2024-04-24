@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Professor Bloodstone <git@bloodstone.dev>
+Date: Fri, 23 Jul 2021 02:32:04 +0200
+Subject: [PATCH] Allow skipping writing of comments to server.properties
+
+Makes less git noise, as it won't update the date every single time
+
+Use -DPaper.skipServerPropertiesComments=true flag to disable writing it
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/main/java/net/minecraft/server/dedicated/Settings.java
+index 0ec3b546db0cf3858dd9cd9ea067d1d6713a8491..d7bd235ef2815890e038091dd625177049d253a5 100644
+--- a/src/main/java/net/minecraft/server/dedicated/Settings.java
++++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
+@@ -29,6 +29,7 @@ public abstract class Settings<T extends Settings<T>> {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public final Properties properties;
++    private static final boolean skipComments = Boolean.getBoolean("Paper.skipServerPropertiesComments"); // Paper - allow skipping server.properties comments
+     // CraftBukkit start
+     private OptionSet options = null;
+ 
+@@ -123,7 +124,46 @@ public abstract class Settings<T extends Settings<T>> {
+                 return;
+             }
+             // CraftBukkit end
+-            BufferedWriter bufferedwriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
++            // Paper start - allow skipping server.properties comments
++            java.io.OutputStream outputstream = Files.newOutputStream(path);
++            java.io.BufferedOutputStream bufferedOutputStream =  !skipComments ? new java.io.BufferedOutputStream(outputstream) : new java.io.BufferedOutputStream(outputstream) {
++                private boolean isRightAfterNewline = true; // If last written char was newline
++                private boolean isComment = false; // Are we writing comment currently?
++
++                @Override
++                public void write(@org.jetbrains.annotations.NotNull byte[] b) throws IOException {
++                    this.write(b, 0, b.length);
++                }
++
++                @Override
++                public void write(@org.jetbrains.annotations.NotNull byte[] bbuf, int off, int len) throws IOException {
++                    int latest_offset = off; // The latest offset, updated when comment ends
++                    for (int index = off; index < off + len; ++index ) {
++                        byte c = bbuf[index];
++                        boolean isNewline = (c == '\n' || c == '\r');
++                        if (isNewline && this.isComment) {
++                            // Comment has ended
++                            this.isComment = false;
++                            latest_offset = index+1;
++                        }
++                        if (c == '#' && this.isRightAfterNewline) {
++                            this.isComment = true;
++                            if (index != latest_offset) {
++                                // We got some non-comment data earlier
++                                super.write(bbuf, latest_offset, index-latest_offset);
++                            }
++                        }
++                        this.isRightAfterNewline = isNewline; // Store for next iteration
++
++                    }
++                    if (latest_offset < off+len && !this.isComment) {
++                        // We have some unwritten data, that isn't part of a comment
++                        super.write(bbuf, latest_offset, (off + len) - latest_offset);
++                    }
++                }
++            };
++            BufferedWriter bufferedwriter = new BufferedWriter(new java.io.OutputStreamWriter(bufferedOutputStream, java.nio.charset.StandardCharsets.UTF_8.newEncoder()));
++            // Paper end - allow skipping server.properties comments
+ 
+             try {
+                 this.properties.store(bufferedwriter, "Minecraft server properties");
