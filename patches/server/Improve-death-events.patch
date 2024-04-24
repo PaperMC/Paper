@@ -32,7 +32,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - cancellable death event
  
      // CraftBukkit start
-     public String displayName;
+     public CraftPlayer.TransferCookieConnection transferCookieConnection;
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
  
      @Override
@@ -95,10 +95,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (this.isDeadOrDying()) {
                  if (!this.checkTotemDeathProtection(source)) {
--                    SoundEvent soundeffect = this.getDeathSound();
--
--                    if (flag1 && soundeffect != null) {
--                        this.playSound(soundeffect, this.getSoundVolume(), this.getVoicePitch());
+-                    if (flag1) {
+-                        this.makeSound(this.getDeathSound());
 -                    }
 +                    // Paper start - moved into CraftEventFactory event caller for cancellable death event
 +                    this.silentDeath = !flag1; // mark entity as dying silently
@@ -131,8 +129,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (world instanceof ServerLevel) {
                  ServerLevel worldserver = (ServerLevel) world;
 +                // Paper - move below into if for onKill
- 
--                if (entity == null || entity.killedEntity(worldserver, this)) {
++
 +                // Paper start
 +                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(damageSource);
 +                if (deathEvent == null || !deathEvent.isCancelled()) {
@@ -155,7 +152,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (!this.level().isClientSide && this.hasCustomName()) {
 +                        if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
 +                    }
-+
+ 
+-                if (entity == null || entity.killedEntity(worldserver, this)) {
 +                    this.getCombatTracker().recheckStatus();
 +                    if (entity != null) {
 +                        entity.killedEntity((ServerLevel) this.level(), this);
@@ -237,7 +235,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/n
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
  
      }
  
@@ -250,7 +248,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
          super.dropCustomDeathLoot(source, lootingMultiplier, allowDrops);
-@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
  
          for (int k = 0; k < j; ++k) {
              EquipmentSlot enumitemslot = aenumitemslot[k];
@@ -258,7 +256,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              ItemStack itemstack = this.getItemBySlot(enumitemslot);
              float f = this.getEquipmentDropChance(enumitemslot);
              boolean flag1 = f > 1.0F;
-@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
                  }
  
                  this.spawnAtLocation(itemstack);
@@ -317,7 +315,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return deathEvent; // Paper - Cancellable death event
      }
  
-     @Override
+     public static boolean isPathClear(Fox fox, LivingEntity chasedEntity) {
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractChestedHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractChestedHorse.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractChestedHorse.java
@@ -390,10 +388,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private org.bukkit.event.entity.EntityDeathEvent brokenByPlayer(DamageSource damageSource) { // Paper
          ItemStack itemstack = new ItemStack(Items.ARMOR_STAND);
  
-         if (this.hasCustomName()) {
-@@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
-         }
- 
+         itemstack.set(DataComponents.CUSTOM_NAME, this.getCustomName());
          this.drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
 -        this.brokenByAnything(damageSource);
 +        return this.brokenByAnything(damageSource); // Paper
