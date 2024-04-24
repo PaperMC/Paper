@@ -78,7 +78,7 @@ public final class StructureType implements Keyed {
      * They come in my different variations. The cold variants consist primarily
      * of stone brick, and the warm variants consist of sandstone.
      */
-    public static final StructureType OCEAN_RUIN = register(new StructureType("ocean_ruin", MapCursor.Type.TEMPLE));
+    public static final StructureType OCEAN_RUIN = register(new StructureType("ocean_ruin", MapCursor.Type.MONUMENT));
 
     /**
      * Desert pyramids (also known as desert temples) are found in deserts.
@@ -107,7 +107,7 @@ public final class StructureType implements Keyed {
      * lanterns. They are the only place guardians and elder guardians spawn
      * naturally.
      */
-    public static final StructureType OCEAN_MONUMENT = register(new StructureType("monument", MapCursor.Type.TEMPLE));
+    public static final StructureType OCEAN_MONUMENT = register(new StructureType("monument", MapCursor.Type.MONUMENT));
 
     /**
      * End Cities are tall castle-like structures that generate in the outer
