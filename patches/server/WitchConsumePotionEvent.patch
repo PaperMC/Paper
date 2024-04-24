@@ -12,13 +12,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class Witch extends Raider implements RangedAttackMob {
  
                      this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-                     if (itemstack.is(Items.POTION)) {
--                        List<MobEffectInstance> list = PotionUtils.getMobEffects(itemstack);
-+                        // Paper start - WitchConsumePotionEvent
+                     PotionContents potioncontents = (PotionContents) itemstack.get(DataComponents.POTION_CONTENTS);
++                    // Paper start - WitchConsumePotionEvent
++                    if (itemstack.is(Items.POTION)) {
 +                        com.destroystokyo.paper.event.entity.WitchConsumePotionEvent event = new com.destroystokyo.paper.event.entity.WitchConsumePotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack));
-+
-+                        List<MobEffectInstance> list = event.callEvent() ? PotionUtils.getMobEffects(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion())) : null;
-+                        // Paper end - WitchConsumePotionEvent
++                        potioncontents = event.callEvent() ? org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getPotion()).get(DataComponents.POTION_CONTENTS) : null;
++                    }
++                    // Paper end - WitchConsumePotionEvent
  
-                         if (list != null) {
-                             Iterator iterator = list.iterator();
+                     if (itemstack.is(Items.POTION) && potioncontents != null) {
+                         potioncontents.forEachEffect((effect) -> this.addEffect(effect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK)); // CraftBukkit

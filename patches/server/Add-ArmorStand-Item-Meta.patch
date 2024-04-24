@@ -19,11 +19,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ import org.bukkit.Material;
  import org.bukkit.configuration.serialization.DelegateDeserialization;
  
- @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
+ @DelegateDeserialization(SerializableMeta.class)
 -public class CraftMetaArmorStand extends CraftMetaItem {
 +public class CraftMetaArmorStand extends CraftMetaItem implements com.destroystokyo.paper.inventory.meta.ArmorStandMeta { // Paper
  
-     static final ItemMetaKey ENTITY_TAG = new ItemMetaKey("EntityTag", "entity-tag");
+     static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
 +    // Paper start
 +    static final ItemMetaKey INVISIBLE = new ItemMetaKey("Invisible", "invisible");
 +    static final ItemMetaKey NO_BASE_PLATE = new ItemMetaKey("NoBasePlate", "no-base-plate");
@@ -56,8 +56,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public class CraftMetaArmorStand extends CraftMetaItem {
  
-         if (tag.contains(CraftMetaArmorStand.ENTITY_TAG.NBT)) {
-             this.entityTag = tag.getCompound(CraftMetaArmorStand.ENTITY_TAG.NBT).copy();
+         getOrEmpty(tag, CraftMetaArmorStand.ENTITY_TAG).ifPresent((nbt) -> {
+             this.entityTag = nbt.copyTag();
 +            // Paper start
 +            if (entityTag.contains(INVISIBLE.NBT)) {
 +                invisible = entityTag.getBoolean(INVISIBLE.NBT);
@@ -79,7 +79,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                marker = entityTag.getBoolean(MARKER.NBT);
 +            }
 +            // Paper end
-         }
+         });
      }
  
      CraftMetaArmorStand(Map<String, Object> map) {
@@ -95,7 +95,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 @@ -0,0 +0,0 @@ public class CraftMetaArmorStand extends CraftMetaItem {
-     void applyToItem(CompoundTag tag) {
+     void applyToItem(CraftMetaItem.Applicator tag) {
          super.applyToItem(tag);
  
 +        // Paper start
@@ -124,7 +124,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end
          if (this.entityTag != null) {
-             tag.put(CraftMetaArmorStand.ENTITY_TAG.NBT, this.entityTag);
+             tag.put(CraftMetaArmorStand.ENTITY_TAG, CustomData.of(this.entityTag));
          }
 @@ -0,0 +0,0 @@ public class CraftMetaArmorStand extends CraftMetaItem {
      }
@@ -254,25 +254,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  }
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-                         CraftMetaCrossbow.CHARGED.NBT,
-                         CraftMetaCrossbow.CHARGED_PROJECTILES.NBT,
-                         CraftMetaSuspiciousStew.EFFECTS.NBT,
-+                        // Paper start
-+                        CraftMetaArmorStand.ENTITY_TAG.NBT,
-+                        CraftMetaArmorStand.INVISIBLE.NBT,
-+                        CraftMetaArmorStand.NO_BASE_PLATE.NBT,
-+                        CraftMetaArmorStand.SHOW_ARMS.NBT,
-+                        CraftMetaArmorStand.SMALL.NBT,
-+                        CraftMetaArmorStand.MARKER.NBT,
-+                        // Paper end
-                         CraftMetaCompass.LODESTONE_DIMENSION.NBT,
-                         CraftMetaCompass.LODESTONE_POS.NBT,
-                         CraftMetaCompass.LODESTONE_TRACKED.NBT,
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java

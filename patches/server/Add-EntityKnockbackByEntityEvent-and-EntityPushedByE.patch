@@ -12,7 +12,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          }
      }
  
@@ -102,14 +102,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java
 @@ -0,0 +0,0 @@ public class SonicBoom extends Behavior<Warden> {
-                     target.hurt(world.damageSources().sonicBoom(entity), 10.0F);
-                     double d = 0.5 * (1.0 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
-                     double e = 2.5 * (1.0 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
--                    target.push(vec33.x() * e, vec33.y() * d, vec33.z() * e);
-+                    target.push(vec33.x() * e, vec33.y() * d, vec33.z() * e, entity); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+                     if (target.hurt(world.damageSources().sonicBoom(entity), 10.0F)) {
+                         double d = 0.5 * (1.0 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+                         double e = 2.5 * (1.0 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+-                        target.push(vec33.x() * e, vec33.y() * d, vec33.z() * e);
++                        target.push(vec33.x() * e, vec33.y() * d, vec33.z() * e, entity); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+                     }
                  });
          }
-     }
 diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
@@ -183,14 +183,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
-                             if (target instanceof LivingEntity) {
-                                 ((LivingEntity) target).knockback((double) ((float) i * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, EntityKnockbackEvent.KnockbackCause.ENTITY_ATTACK); // CraftBukkit
-                             } else {
--                                target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F));
-+                                target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F), this); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
-                             }
+                                 if (target instanceof LivingEntity) {
+                                     ((LivingEntity) target).knockback((double) ((float) i * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, EntityKnockbackEvent.KnockbackCause.ENTITY_ATTACK); // CraftBukkit
+                                 } else {
+-                                    target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F));
++                                    target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F), this); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+                                 }
  
-                             this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
+                                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
