@@ -1,0 +1,114 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 21 Aug 2021 17:25:38 -0700
+Subject: [PATCH] API for updating recipes on clients
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index b00da578cb4ba037a540584738b3f866acfa9f88..2f62af670441d422133b18d00d9e5e5e58e4afe7 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1530,6 +1530,13 @@ public abstract class PlayerList {
+     }
+ 
+     public void reloadResources() {
++        // Paper start - API for updating recipes on clients
++        this.reloadAdvancementData();
++        this.reloadTagData();
++        this.reloadRecipeData();
++    }
++    public void reloadAdvancementData() {
++        // Paper end - API for updating recipes on clients
+         // CraftBukkit start
+         /*Iterator iterator = this.advancements.values().iterator();
+ 
+@@ -1545,7 +1552,15 @@ public abstract class PlayerList {
+         }
+         // CraftBukkit end
+ 
++        // Paper start - API for updating recipes on clients
++    }
++    public void reloadTagData() {
++        // Paper end - API for updating recipes on clients
+         this.broadcastAll(new ClientboundUpdateTagsPacket(TagNetworkSerialization.serializeTagsToNetwork(this.registries)));
++        // Paper start - API for updating recipes on clients
++    }
++    public void reloadRecipeData() {
++        // Paper end - API for updating recipes on clients
+         ClientboundUpdateRecipesPacket packetplayoutrecipeupdate = new ClientboundUpdateRecipesPacket(this.server.getRecipeManager().getOrderedRecipes());
+         Iterator iterator1 = this.players.iterator();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 233dc26b6698887e5b2ab179a67364eca389ed86..810ffd7cd1a8a7facc63e10e9eb5fed0504737e3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1142,6 +1142,18 @@ public final class CraftServer implements Server {
+         ReloadCommand.reload(this.console);
+     }
+ 
++    // Paper start - API for updating recipes on clients
++    @Override
++    public void updateResources() {
++        this.playerList.reloadResources();
++    }
++
++    @Override
++    public void updateRecipes() {
++        this.playerList.reloadRecipeData();
++    }
++    // Paper end - API for updating recipes on clients
++
+     private void loadIcon() {
+         this.icon = new CraftIconCache(null);
+         try {
+@@ -1529,6 +1541,13 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean addRecipe(Recipe recipe) {
++        // Paper start - API for updating recipes on clients
++        return this.addRecipe(recipe, false);
++    }
++
++    @Override
++    public boolean addRecipe(Recipe recipe, boolean resendRecipes) {
++        // Paper end - API for updating recipes on clients
+         CraftRecipe toAdd;
+         if (recipe instanceof CraftRecipe) {
+             toAdd = (CraftRecipe) recipe;
+@@ -1558,6 +1577,11 @@ public final class CraftServer implements Server {
+             }
+         }
+         toAdd.addToCraftingManager();
++        // Paper start - API for updating recipes on clients
++        if (resendRecipes) {
++            this.playerList.reloadRecipeData();
++        }
++        // Paper end - API for updating recipes on clients
+         return true;
+     }
+ 
+@@ -1738,10 +1762,23 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean removeRecipe(NamespacedKey recipeKey) {
++        // Paper start - API for updating recipes on clients
++        return this.removeRecipe(recipeKey, false);
++    }
++
++    @Override
++    public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
++        // Paper end - API for updating recipes on clients
+         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
+ 
+         ResourceLocation mcKey = CraftNamespacedKey.toMinecraft(recipeKey);
+-        return this.getServer().getRecipeManager().removeRecipe(mcKey);
++        // Paper start - resend recipes on successful removal
++        boolean removed = this.getServer().getRecipeManager().removeRecipe(mcKey);
++        if (removed && resendRecipes) {
++            this.playerList.reloadRecipeData();
++        }
++        return removed;
++        // Paper end
+     }
+ 
+     @Override

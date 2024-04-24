@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 11 Jul 2023 11:22:30 -0700
+Subject: [PATCH] fix item meta for tadpole buckets
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+index 071f4fe53fbea333b5db52ac719c5e6b833ffe19..4cc5f39ee20948e2369b21041b663a7e50d15ac1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+@@ -364,6 +364,7 @@ public final class CraftItemFactory implements ItemFactory {
+         case COD_BUCKET:
+         case PUFFERFISH_BUCKET:
+         case SALMON_BUCKET:
++        case TADPOLE_BUCKET: // Paper
+         case ITEM_FRAME:
+         case GLOW_ITEM_FRAME:
+         case PAINTING:
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index be2b7c2b412a1d64466c25c1b19b10a869cd288d..d544a4e4d88b51cf6ca53e048c411aa23c64d78f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -600,6 +600,7 @@ public final class CraftItemStack extends ItemStack {
+             case COD_BUCKET:
+             case PUFFERFISH_BUCKET:
+             case SALMON_BUCKET:
++            case TADPOLE_BUCKET: // Paper
+             case ITEM_FRAME:
+             case GLOW_ITEM_FRAME:
+             case PAINTING:
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+index 27af7ca9d62bdb4a24be5af139c181d7bc271ba5..3ff0340c40e9dc9a6e690de15ccade7a0c4e8f02 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+@@ -19,6 +19,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+             Material.COD_BUCKET,
+             Material.PUFFERFISH_BUCKET,
+             Material.SALMON_BUCKET,
++            Material.TADPOLE_BUCKET, // Paper
+             Material.ITEM_FRAME,
+             Material.GLOW_ITEM_FRAME,
+             Material.PAINTING
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+index 7237e24686885c754c87e7eec53c6400fd0b47bf..f071968be481a164192085a3e405bea2d26062b6 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+@@ -234,6 +234,27 @@ public class ItemMetaTest extends AbstractTestingBase {
+         }
+     }
+ 
++    // Paper start - check entity tag metas
++    private static final java.util.Set<Class<?>> ENTITY_TAG_METAS = java.util.Set.of(
++        CraftMetaEntityTag.class,
++        CraftMetaTropicalFishBucket.class,
++        CraftMetaAxolotlBucket.class
++    );
++    @Test
++    public void testEntityTagMeta() {
++        for (final Item item : BuiltInRegistries.ITEM) {
++            if (item instanceof net.minecraft.world.item.HangingEntityItem || item instanceof net.minecraft.world.item.MobBucketItem) {
++                ItemStack stack = new ItemStack(CraftItemType.minecraftToBukkit(item));
++                assertTrue(ENTITY_TAG_METAS.contains(stack.getItemMeta().getClass()), "missing entity tag meta handling for " + item);
++                stack = CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.STONE);
++                stack.editMeta(meta -> meta.displayName(net.kyori.adventure.text.Component.text("hello")));
++                stack.setType(CraftItemType.minecraftToBukkit(item));
++                assertTrue(ENTITY_TAG_METAS.contains(stack.getItemMeta().getClass()), "missing entity tag meta handling for " + item);
++            }
++        }
++    }
++    // Paper end
++
+     @Test
+     public void testEachExtraData() {
+         final List<StackProvider> providers = Arrays.asList(
