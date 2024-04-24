@@ -10,26 +10,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 @@ -0,0 +0,0 @@ public class ItemFrame extends HangingEntity {
-     // Paper end
+     }
  
-     private void removeFramedMap(ItemStack itemstack) {
--        this.getFramedMapId().ifPresent((i) -> {
-+        // Paper start - fix MC-252817 (green map markers do not disappear)
-+        this.getFramedMapIdFromItem(itemstack).ifPresent((i) -> {
-+            // Paper end - fix MC-252817
-             MapItemSavedData worldmap = MapItem.getSavedData(i, this.level());
+     private void removeFramedMap(ItemStack stack) {
+-        MapId mapid = this.getFramedMapId();
+-
++        MapId mapid = this.getFramedMapIdForItem(stack); // Paper - fix MC-252817 (green map markers do not disappear)
+         if (mapid != null) {
+             MapItemSavedData worldmap = MapItem.getSavedData(mapid, this.level());
  
-             if (worldmap != null) {
 @@ -0,0 +0,0 @@ public class ItemFrame extends HangingEntity {
  
-     public OptionalInt getFramedMapId() {
-         ItemStack itemstack = this.getItem();
-+        // Paper start - fix MC-252817 (green map markers do not disappear)
-+        return this.getFramedMapIdFromItem(itemstack);
+     @Nullable
+     public MapId getFramedMapId() {
+-        return (MapId) this.getItem().get(DataComponents.MAP_ID);
++        // Paper start
++        return this.getFramedMapIdForItem(this.getItem());
+     }
+ 
++    @Nullable
++    public MapId getFramedMapIdForItem(ItemStack item) {
++        return (MapId) item.get(DataComponents.MAP_ID);
 +    }
- 
-+    public OptionalInt getFramedMapIdFromItem(ItemStack itemstack) {
-+        // Paper end - fix MC-252817
-         if (itemstack.is(Items.FILLED_MAP)) {
-             Integer integer = MapItem.getMapId(itemstack);
- 
++    // Paper end
++
+     public boolean hasFramedMap() {
+         return this.getItem().has(DataComponents.MAP_ID);
+     }

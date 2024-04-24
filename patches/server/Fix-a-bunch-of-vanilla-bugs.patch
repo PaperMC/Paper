@@ -3,9 +3,6 @@ From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Mon, 11 Jul 2022 11:56:41 -0700
 Subject: [PATCH] Fix a bunch of vanilla bugs
 
-https://bugs.mojang.com/browse/MC-253884
-  show raid entity event to all tracking players
-
 https://bugs.mojang.com/browse/MC-253721
   wrong msg for opping multiple players
 
@@ -48,12 +45,6 @@ https://bugs.mojang.com/browse/MC-123848
 
 https://bugs.mojang.com/browse/MC-84789
   Fix wild wolves not considering bones interesting
-
-https://bugs.mojang.com/browse/MC-225381
-  Fix overfilled bundles duplicating items / being filled with air
-
-https://bugs.mojang.com/browse/MC-173303
-  Fix leashed pets teleporting to owner when loaded
 
 https://bugs.mojang.com/browse/MC-174630
   Fix secondary beacon effect remaining after switching effect
@@ -250,19 +241,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.mob.getRandom().nextInt(this.mob.isBaby() ? 50 : 1000) != 0) {
              return false;
          } else {
-diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
-@@ -0,0 +0,0 @@ public class FollowOwnerGoal extends Goal {
-     }
- 
-     private boolean unableToMove() {
--        return this.tamable.isOrderedToSit() || this.tamable.isPassenger() || this.tamable.isLeashed();
-+        return this.tamable.isOrderedToSit() || this.tamable.isPassenger() || this.tamable.isLeashed() || this.tamable.leashInfoTag != null; // Paper - Fix MC-173303
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
@@ -315,13 +293,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
      }
  
-     public void equipArmor(Player player, ItemStack stack) {
+     public void equipBodyArmor(Player player, ItemStack stack) {
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 @@ -0,0 +0,0 @@ public class ItemFrame extends HangingEntity {
-         }
+         return (ItemStack) this.getEntityData().get(ItemFrame.DATA_ITEM);
      }
  
 +    // Paper start - Fix MC-123848 (spawn item frame drops above block)
@@ -332,9 +310,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     private void removeFramedMap(ItemStack itemstack) {
-         this.getFramedMapId().ifPresent((i) -> {
-             MapItemSavedData worldmap = MapItem.getSavedData(i, this.level());
+     @Nullable
+     public MapId getFramedMapId() {
+         return (MapId) this.getItem().get(DataComponents.MAP_ID);
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
@@ -344,33 +322,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return 0;
          } else {
 +            cat.moveTo(pos, 0.0F, 0.0F); // Paper - move up - Fix MC-147659
-             cat.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null, null);
+             cat.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null);
 -            cat.moveTo(pos, 0.0F, 0.0F);
              world.addFreshEntityWithPassengers(cat);
              return 1;
          }
-diff --git a/src/main/java/net/minecraft/world/entity/raid/Raids.java b/src/main/java/net/minecraft/world/entity/raid/Raids.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/raid/Raids.java
-+++ b/src/main/java/net/minecraft/world/entity/raid/Raids.java
-@@ -0,0 +0,0 @@ public class Raids extends SavedData {
-                     // CraftBukkit end
-                 } else {
-                     player.removeEffect(MobEffects.BAD_OMEN);
--                    player.connection.send(new ClientboundEntityEventPacket(player, (byte) 43));
-+                    this.level.broadcastEntityEvent(player, net.minecraft.world.entity.EntityEvent.BAD_OMEN_TRIGGERED /* (byte) 43 */); // Paper - Fix MC-253884
-                 }
- 
-                 if (flag) {
-@@ -0,0 +0,0 @@ public class Raids extends SavedData {
-                     }
-                     // CraftBukkit end
-                     raid.absorbBadOmen(player);
--                    player.connection.send(new ClientboundEntityEventPacket(player, (byte) 43));
-+                    this.level.broadcastEntityEvent(player, net.minecraft.world.entity.EntityEvent.BAD_OMEN_TRIGGERED /* (byte) 43 */); // Paper - Fix MC-253884
-                     if (!raid.hasFirstWaveSpawned()) {
-                         player.awardStat(Stats.RAID_TRIGGER);
-                         CriteriaTriggers.BAD_OMEN.trigger(player);
 diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
@@ -378,37 +334,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class BeaconMenu extends AbstractContainerMenu {
      // Paper end - Add PlayerChangeBeaconEffectEvent
  
-     public void updateEffects(Optional<MobEffect> primary, Optional<MobEffect> secondary) {
+     public void updateEffects(Optional<Holder<MobEffect>> primary, Optional<Holder<MobEffect>> secondary) {
 +        // Paper start - fix MC-174630 - validate secondary power
-+        if (secondary.isPresent() && secondary.get() != net.minecraft.world.effect.MobEffects.REGENERATION && (primary.isPresent() && secondary.get() != primary.get())) {
++        if (secondary.isPresent() && secondary.get().value() != net.minecraft.world.effect.MobEffects.REGENERATION && (primary.isPresent() && secondary.get() != primary.get())) {
 +            secondary = Optional.empty();
 +        }
 +        // Paper end
          if (this.paymentSlot.hasItem()) {
              // Paper start - Add PlayerChangeBeaconEffectEvent
              io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
-diff --git a/src/main/java/net/minecraft/world/item/BundleItem.java b/src/main/java/net/minecraft/world/item/BundleItem.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/item/BundleItem.java
-+++ b/src/main/java/net/minecraft/world/item/BundleItem.java
-@@ -0,0 +0,0 @@ public class BundleItem extends Item {
-                 removeOne(stack).ifPresent(removedStack -> add(stack, slot.safeInsert(removedStack)));
-             } else if (itemStack.getItem().canFitInsideContainerItems()) {
-                 int i = (64 - getContentWeight(stack)) / getWeight(itemStack);
--                int j = add(stack, slot.safeTake(itemStack.getCount(), i, player));
-+                int j = add(stack, slot.safeTake(itemStack.getCount(), Math.max(0, i), player)); // Paper - prevent item addition on overfilled bundles - safeTake will yield EMPTY for amount == 0.
-                 if (j > 0) {
-                     this.playInsertSound(player);
-                 }
-@@ -0,0 +0,0 @@ public class BundleItem extends Item {
-             int i = getContentWeight(bundle);
-             int j = getWeight(stack);
-             int k = Math.min(stack.getCount(), (64 - i) / j);
--            if (k == 0) {
-+            if (k <= 0) { // Paper - prevent item addition on overfilled bundles
-                 return 0;
-             } else {
-                 ListTag listTag = compoundTag.getList("Items", 10);
 diff --git a/src/main/java/net/minecraft/world/item/SaddleItem.java b/src/main/java/net/minecraft/world/item/SaddleItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/SaddleItem.java

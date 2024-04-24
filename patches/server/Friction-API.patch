@@ -68,21 +68,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          super(type, world);
 @@ -0,0 +0,0 @@ public class ItemEntity extends Entity implements TraceableEntity {
                  this.move(MoverType.SELF, this.getDeltaMovement());
-                 float f1 = 0.98F;
+                 float f = 0.98F;
  
 -                if (this.onGround()) {
 +                // Paper start - Friction API
 +                if (frictionState == net.kyori.adventure.util.TriState.FALSE) {
-+                    f1 = 1F;
++                    f = 1F;
 +                } else if (this.onGround()) {
 +                    // Paper end - Friction API
-                     f1 = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getBlock().getFriction() * 0.98F;
+                     f = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getBlock().getFriction() * 0.98F;
                  }
- 
--                this.setDeltaMovement(this.getDeltaMovement().multiply((double) f1, 0.98D, (double) f1));
-+                this.setDeltaMovement(this.getDeltaMovement().multiply((double) f1, frictionState == net.kyori.adventure.util.TriState.FALSE ? 1D : 0.98D, (double) f1)); // Paper - Friction API
-                 if (this.onGround()) {
-                     Vec3 vec3d1 = this.getDeltaMovement();
  
 @@ -0,0 +0,0 @@ public class ItemEntity extends Entity implements TraceableEntity {
  
@@ -97,7 +92,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          nbt.putShort("Age", (short) this.age);
          nbt.putShort("PickupDelay", (short) this.pickupDelay);
 @@ -0,0 +0,0 @@ public class ItemEntity extends Entity implements TraceableEntity {
-             this.cachedThrower = null;
+             this.setItem(ItemStack.EMPTY);
          }
  
 +        // Paper start - Friction API
@@ -111,9 +106,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end - Friction API
 +
-         CompoundTag nbttagcompound1 = nbt.getCompound("Item");
- 
-         this.setItem(ItemStack.of(nbttagcompound1));
+         if (this.getItem().isEmpty()) {
+             this.discard(null); // CraftBukkit - add Bukkit remove cause
+         }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java

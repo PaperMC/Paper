@@ -137,7 +137,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class PotionItem extends Item {
          BlockState iblockdata = world.getBlockState(blockposition);
  
-         if (context.getClickedFace() != Direction.DOWN && iblockdata.is(BlockTags.CONVERTABLE_TO_MUD) && PotionUtils.getPotion(itemstack) == Potions.WATER) {
+         if (context.getClickedFace() != Direction.DOWN && iblockdata.is(BlockTags.CONVERTABLE_TO_MUD) && potioncontents.is(Potions.WATER)) {
 +            // Paper start
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityhuman, blockposition, Blocks.MUD.defaultBlockState())) {
 +                entityhuman.containerMenu.sendAllDataToRemote();
@@ -187,17 +187,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/CakeBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
 @@ -0,0 +0,0 @@ public class CakeBlock extends Block {
-             Block block = Block.byItem(item);
  
              if (block instanceof CandleBlock) {
+                 CandleBlock candleblock = (CandleBlock) block;
+-
 +                // Paper start - call change block event
 +                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, CandleCakeBlock.byCandle(block))) {
 +                    player.containerMenu.sendAllDataToRemote(); // update inv because candle could decrease
-+                    return InteractionResult.PASS;
++                    return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 +                }
 +                // Paper end - call change block event
                  if (!player.isCreative()) {
-                     itemstack.shrink(1);
+                     stack.shrink(1);
                  }
 @@ -0,0 +0,0 @@ public class CakeBlock extends Block {
          if (!player.canEat(false)) {
@@ -221,16 +222,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            int i = (Integer) state.getValue(CakeBlock.BITES);
 +            // Paper - move up
  
-             world.gameEvent((Entity) player, GameEvent.EAT, pos);
+             world.gameEvent((Entity) player, (Holder) GameEvent.EAT, pos);
              if (i < 6) {
 diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 @@ -0,0 +0,0 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
-         if (i < 8 && ComposterBlock.COMPOSTABLES.containsKey(itemstack.getItem())) {
+         if (i < 8 && ComposterBlock.COMPOSTABLES.containsKey(stack.getItem())) {
              if (i < 7 && !world.isClientSide) {
-                 BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
+                 BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, stack);
 +                // Paper start - handle cancelled events
 +                if (iblockdata1 == null) {
 +                    return InteractionResult.PASS;
@@ -238,7 +239,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper end
  
                  world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
-                 player.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
+                 player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
 @@ -0,0 +0,0 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          if (i < 7 && ComposterBlock.COMPOSTABLES.containsKey(stack.getItem())) {
              // CraftBukkit start
@@ -283,26 +284,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
  
              generatoraccess.setBlock(blockposition, iblockdata1, 3);
-             generatoraccess.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entity, iblockdata1));
+             generatoraccess.gameEvent((Holder) GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entity, iblockdata1));
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 @@ -0,0 +0,0 @@ public class BeehiveBlockEntity extends BlockEntity {
-                                             --j;
-                                         }
- 
--                                        world.setBlockAndUpdate(blockposition, (BlockState) iblockdata.setValue(BeehiveBlock.HONEY_LEVEL, i + j));
-+                                        // Paper start - Fire EntityChangeBlockEvent in more places
-+                                        BlockState newBlockState = iblockdata.setValue(BeehiveBlock.HONEY_LEVEL, i + j);
-+
-+                                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entitybee, blockposition, newBlockState)) {
-+                                            world.setBlockAndUpdate(blockposition, newBlockState);
-+                                        }
-+                                        // Paper end - Fire EntityChangeBlockEvent in more places
+                                         --j;
                                      }
+ 
+-                                    world.setBlockAndUpdate(blockposition, (BlockState) iblockdata.setValue(BeehiveBlock.HONEY_LEVEL, i + j));
++                                    // Paper start - Fire EntityChangeBlockEvent in more places
++                                    BlockState newBlockState = iblockdata.setValue(BeehiveBlock.HONEY_LEVEL, i + j);
++
++                                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entitybee, blockposition, newBlockState)) {
++                                        world.setBlockAndUpdate(blockposition, newBlockState);
++                                    }
++                                    // Paper end - Fire EntityChangeBlockEvent in more places
                                  }
                              }
+                         }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
@@ -310,7 +311,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class DummyGeneratorAccess implements WorldGenLevel {
  
      @Override
-     public void gameEvent(GameEvent event, Vec3 emitterPos, GameEvent.Context emitter) {
+     public void gameEvent(Holder<GameEvent> event, Vec3 emitterPos, GameEvent.Context emitter) {
 -        // Used by BlockComposter
 +        // Used by ComposterBlock
      }
