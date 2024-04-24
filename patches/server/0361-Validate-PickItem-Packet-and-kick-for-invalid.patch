@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 2 May 2020 03:09:46 -0400
+Subject: [PATCH] Validate PickItem Packet and kick for invalid
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index eae6e3aeaca1b567698eaa05ed02c6c45717d7f6..6a490ba55e5af694b68bf6bf1677afc7f4f3679f 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -898,7 +898,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     @Override
+     public void handlePickItem(ServerboundPickItemPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+-        this.player.getInventory().pickSlot(packet.getSlot());
++        // Paper start - validate pick item position
++        if (!(packet.getSlot() >= 0 && packet.getSlot() < this.player.getInventory().items.size())) {
++            ServerGamePacketListenerImpl.LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
++            this.disconnect("Invalid hotbar selection (Hacking?)");
++            return;
++        }
++        this.player.getInventory().pickSlot(packet.getSlot()); // Paper - Diff above if changed
++        // Paper end - validate pick item position
+         this.player.connection.send(new ClientboundContainerSetSlotPacket(-2, 0, this.player.getInventory().selected, this.player.getInventory().getItem(this.player.getInventory().selected)));
+         this.player.connection.send(new ClientboundContainerSetSlotPacket(-2, 0, packet.getSlot(), this.player.getInventory().getItem(packet.getSlot())));
+         this.player.connection.send(new ClientboundSetCarriedItemPacket(this.player.getInventory().selected));
