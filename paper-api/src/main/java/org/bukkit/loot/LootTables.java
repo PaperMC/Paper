@@ -3,8 +3,8 @@ package org.bukkit.loot;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.MinecraftExperimental;
-import org.bukkit.NamespacedKey;
 import org.bukkit.MinecraftExperimental.Requires;
+import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
 /**

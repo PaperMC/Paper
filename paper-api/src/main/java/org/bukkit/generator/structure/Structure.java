@@ -2,9 +2,9 @@ package org.bukkit.generator.structure;
 
 import org.bukkit.Keyed;
 import org.bukkit.MinecraftExperimental;
+import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.MinecraftExperimental.Requires;
 import org.jetbrains.annotations.NotNull;
 
 /**
