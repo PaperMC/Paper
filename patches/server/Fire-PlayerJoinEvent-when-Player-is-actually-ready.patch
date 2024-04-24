@@ -66,7 +66,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        player.supressTrackerForLogin = true;
 +        worldserver1.addNewPlayer(player);
 +        this.server.getCustomBossEvents().onPlayerConnect(player); // see commented out section below worldserver.addPlayerJoin(entityplayer);
-+        mountSavedVehicle(player, worldserver1, nbttagcompound);
++        this.mountSavedVehicle(player, worldserver1, optional);
 +        // Paper end - Fire PlayerJoinEvent when Player is actually ready
          // CraftBukkit start
          CraftPlayer bukkitPlayer = player.getBukkitEntity();
@@ -79,19 +79,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ((ServerLevel)player.level()).getChunkSource().chunkMap.addEntity(player); // Paper - Fire PlayerJoinEvent when Player is actually ready; track entity now
          // CraftBukkit end
  
-         player.getEntityData().refresh(player); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
+         player.refreshEntityData(player); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-             playerconnection.send(new ClientboundUpdateMobEffectPacket(player.getId(), mobeffect));
-         }
  
+             playerconnection.send(new ClientboundUpdateMobEffectPacket(player.getId(), mobeffect, false));
+         }
+-
 +        // Paper start - Fire PlayerJoinEvent when Player is actually ready; move vehicle into method so it can be called above - short circuit around that code
-+        onPlayerJoinFinish(player, worldserver1, s1);
++        this.onPlayerJoinFinish(player, worldserver1, s1);
 +    }
-+    private void mountSavedVehicle(ServerPlayer player, ServerLevel worldserver1, CompoundTag nbttagcompound) {
++    private void mountSavedVehicle(ServerPlayer player, ServerLevel worldserver1, Optional<CompoundTag> optional) {
 +        // Paper end - Fire PlayerJoinEvent when Player is actually ready
-         if (nbttagcompound != null && nbttagcompound.contains("RootVehicle", 10)) {
-             CompoundTag nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
-             // CraftBukkit start
+         if (optional.isPresent() && ((CompoundTag) optional.get()).contains("RootVehicle", 10)) {
+             CompoundTag nbttagcompound = ((CompoundTag) optional.get()).getCompound("RootVehicle");
+             ServerLevel finalWorldServer = worldserver1; // CraftBukkit - decompile error
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
              }
          }

@@ -38,7 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkStorage implements AutoCloseable {
      }
  
-     public void write(ChunkPos chunkPos, CompoundTag nbt) {
+     public CompletableFuture<Void> write(ChunkPos chunkPos, CompoundTag nbt) {
 +        // Paper start - guard against serializing mismatching coordinates
 +        if (nbt != null && !chunkPos.equals(ChunkSerializer.getChunkCoordinate(nbt))) {
 +            final String world = (this instanceof net.minecraft.server.level.ChunkMap) ? ((net.minecraft.server.level.ChunkMap) this).level.getWorld().getName() : null;
@@ -46,6 +46,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                + " but compound says coordinate is " + ChunkSerializer.getChunkCoordinate(nbt) + (world == null ? " for an unknown world" : (" for world: " + world)));
 +        }
 +        // Paper end - guard against serializing mismatching coordinates
-         this.worker.store(chunkPos, nbt);
-         if (this.legacyStructureHandler != null) {
-             this.legacyStructureHandler.removeIndex(chunkPos.toLong());
+         this.handleLegacyStructureIndex(chunkPos);
+         return this.worker.store(chunkPos, nbt);
+     }
