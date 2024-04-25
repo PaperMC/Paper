@@ -12,19 +12,16 @@ Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6bd0afddbcc461149dfe9a5c7a86fff6ea13a5f1
+index 0000000000000000000000000000000000000000..68098dfe716e93aafcca4d8d5b5a81d8648b3654
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,23 @@
 +package io.papermc.paper.util;
 +
 +import com.sun.security.auth.module.NTSystem;
 +import com.sun.security.auth.module.UnixSystem;
-+import org.apache.commons.lang.SystemUtils;
-+
-+import java.io.IOException;
-+import java.io.InputStream;
 +import java.util.Set;
++import org.apache.commons.lang.SystemUtils;
 +
 +public class ServerEnvironment {
 +    private static final boolean RUNNING_AS_ROOT_OR_ADMIN;
@@ -34,21 +31,7 @@ index 0000000000000000000000000000000000000000..6bd0afddbcc461149dfe9a5c7a86fff6
 +        if (SystemUtils.IS_OS_WINDOWS) {
 +            RUNNING_AS_ROOT_OR_ADMIN = Set.of(new NTSystem().getGroupIDs()).contains(WINDOWS_HIGH_INTEGRITY_LEVEL);
 +        } else {
-+            boolean isRunningAsRoot = false;
-+            if (new UnixSystem().getUid() == 0) {
-+                // Due to an OpenJDK bug (https://bugs.openjdk.java.net/browse/JDK-8274721), UnixSystem#getUid incorrectly
-+                // returns 0 when the user doesn't have a username. Because of this, we'll have to double-check if the user ID is
-+                // actually 0 by running the id -u command.
-+                try {
-+                    Process process = new ProcessBuilder("id", "-u").start();
-+                    process.waitFor();
-+                    InputStream inputStream = process.getInputStream();
-+                    isRunningAsRoot = new String(inputStream.readAllBytes()).trim().equals("0");
-+                } catch (InterruptedException | IOException ignored) {
-+                    isRunningAsRoot = false;
-+                }
-+            }
-+            RUNNING_AS_ROOT_OR_ADMIN = isRunningAsRoot;
++            RUNNING_AS_ROOT_OR_ADMIN = new UnixSystem().getUid() == 0;
 +        }
 +    }
 +
