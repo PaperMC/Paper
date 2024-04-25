@@ -50,12 +50,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +
-+            final java.util.concurrent.CompletableFuture<com.mojang.datafixers.util.Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = chunkStatus.generate(
++            final java.util.concurrent.CompletableFuture<ChunkAccess> future = chunkStatus.generate(
++                new net.minecraft.world.level.chunk.status.WorldGenContext(
++                    serverLevel,
++                    serverChunkCache.getGenerator(),
++                    serverLevel.getStructureManager(),
++                    serverChunkCache.getLightEngine()
++                ),
 +                Runnable::run,
-+                serverLevel,
-+                serverChunkCache.getGenerator(),
-+                serverLevel.getStructureManager(),
-+                serverChunkCache.getLightEngine(),
 +                chunk -> {
 +                    throw new UnsupportedOperationException("Not creating full chunks here");
 +                },
@@ -63,7 +65,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            );
 +            serverChunkCache.mainThreadProcessor.managedBlock(future::isDone);
 +            if (chunkStatus == ChunkStatus.NOISE) {
-+                future.join().left().ifPresent(chunk -> net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(chunk, ChunkStatus.POST_FEATURES));
++                net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(future.join(), ChunkStatus.POST_FEATURES);
 +            }
          }
  
