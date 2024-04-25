@@ -6,7 +6,7 @@ Subject: [PATCH] Implement regenerateChunk
 Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 98d87f29f111029b11409e6f4230e53119bd8711..377582da016ed510d1dfd53805b13456fe04b28f 100644
+index 98d87f29f111029b11409e6f4230e53119bd8711..9aa26056e0056dedaf86d19f71eb0c6e9ab956d3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -151,6 +151,7 @@ import org.jetbrains.annotations.Nullable;
@@ -17,7 +17,7 @@ index 98d87f29f111029b11409e6f4230e53119bd8711..377582da016ed510d1dfd53805b13456
  
      private final ServerLevel world;
      private WorldBorder worldBorder;
-@@ -421,27 +422,68 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -421,27 +422,70 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean regenerateChunk(int x, int z) {
          org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
@@ -50,12 +50,14 @@ index 98d87f29f111029b11409e6f4230e53119bd8711..377582da016ed510d1dfd53805b13456
 +                }
 +            }
 +
-+            final java.util.concurrent.CompletableFuture<com.mojang.datafixers.util.Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = chunkStatus.generate(
++            final java.util.concurrent.CompletableFuture<ChunkAccess> future = chunkStatus.generate(
++                new net.minecraft.world.level.chunk.status.WorldGenContext(
++                    serverLevel,
++                    serverChunkCache.getGenerator(),
++                    serverLevel.getStructureManager(),
++                    serverChunkCache.getLightEngine()
++                ),
 +                Runnable::run,
-+                serverLevel,
-+                serverChunkCache.getGenerator(),
-+                serverLevel.getStructureManager(),
-+                serverChunkCache.getLightEngine(),
 +                chunk -> {
 +                    throw new UnsupportedOperationException("Not creating full chunks here");
 +                },
@@ -63,7 +65,7 @@ index 98d87f29f111029b11409e6f4230e53119bd8711..377582da016ed510d1dfd53805b13456
 +            );
 +            serverChunkCache.mainThreadProcessor.managedBlock(future::isDone);
 +            if (chunkStatus == ChunkStatus.NOISE) {
-+                future.join().left().ifPresent(chunk -> net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(chunk, ChunkStatus.POST_FEATURES));
++                net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(future.join(), ChunkStatus.POST_FEATURES);
 +            }
          }
  

@@ -4069,7 +4069,7 @@ index 55945b83a5426b352bad9507cc9e94afb1278032..9ea1537408ff2d790747b6e5a681d917
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 9d2af8b74e33888df33425627b286d32c95753d6..1f0f7498cc33d2035d627d63a69ae7d3fd5dbb91 100644
+index 9d2af8b74e33888df33425627b286d32c95753d6..fab8d670ed8fcd26bf25dabac207b563de0d37e9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -385,14 +385,40 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -4279,7 +4279,7 @@ index 9d2af8b74e33888df33425627b286d32c95753d6..1f0f7498cc33d2035d627d63a69ae7d3
 +            hash = "";
 +        }
 +        this.getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
-+        this.getHandle().connection.send(new ClientboundResourcePackPushPacket(uuid, url, hash, force, io.papermc.paper.adventure.PaperAdventure.asVanilla(prompt)));
++        this.getHandle().connection.send(new ClientboundResourcePackPushPacket(uuid, url, hash, force, Optional.ofNullable(prompt).map(io.papermc.paper.adventure.PaperAdventure::asVanilla)));
 +    }
 +
 +    @SuppressWarnings({"unchecked", "rawtypes"})
@@ -4335,7 +4335,7 @@ index 9d2af8b74e33888df33425627b286d32c95753d6..1f0f7498cc33d2035d627d63a69ae7d3
      @Override
      public int getPing() {
          return this.getHandle().connection.latency();
-@@ -2322,6 +2449,252 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2322,6 +2449,249 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
@@ -4439,9 +4439,10 @@ index 9d2af8b74e33888df33425627b286d32c95753d6..1f0f7498cc33d2035d627d63a69ae7d3
 +    private void adventure$sendPlayerListHeaderAndFooter() {
 +        final ServerGamePacketListenerImpl connection = this.getHandle().connection;
 +        if (connection == null) return;
-+        final ClientboundTabListPacket packet = new ClientboundTabListPacket(null, null);
-+        packet.adventure$header = (this.playerListHeader == null) ? net.kyori.adventure.text.Component.empty() : this.playerListHeader;
-+        packet.adventure$footer = (this.playerListFooter == null) ? net.kyori.adventure.text.Component.empty() : this.playerListFooter;
++        final ClientboundTabListPacket packet = new ClientboundTabListPacket(
++            io.papermc.paper.adventure.PaperAdventure.asVanilla((this.playerListHeader == null) ? net.kyori.adventure.text.Component.empty() : this.playerListHeader),
++            io.papermc.paper.adventure.PaperAdventure.asVanilla((this.playerListFooter == null) ? net.kyori.adventure.text.Component.empty() : this.playerListFooter)
++        );
 +        connection.send(packet);
 +    }
 +
@@ -4452,11 +4453,9 @@ index 9d2af8b74e33888df33425627b286d32c95753d6..1f0f7498cc33d2035d627d63a69ae7d3
 +        if (times != null) {
 +            connection.send(new ClientboundSetTitlesAnimationPacket(ticks(times.fadeIn()), ticks(times.stay()), ticks(times.fadeOut())));
 +        }
-+        final ClientboundSetSubtitleTextPacket sp = new ClientboundSetSubtitleTextPacket((net.minecraft.network.chat.Component) null);
-+        sp.adventure$text = title.subtitle();
++        final ClientboundSetSubtitleTextPacket sp = new ClientboundSetSubtitleTextPacket(io.papermc.paper.adventure.PaperAdventure.asVanilla(title.subtitle()));
 +        connection.send(sp);
-+        final ClientboundSetTitleTextPacket tp = new ClientboundSetTitleTextPacket((net.minecraft.network.chat.Component) null);
-+        tp.adventure$text = title.title();
++        final ClientboundSetTitleTextPacket tp = new ClientboundSetTitleTextPacket(io.papermc.paper.adventure.PaperAdventure.asVanilla(title.title()));
 +        connection.send(tp);
 +    }
 +
@@ -4465,12 +4464,10 @@ index 9d2af8b74e33888df33425627b286d32c95753d6..1f0f7498cc33d2035d627d63a69ae7d3
 +        java.util.Objects.requireNonNull(part, "part");
 +        java.util.Objects.requireNonNull(value, "value");
 +        if (part == net.kyori.adventure.title.TitlePart.TITLE) {
-+            final ClientboundSetTitleTextPacket tp = new ClientboundSetTitleTextPacket((net.minecraft.network.chat.Component) null);
-+            tp.adventure$text = (net.kyori.adventure.text.Component) value;
++            final ClientboundSetTitleTextPacket tp = new ClientboundSetTitleTextPacket(io.papermc.paper.adventure.PaperAdventure.asVanilla((net.kyori.adventure.text.Component)value));
 +            this.getHandle().connection.send(tp);
 +        } else if (part == net.kyori.adventure.title.TitlePart.SUBTITLE) {
-+            final ClientboundSetSubtitleTextPacket sp = new ClientboundSetSubtitleTextPacket((net.minecraft.network.chat.Component) null);
-+            sp.adventure$text = (net.kyori.adventure.text.Component) value;
++            final ClientboundSetSubtitleTextPacket sp = new ClientboundSetSubtitleTextPacket(io.papermc.paper.adventure.PaperAdventure.asVanilla((net.kyori.adventure.text.Component)value));
 +            this.getHandle().connection.send(sp);
 +        } else if (part == net.kyori.adventure.title.TitlePart.TIMES) {
 +            final net.kyori.adventure.title.Title.Times times = (net.kyori.adventure.title.Title.Times) value;
