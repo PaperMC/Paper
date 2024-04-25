@@ -57,7 +57,7 @@ index 02bf2705ca1c99023a83a22d92e1962181102297..0f99733660f91280e4c6262cf75b3c9c
  
          final EntityDataAccessor<T> accessor;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index abb9a86cd42a34cf722a312068134e820ac21956..3b6ebe8f9575783a1607eb6667554ca66de94271 100644
+index abb9a86cd42a34cf722a312068134e820ac21956..f168044d36f22080504da171e5ed31a6f02385ba 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -556,6 +556,7 @@ public class ServerPlayerGameMode {
@@ -68,18 +68,18 @@ index abb9a86cd42a34cf722a312068134e820ac21956..3b6ebe8f9575783a1607eb6667554ca6
              return (event.useItemInHand() != Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
          } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
              MenuProvider itileinventory = iblockdata.getMenuProvider(world, blockposition);
-@@ -609,6 +610,11 @@ public class ServerPlayerGameMode {
+@@ -607,6 +608,11 @@ public class ServerPlayerGameMode {
+ 
+                 return enuminteractionresult;
              } else {
++                // Paper start - Properly cancel usable items; Cancel only if cancelled + if the interact result is different from default response
++                if (this.interactResult && this.interactResult != cancelledItem) {
++                    this.player.resyncUsingItem(this.player);
++                }
++                // Paper end - Properly cancel usable items
                  return InteractionResult.PASS;
              }
-+            // Paper start - Properly cancel usable items; Cancel only if cancelled + if the interact result is different from default response
-+            else if (this.interactResult && this.interactResult != cancelledItem) {
-+                this.player.resyncUsingItem(this.player);
-+            }
-+            // Paper end - Properly cancel usable items
          }
-     }
- 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index 88fc56fa521c36accd807ca1704136f29733e52f..a771f78f63e4f26c0ba411a3c355f8dfbb5f4a61 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
@@ -115,74 +115,10 @@ index c83ec24c0bf54f8699caa2d37bfe82d273f7b16c..dd628c8190704505fde543a8853d5b4d
          this.sendLevelInfo(player, worldserver1);
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 8ad2d17615ff489b2fbbb13480dd0b217a42d805..130ad5dc8ef5cfe1cfc0a166eba2cf67d424ff69 100644
+index 8ad2d17615ff489b2fbbb13480dd0b217a42d805..2bc85351e6e52f90da5fdb29d8d042a06132d742 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
- import com.google.common.collect.Sets;
- import com.google.common.collect.UnmodifiableIterator;
- import com.mojang.logging.LogUtils;
-+import io.papermc.paper.util.MCUtil;
- import it.unimi.dsi.fastutil.objects.Object2DoubleArrayMap;
- import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
- import java.util.Arrays;
-@@ -59,7 +60,6 @@ import net.minecraft.network.syncher.SyncedDataHolder;
- import net.minecraft.network.syncher.SynchedEntityData;
- import net.minecraft.resources.ResourceKey;
- import net.minecraft.resources.ResourceLocation;
--import io.papermc.paper.util.MCUtil;
- import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.server.level.ServerPlayer;
-@@ -129,28 +129,22 @@ import net.minecraft.world.phys.shapes.VoxelShape;
- import net.minecraft.world.scores.PlayerTeam;
- import net.minecraft.world.scores.ScoreHolder;
- import net.minecraft.world.scores.Team;
--import org.slf4j.Logger;
- import org.bukkit.Bukkit;
- import org.bukkit.Location;
--import org.bukkit.Server;
- import org.bukkit.block.BlockFace;
- import org.bukkit.command.CommandSender;
--import org.bukkit.craftbukkit.event.CraftPortalEvent;
--import org.bukkit.entity.Hanging;
--import org.bukkit.entity.LivingEntity;
--import org.bukkit.entity.Vehicle;
--import org.bukkit.event.entity.EntityCombustByEntityEvent;
--import org.bukkit.event.hanging.HangingBreakByEntityEvent;
--import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
--import org.bukkit.event.vehicle.VehicleEnterEvent;
--import org.bukkit.event.vehicle.VehicleExitEvent;
- import org.bukkit.craftbukkit.CraftWorld;
- import org.bukkit.craftbukkit.entity.CraftEntity;
- import org.bukkit.craftbukkit.entity.CraftPlayer;
- import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.event.CraftPortalEvent;
- import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.entity.Hanging;
-+import org.bukkit.entity.LivingEntity;
- import org.bukkit.entity.Pose;
-+import org.bukkit.entity.Vehicle;
- import org.bukkit.event.entity.EntityAirChangeEvent;
-+import org.bukkit.event.entity.EntityCombustByEntityEvent;
- import org.bukkit.event.entity.EntityCombustEvent;
- import org.bukkit.event.entity.EntityDismountEvent;
- import org.bukkit.event.entity.EntityDropItemEvent;
-@@ -158,8 +152,13 @@ import org.bukkit.event.entity.EntityMountEvent;
- import org.bukkit.event.entity.EntityPortalEvent;
- import org.bukkit.event.entity.EntityPoseChangeEvent;
- import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
- import org.bukkit.event.player.PlayerTeleportEvent;
-+import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
-+import org.bukkit.event.vehicle.VehicleEnterEvent;
-+import org.bukkit.event.vehicle.VehicleExitEvent;
- import org.bukkit.plugin.PluginManager;
-+import org.slf4j.Logger;
- // CraftBukkit end
- 
- public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, CommandSource, ScoreHolder {
-@@ -704,13 +703,44 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -704,13 +704,44 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      // CraftBukkit start
      public void refreshEntityData(ServerPlayer to) {
