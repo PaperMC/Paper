@@ -2683,7 +2683,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.ChunkStatus;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.LevelChunk;
 +import org.bukkit.Bukkit;
 +import org.slf4j.Logger;
@@ -4013,8 +4013,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
-+        return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
++    public static int getTicketLevelFor(net.minecraft.world.level.chunk.status.ChunkStatus status) {
++        return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.status.ChunkStatus.getDistance(status);
 +    }
 +
 +    @NotNull
@@ -6262,13 +6262,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.fullChunkFuture = chunkStorage.prepareAccessibleChunk(this);
              this.scheduleFullChunkPromotion(chunkStorage, this.fullChunkFuture, executor, FullChunkStatus.FULL);
 +            // Paper start - cache ticking ready status
-+            this.fullChunkFuture.thenAccept(either -> {
-+                final Optional<LevelChunk> left = either.left();
-+                if (left.isPresent() && ChunkHolder.this.fullChunkCreateCount == expectCreateCount) {
-+                    LevelChunk fullChunk = either.left().get();
-+                    ChunkHolder.this.isFullChunkReady = true;
-+                    io.papermc.paper.chunk.system.ChunkSystem.onChunkBorder(fullChunk, this);
-+                }
++            this.fullChunkFuture.thenAccept(chunkResult -> {
++                chunkResult.ifSuccess(chunk -> {
++                    if (ChunkHolder.this.fullChunkCreateCount == expectCreateCount) {
++                        ChunkHolder.this.isFullChunkReady = true;
++                        io.papermc.paper.chunk.system.ChunkSystem.onChunkBorder(chunk, this);
++                    }
++                });
 +            });
              this.updateChunkToSave(this.fullChunkFuture, "full");
          }
@@ -6276,7 +6276,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (flag2 && !flag3) {
 +            // Paper start
 +            if (this.isFullChunkReady) {
-+                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotBorder(this.fullChunkFuture.join().left().get(), this); // Paper
++                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotBorder(this.fullChunkFuture.join().orElseThrow(IllegalStateException::new), this); // Paper
 +            }
 +            // Paper end
              this.fullChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK);
@@ -6318,8 +6318,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.entityTickingChunkFuture = chunkStorage.prepareEntityTickingChunk(this);
              this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, FullChunkStatus.ENTITY_TICKING);
 +            // Paper start - cache ticking ready status
-+            this.entityTickingChunkFuture.thenAccept(either -> {
-+                either.ifLeft(chunk -> {
++            this.entityTickingChunkFuture.thenAccept(chunkResult -> {
++                chunkResult.ifSuccess(chunk -> {
 +                    ChunkHolder.this.isEntityTickingReady = true;
 +                    io.papermc.paper.chunk.system.ChunkSystem.onChunkEntityTicking(chunk, this);
 +                });
@@ -6332,7 +6332,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.entityTickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK);
 +            // Paper start
 +            if (this.isEntityTickingReady) {
-+                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotEntityTicking(this.entityTickingChunkFuture.join().left().get(), this);
++                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotEntityTicking(this.entityTickingChunkFuture.join().orElseThrow(IllegalStateException::new), this);
 +            }
 +            // Paper end
 +            this.entityTickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
@@ -6939,7 +6939,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
 +            for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
 +                io.papermc.paper.chunk.system.ChunkSystem.scheduleChunkLoad(
-+                    this, cx, cz, net.minecraft.world.level.chunk.ChunkStatus.FULL, true, priority, consumer
++                    this, cx, cz, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, true, priority, consumer
 +                );
 +            }
 +        }
