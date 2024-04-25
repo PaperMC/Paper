@@ -218,14 +218,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.worldData.setDataConfiguration(worlddataconfiguration);
-             this.resources.managers.updateRegistryTags(this.registryAccess());
-             net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper - Custom Potion Mixes
+             this.resources.managers.updateRegistryTags();
+             this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
 -            this.getPlayerList().saveAll();
 +            // Paper start
 +            if (Thread.currentThread() != this.serverThread) {
 +                return;
 +            }
-+            // this.getPlayerList().saveAll(); // Paper - we don't need to save everything, just advancements
++            // this.getPlayerList().saveAll(); // Paper - we don't need to save everything, just advancements // TODO Move this to a different patch
 +            for (ServerPlayer player : this.getPlayerList().getPlayers()) {
 +                player.getAdvancements().save();
 +            }
@@ -537,8 +537,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/resources/log4j2.xml
 @@ -0,0 +0,0 @@
  <?xml version="1.0" encoding="UTF-8"?>
--<Configuration status="WARN" packages="com.mojang.util">
-+<Configuration status="WARN" packages="com.mojang.util" shutdownHook="disable">
+-<Configuration status="WARN">
++<Configuration status="WARN" shutdownHook="disable">
      <Appenders>
          <Queue name="ServerGuiConsole">
-             <PatternLayout pattern="[%d{HH:mm:ss} %level]: %msg%n" />
+             <PatternLayout pattern="[%d{HH:mm:ss} %level]: %msg{nolookups}%n" />

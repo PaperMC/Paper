@@ -47,10 +47,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 @@ -0,0 +0,0 @@ public class ChunkStorage implements AutoCloseable {
  
-     public ChunkStorage(Path directory, DataFixer dataFixer, boolean dsync) {
+     public ChunkStorage(RegionStorageInfo storageKey, Path directory, DataFixer dataFixer, boolean dsync) {
          this.fixerUpper = dataFixer;
--        this.regionFileCache = new RegionFileStorage(directory, dsync); // Paper - rewrite chunk system; async chunk IO
-+        this.regionFileCache = new RegionFileStorage(directory, dsync, true); // Paper - rewrite chunk system; async chunk IO & Attempt to recalculate regionfile header if it is corrupt
+-        this.regionFileCache = new RegionFileStorage(storageKey, directory, dsync); // Paper - rewrite chunk system; async chunk IO
++        this.regionFileCache = new RegionFileStorage(storageKey, directory, dsync, true); // Paper - rewrite chunk system; async chunk IO & Attempt to recalculate regionfile header if it is corrupt
      }
  
      public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
@@ -91,9 +91,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+     protected final RegionBitmap usedSectors;
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
      public final Path regionFile; // Paper
- 
++
 +    // Paper start - Attempt to recalculate regionfile header if it is corrupt
 +    private static long roundToSectors(long bytes) {
 +        long sectors = bytes >>> 12; // 4096 = 2^12
@@ -447,31 +448,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final net.minecraft.world.level.chunk.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.ChunkStatus[32 * 32];
  
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-     public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
-         this(file, directory, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
+     public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
+         this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
      }
 +    // Paper start - add can recalc flag
-+    public RegionFile(Path file, Path directory, boolean dsync, boolean canRecalcHeader) throws IOException {
-+        this(file, directory, RegionFileVersion.getCompressionFormat(), dsync, canRecalcHeader);
++    public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync, boolean canRecalcHeader) throws IOException {
++        this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync, canRecalcHeader);
 +    }
-+    // Paper end - add can recalc flag
  
-     public RegionFile(Path file, Path directory, RegionFileVersion outputChunkStreamVersion, boolean dsync) throws IOException {
-+        // Paper start - add can recalc flag
-+        this(file, directory, outputChunkStreamVersion, dsync, false);
+     public RegionFile(RegionStorageInfo storageKey, Path path, Path directory, RegionFileVersion compressionFormat, boolean dsync) throws IOException {
++        this(storageKey, path, directory, compressionFormat, dsync, true);
 +    }
-+    public RegionFile(Path file, Path directory, RegionFileVersion outputChunkStreamVersion, boolean dsync, boolean canRecalcHeader) throws IOException {
++
++    public RegionFile(RegionStorageInfo storageKey, Path path, Path directory, RegionFileVersion compressionFormat, boolean dsync, boolean canRecalcHeader) throws IOException {
 +        this.canRecalcHeader = canRecalcHeader;
 +        // Paper end - add can recalc flag
          this.header = ByteBuffer.allocateDirect(8192);
          this.regionFile = file; // Paper
          initOversizedState(); // Paper
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-                     RegionFile.LOGGER.warn("Region file {} has truncated header: {}", file, i);
+                     RegionFile.LOGGER.warn("Region file {} has truncated header: {}", path, i);
                  }
  
--                long j = Files.size(file);
-+                final long j = Files.size(file); final long regionFileSize = j; // Paper - recalculate header on header corruption
+-                long j = Files.size(path);
++                final long j = Files.size(path); final long regionFileSize = j; // Paper - recalculate header on header corruption
  
 -                for (int k = 0; k < 1024; ++k) {
 -                    int l = this.offsets.get(k);
@@ -495,15 +495,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        sectorLength = j1; // Paper - diff on change, we expect this to be sector length of region
  
                          if (i1 < 2) {
-                             RegionFile.LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", new Object[]{file, k, i1});
+                             RegionFile.LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", new Object[]{path, k, i1});
 -                            this.offsets.put(k, 0);
 +                            //this.offsets.put(k, 0); // Paper - we catch this, but need it in the header for the summary change
                          } else if (j1 == 0) {
-                             RegionFile.LOGGER.warn("Region file {} has an invalid sector at index: {}; size has to be > 0", file, k);
+                             RegionFile.LOGGER.warn("Region file {} has an invalid sector at index: {}; size has to be > 0", path, k);
 -                            this.offsets.put(k, 0);
 +                            //this.offsets.put(k, 0); // Paper - we catch this, but need it in the header for the summary change
                          } else if ((long) i1 * 4096L > j) {
-                             RegionFile.LOGGER.warn("Region file {} has an invalid sector at index: {}; sector {} is out of bounds", new Object[]{file, k, i1});
+                             RegionFile.LOGGER.warn("Region file {} has an invalid sector at index: {}; sector {} is out of bounds", new Object[]{path, k, i1});
 -                            this.offsets.put(k, 0);
 +                            //this.offsets.put(k, 0); // Paper - we catch this, but need it in the header for the summary change
                          } else {
@@ -559,6 +559,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
          }
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
      }
  
      private Path getExternalChunkPath(ChunkPos chunkPos) {
@@ -656,6 +657,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        // Paper end - recalculate header on regionfile corruption
                          return null;
                      } else {
+                         JvmProfiler.INSTANCE.onRegionFileRead(this.info, pos, this.version, j1);
 -                        return this.createChunkInputStream(pos, b0, RegionFile.createStream(bytebuffer, j1));
 +                        // Paper start - recalculate header on regionfile corruption
 +                        final DataInputStream ret = this.createChunkInputStream(pos, b0, RegionFile.createStream(bytebuffer, j1));
@@ -689,7 +691,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
-     public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap();
+     private final RegionStorageInfo info;
      private final Path folder;
      private final boolean sync;
 +    private final boolean isChunkData; // Paper
@@ -699,16 +701,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
      // Paper end - cache regionfile does not exist state
  
-     protected RegionFileStorage(Path directory, boolean dsync) { // Paper - protected constructor
+     protected RegionFileStorage(RegionStorageInfo storageKey, Path directory, boolean dsync) { // Paper - protected constructor
 +        // Paper start - add isChunkData param
-+        this(directory, dsync, false);
++        this(storageKey, directory, dsync, false);
 +    }
-+    RegionFileStorage(Path directory, boolean dsync, boolean isChunkData) {
++    RegionFileStorage(RegionStorageInfo storageKey, Path directory, boolean dsync, boolean isChunkData) {
 +        this.isChunkData = isChunkData;
 +        // Paper end - add isChunkData param
          this.folder = directory;
          this.sync = dsync;
-     }
+         this.info = storageKey;
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
              // Paper - only create directory if not existing only - moved down
              Path path = this.folder;
@@ -722,8 +724,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
              // Paper end - cache regionfile does not exist state
              FileUtil.createDirectoriesSafe(this.folder); // Paper - only create directory if not existing only - moved from above
--            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
-+            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
+-            RegionFile regionfile1 = new RegionFile(this.info, path1, this.folder, this.sync);
++            RegionFile regionfile1 = new RegionFile(this.info, path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
  
              this.regionCache.putAndMoveToFirst(i, regionfile1);
              // Paper start
@@ -766,12 +768,12 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVer
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
-@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
- import net.minecraft.util.FastBufferedInputStream;
+@@ -0,0 +0,0 @@ import org.slf4j.Logger;
  
  public class RegionFileVersion {
+     private static final Logger LOGGER = LogUtils.getLogger();
 -    private static final Int2ObjectMap<RegionFileVersion> VERSIONS = new Int2ObjectOpenHashMap<>();
 +    public static final Int2ObjectMap<RegionFileVersion> VERSIONS = new Int2ObjectOpenHashMap<>(); // Paper - private -> public
+     private static final Object2ObjectMap<String, RegionFileVersion> VERSIONS_BY_NAME = new Object2ObjectOpenHashMap<>();
      public static final RegionFileVersion VERSION_GZIP = register(
          new RegionFileVersion(
-             1, stream -> new FastBufferedInputStream(new GZIPInputStream(stream)), stream -> new BufferedOutputStream(new GZIPOutputStream(stream))

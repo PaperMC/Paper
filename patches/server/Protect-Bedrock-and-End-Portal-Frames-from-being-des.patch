@@ -69,7 +69,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 @@ -0,0 +0,0 @@ public class PistonBaseBlock extends DirectionalBlock {
      @Override
-     public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
+     protected boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
          Direction enumdirection = (Direction) state.getValue(PistonBaseBlock.FACING);
 +        // Paper start - Protect Bedrock and End Portal/Frames from being destroyed; prevent retracting when we're facing the wrong way (we were replaced before retraction could occur)
 +        Direction directionQueuedAs = Direction.from3DDataValue(data & 7); // Paper - copied from below
@@ -110,23 +110,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
-     /** @deprecated */
-     @Deprecated
-     public void onExplosionHit(BlockState state, Level world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
+     }
+ 
+     protected void onExplosionHit(BlockState state, Level world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
 -        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK) {
 +        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && state.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
              Block block = state.getBlock();
              boolean flag = explosion.getIndirectSourceEntity() instanceof Player;
  
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
-     /** @deprecated */
-     @Deprecated
-     public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
+     }
+ 
+     protected boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
 -        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
 +        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper - Protect Bedrock and End Portal/Frames from being destroyed
      }
  
-     /** @deprecated */
+     protected boolean canBeReplaced(BlockState state, Fluid fluid) {
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.legacySolid;
          }
