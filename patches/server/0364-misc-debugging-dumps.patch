@@ -6,10 +6,10 @@ Subject: [PATCH] misc debugging dumps
 
 diff --git a/src/main/java/io/papermc/paper/util/TraceUtil.java b/src/main/java/io/papermc/paper/util/TraceUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d5494d2813b773e60ddba6790b750a9a08f21f8
+index 0000000000000000000000000000000000000000..479bb92d159f33c54c2d9c39d8a63aa9e74d95b9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/TraceUtil.java
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.util;
 +
 +import org.bukkit.Bukkit;
@@ -18,14 +18,21 @@ index 0000000000000000000000000000000000000000..2d5494d2813b773e60ddba6790b750a9
 +
 +    public static void dumpTraceForThread(Thread thread, String reason) {
 +        Bukkit.getLogger().warning(thread.getName() + ": " + reason);
-+        StackTraceElement[] trace = thread.getStackTrace();
++        StackTraceElement[] trace = StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace());
 +        for (StackTraceElement traceElement : trace) {
 +            Bukkit.getLogger().warning("\tat " + traceElement);
 +        }
 +    }
 +
 +    public static void dumpTraceForThread(String reason) {
-+        new Throwable(reason).printStackTrace();
++        final Throwable thr = new Throwable(reason);
++        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
++        thr.printStackTrace();
++    }
++
++    public static void printStackTrace(Throwable thr) {
++        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
++        thr.printStackTrace();
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
