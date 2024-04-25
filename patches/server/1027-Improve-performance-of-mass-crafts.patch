@@ -34,7 +34,7 @@ index 7a0c1a55a211035bbca7b97293e94b04ae308bae..c3800bdd5096cb06e085e28f6bf0f655
              if (optional.isPresent()) {
                  RecipeHolder<CraftingRecipe> recipeholder = (RecipeHolder) optional.get();
 diff --git a/src/main/java/net/minecraft/world/inventory/ResultSlot.java b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
-index 113460eff5121788fce44d6569ec07deb9701b20..accf752e7615f775483830f81bd0df30e40d3c7f 100644
+index fef82418358ecf19d367dafbec159bd78ea97494..f17ff5988d826c8fad68f6bf7bac1d06edae01ae 100644
 --- a/src/main/java/net/minecraft/world/inventory/ResultSlot.java
 +++ b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
 @@ -58,7 +58,7 @@ public class ResultSlot extends Slot {
@@ -47,27 +47,18 @@ index 113460eff5121788fce44d6569ec07deb9701b20..accf752e7615f775483830f81bd0df30
          for (int i = 0; i < nonNullList.size(); i++) {
              ItemStack itemStack = this.craftSlots.getItem(i);
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index a0ab3c55826af292d1cdac05648139b4d31f1376..d87124f5356180a37e581febc6141fdc5f1395a7 100644
+index 0126b88f60904dfbf1e29eb3b89a985061d91f91..a42c7be84e10a06303a7fc23236ac4d84e8323c6 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-@@ -122,13 +122,16 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
-             RecipeHolder<T> recipeholder = (RecipeHolder) map.get(id);
+@@ -116,6 +116,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+             RecipeHolder<T> recipeholder = this.byKeyTyped(type, id);
  
              if (recipeholder != null && recipeholder.value().matches(inventory, world)) {
 +                inventory.setCurrentRecipe(recipeholder); // Paper - Perf: Improve mass crafting
-                 return Optional.of(Pair.of(id, recipeholder));
+                 return Optional.of(recipeholder);
              }
          }
- 
-+        inventory.setCurrentRecipe(null); // Paper - Perf: Improve mass crafting;; clear before it might be set again
-         return map.entrySet().stream().filter((entry) -> {
-             return ((RecipeHolder) entry.getValue()).value().matches(inventory, world);
-         }).findFirst().map((entry) -> {
-+            inventory.setCurrentRecipe(entry.getValue()); // Paper - Perf: Improve mass crafting
-             return Pair.of((ResourceLocation) entry.getKey(), (RecipeHolder) entry.getValue());
-         });
-     }
-@@ -150,7 +153,12 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+@@ -147,7 +148,12 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
      }
  
      public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world) {

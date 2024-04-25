@@ -34,10 +34,10 @@ The results indicate that this logic is 5 times faster than Vanilla
 and 2.3 times faster than Lithium.
 
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index 093c814d6835f20b1208236db96bb40b4611936c..b678da2cbb93cea7971bc3c4d324cfca18b0bc97 100644
+index 6bd6533e314b64d3512cbb46f5174a4956c323b2..46a14da698eff141b7379aa9c159e6a5c5f7d84c 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
-@@ -111,6 +111,271 @@ public class Explosion {
+@@ -112,6 +112,271 @@ public class Explosion {
          this.yield = this.blockInteraction == Explosion.BlockInteraction.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F; // CraftBukkit
      }
  
@@ -309,7 +309,7 @@ index 093c814d6835f20b1208236db96bb40b4611936c..b678da2cbb93cea7971bc3c4d324cfca
      private ExplosionDamageCalculator makeDamageCalculator(@Nullable Entity entity) {
          return (ExplosionDamageCalculator) (entity == null ? Explosion.EXPLOSION_DAMAGE_CALCULATOR : new EntityBasedExplosionDamageCalculator(entity));
      }
-@@ -171,40 +436,88 @@ public class Explosion {
+@@ -172,40 +437,88 @@ public class Explosion {
          int i;
          int j;
  
@@ -420,7 +420,7 @@ index 093c814d6835f20b1208236db96bb40b4611936c..b678da2cbb93cea7971bc3c4d324cfca
                                  set.add(blockposition);
                                  // Paper start - prevent headless pistons from forming
                                  if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowHeadlessPistons && iblockdata.getBlock() == Blocks.MOVING_PISTON) {
-@@ -215,11 +528,12 @@ public class Explosion {
+@@ -216,11 +529,12 @@ public class Explosion {
                                      }
                                  }
                                  // Paper end - prevent headless pistons from forming
@@ -436,7 +436,7 @@ index 093c814d6835f20b1208236db96bb40b4611936c..b678da2cbb93cea7971bc3c4d324cfca
                          }
                      }
                  }
-@@ -239,6 +553,8 @@ public class Explosion {
+@@ -240,6 +554,8 @@ public class Explosion {
          Vec3 vec3d = new Vec3(this.x, this.y, this.z);
          Iterator iterator = list.iterator();
  
@@ -445,7 +445,7 @@ index 093c814d6835f20b1208236db96bb40b4611936c..b678da2cbb93cea7971bc3c4d324cfca
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
-@@ -274,11 +590,11 @@ public class Explosion {
+@@ -275,11 +591,11 @@ public class Explosion {
                                  for (EnderDragonPart entityComplexPart : ((EnderDragon) entity).subEntities) {
                                      // Calculate damage separately for each EntityComplexPart
                                      if (list.contains(entityComplexPart)) {
@@ -459,16 +459,16 @@ index 093c814d6835f20b1208236db96bb40b4611936c..b678da2cbb93cea7971bc3c4d324cfca
                              }
  
                              if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled
-@@ -287,7 +603,7 @@ public class Explosion {
+@@ -288,7 +604,7 @@ public class Explosion {
                              // CraftBukkit end
                          }
  
--                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity); // Paper - Optimize explosions
-+                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity, blockCache, blockPos); // Paper - Optimize explosions
+-                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity) * (double) this.damageCalculator.getKnockbackMultiplier(entity); // Paper - Optimize explosions
++                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity, blockCache, blockPos) * (double) this.damageCalculator.getKnockbackMultiplier(entity); // Paper - Optimize explosions
                          double d13;
  
                          if (entity instanceof LivingEntity) {
-@@ -334,6 +650,9 @@ public class Explosion {
+@@ -337,6 +653,9 @@ public class Explosion {
              }
          }
  
@@ -478,7 +478,7 @@ index 093c814d6835f20b1208236db96bb40b4611936c..b678da2cbb93cea7971bc3c4d324cfca
      }
  
      public void finalizeExplosion(boolean particles) {
-@@ -547,14 +866,14 @@ public class Explosion {
+@@ -550,14 +869,14 @@ public class Explosion {
          private BlockInteraction() {}
      }
      // Paper start - Optimize explosions
@@ -497,11 +497,11 @@ index 093c814d6835f20b1208236db96bb40b4611936c..b678da2cbb93cea7971bc3c4d324cfca
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java b/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
-index 4085949accf23728de9a2ff14249cd6ca9b71f8a..5b93c038331c1750260a42726f5bfb97998d93a9 100644
+index 0ef9b402d129b072134688c06719a56328581158..1eb259b48bcab6172c15546744eea410c6a3e1fe 100644
 --- a/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
 +++ b/src/main/java/net/minecraft/world/level/ExplosionDamageCalculator.java
-@@ -22,11 +22,17 @@ public class ExplosionDamageCalculator {
-         return true;
+@@ -26,11 +26,17 @@ public class ExplosionDamageCalculator {
+         return 1.0F;
      }
  
 +    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
