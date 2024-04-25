@@ -16,7 +16,7 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index a2e7040df11a0138c706a10b190111b6c3bd99a9..d1e1f12451058f7f276f8277536a4c0a4d736601 100644
+index 8a483c8d2a54617d78af19de32fa0ded71b3223a..18bbb3f8f99849333ff4bc020c8ce758a69312a5 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 @@ -38,8 +38,12 @@ public class PathFinder {
@@ -24,11 +24,11 @@ index a2e7040df11a0138c706a10b190111b6c3bd99a9..d1e1f12451058f7f276f8277536a4c0a
              return null;
          } else {
 -            Map<Target, BlockPos> map = positions.stream()
--                .collect(Collectors.toMap(pos -> this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ()), Function.identity()));
+-                .collect(Collectors.toMap(pos -> this.nodeEvaluator.getTarget((double)pos.getX(), (double)pos.getY(), (double)pos.getZ()), Function.identity()));
 +            // Paper start - Perf: remove streams and optimize collection
 +            List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
-+            for (BlockPos pos : positions) {
-+                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos));
++            for (final BlockPos pos : positions) {
++                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos));
 +            }
 +            // Paper end - Perf: remove streams and optimize collection
              Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);

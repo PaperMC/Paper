@@ -173,24 +173,24 @@ index 0000000000000000000000000000000000000000..57d0cd3ad6f972e986c72a57f1a6e360
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
-index 4ce9906e1f2b79df7c08d644684281ee59aa0c91..2630f54d499abbe52798f97c8ea14a8d0bd75e99 100644
+index daedcfd867ed6171fb61bdcbded417a11c8a5b0f..223ab2d0256fa6df8064f16bc5f8fbe87a1422e4 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
-@@ -40,11 +40,13 @@ public abstract class StateHolder<O, S> {
-     private final ImmutableMap<Property<?>, Comparable<?>> values;
+@@ -39,11 +39,13 @@ public abstract class StateHolder<O, S> {
+     private final Reference2ObjectArrayMap<Property<?>, Comparable<?>> values;
      private Table<Property<?>, Comparable<?>, S> neighbours;
      protected final MapCodec<S> propertiesCodec;
 +    protected final io.papermc.paper.util.table.ZeroCollidingReferenceStateTable optimisedTable; // Paper - optimise state lookup
  
-     protected StateHolder(O owner, ImmutableMap<Property<?>, Comparable<?>> entries, MapCodec<S> codec) {
+     protected StateHolder(O owner, Reference2ObjectArrayMap<Property<?>, Comparable<?>> propertyMap, MapCodec<S> codec) {
          this.owner = owner;
-         this.values = entries;
+         this.values = propertyMap;
          this.propertiesCodec = codec;
 +        this.optimisedTable = new io.papermc.paper.util.table.ZeroCollidingReferenceStateTable(this, entries); // Paper - optimise state lookup
      }
  
      public <T extends Comparable<T>> S cycle(Property<T> property) {
-@@ -85,11 +87,11 @@ public abstract class StateHolder<O, S> {
+@@ -84,11 +86,11 @@ public abstract class StateHolder<O, S> {
      }
  
      public <T extends Comparable<T>> boolean hasProperty(Property<T> property) {
@@ -204,7 +204,7 @@ index 4ce9906e1f2b79df7c08d644684281ee59aa0c91..2630f54d499abbe52798f97c8ea14a8d
          if (comparable == null) {
              throw new IllegalArgumentException("Cannot get property " + property + " as it does not exist in " + this.owner);
          } else {
-@@ -98,24 +100,18 @@ public abstract class StateHolder<O, S> {
+@@ -97,24 +99,18 @@ public abstract class StateHolder<O, S> {
      }
  
      public <T extends Comparable<T>> Optional<T> getOptionalValue(Property<T> property) {
@@ -236,7 +236,7 @@ index 4ce9906e1f2b79df7c08d644684281ee59aa0c91..2630f54d499abbe52798f97c8ea14a8d
      }
  
      public <T extends Comparable<T>, V extends T> S trySetValue(Property<T> property, V value) {
-@@ -148,7 +144,7 @@ public abstract class StateHolder<O, S> {
+@@ -147,7 +143,7 @@ public abstract class StateHolder<O, S> {
                  }
              }
  

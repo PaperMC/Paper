@@ -13,10 +13,10 @@ A config is provided if you rather let players use these exploits, and let
 them destroy the worlds End Portals and get on top of the nether easy.
 
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index 217018dbdd78af4b89d9d4e7154956593dfa8dae..093c814d6835f20b1208236db96bb40b4611936c 100644
+index 550c0cf4d84afc0cd6b2675bdc6aa2282d87e312..6bd6533e314b64d3512cbb46f5174a4956c323b2 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
-@@ -191,6 +191,7 @@ public class Explosion {
+@@ -192,6 +192,7 @@ public class Explosion {
                          for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
                              BlockPos blockposition = BlockPos.containing(d4, d5, d6);
                              BlockState iblockdata = this.level.getBlockState(blockposition);
@@ -25,10 +25,10 @@ index 217018dbdd78af4b89d9d4e7154956593dfa8dae..093c814d6835f20b1208236db96bb40b
  
                              if (!this.level.isInWorldBounds(blockposition)) {
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 983dad7ecc58033ecb6f523f7aef24de122417e8..44d81cacbe3ec878f3af02f4fad974d75fc4db9e 100644
+index 799db7d6229de9e4b7b97da91037dc8fed5b379e..232ac315fa1ed0e6e9ff4882d3378745804e4e1c 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -540,6 +540,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -534,6 +534,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
          // CraftBukkit start - tree generation
          if (this.captureTreeGeneration) {
@@ -40,7 +40,7 @@ index 983dad7ecc58033ecb6f523f7aef24de122417e8..44d81cacbe3ec878f3af02f4fad974d7
              if (blockstate == null) {
                  blockstate = CapturedBlockState.getTreeBlockState(this, pos, flags);
 diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
-index 6896d46fce2e466ebee23ac2dc00312ec1beefdb..b60a52788e73de3dcb086c1a4628466b25c9d3ef 100644
+index 7f0c0ca49e7575c18935b71e3180d112440289f7..054593fc0b8d13f6bf449cc20a1f7ddfd5f1d1f0 100644
 --- a/src/main/java/net/minecraft/world/level/block/Block.java
 +++ b/src/main/java/net/minecraft/world/level/block/Block.java
 @@ -90,6 +90,19 @@ public class Block extends BlockBehaviour implements ItemLike {
@@ -64,12 +64,12 @@ index 6896d46fce2e466ebee23ac2dc00312ec1beefdb..b60a52788e73de3dcb086c1a4628466b
      public co.aikar.timings.Timing getTiming() {
          if (timing == null) {
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-index 3dfe79684f662ac7cae4583bfe03a633438b4df7..be74adc86f0ca467f3b59e7b57fd47a8f381d86e 100644
+index e6bfbe2588e0c2a1be14e38d654e889d392ad4db..e0c62227b279a5fe0f3868fbf9ce8c78c515a09c 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-@@ -212,6 +212,12 @@ public class PistonBaseBlock extends DirectionalBlock {
+@@ -213,6 +213,12 @@ public class PistonBaseBlock extends DirectionalBlock {
      @Override
-     public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
+     protected boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
          Direction enumdirection = (Direction) state.getValue(PistonBaseBlock.FACING);
 +        // Paper start - Protect Bedrock and End Portal/Frames from being destroyed; prevent retracting when we're facing the wrong way (we were replaced before retraction could occur)
 +        Direction directionQueuedAs = Direction.from3DDataValue(data & 7); // Paper - copied from below
@@ -80,7 +80,7 @@ index 3dfe79684f662ac7cae4583bfe03a633438b4df7..be74adc86f0ca467f3b59e7b57fd47a8
          BlockState iblockdata1 = (BlockState) state.setValue(PistonBaseBlock.EXTENDED, true);
  
          if (!world.isClientSide) {
-@@ -252,7 +258,7 @@ public class PistonBaseBlock extends DirectionalBlock {
+@@ -253,7 +259,7 @@ public class PistonBaseBlock extends DirectionalBlock {
              }
              // Paper end - Fix sticky pistons and BlockPistonRetractEvent
              world.setBlock(pos, iblockdata2, 20);
@@ -89,7 +89,7 @@ index 3dfe79684f662ac7cae4583bfe03a633438b4df7..be74adc86f0ca467f3b59e7b57fd47a8
              world.blockUpdated(pos, iblockdata2.getBlock());
              iblockdata2.updateNeighbourShapes(world, pos, 2);
              if (this.isSticky) {
-@@ -288,7 +294,14 @@ public class PistonBaseBlock extends DirectionalBlock {
+@@ -289,7 +295,14 @@ public class PistonBaseBlock extends DirectionalBlock {
                      }
                  }
              } else {
@@ -106,28 +106,28 @@ index 3dfe79684f662ac7cae4583bfe03a633438b4df7..be74adc86f0ca467f3b59e7b57fd47a8
  
              world.playSound((Player) null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.15F + 0.6F);
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index e28ac8f7960f648099e5f3607530a406c72e5056..e493b34aa8726ed48f8e5db2ae8ea561cc5b1f75 100644
+index 0cc12c418d18c5c2e927b93907daea3e0f662035..f863f3a553e26af1fb656622da052505e6ef1c01 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -189,7 +189,7 @@ public abstract class BlockBehaviour implements FeatureElement {
-     /** @deprecated */
-     @Deprecated
-     public void onExplosionHit(BlockState state, Level world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
+@@ -174,7 +174,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+     }
+ 
+     protected void onExplosionHit(BlockState state, Level world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
 -        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK) {
 +        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && state.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
              Block block = state.getBlock();
              boolean flag = explosion.getIndirectSourceEntity() instanceof Player;
  
-@@ -285,7 +285,7 @@ public abstract class BlockBehaviour implements FeatureElement {
-     /** @deprecated */
-     @Deprecated
-     public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
+@@ -254,7 +254,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+     }
+ 
+     protected boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
 -        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
 +        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper - Protect Bedrock and End Portal/Frames from being destroyed
      }
  
-     /** @deprecated */
-@@ -965,6 +965,12 @@ public abstract class BlockBehaviour implements FeatureElement {
+     protected boolean canBeReplaced(BlockState state, Fluid fluid) {
+@@ -896,6 +896,12 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.legacySolid;
          }
  
@@ -140,7 +140,7 @@ index e28ac8f7960f648099e5f3607530a406c72e5056..e493b34aa8726ed48f8e5db2ae8ea561
          public boolean isValidSpawn(BlockGetter world, BlockPos pos, EntityType<?> type) {
              return this.getBlock().properties.isValidSpawn.test(this.asState(), world, pos, type);
          }
-@@ -1068,7 +1074,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -999,7 +1005,7 @@ public abstract class BlockBehaviour implements FeatureElement {
          }
  
          public PushReaction getPistonPushReaction() {
@@ -150,7 +150,7 @@ index e28ac8f7960f648099e5f3607530a406c72e5056..e493b34aa8726ed48f8e5db2ae8ea561
  
          public boolean isSolidRender(BlockGetter world, BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
-index afdd4ecbff21e2172b390bcbdf74f3c1bbddafcc..bb739f8584dd3847152314aa995800f51907da2f 100644
+index 03dd833d61d5152af3032f23dd1fc4c75da9bc4f..a61959700d5e00739a79eaa617ac383160335f26 100644
 --- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 +++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 @@ -221,6 +221,13 @@ public class PortalForcer {
