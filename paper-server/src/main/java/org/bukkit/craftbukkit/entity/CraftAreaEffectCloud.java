@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.entity;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Optional;
@@ -122,10 +121,6 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public <T> void setParticle(Particle particle, T data) {
-        data = CraftParticle.convertLegacy(data);
-        if (data != null) {
-            Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
-        }
         getHandle().setParticle(CraftParticle.createParticleParam(particle, data));
     }
 

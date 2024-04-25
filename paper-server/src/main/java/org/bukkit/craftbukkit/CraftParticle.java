@@ -61,7 +61,15 @@ public abstract class CraftParticle<D> implements Keyed {
     }
 
     public static <D> ParticleParam createParticleParam(Particle particle, D data) {
-        Preconditions.checkArgument(particle != null);
+        Preconditions.checkArgument(particle != null, "particle cannot be null");
+
+        data = CraftParticle.convertLegacy(data);
+        if (particle.getDataType() != Void.class) {
+            Preconditions.checkArgument(data != null, "missing required data %s", particle.getDataType());
+        }
+        if (data != null) {
+            Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
+        }
 
         CraftParticle<D> craftParticle = (CraftParticle<D>) CRAFT_PARTICLE_REGISTRY.get(particle.getKey());
 

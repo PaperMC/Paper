@@ -2241,10 +2241,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
-        data = CraftParticle.convertLegacy(data);
-        if (data != null) {
-            Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
-        }
         PacketPlayOutWorldParticles packetplayoutworldparticles = new PacketPlayOutWorldParticles(CraftParticle.createParticleParam(particle, data), true, (float) x, (float) y, (float) z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count);
         getHandle().connection.send(packetplayoutworldparticles);
 
