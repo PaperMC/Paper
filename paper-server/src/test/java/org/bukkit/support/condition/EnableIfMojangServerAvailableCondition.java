@@ -2,6 +2,7 @@ package org.bukkit.support.condition;
 
 import com.mojang.authlib.yggdrasil.YggdrasilEnvironment;
 import java.net.InetAddress;
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
@@ -12,7 +13,8 @@ public class EnableIfMojangServerAvailableCondition implements ExecutionConditio
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
         try {
-            InetAddress address = InetAddress.getByName(YggdrasilEnvironment.PROD.getEnvironment().servicesHost());
+            URI url = new URI(YggdrasilEnvironment.PROD.getEnvironment().servicesHost());
+            InetAddress address = InetAddress.getByName(url.getHost());
 
             if (!address.isReachable((int) TimeUnit.SECONDS.toMillis(1))) {
                 return ConditionEvaluationResult.disabled("Mojang server is not available");
