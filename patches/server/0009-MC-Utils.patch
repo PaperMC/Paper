@@ -6125,7 +6125,7 @@ index a3d44867e6243f30640df91a0285ed735a9f1f34..be9fde876cb22296afd01fb5d55be1f1
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..7653d56ceb687a2784a4030412c1034fb02e0f8c 100644
+index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..b12921579cb9ab3cbf5607841cc84f2f843624ea 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -48,9 +48,9 @@ public class ChunkHolder {
@@ -6171,12 +6171,12 @@ index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..7653d56ceb687a2784a4030412c1034f
 +    public @Nullable ChunkAccess getAvailableChunkNow() {
 +        // TODO can we just getStatusFuture(EMPTY)?
 +        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
-+            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getFutureIfPresentUnchecked(curr);
-+            Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = future.getNow(null);
-+            if (either == null || either.left().isEmpty()) {
++            CompletableFuture<ChunkResult<ChunkAccess>> future = this.getFutureIfPresentUnchecked(curr);
++            ChunkResult<ChunkAccess> either = future.getNow(null);
++            if (either == null || either.isSuccess()) {
 +                continue;
 +            }
-+            return either.left().get();
++            return either.orElseThrow(IllegalStateException::new);
 +        }
 +        return null;
 +    }
@@ -6214,11 +6214,11 @@ index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..7653d56ceb687a2784a4030412c1034f
      }
  
 +    // Paper start
-+    public ChunkStatus getChunkHolderStatus() {
++    public @Nullable ChunkStatus getChunkHolderStatus() {
 +        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
-+            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getFutureIfPresentUnchecked(curr);
-+            Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = future.getNow(null);
-+            if (either == null || !either.left().isPresent()) {
++            CompletableFuture<ChunkResult<ChunkAccess>> future = this.getFutureIfPresentUnchecked(curr);
++            ChunkResult<ChunkAccess> either = future.getNow(null);
++            if (either == null || !either.isSuccess()) {
 +                continue;
 +            }
 +            return curr;
@@ -6291,8 +6291,8 @@ index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..7653d56ceb687a2784a4030412c1034f
              this.tickingChunkFuture = chunkStorage.prepareTickingChunk(this);
              this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, FullChunkStatus.BLOCK_TICKING);
 +            // Paper start - cache ticking ready status
-+            this.tickingChunkFuture.thenAccept(either -> {
-+                either.ifLeft(chunk -> {
++            this.tickingChunkFuture.thenAccept(chunkResult -> {
++                chunkResult.ifSuccess(chunk -> {
 +                    // note: Here is a very good place to add callbacks to logic waiting on this.
 +                    ChunkHolder.this.isTickingReady = true;
 +                    io.papermc.paper.chunk.system.ChunkSystem.onChunkTicking(chunk, this);
@@ -6306,7 +6306,7 @@ index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..7653d56ceb687a2784a4030412c1034f
 -            this.tickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK);
 +            // Paper start
 +            if (this.isTickingReady) {
-+                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotTicking(this.tickingChunkFuture.join().left().get(), this); // Paper
++                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotTicking(this.tickingChunkFuture.join().orElseThrow(IllegalStateException::new), this); // Paper
 +            }
 +            // Paper end
 +            this.tickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isTickingReady = false; // Paper - cache chunk ticking stage
