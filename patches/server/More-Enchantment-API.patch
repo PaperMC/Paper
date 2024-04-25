@@ -53,7 +53,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public float getDamageIncrease(int level, org.bukkit.entity.EntityCategory entityCategory) {
-+        return handle.getDamageBonus(level, org.bukkit.craftbukkit.entity.CraftLivingEntity.fromBukkitEntityCategory(entityCategory));
++        return handle.getDamageBonus(level, guessEntityTypeFromEnchantmentCategory(entityCategory));
++    }
++
++    @Override
++    public float getDamageIncrease(int level, org.bukkit.entity.EntityType entityType) {
++        return handle.getDamageBonus(level, org.bukkit.craftbukkit.util.CraftMagicNumbers.getEntityTypes(entityType));
++    }
++
++    @Deprecated(forRemoval = true)
++    private net.minecraft.world.entity.EntityType<?> guessEntityTypeFromEnchantmentCategory(
++        final org.bukkit.entity.EntityCategory entityCategory
++    ) {
++        final net.minecraft.tags.TagKey<net.minecraft.world.entity.EntityType<?>> tag = switch (entityCategory) {
++            case ARTHROPOD -> net.minecraft.tags.EntityTypeTags.SENSITIVE_TO_BANE_OF_ARTHROPODS;
++            case UNDEAD -> net.minecraft.tags.EntityTypeTags.SENSITIVE_TO_SMITE;
++            case WATER -> net.minecraft.tags.EntityTypeTags.SENSITIVE_TO_IMPALING;
++            default -> null;
++        };
++        if (tag == null) return null;
++
++        return net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tag)
++            .map(e -> e.size() > 0 ? e.get(0).value() : null)
++            .orElse(null);
 +    }
 +
 +    @Override
@@ -77,33 +99,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper end
  
      @Override
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -0,0 +0,0 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
-         throw new UnsupportedOperationException("Cannot set the hurt direction on a non player");
-     }
-     // Paper end - hurt direction API
-+
-+    // Paper start - more enchant API
-+    public static MobType fromBukkitEntityCategory(EntityCategory entityCategory) {
-+        switch (entityCategory) {
-+            case NONE:
-+                return MobType.UNDEFINED;
-+            case UNDEAD:
-+                return MobType.UNDEAD;
-+            case ARTHROPOD:
-+                return MobType.ARTHROPOD;
-+            case ILLAGER:
-+                return MobType.ILLAGER;
-+            case WATER:
-+                return MobType.WATER;
-+        }
-+        throw new IllegalArgumentException(entityCategory + " is an unrecognized entity category");
-+    }
-+    // Paper end - more enchant API
- }
 diff --git a/src/test/java/io/papermc/paper/enchantments/EnchantmentRarityTest.java b/src/test/java/io/papermc/paper/enchantments/EnchantmentRarityTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
