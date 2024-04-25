@@ -152,7 +152,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static Codec<HoverEvent.ShowItem> showItemCodec(final Codec<Component> componentCodec) {
 +        return net.minecraft.network.chat.HoverEvent.ItemStackInfo.CODEC.xmap(isi -> {
 +            @Subst("key") final String typeKey = isi.item.unwrapKey().orElseThrow().toString();
-+            return HoverEvent.ShowItem.showItem(Key.key(typeKey), isi.count, PaperAdventure.asBinaryTagHolder(isi.tag.orElse(null)));
++            return HoverEvent.ShowItem.showItem(Key.key(typeKey), isi.count, PaperAdventure.dataComponents(isi.getItemStack()));
 +        }, si -> {
 +            final Item itemType = BuiltInRegistries.ITEM.get(PaperAdventure.asVanilla(si.item()));
 +            final ItemStack stack;
@@ -168,7 +168,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    static final HoverEventType<HoverEvent.ShowEntity> SHOW_ENTITY_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showEntityCodec, HoverEvent.Action.SHOW_ENTITY, "show_entity", AdventureCodecs::legacyDeserializeEntity);
 +    static final HoverEventType<HoverEvent.ShowItem> SHOW_ITEM_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showItemCodec, HoverEvent.Action.SHOW_ITEM, "show_item", AdventureCodecs::legacyDeserializeItem);
-+    static final HoverEventType<Component> SHOW_TEXT_HOVER_EVENT_TYPE = new HoverEventType<>(identity(), HoverEvent.Action.SHOW_TEXT, "show_text", DataResult::success);
++    static final HoverEventType<Component> SHOW_TEXT_HOVER_EVENT_TYPE = new HoverEventType<>(identity(), HoverEvent.Action.SHOW_TEXT, "show_text", (component, registryOps, codec) -> DataResult.success(component));
 +    static final Codec<HoverEventType<?>> HOVER_EVENT_TYPE_CODEC = StringRepresentable.fromValues(() -> new HoverEventType<?>[]{ SHOW_ENTITY_HOVER_EVENT_TYPE, SHOW_ITEM_HOVER_EVENT_TYPE, SHOW_TEXT_HOVER_EVENT_TYPE });
 +
 +    static DataResult<HoverEvent.ShowEntity> legacyDeserializeEntity(final Component component, final @Nullable RegistryOps<?> ops, final Codec<Component> componentCodec) {
@@ -188,11 +188,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        try {
 +            final CompoundTag tag = TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(component));
 +            final DynamicOps<Tag> dynamicOps = ops != null ? ops.withParent(NbtOps.INSTANCE) : NbtOps.INSTANCE;
-+            final DataResult<org.bukkit.inventory.ItemStack> stackResult = ItemStack.CODEC.parse(dynamicOps, tag).map(CraftItemStack::asCraftMirror);
++            final DataResult<ItemStack> stackResult = ItemStack.CODEC.parse(dynamicOps, tag);
 +            return stackResult.map(stack -> {
-+                return HoverEvent.ShowItem.showItem(stack.getType().key(), stack.getAmount(), /* TODO */);
++                final CraftItemStack craft = CraftItemStack.asCraftMirror(stack);
++                return HoverEvent.ShowItem.showItem(craft.getType().key(), stack.getCount(), PaperAdventure.dataComponents(stack));
 +            });
-+        } catch (final CommandSyntaxException | IOException ex) {
++        } catch (final CommandSyntaxException ex) {
 +            return DataResult.error(() -> "Failed to parse item tag: " + ex.getMessage());
 +        }
 +    }
@@ -1169,6 +1170,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.netty.util.AttributeKey;
 +import java.io.IOException;
 +import java.util.ArrayList;
++import java.util.HashMap;
 +import java.util.List;
 +import java.util.Locale;
 +import java.util.Map;
@@ -1186,6 +1188,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.TranslatableComponent;
 +import net.kyori.adventure.text.TranslationArgument;
++import net.kyori.adventure.text.event.DataComponentValue;
 +import net.kyori.adventure.text.flattener.ComponentFlattener;
 +import net.kyori.adventure.text.format.Style;
 +import net.kyori.adventure.text.format.TextColor;
@@ -1201,11 +1204,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.Util;
 +import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.core.Holder;
++import net.minecraft.core.component.TypedDataComponent;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.locale.Language;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.ListTag;
++import net.minecraft.nbt.NbtOps;
 +import net.minecraft.nbt.StringTag;
++import net.minecraft.nbt.Tag;
 +import net.minecraft.nbt.TagParser;
 +import net.minecraft.network.chat.ComponentUtils;
 +import net.minecraft.network.protocol.Packet;
@@ -1540,6 +1546,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    // NBT
++
++    public static Map<Key, ? extends DataComponentValue> dataComponents(
++        final ItemStack stack
++    ) {
++        final Map<Key, DataComponentValue> map = new HashMap<>();
++        for (final TypedDataComponent<?> component : stack.getComponents()) {
++            final ResourceLocation key = BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(component.type());
++            final DataComponentValue value = new DataComponentValue.TagSerializable() {
++                @Override
++                public @NotNull BinaryTagHolder asBinaryTag() {
++                    return BinaryTagHolder.binaryTagHolder(
++                        component.encodeValue(NbtOps.INSTANCE).map(Tag::getAsString).getOrThrow()
++                    );
++                }
++            };
++            map.put(Key.key(key.toString()), value);
++        }
++        return map;
++    }
 +
 +    public static @Nullable BinaryTagHolder asBinaryTagHolder(final @Nullable CompoundTag tag) {
 +        if (tag == null) {
@@ -4620,8 +4645,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - Adventure
 +    @Override
 +    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
-+        final net.minecraft.nbt.CompoundTag tag = CraftItemStack.asNMSCopy(item).getTag();
-+        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(item.getType().getKey(), item.getAmount(), io.papermc.paper.adventure.PaperAdventure.asBinaryTagHolder(tag))));
++        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(item.getType().getKey(), item.getAmount(), io.papermc.paper.adventure.PaperAdventure.dataComponents(CraftItemStack.asNMSCopy(item)))));
 +    }
 +
 +    @Override
