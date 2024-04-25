@@ -19610,10 +19610,10 @@ index 3c1bcf8d1a07b35a8688160c9f05f792451338a3..03840f520624662d4ce3ac9f3065a01c
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 71d8909f35a22256406a2232d21adfd7d94dc3a5..51564dc963e39018e1572d3429c70eb9f8094e72 100644
+index 71d8909f35a22256406a2232d21adfd7d94dc3a5..7b52b0507cbda76aee1db954641f397bef51f94d 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-@@ -40,8 +40,23 @@ import net.minecraft.world.level.chunk.storage.SimpleRegionStorage;
+@@ -40,20 +40,40 @@ import net.minecraft.world.level.chunk.storage.SimpleRegionStorage;
  public class PoiManager extends SectionStorage<PoiSection> {
      public static final int MAX_VILLAGE_DISTANCE = 6;
      public static final int VILLAGE_SECTION_SIZE = 1;
@@ -19639,7 +19639,16 @@ index 71d8909f35a22256406a2232d21adfd7d94dc3a5..51564dc963e39018e1572d3429c70eb9
  
      public PoiManager(
          RegionStorageInfo storageKey, Path directory, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world
-@@ -53,7 +68,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+     ) {
+         super(
++            // Paper start
++            storageKey,
++            directory,
++            dsync,
++            // Paper end
+             new SimpleRegionStorage(storageKey, directory, dataFixer, dsync, DataFixTypes.POI_CHUNK),
+             PoiSection::codec,
+             PoiSection::new,
              registryManager,
              world
          );
@@ -19648,7 +19657,7 @@ index 71d8909f35a22256406a2232d21adfd7d94dc3a5..51564dc963e39018e1572d3429c70eb9
      }
  
      public void add(BlockPos pos, Holder<PoiType> type) {
-@@ -187,8 +202,8 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -187,8 +207,8 @@ public class PoiManager extends SectionStorage<PoiSection> {
      }
  
      public int sectionsToVillage(SectionPos pos) {
@@ -19659,7 +19668,7 @@ index 71d8909f35a22256406a2232d21adfd7d94dc3a5..51564dc963e39018e1572d3429c70eb9
      }
  
      boolean isVillageCenter(long pos) {
-@@ -202,20 +217,117 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -202,20 +222,117 @@ public class PoiManager extends SectionStorage<PoiSection> {
  
      @Override
      public void tick(BooleanSupplier shouldKeepTicking) {
@@ -19783,7 +19792,7 @@ index 71d8909f35a22256406a2232d21adfd7d94dc3a5..51564dc963e39018e1572d3429c70eb9
  
      public void checkConsistencyWithBlocks(SectionPos sectionPos, LevelChunkSection chunkSection) {
          Util.ifElse(this.getOrLoad(sectionPos.asLong()), poiSet -> poiSet.refresh(populator -> {
-@@ -251,7 +363,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -251,7 +368,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
              .map(sectionPos -> Pair.of(sectionPos, this.getOrLoad(sectionPos.asLong())))
              .filter(pair -> !pair.getSecond().map(PoiSection::isValid).orElse(false))
              .map(pair -> pair.getFirst().chunk())
@@ -19792,7 +19801,7 @@ index 71d8909f35a22256406a2232d21adfd7d94dc3a5..51564dc963e39018e1572d3429c70eb9
              .forEach(chunkPos -> world.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.EMPTY));
      }
  
-@@ -265,7 +377,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -265,7 +382,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
  
          @Override
          protected int getLevelFromSource(long id) {
@@ -19801,7 +19810,7 @@ index 71d8909f35a22256406a2232d21adfd7d94dc3a5..51564dc963e39018e1572d3429c70eb9
          }
  
          @Override
-@@ -287,6 +399,35 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -287,6 +404,35 @@ public class PoiManager extends SectionStorage<PoiSection> {
          }
      }
  
@@ -21000,10 +21009,18 @@ index c4eef3aade889c69cefd873bec2d031cc54103ea..3f6955be976064eb542b5c50a9d6d744
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index 151fcbca34e02783e19fbb7b54ec4fbec2eed190..428ed5adce8510dbcd3518f645f0ecdacf3a0132 100644
+index 151fcbca34e02783e19fbb7b54ec4fbec2eed190..883fbe5c81e3be27007a1a0489f80ba1863e5a04 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-@@ -31,15 +31,15 @@ import net.minecraft.world.level.ChunkPos;
+@@ -12,6 +12,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+ import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
+ import java.io.IOException;
++import java.nio.file.Path;
+ import java.util.Map;
+ import java.util.Optional;
+ import java.util.concurrent.CompletableFuture;
+@@ -31,25 +32,30 @@ import net.minecraft.world.level.ChunkPos;
  import net.minecraft.world.level.LevelHeightAccessor;
  import org.slf4j.Logger;
  
@@ -21022,16 +21039,23 @@ index 151fcbca34e02783e19fbb7b54ec4fbec2eed190..428ed5adce8510dbcd3518f645f0ecda
      protected final LevelHeightAccessor levelHeightAccessor;
  
      public SectionStorage(
-@@ -49,7 +49,7 @@ public class SectionStorage<R> implements AutoCloseable {
++        // Paper start
++        RegionStorageInfo regionStorageInfo,
++        Path path,
++        boolean dsync,
++        // Paper end
+         SimpleRegionStorage storageAccess,
+         Function<Runnable, Codec<R>> codecFactory,
+         Function<Runnable, R> factory,
          RegistryAccess registryManager,
          LevelHeightAccessor world
      ) {
 -        this.simpleRegionStorage = storageAccess;
-+        super(,path, dsync); // Paper - remove mojang I/O thread TODO this trash
++        super(regionStorageInfo, path, dsync); // Paper - remove mojang I/O thread
          this.codec = codecFactory;
          this.factory = factory;
          this.registryAccess = registryManager;
-@@ -112,23 +112,21 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -112,23 +118,21 @@ public class SectionStorage<R> implements AutoCloseable {
      }
  
      private void readColumn(ChunkPos pos) {
@@ -21064,7 +21088,7 @@ index 151fcbca34e02783e19fbb7b54ec4fbec2eed190..428ed5adce8510dbcd3518f645f0ecda
          if (nbt == null) {
              for (int i = this.levelHeightAccessor.getMinSection(); i < this.levelHeightAccessor.getMaxSection(); i++) {
                  this.storage.put(getKey(pos, i), Optional.empty());
-@@ -138,7 +136,7 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -138,7 +142,7 @@ public class SectionStorage<R> implements AutoCloseable {
              int j = getVersion(dynamic);
              int k = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
              boolean bl = j != k;
@@ -21073,7 +21097,7 @@ index 151fcbca34e02783e19fbb7b54ec4fbec2eed190..428ed5adce8510dbcd3518f645f0ecda
              OptionalDynamic<Tag> optionalDynamic = dynamic2.get("Sections");
  
              for (int l = this.levelHeightAccessor.getMinSection(); l < this.levelHeightAccessor.getMaxSection(); l++) {
-@@ -162,7 +160,7 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -162,7 +166,7 @@ public class SectionStorage<R> implements AutoCloseable {
          Dynamic<Tag> dynamic = this.writeColumn(pos, registryOps);
          Tag tag = dynamic.getValue();
          if (tag instanceof CompoundTag) {
@@ -21082,7 +21106,7 @@ index 151fcbca34e02783e19fbb7b54ec4fbec2eed190..428ed5adce8510dbcd3518f645f0ecda
          } else {
              LOGGER.error("Expected compound tag, got {}", tag);
          }
-@@ -212,7 +210,7 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -212,7 +216,7 @@ public class SectionStorage<R> implements AutoCloseable {
      }
  
      private static int getVersion(Dynamic<?> dynamic) {
@@ -21091,7 +21115,7 @@ index 151fcbca34e02783e19fbb7b54ec4fbec2eed190..428ed5adce8510dbcd3518f645f0ecda
      }
  
      public void flush(ChunkPos pos) {
-@@ -229,6 +227,6 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -229,6 +233,6 @@ public class SectionStorage<R> implements AutoCloseable {
  
      @Override
      public void close() throws IOException {
