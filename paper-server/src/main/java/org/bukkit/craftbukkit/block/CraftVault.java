@@ -3,9 +3,9 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.TrialSpawner;
+import org.bukkit.block.Vault;
 
-public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implements TrialSpawner {
+public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implements Vault {
 
     public CraftVault(World world, VaultBlockEntity tileEntity) {
         super(world, tileEntity);
