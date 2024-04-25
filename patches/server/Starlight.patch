@@ -20,19 +20,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.ChunkStatus;
-+import net.minecraft.world.level.chunk.ImposterProtoChunk;
-+import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.LevelChunkSection;
 +import net.minecraft.world.level.chunk.LightChunkGetter;
 +import net.minecraft.world.level.chunk.PalettedContainer;
 +import net.minecraft.world.phys.shapes.Shapes;
 +import net.minecraft.world.phys.shapes.VoxelShape;
 +import java.util.ArrayList;
-+import java.util.Iterator;
 +import java.util.List;
 +import java.util.Set;
-+import java.util.stream.Collectors;
 +
 +public final class BlockStarLightEngine extends StarLightEngine {
 +
@@ -756,7 +752,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.ChunkStatus;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.LevelChunkSection;
 +import net.minecraft.world.level.chunk.LightChunkGetter;
 +import net.minecraft.world.phys.shapes.Shapes;
@@ -3054,7 +3050,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.ChunkStatus;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.DataLayer;
 +import net.minecraft.world.level.chunk.LevelChunk;
 +import net.minecraft.world.level.chunk.LightChunkGetter;
@@ -4111,7 +4107,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.ChunkStatus;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import org.slf4j.Logger;
 +
 +public final class SaveUtil {
@@ -4366,17 +4362,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.command.subcommands;
 +
 +import io.papermc.paper.command.PaperSubcommand;
-+import java.util.ArrayDeque;
-+import java.util.Deque;
 +import io.papermc.paper.util.MCUtil;
-+import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.level.ChunkHolder;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.server.level.ThreadedLevelLightEngine;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.LevelChunk;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.entity.Player;
@@ -4387,7 +4378,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
 +import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
-+import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
 +
 +@DefaultQualifier(NonNull.class)
@@ -4445,7 +4435,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            final ChunkPos chunkPos = iterator.next();
 +
 +            final @Nullable ChunkAccess chunk = (ChunkAccess) world.getChunkSource().getChunkForLighting(chunkPos.x, chunkPos.z);
-+            if (chunk == null || !chunk.isLightCorrect() || !chunk.getStatus().isOrAfter(net.minecraft.world.level.chunk.ChunkStatus.LIGHT)) {
++            if (chunk == null || !chunk.isLightCorrect() || !chunk.getStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.LIGHT)) {
 +                // cannot relight this chunk
 +                iterator.remove();
 +                continue;
@@ -4483,14 +4473,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-     private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
-     private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> tickingChunkFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage
-     private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> entityTickingChunkFuture; private volatile boolean isEntityTickingReady; // Paper - cache chunk ticking stage
+     private volatile CompletableFuture<ChunkResult<LevelChunk>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
+     private volatile CompletableFuture<ChunkResult<LevelChunk>> tickingChunkFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage
+     private volatile CompletableFuture<ChunkResult<LevelChunk>> entityTickingChunkFuture; private volatile boolean isEntityTickingReady; // Paper - cache chunk ticking stage
 -    private CompletableFuture<ChunkAccess> chunkToSave;
 +    public CompletableFuture<ChunkAccess> chunkToSave;  // Paper - public
      @Nullable
      private final DebugBuffer<ChunkHolder.ChunkSaveDebug> chunkToSaveHistory;
      public int oldTicketLevel;
+@@ -0,0 +0,0 @@ public class ChunkHolder {
+         }
+     }
+ 
++    // Paper start - starlight
++    public void broadcast(Packet<?> packet, boolean onChunkViewEdge) {
++        this.broadcast(this.playerProvider.getPlayers(this.pos, onChunkViewEdge), packet);
++    }
++    // Paper end - starlight
++
+     public void broadcastChanges(LevelChunk chunk) {
+         if (this.hasChangedSections || !this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
+             Level world = chunk.getLevel();
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -4514,7 +4517,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void removeTicketsOnClosing() {
 -        ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT, TicketType.FUTURE_AWAIT); // Paper - add additional tickets to preserve
 +        ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT, TicketType.FUTURE_AWAIT, TicketType.CHUNK_RELIGHT, ca.spottedleaf.starlight.common.light.StarLightInterface.CHUNK_WORK_TICKET); // Paper - add additional tickets to preserve
-         ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
+         ObjectIterator<Entry<SortedArraySet<Ticket<?>>>> objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
@@ -4533,7 +4536,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.longs.LongArrayList;
 +import it.unimi.dsi.fastutil.longs.LongIterator;
-+import net.minecraft.world.level.chunk.ChunkStatus;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
 +// Paper end
 +
  public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
@@ -5018,28 +5021,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static record TicksToSave(SerializableTickContainer<Block> blocks, SerializableTickContainer<Fluid> fluids) {
-diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-@@ -0,0 +0,0 @@ public class ChunkStatus {
-         return this.chunkType;
-     }
- 
-+    // Paper start
-+    public static ChunkStatus getStatus(String name) {
-+        try {
-+            // We need this otherwise we return EMPTY for invalid names
-+            ResourceLocation key = new ResourceLocation(name);
-+            return BuiltInRegistries.CHUNK_STATUS.getOptional(key).orElse(null);
-+        } catch (Exception ex) {
-+            return null; // invalid name
-+        }
-+    }
-+    // Paper end
-     public static ChunkStatus byName(String id) {
-         return (ChunkStatus) BuiltInRegistries.CHUNK_STATUS.get(ResourceLocation.tryParse(id));
-     }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
@@ -5199,6 +5180,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          this.lightEngine.checkBlock(pos);
                      }
                  }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java
++++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java
+@@ -0,0 +0,0 @@ public class ChunkStatus {
+     private final ChunkType chunkType;
+     private final EnumSet<Heightmap.Types> heightmapsAfter;
+ 
++    // Paper start - starlight
++    public static ChunkStatus getStatus(String name) {
++        try {
++            // We need this otherwise we return EMPTY for invalid names
++            ResourceLocation key = new ResourceLocation(name);
++            return BuiltInRegistries.CHUNK_STATUS.getOptional(key).orElse(null);
++        } catch (Exception ex) {
++            return null; // invalid name
++        }
++    }
++    // Paper end - starlight
++
+     private static ChunkStatus register(
+         String id,
+         @Nullable ChunkStatus previous,
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
@@ -5240,8 +5244,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Registry<Biome> iregistry = world.registryAccess().registryOrThrow(Registries.BIOME);
          Codec<PalettedContainer<Holder<Biome>>> codec = ChunkSerializer.makeBiomeCodecRW(iregistry); // CraftBukkit - read/write
          boolean flag2 = false;
-@@ -0,0 +0,0 @@ public class ChunkSerializer {
-         DataResult dataresult;
  
          for (int j = 0; j < nbttaglist.size(); ++j) {
 -            CompoundTag nbttagcompound1 = nbttaglist.getCompound(j);
@@ -5348,7 +5350,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (flag1) {
                      LevelChunkSection chunksection = achunksection[j];
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
-                     nbttagcompound1.put("biomes", (Tag) dataresult1.getOrThrow(false, logger1::error));
+                     nbttagcompound1.put("biomes", (Tag) codec.encodeStart(NbtOps.INSTANCE, chunksection.getBiomes()).getOrThrow());
                  }
  
 -                if (nibblearray != null && !nibblearray.isEmpty()) {
@@ -5404,8 +5406,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     public static ChunkStatus.ChunkType getChunkTypeFromTag(@Nullable CompoundTag nbt) {
-         return nbt != null ? ChunkStatus.byName(nbt.getString("Status")).getChunkType() : ChunkStatus.ChunkType.PROTOCHUNK;
+     public static ChunkType getChunkTypeFromTag(@Nullable CompoundTag nbt) {
+         return nbt != null ? ChunkStatus.byName(nbt.getString("Status")).getChunkType() : ChunkType.PROTOCHUNK;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
