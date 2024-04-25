@@ -1627,11 +1627,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
-+import java.util.function.Function;
++import com.mojang.serialization.JavaOps;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.serializer.ComponentSerializer;
 +import net.minecraft.network.chat.ComponentSerialization;
-+import net.minecraft.util.JavaOps;
 +
 +final class WrapperAwareSerializer implements ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> {
 +    @Override
@@ -1640,26 +1639,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return ((AdventureComponent) input).adventure;
 +        }
 +        final Object obj = ComponentSerialization.CODEC.encodeStart(JavaOps.INSTANCE, input)
-+            .get().map(Function.identity(), partial -> {
-+                throw new RuntimeException("Failed to encode Minecraft Component: " + input + "; " + partial.message());
-+            });
++            .getOrThrow(s -> new RuntimeException("Failed to encode Minecraft Component: " + input + "; " + s));
 +        final Pair<Component, Object> converted = AdventureCodecs.COMPONENT_CODEC.decode(JavaOps.INSTANCE, obj)
-+            .get().map(Function.identity(), partial -> {
-+                throw new RuntimeException("Failed to decode to adventure Component: " + obj + "; " + partial.message());
-+            });
++            .getOrThrow(s -> new RuntimeException("Failed to decode to adventure Component: " + obj + "; " + s));
 +        return converted.getFirst();
 +    }
 +
 +    @Override
 +    public net.minecraft.network.chat.Component serialize(final Component component) {
 +        final Object obj = AdventureCodecs.COMPONENT_CODEC.encodeStart(JavaOps.INSTANCE, component)
-+            .get().map(Function.identity(), partial -> {
-+                throw new RuntimeException("Failed to encode adventure Component: " + component + "; " + partial.message());
-+            });
++            .getOrThrow(s -> new RuntimeException("Failed to encode adventure Component: " + component + "; " + s));
 +        final Pair<net.minecraft.network.chat.Component, Object> converted = ComponentSerialization.CODEC.decode(JavaOps.INSTANCE, obj)
-+            .get().map(Function.identity(), partial -> {
-+                throw new RuntimeException("Failed to decode to Minecraft Component: " + obj + "; " + partial.message());
-+            });
++            .getOrThrow(s -> new RuntimeException("Failed to decode to Minecraft Component: " + obj + "; " + s));
 +        return converted.getFirst();
 +    }
 +}
@@ -5854,10 +5845,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    static <R> R require(final DataResult<R> result, final Function<String, String> errorMessage) {
-+        return switch (result) {
-+            case final DataResult.Error<R> error -> throw new RuntimeException(errorMessage.apply(error.message()));
-+            case final DataResult.Success<R> success -> success.value();
-+        };
++        return result.getOrThrow(s -> new RuntimeException(errorMessage.apply(s)));
 +    }
 +
 +    static List<Tag> invalidData() {

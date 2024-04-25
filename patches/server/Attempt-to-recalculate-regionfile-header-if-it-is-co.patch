@@ -91,10 +91,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+     @VisibleForTesting
      protected final RegionBitmap usedSectors;
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
-     public final Path regionFile; // Paper
-+
 +    // Paper start - Attempt to recalculate regionfile header if it is corrupt
 +    private static long roundToSectors(long bytes) {
 +        long sectors = bytes >>> 12; // 4096 = 2^12
@@ -153,15 +152,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void backupRegionFile() {
-+        Path backup = this.regionFile.getParent().resolve(this.regionFile.getFileName() + "." + new java.util.Random().nextLong() + ".backup");
++        Path backup = this.path.getParent().resolve(this.path.getFileName() + "." + new java.util.Random().nextLong() + ".backup");
 +        this.backupRegionFile(backup);
 +    }
 +
 +    private void backupRegionFile(Path to) {
 +        try {
 +            this.file.force(true);
-+            LOGGER.warn("Backing up regionfile \"" + this.regionFile.toAbsolutePath() + "\" to " + to.toAbsolutePath());
-+            java.nio.file.Files.copy(this.regionFile, to, java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
++            LOGGER.warn("Backing up regionfile \"" + this.path.toAbsolutePath() + "\" to " + to.toAbsolutePath());
++            java.nio.file.Files.copy(this.path, to, java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
 +            LOGGER.warn("Backed up the regionfile to " + to.toAbsolutePath());
 +        } catch (IOException ex) {
 +            LOGGER.error("Failed to backup to " + to.toAbsolutePath(), ex);
@@ -177,13 +176,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (!this.canRecalcHeader) {
 +            return false;
 +        }
-+        ChunkPos ourLowerLeftPosition = RegionFileStorage.getRegionFileCoordinates(this.regionFile);
++        ChunkPos ourLowerLeftPosition = RegionFileStorage.getRegionFileCoordinates(this.path);
 +        if (ourLowerLeftPosition == null) {
-+            LOGGER.error("Unable to get chunk location of regionfile " + this.regionFile.toAbsolutePath() + ", cannot recover header");
++            LOGGER.error("Unable to get chunk location of regionfile " + this.path.toAbsolutePath() + ", cannot recover header");
 +            return false;
 +        }
 +        synchronized (this) {
-+            LOGGER.warn("Corrupt regionfile header detected! Attempting to re-calculate header offsets for regionfile " + this.regionFile.toAbsolutePath(), new Throwable());
++            LOGGER.warn("Corrupt regionfile header detected! Attempting to re-calculate header offsets for regionfile " + this.path.toAbsolutePath(), new Throwable());
 +
 +            // try to backup file so maybe it could be sent to us for further investigation
 +
@@ -207,7 +206,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                ChunkPos chunkPos = ChunkSerializer.getChunkCoordinate(compound);
 +                if (!inSameRegionfile(ourLowerLeftPosition, chunkPos)) {
-+                    LOGGER.error("Ignoring absolute chunk " + chunkPos + " in regionfile as it is not contained in the bounds of the regionfile '" + this.regionFile.toAbsolutePath() + "'. It should be in regionfile (" + (chunkPos.x >> 5) + "," + (chunkPos.z >> 5) + ")");
++                    LOGGER.error("Ignoring absolute chunk " + chunkPos + " in regionfile as it is not contained in the bounds of the regionfile '" + this.path.toAbsolutePath() + "'. It should be in regionfile (" + (chunkPos.x >> 5) + "," + (chunkPos.z >> 5) + ")");
 +                    continue;
 +                }
 +                int location = (chunkPos.x & 31) | ((chunkPos.z & 31) << 5);
@@ -229,7 +228,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                            isAikarOversized = true;
 +                        }
 +                    } catch (Exception ex) {
-+                        LOGGER.error("Failed to read aikar oversized data for absolute chunk (" + chunkPos.x + "," + chunkPos.z + ") in regionfile " + this.regionFile.toAbsolutePath() + ", oversized data for this chunk will be lost", ex);
++                        LOGGER.error("Failed to read aikar oversized data for absolute chunk (" + chunkPos.x + "," + chunkPos.z + ") in regionfile " + this.path.toAbsolutePath() + ", oversized data for this chunk will be lost", ex);
 +                        // fall through, if we can't read aikar oversized we can't risk corrupting chunk data
 +                    }
 +                }
@@ -337,7 +336,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (newSectorAllocations.tryAllocate(sectorOffset, sectorLength)) {
 +                        calculatedOffsets[location] = sectorOffset << 8 | (sectorLength > 255 ? 255 : sectorLength); // support forge style oversized
 +                    } else {
-+                        LOGGER.error("Failed to allocate space for local chunk (overlapping data??) at (" + chunkX + "," + chunkZ + ") in regionfile " + this.regionFile.toAbsolutePath() + ", chunk will be regenerated");
++                        LOGGER.error("Failed to allocate space for local chunk (overlapping data??) at (" + chunkX + "," + chunkZ + ") in regionfile " + this.path.toAbsolutePath() + ", chunk will be regenerated");
 +                    }
 +                }
 +            }
@@ -361,7 +360,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        calculatedOffsets[location] = sectorOffset << 8 | (sectorLength > 255 ? 255 : sectorLength); // support forge style oversized
 +                    } catch (IOException ex) {
 +                        newSectorAllocations.free(sectorOffset, sectorLength);
-+                        LOGGER.error("Failed to write new oversized chunk data holder, local chunk at (" + chunkX + "," + chunkZ + ") in regionfile " + this.regionFile.toAbsolutePath() + " will be regenerated");
++                        LOGGER.error("Failed to write new oversized chunk data holder, local chunk at (" + chunkX + "," + chunkZ + ") in regionfile " + this.path.toAbsolutePath() + " will be regenerated");
 +                    }
 +                }
 +            }
@@ -383,7 +382,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                try {
 +                    this.writeOversizedMeta();
 +                } catch (Exception ex) {
-+                    LOGGER.error("Failed to write aikar oversized chunk meta, all aikar style oversized chunk data will be lost for regionfile " + this.regionFile.toAbsolutePath(), ex);
++                    LOGGER.error("Failed to write aikar oversized chunk meta, all aikar style oversized chunk data will be lost for regionfile " + this.path.toAbsolutePath(), ex);
 +                    Files.deleteIfExists(this.getOversizedMetaFile());
 +                }
 +            } else {
@@ -394,7 +393,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            // before we overwrite the old sectors, print a summary of the chunks that got changed.
 +
-+            LOGGER.info("Starting summary of changes for regionfile " + this.regionFile.toAbsolutePath());
++            LOGGER.info("Starting summary of changes for regionfile " + this.path.toAbsolutePath());
 +
 +            for (int chunkX = 0; chunkX < 32; ++chunkX) {
 +                for (int chunkZ = 0; chunkZ < 32; ++chunkZ) {
@@ -411,16 +410,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                    if (oldOffset == 0) {
 +                        // found lost data
-+                        LOGGER.info("Found missing data for local chunk (" + chunkX + "," + chunkZ + ") in regionfile " + this.regionFile.toAbsolutePath());
++                        LOGGER.info("Found missing data for local chunk (" + chunkX + "," + chunkZ + ") in regionfile " + this.path.toAbsolutePath());
 +                    } else if (newOffset == 0) {
-+                        LOGGER.warn("Data for local chunk (" + chunkX + "," + chunkZ + ") could not be recovered in regionfile " + this.regionFile.toAbsolutePath() + ", it will be regenerated");
++                        LOGGER.warn("Data for local chunk (" + chunkX + "," + chunkZ + ") could not be recovered in regionfile " + this.path.toAbsolutePath() + ", it will be regenerated");
 +                    } else {
-+                        LOGGER.info("Local chunk (" + chunkX + "," + chunkZ + ") changed to point to newer data or correct chunk in regionfile " + this.regionFile.toAbsolutePath());
++                        LOGGER.info("Local chunk (" + chunkX + "," + chunkZ + ") changed to point to newer data or correct chunk in regionfile " + this.path.toAbsolutePath());
 +                    }
 +                }
 +            }
 +
-+            LOGGER.info("End of change summary for regionfile " + this.regionFile.toAbsolutePath());
++            LOGGER.info("End of change summary for regionfile " + this.path.toAbsolutePath());
 +
 +            // simply destroy the timestamp header, it's not used
 +
@@ -432,9 +431,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            try {
 +                this.flush();
 +                this.file.force(true); // try to ensure it goes through...
-+                LOGGER.info("Successfully wrote new header to disk for regionfile " + this.regionFile.toAbsolutePath());
++                LOGGER.info("Successfully wrote new header to disk for regionfile " + this.path.toAbsolutePath());
 +            } catch (IOException ex) {
-+                LOGGER.error("Failed to write new header to disk for regionfile " + this.regionFile.toAbsolutePath(), ex);
++                LOGGER.error("Failed to write new header to disk for regionfile " + this.path.toAbsolutePath(), ex);
 +            }
 +        }
 +
@@ -443,9 +442,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    final boolean canRecalcHeader; // final forces compile fail on new constructor
 +    // Paper end - Attempt to recalculate regionfile header if it is corrupt
-+
      // Paper start - Cache chunk status
-     private final net.minecraft.world.level.chunk.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.ChunkStatus[32 * 32];
+     private final net.minecraft.world.level.chunk.status.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.status.ChunkStatus[32 * 32];
  
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
      public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
@@ -464,8 +462,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.canRecalcHeader = canRecalcHeader;
 +        // Paper end - add can recalc flag
          this.header = ByteBuffer.allocateDirect(8192);
-         this.regionFile = file; // Paper
          initOversizedState(); // Paper
+         this.usedSectors = new RegionBitmap();
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
                      RegionFile.LOGGER.warn("Region file {} has truncated header: {}", path, i);
                  }
@@ -513,12 +511,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        // Paper start - recalculate header on header corruption
 +                        if (offset < 2 || sectorLength <= 0 || ((long)offset * 4096L) > regionFileSize) {
 +                            if (canRecalcHeader) {
-+                                LOGGER.error("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() + "! Recalculating header...");
++                                LOGGER.error("Detected invalid header for regionfile " + this.path.toAbsolutePath() + "! Recalculating header...");
 +                                needsHeaderRecalc = true;
 +                                break;
 +                            } else {
 +                                // location = chunkX | (chunkZ << 5);
-+                                LOGGER.error("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() +
++                                LOGGER.error("Detected invalid header for regionfile " + this.path.toAbsolutePath() +
 +                                        "! Cannot recalculate, removing local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") from header");
 +                                if (!hasBackedUp) {
 +                                    hasBackedUp = true;
@@ -531,11 +529,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        }
 +                        boolean failedToAllocate = !this.usedSectors.tryAllocate(offset, sectorLength);
 +                        if (failedToAllocate) {
-+                            LOGGER.error("Overlapping allocation by local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") in regionfile " + this.regionFile.toAbsolutePath());
++                            LOGGER.error("Overlapping allocation by local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") in regionfile " + this.path.toAbsolutePath());
                          }
 +                        if (failedToAllocate & !canRecalcHeader) {
 +                            // location = chunkX | (chunkZ << 5);
-+                            LOGGER.error("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() +
++                            LOGGER.error("Detected invalid header for regionfile " + this.path.toAbsolutePath() +
 +                                    "! Cannot recalculate, removing local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") from header");
 +                            if (!hasBackedUp) {
 +                                hasBackedUp = true;
@@ -552,7 +550,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper start - recalculate header on header corruption
 +                // we move the recalc here so comparison to old header is correct when logging to console
 +                if (needsHeaderRecalc) { // true if header gave us overlapping allocations or had other issues
-+                    LOGGER.error("Recalculating regionfile " + this.regionFile.toAbsolutePath() + ", header gave erroneous offsets & locations");
++                    LOGGER.error("Recalculating regionfile " + this.path.toAbsolutePath() + ", header gave erroneous offsets & locations");
 +                    this.recalculateHeader();
 +                }
 +                // Paper end
