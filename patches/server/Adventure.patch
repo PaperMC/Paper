@@ -6,7 +6,7 @@ Subject: [PATCH] Adventure
 == AT ==
 public net.minecraft.network.chat.HoverEvent$ItemStackInfo item
 public net.minecraft.network.chat.HoverEvent$ItemStackInfo count
-public net.minecraft.network.chat.HoverEvent$ItemStackInfo tag
+public net.minecraft.network.chat.HoverEvent$ItemStackInfo components
 public net.minecraft.network.chat.contents.TranslatableContents filterAllowedArguments(Ljava/lang/Object;)Lcom/mojang/serialization/DataResult;
 
 Co-authored-by: zml <zml@stellardrift.ca>
@@ -28,27 +28,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.serialization.Codec;
 +import com.mojang.serialization.DataResult;
 +import com.mojang.serialization.DynamicOps;
-+import com.mojang.serialization.Encoder;
 +import com.mojang.serialization.JsonOps;
 +import com.mojang.serialization.MapCodec;
 +import com.mojang.serialization.codecs.RecordCodecBuilder;
-+import io.netty.buffer.ByteBuf;
-+import io.netty.handler.codec.DecoderException;
-+import io.netty.handler.codec.EncoderException;
 +import java.io.IOException;
 +import java.util.Collections;
 +import java.util.List;
++import java.util.Map;
 +import java.util.Optional;
 +import java.util.UUID;
-+import java.util.function.BiFunction;
 +import java.util.function.Consumer;
 +import java.util.function.Function;
 +import java.util.function.Predicate;
 +import net.kyori.adventure.key.Key;
-+import net.kyori.adventure.nbt.api.BinaryTagHolder;
 +import net.kyori.adventure.text.BlockNBTComponent;
 +import net.kyori.adventure.text.Component;
-+import net.kyori.adventure.text.ComponentLike;
 +import net.kyori.adventure.text.EntityNBTComponent;
 +import net.kyori.adventure.text.KeybindComponent;
 +import net.kyori.adventure.text.NBTComponent;
@@ -60,17 +54,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.TranslatableComponent;
 +import net.kyori.adventure.text.TranslationArgument;
 +import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.event.DataComponentValue;
 +import net.kyori.adventure.text.event.HoverEvent;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.format.Style;
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.format.TextDecoration;
-+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 +import net.minecraft.core.UUIDUtil;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.nbt.NbtAccounter;
 +import net.minecraft.nbt.NbtOps;
 +import net.minecraft.nbt.Tag;
 +import net.minecraft.nbt.TagParser;
@@ -86,19 +79,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.util.StringRepresentable;
 +import net.minecraft.world.item.Item;
 +import net.minecraft.world.item.ItemStack;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.intellij.lang.annotations.Subst;
 +
++import static com.mojang.serialization.Codec.recursive;
 +import static com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec;
 +import static java.util.function.Function.identity;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.TranslationArgument.bool;
 +import static net.kyori.adventure.text.TranslationArgument.component;
 +import static net.kyori.adventure.text.TranslationArgument.numeric;
-+import static com.mojang.serialization.Codec.recursive;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class AdventureCodecs {
@@ -152,16 +144,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static Codec<HoverEvent.ShowItem> showItemCodec(final Codec<Component> componentCodec) {
 +        return net.minecraft.network.chat.HoverEvent.ItemStackInfo.CODEC.xmap(isi -> {
 +            @Subst("key") final String typeKey = isi.item.unwrapKey().orElseThrow().toString();
-+            return HoverEvent.ShowItem.showItem(Key.key(typeKey), isi.count, PaperAdventure.dataComponents(isi.getItemStack()));
++            return HoverEvent.ShowItem.showItem(Key.key(typeKey), isi.count, PaperAdventure.asAdventure(isi.getItemStack().getComponentsPatch()));
 +        }, si -> {
 +            final Item itemType = BuiltInRegistries.ITEM.get(PaperAdventure.asVanilla(si.item()));
-+            final ItemStack stack;
-+            try {
-+                final @Nullable CompoundTag tag = si.nbt() != null ? si.nbt().get(PaperAdventure.NBT_CODEC) : null;
-+                stack = new ItemStack(BuiltInRegistries.ITEM.wrapAsHolder(itemType), si.count(), Optional.ofNullable(tag));
-+            } catch (final IOException e) {
-+                throw new RuntimeException(e);
-+            }
++            final Map<Key, DataComponentValue> dataComponentsMap = si.dataComponents();
++            final ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.wrapAsHolder(itemType), si.count(), PaperAdventure.asVanilla(dataComponentsMap));
 +            return new net.minecraft.network.chat.HoverEvent.ItemStackInfo(stack);
 +        });
 +    }
@@ -190,8 +177,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            final DynamicOps<Tag> dynamicOps = ops != null ? ops.withParent(NbtOps.INSTANCE) : NbtOps.INSTANCE;
 +            final DataResult<ItemStack> stackResult = ItemStack.CODEC.parse(dynamicOps, tag);
 +            return stackResult.map(stack -> {
-+                final CraftItemStack craft = CraftItemStack.asCraftMirror(stack);
-+                return HoverEvent.ShowItem.showItem(craft.getType().key(), stack.getCount(), PaperAdventure.dataComponents(stack));
++                @Subst("key:value") final String location = stack.getItemHolder().unwrapKey().orElseThrow().location().toString();
++                return HoverEvent.ShowItem.showItem(Key.key(location), stack.getCount(), PaperAdventure.asAdventure(stack.getComponentsPatch()));
 +            });
 +        } catch (final CommandSyntaxException ex) {
 +            return DataResult.error(() -> "Failed to parse item tag: " + ex.getMessage());
@@ -1166,10 +1153,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.adventure;
 +
++import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.serialization.JavaOps;
 +import io.netty.util.AttributeKey;
 +import java.io.IOException;
 +import java.util.ArrayList;
++import java.util.Collections;
 +import java.util.HashMap;
 +import java.util.List;
 +import java.util.Locale;
@@ -1189,6 +1179,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.TranslatableComponent;
 +import net.kyori.adventure.text.TranslationArgument;
 +import net.kyori.adventure.text.event.DataComponentValue;
++import net.kyori.adventure.text.event.DataComponentValueConverterRegistry;
 +import net.kyori.adventure.text.flattener.ComponentFlattener;
 +import net.kyori.adventure.text.format.Style;
 +import net.kyori.adventure.text.format.TextColor;
@@ -1201,16 +1192,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.translation.Translator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.ChatFormatting;
-+import net.minecraft.Util;
 +import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.core.Holder;
-+import net.minecraft.core.component.TypedDataComponent;
++import net.minecraft.core.component.DataComponentPatch;
++import net.minecraft.core.component.DataComponentType;
++import net.minecraft.core.component.DataComponents;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.locale.Language;
 +import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.nbt.ListTag;
 +import net.minecraft.nbt.NbtOps;
-+import net.minecraft.nbt.StringTag;
 +import net.minecraft.nbt.Tag;
 +import net.minecraft.nbt.TagParser;
 +import net.minecraft.network.chat.ComponentUtils;
@@ -1218,17 +1208,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 +import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 +import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.network.Filterable;
 +import net.minecraft.sounds.SoundEvent;
 +import net.minecraft.sounds.SoundSource;
 +import net.minecraft.world.BossEvent;
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.item.ItemStack;
-+import net.minecraft.world.item.WrittenBookItem;
++import net.minecraft.world.item.component.WrittenBookContent;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 +import org.bukkit.craftbukkit.entity.CraftEntity;
++import org.intellij.lang.annotations.Subst;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
++
++import static java.util.Objects.requireNonNull;
 +
 +public final class PaperAdventure {
 +    private static final Pattern LOCALIZATION_PATTERN = Pattern.compile("%(?:(\\d+)\\$)?s");
@@ -1284,18 +1278,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale"); // init after FLATTENER because classloading triggered here might create a logger
 +    @Deprecated
 +    public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
-+    static final Codec<CompoundTag, String, IOException, IOException> NBT_CODEC = new Codec<CompoundTag, String, IOException, IOException>() {
++    public static final Codec<Tag, String, CommandSyntaxException, RuntimeException> NBT_CODEC = new Codec<>() {
 +        @Override
-+        public @NotNull CompoundTag decode(final @NotNull String encoded) throws IOException {
-+            try {
-+                return TagParser.parseTag(encoded);
-+            } catch (final CommandSyntaxException e) {
-+                throw new IOException(e);
-+            }
++        public @NotNull Tag decode(final @NotNull String encoded) throws CommandSyntaxException {
++            return new TagParser(new StringReader(encoded)).readValue();
 +        }
 +
 +        @Override
-+        public @NotNull String encode(final @NotNull CompoundTag decoded) {
++        public @NotNull String encode(final @NotNull Tag decoded) {
 +            return decoded.toString();
 +        }
 +    };
@@ -1473,17 +1463,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static ItemStack asItemStack(final Book book, final Locale locale) {
 +        final ItemStack item = new ItemStack(net.minecraft.world.item.Items.WRITTEN_BOOK, 1);
-+        final CompoundTag tag = item.getOrCreateTag();
-+        tag.putString(WrittenBookItem.TAG_TITLE, validateField(asPlain(book.title(), locale), WrittenBookItem.TITLE_MAX_LENGTH, WrittenBookItem.TAG_TITLE));
-+        tag.putString(WrittenBookItem.TAG_AUTHOR, asPlain(book.author(), locale));
-+        final ListTag pages = new ListTag();
-+        if (book.pages().size() > WrittenBookItem.MAX_PAGES) {
-+            throw new IllegalArgumentException("Book provided had " + book.pages().size() + " pages, but is only allowed a maximum of " + WrittenBookItem.MAX_PAGES);
-+        }
-+        for (final Component page : book.pages()) {
-+            pages.add(StringTag.valueOf(validateField(asJsonString(page, locale), WrittenBookItem.PAGE_LENGTH, "page")));
-+        }
-+        tag.put(WrittenBookItem.TAG_PAGES, pages);
++        item.set(DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(
++            Filterable.passThrough(validateField(asPlain(book.title(), locale), WrittenBookContent.TITLE_MAX_LENGTH, "title")),
++            asPlain(book.author(), locale),
++            0,
++            book.pages().stream().map(c -> Filterable.passThrough(PaperAdventure.asVanilla(c))).toList(), // TODO should we validate legnth?
++            false
++        ));
 +        return item;
 +    }
 +
@@ -1547,34 +1533,57 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    // NBT
 +
-+    public static Map<Key, ? extends DataComponentValue> dataComponents(
-+        final ItemStack stack
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    public static Map<Key, ? extends DataComponentValue> asAdventure(
++        final DataComponentPatch patch
 +    ) {
++        if (patch.isEmpty()) {
++            return Collections.emptyMap();
++        }
 +        final Map<Key, DataComponentValue> map = new HashMap<>();
-+        for (final TypedDataComponent<?> component : stack.getComponents()) {
-+            final ResourceLocation key = BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(component.type());
-+            final DataComponentValue value = new DataComponentValue.TagSerializable() {
-+                @Override
-+                public @NotNull BinaryTagHolder asBinaryTag() {
-+                    return BinaryTagHolder.binaryTagHolder(
-+                        component.encodeValue(NbtOps.INSTANCE).map(Tag::getAsString).getOrThrow()
-+                    );
-+                }
-+            };
-+            map.put(Key.key(key.toString()), value);
++        for (final Map.Entry<DataComponentType<?>, Optional<?>> entry : patch.entrySet()) {
++            if (entry.getKey().isTransient()) continue;
++            @Subst("key:value") final String typeKey = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(entry.getKey())).toString();
++            if (entry.getValue().isEmpty()) {
++                   map.put(Key.key(typeKey), DataComponentValue.removed());
++            } else {
++                map.put(Key.key(typeKey), new DataComponentValueImpl(entry.getKey().codec(), entry.getValue().get()));
++            }
 +        }
 +        return map;
++    }
++
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    public static DataComponentPatch asVanilla(final Map<? extends Key, ? extends DataComponentValue> map) {
++        if (map.isEmpty()) {
++            return DataComponentPatch.EMPTY;
++        }
++        final DataComponentPatch.Builder builder = DataComponentPatch.builder();
++        map.forEach((key, dataComponentValue) -> {
++            final DataComponentType<?> type = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.get(asVanilla(key)));
++            if (dataComponentValue instanceof DataComponentValue.Removed) {
++                builder.remove(type);
++                return;
++            }
++            final DataComponentValueImpl<?> converted = DataComponentValueConverterRegistry.convert(DataComponentValueImpl.class, key, dataComponentValue);
++            builder.set((DataComponentType) type, (Object) converted.value());
++        });
++        return builder.build();
++    }
++
++    public record DataComponentValueImpl<T>(com.mojang.serialization.Codec<T> codec, T value) implements DataComponentValue.TagSerializable {
++
++        @Override
++        public @NotNull BinaryTagHolder asBinaryTag() {
++            return BinaryTagHolder.encode(this.codec.encodeStart(NbtOps.INSTANCE, this.value).getOrThrow(IllegalArgumentException::new), NBT_CODEC);
++        }
 +    }
 +
 +    public static @Nullable BinaryTagHolder asBinaryTagHolder(final @Nullable CompoundTag tag) {
 +        if (tag == null) {
 +            return null;
 +        }
-+        try {
-+            return BinaryTagHolder.encode(tag, NBT_CODEC);
-+        } catch (final IOException e) {
-+            return null;
-+        }
++        return BinaryTagHolder.encode(tag, NBT_CODEC);
 +    }
 +
 +    // Colors
@@ -1593,20 +1602,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    // Style
 +
-+    public static net.minecraft.network.chat.Style asVanilla(Style style) {
-+        Object encoded = Util.getOrThrow(AdventureCodecs.STYLE_MAP_CODEC.codec()
-+            .encodeStart(net.minecraft.util.JavaOps.INSTANCE, style), IllegalStateException::new);
++    public static net.minecraft.network.chat.Style asVanilla(final Style style) {
++        final Object encoded = AdventureCodecs.STYLE_MAP_CODEC.codec()
++            .parse(JavaOps.INSTANCE, style).getOrThrow(IllegalStateException::new);
 +
-+        return Util.getOrThrow(net.minecraft.network.chat.Style.Serializer.CODEC
-+            .parse(net.minecraft.util.JavaOps.INSTANCE, encoded), IllegalStateException::new);
++        return net.minecraft.network.chat.Style.Serializer.CODEC
++            .parse(JavaOps.INSTANCE, encoded).getOrThrow(IllegalStateException::new);
 +    }
 +
-+    public static Style asAdventure(net.minecraft.network.chat.Style style) {
-+        Object encoded = Util.getOrThrow(net.minecraft.network.chat.Style.Serializer.CODEC
-+            .encodeStart(net.minecraft.util.JavaOps.INSTANCE, style), IllegalStateException::new);
++    public static Style asAdventure(final net.minecraft.network.chat.Style style) {
++        final Object encoded = net.minecraft.network.chat.Style.Serializer.CODEC
++            .parse(JavaOps.INSTANCE, style).getOrThrow(IllegalStateException::new);
 +
-+        return Util.getOrThrow(AdventureCodecs.STYLE_MAP_CODEC.codec()
-+            .parse(net.minecraft.util.JavaOps.INSTANCE, encoded), IllegalStateException::new);
++        return AdventureCodecs.STYLE_MAP_CODEC.codec()
++            .parse(JavaOps.INSTANCE, encoded).getOrThrow(IllegalStateException::new);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
@@ -1800,6 +1809,88 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private String serialize(final Component message) {
 +        return PaperAdventure.asPlain(message, null);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/adventure/providers/DataComponentValueConverterProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/DataComponentValueConverterProviderImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/providers/DataComponentValueConverterProviderImpl.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.adventure.providers;
++
++import com.google.gson.JsonElement;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.serialization.JsonOps;
++import io.papermc.paper.adventure.PaperAdventure;
++import java.util.List;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.nbt.api.BinaryTagHolder;
++import net.kyori.adventure.text.event.DataComponentValue;
++import net.kyori.adventure.text.event.DataComponentValueConverterRegistry;
++import net.kyori.adventure.text.serializer.gson.GsonDataComponentValue;
++import net.minecraft.core.component.DataComponentType;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.Tag;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.nbt.api.BinaryTagHolder.binaryTagHolder;
++import static net.kyori.adventure.text.serializer.gson.GsonDataComponentValue.gsonDatacomponentValue;
++
++@DefaultQualifier(NonNull.class)
++public class DataComponentValueConverterProviderImpl implements DataComponentValueConverterRegistry.Provider {
++
++    static final Key ID = Key.key("adventure", "platform/paper");
++
++    @Override
++    public Key id() {
++        return ID;
++    }
++
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    @Override
++    public Iterable<DataComponentValueConverterRegistry.Conversion<?, ?>> conversions() {
++        return List.of(
++            DataComponentValueConverterRegistry.Conversion.convert(
++                PaperAdventure.DataComponentValueImpl.class,
++                GsonDataComponentValue.class,
++                (key, dataComponentValue) -> gsonDatacomponentValue((JsonElement) dataComponentValue.codec().encodeStart(JsonOps.INSTANCE, dataComponentValue.value()).getOrThrow())
++            ),
++            DataComponentValueConverterRegistry.Conversion.convert(
++                GsonDataComponentValue.class,
++                PaperAdventure.DataComponentValueImpl.class,
++                (key, dataComponentValue) -> {
++                    final @Nullable DataComponentType<?> type = BuiltInRegistries.DATA_COMPONENT_TYPE.get(PaperAdventure.asVanilla(key));
++                    if (type == null) {
++                        throw new IllegalArgumentException("Unknown data component type: " + key);
++                    }
++                    return new PaperAdventure.DataComponentValueImpl(type.codecOrThrow(), type.codecOrThrow().parse(JsonOps.INSTANCE, dataComponentValue.element()).getOrThrow(IllegalArgumentException::new));
++                }
++            ),
++            DataComponentValueConverterRegistry.Conversion.convert(
++                PaperAdventure.DataComponentValueImpl.class,
++                DataComponentValue.TagSerializable.class,
++                (key, dataComponentValue) -> BinaryTagHolder.encode((Tag) dataComponentValue.codec().encodeStart(NbtOps.INSTANCE, dataComponentValue.value()).getOrThrow(), PaperAdventure.NBT_CODEC)
++            ),
++            DataComponentValueConverterRegistry.Conversion.convert(
++                DataComponentValue.TagSerializable.class,
++                PaperAdventure.DataComponentValueImpl.class,
++                (key, tagSerializable) -> {
++                    final @Nullable DataComponentType<?> type = BuiltInRegistries.DATA_COMPONENT_TYPE.get(PaperAdventure.asVanilla(key));
++                    if (type == null) {
++                        throw new IllegalArgumentException("Unknown data component type: " + key);
++                    }
++                    try {
++                        return new PaperAdventure.DataComponentValueImpl(type.codecOrThrow(), type.codecOrThrow().parse(NbtOps.INSTANCE, tagSerializable.asBinaryTag().get(PaperAdventure.NBT_CODEC)).getOrThrow(IllegalArgumentException::new));
++                    } catch (final CommandSyntaxException e) {
++                        throw new IllegalArgumentException(e);
++                    }
++                }
++            )
++        );
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/providers/GsonComponentSerializerProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/GsonComponentSerializerProviderImpl.java
@@ -2182,28 +2273,36 @@ diff --git a/src/main/java/net/minecraft/network/chat/ComponentSerialization.jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentSerialization.java
-@@ -0,0 +0,0 @@ public class ComponentSerialization {
+@@ -0,0 +0,0 @@ import net.minecraft.util.StringRepresentable;
+ 
+ public class ComponentSerialization {
      public static final Codec<Component> CODEC = Codec.recursive("Component", ComponentSerialization::createCodec);
-     public static final StreamCodec<RegistryFriendlyByteBuf, Component> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
+-    public static final StreamCodec<RegistryFriendlyByteBuf, Component> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
++    public static final StreamCodec<RegistryFriendlyByteBuf, Component> STREAM_CODEC = createTranslationAware(() -> net.minecraft.nbt.NbtAccounter.create(net.minecraft.network.FriendlyByteBuf.DEFAULT_NBT_QUOTA)); // Paper - adventure
      public static final StreamCodec<RegistryFriendlyByteBuf, Optional<Component>> OPTIONAL_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs::optional);
 -    public static final StreamCodec<RegistryFriendlyByteBuf, Component> TRUSTED_STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistriesTrusted(CODEC);
 +    // Paper start - adventure; use locale from bytebuf for translation
-+    public static final StreamCodec<RegistryFriendlyByteBuf, Component> TRUSTED_STREAM_CODEC = new StreamCodec<>() {
-+        final StreamCodec<ByteBuf, net.minecraft.nbt.Tag> streamCodec = ByteBufCodecs.tagCodec(net.minecraft.nbt.NbtAccounter::unlimitedHeap);
-+        @Override
-+        public Component decode(RegistryFriendlyByteBuf registryFriendlyByteBuf) {
-+            net.minecraft.nbt.Tag tag = this.streamCodec.decode(registryFriendlyByteBuf);
-+            RegistryOps<net.minecraft.nbt.Tag> registryOps = registryFriendlyByteBuf.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
-+            return CODEC.parse(registryOps, tag).getOrThrow(error -> new io.netty.handler.codec.DecoderException("Failed to decode: " + error + " " + tag));
-+        }
++    public static final ThreadLocal<Boolean> DONT_RENDER_TRANSLATABLES = ThreadLocal.withInitial(() -> false);
++    public static final StreamCodec<RegistryFriendlyByteBuf, Component> TRUSTED_STREAM_CODEC = createTranslationAware(net.minecraft.nbt.NbtAccounter::unlimitedHeap);
++    private static StreamCodec<RegistryFriendlyByteBuf, Component> createTranslationAware(final Supplier<net.minecraft.nbt.NbtAccounter> sizeTracker) {
++        return new StreamCodec<>() {
++            final StreamCodec<ByteBuf, net.minecraft.nbt.Tag> streamCodec = ByteBufCodecs.tagCodec(sizeTracker);
++            @Override
++            public Component decode(RegistryFriendlyByteBuf registryFriendlyByteBuf) {
++                net.minecraft.nbt.Tag tag = this.streamCodec.decode(registryFriendlyByteBuf);
++                RegistryOps<net.minecraft.nbt.Tag> registryOps = registryFriendlyByteBuf.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
++                return CODEC.parse(registryOps, tag).getOrThrow(error -> new io.netty.handler.codec.DecoderException("Failed to decode: " + error + " " + tag));
++            }
 +
-+        @Override
-+        public void encode(RegistryFriendlyByteBuf registryFriendlyByteBuf, Component object) {
-+            RegistryOps<net.minecraft.nbt.Tag> registryOps = registryFriendlyByteBuf.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
-+            net.minecraft.nbt.Tag tag = ComponentSerialization.localizedCodec(registryFriendlyByteBuf.adventure$locale).encodeStart(registryOps, object).getOrThrow(error -> new io.netty.handler.codec.EncoderException("Failed to encode: " + error + " " + object));
-+            this.streamCodec.encode(registryFriendlyByteBuf, tag);
-+        }
-+    };
++            @Override
++            public void encode(RegistryFriendlyByteBuf registryFriendlyByteBuf, Component object) {
++                RegistryOps<net.minecraft.nbt.Tag> registryOps = registryFriendlyByteBuf.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
++                net.minecraft.nbt.Tag tag = (DONT_RENDER_TRANSLATABLES.get() ? CODEC : ComponentSerialization.localizedCodec(registryFriendlyByteBuf.adventure$locale))
++                    .encodeStart(registryOps, object).getOrThrow(error -> new io.netty.handler.codec.EncoderException("Failed to encode: " + error + " " + object));
++                this.streamCodec.encode(registryFriendlyByteBuf, tag);
++            }
++        };
++    }
 +    // Paper end - adventure; use locale from bytebuf for translation
      public static final StreamCodec<RegistryFriendlyByteBuf, Optional<Component>> TRUSTED_OPTIONAL_STREAM_CODEC = TRUSTED_STREAM_CODEC.apply(
          ByteBufCodecs::optional
@@ -3111,6 +3210,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.createWorldFog;
      }
  
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
+                 return ItemStack.EMPTY;
+             } else {
+                 Holder<Item> holder = (Holder) ITEM_STREAM_CODEC.decode(registryfriendlybytebuf); // CraftBukkit - decompile error
+-                DataComponentPatch datacomponentpatch = (DataComponentPatch) DataComponentPatch.STREAM_CODEC.decode(registryfriendlybytebuf);
++                // Paper start - adventure; conditionally render translatable components
++                DataComponentPatch datacomponentpatch;
++                boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
++                try {
++                net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
++                datacomponentpatch = (DataComponentPatch) DataComponentPatch.STREAM_CODEC.decode(registryfriendlybytebuf);
++                } finally {
++                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(prev);
++                }
++                // Paper end - adventure; conditionally render translatable components
+ 
+                 // CraftBukkit start
+                 ItemStack itemstack = new ItemStack(holder, i, datacomponentpatch);
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
@@ -4645,7 +4766,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - Adventure
 +    @Override
 +    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
-+        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(item.getType().getKey(), item.getAmount(), io.papermc.paper.adventure.PaperAdventure.dataComponents(CraftItemStack.asNMSCopy(item)))));
++        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(item.getType().getKey(), item.getAmount(), io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(item)))));
 +    }
 +
 +    @Override
@@ -5416,6 +5537,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/resources/META-INF/services/net.kyori.adventure.text.event.ClickCallback$Provider
 @@ -0,0 +1 @@
 +io.papermc.paper.adventure.providers.ClickCallbackProviderImpl
+diff --git a/src/main/resources/META-INF/services/net.kyori.adventure.text.event.DataComponentValueConverterRegistry$Provider b/src/main/resources/META-INF/services/net.kyori.adventure.text.event.DataComponentValueConverterRegistry$Provider
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/resources/META-INF/services/net.kyori.adventure.text.event.DataComponentValueConverterRegistry$Provider
+@@ -0,0 +1 @@
++io.papermc.paper.adventure.providers.DataComponentValueConverterProviderImpl
 diff --git a/src/main/resources/META-INF/services/net.kyori.adventure.text.logger.slf4j.ComponentLoggerProvider b/src/main/resources/META-INF/services/net.kyori.adventure.text.logger.slf4j.ComponentLoggerProvider
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -5483,6 +5611,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.serialization.Codec;
 +import com.mojang.serialization.DataResult;
 +import com.mojang.serialization.DynamicOps;
++import com.mojang.serialization.JavaOps;
 +import com.mojang.serialization.JsonOps;
 +import io.papermc.paper.util.MethodParameterSource;
 +import java.io.IOException;
@@ -5494,7 +5623,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.UUID;
 +import java.util.function.Function;
 +import net.kyori.adventure.key.Key;
-+import net.kyori.adventure.nbt.api.BinaryTagHolder;
 +import net.kyori.adventure.text.BlockNBTComponent;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.event.ClickEvent;
@@ -5503,6 +5631,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.format.Style;
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.format.TextDecoration;
++import net.minecraft.core.component.DataComponents;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.ByteTag;
 +import net.minecraft.nbt.CompoundTag;
@@ -5512,7 +5641,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.nbt.Tag;
 +import net.minecraft.network.chat.ComponentSerialization;
 +import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.util.JavaOps;
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.Items;
 +import org.apache.commons.lang3.RandomStringUtils;
@@ -5529,7 +5657,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import static io.papermc.paper.adventure.AdventureCodecs.KEY_CODEC;
 +import static io.papermc.paper.adventure.AdventureCodecs.STYLE_MAP_CODEC;
 +import static io.papermc.paper.adventure.AdventureCodecs.TEXT_COLOR_CODEC;
-+import static io.papermc.paper.adventure.PaperAdventure.NBT_CODEC;
 +import static java.util.Objects.requireNonNull;
 +import static net.kyori.adventure.key.Key.key;
 +import static net.kyori.adventure.text.Component.blockNBT;
@@ -5540,7 +5667,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import static net.kyori.adventure.text.Component.storageNBT;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.Component.translatable;
-+import static net.kyori.adventure.text.TranslationArgument.bool;
 +import static net.kyori.adventure.text.TranslationArgument.numeric;
 +import static net.kyori.adventure.text.event.ClickEvent.openUrl;
 +import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
@@ -5606,8 +5732,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Test
 +    void testShowItemHoverEvent() throws IOException {
 +        final ItemStack stack = new ItemStack(Items.PUMPKIN, 3);
-+        stack.setHoverName(net.minecraft.network.chat.Component.literal("NAME"));
-+        final HoverEvent<HoverEvent.ShowItem> hoverEvent = HoverEvent.showItem(key("minecraft:pumpkin"), 3, BinaryTagHolder.encode(requireNonNull(stack.getTag()), NBT_CODEC));
++        stack.set(DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("NAME"));
++        final HoverEvent<HoverEvent.ShowItem> hoverEvent = HoverEvent.showItem(key("minecraft:pumpkin"), 3, PaperAdventure.asAdventure(stack.getComponentsPatch()));
 +        final Tag result = HOVER_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, hoverEvent).result().orElseThrow();
 +        final DataResult<Pair<net.minecraft.network.chat.HoverEvent, Tag>> dataResult = net.minecraft.network.chat.HoverEvent.CODEC.decode(NbtOps.INSTANCE, result);
 +        assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
@@ -5616,8 +5742,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final net.minecraft.network.chat.HoverEvent.ItemStackInfo value = nms.getValue(net.minecraft.network.chat.HoverEvent.Action.SHOW_ITEM);
 +        assertNotNull(value);
 +        assertEquals(hoverEvent.value().count(), value.count);
-+        assertEquals(hoverEvent.value().item().asString(), BuiltInRegistries.ITEM.getKey(value.item).toString());
-+        assertEquals(stack.getTag(), value.tag.orElse(null));
++        assertEquals(hoverEvent.value().item().asString(), value.item.unwrapKey().orElseThrow().location().toString());
++        assertEquals(stack.getComponentsPatch(), value.components);
 +    }
 +
 +    @Test
@@ -5731,9 +5857,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    static <R> R require(final DataResult<R> result, final Function<String, String> errorMessage) {
-+        return result.get().map(Function.identity(), r -> {
-+            throw new RuntimeException(errorMessage.apply(r.message()));
-+        });
++        return switch (result) {
++            case final DataResult.Error<R> error -> throw new RuntimeException(errorMessage.apply(error.message()));
++            case final DataResult.Success<R> success -> success.value();
++        };
 +    }
 +
 +    static List<Tag> invalidData() {
