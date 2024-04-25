@@ -9,7 +9,7 @@ public net.minecraft.world.item.enchantment.Enchantment slots
 Co-authored-by: Luis <luisc99@icloud.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
-index bb8a3e670924ebcce48669c5dce57e2df03fad77..5b6490786a7670a836fbf0a99545f77ae04771a6 100644
+index bb8a3e670924ebcce48669c5dce57e2df03fad77..58a24e149ae9500c9db90693ac9eb6446794535c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
 +++ b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
 @@ -71,7 +71,7 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
@@ -21,7 +21,7 @@ index bb8a3e670924ebcce48669c5dce57e2df03fad77..5b6490786a7670a836fbf0a99545f77a
      }
  
      @Override
-@@ -150,6 +150,55 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
+@@ -150,6 +150,77 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
      public String translationKey() {
          return this.handle.getDescriptionId();
      }
@@ -53,7 +53,29 @@ index bb8a3e670924ebcce48669c5dce57e2df03fad77..5b6490786a7670a836fbf0a99545f77a
 +
 +    @Override
 +    public float getDamageIncrease(int level, org.bukkit.entity.EntityCategory entityCategory) {
-+        return handle.getDamageBonus(level, org.bukkit.craftbukkit.entity.CraftLivingEntity.fromBukkitEntityCategory(entityCategory));
++        return handle.getDamageBonus(level, guessEntityTypeFromEnchantmentCategory(entityCategory));
++    }
++
++    @Override
++    public float getDamageIncrease(int level, org.bukkit.entity.EntityType entityType) {
++        return handle.getDamageBonus(level, org.bukkit.craftbukkit.util.CraftMagicNumbers.getEntityTypes(entityType));
++    }
++
++    @Deprecated(forRemoval = true)
++    private net.minecraft.world.entity.EntityType<?> guessEntityTypeFromEnchantmentCategory(
++        final org.bukkit.entity.EntityCategory entityCategory
++    ) {
++        final net.minecraft.tags.TagKey<net.minecraft.world.entity.EntityType<?>> tag = switch (entityCategory) {
++            case ARTHROPOD -> net.minecraft.tags.EntityTypeTags.SENSITIVE_TO_BANE_OF_ARTHROPODS;
++            case UNDEAD -> net.minecraft.tags.EntityTypeTags.SENSITIVE_TO_SMITE;
++            case WATER -> net.minecraft.tags.EntityTypeTags.SENSITIVE_TO_IMPALING;
++            default -> null;
++        };
++        if (tag == null) return null;
++
++        return net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tag)
++            .map(e -> e.size() > 0 ? e.get(0).value() : null)
++            .orElse(null);
 +    }
 +
 +    @Override
@@ -77,33 +99,6 @@ index bb8a3e670924ebcce48669c5dce57e2df03fad77..5b6490786a7670a836fbf0a99545f77a
      // Paper end
  
      @Override
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 2701e53086f4be07c341cd1e4fcd7a351e77c486..ab4008a94ba622cbe423b0ce1d45333334850494 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -1010,4 +1010,22 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
-         throw new UnsupportedOperationException("Cannot set the hurt direction on a non player");
-     }
-     // Paper end - hurt direction API
-+
-+    // Paper start - more enchant API
-+    public static MobType fromBukkitEntityCategory(EntityCategory entityCategory) {
-+        switch (entityCategory) {
-+            case NONE:
-+                return MobType.UNDEFINED;
-+            case UNDEAD:
-+                return MobType.UNDEAD;
-+            case ARTHROPOD:
-+                return MobType.ARTHROPOD;
-+            case ILLAGER:
-+                return MobType.ILLAGER;
-+            case WATER:
-+                return MobType.WATER;
-+        }
-+        throw new IllegalArgumentException(entityCategory + " is an unrecognized entity category");
-+    }
-+    // Paper end - more enchant API
- }
 diff --git a/src/test/java/io/papermc/paper/enchantments/EnchantmentRarityTest.java b/src/test/java/io/papermc/paper/enchantments/EnchantmentRarityTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..03a53ceb0dc3aaff7b5d10ec57f74d71be90ec3a
