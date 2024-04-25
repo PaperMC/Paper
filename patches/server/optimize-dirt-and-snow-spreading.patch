@@ -40,16 +40,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
-         if (this instanceof GrassBlock && world.paperConfig().tickRates.grassSpread != 1 && (world.paperConfig().tickRates.grassSpread < 1 || (MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.grassSpread != 0)) { return; } // Paper - Configurable random tick rates for blocks
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if (this instanceof GrassBlock && world.paperConfig().tickRates.grassSpread != 1 && (world.paperConfig().tickRates.grassSpread < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.grassSpread != 0)) { return; } // Paper - Configurable random tick rates for blocks
 -        if (!SpreadingSnowyDirtBlock.canBeGrass(state, world, pos)) {
 +        // Paper start - Perf: optimize dirt and snow spreading
-+        net.minecraft.world.level.chunk.ChunkAccess cachedBlockChunk = world.getChunkIfLoaded(pos);
++        final net.minecraft.world.level.chunk.ChunkAccess cachedBlockChunk = world.getChunkIfLoaded(pos);
 +        if (cachedBlockChunk == null) { // Is this needed?
 +            return;
 +        }
 +        if (!SpreadingSnowyDirtBlock.canBeGrass(cachedBlockChunk, state, world, pos)) {
-+        // Paper end - Perf: optimize dirt and snow spreading
++            // Paper end - Perf: optimize dirt and snow spreading
              // CraftBukkit start
              if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
                  return;

@@ -2176,8 +2176,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - optimise collisions
  
-     private Direction(int id, int idOpposite, int idHorizontal, String name, Direction.AxisDirection direction, Direction.Axis axis, Vec3i vector) {
-         this.data3d = id;
+     private Direction(
+         final int id,
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
@@ -2217,7 +2217,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  float f = this.getBlockSpeedFactor();
  
                  this.setDeltaMovement(this.getDeltaMovement().multiply((double) f, 1.0D, (double) f));
@@ -2265,7 +2265,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      if (this.remainingFireTicks <= 0) {
                          this.setRemainingFireTicks(-this.getFireImmuneTicks());
                      }
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      private Vec3 collide(Vec3 movement) {
@@ -2364,8 +2364,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static Vec3 collideBoundingBox(@Nullable Entity entity, Vec3 movement, AABB entityBoundingBox, Level world, List<VoxelShape> collisions) {
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
-             float f = this.dimensions.width * 0.8F;
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             float f = this.dimensions.width() * 0.8F;
              AABB axisalignedbb = AABB.ofSize(this.getEyePosition(), (double) f, 1.0E-6D, (double) f);
  
 -            return BlockPos.betweenClosedStream(axisalignedbb).anyMatch((blockposition) -> {
@@ -3028,7 +3028,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return shape.isFullBlock(); // Paper - optimise collisions
      }
  
-     public boolean propagatesSkylightDown(BlockState state, BlockGetter world, BlockPos pos) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {}
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
@@ -3194,7 +3194,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper end - optimise collisions
              });
          }
-         // Paper end
+         // Paper end - unfuck this
 diff --git a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java b/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
@@ -3308,22 +3308,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - optimise collisions
 +        // called with the shape of a VoxelShape, so we can expect the cache to exist
 +        final io.papermc.paper.util.collisions.CachedShapeData cache = voxelSet.getOrCreateCachedShapeData();
- 
--        for (int i = 0; i < bitSetDiscreteVoxelShape.ySize; i++) {
--            for (int j = 0; j < bitSetDiscreteVoxelShape.xSize; j++) {
--                int k = -1;
++
 +        final int sizeX = cache.sizeX();
 +        final int sizeY = cache.sizeY();
 +        final int sizeZ = cache.sizeZ();
- 
--                for (int l = 0; l <= bitSetDiscreteVoxelShape.zSize; l++) {
--                    if (bitSetDiscreteVoxelShape.isFullWide(j, i, l)) {
--                        if (coalesce) {
--                            if (k == -1) {
--                                k = l;
--                            }
--                        } else {
--                            callback.consume(j, i, l, j + 1, i + 1, l + 1);
++
 +        int indexX;
 +        int indexY = 0;
 +        int indexZ;
@@ -3353,10 +3342,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
 +            // same notes about loop order as the above
 +            // this branch is actually important to optimise, as it affects uncached toAabbs() (which affects optimize())
-+
+ 
+-        for (int i = 0; i < bitSetDiscreteVoxelShape.ySize; i++) {
+-            for (int j = 0; j < bitSetDiscreteVoxelShape.xSize; j++) {
+-                int k = -1;
 +            // only clone when we may write to it
 +            bitset = bitset.clone();
-+
+ 
+-                for (int l = 0; l <= bitSetDiscreteVoxelShape.zSize; l++) {
+-                    if (bitSetDiscreteVoxelShape.isFullWide(j, i, l)) {
+-                        if (coalesce) {
+-                            if (k == -1) {
+-                                k = l;
+-                            }
+-                        } else {
+-                            callback.consume(j, i, l, j + 1, i + 1, l + 1);
 +            for (int y = 0; y < sizeY; ++y, indexY += incY) {
 +                indexX = indexY;
 +                for (int x = 0; x < sizeX; ++x, indexX += incX) {
@@ -3365,6 +3365,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                        if (firstSetZ == -1) {
 +                            break;
++                        }
++
++                        int lastSetZ = io.papermc.paper.util.collisions.FlatBitsetUtil.firstClear(bitset, firstSetZ, endIndex);
++                        if (lastSetZ == -1) {
++                            lastSetZ = endIndex;
                          }
 -                    } else if (k != -1) {
 -                        int m = j;
@@ -3375,14 +3380,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                            bitSetDiscreteVoxelShape.clearZStrip(k, l, m + 1, i);
 -                            m++;
 +
-+                        int lastSetZ = io.papermc.paper.util.collisions.FlatBitsetUtil.firstClear(bitset, firstSetZ, endIndex);
-+                        if (lastSetZ == -1) {
-+                            lastSetZ = endIndex;
-                         }
- 
--                        while (bitSetDiscreteVoxelShape.isXZRectangleFull(j, m + 1, k, l, n + 1)) {
--                            for (int o = j; o <= m; o++) {
--                                bitSetDiscreteVoxelShape.clearZStrip(k, l, o, n + 1);
 +                        io.papermc.paper.util.collisions.FlatBitsetUtil.clearRange(bitset, firstSetZ, lastSetZ);
 +
 +                        // try to merge neighbouring on the X axis
@@ -3393,8 +3390,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                            ++endX;
 +                            io.papermc.paper.util.collisions.FlatBitsetUtil.clearRange(bitset, neighbourIdxStart, neighbourIdxEnd);
-+                        }
-+
+                         }
+ 
+-                        while (bitSetDiscreteVoxelShape.isXZRectangleFull(j, m + 1, k, l, n + 1)) {
+-                            for (int o = j; o <= m; o++) {
+-                                bitSetDiscreteVoxelShape.clearZStrip(k, l, o, n + 1);
 +                        // try to merge neighbouring on the Y axis
 +
 +                        int endY; // exclusive

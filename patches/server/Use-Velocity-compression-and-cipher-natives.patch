@@ -9,8 +9,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -0,0 +0,0 @@ dependencies {
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
-     runtimeOnly("com.mysql:mysql-connector-j:8.2.0")
+     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
+     implementation("commons-lang:commons-lang:2.6")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 +    // Paper start - Use Velocity cipher
 +    implementation("com.velocitypowered:velocity-native:3.1.2-SNAPSHOT") {
@@ -109,7 +109,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final int MAXIMUM_COMPRESSED_LENGTH = 2097152;
      public static final int MAXIMUM_UNCOMPRESSED_LENGTH = 8388608;
      private final Inflater inflater;
-+    private final com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper - Use Velocity cipher
++    private com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper - Use Velocity cipher
      private int threshold;
      private boolean validateDecompressed;
  
@@ -170,6 +170,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private void setupInflaterInput(ByteBuf buf) {
          ByteBuffer byteBuffer;
          if (buf.nioBufferCount() > 0) {
+@@ -0,0 +0,0 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+         }
+     }
+ 
+-    public void setThreshold(int compressionThreshold, boolean rejectsBadPackets) {
++    public void setThreshold(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) { // Paper - Use Velocity cipher
+         this.threshold = compressionThreshold;
+         this.validateDecompressed = rejectsBadPackets;
+     }
 diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/CompressionEncoder.java
@@ -207,32 +216,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) {
 +    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception { // Paper - Use Velocity cipher
          int i = byteBuf.readableBytes();
-         if (i < this.threshold) {
-             VarInt.write(byteBuf2, 0);
-             byteBuf2.writeBytes(byteBuf);
-         } else {
-+            if (this.deflater != null) { // Paper - Use Velocity cipher
-             byte[] bs = new byte[i];
-             byteBuf.readBytes(bs);
-             VarInt.write(byteBuf2, bs.length);
+         if (i > 8388608) {
+             throw new IllegalArgumentException("Packet too big (is " + i + ", should be less than 8388608)");
 @@ -0,0 +0,0 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
-             }
+                 VarInt.write(byteBuf2, 0);
+                 byteBuf2.writeBytes(byteBuf);
+             } else {
++                if (this.deflater != null) { // Paper - Use Velocity cipher
+                 byte[] bs = new byte[i];
+                 byteBuf.readBytes(bs);
+                 VarInt.write(byteBuf2, bs.length);
+@@ -0,0 +0,0 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+                 }
  
-             this.deflater.reset();
-+            // Paper start - Use Velocity cipher
-+                return;
-+            }
+                 this.deflater.reset();
++                // Paper start - Use Velocity cipher
++                    return;
++                }
 +
-+            VarInt.write(byteBuf2, i);
-+            ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), this.compressor, byteBuf);
-+            try {
-+                this.compressor.deflate(compatibleIn, byteBuf2);
-+            } finally {
-+                compatibleIn.release();
-+            }
-+        }
-+    }
-+
++                VarInt.write(byteBuf2, i);
++                final ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), this.compressor, byteBuf);
++                try {
++                    this.compressor.deflate(compatibleIn, byteBuf2);
++                } finally {
++                    compatibleIn.release();
++                }
+             }
+         }
+     }
+ 
 +    @Override
 +    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, ByteBuf msg, boolean preferDirect) throws Exception{
 +        if (this.compressor != null) {
@@ -244,7 +256,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            //    size the compressed size will ever be is the input size minus one.
 +            // - Uncompressed
 +            //    This is fairly obvious - we will then have one more than the uncompressed size.
-+            int initialBufferSize = msg.readableBytes() + 1;
++            final int initialBufferSize = msg.readableBytes() + 1;
 +            return com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(ctx.alloc(), this.compressor, initialBufferSize);
 +        }
 +
@@ -256,9 +268,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (this.compressor != null) {
 +            this.compressor.close();
 +            // Paper end - Use Velocity cipher
-         }
++        }
++    }
++
+     public int getThreshold() {
+         return this.threshold;
      }
- 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
@@ -301,18 +316,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
          if (compressionThreshold >= 0) {
 +            com.velocitypowered.natives.compression.VelocityCompressor compressor = com.velocitypowered.natives.util.Natives.compress.get().create(io.papermc.paper.configuration.GlobalConfiguration.get().misc.compressionLevel.or(-1)); // Paper - Use Velocity cipher
-             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
-                 ((CompressionDecoder) this.channel.pipeline().get("decompress")).setThreshold(compressionThreshold, rejectsBadPackets);
-             } else {
--                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressionThreshold, rejectsBadPackets));
-+                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressor, compressionThreshold, rejectsBadPackets)); // Paper - Use Velocity cipher
-             }
+             ChannelHandler channelhandler = this.channel.pipeline().get("decompress");
  
-             if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
-                 ((CompressionEncoder) this.channel.pipeline().get("compress")).setThreshold(compressionThreshold);
+             if (channelhandler instanceof CompressionDecoder) {
+                 CompressionDecoder packetdecompressor = (CompressionDecoder) channelhandler;
+ 
+-                packetdecompressor.setThreshold(compressionThreshold, rejectsBadPackets);
++                packetdecompressor.setThreshold(compressor, compressionThreshold, rejectsBadPackets); // Paper - Use Velocity cipher
              } else {
--                this.channel.pipeline().addBefore("encoder", "compress", new CompressionEncoder(compressionThreshold));
-+                this.channel.pipeline().addBefore("encoder", "compress", new CompressionEncoder(compressor, compressionThreshold)); // Paper - Use Velocity cipher
+                 this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(compressionThreshold, rejectsBadPackets));
+             }
+@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+                 packetcompressor.setThreshold(compressionThreshold);
+             } else {
+-                this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressionThreshold));
++                this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressor, compressionThreshold)); // Paper - Use Velocity cipher
              }
              this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper - Add Channel initialization listeners
          } else {
@@ -331,7 +350,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
              this.channels.add(((ServerBootstrap) ((ServerBootstrap) (new ServerBootstrap()).channel(oclass)).childHandler(new ChannelInitializer<Channel>() {
                  protected void initChannel(Channel channel) {
-                     Connection.setInitialProtocolAttributes(channel);
+                     try {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
