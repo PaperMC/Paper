@@ -17,7 +17,7 @@ Adds villagers as separate config
 public net.minecraft.world.entity.Entity isInsidePortal
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index bd8c96e914b156284bdbb960f168e63e1f122920..abb4c32e8b35de332fa517523e8c598ea3275def 100644
+index 63777efec582b8db9804914d554e8aedafcf08c8..d0adc0fab52c0b394d348fbf658eb77a7dfc7049 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2,7 +2,6 @@ package net.minecraft.server.level;
@@ -28,7 +28,7 @@ index bd8c96e914b156284bdbb960f168e63e1f122920..abb4c32e8b35de332fa517523e8c598e
  import com.google.common.collect.Lists;
  import com.mojang.datafixers.DataFixer;
  import com.mojang.datafixers.util.Pair;
-@@ -1222,17 +1221,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1228,17 +1227,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
          ++TimingHistory.entityTicks; // Paper - timings
          // Spigot start
          co.aikar.timings.Timing timer; // Paper
@@ -50,7 +50,7 @@ index bd8c96e914b156284bdbb960f168e63e1f122920..abb4c32e8b35de332fa517523e8c598e
          try {
          // Paper end - timings
          entity.setOldPosAndRot();
-@@ -1243,9 +1242,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1249,9 +1248,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
              return BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
          });
          gameprofilerfiller.incrementCounter("tickNonPassenger");
@@ -64,7 +64,7 @@ index bd8c96e914b156284bdbb960f168e63e1f122920..abb4c32e8b35de332fa517523e8c598e
          Iterator iterator = entity.getPassengers().iterator();
  
          while (iterator.hasNext()) {
-@@ -1253,13 +1256,18 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1259,13 +1262,18 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
              this.tickPassenger(entity, entity1);
          }
@@ -84,7 +84,7 @@ index bd8c96e914b156284bdbb960f168e63e1f122920..abb4c32e8b35de332fa517523e8c598e
                  passenger.setOldPosAndRot();
                  ++passenger.tickCount;
                  ProfilerFiller gameprofilerfiller = this.getProfiler();
-@@ -1268,8 +1276,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1274,8 +1282,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
                      return BuiltInRegistries.ENTITY_TYPE.getKey(passenger.getType()).toString();
                  });
                  gameprofilerfiller.incrementCounter("tickPassenger");
@@ -102,7 +102,7 @@ index bd8c96e914b156284bdbb960f168e63e1f122920..abb4c32e8b35de332fa517523e8c598e
                  gameprofilerfiller.pop();
                  Iterator iterator = passenger.getPassengers().iterator();
  
-@@ -1279,6 +1296,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1285,6 +1302,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                      this.tickPassenger(passenger, entity2);
                  }
  
@@ -111,10 +111,10 @@ index bd8c96e914b156284bdbb960f168e63e1f122920..abb4c32e8b35de332fa517523e8c598e
          } else {
              passenger.stopRiding();
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b108f779abe3d9798c0bcbc983f41d48b33aa153..a66fe080ee73171090abec48352ad0bd457a2a6f 100644
+index 64ba2b3f8e0d5176dc24432ceb4a51eea1f24098..ab529d8c2c10fffd58fe4754882b558eed239fbd 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -412,6 +412,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -414,6 +414,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      // Spigot end
      protected int numCollisions = 0; // Paper - Cap entity collisions
      public boolean fromNetherPortal; // Paper - Add option to nerf pigmen from nether portals
@@ -123,7 +123,7 @@ index b108f779abe3d9798c0bcbc983f41d48b33aa153..a66fe080ee73171090abec48352ad0bd
      public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
      // Paper start - Entity origin API
      @javax.annotation.Nullable
-@@ -1034,6 +1036,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -1045,6 +1047,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          } else {
              this.wasOnFire = this.isOnFire();
              if (movementType == MoverType.PISTON) {
@@ -132,7 +132,7 @@ index b108f779abe3d9798c0bcbc983f41d48b33aa153..a66fe080ee73171090abec48352ad0bd
                  movement = this.limitPistonMovement(movement);
                  if (movement.equals(Vec3.ZERO)) {
                      return;
-@@ -1046,6 +1050,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -1057,6 +1061,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  this.stuckSpeedMultiplier = Vec3.ZERO;
                  this.setDeltaMovement(Vec3.ZERO);
              }
@@ -147,10 +147,10 @@ index b108f779abe3d9798c0bcbc983f41d48b33aa153..a66fe080ee73171090abec48352ad0bd
              movement = this.maybeBackOffFromEdge(movement, movementType);
              Vec3 vec3d1 = this.collide(movement);
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 11c933a662c2275e2ef239cb0b5dd2480cc55490..d2c92df28475f0a32a0134324eb0a5609a9afb99 100644
+index 4f2148d13fc26ad2c43460f46c376832c1bb8150..146ec4bb70ae7b1d2b7705daa150e5fcfe6ec223 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -222,6 +222,19 @@ public abstract class Mob extends LivingEntity implements Targeting {
+@@ -237,6 +237,19 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
          return this.lookControl;
      }
  
@@ -171,10 +171,10 @@ index 11c933a662c2275e2ef239cb0b5dd2480cc55490..d2c92df28475f0a32a0134324eb0a560
          Entity entity = this.getControlledVehicle();
  
 diff --git a/src/main/java/net/minecraft/world/entity/PathfinderMob.java b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
-index d6393210cfee53685f83c8491bea8b9c13b01eea..3d95257d2203fe40bb1fab58ad2a1f9e815184a9 100644
+index cdd07093342521ff9944bf7a342bbf142ba3f0b7..645414720db0231a19c88f681608eb08200b8782 100644
 --- a/src/main/java/net/minecraft/world/entity/PathfinderMob.java
 +++ b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
-@@ -21,6 +21,7 @@ public abstract class PathfinderMob extends Mob {
+@@ -23,6 +23,7 @@ public abstract class PathfinderMob extends Mob {
      }
  
      public org.bukkit.craftbukkit.entity.CraftCreature getBukkitCreature() { return (org.bukkit.craftbukkit.entity.CraftCreature) super.getBukkitEntity(); } // Paper
@@ -183,25 +183,25 @@ index d6393210cfee53685f83c8491bea8b9c13b01eea..3d95257d2203fe40bb1fab58ad2a1f9e
      public float getWalkTargetValue(BlockPos pos) {
          return this.getWalkTargetValue(pos, this.level());
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index 9be9a6a59666297e05a9fc19d9345ae7d5f3bf40..040d62effc651d14d3557f8ff582cb078b74ae1e 100644
+index 89b8a304fe9fae4b57640afbab04b6764ce9aab8..074ef807258139f818e30494126585262c2f33c0 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-@@ -34,6 +34,7 @@ public class GoalSelector {
+@@ -26,6 +26,7 @@ public class GoalSelector {
+     private final Set<WrappedGoal> availableGoals = new ObjectLinkedOpenHashSet<>();
+     private final Supplier<ProfilerFiller> profiler;
      private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class);
-     private int tickCount;
-     private int newGoalRate = 3;
 +    private int curRate;
  
      public GoalSelector(Supplier<ProfilerFiller> profiler) {
          this.profiler = profiler;
-@@ -48,6 +49,20 @@ public class GoalSelector {
+@@ -40,6 +41,20 @@ public class GoalSelector {
          this.availableGoals.removeIf(goal -> predicate.test(goal.getGoal()));
      }
  
 +    // Paper start
 +    public boolean inactiveTick() {
 +        this.curRate++;
-+        return this.curRate % this.newGoalRate == 0;
++        return this.curRate % 3 == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
 +    }
 +    public boolean hasTasks() {
 +        for (WrappedGoal task : this.availableGoals) {
@@ -213,8 +213,8 @@ index 9be9a6a59666297e05a9fc19d9345ae7d5f3bf40..040d62effc651d14d3557f8ff582cb07
 +    }
 +    // Paper end
      public void removeGoal(Goal goal) {
-         this.availableGoals.stream().filter(wrappedGoal -> wrappedGoal.getGoal() == goal).filter(WrappedGoal::isRunning).forEach(WrappedGoal::stop);
-         this.availableGoals.removeIf(wrappedGoal -> wrappedGoal.getGoal() == goal);
+         for (WrappedGoal wrappedGoal : this.availableGoals) {
+             if (wrappedGoal.getGoal() == goal && wrappedGoal.isRunning()) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 index 6d8ea05e5e86e9f6359b560043bb55a10784e952..aee0147649d458b87d92496eda0c1723ebe570d2 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
@@ -243,7 +243,7 @@ index 6d8ea05e5e86e9f6359b560043bb55a10784e952..aee0147649d458b87d92496eda0c1723
                          }
                      }
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index fa2569fecefb3e3af3264928a3c7a347710deedf..24044795d8e0f1fb15a4f2f5401f44897092f2a3 100644
+index 1e8579c994098fb18d9725e3f1604a582be4162f..a7930f9875aa4aca997caaead46ecdc21e5e11d7 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
 @@ -228,17 +228,34 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
@@ -302,7 +302,7 @@ index fa2569fecefb3e3af3264928a3c7a347710deedf..24044795d8e0f1fb15a4f2f5401f4489
          super.customServerAiStep();
      }
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
-index eaafb57c14ead01ffd2650fdec9ca75406201e41..761142374f793a1cd4228936b21a68d7a0458894 100644
+index 0b7f52021441d633c37543e8ae485e81c292b747..d7f8464bf3eed0e42a5fc7f14a5b243d171f8b5e 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
 @@ -52,6 +52,7 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
@@ -313,7 +313,7 @@ index eaafb57c14ead01ffd2650fdec9ca75406201e41..761142374f793a1cd4228936b21a68d7
      }
  
      public boolean isEnabled() {
-@@ -87,11 +88,13 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+@@ -92,11 +93,13 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
  
      public boolean suckInItems() {
          if (HopperBlockEntity.suckInItems(this.level(), this)) {
@@ -327,7 +327,7 @@ index eaafb57c14ead01ffd2650fdec9ca75406201e41..761142374f793a1cd4228936b21a68d7
                      return true;
                  }
              }
-@@ -121,4 +124,11 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+@@ -126,4 +129,11 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
      public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory) {
          return new HopperMenu(syncId, playerInventory, this);
      }
@@ -340,10 +340,10 @@ index eaafb57c14ead01ffd2650fdec9ca75406201e41..761142374f793a1cd4228936b21a68d7
 +
  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 5c209e323a5559480231c6d99357ba8b89edb027..4bedd5801cc8ce14387f02dfb361a00ab2960855 100644
+index acfb87cd9ea3ca52f1ded99f0f7065fe5abd9af4..09608b495a460af86dabf34ccd8803cf1c0e3769 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -157,6 +157,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -154,6 +154,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
      public List<ItemEntity> captureDrops;
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
@@ -357,10 +357,10 @@ index 5c209e323a5559480231c6d99357ba8b89edb027..4bedd5801cc8ce14387f02dfb361a00a
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
      // Paper start - add paper world config
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
-index 0e15da7cae105196d444b924b8e0db190583ba30..9f45dda6ff45ac1ffb7ac99575b7d09bdc61c56a 100644
+index d7b963571c900f0f68005d6954bcd9ef1d9e0b7c..b35f476e26a020cf75e53a5eb488717d996a6935 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
-@@ -147,6 +147,10 @@ public class PistonMovingBlockEntity extends BlockEntity {
+@@ -148,6 +148,10 @@ public class PistonMovingBlockEntity extends BlockEntity {
                                  }
  
                                  entity.setDeltaMovement(e, g, h);

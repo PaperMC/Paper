@@ -8,10 +8,10 @@ This patch also adds a chunk status cache on region files (note that
 its only purpose is to cache the status on DISK)
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 4549b32a3d848e4e84334e889dbc9c6b883fe621..07a9a11c7fa608e221c0f0e759c483b44de9fdd5 100644
+index 721b63f7471ace33ae22f4205f554ee3be0e033d..c22b40790a28c9a670538a8cc97821b33443845d 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -717,9 +717,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -735,9 +735,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      // Paper end
  
      private CompletableFuture<Optional<CompoundTag>> readChunk(ChunkPos chunkPos) {
@@ -28,7 +28,7 @@ index 4549b32a3d848e4e84334e889dbc9c6b883fe621..07a9a11c7fa608e221c0f0e759c483b4
      }
  
      // CraftBukkit start
-@@ -728,6 +732,60 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -746,6 +750,60 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          // CraftBukkit end
      }
  
@@ -90,13 +90,13 @@ index 4549b32a3d848e4e84334e889dbc9c6b883fe621..07a9a11c7fa608e221c0f0e759c483b4
          // Spigot start
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 6c89b92cac521808873e9e1eccc363695275cd7a..92ba75254f6ffca40abd5485dbb4789de59edebd 100644
+index 69d7a7c2dcee40552d229288c52ed7dd6ad0c2a8..36cdf165334c4d7c1ca28ba42b1006b163e45a95 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -50,6 +50,30 @@ public class RegionFile implements AutoCloseable {
+@@ -53,6 +53,29 @@ public class RegionFile implements AutoCloseable {
+     protected final RegionBitmap usedSectors;
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
      public final Path regionFile; // Paper
- 
 +    // Paper start - Cache chunk status
 +    private final net.minecraft.world.level.chunk.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.ChunkStatus[32 * 32];
 +
@@ -120,11 +120,10 @@ index 6c89b92cac521808873e9e1eccc363695275cd7a..92ba75254f6ffca40abd5485dbb4789d
 +        return this.statuses[location];
 +    }
 +    // Paper end - Cache chunk status
-+
-     public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
-         this(file, directory, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
-     }
-@@ -397,6 +421,7 @@ public class RegionFile implements AutoCloseable {
+ 
+     public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
+         this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
+@@ -419,6 +442,7 @@ public class RegionFile implements AutoCloseable {
          return this.getOffset(pos) != 0;
      }
  
@@ -132,7 +131,7 @@ index 6c89b92cac521808873e9e1eccc363695275cd7a..92ba75254f6ffca40abd5485dbb4789d
      private static int getOffsetIndex(ChunkPos pos) {
          return pos.getRegionLocalX() + pos.getRegionLocalZ() * 32;
      }
-@@ -407,6 +432,7 @@ public class RegionFile implements AutoCloseable {
+@@ -429,6 +453,7 @@ public class RegionFile implements AutoCloseable {
          synchronized (this) {
          try {
          // Paper end
@@ -141,10 +140,10 @@ index 6c89b92cac521808873e9e1eccc363695275cd7a..92ba75254f6ffca40abd5485dbb4789d
              this.padToFullSector();
          } finally {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index f27cf743bbc379520263909541d653dd38d1be58..0db8ee3b640e6d1268e9c1cccda85459bd447105 100644
+index 3b5849f51ff56c6582c8bd451c5c3398827df6db..a73a37320da2c141fc2db9d1d61233a34ce0c906 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -266,6 +266,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -268,6 +268,7 @@ public class RegionFileStorage implements AutoCloseable {
  
              try {
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);
@@ -153,7 +152,7 @@ index f27cf743bbc379520263909541d653dd38d1be58..0db8ee3b640e6d1268e9c1cccda85459
                  // Paper start - don't write garbage data to disk if writing serialization fails
                  dataoutputstream.close(); // Only write if successful
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 75ddeceb3f6c381b95dca0a93643aaca69d418e3..18a2f8c956137b8b60b07e02df4b3a2350fc6e46 100644
+index 4bcfae1ca9c2ba590d800534bb199f947c114c20..67e51df85f967e7f3184a7b21562b26cbd64eae1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -383,9 +383,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -182,7 +181,7 @@ index 75ddeceb3f6c381b95dca0a93643aaca69d418e3..18a2f8c956137b8b60b07e02df4b3a23
              throw new RuntimeException(ex);
          }
      }
-@@ -537,20 +551,48 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -539,20 +553,48 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public boolean loadChunk(int x, int z, boolean generate) {
          org.spigotmc.AsyncCatcher.catchOp("chunk load"); // Spigot
          warnUnsafeChunk("loading a faraway chunk", x, z); // Paper

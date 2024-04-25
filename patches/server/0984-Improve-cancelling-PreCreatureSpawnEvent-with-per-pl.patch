@@ -6,10 +6,10 @@ Subject: [PATCH] Improve cancelling PreCreatureSpawnEvent with per player mob
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index ccf0f7c7feaf47f451cec30ba02bea39ba192b3c..ac1a4ff5f83e53fa2983ff6e834775e51fba715e 100644
+index 79a3410833cb3f2d3a6429f821b524b89e152629..2ae2f36ef3d78ee4859c09096d516eeb3ffb02a0 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -306,8 +306,25 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -309,8 +309,25 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }
  
@@ -37,10 +37,10 @@ index ccf0f7c7feaf47f451cec30ba02bea39ba192b3c..ac1a4ff5f83e53fa2983ff6e834775e5
      // Paper end - Optional per player mob spawns
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 059ab637adf1be576fa1fff36a91b6c5f1b5f035..5afbb5b307cc67d86dd916dc8f7521d5d021e056 100644
+index 002aad174fb1781ee963414037f84e5120488592..c7b7f153895a4b95b2071a31db00c9c4b69fa094 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -524,7 +524,17 @@ public class ServerChunkCache extends ChunkSource {
+@@ -522,7 +522,17 @@ public class ServerChunkCache extends ChunkSource {
                  if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
                      // re-set mob counts
                      for (ServerPlayer player : this.level.players) {
@@ -60,22 +60,22 @@ index 059ab637adf1be576fa1fff36a91b6c5f1b5f035..5afbb5b307cc67d86dd916dc8f7521d5
                      spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
                  } else {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 7fb2c0f2576142423cd0e50b811ce4f55795e43d..acc1751324f040accc4fc18914ed281e572358eb 100644
+index 61e256224c6d7c944bee0e11d0edcf05b8a5ecd3..e06b9b0c7b1c3a200b89819e0e521f1c88dc981b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -260,6 +260,7 @@ public class ServerPlayer extends Player {
+@@ -275,6 +275,7 @@ public class ServerPlayer extends Player {
      public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
      public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper
      // Paper end - Optional per player mob spawns
 +    public final int[] mobBackoffCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper - per player mob count backoff
  
      // CraftBukkit start
-     public String displayName;
+     public CraftPlayer.TransferCookieConnection transferCookieConnection;
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 14f4ceb6c0be34d23b24c1695f966145c3aaee96..da7489986848316fed029b71d1bc4e1248c9c9a8 100644
+index 0679636530ca1afd077c43b0fa605a2ac74e0522..ed8032495af9ce9c23419224814b8d27e4a97c17 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-@@ -277,6 +277,11 @@ public final class NaturalSpawner {
+@@ -272,6 +272,11 @@ public final class NaturalSpawner {
  
                                      // Paper start - PreCreatureSpawnEvent
                                      PreSpawnStatus doSpawning = isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
