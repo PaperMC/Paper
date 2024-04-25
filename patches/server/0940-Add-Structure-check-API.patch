@@ -5,17 +5,25 @@ Subject: [PATCH] Add Structure check API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index c479fcf24025ba2c8a48dbc2b9b3c47d398be486..66efa8a5f70c63f07bfeb0088e6745ca4420cc0a 100644
+index c479fcf24025ba2c8a48dbc2b9b3c47d398be486..9483c268c19f469943ee0f344a8c599094c64f58 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -237,6 +237,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -237,6 +237,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          };
      }
      // Paper end
 +    // Paper start - structure check API
 +    @Override
 +    public boolean hasStructureAt(final io.papermc.paper.math.Position position, final Structure structure) {
-+        return this.world.structureManager().getStructureWithPieceAt(io.papermc.paper.util.MCUtil.toBlockPos(position), net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.STRUCTURE, CraftNamespacedKey.toMinecraft(structure.getKey()))).isValid();
++        net.minecraft.world.level.levelgen.structure.Structure vanillaStructure = this.world.registryAccess()
++            .registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE)
++            .getHolder(CraftNamespacedKey.toMinecraft(structure.getStructureType().getKey()))
++            .orElseThrow()
++            .value();
++        return this.world.structureManager().getStructureWithPieceAt(
++            io.papermc.paper.util.MCUtil.toBlockPos(position),
++            vanillaStructure
++        ).isValid();
 +    }
 +    // Paper end
  
