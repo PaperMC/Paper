@@ -103,7 +103,7 @@
              Item item = this.getItem();
 -            EnumInteractionResult enuminteractionresult = item.useOn(itemactioncontext);
 +            // CraftBukkit start - handle all block place event logic here
-+            PatchedDataComponentMap oldData = this.getComponentsClone();
++            DataComponentPatch oldData = this.getComponentsPatch();
 +            int oldCount = this.getCount();
 +            WorldServer world = (WorldServer) itemactioncontext.getLevel();
 +
@@ -120,10 +120,10 @@
 +            } finally {
 +                world.captureBlockStates = false;
 +            }
-+            PatchedDataComponentMap newData = this.getComponentsClone();
++            DataComponentPatch newData = this.getComponentsPatch();
 +            int newCount = this.getCount();
 +            this.setCount(oldCount);
-+            this.setComponentsClone(oldData);
++            this.restorePatch(oldData);
 +            if (enuminteractionresult.consumesAction() && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
 +                world.captureTreeGeneration = false;
 +                Location location = CraftLocation.toBukkit(blockposition, world.getWorld());
@@ -145,7 +145,7 @@
 +                if (!fertilizeEvent.isCancelled()) {
 +                    // Change the stack to its new contents if it hasn't been tampered with.
 +                    if (this.getCount() == oldCount && Objects.equals(this.components, oldData)) {
-+                        this.applyComponents(newData);
++                        this.restorePatch(newData);
 +                        this.setCount(newCount);
 +                    }
 +                    for (CraftBlockState blockstate : blocks) {
@@ -192,7 +192,7 @@
 +                } else {
 +                    // Change the stack to its new contents if it hasn't been tampered with.
 +                    if (this.getCount() == oldCount && Objects.equals(this.components, oldData)) {
-+                        this.applyComponents(newData);
++                        this.restorePatch(newData);
 +                        this.setCount(newCount);
 +                    }
 +
@@ -325,25 +325,20 @@
  
                  this.shrink(1);
                  if (entityliving instanceof EntityHuman) {
-@@ -669,6 +909,17 @@
+@@ -669,6 +909,12 @@
          return this.getItem().useOnRelease(this);
      }
  
 +    // CraftBukkit start
-+    @Nullable
-+    private PatchedDataComponentMap getComponentsClone() {
-+        return this.components.isEmpty() ? null : this.components.copy();
-+    }
-+
-+    private void setComponentsClone(@Nullable PatchedDataComponentMap patchedDataComponentMap) {
-+        this.applyComponents(patchedDataComponentMap == null ? null : patchedDataComponentMap.copy());
++    public void restorePatch(DataComponentPatch datacomponentpatch) {
++        this.components.restorePatch(datacomponentpatch);
 +    }
 +    // CraftBukkit end
 +
      @Nullable
      public <T> T set(DataComponentType<? super T> datacomponenttype, @Nullable T t0) {
          return this.components.set(datacomponenttype, t0);
-@@ -728,7 +979,7 @@
+@@ -728,7 +974,7 @@
      }
  
      private <T extends TooltipProvider> void addToTooltip(DataComponentType<T> datacomponenttype, Item.b item_b, Consumer<IChatBaseComponent> consumer, TooltipFlag tooltipflag) {
@@ -352,7 +347,7 @@
  
          if (t0 != null) {
              t0.addToTooltip(item_b, consumer, tooltipflag);
-@@ -955,6 +1206,13 @@
+@@ -955,6 +1201,13 @@
  
      }
  
@@ -366,7 +361,7 @@
      public IChatBaseComponent getDisplayName() {
          IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.empty().append(this.getHoverName());
  
-@@ -1017,7 +1275,7 @@
+@@ -1017,7 +1270,7 @@
      }
  
      public void consume(int i, @Nullable EntityLiving entityliving) {

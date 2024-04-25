@@ -169,7 +169,9 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
             hash = 73 * hash + lodestoneY;
             hash = 73 * hash + lodestoneZ;
         }
-        hash = 73 * hash + (isLodestoneTracked() ? 1231 : 1237);
+        if (hasLodestoneTracked()) {
+            hash = 73 * hash + (isLodestoneTracked() ? 1231 : 1237);
+        }
 
         return original != hash ? CraftMetaCompass.class.hashCode() ^ hash : hash;
     }
@@ -205,7 +207,9 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
             builder.put(LODESTONE_POS_Y.BUKKIT, lodestoneY);
             builder.put(LODESTONE_POS_Z.BUKKIT, lodestoneZ);
         }
-        builder.put(LODESTONE_TRACKED.BUKKIT, tracked);
+        if (hasLodestoneTracked()) {
+            builder.put(LODESTONE_TRACKED.BUKKIT, tracked);
+        }
 
         return builder;
     }

@@ -308,8 +308,12 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
         if (this.pages != null) {
             hash = 61 * hash + 17 * this.pages.hashCode();
         }
-        hash = 61 * hash + 17 * Boolean.hashCode(resolved);
-        hash = 61 * hash + 19 * Integer.hashCode(generation);
+        if (this.resolved) {
+            hash = 61 * hash + 17 * Boolean.hashCode(this.resolved);
+        }
+        if (hasGeneration()) {
+            hash = 61 * hash + 19 * Integer.hashCode(this.generation);
+        }
         return original != hash ? CraftMetaBook.class.hashCode() ^ hash : hash;
     }
 

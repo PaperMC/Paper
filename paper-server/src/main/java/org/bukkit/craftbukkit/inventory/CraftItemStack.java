@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.EnchantmentManager;
@@ -616,7 +616,7 @@ public final class CraftItemStack extends ItemStack {
             return false;
         }
         if (CraftItemFactory.instance().equals(itemMeta, null)) {
-            item.applyComponents(DataComponentMap.EMPTY);
+            item.restorePatch(DataComponentPatch.EMPTY);
             return true;
         }
         if (!CraftItemFactory.instance().isApplicable(itemMeta, getType(item))) {
@@ -636,7 +636,7 @@ public final class CraftItemStack extends ItemStack {
             CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
 
             ((CraftMetaItem) itemMeta).applyToItem(tag);
-            item.applyComponents(tag.build());
+            item.restorePatch(tag.build());
         }
         // SpigotCraft#463 this is required now by the Vanilla client, so mimic ItemStack constructor in ensuring it
         if (item.getItem() != null && item.getMaxDamage() > 0) {

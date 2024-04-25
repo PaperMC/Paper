@@ -18,7 +18,8 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
             Material.LEATHER_HELMET,
             Material.LEATHER_CHESTPLATE,
             Material.LEATHER_LEGGINGS,
-            Material.LEATHER_BOOTS
+            Material.LEATHER_BOOTS,
+            Material.WOLF_ARMOR
     );
 
     private Color color = DEFAULT_LEATHER_COLOR;
