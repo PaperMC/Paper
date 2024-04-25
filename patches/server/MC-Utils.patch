@@ -6171,12 +6171,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public @Nullable ChunkAccess getAvailableChunkNow() {
 +        // TODO can we just getStatusFuture(EMPTY)?
 +        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
-+            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getFutureIfPresentUnchecked(curr);
-+            Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = future.getNow(null);
-+            if (either == null || either.left().isEmpty()) {
++            CompletableFuture<ChunkResult<ChunkAccess>> future = this.getFutureIfPresentUnchecked(curr);
++            ChunkResult<ChunkAccess> either = future.getNow(null);
++            if (either == null || either.isSuccess()) {
 +                continue;
 +            }
-+            return either.left().get();
++            return either.orElseThrow(IllegalStateException::new);
 +        }
 +        return null;
 +    }
@@ -6214,11 +6214,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start
-+    public ChunkStatus getChunkHolderStatus() {
++    public @Nullable ChunkStatus getChunkHolderStatus() {
 +        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
-+            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getFutureIfPresentUnchecked(curr);
-+            Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = future.getNow(null);
-+            if (either == null || !either.left().isPresent()) {
++            CompletableFuture<ChunkResult<ChunkAccess>> future = this.getFutureIfPresentUnchecked(curr);
++            ChunkResult<ChunkAccess> either = future.getNow(null);
++            if (either == null || !either.isSuccess()) {
 +                continue;
 +            }
 +            return curr;
@@ -6291,8 +6291,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.tickingChunkFuture = chunkStorage.prepareTickingChunk(this);
              this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, FullChunkStatus.BLOCK_TICKING);
 +            // Paper start - cache ticking ready status
-+            this.tickingChunkFuture.thenAccept(either -> {
-+                either.ifLeft(chunk -> {
++            this.tickingChunkFuture.thenAccept(chunkResult -> {
++                chunkResult.ifSuccess(chunk -> {
 +                    // note: Here is a very good place to add callbacks to logic waiting on this.
 +                    ChunkHolder.this.isTickingReady = true;
 +                    io.papermc.paper.chunk.system.ChunkSystem.onChunkTicking(chunk, this);
@@ -6306,7 +6306,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.tickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK);
 +            // Paper start
 +            if (this.isTickingReady) {
-+                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotTicking(this.tickingChunkFuture.join().left().get(), this); // Paper
++                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotTicking(this.tickingChunkFuture.join().orElseThrow(IllegalStateException::new), this); // Paper
 +            }
 +            // Paper end
 +            this.tickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isTickingReady = false; // Paper - cache chunk ticking stage

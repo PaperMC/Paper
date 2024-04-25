@@ -19,7 +19,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Preconditions.checkNotNull(item, "null cannot be serialized");
 +        Preconditions.checkArgument(item.getType() != Material.AIR, "air cannot be serialized");
 +
-+        return serializeNbtToBytes((item instanceof CraftItemStack ? ((CraftItemStack) item).handle : CraftItemStack.asNMSCopy(item)).save(new CompoundTag()));
++        return serializeNbtToBytes((net.minecraft.nbt.CompoundTag) (item instanceof CraftItemStack ? ((CraftItemStack) item).handle : CraftItemStack.asNMSCopy(item)).save(MinecraftServer.getServer().registryAccess()));
 +    }
 +
 +    @Override
@@ -27,10 +27,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Preconditions.checkNotNull(data, "null cannot be deserialized");
 +        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 +
-+        CompoundTag compound = deserializeNbtFromBytes(data);
++        net.minecraft.nbt.CompoundTag compound = deserializeNbtFromBytes(data);
 +        final int dataVersion = compound.getInt("DataVersion");
-+        compound = (CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(NbtOps.INSTANCE, compound), dataVersion, this.getDataVersion()).getValue();
-+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of(compound));
++        compound = (net.minecraft.nbt.CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(NbtOps.INSTANCE, compound), dataVersion, this.getDataVersion()).getValue();
++        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
 +    }
 +
 +    private byte[] serializeNbtToBytes(CompoundTag compound) {
@@ -47,8 +47,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return outputStream.toByteArray();
 +    }
 +
-+    private CompoundTag deserializeNbtFromBytes(byte[] data) {
-+        CompoundTag compound;
++    private net.minecraft.nbt.CompoundTag deserializeNbtFromBytes(byte[] data) {
++        net.minecraft.nbt.CompoundTag compound;
 +        try {
 +            compound = net.minecraft.nbt.NbtIo.readCompressed(
 +                new java.io.ByteArrayInputStream(data), net.minecraft.nbt.NbtAccounter.unlimitedHeap()

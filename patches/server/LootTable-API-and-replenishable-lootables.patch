@@ -673,9 +673,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Copied from super with changes, always check the original method
 +        this.lootableData.loadNbt(nbt); // Paper
 +        if (nbt.contains("LootTable", 8)) {
-+            this.setLootTable(ResourceLocation.tryParse(nbt.getString("LootTable")));
-+            try { org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.lootTable); } catch (IllegalArgumentException ex) { this.lootTable = null; } // Paper - validate
-+            this.setLootTableSeed(nbt.getLong("LootTableSeed"));
++            final var loc = new net.minecraft.resources.ResourceLocation(nbt.getString("LootTable"));
++            this.setLootTable(ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE, loc));
++            try { org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.lootTable.location()); } catch (IllegalArgumentException ex) { this.lootTable = null; } // Paper - validate
++            if (nbt.contains("LootTableSeed", 4)) {
++                this.setLootTableSeed(nbt.getLong("LootTableSeed"));
++            } else {
++                this.setLootTableSeed(0L);
++            }
 +            return false; // Paper - always load the items, table may still remain
 +        } else {
 +            return false;
@@ -694,11 +699,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Copied from super with changes, always check the original method
 +        net.minecraft.world.level.Level level = this.getLevel();
 +        BlockPos blockPos = this.getBlockPos();
-+        ResourceLocation resourceLocation = this.getLootTable();
-+        if (this.lootableData.shouldReplenish(player) && level != null) { // Paper
-+            net.minecraft.world.level.storage.loot.LootTable lootTable = level.getServer().getLootData().getLootTable(resourceLocation);
++        ResourceKey<LootTable> resourceKey = this.getLootTable();
++        if (this.lootableData.shouldReplenish(player) && resourceKey != null && level != null && level.getServer() != null) { // Paper
++            net.minecraft.world.level.storage.loot.LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(resourceKey);
 +            if (player instanceof net.minecraft.server.level.ServerPlayer) {
-+                net.minecraft.advancements.CriteriaTriggers.GENERATE_LOOT.trigger((net.minecraft.server.level.ServerPlayer)player, resourceLocation);
++                net.minecraft.advancements.CriteriaTriggers.GENERATE_LOOT.trigger((net.minecraft.server.level.ServerPlayer)player, resourceKey);
 +            }
 +
 +            this.lootableData.processRefill(player); // Paper
