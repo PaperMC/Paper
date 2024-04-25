@@ -2663,7 +2663,7 @@ index 0000000000000000000000000000000000000000..a5f706d6f716b2a463ae58adcde69d9e
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..05bddc0697faa8d9d9955d89d76930c84ef7df0d
+index 0000000000000000000000000000000000000000..cff2f04409fab9abca87ceec85a551e1d59f9e7d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
 @@ -0,0 +1,296 @@
@@ -2683,7 +2683,7 @@ index 0000000000000000000000000000000000000000..05bddc0697faa8d9d9955d89d76930c8
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.ChunkStatus;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.LevelChunk;
 +import org.bukkit.Bukkit;
 +import org.slf4j.Logger;
@@ -3482,7 +3482,7 @@ index 0000000000000000000000000000000000000000..cea9c098ade00ee87b8efc8164ab72f5
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..722dcae9ab65bcacb9fb89dfaa63715d87816476
+index 0000000000000000000000000000000000000000..9e21566fc4d76ae2e305f0e1d47d8c2f1c1f2c4c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
 @@ -0,0 +1,554 @@
@@ -4013,8 +4013,8 @@ index 0000000000000000000000000000000000000000..722dcae9ab65bcacb9fb89dfaa63715d
 +        }
 +    }
 +
-+    public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
-+        return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
++    public static int getTicketLevelFor(net.minecraft.world.level.chunk.status.ChunkStatus status) {
++        return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.status.ChunkStatus.getDistance(status);
 +    }
 +
 +    @NotNull
@@ -6125,7 +6125,7 @@ index a3d44867e6243f30640df91a0285ed735a9f1f34..be9fde876cb22296afd01fb5d55be1f1
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..05f761913bc0c65f2b8ada5f90e322e139518173 100644
+index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..7653d56ceb687a2784a4030412c1034fb02e0f8c 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -48,9 +48,9 @@ public class ChunkHolder {
@@ -6262,13 +6262,13 @@ index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..05f761913bc0c65f2b8ada5f90e322e1
              this.fullChunkFuture = chunkStorage.prepareAccessibleChunk(this);
              this.scheduleFullChunkPromotion(chunkStorage, this.fullChunkFuture, executor, FullChunkStatus.FULL);
 +            // Paper start - cache ticking ready status
-+            this.fullChunkFuture.thenAccept(either -> {
-+                final Optional<LevelChunk> left = either.left();
-+                if (left.isPresent() && ChunkHolder.this.fullChunkCreateCount == expectCreateCount) {
-+                    LevelChunk fullChunk = either.left().get();
-+                    ChunkHolder.this.isFullChunkReady = true;
-+                    io.papermc.paper.chunk.system.ChunkSystem.onChunkBorder(fullChunk, this);
-+                }
++            this.fullChunkFuture.thenAccept(chunkResult -> {
++                chunkResult.ifSuccess(chunk -> {
++                    if (ChunkHolder.this.fullChunkCreateCount == expectCreateCount) {
++                        ChunkHolder.this.isFullChunkReady = true;
++                        io.papermc.paper.chunk.system.ChunkSystem.onChunkBorder(chunk, this);
++                    }
++                });
 +            });
              this.updateChunkToSave(this.fullChunkFuture, "full");
          }
@@ -6276,7 +6276,7 @@ index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..05f761913bc0c65f2b8ada5f90e322e1
          if (flag2 && !flag3) {
 +            // Paper start
 +            if (this.isFullChunkReady) {
-+                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotBorder(this.fullChunkFuture.join().left().get(), this); // Paper
++                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotBorder(this.fullChunkFuture.join().orElseThrow(IllegalStateException::new), this); // Paper
 +            }
 +            // Paper end
              this.fullChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK);
@@ -6318,8 +6318,8 @@ index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..05f761913bc0c65f2b8ada5f90e322e1
              this.entityTickingChunkFuture = chunkStorage.prepareEntityTickingChunk(this);
              this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, FullChunkStatus.ENTITY_TICKING);
 +            // Paper start - cache ticking ready status
-+            this.entityTickingChunkFuture.thenAccept(either -> {
-+                either.ifLeft(chunk -> {
++            this.entityTickingChunkFuture.thenAccept(chunkResult -> {
++                chunkResult.ifSuccess(chunk -> {
 +                    ChunkHolder.this.isEntityTickingReady = true;
 +                    io.papermc.paper.chunk.system.ChunkSystem.onChunkEntityTicking(chunk, this);
 +                });
@@ -6332,7 +6332,7 @@ index 2119fc6f72461199ae8969ab0d9b8fab26d775a8..05f761913bc0c65f2b8ada5f90e322e1
 -            this.entityTickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK);
 +            // Paper start
 +            if (this.isEntityTickingReady) {
-+                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotEntityTicking(this.entityTickingChunkFuture.join().left().get(), this);
++                io.papermc.paper.chunk.system.ChunkSystem.onChunkNotEntityTicking(this.entityTickingChunkFuture.join().orElseThrow(IllegalStateException::new), this);
 +            }
 +            // Paper end
 +            this.entityTickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
@@ -6847,7 +6847,7 @@ index 8661ed9962d07fb40390faf7f186b9cd8ce6bc62..23c39b78486b018e222af489c8edbf4e
          ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b3caf69f9627ba2114dc9d06551ccf182debfb04..2567f0d6060c29c75ba8d4331ec51ad0f3a51883 100644
+index b3caf69f9627ba2114dc9d06551ccf182debfb04..9332573e6948092ea1cda4efa7f3944729da91be 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -235,6 +235,98 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -6939,7 +6939,7 @@ index b3caf69f9627ba2114dc9d06551ccf182debfb04..2567f0d6060c29c75ba8d4331ec51ad0
 +        for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
 +            for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
 +                io.papermc.paper.chunk.system.ChunkSystem.scheduleChunkLoad(
-+                    this, cx, cz, net.minecraft.world.level.chunk.ChunkStatus.FULL, true, priority, consumer
++                    this, cx, cz, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, true, priority, consumer
 +                );
 +            }
 +        }

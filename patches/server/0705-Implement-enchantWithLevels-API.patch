@@ -5,10 +5,10 @@ Subject: [PATCH] Implement enchantWithLevels API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 992c6a354432023cd93fa654a6a911bee1af335a..4abf2373199654dec1a3780866e1d6c9f0742441 100644
+index db112344ef6cd6dc5c1fc5c222e23d481d161e73..da1b01c6489f96cfbded87e651e1d6df1dd0751a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -588,4 +588,20 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -591,4 +591,26 @@ public final class CraftItemFactory implements ItemFactory {
          return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();
      }
      // Paper end - old getSpawnEgg API
@@ -21,10 +21,16 @@ index 992c6a354432023cd93fa654a6a911bee1af335a..4abf2373199654dec1a3780866e1d6c9
 +        Preconditions.checkArgument(levels > 0 && levels <= 30, "Argument 'levels' must be in range [1, 30] (attempted " + levels + ")");
 +        Preconditions.checkArgument(random != null, "Argument 'random' must not be null");
 +        final net.minecraft.world.item.ItemStack internalStack = CraftItemStack.asNMSCopy(itemStack);
-+        if (internalStack.getTag() != null) {
-+            internalStack.getTag().remove(net.minecraft.world.item.ItemStack.TAG_ENCH);
++        if (internalStack.isEnchanted()) {
++            internalStack.applyComponents(net.minecraft.core.component.DataComponentPatch.builder().remove(net.minecraft.core.component.DataComponents.ENCHANTMENTS).build());
 +        }
-+        final net.minecraft.world.item.ItemStack enchanted = net.minecraft.world.item.enchantment.EnchantmentHelper.enchantItem(new org.bukkit.craftbukkit.util.RandomSourceWrapper(random), internalStack, levels, allowTreasure);
++        final net.minecraft.world.item.ItemStack enchanted = net.minecraft.world.item.enchantment.EnchantmentHelper.enchantItem(
++            MinecraftServer.getServer().getWorldData().enabledFeatures(),
++            new org.bukkit.craftbukkit.util.RandomSourceWrapper(random),
++            internalStack,
++            levels,
++            allowTreasure
++        );
 +        return CraftItemStack.asCraftMirror(enchanted);
 +    }
 +    // Paper end - enchantWithLevels API
