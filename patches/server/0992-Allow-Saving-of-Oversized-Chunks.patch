@@ -33,7 +33,7 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 307196b2a58d4f8db3e6e3c3517a8004d4908b13..69d7a7c2dcee40552d229288c52ed7dd6ad0c2a8 100644
+index 307196b2a58d4f8db3e6e3c3517a8004d4908b13..c9fd589b1354ac788b63d163d427e8cc5fbba3c5 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -18,10 +18,13 @@ import java.nio.file.LinkOption;
@@ -50,24 +50,15 @@ index 307196b2a58d4f8db3e6e3c3517a8004d4908b13..69d7a7c2dcee40552d229288c52ed7dd
  import net.minecraft.world.level.ChunkPos;
  import org.slf4j.Logger;
  
-@@ -49,6 +52,7 @@ public class RegionFile implements AutoCloseable {
-     @VisibleForTesting
-     protected final RegionBitmap usedSectors;
-     public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
-+    public final Path regionFile; // Paper
- 
-     public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
-         this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
-@@ -56,6 +60,8 @@ public class RegionFile implements AutoCloseable {
+@@ -56,6 +59,7 @@ public class RegionFile implements AutoCloseable {
  
      public RegionFile(RegionStorageInfo storageKey, Path path, Path directory, RegionFileVersion compressionFormat, boolean dsync) throws IOException {
          this.header = ByteBuffer.allocateDirect(8192);
-+        this.regionFile = file; // Paper
 +        initOversizedState(); // Paper
          this.usedSectors = new RegionBitmap();
          this.info = storageKey;
          this.path = path;
-@@ -453,6 +459,74 @@ public class RegionFile implements AutoCloseable {
+@@ -453,6 +457,74 @@ public class RegionFile implements AutoCloseable {
      }
  
      public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - don't write garbage data to disk if writing serialization fails
@@ -124,11 +115,11 @@ index 307196b2a58d4f8db3e6e3c3517a8004d4908b13..69d7a7c2dcee40552d229288c52ed7dd
 +    }
 +
 +    private Path getOversizedMetaFile() {
-+        return this.regionFile.getParent().resolve(this.regionFile.getFileName().toString().replaceAll("\\.mca$", "") + ".oversized.nbt");
++        return this.path.getParent().resolve(this.path.getFileName().toString().replaceAll("\\.mca$", "") + ".oversized.nbt");
 +    }
 +
 +    private Path getOversizedFile(int x, int z) {
-+        return this.regionFile.getParent().resolve(this.regionFile.getFileName().toString().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
++        return this.path.getParent().resolve(this.path.getFileName().toString().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
 +    }
 +
 +    synchronized CompoundTag getOversizedData(int x, int z) throws IOException {

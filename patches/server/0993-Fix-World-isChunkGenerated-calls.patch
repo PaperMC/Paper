@@ -90,20 +90,20 @@ index 721b63f7471ace33ae22f4205f554ee3be0e033d..c22b40790a28c9a670538a8cc97821b3
          // Spigot start
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 69d7a7c2dcee40552d229288c52ed7dd6ad0c2a8..36cdf165334c4d7c1ca28ba42b1006b163e45a95 100644
+index c9fd589b1354ac788b63d163d427e8cc5fbba3c5..27d3209275d621a211a82436667ba1a8eae605c7 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -53,6 +53,29 @@ public class RegionFile implements AutoCloseable {
+@@ -52,6 +52,29 @@ public class RegionFile implements AutoCloseable {
+     @VisibleForTesting
      protected final RegionBitmap usedSectors;
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
-     public final Path regionFile; // Paper
 +    // Paper start - Cache chunk status
-+    private final net.minecraft.world.level.chunk.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.ChunkStatus[32 * 32];
++    private final net.minecraft.world.level.chunk.status.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.status.ChunkStatus[32 * 32];
 +
 +    private boolean closed;
 +
 +    // invoked on write/read
-+    public void setStatus(int x, int z, net.minecraft.world.level.chunk.ChunkStatus status) {
++    public void setStatus(int x, int z, net.minecraft.world.level.chunk.status.ChunkStatus status) {
 +        if (this.closed) {
 +            // We've used an invalid region file.
 +            throw new IllegalStateException("RegionFile is closed");
@@ -111,7 +111,7 @@ index 69d7a7c2dcee40552d229288c52ed7dd6ad0c2a8..36cdf165334c4d7c1ca28ba42b1006b1
 +        this.statuses[getChunkLocation(x, z)] = status;
 +    }
 +
-+    public net.minecraft.world.level.chunk.ChunkStatus getStatusIfCached(int x, int z) {
++    public net.minecraft.world.level.chunk.status.ChunkStatus getStatusIfCached(int x, int z) {
 +        if (this.closed) {
 +            // We've used an invalid region file.
 +            throw new IllegalStateException("RegionFile is closed");
@@ -123,7 +123,7 @@ index 69d7a7c2dcee40552d229288c52ed7dd6ad0c2a8..36cdf165334c4d7c1ca28ba42b1006b1
  
      public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
          this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
-@@ -419,6 +442,7 @@ public class RegionFile implements AutoCloseable {
+@@ -417,6 +440,7 @@ public class RegionFile implements AutoCloseable {
          return this.getOffset(pos) != 0;
      }
  
@@ -131,7 +131,7 @@ index 69d7a7c2dcee40552d229288c52ed7dd6ad0c2a8..36cdf165334c4d7c1ca28ba42b1006b1
      private static int getOffsetIndex(ChunkPos pos) {
          return pos.getRegionLocalX() + pos.getRegionLocalZ() * 32;
      }
-@@ -429,6 +453,7 @@ public class RegionFile implements AutoCloseable {
+@@ -427,6 +451,7 @@ public class RegionFile implements AutoCloseable {
          synchronized (this) {
          try {
          // Paper end
