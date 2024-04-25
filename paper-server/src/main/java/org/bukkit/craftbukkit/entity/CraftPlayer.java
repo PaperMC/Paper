@@ -270,9 +270,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         boolean isTransferred();
 
-        EnumProtocol protocol();
+        EnumProtocol getProtocol();
 
-        void send(Packet<?> packet);
+        void sendPacket(Packet<?> packet);
     }
 
     public record CookieFuture(MinecraftKey key, CompletableFuture<byte[]> future) {
@@ -311,7 +311,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         MinecraftKey nms = CraftNamespacedKey.toMinecraft(key);
         requestedCookies.add(new CookieFuture(nms, future));
 
-        getHandle().transferCookieConnection.send(new ClientboundCookieRequestPacket(nms));
+        getHandle().transferCookieConnection.sendPacket(new ClientboundCookieRequestPacket(nms));
 
         return future;
     }
@@ -321,17 +321,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Preconditions.checkArgument(key != null, "Cookie key cannot be null");
         Preconditions.checkArgument(value != null, "Cookie value cannot be null");
         Preconditions.checkArgument(value.length <= 5120, "Cookie value too large, must be smaller than 5120 bytes");
-        Preconditions.checkState(getHandle().transferCookieConnection.protocol() == EnumProtocol.CONFIGURATION || getHandle().transferCookieConnection.protocol() == EnumProtocol.PLAY, "Can only store cookie in CONFIGURATION or PLAY protocol.");
+        Preconditions.checkState(getHandle().transferCookieConnection.getProtocol() == EnumProtocol.CONFIGURATION || getHandle().transferCookieConnection.getProtocol() == EnumProtocol.PLAY, "Can only store cookie in CONFIGURATION or PLAY protocol.");
 
-        getHandle().transferCookieConnection.send(new ClientboundStoreCookiePacket(CraftNamespacedKey.toMinecraft(key), value));
+        getHandle().transferCookieConnection.sendPacket(new ClientboundStoreCookiePacket(CraftNamespacedKey.toMinecraft(key), value));
     }
 
     @Override
     public void transfer(String host, int port) {
         Preconditions.checkArgument(host != null, "Host cannot be null");
-        Preconditions.checkState(getHandle().transferCookieConnection.protocol() == EnumProtocol.CONFIGURATION || getHandle().transferCookieConnection.protocol() == EnumProtocol.PLAY, "Can only transfer in CONFIGURATION or PLAY protocol.");
+        Preconditions.checkState(getHandle().transferCookieConnection.getProtocol() == EnumProtocol.CONFIGURATION || getHandle().transferCookieConnection.getProtocol() == EnumProtocol.PLAY, "Can only transfer in CONFIGURATION or PLAY protocol.");
 
-        getHandle().transferCookieConnection.send(new ClientboundTransferPacket(host, port));
+        getHandle().transferCookieConnection.sendPacket(new ClientboundTransferPacket(host, port));
     }
 
     @Override

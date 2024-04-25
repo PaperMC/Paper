@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -27,8 +27,28 @@
+@@ -27,8 +27,39 @@
  import net.minecraft.util.thread.IAsyncTaskHandler;
  import org.slf4j.Logger;
  
@@ -9,6 +9,7 @@
 +import io.netty.buffer.ByteBuf;
 +import java.util.concurrent.ExecutionException;
 +import net.minecraft.EnumChatFormat;
++import net.minecraft.network.EnumProtocol;
 +import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 +import net.minecraft.network.protocol.game.PacketPlayOutSpawnPosition;
 +import net.minecraft.resources.MinecraftKey;
@@ -19,18 +20,28 @@
 +import org.bukkit.craftbukkit.util.Waitable;
 +import org.bukkit.event.player.PlayerKickEvent;
 +import org.bukkit.event.player.PlayerResourcePackStatusEvent;
- 
++
 +public abstract class ServerCommonPacketListenerImpl implements ServerCommonPacketListener, CraftPlayer.TransferCookieConnection {
 +
 +    @Override
 +    public boolean isTransferred() {
 +        return this.transferred;
 +    }
+ 
++    @Override
++    public EnumProtocol getProtocol() {
++        return protocol();
++    }
++
++    @Override
++    public void sendPacket(Packet<?> packet) {
++        send(packet);
++    }
 +    // CraftBukkit end
      private static final Logger LOGGER = LogUtils.getLogger();
      public static final int LATENCY_CHECK_INTERVAL = 15000;
      private static final int CLOSED_LISTENER_TIMEOUT = 15000;
-@@ -45,12 +65,24 @@
+@@ -45,12 +76,24 @@
      private int latency;
      private volatile boolean suspendFlushingOnServerThread = false;
  
@@ -56,7 +67,7 @@
      }
  
      private void close() {
-@@ -72,6 +104,7 @@
+@@ -72,6 +115,7 @@
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket serverboundkeepalivepacket) {
@@ -64,7 +75,7 @@
          if (this.keepAlivePending && serverboundkeepalivepacket.getId() == this.keepAliveChallenge) {
              int i = (int) (SystemUtils.getMillis() - this.keepAliveTime);
  
-@@ -86,8 +119,56 @@
+@@ -86,8 +130,56 @@
      @Override
      public void handlePong(ServerboundPongPacket serverboundpongpacket) {}
  
@@ -122,7 +133,7 @@
  
      @Override
      public void handleResourcePackResponse(ServerboundResourcePackPacket serverboundresourcepackpacket) {
-@@ -96,11 +177,18 @@
+@@ -96,11 +188,18 @@
              ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), serverboundresourcepackpacket.id());
              this.disconnect(IChatBaseComponent.translatable("multiplayer.requiredTexturePrompt.disconnect"));
          }
@@ -141,7 +152,7 @@
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
      }
  
-@@ -108,7 +196,7 @@
+@@ -108,7 +207,7 @@
          this.server.getProfiler().push("keepAlive");
          long i = SystemUtils.getMillis();
  
@@ -150,7 +161,7 @@
              if (this.keepAlivePending) {
                  this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
              } else if (this.checkIfClosed(i)) {
-@@ -148,6 +236,14 @@
+@@ -148,6 +247,14 @@
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) {
@@ -165,7 +176,7 @@
          if (packet.isTerminal()) {
              this.close();
          }
-@@ -167,16 +263,67 @@
+@@ -167,16 +274,67 @@
          }
      }
  
