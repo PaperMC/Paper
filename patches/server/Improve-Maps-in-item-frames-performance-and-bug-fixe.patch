@@ -69,8 +69,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
 +        worldmap.vanillaRender.buffer = abyte; // Paper
  
-         ListTag nbttaglist = nbt.getList("banners", 10);
- 
+         RegistryOps<Tag> registryops = registryLookup.createSerializationContext(NbtOps.INSTANCE);
+         List<MapBanner> list = (List) MapBanner.LIST_CODEC.parse(registryops, nbt.get("banners")).resultOrPartial((s) -> {
 @@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
  
      public class HoldingPlayer {
@@ -95,7 +95,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          private int minDirtyX;
 @@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
          @Nullable
-         Packet<?> nextUpdatePacket(int mapId) {
+         Packet<?> nextUpdatePacket(MapId mapId) {
              MapItemSavedData.MapPatch worldmap_b;
 -            org.bukkit.craftbukkit.map.RenderData render = MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()); // CraftBukkit
 +            if (!this.dirtyData && this.tick % 5 != 0) { this.tick++; return null; } // Paper - this won't end up sending, so don't render it!
@@ -112,7 +112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
                  for (org.bukkit.map.MapCursor cursor : render.cursors) {
                      if (cursor.isVisible()) {
-                         icons.add(new MapDecoration(MapDecoration.Type.byIcon(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), PaperAdventure.asVanilla(cursor.caption()))); // Paper - Adventure
+                         icons.add(new MapDecoration(CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()), cursor.getX(), cursor.getY(), cursor.getDirection(), Optional.ofNullable(PaperAdventure.asVanilla(cursor.caption()))));
 diff --git a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java b/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java

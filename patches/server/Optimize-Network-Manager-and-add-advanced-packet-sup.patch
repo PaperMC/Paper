@@ -32,11 +32,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-         return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
-     });
+     private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
+     private volatile boolean sendLoginDisconnect = true;
 -    private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
-+    private final Queue<WrappedConsumer> pendingActions = Queues.newConcurrentLinkedQueue();
++    private final Queue<WrappedConsumer> pendingActions = Queues.newConcurrentLinkedQueue(); // Paper
      public Channel channel;
      public SocketAddress address;
      // Spigot Start
@@ -81,7 +81,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            } else {
 +                final java.util.List<PacketSendAction> actions = new java.util.ArrayList<>(1 + extraPackets.size());
 +                actions.add(new PacketSendAction(packet, null, false)); // Delay the future listener until the end of the extra packets
- 
++
 +                for (int i = 0, len = extraPackets.size(); i < len;) {
 +                    final Packet<?> extraPacket = extraPackets.get(i);
 +                    final boolean end = ++i == len;
@@ -90,7 +90,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                this.pendingActions.addAll(actions);
 +            }
-+
+ 
 +            this.flushQueue();
 +            // Paper end - Optimize network
 +        }
@@ -148,7 +148,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-         return attributekey;
+ 
      }
  
 -    private void flushQueue() {
@@ -239,7 +239,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  final PacketListener packetListener = this.getPacketListener();
                  if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     public void setBandwidthLogger(SampleLogger log) {
+     public void setBandwidthLogger(LocalSampleLogger log) {
          this.bandwidthDebugMonitor = new BandwidthDebugMonitor(log);
      }
 +
@@ -337,9 +337,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/protocol/Packet.java
 +++ b/src/main/java/net/minecraft/network/protocol/Packet.java
 @@ -0,0 +0,0 @@ public interface Packet<T extends PacketListener> {
-     void handle(T listener);
- 
-     // Paper start
+     static <B extends ByteBuf, T extends Packet<?>> StreamCodec<B, T> codec(StreamMemberEncoder<B, T> encoder, StreamDecoder<B, T> decoder) {
+         return StreamCodec.ofMember(encoder, decoder);
+     }
++
++    // Paper start
 +    /**
 +     * @param player Null if not at PLAY stage yet
 +     */
@@ -364,9 +366,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    default java.util.List<Packet<?>> getExtraPackets() {
 +        return null;
 +    }
-     default boolean packetTooLarge(net.minecraft.network.Connection manager) {
-         return false;
-     }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
@@ -389,6 +390,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
  
 +                    if (!disableFlushConsolidation) channel.pipeline().addFirst(new io.netty.handler.flush.FlushConsolidationHandler()); // Paper - Optimize network
-                     ChannelPipeline channelpipeline = channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyQueryHandler(ServerConnectionListener.this.getServer()));
+                     ChannelPipeline channelpipeline = channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30));
  
-                     Connection.configureSerialization(channelpipeline, PacketFlow.SERVERBOUND, (BandwidthDebugMonitor) null);
+                     if (ServerConnectionListener.this.server.repliesToStatus()) {

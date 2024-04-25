@@ -79,9 +79,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final DataFixer dataFixer;
 +    private final Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey;
 +    private final boolean removeCaches;
++    private final boolean recreateRegionFiles; // TODO
 +
 +    public ThreadedWorldUpgrader(final ResourceKey<LevelStem> dimensionType, final String worldName, final File worldDir, final int threads,
-+                                 final DataFixer dataFixer, final Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey, final boolean removeCaches) {
++                                 final DataFixer dataFixer, final Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey,
++                                 final boolean removeCaches, final boolean recreateRegionFiles) {
 +        this.dimensionType = dimensionType;
 +        this.worldName = worldName;
 +        this.worldDir = worldDir;
@@ -103,6 +105,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.dataFixer = dataFixer;
 +        this.generatorKey = generatorKey;
 +        this.removeCaches = removeCaches;
++        this.recreateRegionFiles = recreateRegionFiles;
 +    }
 +
 +    public void convert() {
@@ -256,16 +259,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - fix and optimise world upgrading
 +    public static void convertWorldButItWorks(net.minecraft.resources.ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimensionType, net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess worldSession,
-+                                              DataFixer dataFixer, Optional<net.minecraft.resources.ResourceKey<com.mojang.serialization.Codec<? extends net.minecraft.world.level.chunk.ChunkGenerator>>> generatorKey, boolean removeCaches) {
++                                              DataFixer dataFixer, Optional<net.minecraft.resources.ResourceKey<com.mojang.serialization.Codec<? extends net.minecraft.world.level.chunk.ChunkGenerator>>> generatorKey, boolean removeCaches, boolean recreateRegionFiles) {
 +        int threads = Runtime.getRuntime().availableProcessors() * 3 / 8;
-+        final io.papermc.paper.world.ThreadedWorldUpgrader worldUpgrader = new io.papermc.paper.world.ThreadedWorldUpgrader(dimensionType, worldSession.getLevelId(), worldSession.levelDirectory.path().toFile(), threads, dataFixer, generatorKey, removeCaches);
++        final io.papermc.paper.world.ThreadedWorldUpgrader worldUpgrader = new io.papermc.paper.world.ThreadedWorldUpgrader(dimensionType, worldSession.getLevelId(), worldSession.levelDirectory.path().toFile(), threads, dataFixer, generatorKey, removeCaches, recreateRegionFiles);
 +        worldUpgrader.convert();
 +    }
 +    // Paper end - fix and optimise world upgrading
 +
-     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, Registry<LevelStem> dimensionOptionsRegistry) {
+     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, RegistryAccess dynamicRegistryManager, boolean recreateRegionFiles) {
          Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
-         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, dimensionOptionsRegistry, eraseCache);
+         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, dynamicRegistryManager, eraseCache, recreateRegionFiles);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -277,7 +280,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (this.options.has("forceUpgrade")) {
 -                net.minecraft.server.Main.forceUpgrade(worldSession, DataFixers.getDataFixer(), this.options.has("eraseCache"), () -> {
 -                    return true;
--                }, dimensions);
+-                }, iregistrycustom_dimension, this.options.has("recreateRegionFiles"));
 -            }
 +            // Paper - fix and optimise world upgrading; move down
  
@@ -290,7 +293,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - fix and optimise world upgrading
 +            if (options.has("forceUpgrade")) {
 +                net.minecraft.server.Main.convertWorldButItWorks(
-+                    dimensionKey, worldSession, DataFixers.getDataFixer(), worlddimension.generator().getTypeNameForDataFixer(), options.has("eraseCache")
++                    dimensionKey, worldSession, DataFixers.getDataFixer(), worlddimension.generator().getTypeNameForDataFixer(), options.has("eraseCache"), console.has("recreateRegionFiles")
 +                );
 +            }
 +            // Paper end - fix and optimise world upgrading
@@ -360,7 +363,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          worlddata.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().shouldReportAsModified());
  
 -        if (this.console.options.has("forceUpgrade")) {
--            net.minecraft.server.Main.forceUpgrade(worldSession, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, iregistry);
+-            net.minecraft.server.Main.forceUpgrade(worldSession, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, iregistrycustom_dimension, this.console.options.has("recreateRegionFiles"));
 -        }
 +        // Paper - fix and optimise world upgrading; move down
  
@@ -373,7 +376,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - fix and optimise world upgrading
 +        if (this.console.options.has("forceUpgrade")) {
 +            net.minecraft.server.Main.convertWorldButItWorks(
-+                actualDimension,  worldSession, DataFixers.getDataFixer(), worlddimension.generator().getTypeNameForDataFixer(), this.console.options.has("eraseCache")
++                actualDimension,  worldSession, DataFixers.getDataFixer(), worlddimension.generator().getTypeNameForDataFixer(), this.console.options.has("eraseCache"), this.console.options.has("recreateRegionFiles")
 +            );
 +        }
 +        // Paper end - fix and optimise world upgrading
