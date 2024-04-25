@@ -67,6 +67,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param damage durability / damage
      * @deprecated see {@link #setDurability(short)}
      */
+    @Deprecated
     public ItemStack(@NotNull final Material type, final int amount, final short damage) {
         this(type, amount, damage, null);
     }
