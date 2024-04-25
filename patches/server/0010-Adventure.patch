@@ -1147,10 +1147,10 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..94a0a5850c97df08019c5b0f5d4e02a9b199949b
+index 0000000000000000000000000000000000000000..6c59f7083ea0e5e9215f31baa677d0a4699dd39a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,467 @@
+@@ -0,0 +1,474 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.StringReader;
@@ -1219,6 +1219,7 @@ index 0000000000000000000000000000000000000000..94a0a5850c97df08019c5b0f5d4e02a9
 +import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 +import org.bukkit.craftbukkit.entity.CraftEntity;
 +import org.intellij.lang.annotations.Subst;
++import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -1337,7 +1338,13 @@ index 0000000000000000000000000000000000000000..94a0a5850c97df08019c5b0f5d4e02a9
 +        return jsons;
 +    }
 +
-+    public static net.minecraft.network.chat.Component asVanilla(@Nullable final Component component) {
++    public static net.minecraft.network.chat.@NotNull Component asVanillaNullToEmpty(final @Nullable Component component) {
++        if (component == null) return net.minecraft.network.chat.CommonComponents.EMPTY;
++        return asVanilla(component);
++    }
++
++    @Contract("null -> null; !null -> !null")
++    public static net.minecraft.network.chat.Component asVanilla(final @Nullable Component component) {
 +        if (component == null) return null;
 +        if (true) return new AdventureComponent(component);
 +        return WRAPPER_AWARE_SERIALIZER.serialize(component);
@@ -4059,7 +4066,7 @@ index 55945b83a5426b352bad9507cc9e94afb1278032..9ea1537408ff2d790747b6e5a681d917
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..aa9049ed3d39ab862978e311ec0bb0dceb648a8a 100644
+index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..09293673061edc99d38933d2e4f1a8c0e3f9dac0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -386,14 +386,40 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -4159,7 +4166,7 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..aa9049ed3d39ab862978e311ec0bb0dc
          if (this.getHandle().connection == null) return;
  
 -        ClientboundTabListPacket packet = new ClientboundTabListPacket((this.playerListHeader == null) ? Component.empty() : this.playerListHeader, (this.playerListFooter == null) ? Component.empty() : this.playerListFooter);
-+        ClientboundTabListPacket packet = new ClientboundTabListPacket((this.playerListHeader == null) ? Component.empty() : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListHeader), (this.playerListFooter == null) ? Component.empty() : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListFooter)); // Paper - adventure
++        ClientboundTabListPacket packet = new ClientboundTabListPacket(io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListHeader), io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListFooter)); // Paper - adventure
          this.getHandle().connection.send(packet);
      }
  
@@ -4421,8 +4428,8 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..aa9049ed3d39ab862978e311ec0bb0dc
 +        final ServerGamePacketListenerImpl connection = this.getHandle().connection;
 +        if (connection == null) return;
 +        final ClientboundTabListPacket packet = new ClientboundTabListPacket(
-+            io.papermc.paper.adventure.PaperAdventure.asVanilla((this.playerListHeader == null) ? net.kyori.adventure.text.Component.empty() : this.playerListHeader),
-+            io.papermc.paper.adventure.PaperAdventure.asVanilla((this.playerListFooter == null) ? net.kyori.adventure.text.Component.empty() : this.playerListFooter)
++            io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListHeader),
++            io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListFooter)
 +        );
 +        connection.send(packet);
 +    }
@@ -4733,10 +4740,10 @@ index 4dd9a80af9901287ab6740b072f2b89678c3d0cb..b2586684295b295a3196a2a9cf724cec
      public String getTitle() {
          return this.title;
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 01963ef944da9251c038208c20012939afc77830..cf9069d7b3607c190459ee47ab5f7ca4ff10d03b 100644
+index 01963ef944da9251c038208c20012939afc77830..319ad3342740657175ad78a1c1cc383046fe2fb5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -501,4 +501,16 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -501,4 +501,21 @@ public final class CraftItemFactory implements ItemFactory {
          CraftItemStack craft = (CraftItemStack) itemStack;
          return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(MinecraftServer.getServer().getWorldData().enabledFeatures(), source, craft.handle, level, allowTreasures));
      }
@@ -4744,7 +4751,12 @@ index 01963ef944da9251c038208c20012939afc77830..cf9069d7b3607c190459ee47ab5f7ca4
 +    // Paper start - Adventure
 +    @Override
 +    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
-+        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(item.getType().getKey(), item.getAmount(), io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(item).getComponentsPatch()))));
++        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(
++            net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(
++                item.getType().getKey(),
++                item.getAmount(),
++                io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.unwrap(item).getComponentsPatch())) // unwrap is fine here because the components patch will be safely copied
++        ));
 +    }
 +
 +    @Override
