@@ -28,7 +28,7 @@ public class AttributeModifier implements ConfigurationSerializable {
     }
 
     public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation) {
-        this(uuid, name, amount, operation, (EquipmentSlotGroup) null);
+        this(uuid, name, amount, operation, (EquipmentSlot) null);
     }
 
     public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation, @Nullable EquipmentSlot slot) {
@@ -39,6 +39,7 @@ public class AttributeModifier implements ConfigurationSerializable {
         Preconditions.checkArgument(uuid != null, "UUID cannot be null");
         Preconditions.checkArgument(name != null, "Name cannot be null");
         Preconditions.checkArgument(operation != null, "Operation cannot be null");
+        Preconditions.checkArgument(slot != null, "EquipmentSlotGroup cannot be null");
         this.uuid = uuid;
         this.name = name;
         this.amount = amount;
@@ -95,7 +96,7 @@ public class AttributeModifier implements ConfigurationSerializable {
     @Nullable
     @Deprecated
     public EquipmentSlot getSlot() {
-        return slot.getExample();
+        return slot == EquipmentSlotGroup.ANY ? null : slot.getExample();
     }
 
     /**

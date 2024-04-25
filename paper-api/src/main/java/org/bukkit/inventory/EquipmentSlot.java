@@ -1,24 +1,25 @@
 package org.bukkit.inventory;
 
+import java.util.function.Supplier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 public enum EquipmentSlot {
 
-    HAND(EquipmentSlotGroup.MAINHAND),
-    OFF_HAND(EquipmentSlotGroup.OFFHAND),
-    FEET(EquipmentSlotGroup.FEET),
-    LEGS(EquipmentSlotGroup.LEGS),
-    CHEST(EquipmentSlotGroup.CHEST),
-    HEAD(EquipmentSlotGroup.HEAD),
+    HAND(() -> EquipmentSlotGroup.MAINHAND),
+    OFF_HAND(() -> EquipmentSlotGroup.OFFHAND),
+    FEET(() -> EquipmentSlotGroup.FEET),
+    LEGS(() -> EquipmentSlotGroup.LEGS),
+    CHEST(() -> EquipmentSlotGroup.CHEST),
+    HEAD(() -> EquipmentSlotGroup.HEAD),
     /**
      * Only for certain entities such as horses and wolves.
      */
-    BODY(EquipmentSlotGroup.ARMOR);
+    BODY(() -> EquipmentSlotGroup.ARMOR);
 
-    private final EquipmentSlotGroup group;
+    private final Supplier<EquipmentSlotGroup> group; // Supplier because of class loading order, since EquipmentSlot and EquipmentSlotGroup reference each other on class init
 
-    private EquipmentSlot(/*@NotNull*/ EquipmentSlotGroup group) {
+    private EquipmentSlot(/*@NotNull*/ Supplier<EquipmentSlotGroup> group) {
         this.group = group;
     }
 
@@ -30,6 +31,6 @@ public enum EquipmentSlot {
     @NotNull
     @ApiStatus.Internal
     public EquipmentSlotGroup getGroup() {
-        return group;
+        return group.get();
     }
 }
