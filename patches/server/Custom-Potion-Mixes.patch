@@ -179,10 +179,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
      public static Exception excessiveVelEx; // Paper - Velocity warnings
      private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
-+    private final org.bukkit.craftbukkit.potion.CraftPotionBrewer potionBrewer = new org.bukkit.craftbukkit.potion.CraftPotionBrewer(); // Paper - Custom Potion Mixes
++    private final org.bukkit.craftbukkit.potion.CraftPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
  
      static {
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
+@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
+         if (this.configuration.getBoolean("settings.use-map-color-cache")) {
+             MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
+         }
++        this.potionBrewer = new org.bukkit.craftbukkit.potion.CraftPotionBrewer(playerList.getServer()); // Paper - custom potion mixes
+         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
+     }
+ 
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          return datapackManager;
      }
@@ -222,30 +230,48 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.ArrayList;
 +import java.util.Collection;
 +import org.bukkit.potion.PotionBrewer;
-+import org.bukkit.potion.PotionData;
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionEffectType;
 +import org.bukkit.potion.PotionType;
 +
 +public class CraftPotionBrewer implements PotionBrewer {
 +
++    private final net.minecraft.server.MinecraftServer minecraftServer;
++
++    public CraftPotionBrewer(net.minecraft.server.MinecraftServer minecraftServer) {
++        this.minecraftServer = minecraftServer;
++    }
++
++    // Paper start - keep old spigot methods, removal in 1.20.6
 +    @Override
 +    public Collection<PotionEffect> getEffects(PotionType type, boolean upgraded, boolean extended) {
-+        Preconditions.checkArgument(!type.getKey().getKey().startsWith("strong_"), "Strong potion type cannot be used directly, got %s", type.getKey());
-+        Preconditions.checkArgument(!type.getKey().getKey().startsWith("long_"), "Extended potion type cannot be used directly, got %s", type.getKey());
++        final org.bukkit.NamespacedKey key = type.getKey();
 +
-+        return CraftPotionUtil.fromBukkit(new PotionData(type, upgraded, extended)).getPotionEffects();
++        Preconditions.checkArgument(!key.getKey().startsWith("strong_"), "Strong potion type cannot be used directly, got %s", key);
++        Preconditions.checkArgument(!key.getKey().startsWith("long_"), "Extended potion type cannot be used directly, got %s", key);
++
++        org.bukkit.NamespacedKey effectiveKey = key;
++        if (upgraded) {
++            effectiveKey = new org.bukkit.NamespacedKey(key.namespace(), "strong_" + key.key());
++        } else if (extended) {
++            effectiveKey = new org.bukkit.NamespacedKey(key.namespace(), "long_" + key.key());
++        }
++
++        final org.bukkit.potion.PotionType effectivePotionType = org.bukkit.Registry.POTION.get(effectiveKey);
++        Preconditions.checkNotNull(type, "Unknown potion type from data " + effectiveKey.asMinimalString()); // Legacy error message in 1.20.4
++        return effectivePotionType.getPotionEffects();
 +    }
 +
 +    @Override
 +    public Collection<PotionEffect> getEffectsFromDamage(int damage) {
-+        return new ArrayList<PotionEffect>();
++        return new ArrayList<>();
 +    }
 +
 +    @Override
 +    public PotionEffect createEffect(PotionEffectType potion, int duration, int amplifier) {
-+        return new PotionEffect(potion, potion.isInstant() ? 1 : (int) (duration * potion.getDurationModifier()), amplifier);
++        return new PotionEffect(potion, potion.isInstant() ? 1 : duration, amplifier);
 +    }
++    // Paper end - keep old spigot methods, removal in 1.20.6
 +
 +    // Paper start
 +    @Override
@@ -260,7 +286,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public void resetPotionMixes() {
-+        net.minecraft.world.item.alchemy.PotionBrewing.reload();
++        this.minecraftServer.potionBrewing().reload(this.minecraftServer.getWorldData().enabledFeatures());
 +    }
 +    // Paper end
 +}
