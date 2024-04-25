@@ -1219,6 +1219,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 +import org.bukkit.craftbukkit.entity.CraftEntity;
 +import org.intellij.lang.annotations.Subst;
++import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -1337,7 +1338,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return jsons;
 +    }
 +
-+    public static net.minecraft.network.chat.Component asVanilla(@Nullable final Component component) {
++    public static net.minecraft.network.chat.@NotNull Component asVanillaNullToEmpty(final @Nullable Component component) {
++        if (component == null) return net.minecraft.network.chat.CommonComponents.EMPTY;
++        return asVanilla(component);
++    }
++
++    @Contract("null -> null; !null -> !null")
++    public static net.minecraft.network.chat.Component asVanilla(final @Nullable Component component) {
 +        if (component == null) return null;
 +        if (true) return new AdventureComponent(component);
 +        return WRAPPER_AWARE_SERIALIZER.serialize(component);
@@ -4159,7 +4166,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.getHandle().connection == null) return;
  
 -        ClientboundTabListPacket packet = new ClientboundTabListPacket((this.playerListHeader == null) ? Component.empty() : this.playerListHeader, (this.playerListFooter == null) ? Component.empty() : this.playerListFooter);
-+        ClientboundTabListPacket packet = new ClientboundTabListPacket((this.playerListHeader == null) ? Component.empty() : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListHeader), (this.playerListFooter == null) ? Component.empty() : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListFooter)); // Paper - adventure
++        ClientboundTabListPacket packet = new ClientboundTabListPacket(io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListHeader), io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListFooter)); // Paper - adventure
          this.getHandle().connection.send(packet);
      }
  
@@ -4421,8 +4428,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final ServerGamePacketListenerImpl connection = this.getHandle().connection;
 +        if (connection == null) return;
 +        final ClientboundTabListPacket packet = new ClientboundTabListPacket(
-+            io.papermc.paper.adventure.PaperAdventure.asVanilla((this.playerListHeader == null) ? net.kyori.adventure.text.Component.empty() : this.playerListHeader),
-+            io.papermc.paper.adventure.PaperAdventure.asVanilla((this.playerListFooter == null) ? net.kyori.adventure.text.Component.empty() : this.playerListFooter)
++            io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListHeader),
++            io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListFooter)
 +        );
 +        connection.send(packet);
 +    }
@@ -4744,7 +4751,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - Adventure
 +    @Override
 +    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
-+        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(item.getType().getKey(), item.getAmount(), io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(item).getComponentsPatch()))));
++        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(
++            net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(
++                item.getType().getKey(),
++                item.getAmount(),
++                io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.unwrap(item).getComponentsPatch())) // unwrap is fine here because the components patch will be safely copied
++        ));
 +    }
 +
 +    @Override
