@@ -7,28 +7,28 @@ Subject: [PATCH] Detail more information in watchdog dumps
 - Dump player name, player uuid, position, and world for packet handling
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index fae2a57570a4007b67b9949b9b16504da36a9886..a536ebcf29d8ef0ed32863bd8d5e70f7a0636e8d 100644
+index 63066dfde00569833546da01cd580434f8be6593..7fb162fa031fd76aa9a94f5fdaa3e32ceb9b9abc 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -587,7 +587,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -607,7 +607,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
                  || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
                  || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
 +            // Paper start - detailed watchdog information
 +            net.minecraft.network.protocol.PacketUtils.packetProcessing.push(this.packetListener);
-+            try { // Paper end - detailed watchdog information
++            try {
              tickablepacketlistener.tick();
-+            } finally { // Paper start - detailed watchdog information
++            } finally {
 +                net.minecraft.network.protocol.PacketUtils.packetProcessing.pop();
 +            } // Paper end - detailed watchdog information
-             }
-             // Paper end - Buffer joins to world
+             } // Paper end - Buffer joins to world
          }
+ 
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index b7ffab0284b0bccd79775b8d03c8b2e088f91d1d..83302c252f54481f239522e5c6861ccfe233070a 100644
+index e161ad0f53a21a68e8c78575ba5d3cdbdb11fca0..57e76b53e5e314c3e6b8856010f7a84188121582 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-@@ -18,6 +18,24 @@ public class PacketUtils {
+@@ -19,6 +19,24 @@ public class PacketUtils {
  
      private static final Logger LOGGER = LogUtils.getLogger();
  
@@ -53,7 +53,7 @@ index b7ffab0284b0bccd79775b8d03c8b2e088f91d1d..83302c252f54481f239522e5c6861ccf
      public PacketUtils() {}
  
      public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, ServerLevel world) throws RunningOnDifferentThreadException {
-@@ -27,6 +45,8 @@ public class PacketUtils {
+@@ -28,6 +46,8 @@ public class PacketUtils {
      public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
          if (!engine.isSameThread()) {
              engine.executeIfPossible(() -> {
@@ -62,7 +62,7 @@ index b7ffab0284b0bccd79775b8d03c8b2e088f91d1d..83302c252f54481f239522e5c6861ccf
                  if (listener instanceof ServerCommonPacketListenerImpl serverCommonPacketListener && serverCommonPacketListener.processedDisconnect) return; // CraftBukkit - Don't handle sync packets for kicked players
                  if (listener.shouldHandleMessage(packet)) {
                      co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
-@@ -64,6 +84,12 @@ public class PacketUtils {
+@@ -47,6 +67,12 @@ public class PacketUtils {
                  } else {
                      PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
                  }
@@ -76,10 +76,10 @@ index b7ffab0284b0bccd79775b8d03c8b2e088f91d1d..83302c252f54481f239522e5c6861ccf
              });
              throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 9d18da228c6709e7665ba8babb6ee6d0b36b5dc5..af9f58328c09dddb2875f79128f906b8b276ab88 100644
+index 16d24e70072e3846b3c35d331c3f474238a8def2..98fded81545a96deb6a05df713a5b69e27189cf4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1239,7 +1239,26 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1245,7 +1245,26 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
      }
  
@@ -106,7 +106,7 @@ index 9d18da228c6709e7665ba8babb6ee6d0b36b5dc5..af9f58328c09dddb2875f79128f906b8
          ++TimingHistory.entityTicks; // Paper - timings
          // Spigot start
          co.aikar.timings.Timing timer; // Paper
-@@ -1279,7 +1298,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1285,7 +1304,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
              this.tickPassenger(entity, entity1);
          }
          // } finally { timer.stopTiming(); } // Paper - timings - move up
@@ -122,10 +122,10 @@ index 9d18da228c6709e7665ba8babb6ee6d0b36b5dc5..af9f58328c09dddb2875f79128f906b8
  
      private void tickPassenger(Entity vehicle, Entity passenger) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index ab8a736bd8da140c48e6bd66449d7aa3b4f29a16..9a01eff5a93c68edd45f98e9a6f8d24656650fb6 100644
+index 257943b4c984d6faee29eca17c8f951e7f43168b..0fbcf60a994f67bdd81d40e4a8bf38f0cbb8993d 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1063,8 +1063,43 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -1074,8 +1074,43 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          return this.onGround;
      }
  
@@ -169,7 +169,7 @@ index ab8a736bd8da140c48e6bd66449d7aa3b4f29a16..9a01eff5a93c68edd45f98e9a6f8d246
          if (this.noPhysics) {
              this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
          } else {
-@@ -1234,6 +1269,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -1245,6 +1280,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  this.level().getProfiler().pop();
              }
          }
@@ -183,7 +183,7 @@ index ab8a736bd8da140c48e6bd66449d7aa3b4f29a16..9a01eff5a93c68edd45f98e9a6f8d246
      }
  
      private boolean isStateClimbable(BlockState state) {
-@@ -4379,7 +4421,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -4405,7 +4447,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public void setDeltaMovement(Vec3 velocity) {
@@ -193,7 +193,7 @@ index ab8a736bd8da140c48e6bd66449d7aa3b4f29a16..9a01eff5a93c68edd45f98e9a6f8d246
      }
  
      public void addDeltaMovement(Vec3 velocity) {
-@@ -4482,7 +4526,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -4508,7 +4552,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          }
          // Paper end - Fix MC-4
          if (this.position.x != x || this.position.y != y || this.position.z != z) {
@@ -204,7 +204,7 @@ index ab8a736bd8da140c48e6bd66449d7aa3b4f29a16..9a01eff5a93c68edd45f98e9a6f8d246
              int j = Mth.floor(y);
              int k = Mth.floor(z);
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 0234555978d1b13051f876a257e47bafad37b0f8..9e638f72f180ff5ef63ec3dd6cf548c53f7bd4a5 100644
+index 577f29519156f33b49ee319a64a52249630e28d8..6db566e3111ec08a99aa429624979cb83a85e272 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -22,6 +22,78 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa

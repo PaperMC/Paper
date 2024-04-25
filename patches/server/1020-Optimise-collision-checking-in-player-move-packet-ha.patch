@@ -8,10 +8,10 @@ Move collision logic to just the hasNewCollision call instead of getCubes + hasN
 CHECK ME
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 33560f75dd76f946203faa34ca5d10f213cd62c9..d0ae2c485b0e37406633c79043bd833a8a6b3e2d 100644
+index 6061f7104dd2094e316739a1b0e541475aed40b0..88fc56fa521c36accd807ca1704136f29733e52f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -552,7 +552,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -578,7 +578,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                      return;
                  }
  
@@ -20,7 +20,7 @@ index 33560f75dd76f946203faa34ca5d10f213cd62c9..d0ae2c485b0e37406633c79043bd833a
  
                  d6 = d3 - this.vehicleLastGoodX; // Paper - diff on change, used for checking large move vectors above
                  d7 = d4 - this.vehicleLastGoodY - 1.0E-6D; // Paper - diff on change, used for checking large move vectors above
-@@ -568,6 +568,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -594,6 +594,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  }
  
                  entity.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
@@ -28,7 +28,7 @@ index 33560f75dd76f946203faa34ca5d10f213cd62c9..d0ae2c485b0e37406633c79043bd833a
                  double d11 = d7;
  
                  d6 = d3 - entity.getX();
-@@ -581,15 +582,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -607,15 +608,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  boolean flag2 = false;
  
                  if (d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
@@ -55,7 +55,7 @@ index 33560f75dd76f946203faa34ca5d10f213cd62c9..d0ae2c485b0e37406633c79043bd833a
                      entity.absMoveTo(d0, d1, d2, f, f1);
                      this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(new ClientboundMoveVehiclePacket(entity));
-@@ -668,7 +677,32 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -694,7 +703,32 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      }
  
      private boolean noBlocksAround(Entity entity) {
@@ -89,7 +89,7 @@ index 33560f75dd76f946203faa34ca5d10f213cd62c9..d0ae2c485b0e37406633c79043bd833a
      }
  
      @Override
-@@ -1282,7 +1316,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1289,7 +1323,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  }
  
                  if (this.awaitingPositionFromClient != null) {
@@ -98,7 +98,7 @@ index 33560f75dd76f946203faa34ca5d10f213cd62c9..d0ae2c485b0e37406633c79043bd833a
                          this.awaitingTeleportTime = this.tickCount;
                          this.teleport(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot());
                      }
-@@ -1389,7 +1423,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1398,7 +1432,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                  }
                              }
  
@@ -107,7 +107,7 @@ index 33560f75dd76f946203faa34ca5d10f213cd62c9..d0ae2c485b0e37406633c79043bd833a
  
                              d6 = d0 - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
                              d7 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
-@@ -1431,6 +1465,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1440,6 +1474,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
                              this.player.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
                              this.player.onGround = packet.isOnGround(); // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
@@ -115,10 +115,10 @@ index 33560f75dd76f946203faa34ca5d10f213cd62c9..d0ae2c485b0e37406633c79043bd833a
                              // Paper start - prevent position desync
                              if (this.awaitingPositionFromClient != null) {
                                  return; // ... thanks Mojang for letting move calls teleport across dimensions.
-@@ -1459,7 +1494,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                                 }
+@@ -1470,7 +1505,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                              }
  
+                             // Paper start - Add fail move event
 -                            boolean teleportBack = !this.player.noPhysics && !this.player.isSleeping() && (movedWrongly && worldserver.noCollision(this.player, axisalignedbb) || this.isPlayerCollidingWithAnythingNew(worldserver, axisalignedbb, d0, d1, d2));
 +                            // Paper start - optimise out extra getCubes
 +                            boolean teleportBack = !this.player.noPhysics && !this.player.isSleeping() && movedWrongly;
@@ -134,7 +134,7 @@ index 33560f75dd76f946203faa34ca5d10f213cd62c9..d0ae2c485b0e37406633c79043bd833a
                              if (teleportBack) {
                                  io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
                                      toX, toY, toZ, toYaw, toPitch, false);
-@@ -1559,6 +1604,33 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1576,6 +1621,33 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
      }
  

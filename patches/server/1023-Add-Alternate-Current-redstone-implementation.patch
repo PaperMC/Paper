@@ -2009,10 +2009,10 @@ index 0000000000000000000000000000000000000000..33cd90c30c22200a4e1ae64f40a0bf78
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index af9f58328c09dddb2875f79128f906b8b276ab88..c9405cbea1202e5603dde42637cf2a78592b92e1 100644
+index 98fded81545a96deb6a05df713a5b69e27189cf4..a2a5a43c5e73ba2cccbec4e1ac563f692ae901b5 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -223,6 +223,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -228,6 +228,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
      public final UUID uuid;
      public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
      public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
@@ -2020,7 +2020,7 @@ index af9f58328c09dddb2875f79128f906b8b276ab88..c9405cbea1202e5603dde42637cf2a78
  
      public LevelChunk getChunkIfLoaded(int x, int z) {
          return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
-@@ -2593,6 +2594,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -2560,6 +2561,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
          return crashreportsystemdetails;
      }
  
@@ -2035,10 +2035,10 @@ index af9f58328c09dddb2875f79128f906b8b276ab88..c9405cbea1202e5603dde42637cf2a78
  
          EntityCallbacks() {}
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index bb57f97dbc2fcc7c28ebfb54ff00796fc7f51efe..a09017e74d972a12d0b88b4ade9a3532ce0ecd08 100644
+index ae569a4837dc82bbc390d281d774179706772959..68746df814aa1a8714e199ff887cad9f8bfa283c 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -1887,4 +1887,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1882,4 +1882,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return ret;
      }
      // Paper end
@@ -2054,10 +2054,10 @@ index bb57f97dbc2fcc7c28ebfb54ff00796fc7f51efe..a09017e74d972a12d0b88b4ade9a3532
 +    // Paper end - optimize redstone (Alternate Current)
  }
 diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-index c80af964a2b4026f738aecd2058a7e99d225cce0..b5a71fd4e2f55bf036c2c697da5d50cc90fc657c 100644
+index 7ec3b0f9488b732c51cd1b02fb0dfe3c45aec2a4..f6c1e40001af507b4eed8f46a9ed4e4704b48d72 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -259,7 +259,7 @@ public class RedStoneWireBlock extends Block {
+@@ -258,7 +258,7 @@ public class RedStoneWireBlock extends Block {
          return floor.isFaceSturdy(world, pos, Direction.UP) || floor.is(Blocks.HOPPER);
      }
  
@@ -2066,9 +2066,9 @@ index c80af964a2b4026f738aecd2058a7e99d225cce0..b5a71fd4e2f55bf036c2c697da5d50cc
      // The bulk of the new functionality is found in RedstoneWireTurbo.java
      com.destroystokyo.paper.util.RedstoneWireTurbo turbo = new com.destroystokyo.paper.util.RedstoneWireTurbo(this);
  
-@@ -461,7 +461,13 @@ public class RedStoneWireBlock extends Block {
+@@ -460,7 +460,13 @@ public class RedStoneWireBlock extends Block {
      @Override
-     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+     protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
          if (!oldState.is(state.getBlock()) && !world.isClientSide) {
 -            this.updateSurroundingRedstone(world, pos, state, null); // Paper - Optimize redstone
 +            // Paper start - optimize redstone - replace call to updatePowerStrength
@@ -2081,7 +2081,7 @@ index c80af964a2b4026f738aecd2058a7e99d225cce0..b5a71fd4e2f55bf036c2c697da5d50cc
              Iterator iterator = Direction.Plane.VERTICAL.iterator();
  
              while (iterator.hasNext()) {
-@@ -488,7 +494,13 @@ public class RedStoneWireBlock extends Block {
+@@ -487,7 +493,13 @@ public class RedStoneWireBlock extends Block {
                      world.updateNeighborsAt(pos.relative(enumdirection), this);
                  }
  
@@ -2096,9 +2096,9 @@ index c80af964a2b4026f738aecd2058a7e99d225cce0..b5a71fd4e2f55bf036c2c697da5d50cc
                  this.updateNeighborsOfNeighboringWires(world, pos);
              }
          }
-@@ -522,8 +534,14 @@ public class RedStoneWireBlock extends Block {
+@@ -521,8 +533,14 @@ public class RedStoneWireBlock extends Block {
      @Override
-     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
+     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
          if (!world.isClientSide) {
 +            // Paper start - optimize redstone (Alternate Current)
 +            // Alternate Current handles breaking of redstone wires in the WireHandler.

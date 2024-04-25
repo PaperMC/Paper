@@ -5,10 +5,10 @@ Subject: [PATCH] optimize dirt and snow spreading
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java b/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
-index 4e2e80006bd4edae227af7be5ca8e3284b7494f6..f3003a3832deff7724d28b4b3a091f4802a4cb29 100644
+index 5a39e8d359dc13383711e49ffb2d1294dad26192..b7165ec19bef1a07f6618fc0429d86cda1b08da4 100644
 --- a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
-@@ -19,8 +19,13 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
+@@ -18,8 +18,13 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
      }
  
      private static boolean canBeGrass(BlockState state, LevelReader world, BlockPos pos) {
@@ -23,7 +23,7 @@ index 4e2e80006bd4edae227af7be5ca8e3284b7494f6..f3003a3832deff7724d28b4b3a091f48
  
          if (iblockdata1.is(Blocks.SNOW) && (Integer) iblockdata1.getValue(SnowLayerBlock.LAYERS) == 1) {
              return true;
-@@ -37,15 +42,27 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
+@@ -36,15 +41,27 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
      protected abstract MapCodec<? extends SpreadingSnowyDirtBlock> codec();
  
      private static boolean canPropagate(BlockState state, LevelReader world, BlockPos pos) {
@@ -40,20 +40,20 @@ index 4e2e80006bd4edae227af7be5ca8e3284b7494f6..f3003a3832deff7724d28b4b3a091f48
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
-         if (this instanceof GrassBlock && world.paperConfig().tickRates.grassSpread != 1 && (world.paperConfig().tickRates.grassSpread < 1 || (MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.grassSpread != 0)) { return; } // Paper - Configurable random tick rates for blocks
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if (this instanceof GrassBlock && world.paperConfig().tickRates.grassSpread != 1 && (world.paperConfig().tickRates.grassSpread < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.grassSpread != 0)) { return; } // Paper - Configurable random tick rates for blocks
 -        if (!SpreadingSnowyDirtBlock.canBeGrass(state, world, pos)) {
 +        // Paper start - Perf: optimize dirt and snow spreading
-+        net.minecraft.world.level.chunk.ChunkAccess cachedBlockChunk = world.getChunkIfLoaded(pos);
++        final net.minecraft.world.level.chunk.ChunkAccess cachedBlockChunk = world.getChunkIfLoaded(pos);
 +        if (cachedBlockChunk == null) { // Is this needed?
 +            return;
 +        }
 +        if (!SpreadingSnowyDirtBlock.canBeGrass(cachedBlockChunk, state, world, pos)) {
-+        // Paper end - Perf: optimize dirt and snow spreading
++            // Paper end - Perf: optimize dirt and snow spreading
              // CraftBukkit start
              if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
                  return;
-@@ -58,9 +75,19 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
+@@ -57,9 +74,19 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
  
                  for (int i = 0; i < 4; ++i) {
                      BlockPos blockposition1 = pos.offset(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
