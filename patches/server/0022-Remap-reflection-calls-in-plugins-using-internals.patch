@@ -353,14 +353,14 @@ index 0000000000000000000000000000000000000000..5fa5868e82d1f00498d0c5771369e171
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MappingEnvironment.java b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
-index 8e4229634d41a42b3d93948eebb77def7c0c72b1..450d20a7a43868c06c43a9da07345e47786c75d4 100644
+index 8e4229634d41a42b3d93948eebb77def7c0c72b1..38745299ea49f253a410e77557100903ecb472b0 100644
 --- a/src/main/java/io/papermc/paper/util/MappingEnvironment.java
 +++ b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
 @@ -10,6 +10,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
  
  @DefaultQualifier(NonNull.class)
  public final class MappingEnvironment {
-+    public static final String LEGACY_CB_VERSION = "v1_20_R3";
++    public static final String LEGACY_CB_VERSION = "v1_20_R4";
      private static final @Nullable String MAPPINGS_HASH = readMappingsHash();
      private static final boolean REOBF = checkReobf();
  
@@ -658,10 +658,10 @@ index 457a963ee6ebd3cf5c3831f6660e3850335af49f..61744d8fde3ba98585cf261fc09f0acc
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index 072153a601eb257bd36bba24f356d4eb085e3636..432ad62a82573901673d654b06e87b62369bea7a 100644
+index 072153a601eb257bd36bba24f356d4eb085e3636..c2f46c2d7c4035848724cdccdce23f45774e338c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-@@ -65,36 +65,20 @@ public class Commodore {
+@@ -65,36 +65,26 @@ public class Commodore {
      );
  
      // Paper start - Plugin rewrites
@@ -677,12 +677,16 @@ index 072153a601eb257bd36bba24f356d4eb085e3636..432ad62a82573901673d654b06e87b62
 -            final String NMS_REVISION_PACKAGE = "v" + manifest.getMainAttributes().getValue("CraftBukkit-Package-Version") + "/";
 -
 -            getAndRemove.put("org/bukkit/".concat("craftbukkit/" + NMS_REVISION_PACKAGE), NMS_REVISION_PACKAGE);
--        }
--
--        return getAndRemove;
--    }
 +    private static final String CB_PACKAGE_PREFIX = "org/bukkit/".concat("craftbukkit/");
 +    private static final String LEGACY_CB_PACKAGE_PREFIX = CB_PACKAGE_PREFIX + io.papermc.paper.util.MappingEnvironment.LEGACY_CB_VERSION + "/";
++    private static String runtimeCbPkgPrefix() {
++        if (io.papermc.paper.util.MappingEnvironment.reobf()) {
++            return LEGACY_CB_PACKAGE_PREFIX;
+         }
+-
+-        return getAndRemove;
++        return CB_PACKAGE_PREFIX;
+     }
  
      @Nonnull
      private static String getOriginalOrRewrite(@Nonnull String original)
@@ -705,7 +709,7 @@ index 072153a601eb257bd36bba24f356d4eb085e3636..432ad62a82573901673d654b06e87b62
      }
      // Paper end - Plugin rewrites
  
-@@ -167,7 +151,7 @@ public class Commodore {
+@@ -167,7 +157,7 @@ public class Commodore {
          ClassReader cr = new ClassReader(b);
          ClassWriter cw = new ClassWriter(cr, 0);
  
