@@ -32,10 +32,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    public DamageSource customCausingEntity(Entity entity) {
+-        // This method is not intended for change the causing entity if is already set
+-        // also is only necessary if the entity passed is not the direct entity or different from the current causingEntity
+-        if (this.customCausingEntity != null || this.directEntity == entity || this.causingEntity == entity) {
+-            return this;
 +    public DamageSource customEventDamager(Entity entity) {
 +        if (this.directEntity != null) {
-+            throw new IllegalStateException("Cannot set a custom event damager entity when a direct entity is already set (report as a bug to Paper)");
-+        }
++            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to Paper)");
+         }
          DamageSource damageSource = this.cloneInstance();
 -        damageSource.customCausingEntity = entity;
 +        damageSource.customEventDamager = entity;
@@ -47,7 +51,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              return;
          }
  
@@ -82,6 +86,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  HangingBreakEvent event;
                  if (damager != null) {
                      event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damager.getBukkitEntity(), source.is(DamageTypeTags.IS_EXPLOSION) ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.ENTITY);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+@@ -0,0 +0,0 @@ public class Creeper extends Monster implements PowerableMob {
+             if (!event.isCancelled()) {
+             // CraftBukkit end
+             this.dead = true;
+-            this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customCausingEntity(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
++            this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customEventDamager(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
+             this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
+             this.spawnLingeringCloud();
+             // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java b/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
@@ -180,19 +197,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
          CraftDamageSource bukkitDamageSource = new CraftDamageSource(source);
--        Entity damager = source.getCausingEntity();
-+        final Entity damager = source.getCustomEventDamager(); // Paper - fix DamageSource API
+-        Entity damager = (bukkitDamageSource.isIndirect() && source.getDirectEntity() != null) ? source.getDirectEntity() : source.getCausingEntity();
++        Entity damager = (bukkitDamageSource.isIndirect() && source.getDirectEntity() != null) ? source.getDirectEntity() : source.getCustomEventDamager(); // Paper - fix DamageSource API
          if (source.is(DamageTypeTags.IS_EXPLOSION)) {
              if (damager == null) {
                  return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.explodedBlockState); // Paper - Include BlockState for damage
-@@ -0,0 +0,0 @@ public class CraftEventFactory {
-         } else if (damager != null || source.getDirectEntity() != null) {
-             DamageCause cause = (source.isSweep()) ? DamageCause.ENTITY_SWEEP_ATTACK : DamageCause.ENTITY_ATTACK;
- 
--            if (bukkitDamageSource.isIndirect() && source.getDirectEntity() != null) {
--                damager = source.getDirectEntity();
--            }
-+            // Paper - fix DamageSource API
- 
-             if (damager instanceof net.minecraft.world.entity.projectile.Projectile) {
-                 if (damager.getBukkitEntity() instanceof ThrownPotion) {

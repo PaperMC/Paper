@@ -4,27 +4,6 @@ Date: Mon, 12 Dec 2022 12:14:03 -0800
 Subject: [PATCH] Properly track the changed item from dispense events
 
 
-diff --git a/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java b/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
-+++ b/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
-@@ -0,0 +0,0 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
-         ServerLevel worldserver = pointer.level();
-         Position iposition = DispenserBlock.getDispensePosition(pointer);
-         Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
--        Projectile iprojectile = this.getProjectile(worldserver, iposition, stack);
-+        // Paper - move down
- 
-         // CraftBukkit start
-         // iprojectile.shoot((double) enumdirection.getStepX(), (double) ((float) enumdirection.getStepY() + 0.1F), (double) enumdirection.getStepZ(), this.getPower(), this.getUncertainty());
-@@ -0,0 +0,0 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
-                 return stack;
-             }
-         }
-+        Projectile iprojectile = this.getProjectile(worldserver, iposition, CraftItemStack.asNMSCopy(event.getItem())); // Paper - move from above and track changed items in the dispense event
- 
-         iprojectile.shoot(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.getPower(), this.getUncertainty());
-         ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -53,21 +32,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  Consumer<ArmorStand> consumer = EntityType.appendDefaultStackConfig((entityarmorstand) -> {
                      entityarmorstand.setYRot(enumdirection.toYRot());
 -                }, worldserver, stack, (Player) null);
--                ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, stack.getTag(), consumer, blockposition, MobSpawnType.DISPENSER, false, false);
 +                }, worldserver, newStack, (Player) null); // Paper - track changed items in the dispense event
-+                ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, newStack.getTag(), consumer, blockposition, MobSpawnType.DISPENSER, false, false); // Paper - track changed items in the dispense event
+                 ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, consumer, blockposition, MobSpawnType.DISPENSER, false, false);
  
                  if (entityarmorstand != null) {
-                     if (shrink) stack.shrink(1); // Paper - actually handle here
-@@ -0,0 +0,0 @@ public interface DispenseItemBehavior {
-                 }
- 
-                 SmallFireball entitysmallfireball = new SmallFireball(worldserver, d0, d1, d2, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
--                entitysmallfireball.setItem(itemstack1);
-+                entitysmallfireball.setItem(CraftItemStack.unwrap(event.getItem())); // Paper - track changed items in the dispense event (unwrap is save cause setItem already copies)
-                 entitysmallfireball.projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
- 
-                 worldserver.addFreshEntity(entitysmallfireball);
 @@ -0,0 +0,0 @@ public interface DispenseItemBehavior {
                  int y = blockposition.getY();
                  int z = blockposition.getZ();
@@ -94,6 +62,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      // CraftBukkit start - Handle stacked buckets
                      Item item = Items.BUCKET;
                      stack.shrink(1);
+diff --git a/src/main/java/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java b/src/main/java/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java
+@@ -0,0 +0,0 @@ public class ProjectileDispenseBehavior extends DefaultDispenseItemBehavior {
+         ServerLevel worldserver = pointer.level();
+         Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
+         Position iposition = this.dispenseConfig.positionFunction().getDispensePosition(pointer, enumdirection);
+-        Projectile iprojectile = this.projectileItem.asProjectile(worldserver, iposition, stack, enumdirection);
++        // Paper - move down
+ 
+         // CraftBukkit start
+         // this.projectileItem.shoot(iprojectile, (double) enumdirection.getStepX(), (double) enumdirection.getStepY(), (double) enumdirection.getStepZ(), this.dispenseConfig.power(), this.dispenseConfig.uncertainty());
+@@ -0,0 +0,0 @@ public class ProjectileDispenseBehavior extends DefaultDispenseItemBehavior {
+             }
+         }
+ 
++        Projectile iprojectile = this.projectileItem.asProjectile(worldserver, iposition, CraftItemStack.asNMSCopy(event.getItem()), enumdirection); // Paper - move from above and track changed items in the dispense event
+         this.projectileItem.shoot(iprojectile, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.dispenseConfig.power(), this.dispenseConfig.uncertainty());
+         ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
+         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java b/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
