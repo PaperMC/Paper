@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Sun, 24 Sep 2023 18:35:28 +0200
+Subject: [PATCH] Fix missing map initialize event call
+
+== AT ==
+public net.minecraft.world.level.storage.DimensionDataStorage readSavedData(Ljava/util/function/Function;Lnet/minecraft/util/datafix/DataFixTypes;Ljava/lang/String;)Lnet/minecraft/world/level/saveddata/SavedData;
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index b8aac1c72bac15bf421d0f7ae406feefe1cad587..91ef138bdd0bfe77692353e7598b47a43511eb3b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1670,13 +1670,24 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     @Nullable
+     @Override
+     public MapItemSavedData getMapData(MapId id) {
+-        // CraftBukkit start
+-        MapItemSavedData worldmap = (MapItemSavedData) this.getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), id.key());
+-        if (worldmap != null) {
+-            worldmap.id = id;
++        // Paper start - Call missing map initialize event and set id
++        final DimensionDataStorage storage = this.getServer().overworld().getDataStorage();
++
++        final net.minecraft.world.level.saveddata.SavedData existing = storage.cache.get(id);
++        if (existing == null && !storage.cache.containsKey(id)) {
++            final MapItemSavedData worldmap = (MapItemSavedData) this.getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), id.key());
++            storage.cache.put(id, map);
++            if (map != null) {
++                map.id = id;
++                new MapInitializeEvent(map.mapView).callEvent();
++                return map;
++            }
++        } else if (existing instanceof MapItemSavedData mapItemSavedData) {
++            mapItemSavedData.id = id;
+         }
+-        return worldmap;
+-        // CraftBukkit end
++
++        return existing instanceof MapItemSavedData data ? data : null;
++        // Paper end - Call missing map initialize event and set id
+     }
+ 
+     @Override

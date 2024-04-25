@@ -4,15 +4,20 @@ Date: Thu, 3 Mar 2016 03:53:43 -0600
 Subject: [PATCH] Allow for toggling of spawn chunks
 
 
-diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 5f881af95bd5ee94daadfd9e5d64ee6d411255c4..10e0630d30864f8d38434e58f43c63a6984b974b 100644
---- a/src/main/java/net/minecraft/world/level/Level.java
-+++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -258,6 +258,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         });
-         // CraftBukkit end
-         this.timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
-+        this.keepSpawnInMemory = this.paperConfig().spawn.keepSpawnLoaded; // Paper - Option to keep spawn chunks loaded
-         this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
-         this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
-     }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 476b513e05a8ef099a17db44732ebc8eed8a595c..a72b84cdf2b5f4aea5eb7fe4dfc0faad27c46876 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -403,6 +403,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             this.dragonFight = null;
+         }
+ 
++        // Paper start - keep spawn loaded
++        if (this.paperConfig().spawn.keepSpawnLoaded && this.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS) == 0) {
++            this.getGameRules().getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(this.paperConfig().spawn.keepSpawnLoadedRange, this);
++        }
++        // Paper end - keep spawn loaded
++
+         this.sleepStatus = new SleepStatus();
+         this.gameEventDispatcher = new GameEventDispatcher(this);
+         this.randomSequences = (RandomSequences) Objects.requireNonNullElseGet(randomsequences, () -> {
