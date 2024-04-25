@@ -14,10 +14,10 @@ Additionally equippable mob heads, wither skulls, and carved pumpkins
 are subject to the same possible error.
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-index 1fb809486ee56efd3d0ef3fa02503ba9be459f68..58eccc76fe4c24c364e6c634fcca60ab771a5792 100644
+index 4fa838bf97ede6e1c893ba64f53aa7af5db0405a..32084df594649d8da04052bbfa111896d8ea1f91 100644
 --- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -348,7 +348,7 @@ public interface DispenseItemBehavior {
+@@ -238,7 +238,7 @@ public interface DispenseItemBehavior {
                          // Chain to handler for new item
                          ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
                          DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
@@ -26,7 +26,7 @@ index 1fb809486ee56efd3d0ef3fa02503ba9be459f68..58eccc76fe4c24c364e6c634fcca60ab
                              idispensebehavior.dispense(pointer, eventStack);
                              return stack;
                          }
-@@ -404,7 +404,7 @@ public interface DispenseItemBehavior {
+@@ -294,7 +294,7 @@ public interface DispenseItemBehavior {
                      // Chain to handler for new item
                      ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
                      DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
@@ -35,7 +35,7 @@ index 1fb809486ee56efd3d0ef3fa02503ba9be459f68..58eccc76fe4c24c364e6c634fcca60ab
                          idispensebehavior.dispense(pointer, eventStack);
                          return stack;
                      }
-@@ -478,7 +478,7 @@ public interface DispenseItemBehavior {
+@@ -368,7 +368,7 @@ public interface DispenseItemBehavior {
                      // Chain to handler for new item
                      ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
                      DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
@@ -44,7 +44,7 @@ index 1fb809486ee56efd3d0ef3fa02503ba9be459f68..58eccc76fe4c24c364e6c634fcca60ab
                          idispensebehavior.dispense(pointer, eventStack);
                          return stack;
                      }
-@@ -924,7 +924,7 @@ public interface DispenseItemBehavior {
+@@ -710,7 +710,7 @@ public interface DispenseItemBehavior {
          OptionalDispenseItemBehavior dispensebehaviormaybe1 = new OptionalDispenseItemBehavior() {
              @Override
              protected ItemStack execute(BlockSource pointer, ItemStack stack) {
@@ -53,7 +53,7 @@ index 1fb809486ee56efd3d0ef3fa02503ba9be459f68..58eccc76fe4c24c364e6c634fcca60ab
                  return stack;
              }
          };
-@@ -978,7 +978,7 @@ public interface DispenseItemBehavior {
+@@ -764,7 +764,7 @@ public interface DispenseItemBehavior {
                      stack.shrink(1);
                      this.setSuccess(true);
                  } else {
@@ -62,7 +62,7 @@ index 1fb809486ee56efd3d0ef3fa02503ba9be459f68..58eccc76fe4c24c364e6c634fcca60ab
                  }
  
                  return stack;
-@@ -1024,7 +1024,7 @@ public interface DispenseItemBehavior {
+@@ -810,7 +810,7 @@ public interface DispenseItemBehavior {
                      stack.shrink(1);
                      this.setSuccess(true);
                  } else {
@@ -72,10 +72,10 @@ index 1fb809486ee56efd3d0ef3fa02503ba9be459f68..58eccc76fe4c24c364e6c634fcca60ab
  
                  return stack;
 diff --git a/src/main/java/net/minecraft/world/item/ArmorItem.java b/src/main/java/net/minecraft/world/item/ArmorItem.java
-index 42d87800a328f71c5127ce5599ca4c71cc9bb1cd..6b81be03f87967124b046708557e05d519aa79e4 100644
+index e766397aae3f73548b290b0809b9d1ca0967ea39..786e4a8700cb84b16dd9b8892a0d1d5803924d81 100644
 --- a/src/main/java/net/minecraft/world/item/ArmorItem.java
 +++ b/src/main/java/net/minecraft/world/item/ArmorItem.java
-@@ -43,7 +43,7 @@ public class ArmorItem extends Item implements Equipable {
+@@ -48,14 +48,20 @@ public class ArmorItem extends Item implements Equipable {
      public static final DispenseItemBehavior DISPENSE_ITEM_BEHAVIOR = new DefaultDispenseItemBehavior() {
          @Override
          protected ItemStack execute(BlockSource pointer, ItemStack stack) {
@@ -84,9 +84,8 @@ index 42d87800a328f71c5127ce5599ca4c71cc9bb1cd..6b81be03f87967124b046708557e05d5
          }
      };
      protected final ArmorItem.Type type;
-@@ -53,7 +53,13 @@ public class ArmorItem extends Item implements Equipable {
-     protected final ArmorMaterial material;
-     private final Multimap<Attribute, AttributeModifier> defaultModifiers;
+     protected final Holder<ArmorMaterial> material;
+     private final Supplier<ItemAttributeModifiers> defaultModifiers;
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
      public static boolean dispenseArmor(BlockSource pointer, ItemStack armor) {
@@ -98,7 +97,7 @@ index 42d87800a328f71c5127ce5599ca4c71cc9bb1cd..6b81be03f87967124b046708557e05d5
          BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
          List<LivingEntity> list = pointer.level().getEntitiesOfClass(LivingEntity.class, new AABB(blockposition), EntitySelector.NO_SPECTATORS.and(new EntitySelector.MobCanWearArmorEntitySelector(armor)));
  
-@@ -84,7 +90,7 @@ public class ArmorItem extends Item implements Equipable {
+@@ -86,7 +92,7 @@ public class ArmorItem extends Item implements Equipable {
                  // Chain to handler for new item
                  ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
                  DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());

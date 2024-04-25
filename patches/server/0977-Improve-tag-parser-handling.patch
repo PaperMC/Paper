@@ -54,18 +54,18 @@ index 0000000000000000000000000000000000000000..a375ad4ba9db990b24a2b9ff366fcba6
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/nbt/TagParser.java b/src/main/java/net/minecraft/nbt/TagParser.java
-index ebe0efe488357ae895aaf752e9bc008b96db156f..c77860a141064aea6a0b510bb44d35fea90aee42 100644
+index da101bca71f4710812621b98f0a0d8cab180346a..3cd112584accb8e8f050ac99738eed11c902e60e 100644
 --- a/src/main/java/net/minecraft/nbt/TagParser.java
 +++ b/src/main/java/net/minecraft/nbt/TagParser.java
-@@ -48,6 +48,7 @@ public class TagParser {
-         }
+@@ -49,6 +49,7 @@ public class TagParser {
      }, CompoundTag::toString);
+     public static final Codec<CompoundTag> LENIENT_CODEC = Codec.withAlternative(AS_CODEC, CompoundTag.CODEC);
      private final StringReader reader;
 +    private int depth; // Paper
  
      public static CompoundTag parseTag(String string) throws CommandSyntaxException {
          return new TagParser(new StringReader(string)).readSingleStruct();
-@@ -158,6 +159,7 @@ public class TagParser {
+@@ -159,6 +160,7 @@ public class TagParser {
  
      public CompoundTag readStruct() throws CommandSyntaxException {
          this.expect('{');
@@ -73,7 +73,7 @@ index ebe0efe488357ae895aaf752e9bc008b96db156f..c77860a141064aea6a0b510bb44d35fe
          CompoundTag compoundTag = new CompoundTag();
          this.reader.skipWhitespace();
  
-@@ -181,6 +183,7 @@ public class TagParser {
+@@ -182,6 +184,7 @@ public class TagParser {
          }
  
          this.expect('}');
@@ -81,7 +81,7 @@ index ebe0efe488357ae895aaf752e9bc008b96db156f..c77860a141064aea6a0b510bb44d35fe
          return compoundTag;
      }
  
-@@ -190,6 +193,7 @@ public class TagParser {
+@@ -191,6 +194,7 @@ public class TagParser {
          if (!this.reader.canRead()) {
              throw ERROR_EXPECTED_VALUE.createWithContext(this.reader);
          } else {
@@ -89,7 +89,7 @@ index ebe0efe488357ae895aaf752e9bc008b96db156f..c77860a141064aea6a0b510bb44d35fe
              ListTag listTag = new ListTag();
              TagType<?> tagType = null;
  
-@@ -215,6 +219,7 @@ public class TagParser {
+@@ -216,6 +220,7 @@ public class TagParser {
              }
  
              this.expect(']');
@@ -97,7 +97,7 @@ index ebe0efe488357ae895aaf752e9bc008b96db156f..c77860a141064aea6a0b510bb44d35fe
              return listTag;
          }
      }
-@@ -287,4 +292,11 @@ public class TagParser {
+@@ -288,4 +293,11 @@ public class TagParser {
          this.reader.skipWhitespace();
          this.reader.expect(c);
      }
@@ -110,7 +110,7 @@ index ebe0efe488357ae895aaf752e9bc008b96db156f..c77860a141064aea6a0b510bb44d35fe
 +    }
  }
 diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
-index 65debad7aa7ffb1b0b19f89713ff394e8c9d245e..18e53db59082bae94922edc4baa812aa6f089576 100644
+index 56e641bc5f6edc657647993ea2efbb7bb9c2f732..4aa6232bf0f72fcde32d257100bd15b1c5192aaa 100644
 --- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 +++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 @@ -181,6 +181,15 @@ public class TranslatableContents implements ComponentContents {
@@ -156,23 +156,23 @@ index 65debad7aa7ffb1b0b19f89713ff394e8c9d245e..18e53db59082bae94922edc4baa812aa
      @Override
      public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
-index a5e438a834826161c52ca9db57d234d9ff80a591..4766994cce060564370b0d24836a7da8b5e4a8a1 100644
+index 898b19887ed34c87003fc63cb5905df2ba6234a5..b47eeb23055b135d5567552ba983bfbc3e1fab67 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java
-@@ -14,7 +14,7 @@ public class ServerboundCommandSuggestionPacket implements Packet<ServerGamePack
+@@ -19,7 +19,7 @@ public class ServerboundCommandSuggestionPacket implements Packet<ServerGamePack
  
-     public ServerboundCommandSuggestionPacket(FriendlyByteBuf buf) {
+     private ServerboundCommandSuggestionPacket(FriendlyByteBuf buf) {
          this.id = buf.readVarInt();
 -        this.command = buf.readUtf(32500);
 +        this.command = buf.readUtf(2048); // Paper
      }
  
-     @Override
+     private void write(FriendlyByteBuf buf) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index b8db3c3a5870e9d7dbba38caf7c9e1c1f3849bde..2ad17823bf442ce0455227b64e5d3bb10d0ee2c1 100644
+index d6c767c8fee799e895058c8ef3dad96cc580675d..6061f7104dd2094e316739a1b0e541475aed40b0 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -777,6 +777,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -769,6 +769,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              return;
          }
          // Paper end - Don't suggest if tab-complete is disabled
@@ -186,7 +186,7 @@ index b8db3c3a5870e9d7dbba38caf7c9e1c1f3849bde..2ad17823bf442ce0455227b64e5d3bb1
          // Paper start - AsyncTabCompleteEvent
          TAB_COMPLETE_EXECUTOR.execute(() -> this.handleCustomCommandSuggestions0(packet));
      }
-@@ -824,6 +831,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -821,6 +828,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      private void sendServerSuggestions(final ServerboundCommandSuggestionPacket packet, final StringReader stringreader) {
          // Paper end - AsyncTabCompleteEvent
          ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());

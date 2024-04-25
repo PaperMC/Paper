@@ -7,10 +7,10 @@ Uses the correct entity in the EntityDamageByEntity event
 Returns the correct entity for API's DamageSource#getCausingEntity
 
 diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSource.java b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
-index 1561b85a45f52a8162f43553f8485bfe084b8f1f..b26e4d58ea1898a5e4b31c3d6ab33f38835ab2c6 100644
+index a78fd4f9ce97ebece45979908382de8f5fc14c1b..160dc3216e8f5db5f9b3cce5e2d655f2b35b208a 100644
 --- a/src/main/java/net/minecraft/world/damagesource/DamageSource.java
 +++ b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
-@@ -27,7 +27,8 @@ public class DamageSource {
+@@ -28,7 +28,8 @@ public class DamageSource {
      private boolean withSweep = false;
      private boolean melting = false;
      private boolean poison = false;
@@ -20,7 +20,7 @@ index 1561b85a45f52a8162f43553f8485bfe084b8f1f..b26e4d58ea1898a5e4b31c3d6ab33f38
  
      public DamageSource sweep() {
          this.withSweep = true;
-@@ -56,13 +57,18 @@ public class DamageSource {
+@@ -57,18 +58,18 @@ public class DamageSource {
          return this.poison;
      }
  
@@ -32,10 +32,14 @@ index 1561b85a45f52a8162f43553f8485bfe084b8f1f..b26e4d58ea1898a5e4b31c3d6ab33f38
      }
  
 -    public DamageSource customCausingEntity(Entity entity) {
+-        // This method is not intended for change the causing entity if is already set
+-        // also is only necessary if the entity passed is not the direct entity or different from the current causingEntity
+-        if (this.customCausingEntity != null || this.directEntity == entity || this.causingEntity == entity) {
+-            return this;
 +    public DamageSource customEventDamager(Entity entity) {
 +        if (this.directEntity != null) {
-+            throw new IllegalStateException("Cannot set a custom event damager entity when a direct entity is already set (report as a bug to Paper)");
-+        }
++            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to Paper)");
+         }
          DamageSource damageSource = this.cloneInstance();
 -        damageSource.customCausingEntity = entity;
 +        damageSource.customEventDamager = entity;
@@ -44,10 +48,10 @@ index 1561b85a45f52a8162f43553f8485bfe084b8f1f..b26e4d58ea1898a5e4b31c3d6ab33f38
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 7992375dc55492aeb6defb204b28dd267be4a6e7..637478fd8a284e6833cf8f5fa17ccf9d73d1dd3f 100644
+index 4e96b6c05bf8b8235e91bdd26e5615c5299fd9aa..3c1bcf8d1a07b35a8688160c9f05f792451338a3 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -3462,7 +3462,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -3195,7 +3195,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              return;
          }
  
@@ -57,10 +61,10 @@ index 7992375dc55492aeb6defb204b28dd267be4a6e7..637478fd8a284e6833cf8f5fa17ccf9d
          }
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-index dbdb6c432448b151fa4421f14235f8bad23dc720..2eb099957a3d0bae3339ff4edbab103fb348abed 100644
+index 3eabf1e94c0a1086f471e30bf523581907169c58..ffffa53fcaa6ec8681b283fa20bb5a3320ad9c11 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-@@ -336,7 +336,7 @@ public class Turtle extends Animal {
+@@ -334,7 +334,7 @@ public class Turtle extends Animal {
  
      @Override
      public void thunderHit(ServerLevel world, LightningBolt lightning) {
@@ -70,10 +74,10 @@ index dbdb6c432448b151fa4421f14235f8bad23dc720..2eb099957a3d0bae3339ff4edbab103f
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
-index 4dea85a8ab8ae16d02e35d226fd155891ce2319a..eaad15a4d201356c34c1a09c7fbe5c35f76a2176 100644
+index 0ffff5329fa2c7833f9ec71528cb7f951cf78109..bf2d91bbb4bf401696f5f5d14a67e3920a179084 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
-@@ -204,7 +204,7 @@ public abstract class HangingEntity extends Entity {
+@@ -203,7 +203,7 @@ public abstract class HangingEntity extends Entity {
          } else {
              if (!this.isRemoved() && !this.level().isClientSide) {
                  // CraftBukkit start - fire break events
@@ -82,11 +86,24 @@ index 4dea85a8ab8ae16d02e35d226fd155891ce2319a..eaad15a4d201356c34c1a09c7fbe5c35
                  HangingBreakEvent event;
                  if (damager != null) {
                      event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damager.getBukkitEntity(), source.is(DamageTypeTags.IS_EXPLOSION) ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.ENTITY);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+index 4b94e21d05d6deae75f0c2fb711e43a4c7d06f90..8db431cb9778cd38c8e7ef939a055c4b72232c75 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+@@ -271,7 +271,7 @@ public class Creeper extends Monster implements PowerableMob {
+             if (!event.isCancelled()) {
+             // CraftBukkit end
+             this.dead = true;
+-            this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customCausingEntity(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
++            this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customEventDamager(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
+             this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
+             this.spawnLingeringCloud();
+             // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java b/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
-index a729460e35bbef134bdf0d72d8894c3df007f7b8..e6f549f1fcd261f96f0e4fc4cbe26a04c389d191 100644
+index eb764829bde34a835a151934267bfcf36d5239fa..f8aa723f18e28b02d4b7055404922ff8d7a73f8d 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
-@@ -132,7 +132,7 @@ public class EvokerFangs extends Entity implements TraceableEntity {
+@@ -133,7 +133,7 @@ public class EvokerFangs extends Entity implements TraceableEntity {
  
          if (target.isAlive() && !target.isInvulnerable() && target != entityliving1) {
              if (entityliving1 == null) {
@@ -109,7 +126,7 @@ index 28690877c443ceb2bdf20e6d251c9d32f667814c..1fb1e729d6879568d8b4943071fa9403
                      // CraftBukkit end
                      this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS);
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java b/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
-index 5c7a6fe97b1f0b55b4a5dddbb684e4424688f866..6f49b9b8707d74330adb973e0db3cd5bccf138b6 100644
+index 02931861de955352e71d6f5ffc720a17304815fe..55b4b5ad5f084c9a271a716d076672478d6486ba 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
 @@ -72,7 +72,7 @@ public class WitherSkull extends AbstractHurtingProjectile {
@@ -122,10 +139,10 @@ index 5c7a6fe97b1f0b55b4a5dddbb684e4424688f866..6f49b9b8707d74330adb973e0db3cd5b
  
              if (flag && entity instanceof LivingEntity) {
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index b678da2cbb93cea7971bc3c4d324cfca18b0bc97..90a82bd7977ebe520bdcc2ab99e11452d5cf4a21 100644
+index fbd1f4f3a8c94a4842f91b7cc6c21f0cf7edd7ac..550c0cf4d84afc0cd6b2675bdc6aa2282d87e312 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
-@@ -103,7 +103,7 @@ public class Explosion {
+@@ -104,7 +104,7 @@ public class Explosion {
          this.z = z;
          this.fire = createFire;
          this.blockInteraction = destructionType;
@@ -173,26 +190,15 @@ index 4c6e15535fa40aad8cf1920f392589404f9ba79c..35eb95ef6fb6a0f7ea63351e90741c48
      }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 0a041d0e56dfe1319e5174cb0e6085dc35fa5c48..c0823c612de9dc2a64cc797f061eef25c5f31359 100644
+index 444287fea080182df533198f5c659533de86c5dc..0a06b9f9691896dc9d5b67361e41d9f049422020 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1083,7 +1083,7 @@ public class CraftEventFactory {
+@@ -1082,7 +1082,7 @@ public class CraftEventFactory {
  
      private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
          CraftDamageSource bukkitDamageSource = new CraftDamageSource(source);
--        Entity damager = source.getCausingEntity();
-+        final Entity damager = source.getCustomEventDamager(); // Paper - fix DamageSource API
+-        Entity damager = (bukkitDamageSource.isIndirect() && source.getDirectEntity() != null) ? source.getDirectEntity() : source.getCausingEntity();
++        Entity damager = (bukkitDamageSource.isIndirect() && source.getDirectEntity() != null) ? source.getDirectEntity() : source.getCustomEventDamager(); // Paper - fix DamageSource API
          if (source.is(DamageTypeTags.IS_EXPLOSION)) {
              if (damager == null) {
                  return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.explodedBlockState); // Paper - Include BlockState for damage
-@@ -1093,9 +1093,7 @@ public class CraftEventFactory {
-         } else if (damager != null || source.getDirectEntity() != null) {
-             DamageCause cause = (source.isSweep()) ? DamageCause.ENTITY_SWEEP_ATTACK : DamageCause.ENTITY_ATTACK;
- 
--            if (bukkitDamageSource.isIndirect() && source.getDirectEntity() != null) {
--                damager = source.getDirectEntity();
--            }
-+            // Paper - fix DamageSource API
- 
-             if (damager instanceof net.minecraft.world.entity.projectile.Projectile) {
-                 if (damager.getBukkitEntity() instanceof ThrownPotion) {
