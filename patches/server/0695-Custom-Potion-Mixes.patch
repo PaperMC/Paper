@@ -172,18 +172,26 @@ index 3ebfd564d4bbf00da5919e966f3d047285845640..c1254088fc65fe46101c82cf2629cf02
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 05c5b52a15be83b6b1043cd85872854696d66a4b..0c8268a6b3079efd3387265dd9e2c0c3e2519b61 100644
+index 05c5b52a15be83b6b1043cd85872854696d66a4b..baaa8188e3be7baa99ca8a51b33a14759a50caa7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -308,6 +308,7 @@ public final class CraftServer implements Server {
      private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
      public static Exception excessiveVelEx; // Paper - Velocity warnings
      private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
-+    private final org.bukkit.craftbukkit.potion.CraftPotionBrewer potionBrewer = new org.bukkit.craftbukkit.potion.CraftPotionBrewer(); // Paper - Custom Potion Mixes
++    private final org.bukkit.craftbukkit.potion.CraftPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
  
      static {
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
-@@ -3098,5 +3099,10 @@ public final class CraftServer implements Server {
+@@ -389,6 +390,7 @@ public final class CraftServer implements Server {
+         if (this.configuration.getBoolean("settings.use-map-color-cache")) {
+             MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
+         }
++        this.potionBrewer = new org.bukkit.craftbukkit.potion.CraftPotionBrewer(playerList.getServer()); // Paper - custom potion mixes
+         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
+     }
+ 
+@@ -3098,5 +3100,10 @@ public final class CraftServer implements Server {
          return datapackManager;
      }
  
@@ -212,40 +220,58 @@ index 139dff90561ac6c51954c6289918a07aeea13a1b..6ba29875d78ede4aa7978ff689e588f7
          if (bukkit == null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2909a2736a0c9d863c7ab01e0ec259f7952080cc
+index 0000000000000000000000000000000000000000..5c08be880b81ce8627e7679942f273a948bed934
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,66 @@
 +package org.bukkit.craftbukkit.potion;
 +
 +import com.google.common.base.Preconditions;
 +import java.util.ArrayList;
 +import java.util.Collection;
 +import org.bukkit.potion.PotionBrewer;
-+import org.bukkit.potion.PotionData;
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionEffectType;
 +import org.bukkit.potion.PotionType;
 +
 +public class CraftPotionBrewer implements PotionBrewer {
 +
++    private final net.minecraft.server.MinecraftServer minecraftServer;
++
++    public CraftPotionBrewer(net.minecraft.server.MinecraftServer minecraftServer) {
++        this.minecraftServer = minecraftServer;
++    }
++
++    // Paper start - keep old spigot methods, removal in 1.20.6
 +    @Override
 +    public Collection<PotionEffect> getEffects(PotionType type, boolean upgraded, boolean extended) {
-+        Preconditions.checkArgument(!type.getKey().getKey().startsWith("strong_"), "Strong potion type cannot be used directly, got %s", type.getKey());
-+        Preconditions.checkArgument(!type.getKey().getKey().startsWith("long_"), "Extended potion type cannot be used directly, got %s", type.getKey());
++        final org.bukkit.NamespacedKey key = type.getKey();
 +
-+        return CraftPotionUtil.fromBukkit(new PotionData(type, upgraded, extended)).getPotionEffects();
++        Preconditions.checkArgument(!key.getKey().startsWith("strong_"), "Strong potion type cannot be used directly, got %s", key);
++        Preconditions.checkArgument(!key.getKey().startsWith("long_"), "Extended potion type cannot be used directly, got %s", key);
++
++        org.bukkit.NamespacedKey effectiveKey = key;
++        if (upgraded) {
++            effectiveKey = new org.bukkit.NamespacedKey(key.namespace(), "strong_" + key.key());
++        } else if (extended) {
++            effectiveKey = new org.bukkit.NamespacedKey(key.namespace(), "long_" + key.key());
++        }
++
++        final org.bukkit.potion.PotionType effectivePotionType = org.bukkit.Registry.POTION.get(effectiveKey);
++        Preconditions.checkNotNull(type, "Unknown potion type from data " + effectiveKey.asMinimalString()); // Legacy error message in 1.20.4
++        return effectivePotionType.getPotionEffects();
 +    }
 +
 +    @Override
 +    public Collection<PotionEffect> getEffectsFromDamage(int damage) {
-+        return new ArrayList<PotionEffect>();
++        return new ArrayList<>();
 +    }
 +
 +    @Override
 +    public PotionEffect createEffect(PotionEffectType potion, int duration, int amplifier) {
-+        return new PotionEffect(potion, potion.isInstant() ? 1 : (int) (duration * potion.getDurationModifier()), amplifier);
++        return new PotionEffect(potion, potion.isInstant() ? 1 : duration, amplifier);
 +    }
++    // Paper end - keep old spigot methods, removal in 1.20.6
 +
 +    // Paper start
 +    @Override
@@ -260,7 +286,7 @@ index 0000000000000000000000000000000000000000..2909a2736a0c9d863c7ab01e0ec259f7
 +
 +    @Override
 +    public void resetPotionMixes() {
-+        net.minecraft.world.item.alchemy.PotionBrewing.reload();
++        this.minecraftServer.potionBrewing().reload(this.minecraftServer.getWorldData().enabledFeatures());
 +    }
 +    // Paper end
 +}
