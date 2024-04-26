@@ -466,10 +466,10 @@ index 0000000000000000000000000000000000000000..8dcedc5f4d4453fd942787dbcb9c7572
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/AdventureComponent.java b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4b01e1249276a26aa82eb2d70f4b1223a7c8008f
+index 0000000000000000000000000000000000000000..c9d787f4e66f152b557229fdb1d9a3ac83a7d71f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,88 @@
 +package io.papermc.paper.adventure;
 +
 +import java.util.List;
@@ -546,6 +546,16 @@ index 0000000000000000000000000000000000000000..4b01e1249276a26aa82eb2d70f4b1223
 +
 +    public Component adventure$component() {
 +        return this.adventure;
++    }
++
++    @Override
++    public int hashCode() {
++        return this.deepConverted().hashCode();
++    }
++
++    @Override
++    public boolean equals(final Object obj) {
++        return this.deepConverted().equals(obj);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java b/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java
@@ -2408,6 +2418,22 @@ index 739ef5fb6f4fa37382153ba6a308ca3b451e6b05..7c3154af5d7732037c0ee965f6f8b894
      public static final Codec<MessageSignature> CODEC = ExtraCodecs.BASE64_STRING.xmap(MessageSignature::new, MessageSignature::bytes);
      public static final int BYTES = 256;
  
+diff --git a/src/main/java/net/minecraft/network/chat/MutableComponent.java b/src/main/java/net/minecraft/network/chat/MutableComponent.java
+index 1ce6b84e0d0bb708ced06955cd62281369b5fd4f..82e2a02336da4ee8cfd84bc82b143f8b9dbcf449 100644
+--- a/src/main/java/net/minecraft/network/chat/MutableComponent.java
++++ b/src/main/java/net/minecraft/network/chat/MutableComponent.java
+@@ -94,6 +94,11 @@ public class MutableComponent implements Component {
+ 
+     @Override
+     public boolean equals(Object object) {
++        // Paper start - make AdventureComponent equivalent
++        if (object instanceof io.papermc.paper.adventure.AdventureComponent adventureComponent) {
++            object = adventureComponent.deepConverted();
++        }
++        // Paper end - make AdventureComponent equivalent
+         return this == object
+             || object instanceof MutableComponent mutableComponent
+                 && this.contents.equals(mutableComponent.contents)
 diff --git a/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java b/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java
 index e2def0ca552343143e495736d533b3334686fd62..c87b708c368713a23a10ad97704575ee4df27891 100644
 --- a/src/main/java/net/minecraft/network/chat/OutgoingChatMessage.java
