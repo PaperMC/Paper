@@ -18,6 +18,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          switch (effect) {
 +        case PARTICLES_SCULK_CHARGE: // Paper - add missing effects
 +        case TRIAL_SPAWNER_DETECT_PLAYER: // Paper - add missing effects
++        case BEE_GROWTH: // Paper - add missing effects
          case VILLAGER_PLANT_GROW:
              datavalue = (Integer) data;
              break;
@@ -85,18 +86,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package org.bukkit;
 +
++import com.google.common.base.Joiner;
 +import java.lang.reflect.Field;
 +import java.lang.reflect.Modifier;
 +import java.util.ArrayList;
 +import java.util.HashMap;
++import java.util.HashSet;
 +import java.util.List;
 +import java.util.Map;
++import java.util.Set;
 +import net.minecraft.world.level.block.LevelEvent;
 +import org.junit.jupiter.api.Test;
 +
 +import static org.junit.jupiter.api.Assertions.assertNotNull;
 +import static org.junit.jupiter.api.Assertions.assertNull;
 +import static org.junit.jupiter.api.Assertions.assertTrue;
++import static org.junit.jupiter.api.Assertions.fail;
 +
 +public class EffectTest {
 +
@@ -125,12 +130,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
++        final Set<Integer> missingEvents = new HashSet<>();
 +        for (final Integer event : collectNmsLevelEvents()) {
-+            assertNotNull(toId.get(event), "missing API Effect: " + event);
++            if (toId.get(event) == null) {
++                missingEvents.add(event);
++            }
++        }
++        if (!missingEvents.isEmpty()) {
++            fail("Missing API Effects:\n" + Joiner.on("\n").join(missingEvents));
 +        }
 +    }
 +
-+    @SuppressWarnings("deprecation")
 +    @Test
 +    public void checkNoExtraApi() throws ReflectiveOperationException {
 +        Map<Integer, Effect> toId = new HashMap<>();
@@ -142,8 +152,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        final List<Integer> nmsEvents = collectNmsLevelEvents();
++        final Set<Effect> extraApiEffects = new HashSet<>();
 +        for (final Map.Entry<Integer, Effect> entry : toId.entrySet()) {
-+            assertTrue(nmsEvents.contains(entry.getKey()), "Extra API Effect: " + entry.getValue());
++            if (!nmsEvents.contains(entry.getKey())) {
++                extraApiEffects.add(entry.getValue());
++            }
++        }
++        if (!extraApiEffects.isEmpty()) {
++            fail("Extra API Effects:\n" + Joiner.on("\n").join(extraApiEffects));
 +        }
 +    }
 +}

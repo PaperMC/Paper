@@ -232,6 +232,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
      }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Bogged.java b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Bogged.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
+@@ -0,0 +0,0 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+     }
+ 
+     private void spawnShearedMushrooms() {
++        // Paper start - shear drops API
++        this.generateShearedMushrooms(this::spawnAtLocation);
++    }
++    private void generateShearedMushrooms(java.util.function.Consumer<ItemStack> stackConsumer) {
++        // Paper end - shear drops API
+         if (this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+             LootTable lootTable = serverLevel.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.BOGGED_SHEAR);
+             LootParams lootParams = new LootParams.Builder(serverLevel)
+@@ -0,0 +0,0 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+                 .create(LootContextParamSets.SHEARING);
+ 
+             for (ItemStack itemStack : lootTable.getRandomItems(lootParams)) {
+-                this.spawnAtLocation(itemStack);
++                stackConsumer.accept(itemStack); // Paper
+             }
+         }
+     }
+ 
++    // Paper start - shear drops API
++    @Override
++    public java.util.List<ItemStack> generateDefaultDrops() {
++        final java.util.List<ItemStack> drops = new java.util.ArrayList<>();
++        this.generateShearedMushrooms(drops::add);
++        return drops;
++    }
++    // Paper end - shear drops API
++
+     @Override
+     public boolean readyForShearing() {
+         return !this.isSheared() && this.isAlive();
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
