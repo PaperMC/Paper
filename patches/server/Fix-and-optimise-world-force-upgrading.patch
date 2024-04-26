@@ -40,8 +40,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.world;
 +
 +import com.mojang.datafixers.DataFixer;
-+import com.mojang.serialization.Codec;
++import com.mojang.serialization.MapCodec;
 +import net.minecraft.SharedConstants;
++import net.minecraft.core.RegistryAccess;
++import net.minecraft.core.registries.Registries;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.util.worldupdate.WorldUpgrader;
@@ -50,9 +52,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.chunk.ChunkGenerator;
 +import net.minecraft.world.level.chunk.storage.ChunkStorage;
 +import net.minecraft.world.level.chunk.storage.RegionFileStorage;
-+import net.minecraft.world.level.dimension.DimensionType;
++import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
 +import net.minecraft.world.level.dimension.LevelStem;
-+import net.minecraft.world.level.levelgen.WorldGenSettings;
 +import net.minecraft.world.level.storage.DimensionDataStorage;
 +import net.minecraft.world.level.storage.LevelStorageSource;
 +import org.apache.logging.log4j.LogManager;
@@ -77,12 +78,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final File worldDir;
 +    private final ExecutorService threadPool;
 +    private final DataFixer dataFixer;
-+    private final Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey;
++    private final RegistryAccess registryLookup;
++    private final Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> generatorKey;
 +    private final boolean removeCaches;
 +    private final boolean recreateRegionFiles; // TODO
 +
 +    public ThreadedWorldUpgrader(final ResourceKey<LevelStem> dimensionType, final String worldName, final File worldDir, final int threads,
-+                                 final DataFixer dataFixer, final Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey,
++                                 final DataFixer dataFixer, final RegistryAccess registryLookup, final Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> generatorKey,
 +                                 final boolean removeCaches, final boolean recreateRegionFiles) {
 +        this.dimensionType = dimensionType;
 +        this.worldName = worldName;
@@ -103,6 +105,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        });
 +        this.dataFixer = dataFixer;
++        this.registryLookup = registryLookup;
 +        this.generatorKey = generatorKey;
 +        this.removeCaches = removeCaches;
 +        this.recreateRegionFiles = recreateRegionFiles;
@@ -110,24 +113,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public void convert() {
 +        final File worldFolder = LevelStorageSource.getStorageFolder(this.worldDir.toPath(), this.dimensionType).toFile();
-+        final DimensionDataStorage worldPersistentData = new DimensionDataStorage(new File(worldFolder, "data"), this.dataFixer);
++        final DimensionDataStorage worldPersistentData = new DimensionDataStorage(new File(worldFolder, "data"), this.dataFixer, this.registryLookup);
 +
 +        final File regionFolder = new File(worldFolder, "region");
 +
-+        LOGGER.info("Force upgrading " + this.worldName);
-+        LOGGER.info("Counting regionfiles for " + this.worldName);
++        LOGGER.info("Force upgrading {}", this.worldName);
++        LOGGER.info("Counting regionfiles for {}", this.worldName);
 +        final File[] regionFiles = regionFolder.listFiles((final File dir, final String name) -> {
 +            return WorldUpgrader.REGEX.matcher(name).matches();
 +        });
 +        if (regionFiles == null) {
-+            LOGGER.info("Found no regionfiles to convert for world " + this.worldName);
++            LOGGER.info("Found no regionfiles to convert for world {}", this.worldName);
 +            return;
 +        }
-+        LOGGER.info("Found " + regionFiles.length + " regionfiles to convert");
-+        LOGGER.info("Starting conversion now for world " + this.worldName);
++        LOGGER.info("Found {} regionfiles to convert", regionFiles.length);
++        LOGGER.info("Starting conversion now for world {}", this.worldName);
++
++        // Only used for profiling, let's fill it anyways just in case
++        final RegionStorageInfo storageInfo = new RegionStorageInfo(
++            this.worldName,
++            ResourceKey.create(Registries.DIMENSION, this.dimensionType.location()),
++            "region"
++        );
 +
 +        final WorldInfo info = new WorldInfo(() -> worldPersistentData,
-+                new ChunkStorage(regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey);
++                new ChunkStorage(storageInfo, regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey);
 +
 +        long expectedChunks = (long)regionFiles.length * (32L * 32L);
 +
@@ -173,12 +183,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        public final ChunkStorage loader;
 +        public final boolean removeCaches;
 +        public final ResourceKey<LevelStem> worldKey;
-+        public final Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey;
++        public final Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> generatorKey;
 +        public final AtomicLong convertedChunks = new AtomicLong();
 +        public final AtomicLong modifiedChunks = new AtomicLong();
 +
 +        private WorldInfo(final Supplier<DimensionDataStorage> persistentDataSupplier, final ChunkStorage loader, final boolean removeCaches,
-+                          final ResourceKey<LevelStem> worldKey, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey) {
++                          final ResourceKey<LevelStem> worldKey, Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> generatorKey) {
 +            this.persistentDataSupplier = persistentDataSupplier;
 +            this.loader = loader;
 +            this.removeCaches = removeCaches;
@@ -259,9 +269,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - fix and optimise world upgrading
 +    public static void convertWorldButItWorks(net.minecraft.resources.ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimensionType, net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess worldSession,
-+                                              DataFixer dataFixer, Optional<net.minecraft.resources.ResourceKey<com.mojang.serialization.Codec<? extends net.minecraft.world.level.chunk.ChunkGenerator>>> generatorKey, boolean removeCaches, boolean recreateRegionFiles) {
++                                              DataFixer dataFixer, RegistryAccess registryLookup, Optional<net.minecraft.resources.ResourceKey<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.chunk.ChunkGenerator>>> generatorKey, boolean removeCaches, boolean recreateRegionFiles) {
 +        int threads = Runtime.getRuntime().availableProcessors() * 3 / 8;
-+        final io.papermc.paper.world.ThreadedWorldUpgrader worldUpgrader = new io.papermc.paper.world.ThreadedWorldUpgrader(dimensionType, worldSession.getLevelId(), worldSession.levelDirectory.path().toFile(), threads, dataFixer, generatorKey, removeCaches, recreateRegionFiles);
++        final io.papermc.paper.world.ThreadedWorldUpgrader worldUpgrader = new io.papermc.paper.world.ThreadedWorldUpgrader(dimensionType, worldSession.getLevelId(), worldSession.levelDirectory.path().toFile(), threads, dataFixer, registryLookup, generatorKey, removeCaches, recreateRegionFiles);
 +        worldUpgrader.convert();
 +    }
 +    // Paper end - fix and optimise world upgrading
@@ -293,7 +303,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - fix and optimise world upgrading
 +            if (options.has("forceUpgrade")) {
 +                net.minecraft.server.Main.convertWorldButItWorks(
-+                    dimensionKey, worldSession, DataFixers.getDataFixer(), worlddimension.generator().getTypeNameForDataFixer(), options.has("eraseCache"), console.has("recreateRegionFiles")
++                    dimensionKey, worldSession, DataFixers.getDataFixer(), iregistrycustom_dimension, worlddimension.generator().getTypeNameForDataFixer(), options.has("eraseCache"), options.has("recreateRegionFiles")
 +                );
 +            }
 +            // Paper end - fix and optimise world upgrading
@@ -376,7 +386,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - fix and optimise world upgrading
 +        if (this.console.options.has("forceUpgrade")) {
 +            net.minecraft.server.Main.convertWorldButItWorks(
-+                actualDimension,  worldSession, DataFixers.getDataFixer(), worlddimension.generator().getTypeNameForDataFixer(), this.console.options.has("eraseCache"), this.console.options.has("recreateRegionFiles")
++                actualDimension,  worldSession, DataFixers.getDataFixer(), iregistrycustom_dimension, worlddimension.generator().getTypeNameForDataFixer(), this.console.options.has("eraseCache"), this.console.options.has("recreateRegionFiles")
 +            );
 +        }
 +        // Paper end - fix and optimise world upgrading
