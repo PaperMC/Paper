@@ -3770,10 +3770,10 @@ index 0000000000000000000000000000000000000000..92a69677f21b2c1c035119d8e5a6af63
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0f8fa69577f09030fe96df6fa37e88ed38134a2e
+index 0000000000000000000000000000000000000000..d2dee700f2c5cc7d6a272e751a933901fe7a55b6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -0,0 +1,303 @@
+@@ -0,0 +1,317 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.google.common.base.Preconditions;
@@ -3787,7 +3787,9 @@ index 0000000000000000000000000000000000000000..0f8fa69577f09030fe96df6fa37e88ed
 +import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
 +import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
 +import io.papermc.paper.plugin.provider.source.DirectoryProviderSource;
++import io.papermc.paper.plugin.provider.source.FileArrayProviderSource;
 +import io.papermc.paper.plugin.provider.source.FileProviderSource;
++import java.io.File;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Server;
 +import org.bukkit.World;
@@ -3798,7 +3800,6 @@ index 0000000000000000000000000000000000000000..0f8fa69577f09030fe96df6fa37e88ed
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.server.PluginDisableEvent;
 +import org.bukkit.event.server.PluginEnableEvent;
-+import org.bukkit.plugin.InvalidDescriptionException;
 +import org.bukkit.plugin.InvalidPluginException;
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.PluginDescriptionFile;
@@ -3808,7 +3809,6 @@ index 0000000000000000000000000000000000000000..0f8fa69577f09030fe96df6fa37e88ed
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
-+import org.spongepowered.configurate.serialize.SerializationException;
 +
 +import java.io.IOException;
 +import java.nio.file.Files;
@@ -3896,6 +3896,20 @@ index 0000000000000000000000000000000000000000..0f8fa69577f09030fe96df6fa37e88ed
 +
 +        return runtimePluginEntrypointHandler.getPluginProviderStorage().getSingleLoaded()
 +            .orElseThrow(() -> new InvalidPluginException("Plugin didn't load any plugin providers?"));
++    }
++
++    public @NotNull Plugin[] loadPlugins(@NotNull File[] files) {
++        RuntimePluginEntrypointHandler<MultiRuntimePluginProviderStorage> runtimePluginEntrypointHandler = new RuntimePluginEntrypointHandler<>(new MultiRuntimePluginProviderStorage(this.dependencyTree));
++        try {
++            List<Path> paths = FileArrayProviderSource.INSTANCE.prepareContext(files);
++            DirectoryProviderSource.INSTANCE.registerProviders(runtimePluginEntrypointHandler, paths);
++            runtimePluginEntrypointHandler.enter(Entrypoint.PLUGIN);
++        } catch (Exception e) {
++            // This should never happen, any errors that occur in this provider should instead be logged.
++            this.server.getLogger().log(Level.SEVERE, "Unknown error occurred while loading plugins through PluginManager.", e);
++        }
++
++        return runtimePluginEntrypointHandler.getPluginProviderStorage().getLoaded().toArray(new JavaPlugin[0]);
 +    }
 +
 +    // The behavior of this is that all errors are logged instead of being thrown
@@ -4079,10 +4093,10 @@ index 0000000000000000000000000000000000000000..0f8fa69577f09030fe96df6fa37e88ed
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dab211c458311869c61779305580a1c7da830f71
+index 0000000000000000000000000000000000000000..097500a59336db1bbfffcd1aa4cff7a8586e46ec
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
-@@ -0,0 +1,241 @@
+@@ -0,0 +1,246 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.google.common.graph.MutableGraph;
@@ -4170,6 +4184,11 @@ index 0000000000000000000000000000000000000000..dab211c458311869c61779305580a1c7
 +    @Override
 +    public @NotNull Plugin[] loadPlugins(@NotNull File directory) {
 +        return this.instanceManager.loadPlugins(directory.toPath());
++    }
++
++    @Override
++    public @NotNull Plugin[] loadPlugins(final @NotNull File[] files) {
++        return this.instanceManager.loadPlugins(files);
 +    }
 +
 +    @Override
@@ -5548,6 +5567,56 @@ index 0000000000000000000000000000000000000000..226f457db6c1461c943c157b2b91e745
 +    public boolean isValidFile(Path path) {
 +        // Avoid loading plugins that start with a dot
 +        return Files.isRegularFile(path) && !path.startsWith(".");
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileArrayProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileArrayProviderSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b2ec31fdb2ba8f18c29f2014c03c96a15ec995ad
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/source/FileArrayProviderSource.java
+@@ -0,0 +1,44 @@
++package io.papermc.paper.plugin.provider.source;
++
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.plugin.entrypoint.EntrypointHandler;
++import java.io.File;
++import java.nio.file.Path;
++import java.util.ArrayList;
++import java.util.List;
++import org.slf4j.Logger;
++
++public class FileArrayProviderSource implements ProviderSource<File[], List<Path>> {
++
++    public static final FileArrayProviderSource INSTANCE = new FileArrayProviderSource();
++    private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("File '%s'"::formatted);
++    private static final Logger LOGGER = LogUtils.getClassLogger();
++
++    @Override
++    public List<Path> prepareContext(File[] context) {
++        final List<Path> files = new ArrayList<>();
++        for (File file : context) {
++            try {
++                files.add(FILE_PROVIDER_SOURCE.prepareContext(file.toPath()));
++            } catch (IllegalArgumentException ignored) {
++                // Ignore illegal argument exceptions from jar checking
++            } catch (final Exception e) {
++                LOGGER.error("Error preparing plugin context: " + e.getMessage(), e);
++            }
++        }
++        return files;
++    }
++
++    @Override
++    public void registerProviders(EntrypointHandler entrypointHandler, List<Path> context) {
++        for (Path path : context) {
++            try {
++                FILE_PROVIDER_SOURCE.registerProviders(entrypointHandler, path);
++            } catch (IllegalArgumentException ignored) {
++                // Ignore illegal argument exceptions from jar checking
++            } catch (Exception e) {
++                LOGGER.error("Error loading plugin: " + e.getMessage(), e);
++            }
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
