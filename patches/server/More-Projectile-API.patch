@@ -19,6 +19,19 @@ public net.minecraft.world.entity.projectile.Projectile canHitEntity(Lnet/minecr
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -0,0 +0,0 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     }
+ 
+     // CraftBukkit start - call projectile hit event
+-    protected ProjectileDeflection preHitTargetOrDeflectSelf(HitResult movingobjectposition) {
++    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult movingobjectposition) { // Paper - protected -> public
+         org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition);
+         this.hitCancelled = event != null && event.isCancelled();
+         if (movingobjectposition.getType() == HitResult.Type.BLOCK || !this.hitCancelled) {
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
@@ -98,12 +111,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public void hitEntity(org.bukkit.entity.Entity entity) {
-+        this.getHandle().preOnHit(new net.minecraft.world.phys.EntityHitResult(((CraftEntity) entity).getHandle()));
++        this.getHandle().preHitTargetOrDeflectSelf(new net.minecraft.world.phys.EntityHitResult(((CraftEntity) entity).getHandle()));
 +    }
 +
 +    @Override
 +    public void hitEntity(org.bukkit.entity.Entity entity, org.bukkit.util.Vector vector) {
-+        this.getHandle().preOnHit(new net.minecraft.world.phys.EntityHitResult(((CraftEntity) entity).getHandle(), new net.minecraft.world.phys.Vec3(vector.getX(), vector.getY(), vector.getZ())));
++        this.getHandle().preHitTargetOrDeflectSelf(new net.minecraft.world.phys.EntityHitResult(((CraftEntity) entity).getHandle(), new net.minecraft.world.phys.Vec3(vector.getX(), vector.getY(), vector.getZ())));
 +    }
 +
 +    @Override
@@ -158,19 +171,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public boolean isInBlock() {
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
-@@ -0,0 +0,0 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
-         return false;
+@@ -0,0 +0,0 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
+     public String toString() {
+         return "CraftArrow";
      }
- 
++
 +    // Paper start
 +    @Override
-+    @org.jetbrains.annotations.NotNull
 +    public org.bukkit.craftbukkit.inventory.CraftItemStack getItemStack() {
-+        return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(getHandle().getPickupItem());
++        return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.getHandle().getPickupItem());
 +    }
 +
 +    @Override
@@ -183,21 +192,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.getHandle().life;
 +    }
 +
-+    @org.jetbrains.annotations.NotNull
 +    @Override
 +    public org.bukkit.Sound getHitSound() {
 +        return org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(this.getHandle().soundEvent);
 +    }
 +
 +    @Override
-+    public void setHitSound(@org.jetbrains.annotations.NotNull org.bukkit.Sound sound) {
++    public void setHitSound(org.bukkit.Sound sound) {
 +        this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(sound));
 +    }
 +    // Paper end
-+
-     @Override
-     public boolean hasCustomEffects() {
-         return !this.getHandle().getPotionContents().customEffects().isEmpty();
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
@@ -482,7 +487,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - Projectile API
 +    @Override
 +    public org.bukkit.inventory.meta.PotionMeta getPotionMeta() {
-+        return (org.bukkit.inventory.meta.PotionMeta) CraftItemStack.getItemMeta(this.getHandle().getItemRaw(), Material.SPLASH_POTION);
++        return (org.bukkit.inventory.meta.PotionMeta) CraftItemStack.getItemMeta(this.getHandle().getItem(), Material.SPLASH_POTION);
 +    }
 +
 +    @Override
