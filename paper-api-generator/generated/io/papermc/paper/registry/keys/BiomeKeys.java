@@ -6,6 +6,7 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.Biome;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.4")
+@GeneratedFrom("1.20.5")
 @ApiStatus.Experimental
 public final class BiomeKeys {
     /**
@@ -248,6 +249,8 @@ public final class BiomeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
+    @ApiStatus.Experimental
+    @MinecraftExperimental("update 1.21")
     public static final TypedKey<Biome> MANGROVE_SWAMP = create(key("mangrove_swamp"));
 
     /**
@@ -402,6 +405,8 @@ public final class BiomeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
+    @ApiStatus.Experimental
+    @MinecraftExperimental("update 1.21")
     public static final TypedKey<Biome> SWAMP = create(key("swamp"));
 
     /**
