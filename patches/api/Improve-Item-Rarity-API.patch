@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Fri, 12 Mar 2021 17:09:40 -0800
-Subject: [PATCH] Item Rarity API
+Subject: [PATCH] Improve Item Rarity API
 
 
 diff --git a/src/main/java/io/papermc/paper/inventory/ItemRarity.java b/src/main/java/io/papermc/paper/inventory/ItemRarity.java
@@ -16,6 +16,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.format.TextColor;
 +import org.jetbrains.annotations.NotNull;
 +
++/**
++ * @deprecated use {@link org.bukkit.inventory.ItemRarity} with {@link org.bukkit.inventory.meta.ItemMeta#getRarity()}
++ */
++@Deprecated(forRemoval = true, since = "1.20.5")
 +public enum ItemRarity {
 +
 +    COMMON(NamedTextColor.WHITE),
@@ -52,40 +56,56 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Use {@link #isItem()} before this.
 +     *
 +     * @return the item rarity
++     * @deprecated use {@link org.bukkit.inventory.meta.ItemMeta#hasRarity()} and {@link org.bukkit.inventory.meta.ItemMeta#getRarity()}
 +     */
 +    @NotNull
++    @Deprecated(forRemoval = true, since = "1.20.5")
 +    public io.papermc.paper.inventory.ItemRarity getItemRarity() {
-+        return Bukkit.getUnsafe().getItemRarity(this);
++        return new org.bukkit.inventory.ItemStack(this).getRarity();
 +    }
      // Paper end
  
      /**
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+diff --git a/src/main/java/org/bukkit/inventory/ItemRarity.java b/src/main/java/org/bukkit/inventory/ItemRarity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -0,0 +0,0 @@ public interface UnsafeValues {
-      * Just don't use it.
+--- a/src/main/java/org/bukkit/inventory/ItemRarity.java
++++ b/src/main/java/org/bukkit/inventory/ItemRarity.java
+@@ -0,0 +0,0 @@ public enum ItemRarity {
+     /**
+      * White item name.
       */
-     @org.jetbrains.annotations.NotNull String getMainLevelName();
+-    COMMON,
++    COMMON(net.kyori.adventure.text.format.NamedTextColor.WHITE), // Paper
+     /**
+      * Yellow item name.
+      */
+-    UNCOMMON,
++    UNCOMMON(net.kyori.adventure.text.format.NamedTextColor.YELLOW), // Paper
+     /**
+      * Aqua item name.
+      */
+-    RARE,
++    RARE(net.kyori.adventure.text.format.NamedTextColor.AQUA), // Paper
+     /**
+      * Light purple item name.
+      */
+-    EPIC;
++    EPIC(net.kyori.adventure.text.format.NamedTextColor.LIGHT_PURPLE); // Paper
++    // Paper start - improve ItemRarity
++    private final net.kyori.adventure.text.format.NamedTextColor color;
++    ItemRarity(final net.kyori.adventure.text.format.NamedTextColor color) {
++        this.color = color;
++    }
 +
 +    /**
-+     * Gets the item rarity of a material. The material <b>MUST</b> be an item.
-+     * Use {@link Material#isItem()} before this.
++     * Gets the color formatting associated with this rarity.
 +     *
-+     * @param material the material to get the rarity of
-+     * @return the item rarity
++     * @return the color
 +     */
-+    public io.papermc.paper.inventory.ItemRarity getItemRarity(Material material);
-+
-+    /**
-+     * Gets the item rarity of the itemstack. The rarity can change based on enchantements.
-+     *
-+     * @param itemStack the itemstack to get the rarity of
-+     * @return the itemstack rarity
-+     */
-+    public io.papermc.paper.inventory.ItemRarity getItemStackRarity(ItemStack itemStack);
-     // Paper end
++    public net.kyori.adventure.text.format.@org.jetbrains.annotations.NotNull TextColor color() {
++        return this.color;
++    }
++    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -97,13 +117,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +
 +    /**
-+     * Gets the item rarity of the itemstack. The rarity can change based on enchantements.
++     * Gets the item rarity of the itemstack. The rarity can change based on enchantments.
 +     *
 +     * @return the itemstack rarity
++     * @deprecated Use {@link ItemMeta#hasRarity()} and {@link ItemMeta#getRarity()}
 +     */
 +    @NotNull
++    @Deprecated(forRemoval = true, since = "1.20.5")
 +    public io.papermc.paper.inventory.ItemRarity getRarity() {
-+        return Bukkit.getUnsafe().getItemStackRarity(this);
++        return io.papermc.paper.inventory.ItemRarity.valueOf(this.getItemMeta().getRarity().name());
 +    }
      // Paper end
  }
