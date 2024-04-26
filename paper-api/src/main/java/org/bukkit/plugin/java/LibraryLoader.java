@@ -65,6 +65,11 @@ class LibraryLoader
                 logger.log( Level.INFO, "Downloading {0}", event.getResource().getRepositoryUrl() + event.getResource().getResourceName() );
             }
         } );
+
+        // SPIGOT-7638: Add system properties,
+        // since JdkVersionProfileActivator needs 'java.version' when a profile has the 'jdk' element
+        // otherwise it will silently fail and not resolves the dependencies in the affected pom.
+        session.setSystemProperties( System.getProperties() );
         session.setReadOnly();
 
         this.repositories = repository.newResolutionRepositories( session, Arrays.asList( new RemoteRepository.Builder( "central", "default", "https://repo.maven.apache.org/maven2" ).build() ) );
