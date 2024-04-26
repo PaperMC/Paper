@@ -18392,7 +18392,7 @@ index 2d9d4d06b75873f888ef4d8f5779a52706f821a8..f74efe41cd0da2f9749fc96fb9e0f7cf
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 7dfbb3dd6100180abd2ebab4d1e9e34928666f9e..877f9d7a83fa817586f9f2dd2b10e06e9962b7c8 100644
+index 7dfbb3dd6100180abd2ebab4d1e9e34928666f9e..7f8793fa8260cb8a1f55d0ba405e6df0ae6f7321 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -199,7 +199,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -18733,7 +18733,7 @@ index 7dfbb3dd6100180abd2ebab4d1e9e34928666f9e..877f9d7a83fa817586f9f2dd2b10e06e
          boolean flag2 = minecraftserver.forceSynchronousWrites();
          DataFixer datafixer = minecraftserver.getFixerUpper();
 -        EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(new SimpleRegionStorage(new RegionStorageInfo(convertable_conversionsession.getLevelId(), resourcekey, "entities"), convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, DataFixTypes.ENTITY_CHUNK), this, minecraftserver);
-+        this.entityStorage = new EntityRegionFileStorage(convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system // EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(new SimpleRegionStorage(new RegionStorageInfo(convertable_conversionsession.getLevelId(), resourcekey, "entities"), convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, DataFixTypes.ENTITY_CHUNK), this, minecraftserver);
++        this.entityStorage = new EntityRegionFileStorage(new RegionStorageInfo(convertable_conversionsession.getLevelId(), resourcekey, "entities"), convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system
  
 -        this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage);
 +        // this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage, this.entitySliceManager); // Paper // Paper - rewrite chunk system
@@ -19475,6 +19475,24 @@ index ea72dcb064a35bc6245bc5c94d592efedd8faf41..0793dfe47e68a2b48b010aad5b12dcfa
      @Override
      public boolean remove(Object object) {
          int i = this.findIndex((T)object);
+diff --git a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
+index 7984f17cd9c4cef8100909b6c33b3144c8096fcf..639f72618a7c22fa94effa9d0406b97fffc64cb5 100644
+--- a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
++++ b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
+@@ -227,7 +227,13 @@ public class WorldUpgrader {
+                         this.previousWriteFuture.join();
+                     }
+ 
++                    // Paper start - async chunk io
++                    try {
+                     this.previousWriteFuture = storage.write(chunkPos, nbttagcompound1);
++                    } catch (final IOException e) {
++                        com.destroystokyo.paper.util.SneakyThrow.sneaky(e);
++                    }
++                    // Paper end - async chunk io
+                     return true;
+                 }
+             }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 3c1bcf8d1a07b35a8688160c9f05f792451338a3..03840f520624662d4ce3ac9f3065a01c71b5f299 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
