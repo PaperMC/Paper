@@ -5,7 +5,7 @@ Subject: [PATCH] More PotionEffectType API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionEffectType.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionEffectType.java
-index 8dffef71c8b193c0fc84b65a592c93827e341bf7..670a278c1573899f846d33aebc59d2e6616d2c5d 100644
+index 8dffef71c8b193c0fc84b65a592c93827e341bf7..97b31ffb86fa5c8b567a6b3793389571b6bf846f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionEffectType.java
 +++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionEffectType.java
 @@ -123,6 +123,48 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
@@ -17,11 +17,11 @@ index 8dffef71c8b193c0fc84b65a592c93827e341bf7..670a278c1573899f846d33aebc59d2e6
 +    public java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes() {
 +        // re-create map each time because a nms MobEffect can have its attributes modified
 +        final java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> attributeMap = new java.util.HashMap<>();
-+        this.handle.getAttributeModifiers().forEach((attribute, attributeModifier) -> {
++        this.handle.attributeModifiers.forEach((attribute, attributeModifier) -> {
 +            attributeMap.put(
 +                org.bukkit.craftbukkit.attribute.CraftAttribute.stringToBukkit(attribute.toString()),
 +                // use zero as amplifier to get the base amount, as it is amount = base * (amplifier + 1)
-+                org.bukkit.craftbukkit.attribute.CraftAttributeInstance.convert(attributeModifier.create(0))
++                org.bukkit.craftbukkit.attribute.CraftAttributeInstance.convert(attributeModifier.create(this.handle.getDescriptionId(), 0))
 +            );
 +        });
 +        return java.util.Map.copyOf(attributeMap);
@@ -30,9 +30,9 @@ index 8dffef71c8b193c0fc84b65a592c93827e341bf7..670a278c1573899f846d33aebc59d2e6
 +    @Override
 +    public double getAttributeModifierAmount(org.bukkit.attribute.Attribute attribute, int effectAmplifier) {
 +        com.google.common.base.Preconditions.checkArgument(effectAmplifier >= 0, "effectAmplifier must be greater than or equal to 0");
-+        net.minecraft.world.entity.ai.attributes.Attribute nmsAttribute = org.bukkit.craftbukkit.attribute.CraftAttribute.bukkitToMinecraft(attribute);
-+        com.google.common.base.Preconditions.checkArgument(this.handle.getAttributeModifiers().containsKey(nmsAttribute), attribute + " is not present on " + this.getKey());
-+        return this.handle.getAttributeModifiers().get(nmsAttribute).create(effectAmplifier).getAmount();
++        Holder<net.minecraft.world.entity.ai.attributes.Attribute> nmsAttribute = org.bukkit.craftbukkit.attribute.CraftAttribute.bukkitToMinecraftHolder(attribute);
++        com.google.common.base.Preconditions.checkArgument(this.handle.attributeModifiers.containsKey(nmsAttribute), attribute + " is not present on " + this.getKey());
++        return this.handle.attributeModifiers.get(nmsAttribute).create(effectAmplifier).getAmount();
 +    }
 +
 +    @Override

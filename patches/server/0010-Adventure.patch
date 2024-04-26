@@ -3608,7 +3608,7 @@ index f9b89a7c6ac9f7fdbd29567a5b6550398dbc7345..2789d29f5be041a550618d455bb8912e
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java
-index 007b6d66dd837ca6352c0fba5c2399139f6b5425..a1cfddbcabe719121dfe6c960e65dc0ffd0d6de9 100644
+index 007b6d66dd837ca6352c0fba5c2399139f6b5425..513402b61e6b8388b7bc163d98e54ffae0e18254 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java
 @@ -32,6 +32,19 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
@@ -3624,7 +3624,7 @@ index 007b6d66dd837ca6352c0fba5c2399139f6b5425..a1cfddbcabe719121dfe6c960e65dc0f
 +
 +    @Override
 +    public void customName(final net.kyori.adventure.text.Component customName) {
-+        this.getSnapshot().setCustomName(customName != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(customName) : null);
++        this.getSnapshot().name = (customName != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(customName) : null);
 +    }
 +    // Paper end
 +
@@ -3632,7 +3632,7 @@ index 007b6d66dd837ca6352c0fba5c2399139f6b5425..a1cfddbcabe719121dfe6c960e65dc0f
      public String getCustomName() {
          T container = this.getSnapshot();
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java b/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java
-index 690dd79b82108322a290c00de63b1f038f617c84..0854b803b29212ef761536e99c9d9e7d04ea194b 100644
+index 690dd79b82108322a290c00de63b1f038f617c84..a01691f98a378a818b8bf12176c7270e15c316d8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java
 @@ -16,6 +16,19 @@ public class CraftEnchantingTable extends CraftBlockEntityState<EnchantingTableB
@@ -3642,7 +3642,7 @@ index 690dd79b82108322a290c00de63b1f038f617c84..0854b803b29212ef761536e99c9d9e7d
 +    // Paper start
 +    @Override
 +    public net.kyori.adventure.text.Component customName() {
-+        final EnchantmentTableBlockEntity be = this.getSnapshot();
++        final EnchantingTableBlockEntity be = this.getSnapshot();
 +        return be.hasCustomName() ? io.papermc.paper.adventure.PaperAdventure.asAdventure(be.getCustomName()) : null;
 +    }
 +
@@ -4066,7 +4066,7 @@ index 55945b83a5426b352bad9507cc9e94afb1278032..9ea1537408ff2d790747b6e5a681d917
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..09293673061edc99d38933d2e4f1a8c0e3f9dac0 100644
+index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..0b15c8a3906221ef09261f3d42c0aa93de8c5570 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -386,14 +386,40 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -4323,7 +4323,7 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..09293673061edc99d38933d2e4f1a8c0
      @Override
      public int getPing() {
          return this.getHandle().connection.latency();
-@@ -2318,6 +2445,249 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2318,6 +2445,248 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
@@ -4351,9 +4351,9 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..09293673061edc99d38933d2e4f1a8c0
 +        net.minecraft.core.Registry<net.minecraft.network.chat.ChatType> chatTypeRegistry = this.getHandle().level().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.CHAT_TYPE);
 +
 +        return new net.minecraft.network.chat.ChatType.Bound(
-+            chatTypeRegistry.get(io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.type().key())),
++            chatTypeRegistry.getHolderOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.CHAT_TYPE, io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.type().key()))),
 +            io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.name()),
-+            io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.target())
++            Optional.ofNullable(io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.target()))
 +        );
 +    }
 +
@@ -4400,8 +4400,7 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..09293673061edc99d38933d2e4f1a8c0
 +
 +    @Override
 +    public void sendActionBar(final net.kyori.adventure.text.Component message) {
-+        final net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket packet = new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket((net.minecraft.network.chat.Component) null);
-+        packet.adventure$text = message;
++        final net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket packet = new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(message));
 +        this.getHandle().connection.send(packet);
 +    }
 +

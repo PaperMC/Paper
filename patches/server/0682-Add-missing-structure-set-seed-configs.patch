@@ -147,6 +147,40 @@ index e6c59f986ae89022bd76463209dfa550a3d4fb59..a6b6e5ea191c0e2cd7a2e4f01b89d8af
                      return true;
                  }
              }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+index aae73586265593ee7830fb8dd5c2e3d7560057f0..c6181e14d85d454506534f9bbe856156c0d4a062 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+@@ -74,6 +74,20 @@ public class StructureCheck {
+         this.fixerUpper = dataFixer;
+     }
+ 
++    // Paper start - add missing structure salt configs
++    @Nullable
++    private Integer getSaltOverride(Structure type) {
++        if (this.heightAccessor instanceof net.minecraft.server.level.ServerLevel serverLevel) {
++            if (type instanceof net.minecraft.world.level.levelgen.structure.structures.MineshaftStructure) {
++                return serverLevel.spigotConfig.mineshaftSeed;
++            } else if (type instanceof net.minecraft.world.level.levelgen.structure.structures.BuriedTreasureStructure) {
++                return serverLevel.spigotConfig.buriedTreasureSeed;
++            }
++        }
++        return null;
++    }
++    // Paper end - add missing structure seed configs
++
+     public StructureCheckResult checkStart(ChunkPos pos, Structure type, StructurePlacement placement, boolean skipReferencedStructures) {
+         long l = pos.toLong();
+         Object2IntMap<Structure> object2IntMap = this.loadedChunks.get(l);
+@@ -83,7 +97,7 @@ public class StructureCheck {
+             StructureCheckResult structureCheckResult = this.tryLoadFromStorage(pos, type, skipReferencedStructures, l);
+             if (structureCheckResult != null) {
+                 return structureCheckResult;
+-            } else if (!placement.applyAdditionalChunkRestrictions(pos.x, pos.z, this.seed)) {
++            } else if (!placement.applyAdditionalChunkRestrictions(pos.x, pos.z, this.seed, this.getSaltOverride(type))) { // Paper - add missing structure seed configs
+                 return StructureCheckResult.START_NOT_PRESENT;
+             } else {
+                 boolean bl = this.featureChecks
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java b/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
 index a4c34e9415632354d33668a38d06453ada4d3c77..cbf13e4f2da6a27619e9bc9a7cd73bb6e69cad2a 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
