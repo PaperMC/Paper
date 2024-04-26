@@ -32,14 +32,23 @@ index 0000000000000000000000000000000000000000..7ea357ac2f3a93db4ebdf24b5072be7d
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ea442883eda28e5673cef9470145d5c40ac66159..79f7e0fb2f1aa6af441c6e09d2c443d7d4bb47ef 100644
+index ea442883eda28e5673cef9470145d5c40ac66159..25ce1b9dbaa77e2c8541d995a2c28f894cee9d38 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -291,7 +291,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private final StructureTemplateManager structureTemplateManager;
+     private final ServerTickRateManager tickRateManager;
+     protected WorldData worldData;
+-    private final PotionBrewing potionBrewing;
++    public PotionBrewing potionBrewing; // Paper - private -> public (remove final)
+     private volatile boolean isSaving;
+ 
+     // CraftBukkit start
 @@ -2141,6 +2141,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
              this.worldData.setDataConfiguration(worlddataconfiguration);
              this.resources.managers.updateRegistryTags();
-+            this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
++            this.potionBrewing = this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
              this.getPlayerList().saveAll();
              this.getPlayerList().reloadResources();
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
@@ -57,7 +66,7 @@ index 8be4e04df480faaa3aac516012709e9ff852f8a5..5dceffcb6883db128ea41561ed8a8ba4
      }
  
 diff --git a/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java b/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
-index 50e81e3babd331077eda8daa769eb2b3f99e8ca2..45b1a0346c7b0a541b336e2a89f825bf58d993f8 100644
+index 50e81e3babd331077eda8daa769eb2b3f99e8ca2..3469ddcf70a75e2bbfa7fcfc210f316038897bb5 100644
 --- a/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
 +++ b/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
 @@ -19,6 +19,7 @@ public class PotionBrewing {
@@ -103,7 +112,7 @@ index 50e81e3babd331077eda8daa769eb2b3f99e8ca2..45b1a0346c7b0a541b336e2a89f825bf
                  for (PotionBrewing.Mix<Item> mix : this.containerMixes) {
                      if (input.is(mix.from) && mix.ingredient.test(ingredient)) {
                          return PotionContents.createItemStack(mix.to.value(), optional.get());
-@@ -190,6 +203,54 @@ public class PotionBrewing {
+@@ -190,6 +203,50 @@ public class PotionBrewing {
          builder.addMix(Potions.SLOW_FALLING, Items.REDSTONE, Potions.LONG_SLOW_FALLING);
      }
  
@@ -146,12 +155,8 @@ index 50e81e3babd331077eda8daa769eb2b3f99e8ca2..45b1a0346c7b0a541b336e2a89f825bf
 +        return CUSTOM_MIXES.remove(key) != null;
 +    }
 +
-+    public void reload(FeatureFlagSet flags) {
-+        potionMixes.clear();
-+        containerMixes.clear();
-+        containers.clear();
-+        CUSTOM_MIXES.clear();
-+        bootstrap(flags);
++    public PotionBrewing reload(FeatureFlagSet flags) {
++        return bootstrap(flags);
 +    }
 +    // Paper end - Custom Potion Mixes
 +
@@ -220,7 +225,7 @@ index 139dff90561ac6c51954c6289918a07aeea13a1b..6ba29875d78ede4aa7978ff689e588f7
          if (bukkit == null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5c08be880b81ce8627e7679942f273a948bed934
+index 0000000000000000000000000000000000000000..bb47c776cf1d92ef85a5a10d1c42f120457d21c1
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionBrewer.java
 @@ -0,0 +1,66 @@
@@ -286,7 +291,7 @@ index 0000000000000000000000000000000000000000..5c08be880b81ce8627e7679942f273a9
 +
 +    @Override
 +    public void resetPotionMixes() {
-+        this.minecraftServer.potionBrewing().reload(this.minecraftServer.getWorldData().enabledFeatures());
++        this.minecraftServer.potionBrewing = this.minecraftServer.potionBrewing().reload(this.minecraftServer.getWorldData().enabledFeatures());
 +    }
 +    // Paper end
 +}
