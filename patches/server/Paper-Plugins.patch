@@ -4878,6 +4878,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
 +import io.papermc.paper.plugin.provider.configuration.type.PermissionConfiguration;
 +import io.papermc.paper.plugin.provider.configuration.type.PluginDependencyLifeCycle;
++import java.lang.reflect.Type;
++import java.util.function.Predicate;
++import org.bukkit.craftbukkit.util.ApiVersion;
 +import org.bukkit.permissions.Permission;
 +import org.bukkit.permissions.PermissionDefault;
 +import org.bukkit.plugin.PluginLoadOrder;
@@ -4890,6 +4893,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 +import org.spongepowered.configurate.objectmapping.ObjectMapper;
 +import org.spongepowered.configurate.objectmapping.meta.Required;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.yaml.NodeStyle;
 +import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 +
@@ -4925,14 +4930,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @FlattenedResolver
 +    private PermissionConfiguration permissionConfiguration = new PermissionConfiguration(PermissionDefault.OP, List.of());
 +    @Required
-+    @PluginConfigConstraints.PluginVersion
-+    private String apiVersion;
++    private ApiVersion apiVersion;
 +
 +    private Map<PluginDependencyLifeCycle, Map<String, DependencyConfiguration>> dependencies = new EnumMap<>(PluginDependencyLifeCycle.class);
 +
 +    public PaperPluginMeta() {
 +    }
 +
++    static final ApiVersion MINIMUM = ApiVersion.getOrCreateVersion("1.19");
 +    public static PaperPluginMeta create(BufferedReader reader) throws ConfigurateException {
 +        YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
 +            .indent(2)
@@ -4943,6 +4948,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                return options.serializers((serializers) -> {
 +                    serializers
++                        .register(new ScalarSerializer<>(ApiVersion.class) {
++                            @Override
++                            public ApiVersion deserialize(final Type type, final Object obj) throws SerializationException {
++                                try {
++                                    final ApiVersion version = ApiVersion.getOrCreateVersion(obj.toString());
++                                    if (version.isOlderThan(MINIMUM)) {
++                                        throw new SerializationException(version + " is too old for a paper plugin!");
++                                    }
++                                    return version;
++                                } catch (final IllegalArgumentException e) {
++                                    throw new SerializationException(e);
++                                }
++                            }
++
++                            @Override
++                            protected Object serialize(final ApiVersion item, final Predicate<Class<?>> typeSupported) {
++                                return item.getVersionString();
++                            }
++                        })
 +                        .register(new EnumValueSerializer())
 +                        .register(PermissionConfiguration.class, PermissionConfigurationSerializer.SERIALIZER)
 +                        .register(new ComponentSerializer())
@@ -4950,7 +4974,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                            ObjectMapper.factoryBuilder()
 +                                .addConstraint(Constraint.class, new Constraint.Factory())
 +                                .addConstraint(PluginConfigConstraints.PluginName.class, String.class, new PluginConfigConstraints.PluginName.Factory())
-+                                .addConstraint(PluginConfigConstraints.PluginVersion.class, String.class, new PluginConfigConstraints.PluginVersion.Factory())
 +                                .addConstraint(PluginConfigConstraints.PluginNameSpace.class, String.class, new PluginConfigConstraints.PluginNameSpace.Factory())
 +                                .addNodeResolver(new FlattenedResolver.Factory())
 +                                .build()
@@ -5092,7 +5115,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public @NotNull String getAPIVersion() {
-+        return this.apiVersion;
++        return this.apiVersion.getVersionString();
 +    }
 +
 +    @Override
@@ -5345,7 +5368,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public final class PluginConfigConstraints {
 +
 +    public static final Set<String> RESERVED_KEYS = Set.of("bukkit", "minecraft", "mojang", "spigot", "paper");
-+    public static final Set<String> VALID_PAPER_VERSIONS = Set.of("1.19", "1.20");
 +
 +    @Documented
 +    @Retention(RetentionPolicy.RUNTIME)
@@ -5388,24 +5410,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return value -> {
 +                    if (value != null && !NamespaceChecker.isValidNameSpace(value)) {
 +                        throw new SerializationException("provided class '%s' is in an invalid namespace.".formatted(value));
-+                    }
-+                };
-+            }
-+        }
-+    }
-+
-+    @Documented
-+    @Retention(RetentionPolicy.RUNTIME)
-+    @Target(ElementType.FIELD)
-+    public @interface PluginVersion {
-+
-+        final class Factory implements Constraint.Factory<PluginVersion, String> {
-+
-+            @Override
-+            public Constraint<String> make(PluginVersion data, Type type) {
-+                return value -> {
-+                    if (value != null && !VALID_PAPER_VERSIONS.contains(value)) {
-+                        throw new SerializationException("Provided plugin's version (%s) is not supported on this version.".formatted(value));
 +                    }
 +                };
 +            }
@@ -7332,7 +7336,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    @Override
 +    public boolean isSupportedApiVersion(String apiVersion) {
-+        return apiVersion != null && SUPPORTED_API.contains(apiVersion);
++        if (apiVersion == null) return false;
++        final ApiVersion toCheck = ApiVersion.getOrCreateVersion(apiVersion);
++        final ApiVersion minimumVersion = MinecraftServer.getServer().server.minimumAPI;
++
++        return !toCheck.isNewerThan(ApiVersion.CURRENT) && !toCheck.isOlderThan(minimumVersion);
 +    }
 +    // Paper end
  
