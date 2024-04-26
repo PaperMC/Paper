@@ -91,7 +91,7 @@ index 9cc81bcccbf1141f66fedada1359b7c0dfa8e22a..5c5b64bd058684520fa175bfd10622ff
      public String toString() {
          return "CraftMushroomCow";
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java
-index 8fc3cd507d333d2bdea759d7c102a56e88ad5f5a..4825edab85c7969e96018eb9ff47ef0fb3703c69 100644
+index 8fc3cd507d333d2bdea759d7c102a56e88ad5f5a..14e944b4e83b80e0fc6d81e346cc305ab00561c5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java
 @@ -22,7 +22,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
@@ -132,7 +132,7 @@ index 8fc3cd507d333d2bdea759d7c102a56e88ad5f5a..4825edab85c7969e96018eb9ff47ef0f
          }
          return ImmutableList.of();
      }
-@@ -120,27 +120,46 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
+@@ -120,27 +120,47 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
      @Override
      public boolean addCustomEffect(PotionEffect effect, boolean overwrite) {
          Preconditions.checkArgument(effect != null, "Potion effect cannot be null");
@@ -141,52 +141,61 @@ index 8fc3cd507d333d2bdea759d7c102a56e88ad5f5a..4825edab85c7969e96018eb9ff47ef0f
  
 -        int index = this.indexOfEffect(effect.getType());
 -        if (index != -1) {
+-            if (overwrite) {
+-                PotionEffect old = this.customEffects.get(index);
+-                if (old.getDuration() == effect.getDuration()) {
 +    // Paper start - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
 +    @Override
 +    public boolean addCustomEffect(final io.papermc.paper.potion.SuspiciousEffectEntry suspiciousEffectEntry, final boolean overwrite) {
 +        Preconditions.checkArgument(suspiciousEffectEntry != null, "Suspicious effect entry cannot be null");
-+        final List<io.papermc.paper.potion.SuspiciousEffectEntry> matchingEffects = this.customEffects.stream().filter(
-+            entry -> entry.effect() == suspiciousEffectEntry.effect()
-+        ).toList();
-+        if (!matchingEffects.isEmpty()) {
-             if (overwrite) {
--                PotionEffect old = this.customEffects.get(index);
--                if (old.getDuration() == effect.getDuration()) {
-+                boolean foundMatchingDuration = false;
-+                boolean mutated = false;
-+                for (final io.papermc.paper.potion.SuspiciousEffectEntry matchingEffect : matchingEffects) {
-+                    if (matchingEffect.duration() != suspiciousEffectEntry.duration()) {
-+                        this.customEffects.remove(suspiciousEffectEntry);
-+                        mutated = true;
-+                    } else {
-+                        foundMatchingDuration = true;
++        if (this.hasCustomEffects()) {
++            final List<io.papermc.paper.potion.SuspiciousEffectEntry> matchingEffects = this.customEffects.stream().filter(
++                entry -> entry.effect() == suspiciousEffectEntry.effect()
++            ).toList();
++            if (!matchingEffects.isEmpty()) {
++                if (overwrite) {
++                    boolean foundMatchingDuration = false;
++                    boolean mutated = false;
++                    for (final io.papermc.paper.potion.SuspiciousEffectEntry matchingEffect : matchingEffects) {
++                        if (matchingEffect.duration() != suspiciousEffectEntry.duration()) {
++                            this.customEffects.remove(suspiciousEffectEntry);
++                            mutated = true;
++                        } else {
++                            foundMatchingDuration = true;
++                        }
 +                    }
-+                }
-+                if (foundMatchingDuration && !mutated) {
++                    if (foundMatchingDuration && !mutated) {
++                        return false;
++                    } else if (!foundMatchingDuration) {
++                        this.customEffects.add(suspiciousEffectEntry);
++                    }
++                    return true;
++                } else  {
                      return false;
-+                } else if (!foundMatchingDuration) {
-+                    this.customEffects.add(suspiciousEffectEntry);
                  }
 -                this.customEffects.set(index, effect);
-                 return true;
+-                return true;
 -            } else {
-+            } else  {
-                 return false;
+-                return false;
              }
-         } else {
-             if (this.customEffects == null) {
-                 this.customEffects = new ArrayList<>();
-             }
+-        } else {
+-            if (this.customEffects == null) {
+-                this.customEffects = new ArrayList<>();
+-            }
 -            this.customEffects.add(effect);
-+            this.customEffects.add(suspiciousEffectEntry);
-             return true;
+-            return true;
          }
++        if (this.customEffects == null) {
++            this.customEffects = new ArrayList<>();
++        }
++        this.customEffects.add(suspiciousEffectEntry);
++        return true;
      }
 +    // Paper end - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
  
      @Override
      public boolean removeCustomEffect(PotionEffectType type) {
-@@ -151,10 +170,12 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
+@@ -151,10 +171,12 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
          }
  
          boolean changed = false;
@@ -202,7 +211,7 @@ index 8fc3cd507d333d2bdea759d7c102a56e88ad5f5a..4825edab85c7969e96018eb9ff47ef0f
                  iterator.remove();
                  changed = true;
              }
-@@ -177,7 +198,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
+@@ -177,7 +199,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
          }
  
          for (int i = 0; i < this.customEffects.size(); i++) {
@@ -211,7 +220,7 @@ index 8fc3cd507d333d2bdea759d7c102a56e88ad5f5a..4825edab85c7969e96018eb9ff47ef0f
                  return i;
              }
          }
-@@ -222,7 +243,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
+@@ -222,7 +244,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
          super.serialize(builder);
  
          if (this.hasCustomEffects()) {
