@@ -232,6 +232,44 @@ index 2de1a2f666da9db1832907e1651dbff948e37252..5c2ed3c39c8eb850f3be1e2ea5b5a7ea
          }
  
      }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Bogged.java b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
+index 9c0bfddd479eef688d2509ad700371c3c860ff1a..754eb747179d9318bc5a3883e5622cc400c4e06c 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Bogged.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
+@@ -135,6 +135,11 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+     }
+ 
+     private void spawnShearedMushrooms() {
++        // Paper start - shear drops API
++        this.generateShearedMushrooms(this::spawnAtLocation);
++    }
++    private void generateShearedMushrooms(java.util.function.Consumer<ItemStack> stackConsumer) {
++        // Paper end - shear drops API
+         if (this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+             LootTable lootTable = serverLevel.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.BOGGED_SHEAR);
+             LootParams lootParams = new LootParams.Builder(serverLevel)
+@@ -143,11 +148,20 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+                 .create(LootContextParamSets.SHEARING);
+ 
+             for (ItemStack itemStack : lootTable.getRandomItems(lootParams)) {
+-                this.spawnAtLocation(itemStack);
++                stackConsumer.accept(itemStack); // Paper
+             }
+         }
+     }
+ 
++    // Paper start - shear drops API
++    @Override
++    public java.util.List<ItemStack> generateDefaultDrops() {
++        final java.util.List<ItemStack> drops = new java.util.ArrayList<>();
++        this.generateShearedMushrooms(drops::add);
++        return drops;
++    }
++    // Paper end - shear drops API
++
+     @Override
+     public boolean readyForShearing() {
+         return !this.isSheared() && this.isAlive();
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 822bfebc779646dde655239ac217bad011a9eee4..444287fea080182df533198f5c659533de86c5dc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java

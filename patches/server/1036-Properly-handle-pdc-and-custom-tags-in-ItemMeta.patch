@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 26 Apr 2024 11:38:28 -0700
+Subject: [PATCH] Properly handle pdc and custom tags in ItemMeta
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 549d06b83b195c0a0207d18850b98d1e6e611460..bf0870590fcf5c502cd986047efec9f754faf9a7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -369,6 +369,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             this.customTag = customData.copyTag();
+             if (this.customTag.contains(CraftMetaItem.BUKKIT_CUSTOM_TAG.NBT)) {
+                 CompoundTag compound = this.customTag.getCompound(CraftMetaItem.BUKKIT_CUSTOM_TAG.NBT);
++                this.customTag.remove(CraftMetaItem.BUKKIT_CUSTOM_TAG.NBT); // Paper - remove PDC from custom tag
++                if (this.customTag.isEmpty()) this.customTag = null; // Paper - remove PDC from custom tag
+                 Set<String> keys = compound.getAllKeys();
+                 for (String key : keys) {
+                     this.persistentDataContainer.put(key, compound.get(key).copy());
+@@ -573,6 +575,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.getDecoder().decode(custom));
+             try {
+                 this.customTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
++                this.customTag.remove(CraftMetaItem.BUKKIT_CUSTOM_TAG.NBT); // Paper - ensure PDC isn't in custom tag
++                if (this.customTag.isEmpty()) this.customTag = null; // Paper - ensure PDC isn't in custom tag
+             } catch (IOException ex) {
+                 Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+             }
+@@ -795,6 +799,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+         if (this.customTag != null) {
+             itemTag.put(CraftMetaItem.CUSTOM_DATA, CustomData.of(this.customTag));
++            this.customTag.remove(CraftMetaItem.BUKKIT_CUSTOM_TAG.BUKKIT);
++            if (this.customTag.isEmpty()) this.customTag = null;
+         }
+     }
+ 

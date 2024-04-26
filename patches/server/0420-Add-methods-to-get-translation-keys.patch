@@ -5,7 +5,8 @@ Subject: [PATCH] Add methods to get translation keys
 
 == AT ==
 public org.bukkit.craftbukkit.inventory.CraftMetaFirework
-public org.bukkit.craftbukkit.inventory.CraftMetaFirework getNBT(Lorg/bukkit/FireworkEffect$Type;)I
+public org.bukkit.craftbukkit.inventory.CraftMetaFirework power
+public org.bukkit.craftbukkit.inventory.CraftMetaFirework getNBT(Lorg/bukkit/FireworkEffect$Type;)Lnet/minecraft/world/item/component/FireworkExplosion$Shape;
 
 Co-authored-by: MeFisto94 <MeFisto94@users.noreply.github.com>
 
@@ -40,8 +41,21 @@ index d839a0edf31f6803e5813b28a23fa17e20916b2c..bb8a3e670924ebcce48669c5dce57e2d
      // Paper end
  
      @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
+index ebdb19d7ee0460d50c082b0a41b3a6a57a3534ee..b444bd26d6c3def3494d3cc0520e462408272be3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
+@@ -111,7 +111,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+         return new FireworkExplosion(CraftMetaFirework.getNBT(effect.getType()), colors, fadeColors, effect.hasTrail(), effect.hasFlicker());
+     }
+ 
+-    static FireworkExplosion.Shape getNBT(Type type) {
++    public static FireworkExplosion.Shape getNBT(Type type) { // Paper - package-private -> public
+         switch (type) {
+             case BALL:
+                 return FireworkExplosion.Shape.SMALL_BALL;
 diff --git a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
-index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..dbd1dc4453bd26fb6116b62f6ccbf69e92e09fc4 100644
+index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..441e8fbd548e425ca9b0dfd69d08f7b83081888c 100644
 --- a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
 +++ b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
 @@ -1,12 +1,27 @@
@@ -73,7 +87,7 @@ index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..dbd1dc4453bd26fb6116b62f6ccbf69e
  
      @Test
      public void testChatVisibilityKeys() {
-@@ -15,4 +30,67 @@ public class TranslationKeyTest {
+@@ -15,4 +30,69 @@ public class TranslationKeyTest {
              Assertions.assertEquals(ChatVisiblity.valueOf(chatVisibility.name()).getKey(), chatVisibility.translationKey(), chatVisibility + "'s translation key doesn't match");
          }
      }
@@ -101,8 +115,10 @@ index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..dbd1dc4453bd26fb6116b62f6ccbf69e
 +
 +    @Test
 +    public void testFireworkEffectType() {
-+        for (FireworkEffect.Type type : FireworkEffect.Type.values()) {
-+            Assertions.assertEquals(net.minecraft.world.item.FireworkRocketItem.Shape.byId(org.bukkit.craftbukkit.inventory.CraftMetaFirework.getNBT(type)).getName(), org.bukkit.FireworkEffect.Type.NAMES.key(type), "translation key mismatch for " + type);
++        for (final FireworkEffect.Type type : FireworkEffect.Type.values()) {
++            final net.minecraft.world.item.component.FireworkExplosion.Shape nmsType = org.bukkit.craftbukkit.inventory.CraftMetaFirework.getNBT(type);
++            Assertions.assertTrue(nmsType.getName().getContents() instanceof TranslatableContents, "contents aren't translatable");
++            Assertions.assertEquals(((TranslatableContents) nmsType.getName().getContents()).getKey(), type.translationKey(), "translation key mismatch for " + type);
 +        }
 +    }
 +
