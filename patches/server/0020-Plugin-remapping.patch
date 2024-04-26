@@ -366,14 +366,15 @@ index 0000000000000000000000000000000000000000..3a5bb5d2a45654385ca0bc15c81ef953
 +}
 diff --git a/src/main/java/io/papermc/paper/pluginremap/PluginRemapper.java b/src/main/java/io/papermc/paper/pluginremap/PluginRemapper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5408015a25d5e3d2149976e428c9d4be470de2ba
+index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097237505c0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/pluginremap/PluginRemapper.java
-@@ -0,0 +1,369 @@
+@@ -0,0 +1,370 @@
 +package io.papermc.paper.pluginremap;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import com.mojang.logging.LogUtils;
++import io.papermc.paper.plugin.provider.type.PluginFileType;
 +import io.papermc.paper.util.AtomicFiles;
 +import io.papermc.paper.util.MappingEnvironment;
 +import io.papermc.paper.util.concurrent.ScalingThreadPool;
@@ -557,8 +558,8 @@ index 0000000000000000000000000000000000000000..5408015a25d5e3d2149976e428c9d4be
 +        final long start = System.currentTimeMillis();
 +        final IMappingFile reversed = mappings.reverse();
 +        if (DEBUG_LOGGING) {
-+			LOGGER.info("Done reversing mappings in {}ms.", System.currentTimeMillis() - start);
-+		}
++            LOGGER.info("Done reversing mappings in {}ms.", System.currentTimeMillis() - start);
++        }
 +        return reversed;
 +    }
 +
@@ -615,30 +616,30 @@ index 0000000000000000000000000000000000000000..5408015a25d5e3d2149976e428c9d4be
 +
 +        try (final FileSystem fs = FileSystems.newFileSystem(inputFile, new HashMap<>())) {
 +            // Leave dummy files if no remapping is required, so that we can check if they exist without copying the whole file
-+            /*if (Files.exists(fs.getPath(PluginFileType.PAPER_PLUGIN_YML))) { // TODO Uncomment on release
++            final Path manifestPath = fs.getPath("META-INF/MANIFEST.MF");
++            final @Nullable String ns;
++            if (Files.exists(manifestPath)) {
++                final Manifest manifest;
++                try (final InputStream in = new BufferedInputStream(Files.newInputStream(manifestPath))) {
++                    manifest = new Manifest(in);
++                }
++                ns = manifest.getMainAttributes().getValue(InsertManifestAttribute.PAPERWEIGHT_NAMESPACE_MANIFEST_KEY);
++            } else {
++                ns = null;
++            }
++            if (ns != null && (ns.equals(InsertManifestAttribute.MOJANG_NAMESPACE) || ns.equals(InsertManifestAttribute.MOJANG_PLUS_YARN_NAMESPACE))) {
 +                if (DEBUG_LOGGING) {
-+                    LOGGER.info("Plugin '{}' is a Paper plugin, no remapping necessary.", inputFile);
++                    LOGGER.info("Plugin '{}' is already Mojang mapped.", inputFile);
 +                }
 +                index.skip(inputFile);
 +                return CompletableFuture.completedFuture(inputFile);
-+            } else {*/
-+                // Check for paperweight mojang mapped marker
-+                final Path manifestPath = fs.getPath("META-INF/MANIFEST.MF");
-+                if (Files.exists(manifestPath)) {
-+                    final Manifest manifest;
-+                    try (final InputStream in = new BufferedInputStream(Files.newInputStream(manifestPath))) {
-+                        manifest = new Manifest(in);
-+                    }
-+                    final String ns = manifest.getMainAttributes().getValue(InsertManifestAttribute.PAPERWEIGHT_NAMESPACE_MANIFEST_KEY);
-+                    if (ns != null && (ns.equals(InsertManifestAttribute.MOJANG_NAMESPACE) || ns.equals(InsertManifestAttribute.MOJANG_PLUS_YARN_NAMESPACE))) {
-+                        if (DEBUG_LOGGING) {
-+                            LOGGER.info("Plugin '{}' is already Mojang mapped.", inputFile);
-+                        }
-+                        index.skip(inputFile);
-+                        return CompletableFuture.completedFuture(inputFile);
-+                    }
++            } else if (ns == null && Files.exists(fs.getPath(PluginFileType.PAPER_PLUGIN_YML))) {
++                if (DEBUG_LOGGING) {
++                    LOGGER.info("Plugin '{}' is a Paper plugin with no namespace specified.", inputFile);
 +                }
-+            //}
++                index.skip(inputFile);
++                return CompletableFuture.completedFuture(inputFile);
++            }
 +        } catch (final IOException ex) {
 +            throw new RuntimeException("Failed to open plugin jar " + inputFile, ex);
 +        }
