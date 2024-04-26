@@ -18,65 +18,72 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
 @@ -0,0 +0,0 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
-         return ImmutableList.of();
-     }
- 
-+    // Paper start - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
      @Override
      public boolean addEffectToNextStew(PotionEffect potionEffect, boolean overwrite) {
          Preconditions.checkArgument(potionEffect != null, "PotionEffect cannot be null");
 -        MobEffectInstance minecraftPotionEffect = CraftPotionUtil.fromBukkit(potionEffect);
 -        if (!overwrite && this.hasEffectForNextStew(potionEffect.getType())) {
-+        return addEffectToNextStew(io.papermc.paper.potion.SuspiciousEffectEntry.create(potionEffect.getType(), potionEffect.getDuration()), overwrite);
++        // Paper start - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
++        return this.addEffectToNextStew(io.papermc.paper.potion.SuspiciousEffectEntry.create(potionEffect.getType(), potionEffect.getDuration()), overwrite);
 +    }
 +
 +    @Override
 +    public boolean addEffectToNextStew(io.papermc.paper.potion.SuspiciousEffectEntry suspiciousEffectEntry, boolean overwrite) {
 +        Preconditions.checkArgument(suspiciousEffectEntry != null, "SuspiciousEffectEntry cannot be null");
-+        MobEffect minecraftPotionEffect = CraftPotionEffectType.bukkitToMinecraft(suspiciousEffectEntry.effect());
++        Holder<MobEffect> minecraftPotionEffect = CraftPotionEffectType.bukkitToMinecraftHolder(suspiciousEffectEntry.effect());
 +        // Paper end - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
 +        if (!overwrite && this.hasEffectForNextStew(suspiciousEffectEntry.effect())) {
              return false;
          }
          SuspiciousStewEffects stewEffects = this.getHandle().stewEffects;
+         if (stewEffects == null) {
+             stewEffects = SuspiciousStewEffects.EMPTY;
+         }
+-        SuspiciousStewEffects.Entry recordSuspiciousEffect = new SuspiciousStewEffects.Entry(minecraftPotionEffect.getEffect(), minecraftPotionEffect.getDuration());
+-        this.removeEffectFromNextStew(potionEffect.getType()); // Avoid duplicates of effects
++        SuspiciousStewEffects.Entry recordSuspiciousEffect = new SuspiciousStewEffects.Entry(minecraftPotionEffect, suspiciousEffectEntry.duration()); // Paper - sus effect entry API
++        this.removeEffectFromNextStew(suspiciousEffectEntry.effect()); // Avoid duplicates of effects // Paper - sus effect entry API
+         this.getHandle().stewEffects = stewEffects.withEffectAdded(recordSuspiciousEffect);
+         return true;
+     }
 @@ -0,0 +0,0 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow, io.paperm
          this.getHandle().setVariant(net.minecraft.world.entity.animal.MushroomCow.MushroomType.values()[variant.ordinal()]);
      }
  
 +    // Paper start
 +    @Override
-+    public java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> getStewEffects() {
++    public List<io.papermc.paper.potion.SuspiciousEffectEntry> getStewEffects() {
 +        if (this.getHandle().stewEffects == null) {
-+            return java.util.List.of();
++            return List.of();
 +        }
 +
-+        java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> nmsPairs = new java.util.ArrayList<>(this.getHandle().stewEffects.size());
-+        for (final net.minecraft.world.level.block.SuspiciousEffectHolder.EffectEntry effect : this.getHandle().stewEffects) {
-+            nmsPairs.add(io.papermc.paper.potion.SuspiciousEffectEntry.create(
-+                org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftToBukkit(effect.effect()),
++        final List<io.papermc.paper.potion.SuspiciousEffectEntry> effectEntries = new java.util.ArrayList<>(this.getHandle().stewEffects.effects().size());
++        for (final SuspiciousStewEffects.Entry effect : this.getHandle().stewEffects.effects()) {
++            effectEntries.add(io.papermc.paper.potion.SuspiciousEffectEntry.create(
++                org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftHolderToBukkit(effect.effect()),
 +                effect.duration()
 +            ));
 +        }
 +
-+        return java.util.Collections.unmodifiableList(nmsPairs);
++        return java.util.Collections.unmodifiableList(effectEntries);
 +    }
 +
 +    @Override
-+    public void setStewEffects(final java.util.List<io.papermc.paper.potion.SuspiciousEffectEntry> effects) {
++    public void setStewEffects(final List<io.papermc.paper.potion.SuspiciousEffectEntry> effects) {
 +        if (effects.isEmpty()) {
 +            this.getHandle().stewEffects = null;
 +            return;
 +        }
 +
-+        java.util.List<net.minecraft.world.level.block.SuspiciousEffectHolder.EffectEntry> nmsPairs = new java.util.ArrayList<>(effects.size());
++        List<SuspiciousStewEffects.Entry> nmsPairs = new java.util.ArrayList<>(effects.size());
 +        for (final io.papermc.paper.potion.SuspiciousEffectEntry effect : effects) {
-+            nmsPairs.add(new net.minecraft.world.level.block.SuspiciousEffectHolder.EffectEntry(
-+                org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraft(effect.effect()),
++            nmsPairs.add(new SuspiciousStewEffects.Entry(
++                org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(effect.effect()),
 +                effect.duration()
 +            ));
 +        }
 +
-+        this.getHandle().stewEffects = nmsPairs;
++        this.getHandle().stewEffects = new SuspiciousStewEffects(nmsPairs);
 +    }
 +    // Paper end
 +
@@ -96,6 +103,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      CraftMetaSuspiciousStew(CraftMetaItem meta) {
          super(meta);
+@@ -0,0 +0,0 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
+                     continue;
+                 }
+                 int duration = effect.duration();
+-                this.customEffects.add(new PotionEffect(type, duration, 0));
++                this.customEffects.add(io.papermc.paper.potion.SuspiciousEffectEntry.create(type, duration)); // Paper - use suspicious effect entry for suspicious stew meta
+             }
+         });
+     }
 @@ -0,0 +0,0 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
          if (this.customEffects != null) {
              List<SuspiciousStewEffects.Entry> effectList = new ArrayList<>();
@@ -124,25 +140,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
  
 -        int index = this.indexOfEffect(effect.getType());
+-        if (index != -1) {
 +    // Paper start - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
 +    @Override
 +    public boolean addCustomEffect(final io.papermc.paper.potion.SuspiciousEffectEntry suspiciousEffectEntry, final boolean overwrite) {
 +        Preconditions.checkArgument(suspiciousEffectEntry != null, "Suspicious effect entry cannot be null");
-+        int index = this.indexOfEffect(suspiciousEffectEntry.effect());
-         if (index != -1) {
++        final List<io.papermc.paper.potion.SuspiciousEffectEntry> matchingEffects = this.customEffects.stream().filter(
++            entry -> entry.effect() == suspiciousEffectEntry.effect()
++        ).toList();
++        if (!matchingEffects.isEmpty()) {
              if (overwrite) {
 -                PotionEffect old = this.customEffects.get(index);
 -                if (old.getDuration() == effect.getDuration()) {
-+                io.papermc.paper.potion.SuspiciousEffectEntry old = this.customEffects.get(index);
-+                if (old.duration() == suspiciousEffectEntry.duration()) {
++                boolean foundMatchingDuration = false;
++                boolean mutated = false;
++                for (final io.papermc.paper.potion.SuspiciousEffectEntry matchingEffect : matchingEffects) {
++                    if (matchingEffect.duration() != suspiciousEffectEntry.duration()) {
++                        this.customEffects.remove(suspiciousEffectEntry);
++                        mutated = true;
++                    } else {
++                        foundMatchingDuration = true;
++                    }
++                }
++                if (foundMatchingDuration && !mutated) {
                      return false;
++                } else if (!foundMatchingDuration) {
++                    this.customEffects.add(suspiciousEffectEntry);
                  }
 -                this.customEffects.set(index, effect);
-+                this.customEffects.set(index, suspiciousEffectEntry);
                  return true;
-             } else {
+-            } else {
++            } else  {
                  return false;
-@@ -0,0 +0,0 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
+             }
+         } else {
              if (this.customEffects == null) {
                  this.customEffects = new ArrayList<>();
              }
