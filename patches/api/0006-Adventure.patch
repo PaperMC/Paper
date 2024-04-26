@@ -4358,10 +4358,182 @@ index cf1733bc76d1e29ad0f533f6e49818f83e8e3358..f2a6f62f0344684668febc0999b81748
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/meta/BookMeta.java b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
-index 9bab73c3c2ca759b8e1c7d07d98cc593c961666a..7cc66e5dd6f19295728d3c0e6c0898338281b8a7 100644
+index 9bab73c3c2ca759b8e1c7d07d98cc593c961666a..f0c6943da3f783101ca647b75b3230fae3a310da 100644
 --- a/src/main/java/org/bukkit/inventory/meta/BookMeta.java
 +++ b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
-@@ -124,8 +124,10 @@ public interface BookMeta extends WritableBookMeta {
+@@ -7,10 +7,15 @@ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+ /**
+- * Represents a {@link Material#WRITTEN_BOOK}) that can have a title, an author,
++ * Represents a {@link Material#WRITTEN_BOOK} that can have a title, an author,
+  * and pages.
++ * <p>
++ * Before using this type, make sure to check the itemstack's material with
++ * {@link org.bukkit.inventory.ItemStack#getType()}. {@code instanceof} on
++ * the meta instance is not sufficient due to unusual inheritance
++ * with relation to {@link WritableBookMeta}.
+  */
+-public interface BookMeta extends WritableBookMeta {
++public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventory.Book { // Paper - adventure
+ 
+     /**
+      * Represents the generation (or level of copying) of a written book
+@@ -116,6 +121,153 @@ public interface BookMeta extends WritableBookMeta {
+     @NotNull
+     BookMeta clone();
+ 
++    // Paper start - adventure
++    //<editor-fold desc="deprecations" defaultstate="collapsed">
++    /**
++     * @deprecated use {@link #page(int)}
++     */
++    @Deprecated
++    @Override
++    @NotNull String getPage(int page);
++
++    /**
++     * @deprecated use {@link #page(int, net.kyori.adventure.text.Component)}
++     */
++    @Deprecated
++    @Override
++    void setPage(int page, @NotNull String data);
++
++    /**
++     * @deprecated use {@link #pages()}
++     */
++    @Deprecated
++    @Override
++    @NotNull List<String> getPages();
++
++    /**
++     * @deprecated use {@link #pages(List)}
++     */
++    @Deprecated
++    @Override
++    void setPages(@NotNull List<String> pages);
++
++    /**
++     * @deprecated use {@link #pages(net.kyori.adventure.text.Component...)}
++     */
++    @Deprecated
++    @Override
++    void setPages(@NotNull String... pages);
++
++    /**
++     * @deprecated use {@link #addPages(net.kyori.adventure.text.Component...)}
++     */
++    @Deprecated
++    @Override
++    void addPage(@NotNull String... pages);
++    //</editor-fold>
++
++    /**
++     * Gets the title of the book.
++     * <p>
++     * Plugins should check that hasTitle() returns true before calling this
++     * method.
++     *
++     * @return the title of the book
++     */
++    @Override
++    net.kyori.adventure.text.@Nullable Component title();
++
++    /**
++     * Sets the title of the book.
++     * <p>
++     * Limited to 32 characters. Removes title when given null.
++     *
++     * @param title the title to set
++     * @return the same {@link BookMeta} instance
++     */
++    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
++    @Override
++    @NotNull BookMeta title(net.kyori.adventure.text.@Nullable Component title);
++
++    /**
++     * Gets the author of the book.
++     * <p>
++     * Plugins should check that hasAuthor() returns true before calling this
++     * method.
++     *
++     * @return the author of the book
++     */
++    @Override
++    net.kyori.adventure.text.@Nullable Component author();
++
++    /**
++     * Sets the author of the book. Removes author when given null.
++     *
++     * @param author the author to set
++     * @return the same {@link BookMeta} instance
++     */
++    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
++    @Override
++    @NotNull BookMeta author(net.kyori.adventure.text.@Nullable Component author);
++
++
++    /**
++     * Gets the specified page in the book. The page must exist.
++     * <p>
++     * Pages are 1-indexed.
++     *
++     * @param page the page number to get, in range [1, getPageCount()]
++     * @return the page from the book
++     */
++    net.kyori.adventure.text.@NotNull Component page(int page);
++
++    /**
++     * Sets the specified page in the book. Pages of the book must be
++     * contiguous.
++     * <p>
++     * The data can be up to 1024 characters in length, additional characters
++     * are truncated.
++     * <p>
++     * Pages are 1-indexed.
++     *
++     * @param page the page number to set, in range [1, getPageCount()]
++     * @param data the data to set for that page
++     */
++    void page(int page, net.kyori.adventure.text.@NotNull Component data);
++
++    /**
++     * Adds new pages to the end of the book. Up to a maximum of 100 pages with
++     * 1024 characters per page.
++     *
++     * @param pages A list of strings, each being a page
++     */
++    void addPages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
++
++    interface BookMetaBuilder extends net.kyori.adventure.inventory.Book.Builder {
++
++        @Override
++        @NotNull BookMetaBuilder title(net.kyori.adventure.text.@Nullable Component title);
++
++        @Override
++        @NotNull BookMetaBuilder author(net.kyori.adventure.text.@Nullable Component author);
++
++        @Override
++        @NotNull BookMetaBuilder addPage(net.kyori.adventure.text.@NotNull Component page);
++
++        @Override
++        @NotNull BookMetaBuilder pages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
++
++        @Override
++        @NotNull BookMetaBuilder pages(java.util.@NotNull Collection<net.kyori.adventure.text.Component> pages);
++
++        @Override
++        @NotNull BookMeta build();
++    }
++
++    @Override
++    @NotNull BookMetaBuilder toBuilder();
++    // Paper end
++
+     // Spigot start
+     public class Spigot {
+ 
+@@ -124,8 +276,10 @@ public interface BookMeta extends WritableBookMeta {
           *
           * @param page the page number to get
           * @return the page from the book
@@ -4372,7 +4544,7 @@ index 9bab73c3c2ca759b8e1c7d07d98cc593c961666a..7cc66e5dd6f19295728d3c0e6c089833
          public BaseComponent[] getPage(int page) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -139,7 +141,9 @@ public interface BookMeta extends WritableBookMeta {
+@@ -139,7 +293,9 @@ public interface BookMeta extends WritableBookMeta {
           *
           * @param page the page number to set
           * @param data the data to set for that page
@@ -4382,7 +4554,7 @@ index 9bab73c3c2ca759b8e1c7d07d98cc593c961666a..7cc66e5dd6f19295728d3c0e6c089833
          public void setPage(int page, @Nullable BaseComponent... data) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -148,8 +152,10 @@ public interface BookMeta extends WritableBookMeta {
+@@ -148,8 +304,10 @@ public interface BookMeta extends WritableBookMeta {
           * Gets all the pages in the book.
           *
           * @return list of all the pages in the book
@@ -4393,7 +4565,7 @@ index 9bab73c3c2ca759b8e1c7d07d98cc593c961666a..7cc66e5dd6f19295728d3c0e6c089833
          public List<BaseComponent[]> getPages() {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -159,7 +165,9 @@ public interface BookMeta extends WritableBookMeta {
+@@ -159,7 +317,9 @@ public interface BookMeta extends WritableBookMeta {
           * pages. Maximum 50 pages with 256 characters per page.
           *
           * @param pages A list of pages to set the book to use
@@ -4403,7 +4575,7 @@ index 9bab73c3c2ca759b8e1c7d07d98cc593c961666a..7cc66e5dd6f19295728d3c0e6c089833
          public void setPages(@NotNull List<BaseComponent[]> pages) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -169,7 +177,9 @@ public interface BookMeta extends WritableBookMeta {
+@@ -169,7 +329,9 @@ public interface BookMeta extends WritableBookMeta {
           * pages. Maximum 50 pages with 256 characters per page.
           *
           * @param pages A list of component arrays, each being a page
@@ -4413,7 +4585,7 @@ index 9bab73c3c2ca759b8e1c7d07d98cc593c961666a..7cc66e5dd6f19295728d3c0e6c089833
          public void setPages(@NotNull BaseComponent[]... pages) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -179,7 +189,9 @@ public interface BookMeta extends WritableBookMeta {
+@@ -179,7 +341,9 @@ public interface BookMeta extends WritableBookMeta {
           * with 256 characters per page.
           *
           * @param pages A list of component arrays, each being a page
@@ -4518,188 +4690,26 @@ index 255f79d5bca15620cb17d7b54ffebb6ff00bff6b..d7c178b3584db5866a5a21c6ddaab876
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/meta/WritableBookMeta.java b/src/main/java/org/bukkit/inventory/meta/WritableBookMeta.java
-index 12595536080ffe09df2b6ecdb83d846f50100d38..dec77fc3aff1baf21aeff8d8d681a46f597935c9 100644
+index 12595536080ffe09df2b6ecdb83d846f50100d38..9fc47c879ee6b8edf2503f20e4736c2997d2de2e 100644
 --- a/src/main/java/org/bukkit/inventory/meta/WritableBookMeta.java
 +++ b/src/main/java/org/bukkit/inventory/meta/WritableBookMeta.java
-@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
-  * Represents a book ({@link Material#WRITABLE_BOOK} or {@link
-  * Material#WRITTEN_BOOK}) that can have pages.
+@@ -5,8 +5,14 @@ import org.bukkit.Material;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+- * Represents a book ({@link Material#WRITABLE_BOOK} or {@link
+- * Material#WRITTEN_BOOK}) that can have pages.
++ * Represents a book ({@link Material#WRITABLE_BOOK}) that can have pages.
++ * <p>
++ * For {@link Material#WRITTEN_BOOK}, use {@link BookMeta}.
++ * <p>
++ * Before using this type, make sure to check the itemstack's material with
++ * {@link org.bukkit.inventory.ItemStack#getType()}. {@code instanceof} on
++ * the meta instance is not sufficient due to unusual inheritance
++ * with relation to {@link BookMeta}.
   */
--public interface WritableBookMeta extends ItemMeta {
-+public interface WritableBookMeta extends ItemMeta, net.kyori.adventure.inventory.Book { // Paper
+ public interface WritableBookMeta extends ItemMeta {
  
-     /**
-      * Checks for the existence of pages in the book.
-@@ -17,6 +17,108 @@ public interface WritableBookMeta extends ItemMeta {
-      */
-     boolean hasPages();
- 
-+    // Paper start
-+    /**
-+     * Gets the title of the book.
-+     * <p>
-+     * Plugins should check that hasTitle() returns true before calling this
-+     * method.
-+     *
-+     * @return the title of the book
-+     */
-+    @Override
-+    net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component title();
-+
-+    /**
-+     * Sets the title of the book.
-+     * <p>
-+     * Limited to 32 characters. Removes title when given null.
-+     *
-+     * @param title the title to set
-+     * @return the same {@link BookMeta} instance
-+     */
-+    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
-+    @Override
-+    @NotNull BookMeta title(net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component title);
-+
-+    /**
-+     * Gets the author of the book.
-+     * <p>
-+     * Plugins should check that hasAuthor() returns true before calling this
-+     * method.
-+     *
-+     * @return the author of the book
-+     */
-+    @Override
-+    net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component author();
-+
-+    /**
-+     * Sets the author of the book. Removes author when given null.
-+     *
-+     * @param author the author to set
-+     * @return the same {@link BookMeta} instance
-+     */
-+    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
-+    @Override
-+    @NotNull BookMeta author(net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component author);
-+
-+    /**
-+     * Gets the specified page in the book. The page must exist.
-+     * <p>
-+     * Pages are 1-indexed.
-+     *
-+     * @param page the page number to get, in range [1, getPageCount()]
-+     * @return the page from the book
-+     */
-+    net.kyori.adventure.text.@NotNull Component page(int page);
-+
-+    /**
-+     * Sets the specified page in the book. Pages of the book must be
-+     * contiguous.
-+     * <p>
-+     * The data can be up to 1024 characters in length, additional characters
-+     * are truncated.
-+     * <p>
-+     * Pages are 1-indexed.
-+     *
-+     * @param page the page number to set, in range [1, getPageCount()]
-+     * @param data the data to set for that page
-+     */
-+    void page(int page, net.kyori.adventure.text.@NotNull Component data);
-+
-+    /**
-+     * Adds new pages to the end of the book. Up to a maximum of 100 pages with
-+     * 1024 characters per page.
-+     *
-+     * @param pages A list of strings, each being a page
-+     */
-+    void addPages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
-+
-+    interface BookMetaBuilder extends net.kyori.adventure.inventory.Book.Builder {
-+
-+        @Override
-+        @NotNull BookMetaBuilder title(net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component title);
-+
-+        @Override
-+        @NotNull BookMetaBuilder author(net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component author);
-+
-+        @Override
-+        @NotNull BookMetaBuilder addPage(net.kyori.adventure.text.@NotNull Component page);
-+
-+        @Override
-+        @NotNull BookMetaBuilder pages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
-+
-+        @Override
-+        @NotNull BookMetaBuilder pages(java.util.@NotNull Collection<net.kyori.adventure.text.Component> pages);
-+
-+        @Override
-+        @NotNull BookMeta build();
-+    }
-+
-+    @Override
-+    @NotNull BookMetaBuilder toBuilder();
-+    // Paper end
-+
-     /**
-      * Gets the specified page in the book. The given page must exist.
-      * <p>
-@@ -24,8 +126,10 @@ public interface WritableBookMeta extends ItemMeta {
-      *
-      * @param page the page number to get, in range [1, getPageCount()]
-      * @return the page from the book
-+     * @deprecated in favour of {@link #page(int)}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     String getPage(int page);
- 
-     /**
-@@ -39,15 +143,19 @@ public interface WritableBookMeta extends ItemMeta {
-      *
-      * @param page the page number to set, in range [1, getPageCount()]
-      * @param data the data to set for that page
-+     * @deprecated in favour of {@link #page(int, net.kyori.adventure.text.Component)}
-      */
-+    @Deprecated // Paper
-     void setPage(int page, @NotNull String data);
- 
-     /**
-      * Gets all the pages in the book.
-      *
-      * @return list of all the pages in the book
-+     * @deprecated in favour of {@link #pages()}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     List<String> getPages();
- 
-     /**
-@@ -55,7 +163,9 @@ public interface WritableBookMeta extends ItemMeta {
-      * pages. Maximum 100 pages with 1024 characters per page.
-      *
-      * @param pages A list of pages to set the book to use
-+     * @deprecated in favour of {@link #pages(List)}
-      */
-+    @Deprecated // Paper
-     void setPages(@NotNull List<String> pages);
- 
-     /**
-@@ -63,7 +173,9 @@ public interface WritableBookMeta extends ItemMeta {
-      * pages. Maximum 100 pages with 1024 characters per page.
-      *
-      * @param pages A list of strings, each being a page
-+     * @deprecated in favour of {@link #pages(net.kyori.adventure.text.Component...)}
-      */
-+    @Deprecated // Paper
-     void setPages(@NotNull String... pages);
- 
-     /**
-@@ -71,7 +183,9 @@ public interface WritableBookMeta extends ItemMeta {
-      * 1024 characters per page.
-      *
-      * @param pages A list of strings, each being a page
-+     * @deprecated in favour of {@link #addPages(net.kyori.adventure.text.Component...)}
-      */
-+    @Deprecated // Paper
-     void addPage(@NotNull String... pages);
- 
-     /**
 diff --git a/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java b/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java
 index eb80f24da65918a21a2fa6691eeb64b621febaf4..941fac4eee338870d8c30cb1f64cab572cf54548 100644
 --- a/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java
@@ -5028,7 +5038,7 @@ index 78fd35e6115072c6bc2ff5a899ffc2edb8f45801..22b1dc5fd4d453161a5ee520072f8e8f
  
      /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Scoreboard.java b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
-index bf52375e9ed9ec172eca1d27c06c379e3fc216bc..e6aeb01e80fb63a4ebd6a7cbda1815e49775246d 100644
+index bf52375e9ed9ec172eca1d27c06c379e3fc216bc..3377511e1a6dd4aeb78871e47169d5bd9456c1aa 100644
 --- a/src/main/java/org/bukkit/scoreboard/Scoreboard.java
 +++ b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
 @@ -26,6 +26,71 @@ public interface Scoreboard {
@@ -5103,7 +5113,7 @@ index bf52375e9ed9ec172eca1d27c06c379e3fc216bc..e6aeb01e80fb63a4ebd6a7cbda1815e4
      /**
       * Registers an Objective on this Scoreboard
       *
-@@ -37,10 +102,11 @@ public interface Scoreboard {
+@@ -37,7 +102,7 @@ public interface Scoreboard {
       *     characters.
       * @throws IllegalArgumentException if an objective by that name already
       *     exists
@@ -5112,11 +5122,7 @@ index bf52375e9ed9ec172eca1d27c06c379e3fc216bc..e6aeb01e80fb63a4ebd6a7cbda1815e4
       */
      @Deprecated
      @NotNull
-+    @Deprecated // Paper
-     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName);
- 
-     /**
-@@ -55,10 +121,11 @@ public interface Scoreboard {
+@@ -55,7 +120,7 @@ public interface Scoreboard {
       *     characters.
       * @throws IllegalArgumentException if an objective by that name already
       *     exists
@@ -5125,11 +5131,7 @@ index bf52375e9ed9ec172eca1d27c06c379e3fc216bc..e6aeb01e80fb63a4ebd6a7cbda1815e4
       */
      @Deprecated
      @NotNull
-+    @Deprecated // Paper
-     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName, @NotNull RenderType renderType);
- 
-     /**
-@@ -72,8 +139,10 @@ public interface Scoreboard {
+@@ -72,8 +137,10 @@ public interface Scoreboard {
       *     characters.
       * @throws IllegalArgumentException if an objective by that name already
       *     exists
@@ -5140,7 +5142,7 @@ index bf52375e9ed9ec172eca1d27c06c379e3fc216bc..e6aeb01e80fb63a4ebd6a7cbda1815e4
      Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName);
  
      /**
-@@ -88,8 +157,10 @@ public interface Scoreboard {
+@@ -88,8 +155,10 @@ public interface Scoreboard {
       *     characters.
       * @throws IllegalArgumentException if an objective by that name already
       *     exists
