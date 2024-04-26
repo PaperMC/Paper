@@ -69,10 +69,10 @@ index 1d0964a7f544735a0213d5c7832c71f53db139a9..b90127f9f805fdb5bb43a4b8ad2b1049
          nbt.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
          nbt.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-index 1a8fe7adf7c3ab9eb4cbc9847df4cfc872b97921..03a464bcb38b23e44bc02d632d469aab1c8b5b23 100644
+index 1a8fe7adf7c3ab9eb4cbc9847df4cfc872b97921..ebd6b07b8bcad3bc621fe99b0bee394fd2dd154f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-@@ -256,4 +256,28 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+@@ -256,4 +256,36 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
                  new HashMap<>(nms.slotDropChances().entrySet().stream().collect(Collectors.toMap((entry) -> CraftEquipmentSlot.getSlot(entry.getKey()), Map.Entry::getValue)))
          )).orElse(null);
      }
@@ -96,8 +96,16 @@ index 1a8fe7adf7c3ab9eb4cbc9847df4cfc872b97921..03a464bcb38b23e44bc02d632d469aab
 +        net.minecraft.world.item.ItemStack item = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack);
 +        net.minecraft.nbt.CompoundTag entity = new net.minecraft.nbt.CompoundTag();
 +        entity.putString("id", net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(net.minecraft.world.entity.EntityType.ITEM).toString());
-+        entity.put("Item", item.save(new net.minecraft.nbt.CompoundTag()));
-+        this.getSnapshot().getSpawner().setNextSpawnData(this.isPlaced() ? this.world.getHandle() : null, this.getPosition(), new net.minecraft.world.level.SpawnData(entity, java.util.Optional.empty()));
++        entity.put("Item", item.save(this.world.getHandle().registryAccess()));
++        this.getSnapshot().getSpawner().setNextSpawnData(
++            this.isPlaced() ? this.world.getHandle() : null,
++            this.getPosition(),
++            new net.minecraft.world.level.SpawnData(
++                entity,
++                java.util.Optional.empty(),
++                Optional.ofNullable(this.getSnapshot().getSpawner().nextSpawnData).flatMap(SpawnData::equipment)
++            )
++        );
 +    }
 +    // Paper end
  }

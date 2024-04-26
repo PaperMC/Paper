@@ -18,7 +18,7 @@ index 22f27a1ee5bf09247d9bcd50141add4116035735..fb7e956fd7beb741984780a949223091
      testImplementation("org.mockito:mockito-core:5.11.0")
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e9683b5a76b2dd7fc90f1d2e4538b1abbbe27ef0
+index 0000000000000000000000000000000000000000..74778e5089814dd3a28e91738e82dfd7b8eb8d4c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
 @@ -0,0 +1,376 @@
@@ -273,7 +273,7 @@ index 0000000000000000000000000000000000000000..e9683b5a76b2dd7fc90f1d2e4538b1ab
 +    }
 +
 +    public static String getUsableName(Class<?> clazz) {
-+        String name = MappingEnvironment.reobf() ? ObfHelper.INSTANCE.deobfClassName(clazz.getName()) : clazz.getName();
++        String name = io.papermc.paper.util.MappingEnvironment.reobf() ? ObfHelper.INSTANCE.deobfClassName(clazz.getName()) : clazz.getName();
 +        name = name.substring(name.lastIndexOf(".") + 1);
 +        boolean flag = false;
 +        // inner classes
@@ -459,10 +459,10 @@ index 0000000000000000000000000000000000000000..b5f75ad725f5933db8f0688b2c0b27d6
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java b/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..953b0f88cbf0e73c390f8086344f772ac03192bb
+index 0000000000000000000000000000000000000000..02b3670cfc04209baa56d89f82b65ee30d656923
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,216 @@
 +package com.destroystokyo.paper.entity.ai;
 +
 +import java.util.Collection;
@@ -625,7 +625,8 @@ index 0000000000000000000000000000000000000000..953b0f88cbf0e73c390f8086344f772a
 +    public <T extends Mob> Collection<Goal<T>> getRunningGoals(T mob, GoalType type) {
 +        CraftMob craftMob = (CraftMob) mob;
 +        Set<Goal<T>> goals = new HashSet<>();
-+        getHandle(craftMob, type).getRunningGoals()
++        getHandle(craftMob, type).getAvailableGoals()
++            .stream().filter(WrappedGoal::isRunning)
 +            .filter(item -> item.getGoal().getFlags().contains(MobGoalHelper.paperToVanilla(type)))
 +            .forEach(item -> {
 +                if (item.getGoal() instanceof PaperCustomGoal) {
@@ -646,7 +647,9 @@ index 0000000000000000000000000000000000000000..953b0f88cbf0e73c390f8086344f772a
 +            if (internalType == type) {
 +                continue;
 +            }
-+            getHandle(craftMob, internalType).getRunningGoals()
++            getHandle(craftMob, internalType).getAvailableGoals()
++                .stream()
++                .filter(WrappedGoal::isRunning)
 +                .filter(item -> !item.getGoal().getFlags().contains(MobGoalHelper.paperToVanilla(type)))
 +                .forEach(item -> {
 +                    if (item.getGoal() instanceof PaperCustomGoal) {
