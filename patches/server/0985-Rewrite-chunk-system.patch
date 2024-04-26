@@ -18392,7 +18392,7 @@ index 2d9d4d06b75873f888ef4d8f5779a52706f821a8..f74efe41cd0da2f9749fc96fb9e0f7cf
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 7dfbb3dd6100180abd2ebab4d1e9e34928666f9e..4dc5802d203d202081ae034bbf8efd5e7983f360 100644
+index 7dfbb3dd6100180abd2ebab4d1e9e34928666f9e..877f9d7a83fa817586f9f2dd2b10e06e9962b7c8 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -199,7 +199,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -18587,8 +18587,8 @@ index 7dfbb3dd6100180abd2ebab4d1e9e34928666f9e..4dc5802d203d202081ae034bbf8efd5e
 +
 +    private static final class EntityRegionFileStorage extends net.minecraft.world.level.chunk.storage.RegionFileStorage {
 +
-+        public EntityRegionFileStorage(Path directory, boolean dsync) {
-+            super(directory, dsync);
++        public EntityRegionFileStorage(RegionStorageInfo storageKey, Path directory, boolean dsync) {
++            super(storageKey, directory, dsync);
 +        }
 +
 +        protected void write(ChunkPos pos, net.minecraft.nbt.CompoundTag nbt) throws IOException {
@@ -20275,14 +20275,15 @@ index bac191f92ea3735df19c68d5568c2c7962c8680f..5d94aee1303d9eca5f1fa9a2e033ad0d
  
      public void setFullStatus(Supplier<FullChunkStatus> levelTypeProvider) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java
-index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..1b059afaa433212e5b17d35ba221cdf0ad60235c 100644
+index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..b81c548c0e1ac53784e9c94b34b65db5f123309c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java
-@@ -21,13 +21,14 @@ import net.minecraft.world.level.chunk.ProtoChunk;
+@@ -21,13 +21,15 @@ import net.minecraft.world.level.chunk.ProtoChunk;
  import net.minecraft.world.level.levelgen.Heightmap;
  
  public class ChunkStatus {
 +    static final ChunkStatus.LoadingTask PASSTHROUGH_LOAD_TASK = (WorldGenContext context, ChunkStatus status, ToFullChunk fullChunkConverter, ChunkAccess chunk) -> CompletableFuture.completedFuture(chunk); // Paper - rewrite chunk system
++    protected static final java.util.List<ChunkStatus> statuses = new java.util.ArrayList<>(); // Paper - rewrite chunk system
      public static final int MAX_STRUCTURE_DISTANCE = 8;
      private static final EnumSet<Heightmap.Types> PRE_FEATURES = EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG);
      public static final EnumSet<Heightmap.Types> POST_FEATURES = EnumSet.of(
@@ -20294,7 +20295,7 @@ index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..1b059afaa433212e5b17d35ba221cdf0
      );
      public static final ChunkStatus STRUCTURE_STARTS = register(
          "structure_starts",
-@@ -47,22 +48,22 @@ public class ChunkStatus {
+@@ -47,22 +49,22 @@ public class ChunkStatus {
          PRE_FEATURES,
          ChunkType.PROTOCHUNK,
          ChunkStatusTasks::generateStructureReferences,
@@ -20323,7 +20324,7 @@ index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..1b059afaa433212e5b17d35ba221cdf0
      );
      public static final ChunkStatus INITIALIZE_LIGHT = register(
          "initialize_light",
-@@ -78,7 +79,7 @@ public class ChunkStatus {
+@@ -78,7 +80,7 @@ public class ChunkStatus {
          "light", INITIALIZE_LIGHT, 1, true, POST_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateLight, ChunkStatusTasks::loadLight
      );
      public static final ChunkStatus SPAWN = register(
@@ -20332,7 +20333,7 @@ index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..1b059afaa433212e5b17d35ba221cdf0
      );
      public static final ChunkStatus FULL = register(
          "full", SPAWN, 0, false, POST_FEATURES, ChunkType.LEVELCHUNK, ChunkStatusTasks::generateFull, ChunkStatusTasks::loadFull
-@@ -128,6 +129,29 @@ public class ChunkStatus {
+@@ -128,6 +130,27 @@ public class ChunkStatus {
          }
      }
      // Paper end - starlight
@@ -20340,8 +20341,6 @@ index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..1b059afaa433212e5b17d35ba221cdf0
 +    public boolean isParallelCapable; // Paper
 +    public int writeRadius = -1;
 +    public int loadRange = 0;
-+
-+    protected static final java.util.List<ChunkStatus> statuses = new java.util.ArrayList<>();
 +
 +    private ChunkStatus nextStatus;
 +
@@ -20362,7 +20361,7 @@ index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..1b059afaa433212e5b17d35ba221cdf0
  
      private static ChunkStatus register(
          String id,
-@@ -190,6 +214,13 @@ public class ChunkStatus {
+@@ -190,6 +213,13 @@ public class ChunkStatus {
          this.chunkType = chunkType;
          this.heightmapsAfter = heightMapTypes;
          this.index = previous == null ? 0 : previous.getIndex() + 1;
