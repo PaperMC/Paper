@@ -8869,15 +8869,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
-+import com.mojang.datafixers.util.Either;
 +import com.mojang.logging.LogUtils;
-+import net.minecraft.server.level.ChunkHolder;
 +import net.minecraft.server.level.ChunkMap;
++import net.minecraft.server.level.ChunkResult;
 +import net.minecraft.server.level.ServerChunkCache;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.chunk.ChunkAccess;
 +import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.ProtoChunk;
++import net.minecraft.world.level.chunk.status.WorldGenContext;
 +import org.slf4j.Logger;
 +import java.lang.invoke.VarHandle;
 +import java.util.List;
@@ -8931,7 +8931,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final ServerChunkCache serverChunkCache = this.world.chunkSource;
 +        final ChunkMap chunkMap = serverChunkCache.chunkMap;
 +
-+        final CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completeFuture;
++        final CompletableFuture<ChunkAccess> completeFuture;
 +
 +        final boolean generation;
 +        boolean completing = false;
@@ -8939,6 +8939,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // note: should optimise the case where the chunk does not need to execute the status, because
 +        // schedule() calls this synchronously if it will run through that path
 +
++        final WorldGenContext ctx = new WorldGenContext(
++            this.world,
++            chunkMap.generator,
++            chunkMap.getWorldGenContext().structureManager(),
++            serverChunkCache.getLightEngine()
++        );
 +        try {
 +            generation = !chunk.getStatus().isOrAfter(this.toStatus);
 +            if (generation) {
@@ -8950,12 +8956,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    this.complete(chunk, null);
 +                    return;
 +                }
-+                completeFuture = this.toStatus.generate(Runnable::run, this.world, chunkMap.generator, chunkMap.structureTemplateManager,
-+                    serverChunkCache.getLightEngine(), null, this.neighbours)
-+                    .whenComplete((final Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either, final Throwable throwable) -> {
-+                        final ChunkAccess newChunk = (either == null) ? null : either.left().orElse(null);
-+                        if (newChunk instanceof ProtoChunk) {
-+                            ((ProtoChunk)newChunk).setStatus(ChunkUpgradeGenericStatusTask.this.toStatus);
++                completeFuture = this.toStatus.generate(ctx, Runnable::run, null, this.neighbours)
++                    .whenComplete((final ChunkAccess either, final Throwable throwable) -> {
++						if (either instanceof ProtoChunk proto) {
++                            proto.setStatus(ChunkUpgradeGenericStatusTask.this.toStatus);
 +                        }
 +                    }
 +                );
@@ -8965,7 +8969,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    this.complete(chunk, null);
 +                    return;
 +                }
-+                completeFuture = this.toStatus.load(this.world, chunkMap.structureTemplateManager, serverChunkCache.getLightEngine(), null, chunk);
++                completeFuture = this.toStatus.load(ctx, null, chunk);
 +            }
 +        } catch (final Throwable throwable) {
 +            if (!completing) {
@@ -8996,12 +9000,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            LOGGER.warn("Future status not complete after scheduling: " + this.toStatus.toString() + ", generate: " + generation);
 +        }
 +
-+        final Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either;
++        final ChunkResult<ChunkAccess> either;
 +        final ChunkAccess newChunk;
 +
 +        try {
 +            either = completeFuture.join();
-+            newChunk = (either == null) ? null : either.left().orElse(null);
++            newChunk = (either == null) ? null : either.orElse(null);
 +        } catch (final Throwable throwable) {
 +            this.complete(null, throwable);
 +            // ensure the chunk system can respond, then die
