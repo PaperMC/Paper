@@ -16,27 +16,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.setupResultSlot((Holder) this.selectablePatterns.get(id));
 +            // Paper start - Add PlayerLoomPatternSelectEvent
 +            int selectablePatternIndex = id;
-+            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.block.banner.PatternType.getByIdentifier(this.selectablePatterns.get(selectablePatternIndex).value().getHashname()));
++            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.craftbukkit.block.banner.CraftPatternType.minecraftHolderToBukkit((this.selectablePatterns.get(selectablePatternIndex))));
 +            if (!event.callEvent()) {
 +                player.containerMenu.sendAllDataToRemote();
 +                return false;
 +            }
++            final Holder<BannerPattern> eventPattern = org.bukkit.craftbukkit.block.banner.CraftPatternType.bukkitToMinecraftHolder(event.getPatternType());
 +            Holder<BannerPattern> selectedPattern = null;
 +            for (int i = 0; i < this.selectablePatterns.size(); i++) {
 +                final Holder<BannerPattern> holder = this.selectablePatterns.get(i);
-+                if (event.getPatternType().getIdentifier().equals(holder.value().getHashname())) {
++                if (eventPattern.equals(holder)) {
 +                    selectablePatternIndex = i;
 +                    selectedPattern = holder;
 +                    break;
 +                }
 +            }
 +            if (selectedPattern == null) {
-+                for (BannerPattern pattern : BuiltInRegistries.BANNER_PATTERN) {
-+                    if (event.getPatternType().getIdentifier().equals(pattern.getHashname())) {
-+                        selectedPattern = BuiltInRegistries.BANNER_PATTERN.wrapAsHolder(pattern);
-+                        break;
-+                    }
-+                }
++                selectedPattern = eventPattern;
 +                selectablePatternIndex = -1;
 +            }
 +
