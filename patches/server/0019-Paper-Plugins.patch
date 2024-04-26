@@ -4861,10 +4861,10 @@ index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..45bd29b70782e29eb11c36eaca0f940aee49799b
+index 0000000000000000000000000000000000000000..c685871155c8dff1d57ff151d7a5ec70350e5390
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
-@@ -0,0 +1,248 @@
+@@ -0,0 +1,271 @@
 +package io.papermc.paper.plugin.provider.configuration;
 +
 +import com.google.common.base.Preconditions;
@@ -4878,6 +4878,9 @@ index 0000000000000000000000000000000000000000..45bd29b70782e29eb11c36eaca0f940a
 +import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
 +import io.papermc.paper.plugin.provider.configuration.type.PermissionConfiguration;
 +import io.papermc.paper.plugin.provider.configuration.type.PluginDependencyLifeCycle;
++import java.lang.reflect.Type;
++import java.util.function.Predicate;
++import org.bukkit.craftbukkit.util.ApiVersion;
 +import org.bukkit.permissions.Permission;
 +import org.bukkit.permissions.PermissionDefault;
 +import org.bukkit.plugin.PluginLoadOrder;
@@ -4890,6 +4893,8 @@ index 0000000000000000000000000000000000000000..45bd29b70782e29eb11c36eaca0f940a
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 +import org.spongepowered.configurate.objectmapping.ObjectMapper;
 +import org.spongepowered.configurate.objectmapping.meta.Required;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.yaml.NodeStyle;
 +import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 +
@@ -4925,14 +4930,14 @@ index 0000000000000000000000000000000000000000..45bd29b70782e29eb11c36eaca0f940a
 +    @FlattenedResolver
 +    private PermissionConfiguration permissionConfiguration = new PermissionConfiguration(PermissionDefault.OP, List.of());
 +    @Required
-+    @PluginConfigConstraints.PluginVersion
-+    private String apiVersion;
++    private ApiVersion apiVersion;
 +
 +    private Map<PluginDependencyLifeCycle, Map<String, DependencyConfiguration>> dependencies = new EnumMap<>(PluginDependencyLifeCycle.class);
 +
 +    public PaperPluginMeta() {
 +    }
 +
++    static final ApiVersion MINIMUM = ApiVersion.getOrCreateVersion("1.19");
 +    public static PaperPluginMeta create(BufferedReader reader) throws ConfigurateException {
 +        YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
 +            .indent(2)
@@ -4943,6 +4948,25 @@ index 0000000000000000000000000000000000000000..45bd29b70782e29eb11c36eaca0f940a
 +
 +                return options.serializers((serializers) -> {
 +                    serializers
++                        .register(new ScalarSerializer<>(ApiVersion.class) {
++                            @Override
++                            public ApiVersion deserialize(final Type type, final Object obj) throws SerializationException {
++                                try {
++                                    final ApiVersion version = ApiVersion.getOrCreateVersion(obj.toString());
++                                    if (version.isOlderThan(MINIMUM)) {
++                                        throw new SerializationException(version + " is too old for a paper plugin!");
++                                    }
++                                    return version;
++                                } catch (final IllegalArgumentException e) {
++                                    throw new SerializationException(e);
++                                }
++                            }
++
++                            @Override
++                            protected Object serialize(final ApiVersion item, final Predicate<Class<?>> typeSupported) {
++                                return item.getVersionString();
++                            }
++                        })
 +                        .register(new EnumValueSerializer())
 +                        .register(PermissionConfiguration.class, PermissionConfigurationSerializer.SERIALIZER)
 +                        .register(new ComponentSerializer())
@@ -4950,7 +4974,6 @@ index 0000000000000000000000000000000000000000..45bd29b70782e29eb11c36eaca0f940a
 +                            ObjectMapper.factoryBuilder()
 +                                .addConstraint(Constraint.class, new Constraint.Factory())
 +                                .addConstraint(PluginConfigConstraints.PluginName.class, String.class, new PluginConfigConstraints.PluginName.Factory())
-+                                .addConstraint(PluginConfigConstraints.PluginVersion.class, String.class, new PluginConfigConstraints.PluginVersion.Factory())
 +                                .addConstraint(PluginConfigConstraints.PluginNameSpace.class, String.class, new PluginConfigConstraints.PluginNameSpace.Factory())
 +                                .addNodeResolver(new FlattenedResolver.Factory())
 +                                .build()
@@ -5092,7 +5115,7 @@ index 0000000000000000000000000000000000000000..45bd29b70782e29eb11c36eaca0f940a
 +
 +    @Override
 +    public @NotNull String getAPIVersion() {
-+        return this.apiVersion;
++        return this.apiVersion.getVersionString();
 +    }
 +
 +    @Override
@@ -5322,10 +5345,10 @@ index 0000000000000000000000000000000000000000..f951f4024745503e9cdfa7ff17b9313a
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/serializer/constraints/PluginConfigConstraints.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/serializer/constraints/PluginConfigConstraints.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2e02f73b857c530a0cce3a8d6aae46e3b0966486
+index 0000000000000000000000000000000000000000..3043a4216ec13c3de0cb931f11492ded1e6dc8de
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/serializer/constraints/PluginConfigConstraints.java
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,67 @@
 +package io.papermc.paper.plugin.provider.configuration.serializer.constraints;
 +
 +import io.papermc.paper.plugin.util.NamespaceChecker;
@@ -5345,7 +5368,6 @@ index 0000000000000000000000000000000000000000..2e02f73b857c530a0cce3a8d6aae46e3
 +public final class PluginConfigConstraints {
 +
 +    public static final Set<String> RESERVED_KEYS = Set.of("bukkit", "minecraft", "mojang", "spigot", "paper");
-+    public static final Set<String> VALID_PAPER_VERSIONS = Set.of("1.19", "1.20");
 +
 +    @Documented
 +    @Retention(RetentionPolicy.RUNTIME)
@@ -5388,24 +5410,6 @@ index 0000000000000000000000000000000000000000..2e02f73b857c530a0cce3a8d6aae46e3
 +                return value -> {
 +                    if (value != null && !NamespaceChecker.isValidNameSpace(value)) {
 +                        throw new SerializationException("provided class '%s' is in an invalid namespace.".formatted(value));
-+                    }
-+                };
-+            }
-+        }
-+    }
-+
-+    @Documented
-+    @Retention(RetentionPolicy.RUNTIME)
-+    @Target(ElementType.FIELD)
-+    public @interface PluginVersion {
-+
-+        final class Factory implements Constraint.Factory<PluginVersion, String> {
-+
-+            @Override
-+            public Constraint<String> make(PluginVersion data, Type type) {
-+                return value -> {
-+                    if (value != null && !VALID_PAPER_VERSIONS.contains(value)) {
-+                        throw new SerializationException("Provided plugin's version (%s) is not supported on this version.".formatted(value));
 +                    }
 +                };
 +            }
@@ -7322,17 +7326,21 @@ index 909b2c98e7a9117d2f737245e4661792ffafb744..d96399e9bf1a58db5a4a22e58abb99e7
      @Override
      public FileConfiguration getConfig() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index da97b4e91b7952f1459e59c74447a659842990bc..adf28b8e77d42267ce41713e031ee316366202e8 100644
+index da97b4e91b7952f1459e59c74447a659842990bc..fb8d14a2bdaaa25a2237fa4161388439ea8cfc0f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -421,6 +421,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -421,6 +421,16 @@ public final class CraftMagicNumbers implements UnsafeValues {
          net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
          return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
      }
 +    // Paper start
 +    @Override
 +    public boolean isSupportedApiVersion(String apiVersion) {
-+        return apiVersion != null && SUPPORTED_API.contains(apiVersion);
++        if (apiVersion == null) return false;
++        final ApiVersion toCheck = ApiVersion.getOrCreateVersion(apiVersion);
++        final ApiVersion minimumVersion = MinecraftServer.getServer().server.minimumAPI;
++
++        return !toCheck.isNewerThan(ApiVersion.CURRENT) && !toCheck.isOlderThan(minimumVersion);
 +    }
 +    // Paper end
  
