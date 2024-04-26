@@ -141,46 +141,55 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        int index = this.indexOfEffect(effect.getType());
 -        if (index != -1) {
+-            if (overwrite) {
+-                PotionEffect old = this.customEffects.get(index);
+-                if (old.getDuration() == effect.getDuration()) {
 +    // Paper start - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
 +    @Override
 +    public boolean addCustomEffect(final io.papermc.paper.potion.SuspiciousEffectEntry suspiciousEffectEntry, final boolean overwrite) {
 +        Preconditions.checkArgument(suspiciousEffectEntry != null, "Suspicious effect entry cannot be null");
-+        final List<io.papermc.paper.potion.SuspiciousEffectEntry> matchingEffects = this.customEffects.stream().filter(
-+            entry -> entry.effect() == suspiciousEffectEntry.effect()
-+        ).toList();
-+        if (!matchingEffects.isEmpty()) {
-             if (overwrite) {
--                PotionEffect old = this.customEffects.get(index);
--                if (old.getDuration() == effect.getDuration()) {
-+                boolean foundMatchingDuration = false;
-+                boolean mutated = false;
-+                for (final io.papermc.paper.potion.SuspiciousEffectEntry matchingEffect : matchingEffects) {
-+                    if (matchingEffect.duration() != suspiciousEffectEntry.duration()) {
-+                        this.customEffects.remove(suspiciousEffectEntry);
-+                        mutated = true;
-+                    } else {
-+                        foundMatchingDuration = true;
++        if (this.hasCustomEffects()) {
++            final List<io.papermc.paper.potion.SuspiciousEffectEntry> matchingEffects = this.customEffects.stream().filter(
++                entry -> entry.effect() == suspiciousEffectEntry.effect()
++            ).toList();
++            if (!matchingEffects.isEmpty()) {
++                if (overwrite) {
++                    boolean foundMatchingDuration = false;
++                    boolean mutated = false;
++                    for (final io.papermc.paper.potion.SuspiciousEffectEntry matchingEffect : matchingEffects) {
++                        if (matchingEffect.duration() != suspiciousEffectEntry.duration()) {
++                            this.customEffects.remove(suspiciousEffectEntry);
++                            mutated = true;
++                        } else {
++                            foundMatchingDuration = true;
++                        }
 +                    }
-+                }
-+                if (foundMatchingDuration && !mutated) {
++                    if (foundMatchingDuration && !mutated) {
++                        return false;
++                    } else if (!foundMatchingDuration) {
++                        this.customEffects.add(suspiciousEffectEntry);
++                    }
++                    return true;
++                } else  {
                      return false;
-+                } else if (!foundMatchingDuration) {
-+                    this.customEffects.add(suspiciousEffectEntry);
                  }
 -                this.customEffects.set(index, effect);
-                 return true;
+-                return true;
 -            } else {
-+            } else  {
-                 return false;
+-                return false;
              }
-         } else {
-             if (this.customEffects == null) {
-                 this.customEffects = new ArrayList<>();
-             }
+-        } else {
+-            if (this.customEffects == null) {
+-                this.customEffects = new ArrayList<>();
+-            }
 -            this.customEffects.add(effect);
-+            this.customEffects.add(suspiciousEffectEntry);
-             return true;
+-            return true;
          }
++        if (this.customEffects == null) {
++            this.customEffects = new ArrayList<>();
++        }
++        this.customEffects.add(suspiciousEffectEntry);
++        return true;
      }
 +    // Paper end - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
  
