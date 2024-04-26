@@ -110,6 +110,52 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              .applyDevelopmentConfig()
              .pushJarResources()
              .build(VANILLA_PACK_INFO);
+@@ -0,0 +0,0 @@ public class ServerPacksSource extends BuiltInPackSource {
+     @Nullable
+     @Override
+     protected Pack createBuiltinPack(String fileName, Pack.ResourcesSupplier packFactory, Component displayName) {
+-        return Pack.readMetaAndCreate(createBuiltInPackLocation(fileName, displayName), packFactory, PackType.SERVER_DATA, FEATURE_SELECTION_CONFIG);
++        // Paper start - custom built-in pack
++        final PackLocationInfo info;
++        if ("paper".equals(fileName)) {
++            info = new PackLocationInfo(fileName, displayName, PackSource.BUILT_IN, Optional.empty());
++        } else {
++            info = createBuiltInPackLocation(fileName, displayName);
++        }
++        return Pack.readMetaAndCreate(info, packFactory, PackType.SERVER_DATA, FEATURE_SELECTION_CONFIG);
++        // Paper end - custom built-in pack
+     }
+ 
+     public static PackRepository createPackRepository(Path dataPacksPath, DirectoryValidator symlinkFinder) {
+diff --git a/src/main/java/net/minecraft/world/level/DataPackConfig.java b/src/main/java/net/minecraft/world/level/DataPackConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/DataPackConfig.java
++++ b/src/main/java/net/minecraft/world/level/DataPackConfig.java
+@@ -0,0 +0,0 @@ public class DataPackConfig {
+     public static final DataPackConfig DEFAULT = new DataPackConfig(ImmutableList.of("vanilla"), ImmutableList.of());
+     public static final Codec<DataPackConfig> CODEC = RecordCodecBuilder.create(
+         instance -> instance.group(
+-                    Codec.STRING.listOf().fieldOf("Enabled").forGetter(settings -> settings.enabled),
+-                    Codec.STRING.listOf().fieldOf("Disabled").forGetter(settings -> settings.disabled)
++                    Codec.STRING.listOf().validate(DataPackConfig::ensureEnabled).fieldOf("Enabled").forGetter(settings -> settings.enabled), // Paper - ensure "paper" is always enabled
++                    Codec.STRING.listOf().validate(DataPackConfig::ensureNotDisabled).fieldOf("Disabled").forGetter(settings -> settings.disabled) // Paper - ensure "paper" is always enabled
+                 )
+                 .apply(instance, DataPackConfig::new)
+     );
+@@ -0,0 +0,0 @@ public class DataPackConfig {
+     public List<String> getDisabled() {
+         return this.disabled;
+     }
++    // Paper start - ensure "paper" datapack is always enabled
++    private static com.mojang.serialization.DataResult<List<String>> ensureEnabled(final List<String> enabled) {
++        return com.mojang.serialization.DataResult.success(enabled.contains("paper") ? enabled:  io.papermc.paper.util.MCUtil.copyListAndAdd(enabled, "paper"));
++    }
++
++    private static com.mojang.serialization.DataResult<List<String>> ensureNotDisabled(final List<String> disabled) {
++        return com.mojang.serialization.DataResult.success(io.papermc.paper.util.MCUtil.copyListAndRemoveIf(disabled, "paper"::equals));
++    }
++    // Paper end - ensure "paper" datapack is always enabled
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
@@ -139,6 +185,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 diff --git a/src/main/resources/data/.paperassetsroot b/src/main/resources/data/.paperassetsroot
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+diff --git a/src/main/resources/data/minecraft/datapacks/paper/pack.mcmeta b/src/main/resources/data/minecraft/datapacks/paper/pack.mcmeta
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/resources/data/minecraft/datapacks/paper/pack.mcmeta
+@@ -0,0 +0,0 @@
++{
++    "pack": {
++        "description": "Built-in Paper Datapack",
++        "pack_format": 41
++    }
++}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
