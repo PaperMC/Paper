@@ -962,7 +962,7 @@ index 2f0d9b953802dee821cfde82d22b0567cce8ee91..22687667ec69a954261e55e59261286a
  
      public static Timing getTickList(ServerLevel worldserver, String timingsType) {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
-index cff2f04409fab9abca87ceec85a551e1d59f9e7d..b1400f8bb661b13834c4176f94433435500113ba 100644
+index cff2f04409fab9abca87ceec85a551e1d59f9e7d..e3f56908cc8a9c3f4580def50fcfdc61bd495a71 100644
 --- a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
 +++ b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
 @@ -32,192 +32,41 @@ public final class ChunkSystem {
@@ -1167,7 +1167,7 @@ index cff2f04409fab9abca87ceec85a551e1d59f9e7d..b1400f8bb661b13834c4176f94433435
      }
  
      public static boolean hasAnyChunkHolders(final ServerLevel level) {
-@@ -244,26 +93,31 @@ public final class ChunkSystem {
+@@ -244,26 +93,32 @@ public final class ChunkSystem {
  
      public static void onChunkBorder(final LevelChunk chunk, final ChunkHolder holder) {
          chunk.playerChunk = holder;
@@ -1182,6 +1182,7 @@ index cff2f04409fab9abca87ceec85a551e1d59f9e7d..b1400f8bb661b13834c4176f94433435
      public static void onChunkTicking(final LevelChunk chunk, final ChunkHolder holder) {
          chunk.level.getChunkSource().tickingChunks.add(chunk);
 +        chunk.chunkStatus = net.minecraft.server.level.FullChunkStatus.BLOCK_TICKING;
++        chunk.level.chunkSource.chunkMap.tickingGenerated.incrementAndGet();
      }
  
      public static void onChunkNotTicking(final LevelChunk chunk, final ChunkHolder holder) {
@@ -1200,7 +1201,7 @@ index cff2f04409fab9abca87ceec85a551e1d59f9e7d..b1400f8bb661b13834c4176f94433435
      }
  
      public static ChunkHolder getUnloadingChunkHolder(final ServerLevel level, final int chunkX, final int chunkZ) {
-@@ -271,23 +125,15 @@ public final class ChunkSystem {
+@@ -271,23 +126,15 @@ public final class ChunkSystem {
      }
  
      public static int getSendViewDistance(final ServerPlayer player) {
@@ -16539,7 +16540,7 @@ index 88729d92878f98729eb5669cce5ae5b1418865a1..13d15a135dd0373bef4a5ac9ffb56dbb
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index d3f63185edd1db9fab3887ea3f08982435b3a23c..721b63f7471ace33ae22f4205f554ee3be0e033d 100644
+index d3f63185edd1db9fab3887ea3f08982435b3a23c..d6ecee1db17cb9eaeffa94b3d8dd150238fdefe5 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -122,10 +122,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -16554,7 +16555,7 @@ index d3f63185edd1db9fab3887ea3f08982435b3a23c..721b63f7471ace33ae22f4205f554ee3
      public final ServerLevel level;
      private final ThreadedLevelLightEngine lightEngine;
      public final BlockableEventLoop<Runnable> mainThreadExecutor; // Paper - public
-@@ -134,11 +131,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -134,15 +131,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final ChunkGeneratorStructureState chunkGeneratorState;
      public final Supplier<DimensionDataStorage> overworldDataStorage;
      private final PoiManager poiManager;
@@ -16568,6 +16569,11 @@ index d3f63185edd1db9fab3887ea3f08982435b3a23c..721b63f7471ace33ae22f4205f554ee3
      public final ChunkProgressListener progressListener;
      private final ChunkStatusUpdateListener chunkStatusListener;
      public final ChunkMap.ChunkDistanceManager distanceManager;
+-    private final AtomicInteger tickingGenerated;
++    public final AtomicInteger tickingGenerated; // Paper - public
+     private final String storageName;
+     private final PlayerMap playerMap;
+     public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap;
 @@ -150,28 +145,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final Long2LongMap chunkSaveCooldowns;
      private final Queue<Runnable> unloadQueue;
