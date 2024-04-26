@@ -250,7 +250,7 @@ public final class BiomeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental("update 1.21")
+    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<Biome> MANGROVE_SWAMP = create(key("mangrove_swamp"));
 
     /**
@@ -406,7 +406,7 @@ public final class BiomeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental("update 1.21")
+    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<Biome> SWAMP = create(key("swamp"));
 
     /**

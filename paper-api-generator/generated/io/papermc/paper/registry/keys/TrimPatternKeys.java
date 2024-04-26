@@ -33,7 +33,7 @@ public final class TrimPatternKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental("update 1.21")
+    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<TrimPattern> BOLT = create(key("bolt"));
 
     /**
@@ -63,7 +63,7 @@ public final class TrimPatternKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental("update 1.21")
+    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<TrimPattern> FLOW = create(key("flow"));
 
     /**

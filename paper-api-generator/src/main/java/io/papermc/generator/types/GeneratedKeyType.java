@@ -130,15 +130,15 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
                 .initializer("$N(key($S))", createMethod.build(), keyPath)
                 .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.location().toString());
             if (experimental.contains(key)) {
-                fieldBuilder.addAnnotations(experimentalAnnotations("update 1.21"));
+                fieldBuilder.addAnnotations(experimentalAnnotations("MinecraftExperimental.Requires.UPDATE_1_21"));
             } else {
                 allExperimental = false;
             }
             typeBuilder.addField(fieldBuilder.build());
         }
         if (allExperimental) {
-            typeBuilder.addAnnotations(experimentalAnnotations("update 1.21"));
-            createMethod.addAnnotations(experimentalAnnotations("update 1.21"));
+            typeBuilder.addAnnotations(experimentalAnnotations("MinecraftExperimental.Requires.UPDATE_1_21"));
+            createMethod.addAnnotations(experimentalAnnotations("MinecraftExperimental.Requires.UPDATE_1_21"));
         }
         return typeBuilder.addMethod(createMethod.build()).build();
     }
