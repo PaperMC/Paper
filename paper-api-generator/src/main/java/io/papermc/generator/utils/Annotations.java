@@ -16,7 +16,7 @@ public final class Annotations {
         return List.of(
             AnnotationSpec.builder(ApiStatus.Experimental.class).build(),
             AnnotationSpec.builder(MinecraftExperimental.class)
-                .addMember("value", "$S", version)
+                .addMember("value", "$L", version)
                 .build()
         );
     }
