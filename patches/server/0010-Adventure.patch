@@ -2200,18 +2200,26 @@ index d120fff432d9c4fc7a35ddffdc4186459e45e950..676a1499747b07151547913087515726
          }
      }
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index a7419bcb0954f0adbf7ce2d1e9738e690c265f4d..6ad38756cbc532b18de0793c784b9c7f2a10a88f 100644
+index a7419bcb0954f0adbf7ce2d1e9738e690c265f4d..aafeb9c61ddba6a8671f0238eda47b227619f1af 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 @@ -72,6 +72,7 @@ public class FriendlyByteBuf extends ByteBuf {
  
      public static final int DEFAULT_NBT_QUOTA = 2097152;
      private final ByteBuf source;
-+    public java.util.Locale adventure$locale; // Paper - track player's locale for server-side translations
++    @Nullable public final java.util.Locale adventure$locale; // Paper - track player's locale for server-side translations
      public static final short MAX_STRING_LENGTH = Short.MAX_VALUE;
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
      private static final int PUBLIC_KEY_SIZE = 256;
-@@ -120,11 +121,16 @@ public class FriendlyByteBuf extends ByteBuf {
+@@ -80,6 +81,7 @@ public class FriendlyByteBuf extends ByteBuf {
+     private static final Gson GSON = new Gson();
+ 
+     public FriendlyByteBuf(ByteBuf parent) {
++        this.adventure$locale = PacketEncoder.ADVENTURE_LOCALE.get(); // Paper - track player's locale for server-side translations
+         this.source = parent;
+     }
+ 
+@@ -120,11 +122,16 @@ public class FriendlyByteBuf extends ByteBuf {
      }
  
      public <T> void writeJsonWithCodec(Codec<T> codec, T value) {
@@ -2230,17 +2238,22 @@ index a7419bcb0954f0adbf7ce2d1e9738e690c265f4d..6ad38756cbc532b18de0793c784b9c7f
  
      public static <T> IntFunction<T> limitValue(IntFunction<T> applier, int max) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
-index a58f67973b4ed986065860263c7a42214640520d..15783d102208f6ab824ac50ed7969204b80a22c9 100644
+index a58f67973b4ed986065860263c7a42214640520d..046bfc212b640de174b300e7a05cc30bb3cac93e 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
-@@ -20,6 +20,7 @@ public class PacketEncoder<T extends PacketListener> extends MessageToByteEncode
+@@ -17,10 +17,12 @@ public class PacketEncoder<T extends PacketListener> extends MessageToByteEncode
+         this.protocolInfo = state;
+     }
+ 
++    static final ThreadLocal<java.util.Locale> ADVENTURE_LOCALE = ThreadLocal.withInitial(() -> null); // Paper - adventure; set player's locale
      protected void encode(ChannelHandlerContext channelHandlerContext, Packet<T> packet, ByteBuf byteBuf) throws Exception {
          PacketType<? extends Packet<? super T>> packetType = packet.type();
  
-+        if (byteBuf instanceof FriendlyByteBuf friendlyByteBuf) friendlyByteBuf.adventure$locale = channelHandlerContext.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get(); // Paper - adventure; set player's locale
          try {
++            ADVENTURE_LOCALE.set(channelHandlerContext.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get()); // Paper - adventure; set player's locale
              this.protocolInfo.codec().encode(byteBuf, packet);
              int i = byteBuf.readableBytes();
+             if (LOGGER.isDebugEnabled()) {
 diff --git a/src/main/java/net/minecraft/network/chat/ChatDecorator.java b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
 index e4624d696dcf0ddb6d42a80701dfc47ec6877540..6b8dc1eb490098cc14673c9ab0aa16fe3471325b 100644
 --- a/src/main/java/net/minecraft/network/chat/ChatDecorator.java
@@ -3208,27 +3221,25 @@ index ed54c81a3269360acce674aa4e1d54ccb2461841..c9c849534c3998cfcab7ddcb12a71ccb
      }
  
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 2b8b220bf1e132b230abe14770da53de84db9818..7ca60db3a639e68456933f8e5af900dc4aade575 100644
+index 2b8b220bf1e132b230abe14770da53de84db9818..96da768f55ad835a1a55bf359f0d7278bc232304 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -164,7 +164,16 @@ public final class ItemStack implements DataComponentHolder {
-                 return ItemStack.EMPTY;
-             } else {
-                 Holder<Item> holder = (Holder) ITEM_STREAM_CODEC.decode(registryfriendlybytebuf); // CraftBukkit - decompile error
--                DataComponentPatch datacomponentpatch = (DataComponentPatch) DataComponentPatch.STREAM_CODEC.decode(registryfriendlybytebuf);
+@@ -186,7 +186,15 @@ public final class ItemStack implements DataComponentHolder {
+                 CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
+                 // Spigot end
+                 ITEM_STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.getItemHolder()); // CraftBukkit - decompile error
 +                // Paper start - adventure; conditionally render translatable components
-+                DataComponentPatch datacomponentpatch;
 +                boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
 +                try {
-+                net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
-+                datacomponentpatch = (DataComponentPatch) DataComponentPatch.STREAM_CODEC.decode(registryfriendlybytebuf);
++                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
+                 DataComponentPatch.STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.components.asPatch());
 +                } finally {
 +                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(prev);
 +                }
 +                // Paper end - adventure; conditionally render translatable components
- 
-                 // CraftBukkit start
-                 ItemStack itemstack = new ItemStack(holder, i, datacomponentpatch);
+             }
+         }
+     };
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 index 8ec376f453ac1f4c9423483f5ae1625b295858c7..e535fb3b5194b8412c0c26c0799340916c7542eb 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
