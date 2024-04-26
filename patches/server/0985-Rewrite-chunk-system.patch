@@ -20275,10 +20275,64 @@ index bac191f92ea3735df19c68d5568c2c7962c8680f..5d94aee1303d9eca5f1fa9a2e033ad0d
  
      public void setFullStatus(Supplier<FullChunkStatus> levelTypeProvider) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java
-index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..68e1e3d525ee6cec23971eea431f22a535207b2b 100644
+index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..1b059afaa433212e5b17d35ba221cdf0ad60235c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatus.java
-@@ -128,6 +128,29 @@ public class ChunkStatus {
+@@ -21,13 +21,14 @@ import net.minecraft.world.level.chunk.ProtoChunk;
+ import net.minecraft.world.level.levelgen.Heightmap;
+ 
+ public class ChunkStatus {
++    static final ChunkStatus.LoadingTask PASSTHROUGH_LOAD_TASK = (WorldGenContext context, ChunkStatus status, ToFullChunk fullChunkConverter, ChunkAccess chunk) -> CompletableFuture.completedFuture(chunk); // Paper - rewrite chunk system
+     public static final int MAX_STRUCTURE_DISTANCE = 8;
+     private static final EnumSet<Heightmap.Types> PRE_FEATURES = EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG);
+     public static final EnumSet<Heightmap.Types> POST_FEATURES = EnumSet.of(
+         Heightmap.Types.OCEAN_FLOOR, Heightmap.Types.WORLD_SURFACE, Heightmap.Types.MOTION_BLOCKING, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES
+     );
+     public static final ChunkStatus EMPTY = register(
+-        "empty", null, -1, false, PRE_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateEmpty, ChunkStatusTasks::loadPassThrough
++        "empty", null, -1, false, PRE_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateEmpty, PASSTHROUGH_LOAD_TASK // Paper - rewrite chunk system
+     );
+     public static final ChunkStatus STRUCTURE_STARTS = register(
+         "structure_starts",
+@@ -47,22 +48,22 @@ public class ChunkStatus {
+         PRE_FEATURES,
+         ChunkType.PROTOCHUNK,
+         ChunkStatusTasks::generateStructureReferences,
+-        ChunkStatusTasks::loadPassThrough
++        PASSTHROUGH_LOAD_TASK // Paper - rewrite chunk system
+     );
+     public static final ChunkStatus BIOMES = register(
+-        "biomes", STRUCTURE_REFERENCES, 8, false, PRE_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateBiomes, ChunkStatusTasks::loadPassThrough
++        "biomes", STRUCTURE_REFERENCES, 8, false, PRE_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateBiomes, PASSTHROUGH_LOAD_TASK // Paper - rewrite chunk system
+     );
+     public static final ChunkStatus NOISE = register(
+-        "noise", BIOMES, 8, false, PRE_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateNoise, ChunkStatusTasks::loadPassThrough
++        "noise", BIOMES, 8, false, PRE_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateNoise, PASSTHROUGH_LOAD_TASK // Paper - rewrite chunk system
+     );
+     public static final ChunkStatus SURFACE = register(
+-        "surface", NOISE, 8, false, PRE_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateSurface, ChunkStatusTasks::loadPassThrough
++        "surface", NOISE, 8, false, PRE_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateSurface, PASSTHROUGH_LOAD_TASK // Paper - rewrite chunk system
+     );
+     public static final ChunkStatus CARVERS = register(
+-        "carvers", SURFACE, 8, false, POST_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateCarvers, ChunkStatusTasks::loadPassThrough
++        "carvers", SURFACE, 8, false, POST_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateCarvers, PASSTHROUGH_LOAD_TASK // Paper - rewrite chunk system
+     );
+     public static final ChunkStatus FEATURES = register(
+-        "features", CARVERS, 8, false, POST_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateFeatures, ChunkStatusTasks::loadPassThrough
++        "features", CARVERS, 8, false, POST_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateFeatures, PASSTHROUGH_LOAD_TASK // Paper - rewrite chunk system
+     );
+     public static final ChunkStatus INITIALIZE_LIGHT = register(
+         "initialize_light",
+@@ -78,7 +79,7 @@ public class ChunkStatus {
+         "light", INITIALIZE_LIGHT, 1, true, POST_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateLight, ChunkStatusTasks::loadLight
+     );
+     public static final ChunkStatus SPAWN = register(
+-        "spawn", LIGHT, 1, false, POST_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateSpawn, ChunkStatusTasks::loadPassThrough
++        "spawn", LIGHT, 1, false, POST_FEATURES, ChunkType.PROTOCHUNK, ChunkStatusTasks::generateSpawn, PASSTHROUGH_LOAD_TASK // Paper - rewrite chunk system
+     );
+     public static final ChunkStatus FULL = register(
+         "full", SPAWN, 0, false, POST_FEATURES, ChunkType.LEVELCHUNK, ChunkStatusTasks::generateFull, ChunkStatusTasks::loadFull
+@@ -128,6 +129,29 @@ public class ChunkStatus {
          }
      }
      // Paper end - starlight
@@ -20296,7 +20350,7 @@ index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..68e1e3d525ee6cec23971eea431f22a5
 +    }
 +
 +    public final boolean isEmptyLoadStatus() {
-+        return this.loadingTask == PASSTHROUGH_LOAD_TASK; // TODO fix this
++        return this.loadingTask == PASSTHROUGH_LOAD_TASK;
 +    }
 +
 +    public final boolean isEmptyGenStatus() {
@@ -20308,7 +20362,7 @@ index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..68e1e3d525ee6cec23971eea431f22a5
  
      private static ChunkStatus register(
          String id,
-@@ -190,6 +213,13 @@ public class ChunkStatus {
+@@ -190,6 +214,13 @@ public class ChunkStatus {
          this.chunkType = chunkType;
          this.heightmapsAfter = heightMapTypes;
          this.index = previous == null ? 0 : previous.getIndex() + 1;
@@ -20323,10 +20377,22 @@ index 95318092f8281d98132d1d3ceb4a5c36cf32eb05..68e1e3d525ee6cec23971eea431f22a5
  
      public int getIndex() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-index ce7f154b9dad4e78ee0189405cf57dcb3d5301b8..f095704157653f30615c92a8d6f2900fe1721360 100644
+index ce7f154b9dad4e78ee0189405cf57dcb3d5301b8..b66c0c4a9e9b9e5dbcb51b23319f0d4b23837139 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-@@ -113,11 +113,11 @@ public class ChunkStatusTasks {
+@@ -26,8 +26,9 @@ public class ChunkStatusTasks {
+         return CompletableFuture.completedFuture(chunk);
+     }
+ 
+-    static CompletableFuture<ChunkAccess> loadPassThrough(WorldGenContext context, ChunkStatus status, ToFullChunk fullChunkConverter, ChunkAccess chunk) {
+-        return CompletableFuture.completedFuture(chunk);
++    @io.papermc.paper.annotation.DoNotUse @Deprecated(forRemoval = true) // Paper - rewrite chunk system - use ChunkStatus.PASSTHROUGH_LOAD_TASK instead
++    static CompletableFuture<ChunkAccess> loadPassThrough(WorldGenContext context, ChunkStatus status, ToFullChunk fullChunkConverter, ChunkAccess chunk) { // Paper - rewrite chunk system - diff on change
++        return CompletableFuture.completedFuture(chunk); // Paper - rewrite chunk system - diff on change
+     }
+ 
+     static CompletableFuture<ChunkAccess> generateStructureStarts(WorldGenContext context, ChunkStatus status, Executor executor, ToFullChunk fullChunkConverter, List<ChunkAccess> chunks, ChunkAccess chunk) {
+@@ -113,11 +114,11 @@ public class ChunkStatusTasks {
      }
  
      static CompletableFuture<ChunkAccess> generateInitializeLight(WorldGenContext context, ChunkStatus status, Executor executor, ToFullChunk fullChunkConverter, List<ChunkAccess> chunks, ChunkAccess chunk) {
