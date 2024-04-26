@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.4")
+@GeneratedFrom("1.20.5")
 @ApiStatus.Experimental
 public final class StructureTypeKeys {
     /**
