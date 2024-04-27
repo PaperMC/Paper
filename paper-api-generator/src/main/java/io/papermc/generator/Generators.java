@@ -19,6 +19,8 @@ import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import io.papermc.paper.entity.ai.Activity;
+import io.papermc.paper.entity.ai.SensorType;
 import org.bukkit.potion.PotionEffectType;
 
 public interface Generators {
@@ -36,6 +38,8 @@ public interface Generators {
         simpleKey("DamageTypeKeys", DamageType.class, Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, true),
         simpleKey("WolfVariantKeys", Wolf.Variant.class, Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, true),
         simpleKey("ItemTypeKeys", ItemType.class, Registries.ITEM, RegistryKey.ITEM, false),
+        simpleKey("ActivityKeys", Activity.class, Registries.ACTIVITY, RegistryKey.ACTIVITY, false),
+        simpleKey("SensorTypeKeys", SensorType.class, Registries.SENSOR_TYPE, (RegistryKey<SensorType>)(Object)RegistryKey.SENSOR_TYPE, false),
 
         simpleTagKey("EnchantmentTagKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT),
         simpleTagKey("ItemTypeTagKeys", ItemType.class, Registries.ITEM, RegistryKey.ITEM),
