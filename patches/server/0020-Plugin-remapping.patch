@@ -6,15 +6,14 @@ Subject: [PATCH] Plugin remapping
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index dbb67a5dc1eecb1339cd4da1a23e69ed675ddbe4..c29c309503d5d5defe7991baca34b0d692d57e36 100644
+index 3587ff0a4c0fe92c99501aa5251f379481e43437..600b442986fa5ca9dd12f900caa284b854cc30ca 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -44,9 +44,14 @@ dependencies {
-     testImplementation("org.mockito:mockito-core:5.11.0")
+@@ -44,9 +44,13 @@ dependencies {
      testImplementation("org.ow2.asm:asm-tree:9.7")
      testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
+     implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
 +    implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
-+    implementation("net.neoforged:srgutils:1.0.9") // Paper - remap plugins - bump transitive of ART
 +}
 +
 +paperweight {
@@ -25,7 +24,7 @@ index dbb67a5dc1eecb1339cd4da1a23e69ed675ddbe4..c29c309503d5d5defe7991baca34b0d6
  tasks.jar {
      archiveClassifier.set("dev")
  
-@@ -66,7 +71,7 @@ tasks.jar {
+@@ -66,7 +70,7 @@ tasks.jar {
              "Specification-Vendor" to "Bukkit Team",
              "Git-Branch" to gitBranch, // Paper
              "Git-Commit" to gitHash, // Paper
@@ -34,13 +33,13 @@ index dbb67a5dc1eecb1339cd4da1a23e69ed675ddbe4..c29c309503d5d5defe7991baca34b0d6
          )
          for (tld in setOf("net", "com", "org")) {
              attributes("$tld/bukkit", "Sealed" to true)
-@@ -155,20 +160,41 @@ val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatM
+@@ -155,20 +159,41 @@ val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatM
          runtime.filterNot { it.asFile.absolutePath == vanilla }
      }
  
--tasks.registerRunTask("runShadow") {
--    description = "Spin up a test server from the shadowJar archiveFile"
--    classpath(tasks.shadowJar.flatMap { it.archiveFile })
+-tasks.registerRunTask("runServerJar") {
+-    description = "Spin up a test server from the serverJar archiveFile"
+-    classpath(tasks.serverJar.flatMap { it.archiveFile })
 +tasks.registerRunTask("runServer") {
 +    description = "Spin up a test server from the Mojang mapped server jar"
 +    classpath(tasks.includeMappings.flatMap { it.outputJar })
@@ -1362,10 +1361,10 @@ index 0000000000000000000000000000000000000000..8e4229634d41a42b3d93948eebb77def
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/ObfHelper.java b/src/main/java/io/papermc/paper/util/ObfHelper.java
-index e8ff684d8bd994c64ff34f20e1e0601b678244c1..3f03d5efcd95e3adb76dc4292b3d2c420fdc58af 100644
+index 9e6d48335b37fa5204bfebf396d748089884555b..6067be951c4c52c4b1da51efc01436b2c90ea3bf 100644
 --- a/src/main/java/io/papermc/paper/util/ObfHelper.java
 +++ b/src/main/java/io/papermc/paper/util/ObfHelper.java
-@@ -89,10 +89,10 @@ public enum ObfHelper {
+@@ -80,10 +80,10 @@ public enum ObfHelper {
      }
  
      private static @Nullable Set<ClassMapping> loadMappingsIfPresent() {
@@ -1377,9 +1376,9 @@ index e8ff684d8bd994c64ff34f20e1e0601b678244c1..3f03d5efcd95e3adb76dc4292b3d2c42
 +            return null;
 +        }
 +        try (final InputStream mappingsInputStream = MappingEnvironment.mappingsStream()) {
-             final MemoryMappingTree tree = new MemoryMappingTree();
-             MappingReader.read(new InputStreamReader(mappingsInputStream, StandardCharsets.UTF_8), MappingFormat.TINY_2_FILE, tree);
+             final IMappingFile mappings = IMappingFile.load(mappingsInputStream); // Mappings are mojang->spigot
              final Set<ClassMapping> classes = new HashSet<>();
+ 
 diff --git a/src/main/java/io/papermc/paper/util/concurrent/ScalingThreadPool.java b/src/main/java/io/papermc/paper/util/concurrent/ScalingThreadPool.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..badff5d6ae6dd8d209c82bc7e8afe370db6148f2
