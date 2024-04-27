@@ -1157,10 +1157,10 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6c59f7083ea0e5e9215f31baa677d0a4699dd39a
+index 0000000000000000000000000000000000000000..cb9f8567ba6aae41a6cde519ac0cff0169a7cea7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,474 @@
+@@ -0,0 +1,478 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.StringReader;
@@ -1217,6 +1217,7 @@ index 0000000000000000000000000000000000000000..6c59f7083ea0e5e9215f31baa677d0a4
 +import net.minecraft.network.protocol.Packet;
 +import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 +import net.minecraft.network.protocol.game.ClientboundSoundPacket;
++import net.minecraft.resources.RegistryOps;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.network.Filterable;
 +import net.minecraft.sounds.SoundEvent;
@@ -1226,6 +1227,7 @@ index 0000000000000000000000000000000000000000..6c59f7083ea0e5e9215f31baa677d0a4
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.component.WrittenBookContent;
 +import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftRegistry;
 +import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 +import org.bukkit.craftbukkit.entity.CraftEntity;
 +import org.intellij.lang.annotations.Subst;
@@ -1620,27 +1622,29 @@ index 0000000000000000000000000000000000000000..6c59f7083ea0e5e9215f31baa677d0a4
 +    // Style
 +
 +    public static net.minecraft.network.chat.Style asVanilla(final Style style) {
++        final RegistryOps<Object> ops = RegistryOps.create(JavaOps.INSTANCE, CraftRegistry.getMinecraftRegistry());
 +        final Object encoded = AdventureCodecs.STYLE_MAP_CODEC.codec()
-+            .parse(JavaOps.INSTANCE, style).getOrThrow(IllegalStateException::new);
++            .parse(ops, style).getOrThrow(IllegalStateException::new);
 +
 +        return net.minecraft.network.chat.Style.Serializer.CODEC
-+            .parse(JavaOps.INSTANCE, encoded).getOrThrow(IllegalStateException::new);
++            .parse(ops, encoded).getOrThrow(IllegalStateException::new);
 +    }
 +
 +    public static Style asAdventure(final net.minecraft.network.chat.Style style) {
++        final RegistryOps<Object> ops = RegistryOps.create(JavaOps.INSTANCE, CraftRegistry.getMinecraftRegistry());
 +        final Object encoded = net.minecraft.network.chat.Style.Serializer.CODEC
-+            .parse(JavaOps.INSTANCE, style).getOrThrow(IllegalStateException::new);
++            .parse(ops, style).getOrThrow(IllegalStateException::new);
 +
 +        return AdventureCodecs.STYLE_MAP_CODEC.codec()
-+            .parse(JavaOps.INSTANCE, encoded).getOrThrow(IllegalStateException::new);
++            .parse(ops, encoded).getOrThrow(IllegalStateException::new);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c7da1c8395244803872601bb95de95ad91c93e29
+index 0000000000000000000000000000000000000000..e58e8ac574eb60205b17e31589f5a7610c60a4e2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,34 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
@@ -1648,6 +1652,8 @@ index 0000000000000000000000000000000000000000..c7da1c8395244803872601bb95de95ad
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.serializer.ComponentSerializer;
 +import net.minecraft.network.chat.ComponentSerialization;
++import net.minecraft.resources.RegistryOps;
++import org.bukkit.craftbukkit.CraftRegistry;
 +
 +final class WrapperAwareSerializer implements ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> {
 +    @Override
@@ -1655,18 +1661,20 @@ index 0000000000000000000000000000000000000000..c7da1c8395244803872601bb95de95ad
 +        if (input instanceof AdventureComponent) {
 +            return ((AdventureComponent) input).adventure;
 +        }
-+        final Object obj = ComponentSerialization.CODEC.encodeStart(JavaOps.INSTANCE, input)
++        final RegistryOps<Object> ops = RegistryOps.create(JavaOps.INSTANCE, CraftRegistry.getMinecraftRegistry());
++        final Object obj = ComponentSerialization.CODEC.encodeStart(ops, input)
 +            .getOrThrow(s -> new RuntimeException("Failed to encode Minecraft Component: " + input + "; " + s));
-+        final Pair<Component, Object> converted = AdventureCodecs.COMPONENT_CODEC.decode(JavaOps.INSTANCE, obj)
++        final Pair<Component, Object> converted = AdventureCodecs.COMPONENT_CODEC.decode(ops, obj)
 +            .getOrThrow(s -> new RuntimeException("Failed to decode to adventure Component: " + obj + "; " + s));
 +        return converted.getFirst();
 +    }
 +
 +    @Override
 +    public net.minecraft.network.chat.Component serialize(final Component component) {
-+        final Object obj = AdventureCodecs.COMPONENT_CODEC.encodeStart(JavaOps.INSTANCE, component)
++        final RegistryOps<Object> ops = RegistryOps.create(JavaOps.INSTANCE, CraftRegistry.getMinecraftRegistry());
++        final Object obj = AdventureCodecs.COMPONENT_CODEC.encodeStart(ops, component)
 +            .getOrThrow(s -> new RuntimeException("Failed to encode adventure Component: " + component + "; " + s));
-+        final Pair<net.minecraft.network.chat.Component, Object> converted = ComponentSerialization.CODEC.decode(JavaOps.INSTANCE, obj)
++        final Pair<net.minecraft.network.chat.Component, Object> converted = ComponentSerialization.CODEC.decode(ops, obj)
 +            .getOrThrow(s -> new RuntimeException("Failed to decode to Minecraft Component: " + obj + "; " + s));
 +        return converted.getFirst();
 +    }
@@ -5697,10 +5705,10 @@ index 0000000000000000000000000000000000000000..3aedd0bbc97edacc1ebf71264b310e55
 +}
 diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff9e3013e4f5049c6cfa35803676516dfe8b9af1
+index 0000000000000000000000000000000000000000..0b23e6aab901d359845573e12e939a231ee30ada
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
-@@ -0,0 +1,399 @@
+@@ -0,0 +1,403 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.datafixers.util.Pair;
@@ -5718,6 +5726,7 @@ index 0000000000000000000000000000000000000000..ff9e3013e4f5049c6cfa35803676516d
 +import java.util.List;
 +import java.util.UUID;
 +import java.util.function.Function;
++import java.util.stream.Stream;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.BlockNBTComponent;
 +import net.kyori.adventure.text.Component;
@@ -5736,6 +5745,7 @@ index 0000000000000000000000000000000000000000..ff9e3013e4f5049c6cfa35803676516d
 +import net.minecraft.nbt.NbtOps;
 +import net.minecraft.nbt.Tag;
 +import net.minecraft.network.chat.ComponentSerialization;
++import net.minecraft.resources.RegistryOps;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.Items;
@@ -5901,12 +5911,14 @@ index 0000000000000000000000000000000000000000..ff9e3013e4f5049c6cfa35803676516d
 +        testMinecraftRoundTrip(dynamicOps, COMPONENT_CODEC, ComponentSerialization.CODEC, component);
 +    }
 +
-+    static List<DynamicOps<?>> dynamicOps() {
-+        return List.of(
++    static List<? extends DynamicOps<?>> dynamicOps() {
++        return Stream.of(
 +            NbtOps.INSTANCE,
 +            JavaOps.INSTANCE,
 +            JsonOps.INSTANCE
-+        );
++        )
++            .map(ops -> RegistryOps.create(ops, AbstractTestingBase.REGISTRY_CUSTOM))
++            .toList();
 +    }
 +
 +    @ParameterizedTest(name = PARAMETERIZED_NAME)
@@ -6129,3 +6141,21 @@ index 0000000000000000000000000000000000000000..98114b8fdc441f2a1642abf230457c2b
 +        assertEquals("&cDone", LegacyComponentSerializer.legacyAmpersand().serialize(Component.translatable("narrator.loading.done", NamedTextColor.RED)));
 +    }
 +}
+diff --git a/src/test/java/io/papermc/paper/util/MethodParameterSource.java b/src/test/java/io/papermc/paper/util/MethodParameterSource.java
+index 6cbf11c898439834cffb99ef84e5df1494356809..381668df2f58df82ac6da85796752934e92d0796 100644
+--- a/src/test/java/io/papermc/paper/util/MethodParameterSource.java
++++ b/src/test/java/io/papermc/paper/util/MethodParameterSource.java
+@@ -4,11 +4,13 @@ import java.lang.annotation.ElementType;
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+ import java.lang.annotation.Target;
++import org.intellij.lang.annotations.Language;
+ import org.junitpioneer.jupiter.cartesian.CartesianArgumentsSource;
+ 
+ @Retention(RetentionPolicy.RUNTIME)
+ @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
+ @CartesianArgumentsSource(MethodParameterProvider.class)
+ public @interface MethodParameterSource {
++    @Language("jvm-method-name")
+     String[] value() default {};
+ }
