@@ -588,6 +588,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
             Object raw = args.get("meta");
             if (raw instanceof ItemMeta) {
                 ((ItemMeta) raw).setVersion(version);
+                // Paper start - for pre 1.20.5 itemstacks, add HIDE_STORED_ENCHANTS flag if HIDE_ADDITIONAL_TOOLTIP is set
+                if (version < 3837) { // 1.20.5
+                    if (((ItemMeta) raw).hasItemFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)) {
+                        ((ItemMeta) raw).addItemFlags(ItemFlag.HIDE_STORED_ENCHANTS);
+                    }
+                }
+                // Paper end
                 result.setItemMeta((ItemMeta) raw);
             }
         }

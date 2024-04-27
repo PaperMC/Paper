@@ -2,6 +2,8 @@ package org.bukkit.inventory;
 
 /**
  * A ItemFlag can hide some Attributes from ItemStacks
+ * @apiNote Setting these without also setting the data they are hiding
+ * may not result in the item flag being persisted in the ItemMeta/ItemStack.
  */
 public enum ItemFlag {
 
@@ -27,7 +29,8 @@ public enum ItemFlag {
     HIDE_PLACED_ON,
     /**
      * Setting to show/hide potion effects, book and firework information, map
-     * tooltips, patterns of banners, and enchantments of enchanted books.
+     * tooltips, patterns of banners.
+     * @see #HIDE_STORED_ENCHANTS HIDE_STORED_ENCHANTS for hiding stored enchants (like on enchanted books)
      */
     HIDE_ADDITIONAL_TOOLTIP,
     /**
@@ -37,7 +40,13 @@ public enum ItemFlag {
     /**
      * Setting to show/hide armor trim from armor.
      */
-    HIDE_ARMOR_TRIM;
+    HIDE_ARMOR_TRIM,
+    /**
+     * Setting to show/hide stored enchants on an item, such as enchantments
+     * on an enchanted book.
+     */
+    HIDE_STORED_ENCHANTS,
+    ;
     // Paper start
     /**
      * Setting to show/hide item-specific information, including, but not limited to:
