@@ -1,11 +1,37 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Sat, 27 Apr 2024 12:16:38 -0700
-Subject: [PATCH] Fix ItemFlag HIDE_DESTROYES & HIDE_PLACED_ON
+Subject: [PATCH] Fix ItemFlags
+
+Re-adds missing functionality for HIDE_DESTROYS and
+HIDE_PLACED_ON. Also adds new flag in HIDE_STORED_ENCHANTS
+which was split from HIDE_ADDITIONAL_TOOLTIP.
 
 == AT ==
 public net.minecraft.world.item.AdventureModePredicate predicates
 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
+index fca0cfba14dd2cc6f24b56eaf269594b2d87fd04..8734f0b777432cd8639094b75a3da1b9595823ed 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
+@@ -39,7 +39,7 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
+         getOrEmpty(tag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS).ifPresent((itemEnchantments) -> {
+             this.enchantments = buildEnchantments(itemEnchantments);
+             if (!itemEnchantments.showInTooltip) {
+-                this.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
++                this.addItemFlags(ItemFlag.HIDE_STORED_ENCHANTS); // Paper - new ItemFlag
+             }
+         });
+     }
+@@ -54,7 +54,7 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
+     void applyToItem(CraftMetaItem.Applicator itemTag) {
+         super.applyToItem(itemTag);
+ 
+-        this.applyEnchantments(this.enchantments, itemTag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
++        this.applyEnchantments(this.enchantments, itemTag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS, ItemFlag.HIDE_STORED_ENCHANTS);
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index 94e9213414ec08794e875c23c300bfae5dcc877e..940c2c9663657369eda6962728bd37a869209199 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
