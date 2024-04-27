@@ -16,12 +16,18 @@ dependencies {
     implementation(project(":paper-api"))
     implementation("io.github.classgraph:classgraph:4.8.47")
     implementation("org.jetbrains:annotations:24.0.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.register<JavaExec>("generate") {
     mainClass.set("io.papermc.generator.Main")
     classpath(sourceSets.main.map { it.runtimeClasspath })
     args(projectDir.toPath().resolve("generated").toString())
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 group = "io.papermc.paper"
