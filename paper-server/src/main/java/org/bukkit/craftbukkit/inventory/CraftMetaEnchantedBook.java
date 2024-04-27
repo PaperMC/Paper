@@ -38,7 +38,7 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
         getOrEmpty(tag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS).ifPresent((itemEnchantments) -> {
             this.enchantments = buildEnchantments(itemEnchantments);
             if (!itemEnchantments.showInTooltip) {
-                this.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+                this.addItemFlags(ItemFlag.HIDE_STORED_ENCHANTS); // Paper - new ItemFlag
             }
         });
     }
@@ -53,7 +53,7 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
     void applyToItem(CraftMetaItem.Applicator itemTag) {
         super.applyToItem(itemTag);
 
-        this.applyEnchantments(this.enchantments, itemTag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+        this.applyEnchantments(this.enchantments, itemTag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS, ItemFlag.HIDE_STORED_ENCHANTS);
     }
 
     @Override
