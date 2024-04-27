@@ -3,6 +3,7 @@ package io.papermc.generator.utils;
 import com.mojang.serialization.Lifecycle;
 import io.papermc.generator.Main;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Registry;
@@ -12,7 +13,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
 
 @DefaultQualifier(NonNull.class)
-public record CollectingContext<T>(List<ResourceKey<T>> registered,
+public record CollectingContext<T>(Set<ResourceKey<T>> registered,
                                    Registry<T> registry) implements BootstrapContext<T> {
 
     @Override
