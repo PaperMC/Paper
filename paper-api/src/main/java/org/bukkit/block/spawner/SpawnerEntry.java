@@ -120,27 +120,29 @@ public class SpawnerEntry {
         private final Map<EquipmentSlot, Float> dropChances;
 
         public Equipment(@NotNull LootTable equipmentLootTable, @NotNull Map<EquipmentSlot, Float> dropChances) {
+            Preconditions.checkArgument(equipmentLootTable != null, "table cannot be null"); // Paper
             this.equipmentLootTable = equipmentLootTable;
             this.dropChances = dropChances;
         }
 
         /**
-         * Set the loot table for the entity.
+         * Set the loot table for the spawned entity's equipment slots.
          * <br>
-         * To remove a loot table use null.
+         * To remove a loot table use the empty loot table.
          *
          * @param table this {@link org.bukkit.entity.Mob} will have.
          */
         public void setEquipmentLootTable(@NotNull LootTable table) {
+            Preconditions.checkArgument(table != null, "table cannot be null"); // Paper
             this.equipmentLootTable = table;
         }
 
         /**
-         * Gets the loot table for the entity.
+         * Gets the loot table for the spawned entity's equipment.
          * <br>
          *
-         * If an entity does not have a loot table, this will return null, NOT
-         * an empty loot table.
+         * If an entity does not have a loot table, this will return an
+         * empty loot table.
          *
          * @return the loot table for this entity.
          */
