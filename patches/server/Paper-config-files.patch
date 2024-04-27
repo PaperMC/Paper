@@ -127,6 +127,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration;
 +
++import com.google.common.base.Preconditions;
 +import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
@@ -134,6 +135,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.GameRules;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.MustBeInvokedByOverriders;
 +import org.slf4j.Logger;
@@ -141,6 +143,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.ConfigurationOptions;
++import org.spongepowered.configurate.NodePath;
 +import org.spongepowered.configurate.objectmapping.ObjectMapper;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.util.CheckedFunction;
@@ -210,9 +213,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.createLoaderBuilder();
 +    }
 +
-+    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> creator(Class<T> type, boolean refreshNode) {
++    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> creator(final Class<? extends T> type, final boolean refreshNode) {
 +        return node -> {
-+            T instance = node.require(type);
++            final T instance = node.require(type);
 +            if (refreshNode) {
 +                node.set(type, instance);
 +            }
@@ -300,7 +303,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.applyWorldConfigTransformations(contextMap, node);
 +        final W instance = node.require(this.worldConfigClass);
 +        node.set(this.worldConfigClass, instance);
-+        trySaveFileNode(loader, node, configFile.toString());
++        this.trySaveFileNode(loader, node, configFile.toString());
 +    }
 +
 +    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap, final Path configFile) {
@@ -335,6 +338,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
++        Preconditions.checkArgument(!contextMap.isDefaultWorldContext(), "cannot create world map with default world context");
 +        final Path defaultsConfigFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
 +        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap(contextMap.require(REGISTRY_ACCESS)).build(), defaultsConfigFile).loader();
 +        final ConfigurationNode defaultsNode = defaultsLoader.load();
@@ -360,7 +364,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        this.applyWorldConfigTransformations(contextMap, worldNode);
 +        this.applyDefaultsAwareWorldConfigTransformations(contextMap, worldNode, defaultsNode);
-+        trySaveFileNode(worldLoader, worldNode, worldConfigFile.toString()); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
++        this.trySaveFileNode(worldLoader, worldNode, worldConfigFile.toString()); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
 +        worldNode.mergeFrom(defaultsNode);
 +        return creator.apply(worldNode);
 +    }
@@ -467,6 +471,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static final ContextKey<ResourceLocation> WORLD_KEY = new ContextKey<>(ResourceLocation.class, "world key");
 +    public static final ContextKey<Void> FIRST_DEFAULT = new ContextKey<>(Void.class, "first default");
 +    public static final ContextKey<RegistryAccess> REGISTRY_ACCESS = new ContextKey<>(RegistryAccess.class, "registry access");
++    public static final ContextKey<GameRules> GAME_RULES = new ContextKey<>(GameRules.class, "game rules");
 +
 +    public record ContextKey<T>(TypeToken<T> type, String name) {
 +
@@ -864,6 +869,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
++import io.papermc.paper.configuration.transformation.world.SpawnLoadedRangeToGameRule;
 +import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
 +import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
@@ -893,6 +899,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.entity.EntityType;
 +import net.minecraft.world.item.Item;
++import net.minecraft.world.level.GameRules;
 +import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 +import org.apache.commons.lang3.RandomStringUtils;
@@ -1121,21 +1128,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        versionedBuilder.build().apply(node);
 +    }
 +
-+    private static final List<Transformations.DefaultsAware> DEFAULT_AWARE_TRANSFORMATIONS = List.of(FeatureSeedsGeneration::apply);
++    private static final List<Transformations.DefaultsAware> DEFAULT_AWARE_TRANSFORMATIONS = List.of(
++        FeatureSeedsGeneration::apply,
++        SpawnLoadedRangeToGameRule::apply
++    );
 +
 +    @Override
 +    protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
 +        final ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
 +        // ADD FUTURE TRANSFORMS HERE (these transforms run after the defaults have been merged into the node)
 +        DEFAULT_AWARE_TRANSFORMATIONS.forEach(transform -> transform.apply(builder, contextMap, defaultsNode));
-+
-+        ConfigurationTransformation transformation;
-+        try {
-+            transformation = builder.build(); // build throws IAE if no actions were provided (bad zml)
-+        } catch (IllegalArgumentException ignored) {
-+            return;
-+        }
-+        transformation.apply(worldNode);
++        builder.build().apply(worldNode);
 +    }
 +
 +    @Override
@@ -1166,16 +1169,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private static ContextMap createWorldContextMap(ServerLevel level) {
-+        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess());
++        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess(), level.getGameRules());
 +    }
 +
-+    public static ContextMap createWorldContextMap(Path dir, String levelName, ResourceLocation worldKey, SpigotWorldConfig spigotConfig, RegistryAccess registryAccess) {
++    public static ContextMap createWorldContextMap(final Path dir, final String levelName, final ResourceLocation worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {
 +        return ContextMap.builder()
 +            .put(WORLD_DIRECTORY, dir)
 +            .put(WORLD_NAME, levelName)
 +            .put(WORLD_KEY, worldKey)
 +            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, Suppliers.ofInstance(spigotConfig))
 +            .put(REGISTRY_ACCESS, registryAccess)
++            .put(GAME_RULES, gameRules)
 +            .build();
 +    }
 +
@@ -1368,6 +1372,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        path("fixes", "fix-curing-zombie-villager-discount-exploit"),
 +        path("entities", "mob-effects", "undead-immune-to-certain-effects")
 +    };
++    // spawn.keep-spawn-loaded and spawn.keep-spawn-loaded-range are no longer used, but kept
++    // in the world default config for compatibility with old worlds being migrated to use the gamerule
 +
 +    NodePath[] REMOVED_GLOBAL_PATHS = {
 +        path("data-value-allowed-items"),
@@ -1405,7 +1411,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
 +import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
-+import io.papermc.paper.configuration.legacy.SpawnLoadedRangeInitializer;
 +import io.papermc.paper.configuration.mapping.MergeMap;
 +import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
@@ -1463,9 +1468,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +    static final int CURRENT_VERSION = 30; // (when you change the version, change the comment, so it conflicts on rebases): rename filter bad nbt from spawn eggs
 +
-+    private transient final SpigotWorldConfig spigotConfig;
-+    private transient final ResourceLocation worldKey;
-+    WorldConfiguration(SpigotWorldConfig spigotConfig, ResourceLocation worldKey) {
++    private final transient SpigotWorldConfig spigotConfig;
++    private final transient ResourceLocation worldKey;
++
++    WorldConfiguration(final SpigotWorldConfig spigotConfig, final ResourceLocation worldKey) {
 +        this.spigotConfig = spigotConfig;
 +        this.worldKey = worldKey;
 +    }
@@ -1821,9 +1827,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public Spawn spawn;
 +
 +    public class Spawn extends ConfigurationPart {
-+        @RequiresSpigotInitialization(SpawnLoadedRangeInitializer.class)
-+        public short keepSpawnLoadedRange = 10;
-+        public boolean keepSpawnLoaded = true;
 +        public boolean allowUsingSignsInsideSpawnProtection = false;
 +    }
 +
@@ -3631,7 +3634,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +
 +    public static void apply(final ConfigurationTransformation.Builder builder, final Configurations.ContextMap contextMap, final ConfigurationNode defaultsNode) {
-+        if (!contextMap.isDefaultWorldContext() && defaultsNode.node(FEATURE_SEEDS_KEY, GENERATE_KEY).getBoolean(false)) {
++        if (defaultsNode.node(FEATURE_SEEDS_KEY, GENERATE_KEY).getBoolean(false)) {
 +            builder.addAction(path(), new FeatureSeedsGeneration(contextMap.require(Configurations.WORLD_KEY)));
 +        }
 +    }
@@ -3962,6 +3965,63 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static void moveFromGameMechanicsAndRename(final ConfigurationTransformation.Builder builder, final String oldKey, final String newKey, final String... parents) {
 +        moveFromRootAndRename(builder, path("game-mechanics", oldKey), newKey, parents);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/SpawnLoadedRangeToGameRule.java b/src/main/java/io/papermc/paper/configuration/transformation/world/SpawnLoadedRangeToGameRule.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/world/SpawnLoadedRangeToGameRule.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration.transformation.world;
++
++import io.papermc.paper.configuration.Configurations;
++import net.minecraft.world.level.GameRules;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.ConfigurateException;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.NodePath;
++import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++import org.spongepowered.configurate.transformation.TransformAction;
++
++import static org.spongepowered.configurate.NodePath.path;
++
++public final class SpawnLoadedRangeToGameRule implements TransformAction {
++
++    private static final String SPAWN = "spawn";
++    private static final String KEEP_SPAWN_LOADED_RANGE = "keep-spawn-loaded-range";
++    private static final String KEEP_SPAWN_LOADED = "keep-spawn-loaded";
++
++    private final GameRules gameRules;
++    private final ConfigurationNode defaultsNode;
++
++    private SpawnLoadedRangeToGameRule(final GameRules gameRules, final ConfigurationNode defaultsNode) {
++        this.gameRules = gameRules;
++        this.defaultsNode = defaultsNode;
++    }
++
++    @Override
++    public Object @Nullable [] visitPath(final NodePath path, final ConfigurationNode value) {
++        final ConfigurationNode worldSpawnNode = value.node(SPAWN);
++        final ConfigurationNode worldLoadedNode = worldSpawnNode.node(KEEP_SPAWN_LOADED);
++        final boolean keepLoaded = worldLoadedNode.getBoolean(this.defaultsNode.node(SPAWN, KEEP_SPAWN_LOADED).getBoolean());
++        worldLoadedNode.raw(null);
++        final ConfigurationNode worldRangeNode = worldSpawnNode.node(KEEP_SPAWN_LOADED_RANGE);
++        final int range = worldRangeNode.getInt(this.defaultsNode.node(SPAWN, KEEP_SPAWN_LOADED_RANGE).getInt());
++        worldRangeNode.raw(null);
++        if (worldSpawnNode.empty()) {
++            worldSpawnNode.raw(null);
++        }
++        if (!keepLoaded) {
++            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, null);
++        } else {
++            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(range, null);
++        }
++        return null;
++    }
++
++    public static void apply(final ConfigurationTransformation.Builder builder, final Configurations.ContextMap contextMap, final ConfigurationNode defaultsNode) {
++        builder.addAction(path(), new SpawnLoadedRangeToGameRule(contextMap.require(Configurations.GAME_RULES), defaultsNode));
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V29_ZeroWorldHeight.java b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V29_ZeroWorldHeight.java
@@ -4942,7 +5002,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
 -        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env);
-+        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess()))); // Paper - create paper world configs
++        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules()))); // Paper - create paper world configs
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
