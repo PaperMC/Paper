@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 26 Apr 2024 21:33:20 -0700
+Subject: [PATCH] Don't lose removed data components in ItemMeta
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 80070ddd196ec212bc45f15ea098c7148b05b2e9..94e9213414ec08794e875c23c300bfae5dcc877e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -174,6 +174,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             return this;
+         }
+ 
++        // Paper start - support removing component types
++        <T> Applicator remove(DataComponentType<T> type) {
++            this.builder.remove(type);
++            return this;
++        }
++        // Paper end - support removing component types
++
+         DataComponentPatch build() {
+             return this.builder.build();
+         }
+@@ -380,7 +387,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+         Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = tag.entrySet();
+         for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
+-            if (!CraftMetaItem.getHandledTags().contains(key.getKey())) {
++            if (key.getValue().isEmpty()) {
++                this.unhandledTags.remove(key.getKey());
++            } else if (!CraftMetaItem.getHandledTags().contains(key.getKey())) {
+                 key.getValue().ifPresentOrElse((value) -> {
+                     this.unhandledTags.set((DataComponentType) key.getKey(), value);
+                 }, () -> {
+@@ -778,9 +787,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         }
+ 
+         for (Map.Entry<DataComponentType<?>, Optional<?>> e : this.unhandledTags.build().entrySet()) {
+-            e.getValue().ifPresent((value) -> {
++            e.getValue().ifPresentOrElse((value) -> {
+                 itemTag.builder.set((DataComponentType) e.getKey(), value);
+-            });
++            }, () -> itemTag.remove(e.getKey()));
+         }
+ 
+         if (!this.persistentDataContainer.isEmpty()) {
