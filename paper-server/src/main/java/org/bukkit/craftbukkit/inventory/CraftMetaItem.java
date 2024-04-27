@@ -1275,7 +1275,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     public String getAsString() {
         CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
         applyToItem(tag);
-        return tag.build().toString();
+        DataComponentPatch patch = tag.build();
+        NBTBase nbt = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(DynamicOpsNBT.INSTANCE), patch).getOrThrow();
+        return nbt.toString();
     }
 
     @Override
