@@ -6,7 +6,7 @@ Subject: [PATCH] Add experimental improved give command
 Supports removing data components from itemstacks
 
 diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemArgument.java b/src/main/java/net/minecraft/commands/arguments/item/ItemArgument.java
-index d76296c6d53065aecb010d8ea682c9acd7365f17..4c3749deebb7d5c35f3977814f1d7b0307198b1e 100644
+index d76296c6d53065aecb010d8ea682c9acd7365f17..9314a94764786982eff0974411f8341bb0353ecf 100644
 --- a/src/main/java/net/minecraft/commands/arguments/item/ItemArgument.java
 +++ b/src/main/java/net/minecraft/commands/arguments/item/ItemArgument.java
 @@ -16,7 +16,12 @@ public class ItemArgument implements ArgumentType<ItemInput> {
@@ -23,6 +23,15 @@ index d76296c6d53065aecb010d8ea682c9acd7365f17..4c3749deebb7d5c35f3977814f1d7b03
      }
  
      public static ItemArgument item(CommandBuildContext commandRegistryAccess) {
+@@ -25,7 +30,7 @@ public class ItemArgument implements ArgumentType<ItemInput> {
+ 
+     public ItemInput parse(StringReader stringReader) throws CommandSyntaxException {
+         ItemParser.ItemResult itemResult = this.parser.parse(stringReader);
+-        return new ItemInput(itemResult.item(), itemResult.components());
++        return new ItemInput(itemResult.item(), itemResult.components(), itemResult.patch()); // Paper - support component removals
+     }
+ 
+     public static <S> ItemInput getItem(CommandContext<S> context, String name) {
 diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java b/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
 index 3d24fbca90bc7d8bdbac1be2176555c15ae75039..94ea5f0b1913ffa03794d231a6768dd786dc9697 100644
 --- a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
@@ -59,7 +68,7 @@ index 3d24fbca90bc7d8bdbac1be2176555c15ae75039..94ea5f0b1913ffa03794d231a6768dd7
              throw ERROR_STACK_TOO_BIG.create(this.getItemName(), itemStack.getMaxStackSize());
          } else {
 diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemParser.java b/src/main/java/net/minecraft/commands/arguments/item/ItemParser.java
-index 5347a96be3bfbbd2963747ba4b5f222215d80371..f306c27f3242084f2cc39393e302bbdd0b228db2 100644
+index 5347a96be3bfbbd2963747ba4b5f222215d80371..fa431de18de902c580855e9c4419125519b6176b 100644
 --- a/src/main/java/net/minecraft/commands/arguments/item/ItemParser.java
 +++ b/src/main/java/net/minecraft/commands/arguments/item/ItemParser.java
 @@ -59,8 +59,15 @@ public class ItemParser {
@@ -153,9 +162,9 @@ index 5347a96be3bfbbd2963747ba4b5f222215d80371..f306c27f3242084f2cc39393e302bbdd
 +            return this.suggestComponentAssignment(builder, true);
 +        }
 +        private CompletableFuture<Suggestions> suggestComponentAssignment(SuggestionsBuilder builder, boolean suggestRemove) {
-+            if (suggestRemove) builder.suggest("!", Component.literal("Remove a data component"));
-+            // Paper end - support component removals
              String string = builder.getRemaining().toLowerCase(Locale.ROOT);
++            if (suggestRemove && string.isBlank()) builder.suggest("!", Component.literal("Remove a data component"));
++            // Paper end - support component removals
              SharedSuggestionProvider.filterResources(BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet(), string, entry -> entry.getKey().location(), entry -> {
                  DataComponentType<?> dataComponentType = entry.getValue();
                  if (dataComponentType.codec() != null) {
