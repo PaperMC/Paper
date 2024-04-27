@@ -5,8 +5,28 @@ Subject: [PATCH] Write SavedData IO async
 
 Co-Authored-By: Shane Freeder <theboyetronic@gmail.com>
 
+diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
+index e049fbe4038aaea896f45b11ce9ce8f05922c898..7f6d1ccd147e5593412567bb2934ce5662da7ef0 100644
+--- a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
++++ b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
+@@ -110,6 +110,15 @@ public class ThreadedWorldUpgrader {
+             }
+ 
+             this.threadPool.execute(new ConvertTask(info, regionPos.x >> 5, regionPos.z >> 5));
++            // Paper start - Write SavedData IO async
++            this.threadPool.execute(() -> {
++                try {
++                    worldPersistentData.close();
++                } catch (IOException exception) {
++                    LOGGER.error("Failed to close persistent world data", exception);
++                }
++            });
++            // Paper end - Write SavedData IO async
+         }
+         this.threadPool.shutdown();
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index c7b7f153895a4b95b2071a31db00c9c4b69fa094..0b7a38b9e92b19345a34c6226413a9b133264077 100644
+index 36caf354634d6675a3f1ec6829f4778e1d0623bc..b99f50604bafecbc68835974c9ed0caa91911a40 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -447,6 +447,13 @@ public class ServerChunkCache extends ChunkSource {
@@ -24,10 +44,10 @@ index c7b7f153895a4b95b2071a31db00c9c4b69fa094..0b7a38b9e92b19345a34c6226413a9b1
  
      // CraftBukkit start - modelled on below
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index bc609da7105293dfa4ed339f553be66b0a632698..4b7cad5f551d620dbd091111df94fb39efcb79ac 100644
+index de3da37c40053789ba2c5d3754452ab49fa9962b..12a9342634ffa7d6aaa9a7fdd65a45bccec8dd13 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1330,7 +1330,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1498,7 +1498,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
          try (co.aikar.timings.Timing ignored = this.timings.worldSave.startTiming()) {
              if (doFull) {
@@ -36,7 +56,7 @@ index bc609da7105293dfa4ed339f553be66b0a632698..4b7cad5f551d620dbd091111df94fb39
              }
  
              this.timings.worldSaveChunks.startTiming(); // Paper
-@@ -1366,7 +1366,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1534,7 +1534,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                  progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
  
@@ -45,7 +65,7 @@ index bc609da7105293dfa4ed339f553be66b0a632698..4b7cad5f551d620dbd091111df94fb39
              if (progressListener != null) {
                  progressListener.progressStage(Component.translatable("menu.savingChunks"));
              }
-@@ -1389,12 +1389,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1557,12 +1557,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
          // CraftBukkit end
      }
  
