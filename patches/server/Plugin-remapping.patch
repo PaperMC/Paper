@@ -10,11 +10,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -0,0 +0,0 @@ dependencies {
-     testImplementation("org.mockito:mockito-core:5.11.0")
      testImplementation("org.ow2.asm:asm-tree:9.7")
      testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
+     implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
 +    implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
-+    implementation("net.neoforged:srgutils:1.0.9") // Paper - remap plugins - bump transitive of ART
 +}
 +
 +paperweight {
@@ -38,9 +37,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          runtime.filterNot { it.asFile.absolutePath == vanilla }
      }
  
--tasks.registerRunTask("runShadow") {
--    description = "Spin up a test server from the shadowJar archiveFile"
--    classpath(tasks.shadowJar.flatMap { it.archiveFile })
+-tasks.registerRunTask("runServerJar") {
+-    description = "Spin up a test server from the serverJar archiveFile"
+-    classpath(tasks.serverJar.flatMap { it.archiveFile })
 +tasks.registerRunTask("runServer") {
 +    description = "Spin up a test server from the Mojang mapped server jar"
 +    classpath(tasks.includeMappings.flatMap { it.outputJar })
@@ -1377,9 +1376,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return null;
 +        }
 +        try (final InputStream mappingsInputStream = MappingEnvironment.mappingsStream()) {
-             final MemoryMappingTree tree = new MemoryMappingTree();
-             MappingReader.read(new InputStreamReader(mappingsInputStream, StandardCharsets.UTF_8), MappingFormat.TINY_2_FILE, tree);
+             final IMappingFile mappings = IMappingFile.load(mappingsInputStream); // Mappings are mojang->spigot
              final Set<ClassMapping> classes = new HashSet<>();
+ 
 diff --git a/src/main/java/io/papermc/paper/util/concurrent/ScalingThreadPool.java b/src/main/java/io/papermc/paper/util/concurrent/ScalingThreadPool.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
