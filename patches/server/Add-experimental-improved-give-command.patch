@@ -23,6 +23,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static ItemArgument item(CommandBuildContext commandRegistryAccess) {
+@@ -0,0 +0,0 @@ public class ItemArgument implements ArgumentType<ItemInput> {
+ 
+     public ItemInput parse(StringReader stringReader) throws CommandSyntaxException {
+         ItemParser.ItemResult itemResult = this.parser.parse(stringReader);
+-        return new ItemInput(itemResult.item(), itemResult.components());
++        return new ItemInput(itemResult.item(), itemResult.components(), itemResult.patch()); // Paper - support component removals
+     }
+ 
+     public static <S> ItemInput getItem(CommandContext<S> context, String name) {
 diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java b/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
@@ -153,9 +162,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return this.suggestComponentAssignment(builder, true);
 +        }
 +        private CompletableFuture<Suggestions> suggestComponentAssignment(SuggestionsBuilder builder, boolean suggestRemove) {
-+            if (suggestRemove) builder.suggest("!", Component.literal("Remove a data component"));
-+            // Paper end - support component removals
              String string = builder.getRemaining().toLowerCase(Locale.ROOT);
++            if (suggestRemove && string.isBlank()) builder.suggest("!", Component.literal("Remove a data component"));
++            // Paper end - support component removals
              SharedSuggestionProvider.filterResources(BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet(), string, entry -> entry.getKey().location(), entry -> {
                  DataComponentType<?> dataComponentType = entry.getValue();
                  if (dataComponentType.codec() != null) {
