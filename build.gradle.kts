@@ -69,8 +69,8 @@ repositories {
 
 dependencies {
     paramMappings("net.fabricmc:yarn:1.20.5+build.1:mergedv2")
-    remapper("net.fabricmc:tiny-remapper:0.10.1:fat")
-    decompiler("org.vineflower:vineflower:1.10.2")
+    remapper("net.fabricmc:tiny-remapper:0.10.2:fat")
+    decompiler("org.vineflower:vineflower:1.10.1")
     spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.13")
     paperclip("io.papermc:paperclip:3.0.3")
 }
