@@ -1,20 +1,14 @@
 package io.papermc.generator;
 
 import com.mojang.logging.LogUtils;
-import io.papermc.generator.types.GeneratedKeyType;
 import io.papermc.generator.types.SourceGenerator;
-import io.papermc.paper.registry.RegistryKey;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.LayeredRegistryAccess;
-import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.RegistryDataLoader;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.WorldLoader;
@@ -24,12 +18,6 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.ServerPacksSource;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import org.apache.commons.io.file.PathUtils;
-import org.bukkit.GameEvent;
-import org.bukkit.block.Biome;
-import org.bukkit.generator.structure.Structure;
-import org.bukkit.generator.structure.StructureType;
-import org.bukkit.inventory.meta.trim.TrimMaterial;
-import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.slf4j.Logger;
 
 public final class Main {
@@ -40,6 +28,8 @@ public final class Main {
     static {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
+        Bootstrap.validate();
+
         final PackRepository resourceRepository = ServerPacksSource.createVanillaTrustedRepository();
         resourceRepository.reload();
         final MultiPackResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, resourceRepository.getAvailablePacks().stream().map(Pack::open).toList());

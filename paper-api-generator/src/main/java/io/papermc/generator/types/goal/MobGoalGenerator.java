@@ -2,7 +2,6 @@ package io.papermc.generator.types.goal;
 
 import com.destroystokyo.paper.entity.RangedEntity;
 import com.destroystokyo.paper.entity.ai.GoalKey;
-import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -19,12 +18,7 @@ import io.papermc.generator.utils.Annotations;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.generator.utils.Javadocs;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import javax.lang.model.element.Modifier;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
@@ -65,8 +59,12 @@ import org.bukkit.entity.Vindicator;
 import org.bukkit.entity.WanderingTrader;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+
+import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PRIVATE;
+import static javax.lang.model.element.Modifier.PUBLIC;
+import static javax.lang.model.element.Modifier.STATIC;
 
 @DefaultQualifier(NonNull.class)
 public class MobGoalGenerator extends SimpleGenerator {
@@ -168,57 +166,53 @@ public class MobGoalGenerator extends SimpleGenerator {
 
     @Override
     protected TypeSpec getTypeSpec() {
-        TypeName clazzType = TypeName.get(Class.class)
-            .annotated(Annotations.NOT_NULL);
-        TypeName keyType = TypeName.get(String.class)
-            .annotated(Annotations.NOT_NULL);
-
-        MethodSpec.Builder createMethod = MethodSpec.methodBuilder("create")
-            .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-            .addParameter(ParameterSpec.builder(keyType, "key", Modifier.FINAL)
-                .build()
-            )
-            .addParameter(ParameterSpec.builder(clazzType, "clazz", Modifier.FINAL)
-                .build()
-            )
-            .addCode("return $T.of(clazz, $T.minecraft(key));", GoalKey.class, NamespacedKey.class)
-            .returns(ParameterizedTypeName.get(GoalKey.class).annotated(Annotations.NOT_NULL));
-
-
         TypeVariableName type = TypeVariableName.get("T", Mob.class);
         TypeSpec.Builder typeBuilder = TypeSpec.interfaceBuilder(this.className)
             .addSuperinterface(ParameterizedTypeName.get(ClassName.get(com.destroystokyo.paper.entity.ai.Goal.class), type))
-            .addModifiers(Modifier.PUBLIC)
+            .addModifiers(PUBLIC)
             .addTypeVariable(type)
             .addAnnotations(Annotations.CLASS_HEADER)
             .addJavadoc(CLASS_HEADER);
 
+        TypeName mobType = ParameterizedTypeName.get(ClassName.get(Class.class), type)
+            .annotated(Annotations.NOT_NULL);
+        TypeName keyType = TypeName.get(String.class)
+            .annotated(Annotations.NOT_NULL);
 
-        List<Class<?>> classes;
+        ParameterSpec keyParam = ParameterSpec.builder(keyType, "key", FINAL).build();
+        ParameterSpec typeParam = ParameterSpec.builder(mobType, "type", FINAL).build();
+        MethodSpec.Builder createMethod = MethodSpec.methodBuilder("create")
+            .addModifiers(PRIVATE, STATIC)
+            .addParameter(keyParam)
+            .addParameter(typeParam)
+            .addCode("return $T.of($N, $T.minecraft($N));", GoalKey.class, typeParam, NamespacedKey.class, keyParam)
+            .addTypeVariable(type)
+            .returns(ParameterizedTypeName.get(ClassName.get(GoalKey.class), type).annotated(Annotations.NOT_NULL));
+
+        List<Class<Goal>> classes;
         try (ScanResult scanResult = new ClassGraph().enableAllInfo().whitelistPackages("net.minecraft").scan()) {
-            classes = scanResult.getSubclasses(net.minecraft.world.entity.ai.goal.Goal.class.getName()).loadClasses();
+            classes = scanResult.getSubclasses(Goal.class.getName()).loadClasses(Goal.class);
         }
 
-        List<VanillaGoalKey> vanillaNames = classes.stream()
+        List<GoalKey<Mob>> vanillaNames = classes.stream()
             .filter(clazz -> !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers()))
             .filter(clazz -> !WrappedGoal.class.equals(clazz)) // TODO - properly fix
-            .map(goalClass -> new VanillaGoalKey(goalClass, MobGoalNames.getKey(goalClass.getName(), (Class<? extends Goal>) goalClass)))
-            .filter((key) -> !MobGoalNames.isIgnored(key.key().getNamespacedKey().getKey()))
-            .sorted(Comparator.<VanillaGoalKey, String>comparing(o -> o.key().getEntityClass().getSimpleName())
-                .thenComparing(vanillaGoalKey -> vanillaGoalKey.key.getNamespacedKey().getKey())
+            .map(goalClass -> MobGoalNames.getKey(goalClass.getName(), goalClass))
+            .filter((key) -> !MobGoalNames.isIgnored(key.getNamespacedKey().getKey()))
+            .sorted(Comparator.<GoalKey<?>, String>comparing(o -> o.getEntityClass().getSimpleName())
+                .thenComparing(vanillaGoalKey -> vanillaGoalKey.getNamespacedKey().getKey())
             )
             .toList();
 
 
-        for (final VanillaGoalKey vanillaGoalKey : vanillaNames) {
-            GoalKey<?> value = vanillaGoalKey.key();
-            TypeName typedKey = ParameterizedTypeName.get(GoalKey.class, value.getEntityClass());
-            NamespacedKey key = value.getNamespacedKey();
+        for (final GoalKey<?> goalKey : vanillaNames) {
+            TypeName typedKey = ParameterizedTypeName.get(GoalKey.class, goalKey.getEntityClass());
+            NamespacedKey key = goalKey.getNamespacedKey();
 
             String keyPath = key.getKey();
-            String fieldName = Formatting.formatKeyAsField(key);
-            FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKey, fieldName, Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
-                .initializer("$N($S, $T.class)", createMethod.build(), keyPath, value.getEntityClass());
+            String fieldName = Formatting.formatKeyAsField(keyPath);
+            FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKey, fieldName, PUBLIC, STATIC, FINAL)
+                .initializer("$N($S, $T.class)", createMethod.build(), keyPath, goalKey.getEntityClass());
             typeBuilder.addField(fieldBuilder.build());
         }
 
@@ -227,8 +221,8 @@ public class MobGoalGenerator extends SimpleGenerator {
             NamespacedKey key = NamespacedKey.minecraft(value.entryName);
 
             String keyPath = key.getKey();
-            String fieldName = Formatting.formatKeyAsField(key);
-            FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKey, fieldName, Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+            String fieldName = Formatting.formatKeyAsField(keyPath);
+            FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKey, fieldName, PUBLIC, STATIC, FINAL)
                 .addAnnotation(Annotations.deprecatedVersioned(value.removedVersion, value.removalVersion != null))
                 .initializer("$N($S, $T.class)", createMethod.build(), keyPath, value.entity);
 
@@ -249,9 +243,6 @@ public class MobGoalGenerator extends SimpleGenerator {
     protected JavaFile.Builder file(JavaFile.Builder builder) {
         return builder
             .skipJavaLangImports(true);
-    }
-
-    record VanillaGoalKey(Class<?> clazz, GoalKey<?> key) {
     }
 
     record DeprecatedEntry(Class<?> entity, String entryName, @Nullable String removalVersion,

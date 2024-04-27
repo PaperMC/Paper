@@ -12,11 +12,11 @@ import org.jetbrains.annotations.Nullable;
 
 public final class Annotations {
 
-    public static List<AnnotationSpec> experimentalAnnotations(final String version) {
+    public static List<AnnotationSpec> experimentalAnnotations(final MinecraftExperimental.Requires requiredFeatureFlag) {
         return List.of(
             AnnotationSpec.builder(ApiStatus.Experimental.class).build(),
             AnnotationSpec.builder(MinecraftExperimental.class)
-                .addMember("value", "$L", version)
+                .addMember("value", "$T.$L", MinecraftExperimental.Requires.class, requiredFeatureFlag.name())
                 .build()
         );
     }

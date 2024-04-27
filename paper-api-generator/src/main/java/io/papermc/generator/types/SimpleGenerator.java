@@ -5,7 +5,6 @@ import com.squareup.javapoet.TypeSpec;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 public abstract class SimpleGenerator implements SourceGenerator {
@@ -24,14 +23,13 @@ public abstract class SimpleGenerator implements SourceGenerator {
 
     @Override
     public void writeToFile(Path parent) throws IOException {
-        Path packagePath = parent.resolve(this.packageName.replace('.', '/'));
-        Files.createDirectories(packagePath);
 
-        JavaFile.Builder builder = JavaFile.builder(this.packageName, this.getTypeSpec())
-            .indent("    ");
-        this.file(builder);
+        JavaFile.Builder builder = JavaFile.builder(this.packageName, this.getTypeSpec());
+        this.file(builder)
+            .indent("    ")
+            .skipJavaLangImports(true);
 
-        Files.writeString(packagePath.resolve(this.className + ".java"), this.file(builder).build().toString(), StandardCharsets.UTF_8);
+        builder.build().writeTo(parent, StandardCharsets.UTF_8);
     }
 
 }
