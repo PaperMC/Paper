@@ -116,6 +116,8 @@ import org.bukkit.block.data.type.WallHangingSign;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -4753,7 +4755,12 @@ public enum Material implements Keyed, Translatable {
     }
 
     /**
-     * Gets the maximum amount of this material that can be held in a stack
+     * Gets the maximum amount of this material that can be held in a stack.
+     * <p>
+     * Note that this is the <strong>default</strong> maximum size for this Material.
+     * {@link ItemStack ItemStacks} are able to change their maximum stack size per
+     * stack with {@link ItemMeta#setMaxStackSize(Integer)}. If an ItemStack instance
+     * is available, {@link ItemStack#getMaxStackSize()} may be preferred.
      *
      * @return Maximum stack size for this material
      */

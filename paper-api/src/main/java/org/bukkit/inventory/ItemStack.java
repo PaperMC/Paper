@@ -231,18 +231,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
-     * Get the maximum stacksize for the material hold in this ItemStack.
-     * (Returns -1 if it has no idea)
+     * Get the maximum stack size for this item. If this item has a max stack
+     * size component ({@link ItemMeta#hasMaxStackSize()}), the value of that
+     * component will be returned. Otherwise, this item's Material's {@link
+     * Material#getMaxStackSize() default maximum stack size} will be returned
+     * instead.
      *
-     * @return The maximum you can stack this material to.
+     * @return The maximum you can stack this item to.
      */
     @Utility
     public int getMaxStackSize() {
-        Material material = getType();
-        if (material != null) {
-            return material.getMaxStackSize();
+        if (meta != null && meta.hasMaxStackSize()) {
+            return meta.getMaxStackSize();
         }
-        return -1;
+
+        return getType().getMaxStackSize();
     }
 
     private void createData(final byte data) {
