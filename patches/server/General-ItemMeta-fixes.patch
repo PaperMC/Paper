@@ -61,10 +61,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 -        this.resolved = SerializableMeta.getObject(Boolean.class, map, CraftMetaBookSigned.RESOLVED.BUKKIT, true);
+-        this.generation = SerializableMeta.getObject(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true);
 +        this.resolved = SerializableMeta.getBoolean(map, CraftMetaBookSigned.RESOLVED.BUKKIT); // Paper - General ItemMeta fixes
-         this.generation = SerializableMeta.getObject(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true);
++        this.generation = SerializableMeta.getObjectOptionally(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true).orElse(0); // Paper - General ItemMeta Fixes
      }
  
+     @Override
 @@ -0,0 +0,0 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
              for (Component page : this.pages) {
                  list.add(Filterable.passThrough(page));
@@ -137,6 +139,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+@@ -0,0 +0,0 @@ public final class SerializableMeta implements ConfigurationSerializable {
+         }
+         throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
+     }
++
++    // Paper start - General ItemMeta Fixes
++    public static <T> java.util.Optional<T> getObjectOptionally(Class<T> clazz, Map<?, ?> map, Object field, boolean nullable) {
++        final Object object = map.get(field);
++
++        if (clazz.isInstance(object)) {
++            return java.util.Optional.of(clazz.cast(object));
++        }
++        if (object == null) {
++            if (!nullable) {
++                throw new NoSuchElementException(map + " does not contain " + field);
++            }
++            return java.util.Optional.empty();
++        }
++        throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
++    }
++    // Paper end - General ItemMeta Fixes
+ }
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
