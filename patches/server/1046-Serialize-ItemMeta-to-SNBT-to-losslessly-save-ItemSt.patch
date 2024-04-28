@@ -1,0 +1,194 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 28 Apr 2024 12:42:16 -0700
+Subject: [PATCH] Serialize ItemMeta to SNBT to losslessly save ItemStacks
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index aee276c844b9efc3c16b3f728ef237707011958d..2ce2701abd2556405ef9659e2651785c23fccd43 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -266,6 +266,13 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         }
+     }
+ 
++    // Paper start - serialize to SNBT
++    @Override
++    ImmutableMap.Builder<String, Object> modernSerialize(final ImmutableMap.Builder<String, Object> builder) {
++        return builder.put("blockMaterial", this.material.name());
++    }
++    // Paper end - serialize to SNBT
++
+     @Override
+     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
+         super.serialize(builder);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index c2517ad00b6efba47e792a46e591038d79cb3a82..b691bb08d79bd1827ad47338f4ba048ed219f939 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -1619,11 +1619,17 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public final Map<String, Object> serialize() {
++        if (true) return PaperMetaSerialization.serialize(this); // Paper - serialize to SNBT
+         ImmutableMap.Builder<String, Object> map = ImmutableMap.builder();
+         map.put(SerializableMeta.TYPE_FIELD, SerializableMeta.classMap.get(this.getClass()));
+         this.serialize(map);
+         return map.build();
+     }
++    // Paper start
++    ImmutableMap.Builder<String, Object> modernSerialize(final ImmutableMap.Builder<String, Object> builder) {
++        return builder;
++    }
++    // Paper end
+ 
+     @Overridden
+     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/PaperMetaSerialization.java b/src/main/java/org/bukkit/craftbukkit/inventory/PaperMetaSerialization.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1e02d04ba90b2cdfdb9bdf9467d965425a7eb99d
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/PaperMetaSerialization.java
+@@ -0,0 +1,118 @@
++package org.bukkit.craftbukkit.inventory;
++
++import com.google.common.collect.ImmutableMap;
++import com.mojang.brigadier.StringReader;
++import java.lang.reflect.Constructor;
++import java.lang.reflect.InvocationTargetException;
++import java.util.Map;
++import java.util.Objects;
++import java.util.Set;
++import net.minecraft.SharedConstants;
++import net.minecraft.core.component.DataComponentPatch;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.SnbtPrinterTagVisitor;
++import net.minecraft.nbt.Tag;
++import net.minecraft.nbt.TagParser;
++import net.minecraft.resources.RegistryOps;
++import org.bukkit.Material;
++import org.bukkit.craftbukkit.CraftRegistry;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperMetaSerialization {
++
++    @FunctionalInterface
++    interface MetaCreator {
++        CraftMetaItem create(DataComponentPatch patch, Material material) throws Throwable;
++    }
++
++    static final Map<String, MetaCreator> CONSTRUCTOR_MAP;
++    static final Map<String, Class<? extends CraftMetaItem>> CLASS_MAP;
++    static {
++        final ImmutableMap.Builder<String, MetaCreator> builder = ImmutableMap.builder();
++        final ImmutableMap.Builder<String, Class<? extends CraftMetaItem>> classBuilder = ImmutableMap.builder();
++        for (final Map.Entry<Class<? extends CraftMetaItem>, String> entry : SerializableMeta.classMap.entrySet()) {
++            classBuilder.put(entry.getValue(), entry.getKey());
++            @Nullable MetaCreator creator = null;
++            for (final Constructor<?> ctor : entry.getKey().getDeclaredConstructors()) {
++                if (entry.getKey().equals(CraftMetaBlockState.class)) {
++                    creator = (dataComponentPatch, material) -> {
++                        return new CraftMetaBlockState(dataComponentPatch, material, null);
++                    };
++                    continue;
++                }
++                final Class<?>[] paramTypes = ctor.getParameterTypes();
++                if (paramTypes.length != 2 && paramTypes.length != 3) {
++                    continue;
++                }
++                if (!paramTypes[0].equals(DataComponentPatch.class) || !paramTypes[1].equals(Set.class)) {
++                    continue;
++                }
++                creator = (dataComponentPatch, material) -> {
++                    try {
++                        return (CraftMetaItem) ctor.newInstance(dataComponentPatch, null);
++                    } catch (final InstantiationException | IllegalAccessException e) {
++                        throw new AssertionError(e);
++                    } catch (final InvocationTargetException e) {
++                        throw e.getCause();
++                    }
++                };
++            }
++            if (creator == null) {
++                throw new AssertionError("No suitable constructor found for " + entry.getKey());
++            }
++            builder.put(entry.getValue(), creator);
++        }
++        CONSTRUCTOR_MAP = builder.build();
++        CLASS_MAP = classBuilder.build();
++        if (CONSTRUCTOR_MAP.size() != SerializableMeta.constructorMap.size()) {
++            throw new AssertionError("Mismatched constructor map size");
++        }
++    }
++    static final String PAPER_SNBT_TYPE = "PAPER_SNBT";
++
++    static final String SNBT_FIELD = "snbt";
++    static final String SUBTYPE_FIELD = "meta-subtype";
++    static final String VERSION_FIELD = "_version";
++    static Map<String, Object> serialize(final CraftMetaItem meta) {
++        final CraftMetaItem.Applicator applicator = new CraftMetaItem.Applicator() {};
++        meta.applyToItem(applicator);
++        final RegistryOps<Tag> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE);
++        final Tag tag = DataComponentPatch.CODEC.encodeStart(ops, applicator.build()).getOrThrow();
++        final ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
++        builder.put(SNBT_FIELD, new SnbtPrinterTagVisitor().visit(tag));
++        builder.put(VERSION_FIELD, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
++        builder.put(SerializableMeta.TYPE_FIELD, PAPER_SNBT_TYPE);
++        builder.put(SUBTYPE_FIELD, Objects.requireNonNull(SerializableMeta.classMap.get(meta.getClass())));
++        return meta.modernSerialize(builder).build();
++    }
++
++    static CraftMetaItem deserialize(final Map<String, Object> map) throws Throwable {
++        final String subtype = SerializableMeta.getString(map, SUBTYPE_FIELD, false);
++        final MetaCreator creator = Objects.requireNonNull(CONSTRUCTOR_MAP.get(subtype));
++        final Class<? extends CraftMetaItem> metaClass = Objects.requireNonNull(CLASS_MAP.get(subtype));
++        final int version = SerializableMeta.getObject(Integer.class, map, VERSION_FIELD, false);
++        // TODO - handle versioning
++        final String snbt = SerializableMeta.getString(map, SNBT_FIELD, false);
++        final RegistryOps<Tag> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE);
++        final TagParser parser = new TagParser(new StringReader(snbt));
++        final DataComponentPatch patch = DataComponentPatch.CODEC.parse(ops, parser.readValue()).getOrThrow();
++        if (metaClass.equals(CraftMetaBlockState.class)) {
++            final String matName = SerializableMeta.getString(map, "blockMaterial", true);
++            final @Nullable Material m;
++            if (matName != null) {
++                m = Material.getMaterial(matName);
++            } else {
++                m = Material.AIR;
++            }
++            return creator.create(patch, m != null ? m : Material.AIR);
++        } else {
++            return creator.create(patch, Material.AIR); // only CraftMetaBlockState uses the Material
++        }
++    }
++
++    private PaperMetaSerialization() {
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+index a86eb660d8f523cb99a0b668ef1130535d50ce1c..0901f566a9aea8349237a0284629a69fd086b8f3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+@@ -65,6 +65,11 @@ public final class SerializableMeta implements ConfigurationSerializable {
+         Preconditions.checkArgument(map != null, "Cannot deserialize null map");
+ 
+         String type = SerializableMeta.getString(map, SerializableMeta.TYPE_FIELD, false);
++        // Paper start - serialize to SNBT
++        if (type.equals(PaperMetaSerialization.PAPER_SNBT_TYPE)) {
++            return PaperMetaSerialization.deserialize(map);
++        }
++        // Paper end - serialize to SNBT
+         Constructor<? extends CraftMetaItem> constructor = SerializableMeta.constructorMap.get(type);
+ 
+         if (constructor == null) {
+@@ -96,6 +101,7 @@ public final class SerializableMeta implements ConfigurationSerializable {
+         return value != null && value;
+     }
+ 
++    @org.jetbrains.annotations.Contract("_, _, _, false -> !null") // Paper
+     public static <T> T getObject(Class<T> clazz, Map<?, ?> map, Object field, boolean nullable) {
+         final Object object = map.get(field);
+ 
