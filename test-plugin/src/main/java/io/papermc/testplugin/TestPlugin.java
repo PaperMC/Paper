@@ -56,7 +56,7 @@ public final class TestPlugin extends JavaPlugin implements Listener {
 
     static final String MODERN = """
         item:
-         /e ==: org.bukkit.inventory.ItemStack
+          ==: org.bukkit.inventory.ItemStack
           v: 3837
           type: SHULKER_BOX
           meta:
