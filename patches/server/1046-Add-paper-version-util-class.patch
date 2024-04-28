@@ -6,10 +6,10 @@ Subject: [PATCH] Add paper version util class
 
 diff --git a/src/main/java/io/papermc/paper/util/misc/ServerInfoProviderImpl.java b/src/main/java/io/papermc/paper/util/misc/ServerInfoProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1364afc507763a25b5a65086beaad5dd7a18c7b7
+index 0000000000000000000000000000000000000000..40ea612034c21fc4abc95cc4dcd7439b56fd9033
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/misc/ServerInfoProviderImpl.java
-@@ -0,0 +1,192 @@
+@@ -0,0 +1,194 @@
 +package io.papermc.paper.util.misc;
 +
 +import com.google.common.base.Preconditions;
@@ -38,6 +38,7 @@ index 0000000000000000000000000000000000000000..1364afc507763a25b5a65086beaad5dd
 +import java.util.Objects;
 +import java.util.Optional;
 +import java.util.Set;
++import java.util.concurrent.CompletableFuture;
 +import java.util.stream.Stream;
 +
 +public class ServerInfoProviderImpl implements ServerInfoProvider {
@@ -158,14 +159,14 @@ index 0000000000000000000000000000000000000000..1364afc507763a25b5a65086beaad5dd
 +            .orElse("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json");
 +        private final String version = SharedConstants.getCurrentVersion().getName();
 +        private final String id = SharedConstants.getCurrentVersion().getId();
-+        private final List<String> versionList;
-+        private NonStableVersionInfo() {
-+            HttpClient client = HttpClient.newHttpClient();
-+            HttpRequest request = HttpRequest.newBuilder()
-+                .uri(URI.create(manifestURL))
-+                .build();
++        private final CompletableFuture<List<String>> versionList = CompletableFuture.supplyAsync(this::fetchVersionList);
++
++        private List<String> fetchVersionList() {
 +            List<String> versionList = new ArrayList<>();
-+            try {
++            try (HttpClient client = HttpClient.newHttpClient()) {
++                HttpRequest request = HttpRequest.newBuilder()
++                    .uri(URI.create(manifestURL))
++                    .build();
 +                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 +                var parsed = JsonParser.parseString(response.body());
 +                var versionArray = parsed.getAsJsonObject().getAsJsonArray("versions");
@@ -174,8 +175,9 @@ index 0000000000000000000000000000000000000000..1364afc507763a25b5a65086beaad5dd
 +                }
 +            } catch (IOException | InterruptedException e) {
 +                LOGGER.error("Failed to fetch version manifest, plugins depending on version check may not work correctly", e);
++                throw new IllegalStateException("Failed to fetch the version manifest", e);
 +            }
-+            this.versionList = ImmutableList.copyOf(versionList);
++            return ImmutableList.copyOf(versionList);
 +        }
 +        @Override
 +        public boolean is(final int @NotNull ... version) {
@@ -198,7 +200,7 @@ index 0000000000000000000000000000000000000000..1364afc507763a25b5a65086beaad5dd
 +                builder.append('.').append(version[i]);
 +            }
 +            var versionString = builder.toString();
-+            return this.versionList.indexOf(versionString) > this.versionList.indexOf(this.id);
++            return this.versionList.join().indexOf(versionString) > this.versionList.join().indexOf(this.id);
 +        }
 +    }
 +}
