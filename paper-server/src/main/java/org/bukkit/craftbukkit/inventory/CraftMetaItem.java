@@ -372,6 +372,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 for (String key : keys) {
                     persistentDataContainer.put(key, compound.get(key).copy());
                 }
+
+                customTag.remove(BUKKIT_CUSTOM_TAG.NBT);
+            }
+
+            if (customTag.isEmpty()) {
+                customTag = null;
             }
         });
 
@@ -778,6 +784,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             });
         }
 
+        NBTTagCompound customTag = (this.customTag != null) ? this.customTag.copy() : null;
         if (!persistentDataContainer.isEmpty()) {
             NBTTagCompound bukkitCustomCompound = new NBTTagCompound();
             Map<String, NBTBase> rawPublicMap = persistentDataContainer.getRaw();
@@ -1583,7 +1590,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             builder.put(BUKKIT_CUSTOM_TAG.BUKKIT, persistentDataContainer.serialize());
         }
 
-        if (customTag != null && !customTag.isEmpty()) {
+        if (customTag != null) {
             try {
                 ByteArrayOutputStream buf = new ByteArrayOutputStream();
                 NBTCompressedStreamTools.writeCompressed(customTag, buf);
