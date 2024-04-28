@@ -5,45 +5,43 @@ Subject: [PATCH] Add RequiredPlugins
 
 
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-index eedbf46e04b5ae420f9bedcbc2bbb10643ba7e22..bcc4b62ed0bf3ff82ad86fe9375addd4c833319d 100644
+index 3e82ea07ca4194844c5528446e2c4a46ff4acee5..a3c4b162111f6c1485efab383dec916fa7e02ee8 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -209,6 +209,11 @@ class PaperPluginInstanceManager {
+@@ -223,6 +223,9 @@ class PaperPluginInstanceManager {
          if (!(plugin instanceof JavaPlugin javaPlugin)) {
              throw new IllegalArgumentException("Only expects java plugins.");
          }
-+        // Paper start
 +        if (!this.server.isStopping() && !((org.bukkit.craftbukkit.CraftServer) this.server).isReloadingPlugins && io.papermc.paper.configuration.GlobalConfiguration.get().misc.requiredPlugins.contains(plugin.getName())) {
 +            return;
 +        }
-+        // Paper end
          if (!plugin.isEnabled()) {
              return;
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 9f7ed337463cc9bb370a5541d9de5cd8f9c1a78a..af051867fd6e1c5d96cebdc7671fa75c36e29f54 100644
+index 05e304f9fc8d0291fa779da589bd060ef4165b49..683802c34b0a0b1f3524958328646e0f07d66c12 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -302,6 +302,7 @@ public final class CraftServer implements Server {
+@@ -304,6 +304,7 @@ public final class CraftServer implements Server {
      private boolean overrideAllCommandBlockCommands = false;
      public boolean ignoreVanillaPermissions = false;
      private final List<CraftPlayer> playerView;
-+    public boolean isReloadingPlugins; // Paper
++    public boolean isReloadingPlugins; // Paper - Add RequiredPlugins
      public int reloadCount;
      private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
      public static Exception excessiveVelEx; // Paper - Velocity warnings
-@@ -552,6 +553,14 @@ public final class CraftServer implements Server {
+@@ -553,6 +554,14 @@ public final class CraftServer implements Server {
          }
  
          if (type == PluginLoadOrder.POSTWORLD) {
-+            // Paper start
++            // Paper start - Add RequiredPlugins
 +            List<String> missingPlugins = new ArrayList<>(io.papermc.paper.configuration.GlobalConfiguration.get().misc.requiredPlugins);
 +            missingPlugins.removeAll(java.util.Arrays.stream(this.paperPluginManager.getPlugins()).filter(Plugin::isEnabled).map(Plugin::getName).toList());
 +            if (!missingPlugins.isEmpty()) {
 +                this.getLogger().severe("The following required plugins aren't enabled: " + String.join(", ", missingPlugins) + ". Stopping Server.");
 +                this.getServer().stopServer();
 +            }
-+            // Paper end
++            // Paper end - Add RequiredPlugins
              // Spigot start - Allow vanilla commands to be forced to be the main command
              this.setVanillaCommands(true);
              this.commandMap.setFallbackCommands();
@@ -51,7 +49,7 @@ index 9f7ed337463cc9bb370a5541d9de5cd8f9c1a78a..af051867fd6e1c5d96cebdc7671fa75c
              world.spigotConfig.init(); // Spigot
          }
  
-+        this.isReloadingPlugins = true; // Paper
++        this.isReloadingPlugins = true; // Paper - Add RequiredPlugins
          Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
          this.pluginManager.clearPlugins();
          this.commandMap.clearCommands();
@@ -59,7 +57,7 @@ index 9f7ed337463cc9bb370a5541d9de5cd8f9c1a78a..af051867fd6e1c5d96cebdc7671fa75c
          this.loadPlugins();
          this.enablePlugins(PluginLoadOrder.STARTUP);
          this.enablePlugins(PluginLoadOrder.POSTWORLD);
-+        this.isReloadingPlugins = false; // Paper
++        this.isReloadingPlugins = false; // Paper - Add RequiredPlugins
          this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
          org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
-     }
