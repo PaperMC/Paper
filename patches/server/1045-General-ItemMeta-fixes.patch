@@ -53,18 +53,20 @@ index 2d6abecc94683f92da6be26b72ea829663b16d76..6a3b0c7f0cc3ffb17a231383ad103fa7
  
          for (Pattern p : this.patterns) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-index 7f3733c29f2e79bffa24631efb20de49fde857f2..ecb24457877dbbfd446db16b6a87dc9baa17f649 100644
+index 7f3733c29f2e79bffa24631efb20de49fde857f2..6a6e9a1478a2ead20467bc711d0ad4a9ab3010cb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-@@ -116,7 +116,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
+@@ -116,8 +116,8 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
              }
          }
  
 -        this.resolved = SerializableMeta.getObject(Boolean.class, map, CraftMetaBookSigned.RESOLVED.BUKKIT, true);
+-        this.generation = SerializableMeta.getObject(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true);
 +        this.resolved = SerializableMeta.getBoolean(map, CraftMetaBookSigned.RESOLVED.BUKKIT); // Paper - General ItemMeta fixes
-         this.generation = SerializableMeta.getObject(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true);
++        this.generation = SerializableMeta.getObjectOptionally(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true).orElse(0); // Paper - General ItemMeta Fixes
      }
  
+     @Override
 @@ -129,7 +129,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
              for (Component page : this.pages) {
                  list.add(Filterable.passThrough(page));
@@ -137,6 +139,32 @@ index c769d2a210060f6829a6cbe739d6d9ab2f602644..1feffe289a1e714084bd37b5c5ad23a3
              }
          }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+index 05a4a06c0def28fc97e61b4712c45c8730fec60c..a86eb660d8f523cb99a0b668ef1130535d50ce1c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+@@ -110,4 +110,21 @@ public final class SerializableMeta implements ConfigurationSerializable {
+         }
+         throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
+     }
++
++    // Paper start - General ItemMeta Fixes
++    public static <T> java.util.Optional<T> getObjectOptionally(Class<T> clazz, Map<?, ?> map, Object field, boolean nullable) {
++        final Object object = map.get(field);
++
++        if (clazz.isInstance(object)) {
++            return java.util.Optional.of(clazz.cast(object));
++        }
++        if (object == null) {
++            if (!nullable) {
++                throw new NoSuchElementException(map + " does not contain " + field);
++            }
++            return java.util.Optional.empty();
++        }
++        throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
++    }
++    // Paper end - General ItemMeta Fixes
+ }
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
 index 0b11d5ea89539decd2f6c60c5b581bbd78ff1fd6..74ebadacbbd11b5a0d8f8c6cd6409cce17cfa37d 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
