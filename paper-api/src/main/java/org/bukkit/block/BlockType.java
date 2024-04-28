@@ -128,7 +128,7 @@ import org.jetbrains.annotations.Nullable;
  * official replacement for the aforementioned enum. Entirely incompatible
  * changes may occur. Do not use this API in plugins.
  */
-@ApiStatus.Internal
+@org.jetbrains.annotations.ApiStatus.Experimental // Paper - data component API - already required for data component API
 public interface BlockType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add translatable & feature flag API
 
     /**

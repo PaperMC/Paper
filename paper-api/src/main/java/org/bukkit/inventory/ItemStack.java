@@ -1137,4 +1137,185 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
     }
     // Paper end - expose itemstack tooltip lines
+
+    // Paper start - data component API
+    /**
+     * Gets the value for the data component type on this stack.
+     *
+     * @param type the data component type
+     * @param <T> the value type
+     * @return the value for the data component type, or {@code null} if not set or marked as removed
+     * @see #hasData(io.papermc.paper.datacomponent.DataComponentType) for DataComponentType.NonValued
+     */
+    @org.jetbrains.annotations.Contract(pure = true)
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public <T> @Nullable T getData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type) {
+        return this.craftDelegate.getData(type);
+    }
+
+    /**
+     * Gets the value for the data component type on this stack with
+     * a fallback value.
+     *
+     * @param type the data component type
+     * @param fallback the fallback value if the value isn't present
+     * @param <T> the value type
+     * @return the value for the data component type or the fallback value
+     */
+    @Utility
+    @org.jetbrains.annotations.Contract(value = "_, !null -> !null", pure = true)
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public <T> @Nullable T getDataOrDefault(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<? extends T> type, final @Nullable T fallback) {
+        final T object = this.getData(type);
+        return object != null ? object : fallback;
+    }
+
+    /**
+     * Checks if the data component type is set on the itemstack.
+     *
+     * @param type the data component type
+     * @return {@code true} if set, {@code false} otherwise
+     */
+    @org.jetbrains.annotations.Contract(pure = true)
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public boolean hasData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
+        return this.craftDelegate.hasData(type);
+    }
+
+    /**
+     * Gets all the data component types set on this stack.
+     *
+     * @return an immutable set of data component types
+     */
+    @org.jetbrains.annotations.Contract("-> new")
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public java.util.@org.jetbrains.annotations.Unmodifiable Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> getDataTypes() {
+        return this.craftDelegate.getDataTypes();
+    }
+
+    /**
+     * Sets the value of the data component type for this itemstack. To
+     * reset the value to the default for the {@link #getType() item type}, use
+     * {@link #resetData(io.papermc.paper.datacomponent.DataComponentType)}. To mark the data component type
+     * as removed, use {@link #unsetData(io.papermc.paper.datacomponent.DataComponentType)}.
+     *
+     * @param type the data component type
+     * @param valueBuilder value builder
+     * @param <T> value type
+     */
+    @Utility
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public <T> void setData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type, final @NotNull io.papermc.paper.datacomponent.DataComponentBuilder<T> valueBuilder) {
+        this.setData(type, valueBuilder.build());
+    }
+
+    // /**
+    //  * Modifies the value of the specified data component type for this item stack based on the result
+    //  * of applying a given function to the current value.
+    //  *
+    //  * <p>If the function returns {@code null}, the data component type will be reset using
+    //  * {@link #unsetData(DataComponentType)}. Otherwise, the
+    //  * component value will be updated with the new result using {@link #setData(DataComponentType.Valued, Object)}.</p>
+    //  *
+    //  * @param <T>      the type of the data component's value
+    //  * @param type     the data component type to be modified
+    //  * @param consumer a function that takes the current component value (can be {@code null}) and
+    //  *                 returns the modified value (or {@code null} to unset)
+    //  */
+    // @Utility
+    // public <T> void editData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type, final @NotNull java.util.function.Function<@Nullable T, @Nullable T> consumer) {
+    //     T value = getData(type);
+    //     T newType = consumer.apply(value);
+    //     if (newType == null) {
+    //         unsetData(type);
+    //     } else {
+    //         setData(type, newType);
+    //     }
+    // }
+
+    /**
+     * Sets the value of the data component type for this itemstack. To
+     * reset the value to the default for the {@link #getType() item type}, use
+     * {@link #resetData(io.papermc.paper.datacomponent.DataComponentType)}. To mark the data component type
+     * as removed, use {@link #unsetData(io.papermc.paper.datacomponent.DataComponentType)}.
+     *
+     * @param type the data component type
+     * @param value value to set
+     * @param <T> value type
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public <T> void setData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type, final @NotNull T value) {
+        this.craftDelegate.setData(type, value);
+    }
+
+    /**
+     * Marks this non-valued data component type as present in this itemstack.
+     *
+     * @param type the data component type
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public void setData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull NonValued type) {
+        this.craftDelegate.setData(type);
+    }
+
+    /**
+     * Marks this data component as removed for this itemstack.
+     *
+     * @param type the data component type
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public void unsetData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
+        this.craftDelegate.unsetData(type);
+    }
+
+    /**
+     * Resets the value of this component to be the default
+     * value for the item type from {@link Material#getDefaultData(io.papermc.paper.datacomponent.DataComponentType.Valued)}.
+     *
+     * @param type the data component type
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public void resetData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
+        this.craftDelegate.resetData(type);
+    }
+
+    /**
+     * Checks if the data component type is overridden from the default for the
+     * item type.
+     *
+     * @param type the data component type
+     * @return {@code true} if the data type is overridden
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public boolean isDataOverridden(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
+        return this.craftDelegate.isDataOverridden(type);
+    }
+
+    /**
+     * Checks if this itemstack matches another given itemstack excluding the provided components.
+     * This is useful if you are wanting to ignore certain properties of itemstacks, such as durability.
+     *
+     * @param item the item to compare
+     * @param excludeTypes the data component types to ignore
+     * @return {@code true} if the provided item is equal, ignoring the provided components
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes) {
+        return this.matchesWithoutData(item, excludeTypes, false);
+    }
+
+    /**
+     * Checks if this itemstack matches another given itemstack excluding the provided components.
+     * This is useful if you are wanting to ignore certain properties of itemstacks, such as durability.
+     *
+     * @param item the item to compare
+     * @param excludeTypes the data component types to ignore
+     * @param ignoreCount ignore the count of the item
+     * @return {@code true} if the provided item is equal, ignoring the provided components
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes, final boolean ignoreCount) {
+        return this.craftDelegate.matchesWithoutData(item, excludeTypes, ignoreCount);
+    }
+    // Paper end - data component API
 }

@@ -376,6 +376,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = EFFECT;
     // Paper end - potion effect type registry
+    Registry<io.papermc.paper.datacomponent.DataComponentType> DATA_COMPONENT_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.DATA_COMPONENT_TYPE); // Paper
     /**
      * Get the object by its key.
      *

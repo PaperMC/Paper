@@ -138,7 +138,7 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
 public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
     //<editor-fold desc="Materials" defaultstate="collapsed">
-    AIR(9648, 0),
+    AIR(9648, 64), // Paper - air stacks to 64
     STONE(22948),
     GRANITE(21091),
     POLISHED_GRANITE(5477),
@@ -5755,6 +5755,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      */
     @ApiStatus.Internal
     @Nullable
+    @org.jetbrains.annotations.Contract(pure = true) // Paper
     public ItemType asItemType() {
         return itemType.get();
     }
@@ -5767,7 +5768,47 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      */
     @ApiStatus.Internal
     @Nullable
+    @org.jetbrains.annotations.Contract(pure = true) // Paper
     public BlockType asBlockType() {
         return blockType.get();
     }
+
+    // Paper start - data component API
+    /**
+     * Gets the default value of the data component type for this item type.
+     *
+     * @param type the data component type
+     * @param <T> the value type
+     * @return the default value or {@code null} if there is none
+     * @see #hasDefaultData(io.papermc.paper.datacomponent.DataComponentType) for DataComponentType.NonValued
+     * @throws IllegalArgumentException if {@link #isItem()} is {@code false}
+     */
+    public @Nullable <T> T getDefaultData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type) {
+        Preconditions.checkArgument(this.asItemType() != null);
+        return this.asItemType().getDefaultData(type);
+    }
+
+    /**
+     * Checks if the data component type has a default value for this item type.
+     *
+     * @param type the data component type
+     * @return {@code true} if there is a default value
+     * @throws IllegalArgumentException if {@link #isItem()} is {@code false}
+     */
+    public boolean hasDefaultData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
+        Preconditions.checkArgument(this.asItemType() != null);
+        return this.asItemType().hasDefaultData(type);
+    }
+
+    /**
+     * Gets the default data component types for this item type.
+     *
+     * @return an immutable set of data component types
+     * @throws IllegalArgumentException if {@link #isItem()} is {@code false}
+     */
+    public java.util.@org.jetbrains.annotations.Unmodifiable @NotNull Set<io.papermc.paper.datacomponent.DataComponentType> getDefaultDataTypes() {
+        Preconditions.checkArgument(this.asItemType() != null);
+        return this.asItemType().getDefaultDataTypes();
+    }
+    // Paper end - data component API
 }

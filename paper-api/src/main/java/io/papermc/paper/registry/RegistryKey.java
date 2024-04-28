@@ -1,5 +1,6 @@
 package io.papermc.paper.registry;
 
+import io.papermc.paper.datacomponent.DataComponentType;
 import net.kyori.adventure.key.Keyed;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
@@ -124,6 +125,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.SoundEventKeys
      */
     RegistryKey<Sound> SOUND_EVENT = create("sound_event");
+    /**
+     * Built-in registry for data component types.
+     * <!-- @see io.papermc.paper.registry.keys.DataComponentTypeKeys -->
+     */
+    RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
 
 
 

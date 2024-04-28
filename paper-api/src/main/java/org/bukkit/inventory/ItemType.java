@@ -2444,4 +2444,33 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      */
     @Nullable ItemRarity getItemRarity();
     // Paper end - expand ItemRarity API
+    // Paper start - data component API
+    /**
+     * Gets the default value of the data component type for this item type.
+     *
+     * @param type the data component type
+     * @param <T> the value type
+     * @return the default value or {@code null} if there is none
+     * @see #hasDefaultData(io.papermc.paper.datacomponent.DataComponentType) for DataComponentType.NonValued
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    @Nullable <T> T getDefaultData(io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type);
+
+    /**
+     * Checks if the data component type has a default value for this item type.
+     *
+     * @param type the data component type
+     * @return {@code true} if there is a default value
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    boolean hasDefaultData(io.papermc.paper.datacomponent.@NotNull DataComponentType type);
+
+    /**
+     * Gets the default data component types for this item type.
+     *
+     * @return an immutable set of data component types
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    java.util.@org.jetbrains.annotations.Unmodifiable @NotNull Set<io.papermc.paper.datacomponent.DataComponentType> getDefaultDataTypes();
+    // Paper end - data component API
 }
