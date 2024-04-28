@@ -4,6 +4,42 @@ Date: Sat, 27 Apr 2024 20:56:17 -0700
 Subject: [PATCH] General ItemMeta fixes
 
 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+@@ -0,0 +0,0 @@ public abstract class BlockEntity {
+         CompoundTag nbttagcompound = new CompoundTag();
+ 
+         this.saveAdditional(nbttagcompound, registryLookup);
++        // Paper start - store PDC here as well
++        if (this.persistentDataContainer != null && !this.persistentDataContainer.isEmpty()) {
++            nbttagcompound.put("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
++        }
++        // Paper end
+         return nbttagcompound;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+@@ -0,0 +0,0 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
+         return nbt;
+     }
+ 
++    // Paper start - properly save blockentity itemstacks
++    public CompoundTag getSnapshotCustomNbtOnly() {
++        this.applyTo(this.snapshot);
++        final CompoundTag nbt = this.snapshot.saveCustomOnly(this.getRegistryAccess());
++        this.snapshot.removeComponentsFromTag(nbt);
++        return nbt;
++    }
++    // Paper end
++
+     // copies the data of the given tile entity to this block state
+     protected void load(T tileEntity) {
+         if (tileEntity != null && tileEntity != this.snapshot) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
@@ -52,6 +88,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          List<BannerPatternLayers.Layer> newPatterns = new ArrayList<>();
  
          for (Pattern p : this.patterns) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -0,0 +0,0 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         super.applyToItem(tag);
+ 
+         if (this.blockEntityTag != null) {
+-            tag.put(CraftMetaBlockState.BLOCK_ENTITY_TAG, CustomData.of(this.blockEntityTag.getSnapshotNBTWithoutComponents()));
++            // Paper start - accurately replicate logic for creating ItemStack from BlockEntity
++            // taken from BlockEntity#saveToItem and BlockItem#setBlockEntityData
++            CompoundTag nbt = this.blockEntityTag.getSnapshotCustomNbtOnly();
++            nbt.remove("id");
++            if (!nbt.isEmpty()) {
++                BlockEntity.addEntityType(nbt, this.blockEntityTag.getTileEntity().getType());
++                tag.put(CraftMetaBlockState.BLOCK_ENTITY_TAG, CustomData.of(nbt));
++            }
++            // Paper end
+ 
+             for (TypedDataComponent<?> component : this.blockEntityTag.collectComponents()) {
+                 tag.builder.set(component);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
