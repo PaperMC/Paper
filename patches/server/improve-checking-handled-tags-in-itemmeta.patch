@@ -1,0 +1,796 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 10 Jul 2023 16:10:15 -0700
+Subject: [PATCH] improve checking handled tags in itemmeta
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+         } else if (this.handle == null) {
+             this.handle = new net.minecraft.world.item.ItemStack(CraftItemType.bukkitToMinecraft(type), 1);
+         } else {
++            final Material oldType = CraftMagicNumbers.getMaterial(this.handle.getItem()); // Paper
+             this.handle.setItem(CraftItemType.bukkitToMinecraft(type));
+             if (this.hasItemMeta()) {
+                 // This will create the appropriate item meta, which will contain all the data we intend to keep
+-                CraftItemStack.setItemMeta(this.handle, CraftItemStack.getItemMeta(this.handle));
++                this.adjustTagForItemMeta(oldType); // Paper
+             }
+         }
+         this.setData(null);
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+     public ItemMeta getItemMeta() {
+         return CraftItemStack.getItemMeta(this.handle);
+     }
++    // Paper start - improve handled tags on type change
++    public void adjustTagForItemMeta(final Material oldType) {
++        final CraftMetaItem oldMeta = (CraftMetaItem) CraftItemFactory.instance().getItemMeta(oldType);
++        final ItemMeta newMeta;
++        if (oldMeta == null) {
++            newMeta = getItemMeta(this.handle);
++        } else {
++            final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts = new java.util.HashSet<>(CraftMetaItem.getTopLevelHandledDcts(oldMeta.getClass()));
++            newMeta = getItemMeta(this.handle, CraftItemStack.getType(this.handle), extraHandledDcts);
++        }
++        this.setItemMeta(newMeta);
++    }
++    // Paper end - improve handled tags on type change
+     // Paper start
+     public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta itemMeta) {
+         final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+     }
+     public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, Material material) {
+         // Paper end
++        // Paper start - handled tags on type change
++        return getItemMeta(item, material, null);
++    }
++    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, Material material, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
++        // Paper end - handled tags on type change
+         if (!CraftItemStack.hasItemMeta(item)) {
+             return CraftItemFactory.instance().getItemMeta(material); // Paper
+         }
+         switch (material) {  // Paper
+             case WRITTEN_BOOK:
+-                return new CraftMetaBookSigned(item.getComponentsPatch());
++                return new CraftMetaBookSigned(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case WRITABLE_BOOK:
+-                return new CraftMetaBook(item.getComponentsPatch());
++                return new CraftMetaBook(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case CREEPER_HEAD:
+             case CREEPER_WALL_HEAD:
+             case DRAGON_HEAD:
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+             case WITHER_SKELETON_WALL_SKULL:
+             case ZOMBIE_HEAD:
+             case ZOMBIE_WALL_HEAD:
+-                return new CraftMetaSkull(item.getComponentsPatch());
++                return new CraftMetaSkull(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case CHAINMAIL_HELMET:
+             case CHAINMAIL_CHESTPLATE:
+             case CHAINMAIL_LEGGINGS:
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+             case NETHERITE_LEGGINGS:
+             case NETHERITE_BOOTS:
+             case TURTLE_HELMET:
+-                return new CraftMetaArmor(item.getComponentsPatch());
++                return new CraftMetaArmor(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case LEATHER_HELMET:
+             case LEATHER_CHESTPLATE:
+             case LEATHER_LEGGINGS:
+             case LEATHER_BOOTS:
+             case WOLF_ARMOR:
+-                return new CraftMetaColorableArmor(item.getComponentsPatch());
++                return new CraftMetaColorableArmor(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case LEATHER_HORSE_ARMOR:
+-                return new CraftMetaLeatherArmor(item.getComponentsPatch());
++                return new CraftMetaLeatherArmor(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case POTION:
+             case SPLASH_POTION:
+             case LINGERING_POTION:
+             case TIPPED_ARROW:
+-                return new CraftMetaPotion(item.getComponentsPatch());
++                return new CraftMetaPotion(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case FILLED_MAP:
+-                return new CraftMetaMap(item.getComponentsPatch());
++                return new CraftMetaMap(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case FIREWORK_ROCKET:
+-                return new CraftMetaFirework(item.getComponentsPatch());
++                return new CraftMetaFirework(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case FIREWORK_STAR:
+-                return new CraftMetaCharge(item.getComponentsPatch());
++                return new CraftMetaCharge(item.getComponentsPatch(), extraHandledDcts); // Paper;
+             case ENCHANTED_BOOK:
+-                return new CraftMetaEnchantedBook(item.getComponentsPatch());
++                return new CraftMetaEnchantedBook(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case BLACK_BANNER:
+             case BLACK_WALL_BANNER:
+             case BLUE_BANNER:
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+             case WHITE_WALL_BANNER:
+             case YELLOW_BANNER:
+             case YELLOW_WALL_BANNER:
+-                return new CraftMetaBanner(item.getComponentsPatch());
++                return new CraftMetaBanner(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case ARMADILLO_SPAWN_EGG:
+             case ALLAY_SPAWN_EGG:
+             case AXOLOTL_SPAWN_EGG:
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+             case ZOMBIE_SPAWN_EGG:
+             case ZOMBIE_VILLAGER_SPAWN_EGG:
+             case ZOMBIFIED_PIGLIN_SPAWN_EGG:
+-                return new CraftMetaSpawnEgg(item.getComponentsPatch());
++                return new CraftMetaSpawnEgg(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case ARMOR_STAND:
+-                return new CraftMetaArmorStand(item.getComponentsPatch());
++                return new CraftMetaArmorStand(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case KNOWLEDGE_BOOK:
+-                return new CraftMetaKnowledgeBook(item.getComponentsPatch());
++                return new CraftMetaKnowledgeBook(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case FURNACE:
+             case CHEST:
+             case TRAPPED_CHEST:
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+             case CRAFTER:
+             case TRIAL_SPAWNER:
+             case VAULT:
+-                return new CraftMetaBlockState(item.getComponentsPatch(), CraftItemType.minecraftToBukkit(item.getItem()));
++                return new CraftMetaBlockState(item.getComponentsPatch(), CraftItemType.minecraftToBukkit(item.getItem()), extraHandledDcts); // Paper
+             case TROPICAL_FISH_BUCKET:
+-                return new CraftMetaTropicalFishBucket(item.getComponentsPatch());
++                return new CraftMetaTropicalFishBucket(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case AXOLOTL_BUCKET:
+-                return new CraftMetaAxolotlBucket(item.getComponentsPatch());
++                return new CraftMetaAxolotlBucket(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case CROSSBOW:
+-                return new CraftMetaCrossbow(item.getComponentsPatch());
++                return new CraftMetaCrossbow(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case SUSPICIOUS_STEW:
+-                return new CraftMetaSuspiciousStew(item.getComponentsPatch());
++                return new CraftMetaSuspiciousStew(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case COD_BUCKET:
+             case PUFFERFISH_BUCKET:
+             case SALMON_BUCKET:
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+             case ITEM_FRAME:
+             case GLOW_ITEM_FRAME:
+             case PAINTING:
+-                return new CraftMetaEntityTag(item.getComponentsPatch());
++                return new CraftMetaEntityTag(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case COMPASS:
+-                return new CraftMetaCompass(item.getComponentsPatch());
++                return new CraftMetaCompass(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case BUNDLE:
+-                return new CraftMetaBundle(item.getComponentsPatch());
++                return new CraftMetaBundle(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case GOAT_HORN:
+-                return new CraftMetaMusicInstrument(item.getComponentsPatch());
++                return new CraftMetaMusicInstrument(item.getComponentsPatch(), extraHandledDcts); // Paper
+             case OMINOUS_BOTTLE:
+-                return new CraftMetaOminousBottle(item.getComponentsPatch());
++                return new CraftMetaOminousBottle(item.getComponentsPatch(), extraHandledDcts); // Paper
+             default:
+-                return new CraftMetaItem(item.getComponentsPatch());
++                return new CraftMetaItem(item.getComponentsPatch(), extraHandledDcts); // Paper
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
+@@ -0,0 +0,0 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
+         }
+     }
+ 
+-    CraftMetaArmor(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaArmor.TRIM).ifPresent((trimCompound) -> {
+             TrimMaterial trimMaterial = this.unwrapAndConvertHolder(Registry.TRIM_MATERIAL, trimCompound.material()); // Paper - fix upstream not being correct
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
+@@ -0,0 +0,0 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
+         this.entityTag = armorStand.entityTag;
+     }
+ 
+-    CraftMetaArmorStand(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaArmorStand(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaArmorStand.ENTITY_TAG).ifPresent((nbt) -> {
+             this.entityTag = nbt.copyTag();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
+@@ -0,0 +0,0 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+         this.entityTag = bucket.entityTag;
+     }
+ 
+-    CraftMetaAxolotlBucket(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaAxolotlBucket(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaAxolotlBucket.ENTITY_TAG).ifPresent((nbt) -> {
+             this.entityTag = nbt.copyTag();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
+@@ -0,0 +0,0 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+         this.patterns = new ArrayList<Pattern>(banner.patterns);
+     }
+ 
+-    CraftMetaBanner(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaBanner(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaBanner.PATTERNS).ifPresent((entityTag) -> {
+             List<BannerPatternLayers.Layer> patterns = entityTag.layers();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -0,0 +0,0 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         this.blockEntityTag = te.blockEntityTag;
+     }
+ 
+-    CraftMetaBlockState(DataComponentPatch tag, Material material) {
+-        super(tag);
++    CraftMetaBlockState(DataComponentPatch tag, Material material, final Set<DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+         this.material = material;
+ 
+         getOrEmpty(tag, CraftMetaBlockState.BLOCK_ENTITY_TAG).ifPresent((nbt) -> {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
+@@ -0,0 +0,0 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
+         }
+     }
+ 
+-    CraftMetaBook(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaBook(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaBook.BOOK_CONTENT).ifPresent((writable) -> {
+             List<Filterable<String>> pages = writable.pages();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+@@ -0,0 +0,0 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
+         }
+     }
+ 
+-    CraftMetaBookSigned(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaBookSigned(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaBookSigned.BOOK_CONTENT).ifPresent((written) -> {
+             this.title = written.title().raw();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
+@@ -0,0 +0,0 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
+         }
+     }
+ 
+-    CraftMetaBundle(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaBundle(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaBundle.ITEMS).ifPresent((bundle) -> {
+             bundle.items().forEach((item) -> {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCharge.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCharge.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCharge.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCharge.java
+@@ -0,0 +0,0 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
+         this.setEffect(SerializableMeta.getObject(FireworkEffect.class, map, CraftMetaCharge.EXPLOSION.BUKKIT, true));
+     }
+ 
+-    CraftMetaCharge(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaCharge(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaCharge.EXPLOSION).ifPresent((f) -> {
+             try {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java
+@@ -0,0 +0,0 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
+         CraftMetaLeatherArmor.readColor(this, meta);
+     }
+ 
+-    CraftMetaColorableArmor(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaColorableArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+         CraftMetaLeatherArmor.readColor(this, tag);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
+@@ -0,0 +0,0 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
+         this.tracked = compassMeta.tracked;
+     }
+ 
+-    CraftMetaCompass(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaCompass(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+         getOrEmpty(tag, CraftMetaCompass.LODESTONE_TARGET).ifPresent((lodestoneTarget) -> {
+             lodestoneTarget.target().ifPresent((target) -> {
+                 this.lodestoneWorld = target.dimension();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCrossbow.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCrossbow.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCrossbow.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCrossbow.java
+@@ -0,0 +0,0 @@ public class CraftMetaCrossbow extends CraftMetaItem implements CrossbowMeta {
+         }
+     }
+ 
+-    CraftMetaCrossbow(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaCrossbow(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaCrossbow.CHARGED_PROJECTILES).ifPresent((p) -> {
+             List<net.minecraft.world.item.ItemStack> list = p.getItems();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
+@@ -0,0 +0,0 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
+         }
+     }
+ 
+-    CraftMetaEnchantedBook(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaEnchantedBook(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS).ifPresent((itemEnchantments) -> {
+             this.enchantments = buildEnchantments(itemEnchantments);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+@@ -0,0 +0,0 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+         this.entityTag = entity.entityTag;
+     }
+ 
+-    CraftMetaEntityTag(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaEntityTag(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaEntityTag.ENTITY_TAG).ifPresent((nbt) -> {
+             this.entityTag = nbt.copyTag();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
+@@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+         }
+     }
+ 
+-    CraftMetaFirework(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaFirework(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaFirework.FIREWORKS).ifPresent((fireworks) -> {
+             this.power = fireworks.flightDuration();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         // Paper end
+     }
+ 
+-    CraftMetaItem(DataComponentPatch tag) {
++    CraftMetaItem(DataComponentPatch tag, Set<DataComponentType<?>> extraHandledTags) { // Paper - improve handled tags on type changes
+         CraftMetaItem.getOrEmpty(tag, CraftMetaItem.NAME).ifPresent((component) -> {
+             this.displayName = component;
+         });
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         });
+         // Paper end - fix ItemFlags
+ 
++        // Paper start - improve checking handled data component types
++        Set<DataComponentType<?>> handledTags = getTopLevelHandledDcts(this.getClass());
++        if (extraHandledTags != null) {
++            extraHandledTags.addAll(handledTags);
++            handledTags = extraHandledTags;
++        }
++        // Paper end - improve checking handled data component types
+         Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = tag.entrySet();
+         for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
+             if (key.getValue().isEmpty()) {
+                 this.unhandledTags.remove(key.getKey());
+-            } else if (!CraftMetaItem.getHandledTags().contains(key.getKey())) {
++            } else if (!handledTags.contains(key.getKey())) { // Paper - improve checking handled data component types
+                 key.getValue().ifPresentOrElse((value) -> {
+                     this.unhandledTags.set((DataComponentType) key.getKey(), value);
+                 }, () -> {
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         this.version = version;
+     }
+ 
+-    public static Set<DataComponentType> getHandledTags() {
+-        synchronized (CraftMetaItem.HANDLED_TAGS) {
+-            if (CraftMetaItem.HANDLED_TAGS.isEmpty()) {
+-                CraftMetaItem.HANDLED_TAGS.addAll(Arrays.asList(
+-                        CraftMetaItem.NAME.TYPE,
+-                        CraftMetaItem.ITEM_NAME.TYPE,
+-                        CraftMetaItem.LORE.TYPE,
+-                        CraftMetaItem.CUSTOM_MODEL_DATA.TYPE,
+-                        CraftMetaItem.BLOCK_DATA.TYPE,
+-                        CraftMetaItem.REPAIR.TYPE,
+-                        CraftMetaItem.ENCHANTMENTS.TYPE,
+-                        CraftMetaItem.HIDE_ADDITIONAL_TOOLTIP.TYPE,
+-                        CraftMetaItem.HIDE_TOOLTIP.TYPE,
+-                        CraftMetaItem.UNBREAKABLE.TYPE,
+-                        CraftMetaItem.ENCHANTMENT_GLINT_OVERRIDE.TYPE,
+-                        CraftMetaItem.FIRE_RESISTANT.TYPE,
+-                        CraftMetaItem.MAX_STACK_SIZE.TYPE,
+-                        CraftMetaItem.RARITY.TYPE,
+-                        CraftMetaItem.FOOD.TYPE,
+-                        CraftMetaItem.DAMAGE.TYPE,
+-                        CraftMetaItem.MAX_DAMAGE.TYPE,
+-                        CraftMetaItem.CUSTOM_DATA.TYPE,
+-                        CraftMetaItem.ATTRIBUTES.TYPE,
+-                        CraftMetaItem.CAN_PLACE_ON.TYPE, // Paper
+-                        CraftMetaItem.CAN_BREAK.TYPE, // Paper
+-                        CraftMetaArmor.TRIM.TYPE,
+-                        CraftMetaArmorStand.ENTITY_TAG.TYPE,
+-                        CraftMetaBanner.PATTERNS.TYPE,
+-                        CraftMetaEntityTag.ENTITY_TAG.TYPE,
+-                        CraftMetaLeatherArmor.COLOR.TYPE,
+-                        CraftMetaMap.MAP_POST_PROCESSING.TYPE,
+-                        CraftMetaMap.MAP_COLOR.TYPE,
+-                        CraftMetaMap.MAP_ID.TYPE,
+-                        CraftMetaPotion.POTION_CONTENTS.TYPE,
+-                        CraftMetaSkull.SKULL_PROFILE.TYPE,
+-                        CraftMetaSpawnEgg.ENTITY_TAG.TYPE,
+-                        CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE,
+-                        CraftMetaBook.BOOK_CONTENT.TYPE,
+-                        CraftMetaBookSigned.BOOK_CONTENT.TYPE,
+-                        CraftMetaFirework.FIREWORKS.TYPE,
+-                        CraftMetaEnchantedBook.STORED_ENCHANTMENTS.TYPE,
+-                        CraftMetaCharge.EXPLOSION.TYPE,
+-                        CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE,
+-                        CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE,
+-                        CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE,
+-                        CraftMetaAxolotlBucket.ENTITY_TAG.TYPE,
+-                        CraftMetaCrossbow.CHARGED_PROJECTILES.TYPE,
+-                        CraftMetaSuspiciousStew.EFFECTS.TYPE,
+-                        CraftMetaCompass.LODESTONE_TARGET.TYPE,
+-                        CraftMetaBundle.ITEMS.TYPE,
+-                        CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE,
+-                        CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE
+-                ));
++    // Paper start - improve checking handled tags
++    @org.jetbrains.annotations.VisibleForTesting
++    public static final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> HANDLED_DCTS_PER_TYPE = new HashMap<>();
++    private static final Set<DataComponentType<?>> DEFAULT_HANDLED_DCTS = Set.of(
++        CraftMetaItem.NAME.TYPE,
++        CraftMetaItem.ITEM_NAME.TYPE,
++        CraftMetaItem.LORE.TYPE,
++        CraftMetaItem.CUSTOM_MODEL_DATA.TYPE,
++        CraftMetaItem.BLOCK_DATA.TYPE,
++        CraftMetaItem.REPAIR.TYPE,
++        CraftMetaItem.ENCHANTMENTS.TYPE,
++        CraftMetaItem.HIDE_ADDITIONAL_TOOLTIP.TYPE,
++        CraftMetaItem.HIDE_TOOLTIP.TYPE,
++        CraftMetaItem.UNBREAKABLE.TYPE,
++        CraftMetaItem.ENCHANTMENT_GLINT_OVERRIDE.TYPE,
++        CraftMetaItem.FIRE_RESISTANT.TYPE,
++        CraftMetaItem.MAX_STACK_SIZE.TYPE,
++        CraftMetaItem.RARITY.TYPE,
++        CraftMetaItem.FOOD.TYPE,
++        CraftMetaItem.DAMAGE.TYPE,
++        CraftMetaItem.MAX_DAMAGE.TYPE,
++        CraftMetaItem.CUSTOM_DATA.TYPE,
++        CraftMetaItem.ATTRIBUTES.TYPE,
++        CraftMetaItem.CAN_PLACE_ON.TYPE, // Paper
++        CraftMetaItem.CAN_BREAK.TYPE // Paper
++    );
++    public static Set<DataComponentType<?>> getTopLevelHandledDcts(final Class<? extends CraftMetaItem> clazz) {
++        synchronized (HANDLED_DCTS_PER_TYPE) {
++            if (HANDLED_DCTS_PER_TYPE.isEmpty()) {
++                final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> map = new HashMap<>();
++                map.put(CraftMetaArmor.class, Set.of(CraftMetaArmor.TRIM.TYPE));
++                map.put(CraftMetaArmorStand.class, Set.of(CraftMetaArmorStand.ENTITY_TAG.TYPE));
++                map.put(CraftMetaAxolotlBucket.class, Set.of(CraftMetaAxolotlBucket.ENTITY_TAG.TYPE));
++                map.put(CraftMetaBanner.class, Set.of(/*CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT, */CraftMetaBanner.PATTERNS.TYPE)); // banner uses same tag as block state
++                map.put(CraftMetaBlockState.class, Set.of(CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE));
++                map.put(CraftMetaBook.class, Set.of(CraftMetaBook.BOOK_CONTENT.TYPE));
++                map.put(CraftMetaBookSigned.class, Set.of(CraftMetaBookSigned.BOOK_CONTENT.TYPE));
++                map.put(CraftMetaBundle.class, Set.of(CraftMetaBundle.ITEMS.TYPE));
++                map.put(CraftMetaCharge.class, Set.of(CraftMetaCharge.EXPLOSION.TYPE));
++                map.put(CraftMetaColorableArmor.class, Set.of(CraftMetaArmor.TRIM.TYPE, CraftMetaLeatherArmor.COLOR.TYPE));
++                map.put(CraftMetaCompass.class, Set.of(CraftMetaCompass.LODESTONE_TARGET.TYPE));
++                map.put(CraftMetaCrossbow.class, Set.of(CraftMetaCrossbow.CHARGED_PROJECTILES.TYPE));
++                map.put(CraftMetaEnchantedBook.class, Set.of(CraftMetaEnchantedBook.STORED_ENCHANTMENTS.TYPE));
++                map.put(CraftMetaEntityTag.class, Set.of(CraftMetaEntityTag.ENTITY_TAG.TYPE));
++                map.put(CraftMetaFirework.class, Set.of(CraftMetaFirework.FIREWORKS.TYPE));
++                map.put(CraftMetaKnowledgeBook.class, Set.of(CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE));
++                map.put(CraftMetaLeatherArmor.class, Set.of(CraftMetaLeatherArmor.COLOR.TYPE));
++                map.put(CraftMetaMap.class, Set.of(CraftMetaMap.MAP_COLOR.TYPE, CraftMetaMap.MAP_POST_PROCESSING.TYPE, CraftMetaMap.MAP_ID.TYPE));
++                map.put(CraftMetaMusicInstrument.class, Set.of(CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE));
++                map.put(CraftMetaOminousBottle.class, Set.of(CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE));
++                map.put(CraftMetaPotion.class, Set.of(CraftMetaPotion.POTION_CONTENTS.TYPE));
++                map.put(CraftMetaSkull.class, Set.of(CraftMetaSkull.SKULL_PROFILE.TYPE, CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE));
++                map.put(CraftMetaSpawnEgg.class, Set.of(CraftMetaSpawnEgg.ENTITY_TAG.TYPE));
++                map.put(CraftMetaSuspiciousStew.class, Set.of(CraftMetaSuspiciousStew.EFFECTS.TYPE));
++                map.put(CraftMetaTropicalFishBucket.class, Set.of(CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE));
++
++                for (final Map.Entry<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> entry : map.entrySet()) {
++                    final ArrayList<DataComponentType<?>> topLevelTags = new ArrayList<>(entry.getValue());
++                    // add tags common to CraftMetaItem to all
++                    topLevelTags.addAll(DEFAULT_HANDLED_DCTS);
++                    HANDLED_DCTS_PER_TYPE.put(entry.getKey(), Set.copyOf(topLevelTags));
++                }
+             }
+-            return CraftMetaItem.HANDLED_TAGS;
++            return HANDLED_DCTS_PER_TYPE.getOrDefault(clazz, DEFAULT_HANDLED_DCTS);
+         }
+     }
++    // Paper end - improve checking handled data component types
+ 
+     protected static <T> Optional<? extends T> getOrEmpty(DataComponentPatch tag, ItemMetaKeyType<T> type) {
+         Optional<? extends T> result = tag.get(type.TYPE);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java
+@@ -0,0 +0,0 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
+         }
+     }
+ 
+-    CraftMetaKnowledgeBook(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaKnowledgeBook(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaKnowledgeBook.BOOK_RECIPES).ifPresent((pages) -> {
+             for (int i = 0; i < pages.size(); i++) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java
+@@ -0,0 +0,0 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
+         CraftMetaLeatherArmor.readColor(this, meta);
+     }
+ 
+-    CraftMetaLeatherArmor(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaLeatherArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+         CraftMetaLeatherArmor.readColor(this, tag);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
+@@ -0,0 +0,0 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
+         this.color = map.color;
+     }
+ 
+-    CraftMetaMap(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaMap(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaMap.MAP_ID).ifPresent((mapId) -> {
+             this.mapId = mapId.id();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
+@@ -0,0 +0,0 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
+         }
+     }
+ 
+-    CraftMetaMusicInstrument(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaMusicInstrument(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
+             this.instrument = this.unwrapAndConvertHolder(Registry.INSTRUMENT, instrument); // Paper - fix upstream not handling custom instruments
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java
+@@ -0,0 +0,0 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
+         this.ominousBottleAmplifier = bottleMeta.ominousBottleAmplifier;
+     }
+ 
+-    CraftMetaOminousBottle(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaOminousBottle(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+         getOrEmpty(tag, CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER).ifPresent((amplifier) -> {
+             this.ominousBottleAmplifier = amplifier;
+         });
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
+@@ -0,0 +0,0 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+         }
+     }
+ 
+-    CraftMetaPotion(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaPotion(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+         getOrEmpty(tag, CraftMetaPotion.POTION_CONTENTS).ifPresent((potionContents) -> {
+             potionContents.potion().ifPresent((potion) -> {
+                 this.type = CraftPotionType.minecraftHolderToBukkit(potion);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+@@ -0,0 +0,0 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+         this.noteBlockSound = skullMeta.noteBlockSound;
+     }
+ 
+-    CraftMetaSkull(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaSkull(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaSkull.SKULL_PROFILE).ifPresent((resolvableProfile) -> {
+             this.setProfile(resolvableProfile.gameProfile());
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
+@@ -0,0 +0,0 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
+         this.updateMaterial(null); // Trigger type population
+     }
+ 
+-    CraftMetaSpawnEgg(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaSpawnEgg(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaSpawnEgg.ENTITY_TAG).ifPresent((nbt) -> {
+             this.entityTag = nbt.copyTag();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSuspiciousStew.java
+@@ -0,0 +0,0 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
+         }
+     }
+ 
+-    CraftMetaSuspiciousStew(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaSuspiciousStew(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+         getOrEmpty(tag, CraftMetaSuspiciousStew.EFFECTS).ifPresent((suspiciousStewEffects) -> {
+             List<SuspiciousStewEffects.Entry> list = suspiciousStewEffects.effects();
+             int length = list.size();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
+@@ -0,0 +0,0 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+         this.entityTag = bucket.entityTag;
+     }
+ 
+-    CraftMetaTropicalFishBucket(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaTropicalFishBucket(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
++        super(tag, extraHandledDcts); // Paper
+ 
+         getOrEmpty(tag, CraftMetaTropicalFishBucket.ENTITY_TAG).ifPresent((nbt) -> {
+             this.entityTag = nbt.copyTag();
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
+@@ -0,0 +0,0 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
+         CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
+         itemMeta.applyToItem(compound);
+ 
+-        assertEquals(itemMeta, new CraftMetaItem(compound.build()));
++        assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
+     }
+ 
+     @Test
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/MetaHandledTagsTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/MetaHandledTagsTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/MetaHandledTagsTest.java
+@@ -0,0 +0,0 @@
++package org.bukkit.craftbukkit.inventory;
++
++import io.github.classgraph.ClassGraph;
++import io.github.classgraph.ClassInfo;
++import io.github.classgraph.ClassInfoList;
++import io.github.classgraph.ScanResult;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.assertFalse;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++// in cb package because of package-private stuff
++class MetaHandledTagsTest extends AbstractTestingBase {
++
++    @Test
++    public void checkAllMetasHaveHandledTags() {
++        try (final ScanResult result = new ClassGraph().enableAllInfo().scan()) {
++            final ClassInfoList subclasses = result.getSubclasses(CraftMetaItem.class.getName());
++            assertFalse(subclasses.isEmpty(), "found 0 sub types");
++            for (final ClassInfo subclass : subclasses) {
++                final Class<CraftMetaItem> clazz = subclass.loadClass(CraftMetaItem.class);
++                CraftMetaItem.getTopLevelHandledDcts(clazz); // load into map
++                assertTrue(CraftMetaItem.HANDLED_TAGS_PER_TYPE.containsKey(clazz), subclass.getName() + " not found in handled tags map");
++            }
++        } catch (Exception e) {
++            throw new RuntimeException(e);
++        }
++    }
++}
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
+@@ -0,0 +0,0 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+         CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
+         itemMeta.applyToItem(compound);
+ 
+-        assertEquals(itemMeta, new CraftMetaItem(compound.build()));
++        assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
+     }
+ 
+     @Test
+@@ -0,0 +0,0 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+ 
+     @Test
+     public void testEmptyListApplicationToAnyType() throws IOException {
+-        final CraftMetaItem craftItem = new CraftMetaItem(DataComponentPatch.EMPTY);
++        final CraftMetaItem craftItem = new CraftMetaItem(DataComponentPatch.EMPTY, null); // Paper
+         final PersistentDataContainer container = craftItem.getPersistentDataContainer();
+ 
+         container.set(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings(), List.of());
+@@ -0,0 +0,0 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+         final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator();
+         craftItem.applyToItem(storage);
+ 
+-        final CraftMetaItem readItem = new CraftMetaItem(storage.build());
++        final CraftMetaItem readItem = new CraftMetaItem(storage.build(), null); // Paper
+         final PersistentDataContainer readContainer = readItem.getPersistentDataContainer();
+ 
+         assertTrue(readContainer.has(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings()));
