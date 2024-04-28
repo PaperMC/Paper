@@ -106,6 +106,7 @@ public final class CraftToolComponent implements ToolComponent {
     public ToolRule addRule(Material block, Float speed, Boolean correctForDrops) {
         Preconditions.checkArgument(block != null, "block must not be null");
         Preconditions.checkArgument(block.isBlock(), "block must be a block type, given %s", block.getKey());
+        Preconditions.checkArgument(speed == null || speed > 0, "speed must be positive"); // Paper - validate speed
 
         Holder.Reference<Block> nmsBlock = CraftBlockType.bukkitToMinecraft(block).builtInRegistryHolder();
         return this.addRule(HolderSet.direct(nmsBlock), speed, correctForDrops);
@@ -113,6 +114,7 @@ public final class CraftToolComponent implements ToolComponent {
 
     @Override
     public ToolRule addRule(Collection<Material> blocks, Float speed, Boolean correctForDrops) {
+        Preconditions.checkArgument(speed == null || speed > 0, "speed must be positive"); // Paper - validate speed
         List<Holder.Reference<Block>> nmsBlocks = new ArrayList<>(blocks.size());
 
         for (Material material : blocks) {
@@ -126,6 +128,7 @@ public final class CraftToolComponent implements ToolComponent {
     @Override
     public ToolRule addRule(Tag<Material> tag, Float speed, Boolean correctForDrops) {
         Preconditions.checkArgument(tag instanceof CraftBlockTag, "tag must be a block tag");
+        Preconditions.checkArgument(speed == null || speed > 0, "speed must be positive"); // Paper - validate speed
         return this.addRule(((CraftBlockTag) tag).getHandle(), speed, correctForDrops);
     }
 
@@ -258,6 +261,7 @@ public final class CraftToolComponent implements ToolComponent {
 
         @Override
         public void setSpeed(Float speed) {
+            Preconditions.checkArgument(speed == null || speed > 0, "speed must be positive"); // Paper - validate speed
             this.handle = new Tool.Rule(this.handle.blocks(), Optional.ofNullable(speed), this.handle.correctForDrops());
         }
 

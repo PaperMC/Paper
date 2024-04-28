@@ -67,7 +67,7 @@ public final class CraftCustomModelDataComponent implements CustomModelDataCompo
 
     @Override
     public void setFlags(List<Boolean> flags) {
-        this.handle = new CustomModelData(this.handle.floats(), new ArrayList<>(this.handle.flags()), this.handle.strings(), this.handle.colors());
+        this.handle = new CustomModelData(this.handle.floats(), List.copyOf(flags), this.handle.strings(), this.handle.colors()); // Paper
     }
 
     @Override
@@ -77,7 +77,7 @@ public final class CraftCustomModelDataComponent implements CustomModelDataCompo
 
     @Override
     public void setStrings(List<String> strings) {
-        this.handle = new CustomModelData(this.handle.floats(), this.handle.flags(), new ArrayList<>(this.handle.strings()), this.handle.colors());
+        this.handle = new CustomModelData(this.handle.floats(), this.handle.flags(), List.copyOf(strings), this.handle.colors()); // Paper
     }
 
     @Override
@@ -87,7 +87,7 @@ public final class CraftCustomModelDataComponent implements CustomModelDataCompo
 
     @Override
     public void setColors(List<Color> colors) {
-        this.handle = new CustomModelData(this.handle.floats(), this.handle.flags(), this.handle.strings(), new ArrayList<>(this.handle.colors()));
+        this.handle = new CustomModelData(this.handle.floats(), this.handle.flags(), this.handle.strings(), colors.stream().map(Color::asRGB).toList()); // Paper
     }
 
     @Override

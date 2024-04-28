@@ -117,7 +117,7 @@ public class CraftMetaCrossbow extends CraftMetaItem implements CrossbowMeta {
     @Override
     public void addChargedProjectile(ItemStack item) {
         Preconditions.checkArgument(item != null, "item");
-        Preconditions.checkArgument(item.getType() == Material.FIREWORK_ROCKET || CraftItemType.bukkitToMinecraft(item.getType()) instanceof ArrowItem, "Item %s is not an arrow or firework rocket", item);
+        Preconditions.checkArgument(!item.isEmpty(), "Item cannot be empty"); // Paper
 
         if (this.chargedProjectiles == null) {
             this.chargedProjectiles = new ArrayList<>();

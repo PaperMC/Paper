@@ -172,7 +172,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public void setAllowedEntities(Tag<EntityType> tag) {
-        Preconditions.checkArgument(tag instanceof CraftEntityTag, "tag must be an entity tag");
+        Preconditions.checkArgument(tag == null || tag instanceof CraftEntityTag, "tag must be an entity tag"); // Paper
 
         this.handle = new Equippable(this.handle.slot(), this.handle.equipSound(), this.handle.assetId(), this.handle.cameraOverlay(),
                 (tag != null) ? Optional.of(((CraftEntityTag) tag).getHandle()) : Optional.empty(),

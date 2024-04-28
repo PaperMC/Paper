@@ -124,13 +124,13 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
     void applyToItem(CraftMetaItem.Applicator itemData) {
         super.applyToItem(itemData);
 
+        List<Filterable<Component>> list = new ArrayList<>(); // Paper - General ItemMeta Fixes
         if (this.pages != null) {
-            List<Filterable<Component>> list = new ArrayList<>();
             for (Component page : this.pages) {
                 list.add(Filterable.passThrough(page));
             }
-            itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(FilteredText.passThrough(this.title)), this.author, this.generation, list, this.resolved));
         }
+        itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(this.title == null ? FilteredText.EMPTY : FilteredText.passThrough(this.title)), this.author == null ? "" : this.author, this.generation, list, this.resolved)); // Paper - General ItemMeta Fixes
     }
 
     @Override

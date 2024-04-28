@@ -29,7 +29,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     private Integer mapId;
     private byte scaling = CraftMetaMap.SCALING_EMPTY;
-    private Color color;
+    private Integer color; // Paper - keep color component consistent with vanilla (top byte is ignored)
 
     CraftMetaMap(CraftMetaItem meta) {
         super(meta);
@@ -57,7 +57,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         getOrEmpty(tag, CraftMetaMap.MAP_COLOR).ifPresent((mapColor) -> {
             try {
-                this.color = Color.fromRGB(mapColor.rgb());
+                this.color = mapColor.rgb(); // Paper
             } catch (IllegalArgumentException ex) {
                 // Invalid colour
             }
@@ -101,7 +101,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         }
 
         if (this.hasColor()) {
-            tag.put(CraftMetaMap.MAP_COLOR, new MapItemColor(this.color.asRGB()));
+            tag.put(CraftMetaMap.MAP_COLOR, new MapItemColor(this.color)); // Paper
         }
     }
 
@@ -121,6 +121,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     @Override
     public int getMapId() {
+        Preconditions.checkState(this.hasMapId(), "Item does not have map associated - check hasMapId() first!"); // Paper - fix NPE
         return this.mapId;
     }
 
@@ -181,12 +182,12 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     @Override
     public Color getColor() {
-        return this.color;
+        return this.color == null ? null : Color.fromRGB(this.color & 0xFFFFFF); // Paper
     }
 
     @Override
     public void setColor(Color color) {
-        this.color = color;
+        this.color = color == null ? null : color.asRGB(); // Paper
     }
 
     @Override

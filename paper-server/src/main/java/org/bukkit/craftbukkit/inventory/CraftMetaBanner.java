@@ -69,6 +69,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
     void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
+        if (this.patterns.isEmpty()) return; // Paper - don't write empty patterns
         List<BannerPatternLayers.Layer> newPatterns = new ArrayList<>();
 
         for (Pattern p : this.patterns) {

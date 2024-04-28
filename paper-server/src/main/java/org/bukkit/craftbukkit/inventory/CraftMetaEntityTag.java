@@ -98,7 +98,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         if (meta instanceof CraftMetaEntityTag) {
             CraftMetaEntityTag that = (CraftMetaEntityTag) meta;
 
-            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : this.entityTag == null;
+            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null; // Paper
         }
         return true;
     }

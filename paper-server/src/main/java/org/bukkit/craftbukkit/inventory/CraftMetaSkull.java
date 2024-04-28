@@ -112,10 +112,10 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             // Fill in textures
             PlayerProfile ownerProfile = new CraftPlayerProfile(this.profile); // getOwnerProfile may return null
             if (ownerProfile.getTextures().isEmpty()) {
-                ownerProfile.update().thenAccept((filledProfile) -> {
+                ownerProfile.update().thenAcceptAsync((filledProfile) -> { // Paper - run on main thread
                     this.setOwnerProfile(filledProfile);
-                    tag.put(CraftMetaSkull.SKULL_PROFILE, this.profile);
-                });
+                    tag.skullCallback(this.profile); // Paper - actually set profile on itemstack
+                }, ((org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer()).getServer()); // Paper - run on main thread
             }
         }
 

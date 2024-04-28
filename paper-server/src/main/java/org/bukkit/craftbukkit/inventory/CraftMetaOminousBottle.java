@@ -70,6 +70,7 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
 
     @Override
     public int getAmplifier() {
+        Preconditions.checkState(this.hasAmplifier(), "'ominous_bottle_amplifier' data component is absent. Check hasAmplifier first!"); // Paper - fix NPE
         return this.ominousBottleAmplifier;
     }
 

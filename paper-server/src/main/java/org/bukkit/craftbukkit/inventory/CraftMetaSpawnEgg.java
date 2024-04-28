@@ -121,6 +121,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
 
     @Override
     public EntitySnapshot getSpawnedEntity() {
+        if (this.entityTag == null) return null; // Paper - fix NPE
         return CraftEntitySnapshot.create(this.entityTag);
     }
 
@@ -138,7 +139,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
         if (meta instanceof CraftMetaSpawnEgg) {
             CraftMetaSpawnEgg that = (CraftMetaSpawnEgg) meta;
 
-            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : this.entityTag == null;
+            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null; // Paper
         }
         return true;
     }

@@ -34,7 +34,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<WritableBookContent> BOOK_CONTENT = new ItemMetaKeyType<>(DataComponents.WRITABLE_BOOK_CONTENT);
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
-    static final int MAX_PAGES = Integer.MAX_VALUE; // SPIGOT-6911: Use Minecraft limits
+    static final int MAX_PAGES = WritableBookContent.MAX_PAGES; // SPIGOT-6911: Use Minecraft limits // Paper
     static final int MAX_PAGE_LENGTH = WritableBookContent.PAGE_EDIT_LENGTH; // SPIGOT-6911: Use Minecraft limits
 
     // We store the pages in their raw original text representation. See SPIGOT-5063, SPIGOT-5350, SPIGOT-3206

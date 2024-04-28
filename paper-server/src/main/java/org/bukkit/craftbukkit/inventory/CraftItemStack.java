@@ -291,7 +291,9 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public void removeEnchantments() {
-        this.handle.remove(DataComponents.ENCHANTMENTS);
+        if (this.handle != null) { // Paper - fix NPE
+        this.handle.set(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY); // Paper - set to default instead of removing the component
+        } // Paper
     }
 
     @Override
@@ -353,7 +355,14 @@ public final class CraftItemStack extends ItemStack {
     // Paper end - improve handled tags on type change
     // Paper start
     public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta itemMeta) {
-        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
+        // Paper start - support updating profile after resolving it
+        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
+            @Override
+            void skullCallback(final net.minecraft.world.item.component.ResolvableProfile profile) {
+                itemStack.set(DataComponents.PROFILE, profile);
+            }
+        };
+        // Paper end - support updating profile after resolving it
         ((CraftMetaItem) itemMeta).applyToItem(tag);
         itemStack.applyComponents(tag.build());
     }
@@ -401,15 +410,20 @@ public final class CraftItemStack extends ItemStack {
         if (itemMeta == null) return true;
 
         if (!((CraftMetaItem) itemMeta).isEmpty()) {
-            CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
+            // Paper start - support updating profile after resolving it
+            CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
+                @Override
+                void skullCallback(final net.minecraft.world.item.component.ResolvableProfile resolvableProfile) {
+                    item.set(DataComponents.PROFILE, resolvableProfile);
+                }
+            };
+            // Paper end - support updating profile after resolving it
 
             ((CraftMetaItem) itemMeta).applyToItem(tag);
-            item.restorePatch(tag.build());
+            item.restorePatch(DataComponentPatch.EMPTY); // Paper - properly apply the new patch from itemmeta
+            item.applyComponents(tag.build()); // Paper - properly apply the new patch from itemmeta
         }
-        // SpigotCraft#463 this is required now by the Vanilla client, so mimic ItemStack constructor in ensuring it
-        if (item.getItem() != null && item.getMaxDamage() > 0) {
-            item.setDamageValue(item.getDamageValue());
-        }
+        // Paper - this is no longer needed
 
         return true;
     }

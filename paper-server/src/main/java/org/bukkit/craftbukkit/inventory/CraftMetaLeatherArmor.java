@@ -18,16 +18,30 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
 
     static final ItemMetaKeyType<DyedItemColor> COLOR = new ItemMetaKeyType<>(DataComponents.DYED_COLOR, "color");
 
-    private Color color = DEFAULT_LEATHER_COLOR;
+    private Integer color; // Paper - keep color component consistent with vanilla (top byte is ignored)
 
     CraftMetaLeatherArmor(CraftMetaItem meta) {
         super(meta);
-        CraftMetaLeatherArmor.readColor(this, meta);
+        // Paper start
+        if (!(meta instanceof CraftMetaLeatherArmor leatherMeta)) {
+            return;
+        }
+
+        this.color = leatherMeta.color;
+        // Paper end
     }
 
     CraftMetaLeatherArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
         super(tag, extraHandledDcts); // Paper
-        CraftMetaLeatherArmor.readColor(this, tag);
+        // Paper start
+        getOrEmpty(tag, CraftMetaLeatherArmor.COLOR).ifPresent((dyedItemColor) -> {
+            if (!dyedItemColor.showInTooltip()) {
+                this.addItemFlags(ItemFlag.HIDE_DYE);
+            }
+
+            this.color = dyedItemColor.rgb();
+        });
+        // Paper end
     }
 
     CraftMetaLeatherArmor(Map<String, Object> map) {
@@ -38,7 +52,11 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
     @Override
     void applyToItem(CraftMetaItem.Applicator itemTag) {
         super.applyToItem(itemTag);
-        CraftMetaLeatherArmor.applyColor(this, itemTag);
+        // Paper start
+        if (this.hasColor()) {
+            itemTag.put(CraftMetaLeatherArmor.COLOR, new DyedItemColor(this.color, !this.hasItemFlag(ItemFlag.HIDE_DYE)));
+        }
+        // Paper end
     }
 
     @Override
@@ -66,16 +84,16 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
 
     @Override
     public Color getColor() {
-        return this.color;
+        return this.color == null ? DEFAULT_LEATHER_COLOR : Color.fromRGB(this.color & 0xFFFFFF); // Paper
     }
 
     @Override
     public void setColor(Color color) {
-        this.color = color == null ? DEFAULT_LEATHER_COLOR : color;
+        this.color = color == null ? null : color.asRGB(); // Paper
     }
 
     boolean hasColor() {
-        return CraftMetaLeatherArmor.hasColor(this);
+        return this.color != null; // Paper
     }
 
     @Override
@@ -95,7 +113,7 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         if (meta instanceof CraftMetaLeatherArmor) {
             CraftMetaLeatherArmor that = (CraftMetaLeatherArmor) meta;
 
-            return this.color.equals(that.color);
+            return this.hasColor() ? that.hasColor() && this.color.equals(that.color) : !that.hasColor(); // Paper - allow null
         }
         return true;
     }
@@ -115,14 +133,16 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         return original != hash ? CraftMetaLeatherArmor.class.hashCode() ^ hash : hash;
     }
 
+    @io.papermc.paper.annotation.DoNotUse // Paper
     static void readColor(LeatherArmorMeta meta, CraftMetaItem other) {
         if (!(other instanceof CraftMetaLeatherArmor armorMeta)) {
             return;
         }
 
-        meta.setColor(armorMeta.color);
+        // meta.setColor(armorMeta.color); // Paper - commented out, color is now an integer and cannot be passed to setColor
     }
 
+    @io.papermc.paper.annotation.DoNotUse // Paper
     static void readColor(LeatherArmorMeta meta, DataComponentPatch tag) {
         getOrEmpty(tag, CraftMetaLeatherArmor.COLOR).ifPresent((dyedItemColor) -> {
             if (!dyedItemColor.showInTooltip()) {
@@ -145,6 +165,7 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         return !DEFAULT_LEATHER_COLOR.equals(meta.getColor());
     }
 
+    @io.papermc.paper.annotation.DoNotUse // Paper
     static void applyColor(LeatherArmorMeta meta, CraftMetaItem.Applicator tag) {
         if (CraftMetaLeatherArmor.hasColor(meta)) {
             tag.put(CraftMetaLeatherArmor.COLOR, new DyedItemColor(meta.getColor().asRGB(), !meta.hasItemFlag(ItemFlag.HIDE_DYE)));

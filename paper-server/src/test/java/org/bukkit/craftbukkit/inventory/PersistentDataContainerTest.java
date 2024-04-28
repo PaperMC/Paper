@@ -128,7 +128,7 @@ public class PersistentDataContainerTest {
     public void testNBTTagStoring() {
         CraftMetaItem itemMeta = this.createComplexItemMeta();
 
-        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
+        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator() {}; // Paper
         itemMeta.applyToItem(compound);
 
         assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
@@ -474,7 +474,7 @@ public class PersistentDataContainerTest {
         assertEquals(List.of(), container.get(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings()));
 
         // Write and read the entire container to NBT
-        final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator();
+        final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator() {}; // Paper
         craftItem.applyToItem(storage);
 
         final CraftMetaItem readItem = new CraftMetaItem(storage.build(), null); // Paper

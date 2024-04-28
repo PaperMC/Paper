@@ -28,17 +28,29 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
 
     static final ItemMetaKeyType<net.minecraft.world.item.DyeColor> BASE_COLOR = new ItemMetaKeyType<>(DataComponents.BASE_COLOR, "Base", "base-color");
 
-    private Banner banner;
+    // Paper start - general item meta fixes - decoupled base colour and patterns
+    private @org.jetbrains.annotations.Nullable List<Pattern> patterns;
+    private @org.jetbrains.annotations.Nullable DyeColor baseColor;
+
+    // An empty pattern list is the same as the default on the Shield item, and will hence not be present in the data components of the stack.
+    private boolean hasPatterns() {
+        return this.patterns != null && !this.patterns.isEmpty();
+    }
+    // Paper end - general item meta fixes - decoupled base colour and patterns
 
     CraftMetaShield(CraftMetaItem meta) {
         super(meta);
 
         if (meta instanceof CraftMetaShield craftMetaShield) {
-            if (craftMetaShield.banner != null) {
-                this.banner = (Banner) craftMetaShield.banner.copy();
-            }
+            // Paper start - general item meta fixes - decoupled base colour and patterns
+            if (craftMetaShield.patterns != null) this.patterns = new ArrayList<>(craftMetaShield.getPatterns());
+            if (craftMetaShield.baseColor != null) this.baseColor = craftMetaShield.baseColor;
+            // Paper end - general item meta fixes - decoupled base colour and patterns
         } else if (meta instanceof CraftMetaBlockState state && state.hasBlockState() && state.getBlockState() instanceof Banner banner) {
-            this.banner = (Banner) banner.copy();
+            // Paper start - general item meta fixes - decoupled base colour and patterns
+            this.patterns = banner.getPatterns();
+            this.baseColor = banner.getBaseColor();
+            // Paper end - general item meta fixes - decoupled base colour and patterns
         }
     }
 
@@ -46,7 +58,7 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
         super(tag, extraHandledDcts); // Paper - improve checking handled tags in item meta
 
         getOrEmpty(tag, CraftMetaShield.BASE_COLOR).ifPresent((color) -> {
-            this.banner = CraftMetaShield.getBlockState(DyeColor.getByWoolData((byte) color.getId()));
+            this.baseColor = DyeColor.getByWoolData((byte) color.getId()); // Paper - general item meta fixes - decoupled base colour and patterns
         });
 
         getOrEmpty(tag, CraftMetaBanner.PATTERNS).ifPresent((entityTag) -> {
@@ -68,7 +80,7 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
 
         String baseColor = SerializableMeta.getString(map, CraftMetaShield.BASE_COLOR.BUKKIT, true);
         if (baseColor != null) {
-            this.banner = CraftMetaShield.getBlockState(DyeColor.valueOf(baseColor));
+            this.baseColor = DyeColor.valueOf(baseColor); // Paper - general item meta fixes - decoupled base colour and patterns
         }
 
         Iterable<?> rawPatternList = SerializableMeta.getObject(Iterable.class, map, CraftMetaBanner.PATTERNS.BUKKIT, true);
@@ -86,13 +98,14 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
-        if (this.banner != null) {
-            tag.put(CraftMetaShield.BASE_COLOR, net.minecraft.world.item.DyeColor.byId(this.banner.getBaseColor().getWoolData()));
-
-            if (this.banner.numberOfPatterns() > 0) {
+        // Paper start - general item meta fixes - decoupled base colour and patterns
+        if (this.baseColor != null) tag.put(CraftMetaShield.BASE_COLOR, net.minecraft.world.item.DyeColor.byId(this.baseColor.getWoolData()));
+        if (this.patterns != null && !this.patterns.isEmpty()) {
+            {
+        // Paper end - general item meta fixes - decoupled base colour and patterns
                 List<BannerPatternLayers.Layer> newPatterns = new ArrayList<>();
 
-                for (Pattern p : this.banner.getPatterns()) {
+                for (Pattern p : this.patterns) { // Paper - general item meta fixes - decoupled base colour and patterns
                     newPatterns.add(new BannerPatternLayers.Layer(CraftPatternType.bukkitToMinecraftHolder(p.getPattern()), net.minecraft.world.item.DyeColor.byId(p.getColor().getWoolData())));
                 }
 
@@ -103,108 +116,84 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
 
     @Override
     public List<Pattern> getPatterns() {
-        if (this.banner == null) {
+        if (this.patterns == null) { // Paper - general item meta fixes - decoupled base colour and patterns
             return new ArrayList<>();
         }
 
-        return this.banner.getPatterns();
+        return new ArrayList<>(this.patterns); // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public void setPatterns(List<Pattern> patterns) {
-        if (this.banner == null) {
-            if (patterns.isEmpty()) {
-                return;
-            }
-
-            this.banner = CraftMetaShield.getBlockState(null);
-        }
-
-        this.banner.setPatterns(patterns);
+        this.patterns = new ArrayList<>(patterns); // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public void addPattern(Pattern pattern) {
-        if (this.banner == null) {
-            this.banner = CraftMetaShield.getBlockState(null);
-        }
-
-        this.banner.addPattern(pattern);
+        // Paper start - general item meta fixes - decoupled base colour and patterns
+        if (this.patterns == null) this.patterns = new ArrayList<>();
+        this.patterns.add(pattern);
+        // Paper end - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public Pattern getPattern(int i) {
-        if (this.banner == null) {
+        if (this.patterns == null) { // Paper - general item meta fixes - decoupled base colour and patterns
             throw new IndexOutOfBoundsException(i);
         }
 
-        return this.banner.getPattern(i);
+        return this.patterns.get(i); // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public Pattern removePattern(int i) {
-        if (this.banner == null) {
+        if (this.patterns == null) { // Paper - general item meta fixes - decoupled base colour and patterns
             throw new IndexOutOfBoundsException(i);
         }
 
-        return this.banner.removePattern(i);
+        return this.patterns.remove(i); // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public void setPattern(int i, Pattern pattern) {
-        if (this.banner == null) {
+        if (this.patterns == null) { // Paper - general item meta fixes - decoupled base colour and patterns
             throw new IndexOutOfBoundsException(i);
         }
 
-        this.banner.setPattern(i, pattern);
+        this.patterns.set(i, pattern); // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public int numberOfPatterns() {
-        if (this.banner == null) {
+        if (this.patterns == null) { // Paper - general item meta fixes - decoupled base colour and patterns
             return 0;
         }
 
-        return this.banner.numberOfPatterns();
+        return this.patterns.size(); // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public DyeColor getBaseColor() {
-        if (this.banner == null) {
-            return null;
-        }
-
-        return this.banner.getBaseColor();
+        return this.baseColor; // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public void setBaseColor(DyeColor baseColor) {
-        if (baseColor == null) {
-            if (this.banner.numberOfPatterns() > 0) {
-                this.banner.setBaseColor(DyeColor.WHITE);
-            } else {
-                this.banner = null;
-            }
-        } else {
-            if (this.banner == null) {
-                this.banner = CraftMetaShield.getBlockState(baseColor);
-            }
-
-            this.banner.setBaseColor(baseColor);
-        }
+        this.baseColor = baseColor; // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (this.banner != null) {
-            builder.put(CraftMetaShield.BASE_COLOR.BUKKIT, this.banner.getBaseColor().toString());
-
-            if (this.banner.numberOfPatterns() > 0) {
-                builder.put(CraftMetaBanner.PATTERNS.BUKKIT, this.banner.getPatterns());
-            }
+        // Paper start - general item meta fixes - decoupled base colour and patterns
+        if (this.baseColor != null) {
+            builder.put(CraftMetaShield.BASE_COLOR.BUKKIT, this.baseColor.toString());
         }
+        if (hasPatterns()) {
+            builder.put(CraftMetaBanner.PATTERNS.BUKKIT, this.patterns);
+        }
+        // Paper end - general item meta fixes - decoupled base colour and patterns
 
         return builder;
     }
@@ -213,8 +202,13 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();
-        if (this.banner != null) {
-            hash = 61 * hash + this.banner.hashCode();
+        // Paper start - general item meta fixes - decoupled base colour and patterns
+        if (this.baseColor != null) {
+            hash = 61 * hash + this.baseColor.hashCode();
+        }
+        if (hasPatterns()) {
+            hash = 61 * hash + this.patterns.hashCode();
+        // Paper end - general item meta fixes - decoupled base colour and patterns
         }
         return original != hash ? CraftMetaShield.class.hashCode() ^ hash : hash;
     }
@@ -225,29 +219,33 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
             return false;
         }
         if (meta instanceof CraftMetaShield that) {
-            return Objects.equal(this.banner, that.banner);
+            return Objects.equal(this.baseColor, that.baseColor) && Objects.equal(this.patterns, that.patterns); // Paper - general item meta fixes - decoupled base colour and patterns
         }
         return true;
     }
 
     @Override
     boolean notUncommon(CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaShield || this.banner == null);
+        return super.notUncommon(meta) && (meta instanceof CraftMetaShield || (this.baseColor == null && !hasPatterns())); // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && this.banner == null;
+        return super.isEmpty() && this.baseColor == null && !hasPatterns(); // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public boolean hasBlockState() {
-        return this.banner != null;
+        return this.baseColor != null || hasPatterns(); // Paper - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
     public BlockState getBlockState() {
-        return (this.banner != null) ? this.banner.copy() : CraftMetaShield.getBlockState(null);
+        // Paper start - general item meta fixes - decoupled base colour and patterns
+        final Banner banner = CraftMetaShield.getBlockState(this.baseColor);
+        if (this.patterns != null) banner.setPatterns(this.patterns);
+        return banner;
+        // Paper end - general item meta fixes - decoupled base colour and patterns
     }
 
     @Override
@@ -255,13 +253,18 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
         Preconditions.checkArgument(blockState != null, "blockState must not be null");
         Preconditions.checkArgument(blockState instanceof Banner, "Invalid blockState");
 
-        this.banner = (Banner) blockState;
+        // Paper start - general item meta fixes - decoupled base colour and patterns
+        final Banner banner = (Banner) blockState;
+        this.baseColor = banner.getBaseColor();
+        this.patterns = banner.getPatterns();
+        // Paper end - general item meta fixes - decoupled base colour and patterns
     }
 
     // Paper start - add method to clear block state
     @Override
     public void clearBlockState() {
-        this.banner = null;
+        this.baseColor = null;
+        this.patterns = null;
     }
     // Paper end - add method to clear block state
 
@@ -275,9 +278,10 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     @Override
     public CraftMetaShield clone() {
         CraftMetaShield meta = (CraftMetaShield) super.clone();
-        if (this.banner != null) {
-            meta.banner = (Banner) this.banner.copy();
-        }
+        // Paper start - general item meta fixes - decoupled base colour and patterns
+        meta.baseColor = this.baseColor;
+        meta.patterns = this.patterns == null ? null : new ArrayList<>(this.patterns);
+        // Paper start - general item meta fixes - decoupled base colour and patterns
         return meta;
     }
 

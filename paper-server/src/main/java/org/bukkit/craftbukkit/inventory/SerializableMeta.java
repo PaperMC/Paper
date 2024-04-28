@@ -173,4 +173,21 @@ public final class SerializableMeta implements ConfigurationSerializable {
 
         return result;
     }
+
+    // Paper start - General ItemMeta Fixes
+    public static <T> java.util.Optional<T> getObjectOptionally(Class<T> clazz, Map<?, ?> map, Object field, boolean nullable) {
+        final Object object = map.get(field);
+
+        if (clazz.isInstance(object)) {
+            return java.util.Optional.of(clazz.cast(object));
+        }
+        if (object == null) {
+            if (!nullable) {
+                throw new NoSuchElementException(map + " does not contain " + field);
+            }
+            return java.util.Optional.empty();
+        }
+        throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
+    }
+    // Paper end - General ItemMeta Fixes
 }

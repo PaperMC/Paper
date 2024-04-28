@@ -169,7 +169,7 @@
 +            DataComponentPatch oldData = this.components.asPatch();
 +            int oldCount = this.getCount();
 +            ServerLevel world = (ServerLevel) context.getLevel();
- 
++
 +            if (!(item instanceof BucketItem/* || item instanceof SolidBucketItem*/)) { // if not bucket // Paper - Fix cancelled powdered snow bucket placement
 +                world.captureBlockStates = true;
 +                // special case bonemeal
@@ -200,7 +200,7 @@
 +                    structureEvent = new StructureGrowEvent(location, treeType, isBonemeal, (Player) entityhuman.getBukkitEntity(), (List< BlockState>) (List<? extends BlockState>) blocks);
 +                    org.bukkit.Bukkit.getPluginManager().callEvent(structureEvent);
 +                }
-+
+ 
 +                BlockFertilizeEvent fertilizeEvent = new BlockFertilizeEvent(CraftBlock.at(world, blockposition), (Player) entityhuman.getBukkitEntity(), (List< BlockState>) (List<? extends BlockState>) blocks);
 +                fertilizeEvent.setCancelled(structureEvent != null && structureEvent.isCancelled());
 +                org.bukkit.Bukkit.getPluginManager().callEvent(fertilizeEvent);
@@ -521,25 +521,24 @@
          player.awardStat(Stats.ITEM_CRAFTED.get(this.getItem()), amount);
          this.getItem().onCraftedBy(this, world, player);
      }
-@@ -770,6 +1028,12 @@
-         return this.getItem().useOnRelease(this);
-     }
+@@ -768,7 +1026,13 @@
  
+     public boolean useOnRelease() {
+         return this.getItem().useOnRelease(this);
++    }
++
 +    // CraftBukkit start
 +    public void restorePatch(DataComponentPatch datacomponentpatch) {
 +        this.components.restorePatch(datacomponentpatch);
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Nullable
      public <T> T set(DataComponentType<? super T> type, @Nullable T value) {
-         return this.components.set(type, value);
-@@ -803,8 +1067,27 @@
-             this.components.restorePatch(datacomponentpatch1);
-         } else {
+@@ -805,6 +1069,25 @@
              this.getItem().verifyComponentsAfterLoad(this);
-+        }
-+    }
+         }
+     }
 +
 +    // Paper start - (this is just a good no conflict location)
 +    public org.bukkit.inventory.ItemStack asBukkitMirror() {
@@ -555,9 +554,9 @@
 +    public org.bukkit.inventory.ItemStack getBukkitStack() {
 +        if (bukkitStack == null || bukkitStack.handle != this) {
 +            bukkitStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
-         }
++        }
 +        return bukkitStack;
-     }
++    }
 +    // Paper end
  
      public void applyComponents(DataComponentPatch changes) {
@@ -598,7 +597,7 @@
          double d0 = modifier.amount();
          boolean flag = false;
  
-@@ -1091,6 +1374,14 @@
+@@ -1091,6 +1374,19 @@
          EnchantmentHelper.forEachModifier(this, slot, attributeModifierConsumer);
      }
  
@@ -607,13 +606,18 @@
 +    public void setItem(Item item) {
 +        this.bukkitStack = null; // Paper
 +        this.item = item;
++        // Paper start - change base component prototype
++        final DataComponentPatch patch = this.getComponentsPatch();
++        this.components = new PatchedDataComponentMap(this.item.components());
++        this.applyComponents(patch);
++        // Paper end - change base component prototype
 +    }
 +    // CraftBukkit end
 +
      public Component getDisplayName() {
          MutableComponent ichatmutablecomponent = Component.empty().append(this.getHoverName());
  
-@@ -1153,7 +1444,7 @@
+@@ -1153,7 +1449,7 @@
      }
  
      public void consume(int amount, @Nullable LivingEntity entity) {
