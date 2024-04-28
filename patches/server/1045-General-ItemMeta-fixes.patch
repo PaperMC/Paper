@@ -4,6 +4,67 @@ Date: Sat, 27 Apr 2024 20:56:17 -0700
 Subject: [PATCH] General ItemMeta fixes
 
 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index aa23d417272bb160bba8358a8ab0792b56bc0a01..eba5a27e452c4063567fb02d6aabdfb0446d5daf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -326,7 +326,14 @@ public final class CraftItemStack extends ItemStack {
+     // Paper end - improve handled tags on type change
+     // Paper start
+     public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta itemMeta) {
+-        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
++        // Paper start - support updating profile after resolving it
++        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
++            @Override
++            void skullCallback(final com.mojang.authlib.GameProfile gameProfile) {
++                itemStack.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
++            }
++        };
++        // Paper end - support updating profile after resolving it
+         ((CraftMetaItem) itemMeta).applyToItem(tag);
+         itemStack.applyComponents(tag.build());
+     }
+@@ -687,7 +694,14 @@ public final class CraftItemStack extends ItemStack {
+         }
+ 
+         if (!((CraftMetaItem) itemMeta).isEmpty()) {
+-            CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
++            // Paper start - support updating profile after resolving it
++            CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
++                @Override
++                void skullCallback(final com.mojang.authlib.GameProfile gameProfile) {
++                    item.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
++                }
++            };
++            // Paper end - support updating profile after resolving it
+ 
+             ((CraftMetaItem) itemMeta).applyToItem(tag);
+             item.restorePatch(tag.build());
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
+index 2d6abecc94683f92da6be26b72ea829663b16d76..6a3b0c7f0cc3ffb17a231383ad103fa792d7b7ba 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
+@@ -107,6 +107,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+     void applyToItem(CraftMetaItem.Applicator tag) {
+         super.applyToItem(tag);
+ 
++        if (this.patterns.isEmpty()) return; // Paper - don't write empty patterns
+         List<BannerPatternLayers.Layer> newPatterns = new ArrayList<>();
+ 
+         for (Pattern p : this.patterns) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+index 7f3733c29f2e79bffa24631efb20de49fde857f2..2ac5161d92d66d83b45d9ad40a704df9f3ea5e78 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+@@ -129,7 +129,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
+             for (Component page : this.pages) {
+                 list.add(Filterable.passThrough(page));
+             }
+-            itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(FilteredText.passThrough(this.title)), this.author, this.generation, list, this.resolved));
++            itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(FilteredText.passThrough(this.title == null ? "" : this.title)), this.author == null ? "" : this.author, this.generation, list, this.resolved));
+         }
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
 index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..88245d8704f4df3075d592a68a4715565e9eed8c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
@@ -24,3 +85,46 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..88245d8704f4df3075d592a68a471556
  
          itemTag.put(CraftMetaFirework.FIREWORKS, new Fireworks(this.power, effects));
      }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 8973a08f39279415e28a4fadf0015f1ab9581350..8dfba4091670a1f830d3a0128d7170f2b9b4ddb7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -165,9 +165,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         }
+     }
+ 
+-    static final class Applicator {
++    static abstract class Applicator { // Paper - support updating profile after resolving it
+ 
+         final DataComponentPatch.Builder builder = DataComponentPatch.builder();
++        void skullCallback(com.mojang.authlib.GameProfile gameProfile) {} // Paper - support updating profile after resolving it
+ 
+         <T> Applicator put(ItemMetaKeyType<T> key, T value) {
+             this.builder.set(key.TYPE, value);
+@@ -1397,7 +1398,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public String getAsString() {
+-        CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
++        CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {}; // Paper - support updating profile after resolving it
+         this.applyToItem(tag);
+         DataComponentPatch patch = tag.build();
+         Tag nbt = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+index c769d2a210060f6829a6cbe739d6d9ab2f602644..1feffe289a1e714084bd37b5c5ad23a37dd58325 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+@@ -137,10 +137,10 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+             // Fill in textures
+             PlayerProfile ownerProfile = new CraftPlayerProfile(this.profile); // getOwnerProfile may return null
+             if (ownerProfile.getTextures().isEmpty()) {
+-                ownerProfile.update().thenAccept((filledProfile) -> {
++                ownerProfile.update().thenAcceptAsync((filledProfile) -> { // Paper - run on main thread
+                     this.setOwnerProfile(filledProfile);
+-                    tag.put(CraftMetaSkull.SKULL_PROFILE, new ResolvableProfile(this.profile));
+-                });
++                    tag.skullCallback(this.profile); // Paper - actually set profile on itemstack
++                }, ((org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer()).getServer()); // Paper - run on main thread
+             }
+         }
+ 
