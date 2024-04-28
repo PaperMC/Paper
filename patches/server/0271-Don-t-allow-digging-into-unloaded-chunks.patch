@@ -5,10 +5,10 @@ Subject: [PATCH] Don't allow digging into unloaded chunks
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index a8d33286832786031ac57e6ce27d5181e1a3d9b1..e8b12b27e5ec74afb940f575e5ce78e5905d55f4 100644
+index 5f2dec1917f1c1c3bb69446832321f3fc21dc129..cd6f34ee326228036f8c025e4e6d04e0c15ba06f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -119,8 +119,8 @@ public class ServerPlayerGameMode {
+@@ -122,8 +122,8 @@ public class ServerPlayerGameMode {
          BlockState iblockdata;
  
          if (this.hasDelayedDestroy) {
@@ -19,7 +19,7 @@ index a8d33286832786031ac57e6ce27d5181e1a3d9b1..e8b12b27e5ec74afb940f575e5ce78e5
                  this.hasDelayedDestroy = false;
              } else {
                  float f = this.incrementDestroyProgress(iblockdata, this.delayedDestroyPos, this.delayedTickStart);
-@@ -131,7 +131,13 @@ public class ServerPlayerGameMode {
+@@ -134,7 +134,13 @@ public class ServerPlayerGameMode {
                  }
              }
          } else if (this.isDestroyingBlock) {
@@ -34,15 +34,15 @@ index a8d33286832786031ac57e6ce27d5181e1a3d9b1..e8b12b27e5ec74afb940f575e5ce78e5
              if (iblockdata.isAir()) {
                  this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
                  this.lastSentState = -1;
-@@ -160,6 +166,7 @@ public class ServerPlayerGameMode {
+@@ -163,6 +169,7 @@ public class ServerPlayerGameMode {
  
      public void handleBlockBreakAction(BlockPos pos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, int sequence) {
-         if (this.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > ServerGamePacketListenerImpl.MAX_INTERACTION_DISTANCE) {
+         if (!this.player.canInteractWithBlock(pos, 1.0D)) {
 +            if (true) return; // Paper - Don't allow digging into unloaded chunks; Don't notify if unreasonably far away
              this.debugLogging(pos, false, sequence, "too far");
          } else if (pos.getY() >= worldHeight) {
              this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
-@@ -299,10 +306,12 @@ public class ServerPlayerGameMode {
+@@ -302,10 +309,12 @@ public class ServerPlayerGameMode {
                  this.debugLogging(pos, true, sequence, "stopped destroying");
              } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
@@ -59,10 +59,10 @@ index a8d33286832786031ac57e6ce27d5181e1a3d9b1..e8b12b27e5ec74afb940f575e5ce78e5
  
                  this.level.destroyBlockProgress(this.player.getId(), pos, -1);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index c827a2b9a64bba61ffdc8ee5ee35460b332a8556..f64157a1fc3d629b9ef3c3d7b8fcf8f2cd960fe0 100644
+index 2cfd937f30e481038483a6ba2c552f5da316c66e..b137faaf3a6f12b532555bfeebf245f0d6b38c59 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1590,6 +1590,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1583,6 +1583,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              case START_DESTROY_BLOCK:
              case ABORT_DESTROY_BLOCK:
              case STOP_DESTROY_BLOCK:

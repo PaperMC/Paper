@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 12 Sep 2018 21:47:01 -0400
+Subject: [PATCH] Optimize Biome Mob Lookups for Mob Spawning
+
+Uses an EnumMap as well as a Set paired List for O(1) contains calls.
+
+diff --git a/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java b/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
+index d6ebd2ebc3a4a184f1237b00c6c4e709c61d2eec..cb7465ed9bdebe1b31f02d11725e75ff8b44ca66 100644
+--- a/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
++++ b/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
+@@ -75,8 +75,40 @@ public class MobSpawnSettings {
+     }
+ 
+     public static class Builder {
++        // Paper start - Perf: keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
++        public static class MobList extends java.util.ArrayList<MobSpawnSettings.SpawnerData> {
++            java.util.Set<MobSpawnSettings.SpawnerData> biomes = new java.util.HashSet<>();
++
++            @Override
++            public boolean contains(Object o) {
++                return biomes.contains(o);
++            }
++
++            @Override
++            public boolean add(MobSpawnSettings.SpawnerData BiomeSettingsMobs) {
++                biomes.add(BiomeSettingsMobs);
++                return super.add(BiomeSettingsMobs);
++            }
++
++            @Override
++            public MobSpawnSettings.SpawnerData remove(int index) {
++                MobSpawnSettings.SpawnerData removed = super.remove(index);
++                if (removed != null) {
++                    biomes.remove(removed);
++                }
++                return removed;
++            }
++
++            @Override
++            public void clear() {
++                biomes.clear();
++                super.clear();
++            }
++        }
++        // use toImmutableEnumMap collector
+         private final Map<MobCategory, List<MobSpawnSettings.SpawnerData>> spawners = Stream.of(MobCategory.values())
+-            .collect(ImmutableMap.toImmutableMap(mobCategory -> (MobCategory)mobCategory, mobCategory -> Lists.newArrayList()));
++            .collect(Maps.toImmutableEnumMap(mobCategory -> (MobCategory)mobCategory, mobCategory -> new MobList())); // Use MobList instead of ArrayList
++        // Paper end - Perf: keep track of data in a pair set to give O(1) contains calls
+         private final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts = Maps.newLinkedHashMap();
+         private float creatureGenerationProbability = 0.1F;
+ 

@@ -7,50 +7,43 @@ Co-authored-by: Connor Linfoot <connorlinfoot@me.com>
 Co-authored-by: MCMDEV <john-m.1@gmx.de>
 
 diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
-index 3432872303aa0df97b5d9090fe98b269ef3cb9f4..bdb7d2345e7d3a48a2f0561832ce126a16781e89 100644
+index 004f1fd55c143e6c21be74d0a6b9ee8b2e12cc59..ae02788536d0c6736aba4ccf812844df4f9789f1 100644
 --- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 +++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
-@@ -2,6 +2,8 @@ package org.bukkit.event.player;
- 
- import java.net.InetAddress;
- import java.util.UUID;
-+import com.destroystokyo.paper.profile.PlayerProfile;
-+import org.bukkit.Bukkit;
- import org.bukkit.event.Event;
- import org.bukkit.event.HandlerList;
- import org.jetbrains.annotations.NotNull;
-@@ -22,9 +24,10 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -22,9 +22,10 @@ public class AsyncPlayerPreLoginEvent extends Event {
      private static final HandlerList handlers = new HandlerList();
      private Result result;
      private net.kyori.adventure.text.Component message; // Paper
 -    private final String name;
      private final InetAddress ipAddress;
 -    private final UUID uniqueId;
-+    private PlayerProfile profile; // Paper
++    private com.destroystokyo.paper.profile.PlayerProfile profile; // Paper
 +    private final InetAddress rawAddress; // Paper
 +    private final String hostname; // Paper
+     private final boolean transferred;
  
      @Deprecated
-     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
-@@ -32,12 +35,29 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -38,12 +39,30 @@ public class AsyncPlayerPreLoginEvent extends Event {
      }
  
-     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
+     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred) {
 +        // Paper start
-+        this(name, ipAddress, uniqueId, Bukkit.createProfile(uniqueId, name));
++        this(name, ipAddress, uniqueId, transferred, org.bukkit.Bukkit.createProfile(uniqueId, name));
 +    }
 +
 +    @Deprecated(forRemoval = true)
-+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
-+        this(name, ipAddress, ipAddress, uniqueId, profile);
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
++        this(name, ipAddress, ipAddress, uniqueId, transferred, profile);
 +    }
 +
 +    @Deprecated(forRemoval = true)
-+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
-+        this(name, ipAddress, rawAddress, uniqueId, profile, "");
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
++        this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "");
 +    }
 +
-+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile, @NotNull String hostname) {
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname) {
++        // Paper end
          super(true);
          this.result = Result.ALLOWED;
          this.message = net.kyori.adventure.text.Component.empty(); // Paper
@@ -58,13 +51,12 @@ index 3432872303aa0df97b5d9090fe98b269ef3cb9f4..bdb7d2345e7d3a48a2f0561832ce126a
 +        this.profile = profile;
          this.ipAddress = ipAddress;
 -        this.uniqueId = uniqueId;
-+        this.rawAddress = rawAddress;
-+        this.hostname = hostname;
-+        // Paper end
++        this.rawAddress = rawAddress; // Paper
++        this.hostname = hostname; // Paper
+         this.transferred = transferred;
      }
  
-     /**
-@@ -200,7 +220,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -207,7 +226,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
       */
      @NotNull
      public String getName() {
@@ -73,7 +65,7 @@ index 3432872303aa0df97b5d9090fe98b269ef3cb9f4..bdb7d2345e7d3a48a2f0561832ce126a
      }
  
      /**
-@@ -220,9 +240,48 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -227,9 +246,48 @@ public class AsyncPlayerPreLoginEvent extends Event {
       */
      @NotNull
      public UUID getUniqueId() {
@@ -87,7 +79,7 @@ index 3432872303aa0df97b5d9090fe98b269ef3cb9f4..bdb7d2345e7d3a48a2f0561832ce126a
 +     * @return The Profile
 +     */
 +    @NotNull
-+    public PlayerProfile getPlayerProfile() {
++    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
 +        return profile;
 +    }
 +
@@ -95,7 +87,7 @@ index 3432872303aa0df97b5d9090fe98b269ef3cb9f4..bdb7d2345e7d3a48a2f0561832ce126a
 +     * Changes the PlayerProfile the player will login as
 +     * @param profile The profile to use
 +     */
-+    public void setPlayerProfile(@NotNull PlayerProfile profile) {
++    public void setPlayerProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
 +        this.profile = profile;
 +    }
 +
@@ -120,6 +112,6 @@ index 3432872303aa0df97b5d9090fe98b269ef3cb9f4..bdb7d2345e7d3a48a2f0561832ce126a
 +    }
 +    // Paper end
 +
-     @NotNull
-     @Override
-     public HandlerList getHandlers() {
+     /**
+      * Gets if this connection has been transferred from another server.
+      *

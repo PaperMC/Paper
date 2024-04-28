@@ -1,0 +1,133 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 15 Dec 2022 00:14:44 -0800
+Subject: [PATCH] Fix several issues with EntityBreedEvent
+
+Upstream did not account for different hands when storing
+the breed item for later use in the event. Also they only
+stored a reference to the stack, not a copy so if the stack
+changed after love mode was started, the breed item in the event
+also changed. Also in several places, the breed item was stored after
+it was decreased by one to consume the item.
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Animal.java b/src/main/java/net/minecraft/world/entity/animal/Animal.java
+index 3bd13c9b8c7573726ae7defdc3c0f32876d1cf1f..5193cf1d3c922d750a11e492b7636215e23ad0d6 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Animal.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Animal.java
+@@ -147,8 +147,9 @@ public abstract class Animal extends AgeableMob {
+             int i = this.getAge();
+ 
+             if (!this.level().isClientSide && i == 0 && this.canFallInLove()) {
++                final ItemStack breedCopy = itemstack.copy(); // Paper - Fix EntityBreedEvent copying
+                 this.usePlayerItem(player, hand, itemstack);
+-                this.setInLove(player);
++                this.setInLove(player, breedCopy); // Paper - Fix EntityBreedEvent copying
+                 return InteractionResult.SUCCESS;
+             }
+ 
+@@ -174,10 +175,18 @@ public abstract class Animal extends AgeableMob {
+         return this.inLove <= 0;
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Fix EntityBreedEvent copying
+     public void setInLove(@Nullable Player player) {
++        // Paper start - Fix EntityBreedEvent copying
++        this.setInLove(player, null);
++    }
++    public void setInLove(@Nullable Player player, @Nullable ItemStack breedItemCopy) {
++        if (breedItemCopy != null) this.breedItem = breedItemCopy;
++        // Paper end - Fix EntityBreedEvent copying
+         // CraftBukkit start
+         EntityEnterLoveModeEvent entityEnterLoveModeEvent = CraftEventFactory.callEntityEnterLoveModeEvent(player, this, 600);
+         if (entityEnterLoveModeEvent.isCancelled()) {
++            this.breedItem = null; // Paper - Fix EntityBreedEvent copying; clear if cancelled
+             return;
+         }
+         this.inLove = entityEnterLoveModeEvent.getTicksInLove();
+@@ -185,7 +194,7 @@ public abstract class Animal extends AgeableMob {
+         if (player != null) {
+             this.loveCause = player.getUUID();
+         }
+-        this.breedItem = player.getInventory().getSelected(); // CraftBukkit
++        // Paper - Fix EntityBreedEvent copying; set breed item in better place
+ 
+         this.level().broadcastEntityEvent(this, (byte) 18);
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Panda.java b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+index 0440fd2d1bb3f87641ad88de6d5ae64617536a6d..db60b91c2b26ca8cdb66e05deab7742ffe212767 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Panda.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+@@ -668,8 +668,9 @@ public class Panda extends Animal {
+                 this.usePlayerItem(player, hand, itemstack);
+                 this.ageUp((int) ((float) (-this.getAge() / 20) * 0.1F), true);
+             } else if (!this.level().isClientSide && this.getAge() == 0 && this.canFallInLove()) {
++                final ItemStack breedCopy = itemstack.copy(); // Paper - Fix EntityBreedEvent copying
+                 this.usePlayerItem(player, hand, itemstack);
+-                this.setInLove(player);
++                this.setInLove(player, breedCopy); // Paper - Fix EntityBreedEvent copying
+             } else {
+                 if (this.level().isClientSide || this.isSitting() || this.isInWater()) {
+                     return InteractionResult.PASS;
+diff --git a/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java b/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+index 4e38bed2a450e90a416bfc03e4231b95f67133ea..b38281f963377cc82b360e8457da7cad033b8c36 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
++++ b/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+@@ -351,8 +351,8 @@ public class Armadillo extends Animal {
+     }
+ 
+     @Override
+-    public void setInLove(@Nullable Player player) {
+-        super.setInLove(player);
++    public void setInLove(@Nullable Player player, @Nullable ItemStack breedItemCopy) { // Paper
++        super.setInLove(player, breedItemCopy); // Paper
+         this.makeSound(SoundEvents.ARMADILLO_EAT);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+index 8ebe18a1abbac81094e6aab19ba76edc0255e3b7..4eb26874f21726bbc6e6ad78bfaf4ecd268c7246 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
++++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+@@ -389,7 +389,7 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
+             boolean flag1 = this.isTamed() && this.getAge() == 0 && this.canFallInLove();
+ 
+             if (flag1) {
+-                this.setInLove(player);
++                this.setInLove(player, item.copy()); // Paper - Fix EntityBreedEvent copying
+             }
+ 
+             boolean flag2 = this.isBaby();
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index 8cae4e154ca07493aba9acadd4ff7150d7ae4f67..9357cf0179d19fbdfe76413e909a99b924c85780 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -571,7 +571,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+             b0 = 5;
+             if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
+                 flag = true;
+-                this.setInLove(player);
++                this.setInLove(player, item.copy()); // Paper - Fix EntityBreedEvent copying
+             }
+         } else if (item.is(Items.GOLDEN_APPLE) || item.is(Items.ENCHANTED_GOLDEN_APPLE)) {
+             f = 10.0F;
+@@ -579,7 +579,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+             b0 = 10;
+             if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
+                 flag = true;
+-                this.setInLove(player);
++                this.setInLove(player, item.copy()); // Paper - Fix EntityBreedEvent copying
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+index d4eceb535561e11f5f7ab891e81aac285f3cd828..1dd4290287725898ace29e46b439b55df8fdd1af 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+@@ -183,7 +183,7 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
+             f = 10.0F;
+             if (this.isTamed() && this.getAge() == 0 && this.canFallInLove()) {
+                 flag = true;
+-                this.setInLove(player);
++                this.setInLove(player, item.copy()); // Paper - Fix EntityBreedEvent copying
+             }
+         }
+ 

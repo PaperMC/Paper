@@ -1,5 +1,6 @@
 package io.papermc.generator.types;
 
+import com.google.common.collect.Sets;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -10,23 +11,26 @@ import com.squareup.javapoet.TypeSpec;
 import io.papermc.generator.Main;
 import io.papermc.generator.utils.Annotations;
 import io.papermc.generator.utils.CollectingContext;
+import io.papermc.generator.utils.Formatting;
 import io.papermc.generator.utils.Javadocs;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.data.registries.UpdateOneTwentyOneRegistries;
+import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.ResourceKey;
+import org.bukkit.MinecraftExperimental;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
@@ -43,6 +47,9 @@ import static javax.lang.model.element.Modifier.STATIC;
 
 @DefaultQualifier(NonNull.class)
 public class GeneratedKeyType<T, A> extends SimpleGenerator {
+
+    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> VANILLA_REGISTRY_ENTRIES = VanillaRegistries.BUILDER.entries.stream()
+            .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
 
     private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = UpdateOneTwentyOneRegistries.BUILDER.entries.stream()
             .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
@@ -115,48 +122,57 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
         final TypeName typedKey = ParameterizedTypeName.get(TypedKey.class, this.apiType);
 
         final TypeSpec.Builder typeBuilder = this.keyHolderType();
-        typeBuilder.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO experimental API
         final MethodSpec.Builder createMethod = this.createMethod(typedKey);
 
         final Registry<T> registry = Main.REGISTRY_ACCESS.registryOrThrow(this.registryKey);
-        final List<ResourceKey<T>> experimental = this.collectExperimentalKeys(registry);
+        final Set<ResourceKey<T>> experimental = this.collectExperimentalKeys(registry);
 
         boolean allExperimental = true;
-        for (final T value : registry) {
-            final ResourceKey<T> key = registry.getResourceKey(value).orElseThrow();
+        for (final Holder.Reference<T> reference : registry.holders().sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath())).toList()) {
+            final ResourceKey<T> key = reference.key();
             final String keyPath = key.location().getPath();
-            final String fieldName = keyPath.toUpperCase(Locale.ENGLISH).replaceAll("[.-/]", "_"); // replace invalid field name chars
+            final String fieldName = Formatting.formatKeyAsField(keyPath);
             final FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKey, fieldName, PUBLIC, STATIC, FINAL)
                 .initializer("$N(key($S))", createMethod.build(), keyPath)
                 .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.location().toString());
             if (experimental.contains(key)) {
-                fieldBuilder.addAnnotations(experimentalAnnotations("update 1.21"));
+                fieldBuilder.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.UPDATE_1_21));
             } else {
                 allExperimental = false;
             }
             typeBuilder.addField(fieldBuilder.build());
         }
         if (allExperimental) {
-            typeBuilder.addAnnotations(experimentalAnnotations("update 1.21"));
-            createMethod.addAnnotations(experimentalAnnotations("update 1.21"));
+            typeBuilder.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.UPDATE_1_21));
+            createMethod.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.UPDATE_1_21));
+        } else {
+            typeBuilder.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO experimental API
         }
         return typeBuilder.addMethod(createMethod.build()).build();
     }
 
     @SuppressWarnings("unchecked")
-    private List<ResourceKey<T>> collectExperimentalKeys(final Registry<T> registry) {
-        final RegistrySetBuilder.@Nullable RegistryBootstrap<T> registryBootstrap = (RegistrySetBuilder.RegistryBootstrap<T>) EXPERIMENTAL_REGISTRY_ENTRIES.get(this.registryKey);
-        if (registryBootstrap == null) {
-            return Collections.emptyList();
+    private Set<ResourceKey<T>> collectExperimentalKeys(final Registry<T> registry) {
+        final RegistrySetBuilder.@Nullable RegistryBootstrap<T> experimentalBootstrap = (RegistrySetBuilder.RegistryBootstrap<T>) EXPERIMENTAL_REGISTRY_ENTRIES.get(this.registryKey);
+        if (experimentalBootstrap == null) {
+            return Collections.emptySet();
         }
-        final List<ResourceKey<T>> experimental = new ArrayList<>();
-        final CollectingContext<T> context = new CollectingContext<>(experimental, registry);
-        registryBootstrap.run(context);
+        final Set<ResourceKey<T>> experimental = Collections.newSetFromMap(new IdentityHashMap<>());
+        final CollectingContext<T> experimentalCollector = new CollectingContext<>(experimental, registry);
+        experimentalBootstrap.run(experimentalCollector);
+
+        final RegistrySetBuilder.@Nullable RegistryBootstrap<T> vanillaBootstrap = (RegistrySetBuilder.RegistryBootstrap<T>) VANILLA_REGISTRY_ENTRIES.get(this.registryKey);
+        if (vanillaBootstrap != null) {
+            final Set<ResourceKey<T>> vanilla = Collections.newSetFromMap(new IdentityHashMap<>());
+            final CollectingContext<T> vanillaCollector = new CollectingContext<>(vanilla, registry);
+            vanillaBootstrap.run(vanillaCollector);
+            return Sets.difference(experimental, vanilla);
+        }
         return experimental;
     }
 
     @Override
-    protected JavaFile.Builder file(JavaFile.Builder builder) {
+    protected JavaFile.Builder file(final JavaFile.Builder builder) {
         return builder
             .skipJavaLangImports(true)
             .addStaticImport(Key.class, "key")

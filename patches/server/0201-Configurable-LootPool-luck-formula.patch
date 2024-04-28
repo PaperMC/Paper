@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 15 Jun 2018 00:30:32 -0400
+Subject: [PATCH] Configurable LootPool luck formula
+
+Rewrites the Vanilla luck application formula so that luck can be
+applied to items that do not have any quality defined.
+
+See: https://luckformula.emc.gs for data and details
+-----------
+
+The rough summary is:
+My goal was that in a pool, when luck was applied, the pool
+rebalances so the percentages for bigger items is
+lowered and smaller items is boosted.
+
+Do this by boosting and then reducing the weight value,
+so that larger numbers are penalized more than smaller numbers.
+resulting in a larger reduction of entries for more common
+items than the reduction on small weights,
+giving smaller weights more of a chance
+
+-----------
+
+This work kind of obsoletes quality, but quality would be useful
+for 2 items with same weight that you want luck to impact
+in varying directions.
+
+Fishing still falls into that as the weights are closer, so luck
+will invalidate junk more.
+
+This change will result in some major changes to fishing formulas.
+
+-----------
+
+I would love to see this change in Vanilla, so Mojang please pull :)
+
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java b/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java
+index 8e4f33319be13c9d971af40cad2d3f75b1bfff35..8124ea41ac887dbc8438a565ed411821cf4a893c 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java
+@@ -126,9 +126,35 @@ public abstract class LootPoolSingletonContainer extends LootPoolEntryContainer
+     protected abstract class EntryBase implements LootPoolEntry {
+         @Override
+         public int getWeight(float luck) {
+-            return Math.max(Mth.floor((float)LootPoolSingletonContainer.this.weight + (float)LootPoolSingletonContainer.this.quality * luck), 0);
++            // Paper start - Configurable LootPool luck formula
++            // SEE: https://luckformula.emc.gs for details and data
++            if (LootPoolSingletonContainer.this.lastLuck != null && LootPoolSingletonContainer.this.lastLuck == luck) {
++                return lastWeight;
++            }
++            // This is vanilla
++            float qualityModifer = (float) LootPoolSingletonContainer.this.quality * luck;
++            double baseWeight = (LootPoolSingletonContainer.this.weight + qualityModifer);
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.useAlternativeLuckFormula) {
++                // Random boost to avoid losing precision in the final int cast on return
++                final int weightBoost = 100;
++                baseWeight *= weightBoost;
++                // If we have vanilla 1, bump that down to 0 so nothing is is impacted
++                // vanilla 3 = 300, 200 basis = impact 2%
++                // =($B2*(($B2-100)/100/100))
++                double impacted = baseWeight * ((baseWeight - weightBoost) / weightBoost / 100);
++                // =($B$7/100)
++                float luckModifier = Math.min(100, luck * 10) / 100;
++                // =B2 - (C2 *($B$7/100))
++                baseWeight = Math.ceil(baseWeight - (impacted * luckModifier));
++            }
++            LootPoolSingletonContainer.this.lastLuck = luck;
++            LootPoolSingletonContainer.this.lastWeight = (int) Math.max(Math.floor(baseWeight), 0);
++            return lastWeight;
+         }
+     }
++    private Float lastLuck = null;
++    private int lastWeight = 0;
++    // Paper end - Configurable LootPool luck formula
+ 
+     @FunctionalInterface
+     protected interface EntryConstructor {

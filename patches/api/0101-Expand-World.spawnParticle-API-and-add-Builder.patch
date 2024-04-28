@@ -10,13 +10,15 @@ This adds a new Builder API which is much friendlier to use.
 
 diff --git a/src/main/java/com/destroystokyo/paper/ParticleBuilder.java b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f05eb5dc6
+index 0000000000000000000000000000000000000000..e63aabacac12a153ee8f413b529629192cea6900
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
-@@ -0,0 +1,485 @@
+@@ -0,0 +1,579 @@
 +package com.destroystokyo.paper;
 +
++import com.google.common.base.Preconditions;
 +import com.google.common.collect.Lists;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import org.bukkit.Color;
 +import org.bukkit.Location;
 +import org.bukkit.Particle;
@@ -26,6 +28,7 @@ index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f
 +
 +import java.util.Collection;
 +import java.util.List;
++import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -34,7 +37,7 @@ index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f
 + *
 + * Usage of the builder is preferred over the super long {@link World#spawnParticle(Particle, Location, int, double, double, double, double, Object)} API
 + */
-+public class ParticleBuilder {
++public class ParticleBuilder implements Cloneable {
 +
 +    private Particle particle;
 +    private List<Player> receivers;
@@ -470,7 +473,7 @@ index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f
 +     */
 +    @NotNull
 +    public ParticleBuilder color(@Nullable Color color, float size) {
-+        if (particle != Particle.REDSTONE && color != null) {
++        if (particle != Particle.DUST && color != null) {
 +            throw new IllegalStateException("Color may only be set on REDSTONE");
 +        }
 +
@@ -498,12 +501,103 @@ index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f
 +    public ParticleBuilder color(int r, int g, int b) {
 +        return color(Color.fromRGB(r, g, b));
 +    }
++
++    /**
++     * Sets the particle Color.
++     * Only valid for REDSTONE.
++     *
++     * @param rgb an integer representing the red, green, and blue color components
++     * @return a reference to this object.
++     * @throws IllegalArgumentException if called on a particle builder that does not have
++     */
++    @NotNull
++    public ParticleBuilder color(final int rgb) {
++        return color(Color.fromRGB(rgb));
++    }
++
++    /**
++     * Sets the particle Color Transition. Only valid for DUST_COLOR_TRANSITION.
++     *
++     * @param fromColor the new particle from color
++     * @param toColor the new particle to color
++     * @return a reference to this object.
++     * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
++     */
++    @NotNull
++    public ParticleBuilder colorTransition(@NotNull final Color fromColor, @NotNull final Color toColor) {
++        return colorTransition(fromColor, toColor, 1);
++    }
++
++    /**
++     * Sets the particle Color Transition.
++     * Only valid for DUST_COLOR_TRANSITION.
++     *
++     * @param fromRed red color component for the from color
++     * @param fromGreen green color component for the from color
++     * @param fromBlue blue color component for the from color
++     * @param toRed red color component for the to color
++     * @param toGreen green color component for the to color
++     * @param toBlue blue color component for the to color
++     * @return a reference to this object.
++     * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
++     */
++    @NotNull
++    public ParticleBuilder colorTransition(final int fromRed, final int fromGreen, final int fromBlue,
++                                           final int toRed, final int toGreen, final int toBlue) {
++        return colorTransition(Color.fromRGB(fromRed, fromGreen, fromBlue), Color.fromRGB(toRed, toGreen, toBlue));
++    }
++
++    /**
++     * Sets the particle Color Transition.
++     * Only valid for DUST_COLOR_TRANSITION.
++     *
++     * @param fromRgb an integer representing the red, green, and blue color components for the from color
++     * @param toRgb   an integer representing the red, green, and blue color components for the to color
++     * @return a reference to this object.
++     * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
++     */
++    @NotNull
++    public ParticleBuilder colorTransition(final int fromRgb, final int toRgb) {
++        return colorTransition(Color.fromRGB(fromRgb), Color.fromRGB(toRgb));
++    }
++
++    /**
++     * Sets the particle Color Transition and size. Only valid for DUST_COLOR_TRANSITION.
++     *
++     * @param fromColor the new particle color for the from color.
++     * @param toColor the new particle color for the to color.
++     * @param size the size of the particle
++     * @return a reference to this object.
++     * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
++     */
++    @NotNull
++    public ParticleBuilder colorTransition(@NotNull final Color fromColor,
++                                           @NotNull final Color toColor,
++                                           final float size) {
++        Preconditions.checkArgument(fromColor != null, "Cannot define color transition with null fromColor.");
++        Preconditions.checkArgument(toColor != null, "Cannot define color transition with null toColor.");
++        Preconditions.checkArgument(this.particle() == Particle.DUST_COLOR_TRANSITION, "Can only define a color transition on particle DUST_COLOR_TRANSITION.");
++        return data(new Particle.DustTransition(fromColor, toColor, size));
++    }
++
++    @NotNull
++    @Override
++    public ParticleBuilder clone() {
++        try {
++            final ParticleBuilder builder = (ParticleBuilder) super.clone();
++            if (this.location != null) builder.location = this.location.clone();
++            if (this.receivers != null) builder.receivers = new ObjectArrayList<>(this.receivers);
++            return builder;
++        } catch (final CloneNotSupportedException e) {
++            throw new AssertionError();
++        }
++    }
 +}
 diff --git a/src/main/java/org/bukkit/Particle.java b/src/main/java/org/bukkit/Particle.java
-index ca6d0eaa9d9a37c07f3e1630b83a79bf98211edb..26d02aa5da444112f8fa84c07e3080bb669983a1 100644
+index 3d636cb7f275df053d202356c5e9fad5b1112867..b0ccd263cabe911d43cc13261011b64cacaeb7bb 100644
 --- a/src/main/java/org/bukkit/Particle.java
 +++ b/src/main/java/org/bukkit/Particle.java
-@@ -204,6 +204,18 @@ public enum Particle implements Keyed {
+@@ -208,6 +208,18 @@ public enum Particle implements Keyed {
          return key;
      }
  
@@ -523,10 +617,10 @@ index ca6d0eaa9d9a37c07f3e1630b83a79bf98211edb..26d02aa5da444112f8fa84c07e3080bb
       * Options which can be applied to redstone dust particles - a particle
       * color and size.
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index fa4081c62f86245fef5a273f01837f9ac6998faa..fa31ba9d30cd0d1b23e15667c4c9bd9c13b5b9d3 100644
+index c489140bffdfdfa1e34e71489d308ed10cf10b21..b6d08d50c26aa0e69d2479d188fc3c690e8ed357 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -2896,7 +2896,57 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -2921,7 +2921,57 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
       * @param data the data to use for the particle or null,
       *             the type of this depends on {@link Particle#getDataType()}
       */

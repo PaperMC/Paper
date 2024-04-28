@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SamB440 <sam@islandearth.net>
+Date: Mon, 15 Nov 2021 18:10:10 +0000
+Subject: [PATCH] Add PlayerItemFrameChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index 5a0658932cc45c49c9285b1419d574dd83041732..bb22b84c32848869967a47a60f9d8a0629a59e2a 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -2,6 +2,7 @@ package net.minecraft.world.entity.decoration;
+ 
+ import com.mojang.logging.LogUtils;
+ import javax.annotation.Nullable;
++import io.papermc.paper.event.player.PlayerItemFrameChangeEvent; // Paper - Add PlayerItemFrameChangeEvent
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.core.component.DataComponents;
+@@ -179,6 +180,13 @@ public class ItemFrame extends HangingEntity {
+                     return true;
+                 }
+                 // CraftBukkit end
++                // Paper start - Add PlayerItemFrameChangeEvent
++                if (source.getEntity() instanceof Player player) {
++                    var event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
++                    if (!event.callEvent()) return true; // return true here because you aren't cancelling the damage, just the change
++                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
++                }
++                // Paper end - Add PlayerItemFrameChangeEvent
+                 this.dropItem(source.getEntity(), false);
+                 this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
+                 this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
+@@ -429,11 +437,24 @@ public class ItemFrame extends HangingEntity {
+                         }
+                     }
+ 
+-                    this.setItem(itemstack);
++                    // Paper start - Add PlayerItemFrameChangeEvent
++                    PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemstack.asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
++                    if (!event.callEvent()) {
++                        return InteractionResult.FAIL;
++                    }
++                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
++                    // Paper end - Add PlayerItemFrameChangeEvent
+                     this.gameEvent(GameEvent.BLOCK_CHANGE, player);
+                     itemstack.consume(1, player);
+                 }
+             } else {
++                // Paper start - Add PlayerItemFrameChangeEvent
++                PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE);
++                if (!event.callEvent()) {
++                    return InteractionResult.FAIL;
++                }
++                setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false, false);
++                // Paper end - Add PlayerItemFrameChangeEvent
+                 this.playSound(this.getRotateItemSound(), 1.0F, 1.0F);
+                 this.setRotation(this.getRotation() + 1);
+                 this.gameEvent(GameEvent.BLOCK_CHANGE, player);

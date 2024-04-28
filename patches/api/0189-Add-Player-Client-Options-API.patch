@@ -1,0 +1,250 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@benndorf.dev>
+Date: Mon, 20 Jan 2020 21:38:34 +0100
+Subject: [PATCH] Add Player Client Options API
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/ClientOption.java b/src/main/java/com/destroystokyo/paper/ClientOption.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f89bfeba29e6988db849957a508ca97ff5322242
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/ClientOption.java
+@@ -0,0 +1,52 @@
++package com.destroystokyo.paper;
++
++import net.kyori.adventure.translation.Translatable;
++import net.kyori.adventure.util.Index;
++import org.jetbrains.annotations.NotNull;
++
++import org.bukkit.inventory.MainHand;
++
++public final class ClientOption<T> {
++
++    public static final ClientOption<SkinParts> SKIN_PARTS = new ClientOption<>(SkinParts.class);
++    public static final ClientOption<Boolean> CHAT_COLORS_ENABLED = new ClientOption<>(Boolean.class);
++    public static final ClientOption<ChatVisibility> CHAT_VISIBILITY = new ClientOption<>(ChatVisibility.class);
++    public static final ClientOption<String> LOCALE = new ClientOption<>(String.class);
++    public static final ClientOption<MainHand> MAIN_HAND = new ClientOption<>(MainHand.class);
++    public static final ClientOption<Integer> VIEW_DISTANCE = new ClientOption<>(Integer.class);
++    public static final ClientOption<Boolean> ALLOW_SERVER_LISTINGS = new ClientOption<>(Boolean.class);
++    public static final ClientOption<Boolean> TEXT_FILTERING_ENABLED = new ClientOption<>(Boolean.class);
++
++    private final Class<T> type;
++
++    private ClientOption(@NotNull Class<T> type) {
++        this.type = type;
++    }
++
++    @NotNull
++    public Class<T> getType() {
++        return type;
++    }
++
++    public enum ChatVisibility implements Translatable {
++        FULL("full"),
++        SYSTEM("system"),
++        HIDDEN("hidden"),
++        UNKNOWN("unknown");
++
++        public static Index<String, ChatVisibility> NAMES = Index.create(ChatVisibility.class, chatVisibility -> chatVisibility.name);
++        private final String name;
++
++        ChatVisibility(String name) {
++            this.name = name;
++        }
++
++        @Override
++        public @NotNull String translationKey() {
++            if (this == UNKNOWN) {
++                throw new UnsupportedOperationException(this.name + " doesn't have a translation key");
++            }
++            return "options.chat.visibility." + this.name;
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/SkinParts.java b/src/main/java/com/destroystokyo/paper/SkinParts.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4a0c39405d4fbed457787e3c6ded4cc6591bc8c2
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/SkinParts.java
+@@ -0,0 +1,20 @@
++package com.destroystokyo.paper;
++
++public interface SkinParts {
++
++    boolean hasCapeEnabled();
++
++    boolean hasJacketEnabled();
++
++    boolean hasLeftSleeveEnabled();
++
++    boolean hasRightSleeveEnabled();
++
++    boolean hasLeftPantsEnabled();
++
++    boolean hasRightPantsEnabled();
++
++    boolean hasHatsEnabled();
++
++    int getRaw();
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerClientOptionsChangeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerClientOptionsChangeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6aea591ae5
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerClientOptionsChangeEvent.java
+@@ -0,0 +1,136 @@
++package com.destroystokyo.paper.event.player;
++
++import com.destroystokyo.paper.ClientOption;
++import com.destroystokyo.paper.ClientOption.ChatVisibility;
++import com.destroystokyo.paper.SkinParts;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.inventory.MainHand;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Map;
++
++/**
++ * Called when the player changes their client settings
++ */
++public class PlayerClientOptionsChangeEvent extends PlayerEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final String locale;
++    private final int viewDistance;
++    private final ChatVisibility chatVisibility;
++    private final boolean chatColors;
++    private final SkinParts skinparts;
++    private final MainHand mainHand;
++    private final boolean allowsServerListings;
++    private final boolean textFilteringEnabled;
++
++    @Deprecated
++    public PlayerClientOptionsChangeEvent(@NotNull Player player, @NotNull String locale, int viewDistance, @NotNull ChatVisibility chatVisibility, boolean chatColors, @NotNull SkinParts skinParts, @NotNull MainHand mainHand) {
++        super(player);
++        this.locale = locale;
++        this.viewDistance = viewDistance;
++        this.chatVisibility = chatVisibility;
++        this.chatColors = chatColors;
++        this.skinparts = skinParts;
++        this.mainHand = mainHand;
++        this.allowsServerListings = false;
++        this.textFilteringEnabled = false;
++    }
++
++    @ApiStatus.Internal
++    public PlayerClientOptionsChangeEvent(@NotNull Player player, @NotNull Map<ClientOption<?>, ?> options) {
++        super(player);
++
++        this.locale = (String) options.get(ClientOption.LOCALE);
++        this.viewDistance = (int) options.get(ClientOption.VIEW_DISTANCE);
++        this.chatVisibility = (ChatVisibility) options.get(ClientOption.CHAT_VISIBILITY);
++        this.chatColors = (boolean) options.get(ClientOption.CHAT_COLORS_ENABLED);
++        this.skinparts = (SkinParts) options.get(ClientOption.SKIN_PARTS);
++        this.mainHand = (MainHand) options.get(ClientOption.MAIN_HAND);
++        this.allowsServerListings = (boolean) options.get(ClientOption.ALLOW_SERVER_LISTINGS);
++        this.textFilteringEnabled = (boolean) options.get(ClientOption.TEXT_FILTERING_ENABLED);
++    }
++
++    @NotNull
++    public String getLocale() {
++        return this.locale;
++    }
++
++    public boolean hasLocaleChanged() {
++        return !this.locale.equals(this.player.getClientOption(ClientOption.LOCALE));
++    }
++
++    public int getViewDistance() {
++        return this.viewDistance;
++    }
++
++    public boolean hasViewDistanceChanged() {
++        return this.viewDistance != this.player.getClientOption(ClientOption.VIEW_DISTANCE);
++    }
++
++    @NotNull
++    public ChatVisibility getChatVisibility() {
++        return this.chatVisibility;
++    }
++
++    public boolean hasChatVisibilityChanged() {
++        return this.chatVisibility != this.player.getClientOption(ClientOption.CHAT_VISIBILITY);
++    }
++
++    public boolean hasChatColorsEnabled() {
++        return this.chatColors;
++    }
++
++    public boolean hasChatColorsEnabledChanged() {
++        return this.chatColors != this.player.getClientOption(ClientOption.CHAT_COLORS_ENABLED);
++    }
++
++    @NotNull
++    public SkinParts getSkinParts() {
++        return this.skinparts;
++    }
++
++    public boolean hasSkinPartsChanged() {
++        return this.skinparts.getRaw() != this.player.getClientOption(ClientOption.SKIN_PARTS).getRaw();
++    }
++
++    @NotNull
++    public MainHand getMainHand() {
++        return this.mainHand;
++    }
++
++    public boolean hasMainHandChanged() {
++        return this.mainHand != this.player.getClientOption(ClientOption.MAIN_HAND);
++    }
++
++    public boolean allowsServerListings() {
++        return this.allowsServerListings;
++    }
++
++    public boolean hasAllowServerListingsChanged() {
++        return this.allowsServerListings != this.player.getClientOption(ClientOption.ALLOW_SERVER_LISTINGS);
++    }
++
++    public boolean hasTextFilteringEnabled() {
++        return this.textFilteringEnabled;
++    }
++
++    public boolean hasTextFilteringChanged() {
++        return this.textFilteringEnabled != this.player.getClientOption(ClientOption.TEXT_FILTERING_ENABLED);
++    }
++
++    @Override
++    @NotNull
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 33547e9e3f8f7c906a5d91b75eb62327cc1f2a3a..7429666fd1af4f4a924cf93572df5b826782af05 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -3282,6 +3282,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     void resetCooldown();
+     // Paper end - attack cooldown API
+ 
++    // Paper start - client option API
++    /**
++     * @return the client option value of the player
++     */
++    <T> @NotNull T getClientOption(com.destroystokyo.paper.@NotNull ClientOption<T> option);
++    // Paper end - client option API
++
+     // Spigot start
+     public class Spigot extends Entity.Spigot {
+ 

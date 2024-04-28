@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 25 Sep 2022 11:21:01 -0700
+Subject: [PATCH] Fixes and additions to the SpawnReason API
+
+Fixes some wrong reasons, and adds missing spawn reasons for entities.
+
+Co-authored-by: Doc <nachito94@msn.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 7df13199eacc8dec0ba8fbf10ea507b0d1c5f591..df7b9d0693777fa203cc4d4a7519c5648e274bb6 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -366,7 +366,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+     @Nullable
+     public T spawn(ServerLevel world, @Nullable ItemStack stack, @Nullable Player player, BlockPos pos, MobSpawnType spawnReason, boolean alignPosition, boolean invertY) {
+         // CraftBukkit start
+-        return this.spawn(world, stack, player, pos, spawnReason, alignPosition, invertY, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
++        return this.spawn(world, stack, player, pos, spawnReason, alignPosition, invertY, spawnReason == MobSpawnType.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
+     }
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
+index cecfae3bee405fb57df28e83b005e100e72b896b..cde9d03286a3cbb80005b59efe7d57de86fe4eda 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
+@@ -64,7 +64,7 @@ public class DragonFireball extends AbstractHurtingProjectile {
+ 
+                 if (new com.destroystokyo.paper.event.entity.EnderDragonFireballHitEvent((org.bukkit.entity.DragonFireball) this.getBukkitEntity(), list.stream().map(LivingEntity::getBukkitLivingEntity).collect(java.util.stream.Collectors.toList()), (org.bukkit.entity.AreaEffectCloud) entityareaeffectcloud.getBukkitEntity()).callEvent()) { // Paper - EnderDragon Events
+                 this.level().levelEvent(2006, this.blockPosition(), this.isSilent() ? -1 : 1);
+-                this.level().addFreshEntity(entityareaeffectcloud);
++                this.level().addFreshEntity(entityareaeffectcloud, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EXPLOSION); // Paper - use correct spawn reason
+                 } else entityareaeffectcloud.discard(null); // Paper - EnderDragon Events
+                 this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+             }
+diff --git a/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java b/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java
+index 2c076a5b23c09f634fa6807c207e5e06e1795e8a..f87614eec0aa4e6f967add78c6758f78e7ad9505 100644
+--- a/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java
+@@ -117,7 +117,7 @@ public class FrogspawnBlock extends Block {
+                 int k = random.nextInt(1, 361);
+                 tadpole.moveTo(d, (double)pos.getY() - 0.5, e, (float)k, 0.0F);
+                 tadpole.setPersistenceRequired();
+-                world.addFreshEntity(tadpole);
++                world.addFreshEntity(tadpole, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // Paper - use correct spawn reason
+             }
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
+index 38288f20306632e6546c95b4cb1a42806be49975..f53808e200bd83ab80954ec5c1e9c14250302be8 100644
+--- a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
+@@ -87,7 +87,7 @@ public class SnifferEggBlock extends Block {
+                 Vec3 vec3 = pos.getCenter();
+                 sniffer.setBaby(true);
+                 sniffer.moveTo(vec3.x(), vec3.y(), vec3.z(), Mth.wrapDegrees(world.random.nextFloat() * 360.0F), 0.0F);
+-                world.addFreshEntity(sniffer);
++                world.addFreshEntity(sniffer, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // Paper - use correct spawn reason
+             }
+         }
+     }

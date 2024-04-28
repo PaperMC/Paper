@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrew Steinborn <git@steinborn.me>
+Date: Sun, 5 Jul 2020 22:38:18 -0400
+Subject: [PATCH] Optimize NetworkManager Exception Handling
+
+
+diff --git a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
+index 421dd76816063d56ea80339b77531729edd6aa55..1523d69b7b332f0085f40310a94d406da6513edc 100644
+--- a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
++++ b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
+@@ -39,6 +39,12 @@ public class Varint21FrameDecoder extends ByteToMessageDecoder {
+     }
+ 
+     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
++        // Paper start - Perf: Optimize exception handling; if channel is not active just discard the packet
++        if (!channelHandlerContext.channel().isActive()) {
++            byteBuf.skipBytes(byteBuf.readableBytes());
++            return;
++        }
++        // Paper end - Perf: Optimize exception handling
+         byteBuf.markReaderIndex();
+         this.helperBuf.clear();
+         if (!copyVarint(byteBuf, this.helperBuf)) {

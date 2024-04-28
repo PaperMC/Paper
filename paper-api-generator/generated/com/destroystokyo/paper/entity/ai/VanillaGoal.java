@@ -70,7 +70,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.4")
+@GeneratedFrom("1.20.5")
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<AbstractHorse> RANDOM_STAND = create("random_stand", AbstractHorse.class);
 
@@ -1122,7 +1122,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     )
     GoalKey<Mob> UNIVERSAL_ANGER_RESET = create("universal_anger_reset", Mob.class);
 
-    private static @NotNull GoalKey create(final @NotNull String key, final @NotNull Class clazz) {
-        return GoalKey.of(clazz, NamespacedKey.minecraft(key));
+    private static <T extends Mob> @NotNull GoalKey<T> create(final @NotNull String key,
+            final @NotNull Class<T> type) {
+        return GoalKey.of(type, NamespacedKey.minecraft(key));
     }
 }

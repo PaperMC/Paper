@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Thu, 30 Apr 2020 16:56:31 +0200
+Subject: [PATCH] Add Raw Byte ItemStack Serialization
+
+Serializes using NBT which is safer for server data migrations than bukkits format.
+
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index d69e5fa40702c283c370a2f712b51dc2ea3a1fa0..30d869a7c4bba79b4c05de7860b31c14f47b341a 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -153,5 +153,9 @@ public interface UnsafeValues {
+     default com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
+         return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
+     }
++
++    byte[] serializeItem(ItemStack item);
++
++    ItemStack deserializeItem(byte[] data);
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 276cfd52817115981fe7dc46363278f8b8c5aee3..e82eeadc7cb53572351670761c4e592a33345c6b 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -653,6 +653,30 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         return Bukkit.getServer().getItemFactory().ensureServerConversions(this);
+     }
+ 
++    /**
++     * Deserializes this itemstack from raw NBT bytes. NBT is safer for data migrations as it will
++     * use the built in data converter instead of bukkits dangerous serialization system.
++     *
++     * This expects that the DataVersion was stored on the root of the Compound, as saved from
++     * the {@link #serializeAsBytes()} API returned.
++     * @param bytes bytes representing an item in NBT
++     * @return ItemStack migrated to this version of Minecraft if needed.
++     */
++    @NotNull
++    public static ItemStack deserializeBytes(@NotNull byte[] bytes) {
++        return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
++    }
++
++    /**
++     * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
++     * use the built in data converter instead of bukkits dangerous serialization system.
++     * @return bytes representing this item in NBT.
++     */
++    @NotNull
++    public byte[] serializeAsBytes() {
++        return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
++    }
++
+     /**
+      * Gets the Display name as seen in the Client.
+      * Currently the server only supports the English language. To override this,

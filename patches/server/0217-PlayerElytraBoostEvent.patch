@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 21 Jul 2018 01:59:59 -0500
+Subject: [PATCH] PlayerElytraBoostEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+index 38b33eb92d21d0099285a304c6e064bbf56db4eb..16da60b7ecf2e0d4a49804dfa1ad47d4ae672571 100644
+--- a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
++++ b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+@@ -57,9 +57,19 @@ public class FireworkRocketItem extends Item implements ProjectileItem {
+             if (!world.isClientSide) {
+                 FireworkRocketEntity fireworkRocketEntity = new FireworkRocketEntity(world, itemStack, user);
+                 fireworkRocketEntity.spawningEntity = user.getUUID(); // Paper
+-                world.addFreshEntity(fireworkRocketEntity);
+-                itemStack.consume(1, user);
+-                user.awardStat(Stats.ITEM_USED.get(this));
++                // Paper start - PlayerElytraBoostEvent
++                com.destroystokyo.paper.event.player.PlayerElytraBoostEvent event = new com.destroystokyo.paper.event.player.PlayerElytraBoostEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Firework) fireworkRocketEntity.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand));
++                if (event.callEvent() && world.addFreshEntity(fireworkRocketEntity)) {
++                    user.awardStat(Stats.ITEM_USED.get(this));
++                    if (event.shouldConsume() && !user.hasInfiniteMaterials()) {
++                        itemStack.shrink(1);
++                    } else ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                } else if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                    // Paper end - PlayerElytraBoostEvent
++                }
++
++                // user.awardStat(Stats.ITEM_USED.get(this)); // Paper - PlayerElytraBoostEvent; move up
+             }
+ 
+             return InteractionResultHolder.sidedSuccess(user.getItemInHand(hand), world.isClientSide());

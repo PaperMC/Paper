@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 27 Mar 2019 22:48:45 -0400
+Subject: [PATCH] Server Tick Events
+
+Fires event at start and end of a server tick
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 4f4e662e8f21e92b49c3d3811a24f9acedde9fff..91981ef15a9d8a46681f39ec8cf0f136f9931968 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1410,6 +1410,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         });
+         isOversleep = false;MinecraftTimings.serverOversleep.stopTiming();
+         // Paper end
++        new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.tickCount+1).callEvent(); // Paper - Server Tick Events
+ 
+         ++this.tickCount;
+         this.tickRateManager.tick();
+@@ -1436,6 +1437,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.runAllTasks();
+         }
+         // Paper end
++        // Paper start - Server Tick Events
++        long endTime = System.nanoTime();
++        long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
++        new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
++        // Paper end - Server Tick Events
+         this.profiler.push("tallying");
+         long j = Util.getNanos() - i;
+         int k = this.tickCount % 100;

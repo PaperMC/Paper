@@ -9,21 +9,21 @@ public net.minecraft.server.packs.VanillaPackResourcesBuilder safeGetPath(Ljava/
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 74849d7b20e3c3831a6a6c3715a6e875d6ff8a48..517aaae21f8fbd6916ab23d85dac5f74aea9e984 100644
+index a457cf30d37037ce09fbe5d26e051b9555ce9982..9ca8ddea1d53076e0f23c6e3bf3e3eca5cceb393 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -9,9 +9,7 @@ plugins {
+@@ -8,9 +8,7 @@ plugins {
  dependencies {
      implementation(project(":paper-api"))
      implementation("jline:jline:2.12.1")
--    implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") {
+-    implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") {
 -        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
 -    }
-+    implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
-     implementation("org.ow2.asm:asm-commons:9.5")
++    implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") // Paper - remove exclusion
+     implementation("org.ow2.asm:asm-commons:9.7")
      implementation("commons-lang:commons-lang:2.6")
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
-@@ -36,6 +34,7 @@ tasks.jar {
+     runtimeOnly("org.xerial:sqlite-jdbc:3.45.3.0")
+@@ -38,6 +36,7 @@ tasks.jar {
          val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
          val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
          val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
@@ -31,36 +31,24 @@ index 74849d7b20e3c3831a6a6c3715a6e875d6ff8a48..517aaae21f8fbd6916ab23d85dac5f74
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
              "Implementation-Title" to "CraftBukkit",
-@@ -44,6 +43,9 @@ tasks.jar {
+@@ -46,6 +45,9 @@ tasks.jar {
              "Specification-Title" to "Bukkit",
              "Specification-Version" to project.version,
              "Specification-Vendor" to "Bukkit Team",
 +            "Git-Branch" to gitBranch, // Paper
 +            "Git-Commit" to gitHash, // Paper
-+            "CraftBukkit-Package-Version" to craftbukkitPackageVersion, // Paper
++            "CraftBukkit-Package-Version" to paperweight.craftBukkitPackageVersion.get(), // Paper
          )
          for (tld in setOf("net", "com", "org")) {
              attributes("$tld/bukkit", "Sealed" to true)
-@@ -51,6 +53,11 @@ tasks.jar {
-     }
- }
- 
-+tasks.compileJava {
-+    // incremental compilation is currently broken due to patched files having compiled counterparts already on the compile classpath
-+    options.setIncremental(false)
-+}
-+
- publishing {
-     publications.create<MavenPublication>("maven") {
-         artifact(tasks.shadowJar)
-@@ -77,6 +84,17 @@ tasks.shadowJar {
+@@ -58,6 +60,17 @@ publishing {
      }
  }
  
 +// Paper start
 +val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
 +    badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
-+    jarToScan.set(tasks.shadowJar.flatMap { it.archiveFile })
++    jarToScan.set(tasks.serverJar.flatMap { it.archiveFile })
 +    classpath.from(configurations.compileClasspath)
 +}
 +tasks.check {
@@ -71,27 +59,17 @@ index 74849d7b20e3c3831a6a6c3715a6e875d6ff8a48..517aaae21f8fbd6916ab23d85dac5f74
  tasks.test {
      exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
      useJUnitPlatform()
-@@ -135,7 +153,14 @@ tasks.registerRunTask("runReobf") {
-     classpath(runtimeClasspathWithoutVanillaServer)
- }
- 
-+val runtimeClasspathForRunDev = sourceSets.main.flatMap { src ->
-+    src.runtimeClasspath.elements.map { elements ->
-+        elements.filterNot { file -> file.asFile.endsWith("minecraft.jar") }
-+    }
-+}
+@@ -123,4 +136,5 @@ tasks.registerRunTask("runReobf") {
  tasks.registerRunTask("runDev") {
      description = "Spin up a non-relocated Mojang-mapped test server"
--    classpath(sourceSets.main.map { it.runtimeClasspath })
-+    classpath(tasks.filterProjectDir.flatMap { it.outputJar })
-+    classpath(runtimeClasspathForRunDev)
-+    jvmArgs("-DPaper.isRunDev=true")
+     classpath(sourceSets.main.map { it.runtimeClasspath })
++    jvmArgs("-DPaper.pushPaperAssetsRoot=true")
  }
 diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
-index 68e3d54c79924d72b22eb3bc142ff47aa1700895..d3300e43523429fdd0e61c5aa9aed2e6bc78e07e 100644
+index 0e93817621bad5d69cf0f9f839d033c47c861457..0ad6d9d417193248f6a9df67f1d1a66cef3ff122 100644
 --- a/src/main/java/net/minecraft/resources/ResourceLocation.java
 +++ b/src/main/java/net/minecraft/resources/ResourceLocation.java
-@@ -26,6 +26,7 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+@@ -32,6 +32,7 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
      public static final char NAMESPACE_SEPARATOR = ':';
      public static final String DEFAULT_NAMESPACE = "minecraft";
      public static final String REALMS_NAMESPACE = "realms";
@@ -99,46 +77,90 @@ index 68e3d54c79924d72b22eb3bc142ff47aa1700895..d3300e43523429fdd0e61c5aa9aed2e6
      private final String namespace;
      private final String path;
  
-diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 602964d92ddf9e4ec47ed3cb45787fdd061a881e..6b0a1ff870e013a83f7922021ab296bb1c716079 100644
---- a/src/main/java/net/minecraft/server/Main.java
-+++ b/src/main/java/net/minecraft/server/Main.java
-@@ -105,6 +105,17 @@ public class Main {
-             */ // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java b/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java
+index 14fc03563daea531314c7ceba56dbb47884010ee..fcf95958ef659c7aa8e28026961fa1d6a5f8b28c 100644
+--- a/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java
++++ b/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java
+@@ -138,6 +138,15 @@ public class VanillaPackResourcesBuilder {
  
-         try {
-+            // Paper start
-+            if (Boolean.getBoolean("Paper.isRunDev")) {
-+                net.minecraft.server.packs.VanillaPackResourcesBuilder.developmentConfig = builder -> {
-+                    try {
-+                        builder.pushAssetPath(net.minecraft.server.packs.PackType.SERVER_DATA, net.minecraft.server.packs.VanillaPackResourcesBuilder.safeGetPath(java.util.Objects.requireNonNull(Main.class.getResource("/data/.paperassetsroot"), "Missing required .paperassetsroot file").toURI()).getParent());
-+                    } catch (java.net.URISyntaxException | IOException ex) {
-+                        throw new RuntimeException(ex);
-+                    }
-+                };
+     public VanillaPackResourcesBuilder applyDevelopmentConfig() {
+         developmentConfig.accept(this);
++        if (Boolean.getBoolean("Paper.pushPaperAssetsRoot")) {
++            try {
++                this.pushAssetPath(net.minecraft.server.packs.PackType.SERVER_DATA, net.minecraft.server.packs.VanillaPackResourcesBuilder.safeGetPath(java.util.Objects.requireNonNull(
++                    // Important that this is a patched class
++                    VanillaPackResourcesBuilder.class.getResource("/data/.paperassetsroot"), "Missing required .paperassetsroot file").toURI()).getParent());
++            } catch (java.net.URISyntaxException | IOException ex) {
++                throw new RuntimeException(ex);
 +            }
-+            // Paper end
- 
-             Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
- 
-diff --git a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
-index a2a8bce29ec5540de89095574dfdc0ca9b17bbd3..d92cd89373f8373c367ce422328b9836de09096d 100644
---- a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
-+++ b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
-@@ -32,7 +32,7 @@ public class ServerPacksSource extends BuiltInPackSource {
- 
-     @VisibleForTesting
-     public static VanillaPackResources createVanillaPackSource() {
--        return (new VanillaPackResourcesBuilder()).setMetadata(BUILT_IN_METADATA).exposeNamespace("minecraft").applyDevelopmentConfig().pushJarResources().build();
-+        return (new VanillaPackResourcesBuilder()).setMetadata(BUILT_IN_METADATA).exposeNamespace("minecraft", ResourceLocation.PAPER_NAMESPACE).applyDevelopmentConfig().pushJarResources().build(); // Paper
++        }
+         return this;
      }
  
+diff --git a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+index a5e8713bc0fefae455b666ebf13c9529e7ba94e6..def8ed40ef732b512a07fe50449c77a860b97462 100644
+--- a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
++++ b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+@@ -48,7 +48,7 @@ public class ServerPacksSource extends BuiltInPackSource {
+     public static VanillaPackResources createVanillaPackSource() {
+         return new VanillaPackResourcesBuilder()
+             .setMetadata(BUILT_IN_METADATA)
+-            .exposeNamespace("minecraft")
++            .exposeNamespace("minecraft", ResourceLocation.PAPER_NAMESPACE) // Paper
+             .applyDevelopmentConfig()
+             .pushJarResources()
+             .build(VANILLA_PACK_INFO);
+@@ -68,7 +68,15 @@ public class ServerPacksSource extends BuiltInPackSource {
+     @Nullable
      @Override
+     protected Pack createBuiltinPack(String fileName, Pack.ResourcesSupplier packFactory, Component displayName) {
+-        return Pack.readMetaAndCreate(createBuiltInPackLocation(fileName, displayName), packFactory, PackType.SERVER_DATA, FEATURE_SELECTION_CONFIG);
++        // Paper start - custom built-in pack
++        final PackLocationInfo info;
++        if ("paper".equals(fileName)) {
++            info = new PackLocationInfo(fileName, displayName, PackSource.BUILT_IN, Optional.empty());
++        } else {
++            info = createBuiltInPackLocation(fileName, displayName);
++        }
++        return Pack.readMetaAndCreate(info, packFactory, PackType.SERVER_DATA, FEATURE_SELECTION_CONFIG);
++        // Paper end - custom built-in pack
+     }
+ 
+     public static PackRepository createPackRepository(Path dataPacksPath, DirectoryValidator symlinkFinder) {
+diff --git a/src/main/java/net/minecraft/world/level/DataPackConfig.java b/src/main/java/net/minecraft/world/level/DataPackConfig.java
+index 3338a2423275ffff000a61d49167bb631bac3e32..72b5095b286009e95c7cbc0a579d3527d4b88866 100644
+--- a/src/main/java/net/minecraft/world/level/DataPackConfig.java
++++ b/src/main/java/net/minecraft/world/level/DataPackConfig.java
+@@ -9,8 +9,8 @@ public class DataPackConfig {
+     public static final DataPackConfig DEFAULT = new DataPackConfig(ImmutableList.of("vanilla"), ImmutableList.of());
+     public static final Codec<DataPackConfig> CODEC = RecordCodecBuilder.create(
+         instance -> instance.group(
+-                    Codec.STRING.listOf().fieldOf("Enabled").forGetter(settings -> settings.enabled),
+-                    Codec.STRING.listOf().fieldOf("Disabled").forGetter(settings -> settings.disabled)
++                    Codec.STRING.listOf().validate(DataPackConfig::ensureEnabled).fieldOf("Enabled").forGetter(settings -> settings.enabled), // Paper - ensure "paper" is always enabled
++                    Codec.STRING.listOf().validate(DataPackConfig::ensureNotDisabled).fieldOf("Disabled").forGetter(settings -> settings.disabled) // Paper - ensure "paper" is always enabled
+                 )
+                 .apply(instance, DataPackConfig::new)
+     );
+@@ -29,4 +29,13 @@ public class DataPackConfig {
+     public List<String> getDisabled() {
+         return this.disabled;
+     }
++    // Paper start - ensure "paper" datapack is always enabled
++    private static com.mojang.serialization.DataResult<List<String>> ensureEnabled(final List<String> enabled) {
++        return com.mojang.serialization.DataResult.success(enabled.contains("paper") ? enabled:  io.papermc.paper.util.MCUtil.copyListAndAdd(enabled, "paper"));
++    }
++
++    private static com.mojang.serialization.DataResult<List<String>> ensureNotDisabled(final List<String> disabled) {
++        return com.mojang.serialization.DataResult.success(io.papermc.paper.util.MCUtil.copyListAndRemoveIf(disabled, "paper"::equals));
++    }
++    // Paper end - ensure "paper" datapack is always enabled
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 4fad736163683f49502ccd2d3122a4eef0a4a20e..a7921cde2b6275d730879b2814cc5f430520b051 100644
+index 5595eb892fa868508c45448942da65d7c11d49fd..4b8602b168f9dd386aa72b4e5d189c441c93542e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -209,7 +209,7 @@ public class Main {
+@@ -210,7 +210,7 @@ public class Main {
                  }
  
                  if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
@@ -146,7 +168,7 @@ index 4fad736163683f49502ccd2d3122a4eef0a4a20e..a7921cde2b6275d730879b2814cc5f43
 +                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
  
                      Calendar deadline = Calendar.getInstance();
-                     deadline.add(Calendar.DAY_OF_YEAR, -7);
+                     deadline.add(Calendar.DAY_OF_YEAR, -3);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 index 93046379d0cefd5d3236fc59e698809acdc18f80..774556a62eb240da42e84db4502e2ed43495be17 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
@@ -163,3 +185,27 @@ index 93046379d0cefd5d3236fc59e698809acdc18f80..774556a62eb240da42e84db4502e2ed4
 diff --git a/src/main/resources/data/.paperassetsroot b/src/main/resources/data/.paperassetsroot
 new file mode 100644
 index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/src/main/resources/data/minecraft/datapacks/paper/pack.mcmeta b/src/main/resources/data/minecraft/datapacks/paper/pack.mcmeta
+new file mode 100644
+index 0000000000000000000000000000000000000000..288fbe68c6053f40e72f0feedef0ae0fed10fa67
+--- /dev/null
++++ b/src/main/resources/data/minecraft/datapacks/paper/pack.mcmeta
+@@ -0,0 +1,6 @@
++{
++    "pack": {
++        "description": "Built-in Paper Datapack",
++        "pack_format": 41
++    }
++}
+diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+index 1bdf0b2b8f8e6dace403695fece80ebb3dc9e039..544307fe34cbcfa286a7d7b30900ebea127d189e 100644
+--- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
++++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+@@ -43,6 +43,7 @@ public abstract class AbstractTestingBase {
+     public static final Registry<Biome> BIOMES;
+ 
+     static {
++        System.setProperty("Paper.pushPaperAssetsRoot", "true"); // Paper
+         SharedConstants.tryDetectVersion();
+         Bootstrap.bootStrap();
+         // Populate available packs

@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 26 May 2021 17:09:07 -0400
+Subject: [PATCH] Add BellRevealRaiderEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
+index 86dac3f82da065bf79d94da9df192f51ce4665e2..946c9dbfabf154db53d811906fd98d17992167d1 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
+@@ -156,7 +156,7 @@ public class BellBlockEntity extends BlockEntity {
+             return BellBlockEntity.isRaiderWithinRange(pos, entityliving);
+         }).map((entity) -> (org.bukkit.entity.LivingEntity) entity.getBukkitEntity()).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new)); // CraftBukkit
+ 
+-        org.bukkit.craftbukkit.event.CraftEventFactory.handleBellResonateEvent(world, pos, entities).forEach(BellBlockEntity::glow);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBellResonateEvent(world, pos, entities).forEach(entity -> glow(entity, pos)); // Paper - Add BellRevealRaiderEvent
+         // CraftBukkit end
+     }
+ 
+@@ -189,6 +189,13 @@ public class BellBlockEntity extends BlockEntity {
+     }
+ 
+     private static void glow(LivingEntity entity) {
++        // Paper start - Add BellRevealRaiderEvent
++        glow(entity, null);
++    }
++
++    private static void glow(LivingEntity entity, @javax.annotation.Nullable BlockPos pos) {
++        if (pos != null && !new io.papermc.paper.event.block.BellRevealRaiderEvent(org.bukkit.craftbukkit.block.CraftBlock.at(entity.level(), pos), (org.bukkit.entity.Raider) entity.getBukkitEntity()).callEvent()) return;
++        // Paper end - Add BellRevealRaiderEvent
+         entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60));
+     }
+ 

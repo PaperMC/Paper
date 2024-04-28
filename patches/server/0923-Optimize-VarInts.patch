@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: astei <andrew@steinborn.me>
+Date: Sat, 28 Oct 2023 19:46:21 -0400
+Subject: [PATCH] Optimize VarInts
+
+https://github.com/PaperMC/Paper/pull/6957#issuecomment-985250854
+
+diff --git a/src/main/java/net/minecraft/network/VarInt.java b/src/main/java/net/minecraft/network/VarInt.java
+index 49a8ddc269d53458cfbd639b7de838c2e5765748..74ed47659d3e615c2dae7da98d5a8cf1559625bf 100644
+--- a/src/main/java/net/minecraft/network/VarInt.java
++++ b/src/main/java/net/minecraft/network/VarInt.java
+@@ -9,6 +9,18 @@ public class VarInt {
+     private static final int DATA_BITS_PER_BYTE = 7;
+ 
+     public static int getByteSize(int i) {
++    // Paper start - Optimize VarInts
++        return VARINT_EXACT_BYTE_LENGTHS[Integer.numberOfLeadingZeros(i)];
++    }
++    private static final int[] VARINT_EXACT_BYTE_LENGTHS = new int[33];
++    static {
++        for (int i = 0; i <= 32; ++i) {
++            VARINT_EXACT_BYTE_LENGTHS[i] = (int) Math.ceil((31d - (i - 1)) / 7d);
++        }
++        VARINT_EXACT_BYTE_LENGTHS[32] = 1; // Special case for the number 0.
++    }
++    public static int getByteSizeOld(int i) {
++    // Paper end - Optimize VarInts
+         for (int j = 1; j < 5; j++) {
+             if ((i & -1 << j * 7) == 0) {
+                 return j;
+@@ -39,6 +51,21 @@ public class VarInt {
+     }
+ 
+     public static ByteBuf write(ByteBuf buf, int i) {
++     // Paper start - Optimize VarInts
++        // Peel the one and two byte count cases explicitly as they are the most common VarInt sizes
++        // that the proxy will write, to improve inlining.
++        if ((i & (0xFFFFFFFF << 7)) == 0) {
++            buf.writeByte(i);
++        } else if ((i & (0xFFFFFFFF << 14)) == 0) {
++            int w = (i & 0x7F | 0x80) << 8 | (i >>> 7);
++            buf.writeShort(w);
++        } else {
++            writeOld(buf, i);
++        }
++        return buf;
++    }
++    public static ByteBuf writeOld(ByteBuf buf, int i) {
++    // Paper end - Optimize VarInts
+         while ((i & -128) != 0) {
+             buf.writeByte(i & 127 | 128);
+             i >>>= 7;

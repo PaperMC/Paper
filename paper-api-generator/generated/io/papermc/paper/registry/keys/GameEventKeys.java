@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.4")
+@GeneratedFrom("1.20.5")
 @ApiStatus.Experimental
 public final class GameEventKeys {
     /**
@@ -125,6 +125,13 @@ public final class GameEventKeys {
     public static final TypedKey<GameEvent> ELYTRA_GLIDE = create(key("elytra_glide"));
 
     /**
+     * {@code minecraft:entity_action}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> ENTITY_ACTION = create(key("entity_action"));
+
+    /**
      * {@code minecraft:entity_damage}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -165,13 +172,6 @@ public final class GameEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<GameEvent> ENTITY_PLACE = create(key("entity_place"));
-
-    /**
-     * {@code minecraft:entity_action}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<GameEvent> ENTITY_ACTION = create(key("entity_action"));
 
     /**
      * {@code minecraft:equip}
@@ -286,62 +286,6 @@ public final class GameEventKeys {
     public static final TypedKey<GameEvent> PROJECTILE_SHOOT = create(key("projectile_shoot"));
 
     /**
-     * {@code minecraft:sculk_sensor_tendrils_clicking}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<GameEvent> SCULK_SENSOR_TENDRILS_CLICKING = create(key("sculk_sensor_tendrils_clicking"));
-
-    /**
-     * {@code minecraft:shear}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<GameEvent> SHEAR = create(key("shear"));
-
-    /**
-     * {@code minecraft:shriek}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<GameEvent> SHRIEK = create(key("shriek"));
-
-    /**
-     * {@code minecraft:splash}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<GameEvent> SPLASH = create(key("splash"));
-
-    /**
-     * {@code minecraft:step}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<GameEvent> STEP = create(key("step"));
-
-    /**
-     * {@code minecraft:swim}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<GameEvent> SWIM = create(key("swim"));
-
-    /**
-     * {@code minecraft:teleport}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<GameEvent> TELEPORT = create(key("teleport"));
-
-    /**
-     * {@code minecraft:unequip}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<GameEvent> UNEQUIP = create(key("unequip"));
-
-    /**
      * {@code minecraft:resonate_1}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -445,6 +389,62 @@ public final class GameEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<GameEvent> RESONATE_15 = create(key("resonate_15"));
+
+    /**
+     * {@code minecraft:sculk_sensor_tendrils_clicking}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> SCULK_SENSOR_TENDRILS_CLICKING = create(key("sculk_sensor_tendrils_clicking"));
+
+    /**
+     * {@code minecraft:shear}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> SHEAR = create(key("shear"));
+
+    /**
+     * {@code minecraft:shriek}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> SHRIEK = create(key("shriek"));
+
+    /**
+     * {@code minecraft:splash}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> SPLASH = create(key("splash"));
+
+    /**
+     * {@code minecraft:step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> STEP = create(key("step"));
+
+    /**
+     * {@code minecraft:swim}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> SWIM = create(key("swim"));
+
+    /**
+     * {@code minecraft:teleport}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> TELEPORT = create(key("teleport"));
+
+    /**
+     * {@code minecraft:unequip}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> UNEQUIP = create(key("unequip"));
 
     private GameEventKeys() {
     }

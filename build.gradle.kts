@@ -1,3 +1,4 @@
+import io.papermc.paperweight.PaperweightException
 import io.papermc.paperweight.tasks.BaseTask
 import io.papermc.paperweight.util.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
@@ -10,8 +11,7 @@ import kotlin.io.path.*
 plugins {
     java
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
-    id("io.papermc.paperweight.core") version "1.5.11"
+    id("io.papermc.paperweight.core") version "1.6.2"
 }
 
 allprojects {
@@ -20,7 +20,7 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
+            languageVersion = JavaLanguageVersion.of(21)
         }
     }
 }
@@ -30,7 +30,7 @@ val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 subprojects {
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
-        options.release = 17
+        options.release = 21
     }
     tasks.withType<Javadoc> {
         options.encoding = Charsets.UTF_8.name()
@@ -49,6 +49,7 @@ subprojects {
     repositories {
         mavenCentral()
         maven(paperMavenPublicUrl)
+        maven("https://s01.oss.sonatype.org/content/repositories/snapshots/") // TODO - Adventure snapshot
     }
 }
 
@@ -67,10 +68,10 @@ repositories {
 }
 
 dependencies {
-    paramMappings("net.fabricmc:yarn:1.20.4+build.1:mergedv2")
-    remapper("net.fabricmc:tiny-remapper:0.8.10:fat")
-    decompiler("net.minecraftforge:forgeflower:2.0.627.2")
-    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.6")
+    paramMappings("net.fabricmc:yarn:1.20.5+build.1:mergedv2")
+    remapper("net.fabricmc:tiny-remapper:0.10.2:fat")
+    decompiler("org.vineflower:vineflower:1.10.1")
+    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.13")
     paperclip("io.papermc:paperclip:3.0.3")
 }
 
@@ -93,8 +94,6 @@ paperweight {
         mappingsPatch = layout.projectDirectory.file("build-data/mappings-patch.tiny")
         reobfMappingsPatch = layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny")
 
-        spigotServerPatchPatchesDir = layout.projectDirectory.dir("build-data/spigot-server-patches")
-
         reobfPackagesToFix.addAll(
             "co.aikar.timings",
             "com.destroystokyo.paper",
@@ -115,7 +114,7 @@ tasks.generateDevelopmentBundle {
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
         paperMavenPublicUrl,
-        "https://s01.oss.sonatype.org/content/repositories/snapshots/", // todo Remove when updating adventure to release
+        "https://s01.oss.sonatype.org/content/repositories/snapshots/", // TODO - Adventure snapshot
     )
 }
 
@@ -169,6 +168,7 @@ if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()
         appliedPatches = file("patches/server")
         unappliedPatches = file("patches/unapplied/server")
         applyTaskName = "applyServerPatches"
+        patchedDir = "Paper-Server"
     }
 }
 
@@ -186,6 +186,9 @@ abstract class RebasePatches : BaseTask() {
     @get:Input
     abstract val applyTaskName: Property<String>
 
+    @get:Input
+    abstract val patchedDir: Property<String>
+
     private fun unapplied(): List<Path> =
         unappliedPatches.path.listDirectoryEntries("*.patch").sortedBy { it.name }
 
@@ -193,11 +196,20 @@ abstract class RebasePatches : BaseTask() {
 
     companion object {
         val regex = Pattern.compile("Patch failed at ([0-9]{4}) (.*)")
+        val continuationRegex = Pattern.compile("^\\s{1}.+\$")
         const val subjectPrefix = "Subject: [PATCH] "
     }
 
     @TaskAction
     fun run() {
+        val patchedDirPath = projectDir.path.resolve(patchedDir.get())
+        if (patchedDirPath.isDirectory()) {
+            val status = Git(patchedDirPath)("status").getText()
+            if (status.contains("You are in the middle of an am session.")) {
+                throw PaperweightException("Cannot continue update when $patchedDirPath is in the middle of an am session.")
+            }
+        }
+
         val unapplied = unapplied()
         for (patch in unapplied) {
             patch.copyTo(appliedLoc(patch))
@@ -222,8 +234,19 @@ abstract class RebasePatches : BaseTask() {
             val failedSubjectFragment = matcher.group(2)
             val failed = unapplied.single { p ->
                 p.useLines { lines ->
-                    val subjectLine = lines.single { it.startsWith(subjectPrefix) }
-                        .substringAfter(subjectPrefix)
+                    val collect = mutableListOf<String>()
+                    for (line in lines) {
+                        if (line.startsWith(subjectPrefix)) {
+                            collect += line
+                        } else if (collect.size == 1) {
+                            if (continuationRegex.matcher(line).matches()) {
+                                collect += line
+                            } else {
+                                break
+                            }
+                        }
+                    }
+                    val subjectLine = collect.joinToString("").substringAfter(subjectPrefix)
                     subjectLine.startsWith(failedSubjectFragment)
                 }
             }
@@ -248,6 +271,8 @@ abstract class RebasePatches : BaseTask() {
                 }
             }
 
+            // Delete the build file before resetting the AM session in case it has compilation errors
+            patchedDirPath.resolve("build.gradle.kts").deleteIfExists()
             // Apply again to reset the am session (so it ends on the failed patch, to allow us to rebuild after fixing it)
             val apply2 = ProcessBuilder()
                 .directory(projectDir.path)

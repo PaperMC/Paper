@@ -1,0 +1,202 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 27 Apr 2024 20:56:17 -0700
+Subject: [PATCH] General ItemMeta fixes
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index aa23d417272bb160bba8358a8ab0792b56bc0a01..eba5a27e452c4063567fb02d6aabdfb0446d5daf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -326,7 +326,14 @@ public final class CraftItemStack extends ItemStack {
+     // Paper end - improve handled tags on type change
+     // Paper start
+     public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta itemMeta) {
+-        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
++        // Paper start - support updating profile after resolving it
++        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
++            @Override
++            void skullCallback(final com.mojang.authlib.GameProfile gameProfile) {
++                itemStack.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
++            }
++        };
++        // Paper end - support updating profile after resolving it
+         ((CraftMetaItem) itemMeta).applyToItem(tag);
+         itemStack.applyComponents(tag.build());
+     }
+@@ -687,7 +694,14 @@ public final class CraftItemStack extends ItemStack {
+         }
+ 
+         if (!((CraftMetaItem) itemMeta).isEmpty()) {
+-            CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
++            // Paper start - support updating profile after resolving it
++            CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
++                @Override
++                void skullCallback(final com.mojang.authlib.GameProfile gameProfile) {
++                    item.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
++                }
++            };
++            // Paper end - support updating profile after resolving it
+ 
+             ((CraftMetaItem) itemMeta).applyToItem(tag);
+             item.restorePatch(tag.build());
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
+index 2d6abecc94683f92da6be26b72ea829663b16d76..6a3b0c7f0cc3ffb17a231383ad103fa792d7b7ba 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
+@@ -107,6 +107,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+     void applyToItem(CraftMetaItem.Applicator tag) {
+         super.applyToItem(tag);
+ 
++        if (this.patterns.isEmpty()) return; // Paper - don't write empty patterns
+         List<BannerPatternLayers.Layer> newPatterns = new ArrayList<>();
+ 
+         for (Pattern p : this.patterns) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+index 7f3733c29f2e79bffa24631efb20de49fde857f2..6a6e9a1478a2ead20467bc711d0ad4a9ab3010cb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+@@ -116,8 +116,8 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
+             }
+         }
+ 
+-        this.resolved = SerializableMeta.getObject(Boolean.class, map, CraftMetaBookSigned.RESOLVED.BUKKIT, true);
+-        this.generation = SerializableMeta.getObject(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true);
++        this.resolved = SerializableMeta.getBoolean(map, CraftMetaBookSigned.RESOLVED.BUKKIT); // Paper - General ItemMeta fixes
++        this.generation = SerializableMeta.getObjectOptionally(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true).orElse(0); // Paper - General ItemMeta Fixes
+     }
+ 
+     @Override
+@@ -129,7 +129,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
+             for (Component page : this.pages) {
+                 list.add(Filterable.passThrough(page));
+             }
+-            itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(FilteredText.passThrough(this.title)), this.author, this.generation, list, this.resolved));
++            itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(FilteredText.passThrough(this.title == null ? "" : this.title)), this.author == null ? "" : this.author, this.generation, list, this.resolved));
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
+index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..88245d8704f4df3075d592a68a4715565e9eed8c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
+@@ -186,9 +186,13 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+         }
+ 
+         List<FireworkExplosion> effects = new ArrayList<>();
+-        for (FireworkEffect effect : this.effects) {
+-            effects.add(CraftMetaFirework.getExplosion(effect));
++        // Paper start - fix NPE with effects list being null
++        if (this.effects != null) {
++            for (FireworkEffect effect : this.effects) {
++                effects.add(CraftMetaFirework.getExplosion(effect));
++            }
+         }
++        // Paper end
+ 
+         itemTag.put(CraftMetaFirework.FIREWORKS, new Fireworks(this.power, effects));
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 8973a08f39279415e28a4fadf0015f1ab9581350..8dfba4091670a1f830d3a0128d7170f2b9b4ddb7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -165,9 +165,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         }
+     }
+ 
+-    static final class Applicator {
++    static abstract class Applicator { // Paper - support updating profile after resolving it
+ 
+         final DataComponentPatch.Builder builder = DataComponentPatch.builder();
++        void skullCallback(com.mojang.authlib.GameProfile gameProfile) {} // Paper - support updating profile after resolving it
+ 
+         <T> Applicator put(ItemMetaKeyType<T> key, T value) {
+             this.builder.set(key.TYPE, value);
+@@ -1397,7 +1398,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public String getAsString() {
+-        CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
++        CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {}; // Paper - support updating profile after resolving it
+         this.applyToItem(tag);
+         DataComponentPatch patch = tag.build();
+         Tag nbt = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+index c769d2a210060f6829a6cbe739d6d9ab2f602644..1feffe289a1e714084bd37b5c5ad23a37dd58325 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+@@ -137,10 +137,10 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+             // Fill in textures
+             PlayerProfile ownerProfile = new CraftPlayerProfile(this.profile); // getOwnerProfile may return null
+             if (ownerProfile.getTextures().isEmpty()) {
+-                ownerProfile.update().thenAccept((filledProfile) -> {
++                ownerProfile.update().thenAcceptAsync((filledProfile) -> { // Paper - run on main thread
+                     this.setOwnerProfile(filledProfile);
+-                    tag.put(CraftMetaSkull.SKULL_PROFILE, new ResolvableProfile(this.profile));
+-                });
++                    tag.skullCallback(this.profile); // Paper - actually set profile on itemstack
++                }, ((org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer()).getServer()); // Paper - run on main thread
+             }
+         }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+index 05a4a06c0def28fc97e61b4712c45c8730fec60c..a86eb660d8f523cb99a0b668ef1130535d50ce1c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+@@ -110,4 +110,21 @@ public final class SerializableMeta implements ConfigurationSerializable {
+         }
+         throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
+     }
++
++    // Paper start - General ItemMeta Fixes
++    public static <T> java.util.Optional<T> getObjectOptionally(Class<T> clazz, Map<?, ?> map, Object field, boolean nullable) {
++        final Object object = map.get(field);
++
++        if (clazz.isInstance(object)) {
++            return java.util.Optional.of(clazz.cast(object));
++        }
++        if (object == null) {
++            if (!nullable) {
++                throw new NoSuchElementException(map + " does not contain " + field);
++            }
++            return java.util.Optional.empty();
++        }
++        throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
++    }
++    // Paper end - General ItemMeta Fixes
+ }
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
+index 0b11d5ea89539decd2f6c60c5b581bbd78ff1fd6..74ebadacbbd11b5a0d8f8c6cd6409cce17cfa37d 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
+@@ -92,7 +92,7 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
+     public void testNBTTagStoring() {
+         CraftMetaItem itemMeta = this.createComplexItemMeta();
+ 
+-        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
++        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator() {}; // Paper
+         itemMeta.applyToItem(compound);
+ 
+         assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
+index f3939074a886b20f17b00dd3c39833725f47d3f0..1123cc60671c1a48bba9b2baa1f10c6d5a6855fe 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
+@@ -126,7 +126,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+     public void testNBTTagStoring() {
+         CraftMetaItem itemMeta = this.createComplexItemMeta();
+ 
+-        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
++        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator() {}; // Paper
+         itemMeta.applyToItem(compound);
+ 
+         assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
+@@ -472,7 +472,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+         assertEquals(List.of(), container.get(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings()));
+ 
+         // Write and read the entire container to NBT
+-        final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator();
++        final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator() {}; // Paper
+         craftItem.applyToItem(storage);
+ 
+         final CraftMetaItem readItem = new CraftMetaItem(storage.build(), null); // Paper

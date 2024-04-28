@@ -8,10 +8,10 @@ Adds API's to load or generate chunks asynchronously.
 Also adds utility methods to Entity to teleport asynchronously.
 
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 25ff747e23e7373bb96ca9109df7e46cdefdcd2e..116bad653e92efbfd576f3b146c0a9e40afbbe10 100644
+index b3098ce9134acf24f49d23fc1babe79c6bf502f1..5efe33cef4d9c153d760fc71606721ff8abafbfc 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -941,6 +941,472 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -950,6 +950,472 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      }
      // Paper end - additional getNearbyEntities API
  
@@ -485,10 +485,10 @@ index 25ff747e23e7373bb96ca9109df7e46cdefdcd2e..116bad653e92efbfd576f3b146c0a9e4
       * Get a list of all players in this World
       *
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 77a706dde5995a8a6306b1d0a144dd37d580dea3..14e42959033919ff6409e48ddf01c0f15c28eb10 100644
+index 1e43deadce5a1a0e97521b1f69fee3106f5a0b9e..f1fc42ad24648ee481b9a5d4c4cc58ae8c0a93c1 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -168,6 +168,33 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -168,6 +168,39 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
       */
      public boolean teleport(@NotNull Entity destination, @NotNull TeleportCause cause);
  
@@ -498,25 +498,31 @@ index 77a706dde5995a8a6306b1d0a144dd37d580dea3..14e42959033919ff6409e48ddf01c0f1
 +     * @param loc Location to teleport to
 +     * @return A future that will be completed with the result of the teleport
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Boolean> teleportAsync(@NotNull Location loc) {
-+        return teleportAsync(loc, TeleportCause.PLUGIN);
++    default java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(final @NotNull Location loc) {
++        return this.teleportAsync(loc, TeleportCause.PLUGIN);
 +    }
++
 +    /**
 +     * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
 +     * @param loc Location to teleport to
 +     * @param cause Reason for teleport
 +     * @return A future that will be completed with the result of the teleport
 +     */
-+    @NotNull
-+    public default java.util.concurrent.CompletableFuture<Boolean> teleportAsync(@NotNull Location loc, @NotNull TeleportCause cause) {
-+        java.util.concurrent.CompletableFuture<Boolean> future = new java.util.concurrent.CompletableFuture<>();
-+        loc.getWorld().getChunkAtAsyncUrgently(loc).thenAccept((chunk) -> future.complete(teleport(loc, cause))).exceptionally(ex -> {
-+            future.completeExceptionally(ex);
-+            return null;
-+        });
-+        return future;
++    default java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(final @NotNull Location loc, final @NotNull TeleportCause cause) {
++        final class Holder {
++            static final io.papermc.paper.entity.TeleportFlag[] EMPTY_FLAGS = new io.papermc.paper.entity.TeleportFlag[0];
++        }
++        return this.teleportAsync(loc, cause, Holder.EMPTY_FLAGS);
 +    }
++
++    /**
++     * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
++     * @param loc Location to teleport to
++     * @param cause Reason for teleport
++     * @param teleportFlags Flags to be used in this teleportation
++     * @return A future that will be completed with the result of the teleport
++     */
++    java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(@NotNull Location loc, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
 +    // Paper end
 +
      /**

@@ -1,0 +1,189 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 29 Jun 2018 00:19:19 -0400
+Subject: [PATCH] LivingEntity Active Item API
+
+API relating to items being actively used by a LivingEntity
+such as a bow or eating food.
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/org/bukkit/entity/HumanEntity.java b/src/main/java/org/bukkit/entity/HumanEntity.java
+index 2308fa3ca898bcb6c0ac2d4853f82a3398bf51f3..15115b1049bc5053796b84539acbf576bcba1a5f 100644
+--- a/src/main/java/org/bukkit/entity/HumanEntity.java
++++ b/src/main/java/org/bukkit/entity/HumanEntity.java
+@@ -319,7 +319,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder
+      * blocking).
+      *
+      * @return Whether their hand is raised
++     * @see LivingEntity#hasActiveItem()
+      */
++    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.4") // Paper - active item API
+     public boolean isHandRaised();
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index 7b53064364e206bc1a0f4b7af4931f6c658b7c55..0ed64618b3f62ee984fe4f99dc6a52d5fad7b3cc 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -202,15 +202,19 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      *
+      * @return the item being used by the player, or null if they are not using
+      * an item
++     * @deprecated Use {@link #getActiveItem()}
+      */
+     @Nullable
++    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
+     public ItemStack getItemInUse();
+ 
+     /**
+      * Gets the number of ticks remaining for the current item's usage.
+      *
+      * @return The number of ticks remaining
++     * @deprecated use {@link #getActiveItemRemainingTime()}
+      */
++    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
+     public int getItemInUseTicks();
+ 
+     /**
+@@ -219,7 +223,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      * or throwing a trident.
+      *
+      * @param ticks The number of ticks remaining
++     * @deprecated use {@link #setActiveItemRemainingTime(int)}
+      */
++    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
+     public void setItemInUseTicks(int ticks);
+ 
+     /**
+@@ -852,4 +858,130 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      */
+     void setShieldBlockingDelay(int delay);
+     // Paper end
++
++    // Paper start - active item API
++    /**
++     * Starts using the item in the specified hand, making it the
++     * currently active item. When, for example, called on a skeleton,
++     * this will cause it to start drawing its bow.
++     * <p>
++     * Only HAND or OFF_HAND may be used for the hand parameter.
++     * <p>
++     * When used on a player, the client will stop using the item
++     * if right click is held down.
++     * <p>
++     * This method does not make any guarantees about the effect of this method
++     * as such depends on the entity and its state.
++     *
++     * @param hand the hand that contains the item to be used
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    void startUsingItem(@NotNull org.bukkit.inventory.EquipmentSlot hand);
++
++    /**
++     * Finishes using the currently active item. When, for example, a
++     * skeleton is drawing its bow, this will cause it to release and
++     * fire the arrow.
++     * <p>
++     * This method does not make any guarantees about the effect of this method
++     * as such depends on the entity and its state.
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    void completeUsingActiveItem();
++
++    /**
++     * Gets the item being actively "used" or consumed.
++     *
++     * @return the item
++     */
++    org.bukkit.inventory.@NotNull ItemStack getActiveItem();
++
++    /**
++     * Gets the remaining number of ticks for {@link #getActiveItem()}'s usage.
++     *
++     * @return remaining ticks to use {@link #getActiveItem()}
++     */
++    int getActiveItemRemainingTime();
++
++    /**
++     * Sets the number of ticks that remain for {@link #getActiveItem()}'s
++     * usage.
++     * <p>
++     * Valid values are between 0 and the max item use duration for
++     * the specific item type.
++     *
++     * @param ticks time in ticks remaining
++     */
++    void setActiveItemRemainingTime(@org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE) int ticks);
++
++    /**
++     * Gets if the entity is using an item (eating, drinking, etc).
++     *
++     * @return true if using an item
++     */
++    boolean hasActiveItem();
++
++    /**
++     * Get how long the {@link #getActiveItem()} has been in use for.
++     *
++     * @return time used in ticks
++     */
++    int getActiveItemUsedTime();
++
++    /**
++     * Get the hand using the active item. Will be either
++     * {@link org.bukkit.inventory.EquipmentSlot#HAND} or
++     * {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}.
++     *
++     * @return the hand being used
++     */
++    org.bukkit.inventory.@NotNull EquipmentSlot getActiveItemHand();
++
++    /**
++     * Gets remaining time a player needs to keep hands raised with an item to finish using it.
++     *
++     * @return remaining ticks to use the item
++     * @see #getActiveItemRemainingTime()
++     */
++    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.4")
++    default int getItemUseRemainingTime() {
++        return this.getActiveItemRemainingTime();
++    }
++
++    /**
++     * Get how long the entity's hands have been raised (Charging Bow attack, using a potion, etc)
++     *
++     * @return Get how long the players hands have been raised (Charging Bow attack, using a potion, etc)
++     * @see #getActiveItemUsedTime()
++     */
++    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.4")
++    default int getHandRaisedTime() {
++        return this.getActiveItemUsedTime();
++    }
++
++    /**
++     * Whether this entity is using or charging an attack (Bow pulled back, drinking potion, eating food)
++     *
++     * @return whether this entity is using or charging an attack (Bow pulled back, drinking potion, eating food)
++     * @see #hasActiveItem()
++     */
++    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.4")
++    default boolean isHandRaised() {
++        return this.hasActiveItem();
++    }
++
++    /**
++     * Gets the hand raised by this living entity. Will be either
++     * {@link org.bukkit.inventory.EquipmentSlot#HAND} or
++     * {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}.
++     *
++     * @return the hand raised
++     * @see #getActiveItemHand()
++     */
++    @NotNull
++    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.4")
++    default org.bukkit.inventory.EquipmentSlot getHandRaised() {
++        return this.getActiveItemHand();
++    }
++    // Paper end - active item API
+ }

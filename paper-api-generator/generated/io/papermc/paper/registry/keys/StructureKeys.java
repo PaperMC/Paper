@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.4")
+@GeneratedFrom("1.20.5")
 @ApiStatus.Experimental
 public final class StructureKeys {
     /**
@@ -229,7 +229,7 @@ public final class StructureKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental("update 1.21")
+    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<Structure> TRIAL_CHAMBERS = create(key("trial_chambers"));
 
     /**

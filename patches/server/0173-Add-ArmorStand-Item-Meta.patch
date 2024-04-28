@@ -1,0 +1,268 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 27 Jan 2018 17:04:14 -0500
+Subject: [PATCH] Add ArmorStand Item Meta
+
+This is adds basic item meta for armor stands. It does not add all
+possible metadata however.
+
+There are armor, hand, and equipment types, as well as position data
+that can also be added here. This initial addition should serve a
+starting point for future additions in this area.
+
+Fixes GH-559
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
+index c4f12f96e39cb6189799a796b4cb2cb4f0b92392..84e09a934600df116206df1c3922a11ee969901a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
+@@ -11,9 +11,22 @@ import org.bukkit.Material;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+ 
+ @DelegateDeserialization(SerializableMeta.class)
+-public class CraftMetaArmorStand extends CraftMetaItem {
++public class CraftMetaArmorStand extends CraftMetaItem implements com.destroystokyo.paper.inventory.meta.ArmorStandMeta { // Paper
+ 
+     static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
++    // Paper start
++    static final ItemMetaKey INVISIBLE = new ItemMetaKey("Invisible", "invisible");
++    static final ItemMetaKey NO_BASE_PLATE = new ItemMetaKey("NoBasePlate", "no-base-plate");
++    static final ItemMetaKey SHOW_ARMS = new ItemMetaKey("ShowArms", "show-arms");
++    static final ItemMetaKey SMALL = new ItemMetaKey("Small", "small");
++    static final ItemMetaKey MARKER = new ItemMetaKey("Marker", "marker");
++
++    private Boolean invisible = null;
++    private Boolean noBasePlate = null;
++    private Boolean showArms = null;
++    private Boolean small = null;
++    private Boolean marker = null;
++    // Paper end
+     CompoundTag entityTag;
+ 
+     CraftMetaArmorStand(CraftMetaItem meta) {
+@@ -24,6 +37,13 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+         }
+ 
+         CraftMetaArmorStand armorStand = (CraftMetaArmorStand) meta;
++        // Paper start
++        this.invisible = armorStand.invisible;
++        this.noBasePlate = armorStand.noBasePlate;
++        this.showArms = armorStand.showArms;
++        this.small = armorStand.small;
++        this.marker = armorStand.marker;
++        // Paper end
+         this.entityTag = armorStand.entityTag;
+     }
+ 
+@@ -32,11 +52,39 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+ 
+         getOrEmpty(tag, CraftMetaArmorStand.ENTITY_TAG).ifPresent((nbt) -> {
+             this.entityTag = nbt.copyTag();
++            // Paper start
++            if (entityTag.contains(INVISIBLE.NBT)) {
++                invisible = entityTag.getBoolean(INVISIBLE.NBT);
++            }
++
++            if (entityTag.contains(NO_BASE_PLATE.NBT)) {
++                noBasePlate = entityTag.getBoolean(NO_BASE_PLATE.NBT);
++            }
++
++            if (entityTag.contains(SHOW_ARMS.NBT)) {
++                showArms = entityTag.getBoolean(SHOW_ARMS.NBT);
++            }
++
++            if (entityTag.contains(SMALL.NBT)) {
++                small = entityTag.getBoolean(SMALL.NBT);
++            }
++
++            if (entityTag.contains(MARKER.NBT)) {
++                marker = entityTag.getBoolean(MARKER.NBT);
++            }
++            // Paper end
+         });
+     }
+ 
+     CraftMetaArmorStand(Map<String, Object> map) {
+         super(map);
++        // Paper start
++        this.invisible = SerializableMeta.getBoolean(map, INVISIBLE.BUKKIT);
++        this.noBasePlate = SerializableMeta.getBoolean(map, NO_BASE_PLATE.BUKKIT);
++        this.showArms = SerializableMeta.getBoolean(map, SHOW_ARMS.BUKKIT);
++        this.small = SerializableMeta.getBoolean(map, SMALL.BUKKIT);
++        this.marker = SerializableMeta.getBoolean(map, MARKER.BUKKIT);
++        // Paper end
+     }
+ 
+     @Override
+@@ -59,6 +107,31 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+     void applyToItem(CraftMetaItem.Applicator tag) {
+         super.applyToItem(tag);
+ 
++        // Paper start
++        if (!isArmorStandEmpty() && this.entityTag == null) {
++            this.entityTag = new CompoundTag();
++        }
++
++        if (this.invisible != null) {
++            this.entityTag.putBoolean(INVISIBLE.NBT, this.invisible);
++        }
++
++        if (this.noBasePlate != null) {
++            this.entityTag.putBoolean(NO_BASE_PLATE.NBT, this.noBasePlate);
++        }
++
++        if (this.showArms != null) {
++            this.entityTag.putBoolean(SHOW_ARMS.NBT, this.showArms);
++        }
++
++        if (this.small != null) {
++            this.entityTag.putBoolean(SMALL.NBT, this.small);
++        }
++
++        if (this.marker != null) {
++            this.entityTag.putBoolean(MARKER.NBT, this.marker);
++        }
++        // Paper end
+         if (this.entityTag != null) {
+             tag.put(CraftMetaArmorStand.ENTITY_TAG, CustomData.of(this.entityTag));
+         }
+@@ -75,7 +148,7 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+     }
+ 
+     boolean isArmorStandEmpty() {
+-        return !(this.entityTag != null);
++        return !(this.invisible != null || this.noBasePlate != null || this.showArms != null || this.small != null || this.marker != null || this.entityTag != null); // Paper
+     }
+ 
+     @Override
+@@ -86,7 +159,13 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+         if (meta instanceof CraftMetaArmorStand) {
+             CraftMetaArmorStand that = (CraftMetaArmorStand) meta;
+ 
+-            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : this.entityTag == null;
++            // Paper start
++            return this.invisible == that.invisible &&
++                this.noBasePlate == that.noBasePlate &&
++                this.showArms == that.showArms &&
++                this.small == that.small &&
++                this.marker == that.marker;
++            // Paper end
+         }
+         return true;
+     }
+@@ -101,9 +180,14 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+         final int original;
+         int hash = original = super.applyHash();
+ 
+-        if (this.entityTag != null) {
+-            hash = 73 * hash + this.entityTag.hashCode();
+-        }
++        // Paper start
++        hash += this.entityTag != null ? 73 * hash + this.entityTag.hashCode() : 0;
++        hash += this.isInvisible() ? 61 * hash + 1231 : 0;
++        hash += this.hasNoBasePlate() ? 61 * hash + 1231 : 0;
++        hash += this.shouldShowArms() ? 61 * hash + 1231 : 0;
++        hash += this.isSmall() ? 61 * hash + 1231 : 0;
++        hash += this.isMarker() ? 61 * hash + 1231 : 0;
++        // Paper end
+ 
+         return original != hash ? CraftMetaArmorStand.class.hashCode() ^ hash : hash;
+     }
+@@ -112,6 +196,28 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+     Builder<String, Object> serialize(Builder<String, Object> builder) {
+         super.serialize(builder);
+ 
++        // Paper start
++        if (invisible != null) {
++            builder.put(INVISIBLE.BUKKIT, invisible);
++        }
++
++        if (noBasePlate != null) {
++            builder.put(NO_BASE_PLATE.BUKKIT, noBasePlate);
++        }
++
++        if (showArms != null) {
++            builder.put(SHOW_ARMS.BUKKIT, showArms);
++        }
++
++        if (small != null) {
++            builder.put(SMALL.BUKKIT, small);
++        }
++
++        if (marker != null) {
++            builder.put(MARKER.BUKKIT, marker);
++        }
++        // Paper end
++
+         return builder;
+     }
+ 
+@@ -125,4 +231,56 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+ 
+         return clone;
+     }
++
++    // Paper start
++    @Override
++    public boolean isInvisible() {
++        return invisible != null && invisible;
++    }
++
++    @Override
++    public boolean hasNoBasePlate() {
++        return noBasePlate != null && noBasePlate;
++    }
++
++    @Override
++    public boolean shouldShowArms() {
++        return showArms != null && showArms;
++    }
++
++    @Override
++    public boolean isSmall() {
++        return small != null && small;
++    }
++
++    @Override
++    public boolean isMarker() {
++        return marker != null && marker;
++    }
++
++    @Override
++    public void setInvisible(boolean invisible) {
++        this.invisible = invisible;
++    }
++
++    @Override
++    public void setNoBasePlate(boolean noBasePlate) {
++        this.noBasePlate = noBasePlate;
++    }
++
++    @Override
++    public void setShowArms(boolean showArms) {
++        this.showArms = showArms;
++    }
++
++    @Override
++    public void setSmall(boolean small) {
++        this.small = small;
++    }
++
++    @Override
++    public void setMarker(boolean marker) {
++        this.marker = marker;
++    }
++    // Paper end
+ }
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+index 482fcd5abe687accc770722778952e1fd199b471..cf436c9e62a11b8c6cbf7638de0e5635c67459ac 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+@@ -362,6 +362,7 @@ public class ItemMetaTest extends AbstractTestingBase {
+                     final CraftMetaArmorStand meta = (CraftMetaArmorStand) cleanStack.getItemMeta();
+                     meta.entityTag = new CompoundTag();
+                     meta.entityTag.putBoolean("Small", true);
++                    meta.setInvisible(true); // Paper
+                     cleanStack.setItemMeta(meta);
+                     return cleanStack;
+                 }

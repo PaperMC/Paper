@@ -17,10 +17,10 @@ Subject: [PATCH] CB fixes
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 674c996af91de91ee6302cc67334b836ea4fa4de..93867b8883c6f5d5086e8fdc153e6d7c1e5d9fec 100644
+index b84078f8105bccc40da0c14932ad3160c96d371c..c4bd9be9d1884be1f5040ff1417f44f8ac4b655f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -296,7 +296,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -302,7 +302,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
          long l = minecraftserver.getWorldData().worldGenOptions().seed();
  
@@ -29,49 +29,33 @@ index 674c996af91de91ee6302cc67334b836ea4fa4de..93867b8883c6f5d5086e8fdc153e6d7c
          this.structureManager = new StructureManager(this, this.serverLevelData.worldGenOptions(), this.structureCheck); // CraftBukkit
          if ((this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
              this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
-diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-index 869f60e9407ed1c5bee536ef91a21f4d11f8f964..95e5d1d707e610c930b6098a86c5162fd29bf602 100644
---- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-+++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-@@ -445,9 +445,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
-     }
- 
-     @Override
--    protected void actuallyHurt(DamageSource source, float amount) {
-+    protected boolean actuallyHurt(DamageSource source, float amount) { // Paper - Fix CB...
-         this.standUpInstantly();
--        super.actuallyHurt(source, amount);
-+        return super.actuallyHurt(source, amount); // Paper - Fix CB...
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index 161ad6ab1443b2ce33a2d7d91d189c855db0453b..15a9736a870055d639d03063c7cf67fd769fff36 100644
+index 0dc7f88877020bddd5a84db51d349f52b673048e..aae73586265593ee7830fb8dd5c2e3d7560057f0 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -43,7 +43,7 @@ public class StructureCheck {
-     private final Registry<Biome> biomes;
-     private final Registry<Structure> structureConfigs;
+@@ -40,7 +40,7 @@ public class StructureCheck {
+     private final ChunkScanAccess storageAccess;
+     private final RegistryAccess registryAccess;
      private final StructureTemplateManager structureTemplateManager;
 -    private final ResourceKey<Level> dimension;
 +    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
      private final ChunkGenerator chunkGenerator;
      private final RandomState randomState;
      private final LevelHeightAccessor heightAccessor;
-@@ -53,7 +53,7 @@ public class StructureCheck {
-     private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
-     private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
- 
--    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureTemplateManager structureTemplateManager, ResourceKey<Level> worldKey, ChunkGenerator chunkGenerator, RandomState noiseConfig, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) {
-+    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureTemplateManager structureTemplateManager, ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, ChunkGenerator chunkGenerator, RandomState noiseConfig, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) { // Paper - fix missing CB diff
-         this.storageAccess = chunkIoWorker;
-         this.registryAccess = registryManager;
-         this.structureTemplateManager = structureTemplateManager;
+@@ -54,7 +54,7 @@ public class StructureCheck {
+         ChunkScanAccess chunkIoWorker,
+         RegistryAccess registryManager,
+         StructureTemplateManager structureTemplateManager,
+-        ResourceKey<Level> worldKey,
++        ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, // Paper - fix missing CB diff
+         ChunkGenerator chunkGenerator,
+         RandomState noiseConfig,
+         LevelHeightAccessor world,
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
-index 809fdf2da78293391aa5c60c04f4ad652b152eec..955b0abd4019fc45df84719eee6bf413e59d941a 100644
+index 9b90649f71849b3830ca9b6a3c5a722c66b02f1f..209c6b64e79c29ea3bb84ddbe89a8bff66f81d0f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
-@@ -172,4 +172,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
+@@ -197,4 +197,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
          org.bukkit.loot.LootTable table = (org.bukkit.loot.LootTable) obj;
          return table.getKey().equals(this.getKey());
      }
@@ -84,34 +68,48 @@ index 809fdf2da78293391aa5c60c04f4ad652b152eec..955b0abd4019fc45df84719eee6bf413
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index cd39509d383c47319b71797e5d1df41c2b8c7ab6..2cc1871c81056acd0582184bb684e672d14d3b6f 100644
+index 02ddd4e200a86d720297dbec508480fc0cd270d1..080c0cf84d959e1acdde088f367bd005ea9c3bbd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2466,7 +2466,11 @@ public final class CraftServer implements Server {
+@@ -2482,7 +2482,13 @@ public final class CraftServer implements Server {
          Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
  
-         LootDataManager registry = this.getServer().getLootData();
--        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
+         ReloadableServerRegistries.Holder registry = this.getServer().reloadableRegistries();
+-        return new CraftLootTable(key, registry.getLootTable(CraftLootTable.bukkitKeyToMinecraft(key)));
 +        // Paper start - honor method contract
-+        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
-+        final Optional<net.minecraft.world.level.storage.loot.LootTable> table = registry.getElementOptional(net.minecraft.world.level.storage.loot.LootDataType.TABLE, lootTableKey);
++        final ResourceKey<net.minecraft.world.level.storage.loot.LootTable> lootTableKey = CraftLootTable.bukkitKeyToMinecraft(key);
++        final Optional<net.minecraft.world.level.storage.loot.LootTable> table = registry.get().lookup(Registries.LOOT_TABLE)
++            .flatMap(registryEntryLookup -> registryEntryLookup.get(lootTableKey))
++            .map(net.minecraft.core.Holder::value);
 +        return table.map(lootTable -> new CraftLootTable(key, lootTable)).orElse(null);
 +        // Paper end
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index c8f0570b7d37a0c0bddb0a65c36fb32de584df8f..02060584892d630d91f58e864ed34656ee738572 100644
+index 1e3ca7ca98abfd5be233a7eeb6dad201776d2d6a..9ec50bbb262b25fea157ae48e8395f5cd38f8906 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -122,6 +122,7 @@ public class Main {
- 
+@@ -123,6 +123,7 @@ public class Main {
                  this.acceptsAll(Main.asList("forceUpgrade"), "Whether to force a world upgrade");
                  this.acceptsAll(Main.asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                 this.acceptsAll(Main.asList("recreateRegionFiles"), "Whether to recreate region files during world upgrade");
 +                this.accepts("safeMode", "Loads level with vanilla datapack only"); // Paper
                  this.acceptsAll(Main.asList("nogui"), "Disables the graphical console");
  
                  this.acceptsAll(Main.asList("nojline"), "Disables jline and emulates the vanilla console");
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
+index 6b34a8d33faa49ffa9082995e67af10d3cb38c03..f0c817e27a602740bc979b2ebaec3917e1906d74 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
+@@ -127,6 +127,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
+ 
+     @Override
+     public int getMapId() {
++        Preconditions.checkState(this.hasMapView(), "Item does not have map associated - check hasMapView() first!"); // Paper - more friendly message
+         return this.mapId;
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 index 905adf97c0d1f0d1c774a6835a5dffcfea884e58..c017ce2ca1bc535795c958a2e509af2adf88efa9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
