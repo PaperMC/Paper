@@ -46,6 +46,7 @@ public class LibraryLoader
     private final RepositorySystem repository;
     private final DefaultRepositorySystemSession session;
     private final List<RemoteRepository> repositories;
+    public static java.util.function.BiFunction<URL[], ClassLoader, URLClassLoader> LIBRARY_LOADER_FACTORY; // Paper - rewrite reflection in libraries
 
     public LibraryLoader(@NotNull Logger logger)
     {
@@ -130,7 +131,14 @@ public class LibraryLoader
             } );
         }
 
-        URLClassLoader loader = new URLClassLoader( jarFiles.toArray( new URL[ jarFiles.size() ] ), getClass().getClassLoader() );
+        // Paper start - rewrite reflection in libraries
+        URLClassLoader loader;
+        if (LIBRARY_LOADER_FACTORY == null) {
+            loader = new URLClassLoader( jarFiles.toArray( new URL[ jarFiles.size() ] ), getClass().getClassLoader() );
+        } else {
+            loader = LIBRARY_LOADER_FACTORY.apply(jarFiles.toArray( new URL[ jarFiles.size() ] ), getClass().getClassLoader());
+        }
+        // Paper end - rewrite reflection in libraries
 
         return loader;
     }
