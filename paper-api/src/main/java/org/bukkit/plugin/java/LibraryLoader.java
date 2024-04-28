@@ -47,6 +47,7 @@ public class LibraryLoader
     private final DefaultRepositorySystemSession session;
     private final List<RemoteRepository> repositories;
     public static java.util.function.BiFunction<URL[], ClassLoader, URLClassLoader> LIBRARY_LOADER_FACTORY; // Paper - rewrite reflection in libraries
+    public static java.util.function.Function<List<java.nio.file.Path>, List<java.nio.file.Path>> REMAPPER; // Paper - remap libraries
 
     public LibraryLoader(@NotNull Logger logger)
     {
@@ -111,9 +112,18 @@ public class LibraryLoader
         }
 
         List<URL> jarFiles = new ArrayList<>();
+        List<java.nio.file.Path> jarPaths = new ArrayList<>(); // Paper - remap libraries
         for ( ArtifactResult artifact : result.getArtifactResults() )
         {
-            File file = artifact.getArtifact().getFile();
+            // Paper start - remap libraries
+            jarPaths.add(artifact.getArtifact().getFile().toPath());
+        }
+        if (REMAPPER != null) {
+            jarPaths = REMAPPER.apply(jarPaths);
+        }
+        for (java.nio.file.Path path : jarPaths) {
+            File file = path.toFile();
+            // Paper end - remap libraries
 
             URL url;
             try
