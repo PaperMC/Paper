@@ -77,10 +77,44 @@ index 7f3733c29f2e79bffa24631efb20de49fde857f2..6a6e9a1478a2ead20467bc711d0ad4a9
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
-index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..88245d8704f4df3075d592a68a4715565e9eed8c 100644
+index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d2f37e32e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
-@@ -186,9 +186,13 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -154,7 +154,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+         }
+ 
+         Iterable<?> effects = SerializableMeta.getObject(Iterable.class, map, CraftMetaFirework.EXPLOSIONS.BUKKIT, true);
+-        this.safelyAddEffects(effects);
++        this.safelyAddEffects(effects, false); // Paper - limit firework effects
+     }
+ 
+     @Override
+@@ -162,7 +162,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+         return !(this.effects == null || this.effects.isEmpty());
+     }
+ 
+-    void safelyAddEffects(Iterable<?> collection) {
++    void safelyAddEffects(Iterable<?> collection, final boolean throwOnOversize) { // Paper
+         if (collection == null || (collection instanceof Collection && ((Collection<?>) collection).isEmpty())) {
+             return;
+         }
+@@ -174,6 +174,15 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+ 
+         for (Object obj : collection) {
+             Preconditions.checkArgument(obj instanceof FireworkEffect, "%s in %s is not a FireworkEffect", obj, collection);
++            // Paper start - limit firework effects
++            if (effects.size() + 1 > Fireworks.MAX_EXPLOSIONS) {
++                if (throwOnOversize) {
++                    throw new IllegalArgumentException("Cannot have more than " + Fireworks.MAX_EXPLOSIONS + " firework effects");
++                } else {
++                    continue;
++                }
++            }
++            // Paper end - limit firework effects
+             effects.add((FireworkEffect) obj);
+         }
+     }
+@@ -186,9 +195,13 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
          }
  
          List<FireworkExplosion> effects = new ArrayList<>();
@@ -96,8 +130,36 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..88245d8704f4df3075d592a68a471556
  
          itemTag.put(CraftMetaFirework.FIREWORKS, new Fireworks(this.power, effects));
      }
+@@ -287,6 +300,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+     @Override
+     public void addEffect(FireworkEffect effect) {
+         Preconditions.checkArgument(effect != null, "FireworkEffect cannot be null");
++        Preconditions.checkArgument(this.effects == null || this.effects.size() + 1 <= Fireworks.MAX_EXPLOSIONS, "cannot have more than %s firework effects", Fireworks.MAX_EXPLOSIONS); // Paper - limit firework effects
+         if (this.effects == null) {
+             this.effects = new ArrayList<FireworkEffect>();
+         }
+@@ -296,6 +310,10 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+     @Override
+     public void addEffects(FireworkEffect... effects) {
+         Preconditions.checkArgument(effects != null, "effects cannot be null");
++        // Paper start - limit firework effects
++        final int initialSize = this.effects == null ? 0 : this.effects.size();
++        Preconditions.checkArgument(initialSize + effects.length <= Fireworks.MAX_EXPLOSIONS, "Cannot have more than %s firework effects", Fireworks.MAX_EXPLOSIONS);
++        // Paper end - limit firework effects
+         if (effects.length == 0) {
+             return;
+         }
+@@ -314,7 +332,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+     @Override
+     public void addEffects(Iterable<FireworkEffect> effects) {
+         Preconditions.checkArgument(effects != null, "effects cannot be null");
+-        this.safelyAddEffects(effects);
++        this.safelyAddEffects(effects, true); // Paper - limit firework effects
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 8973a08f39279415e28a4fadf0015f1ab9581350..8dfba4091670a1f830d3a0128d7170f2b9b4ddb7 100644
+index 651871b4fc512747bdfa6166c2d21b4f174f5cee..ba7d2b48552b36c6519724893e4054277e7a0cdc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -165,9 +165,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -112,7 +174,31 @@ index 8973a08f39279415e28a4fadf0015f1ab9581350..8dfba4091670a1f830d3a0128d7170f2
  
          <T> Applicator put(ItemMetaKeyType<T> key, T value) {
              this.builder.set(key.TYPE, value);
-@@ -1397,7 +1398,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -991,6 +992,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public void lore(final List<? extends net.kyori.adventure.text.Component> lore) {
++        Preconditions.checkArgument(lore == null || lore.size() <= ItemLore.MAX_LINES, "lore cannot have more than %s lines", ItemLore.MAX_LINES); // Paper - limit lore lines
+         this.lore = lore != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(lore) : null;
+     }
+     // Paper end
+@@ -1115,6 +1117,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     // Paper end
+     @Override
+     public void setLore(List<String> lore) {
++        Preconditions.checkArgument(lore == null || lore.size() <= ItemLore.MAX_LINES, "lore cannot have more than %s lines", ItemLore.MAX_LINES); // Paper - limit lore lines
+         if (lore == null || lore.isEmpty()) {
+             this.lore = null;
+         } else {
+@@ -1130,6 +1133,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     // Paper start
+     @Override
+     public void setLoreComponents(List<net.md_5.bungee.api.chat.BaseComponent[]> lore) {
++        Preconditions.checkArgument(lore == null || lore.size() <= ItemLore.MAX_LINES, "lore cannot have more than %s lines", ItemLore.MAX_LINES); // Paper - limit lore lines
+         if (lore == null) {
+             this.lore = null;
+         } else {
+@@ -1397,7 +1401,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public String getAsString() {
