@@ -21,7 +21,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void handleHello(ServerboundHelloPacket packet) {
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
 -        Validate.validState(StringUtil.isValidPlayerName(packet.name()), "Invalid characters in username", new Object[0]);
-+        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(StringUtil.isValidPlayerName(packet.name()), "Invalid characters in username", new Object[0]); // Paper - config username validation
++        // Paper start - Validate usernames
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
++            && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation
++            && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) {
++            Validate.validState(StringUtil.isReasonablePlayerName(packet.name()), "Invalid characters in username", new Object[0]);
++        }
++        // Paper end - Validate usernames
          this.requestedUsername = packet.name();
          GameProfile gameprofile = this.server.getSingleplayerProfile();
  
@@ -43,18 +49,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/util/StringUtil.java
 +++ b/src/main/java/net/minecraft/util/StringUtil.java
 @@ -0,0 +0,0 @@ public class StringUtil {
+         return name.length() <= 16 && name.chars().filter(c -> c <= 32 || c >= 127).findAny().isEmpty();
      }
  
-     public static boolean isValidPlayerName(String name) {
--        return name.length() <= 16 && name.chars().filter(c -> c <= 32 || c >= 127).findAny().isEmpty();
-+        // Paper start - username validation overriding
-+        if (name == null || name.isEmpty() || name.length() > 16) {
++    // Paper start - Username validation
++    public static boolean isReasonablePlayerName(final String name) {
++        if (name.isEmpty() || name.length() > 16) {
 +            return false;
 +        }
 +
 +        for (int i = 0, len = name.length(); i < len; ++i) {
-+            char c = name.charAt(i);
-+
++            final char c = name.charAt(i);
 +            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_' || c == '.')) {
 +                continue;
 +            }
@@ -63,7 +68,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        return true;
-+        // Paper end - username validation overriding
-     }
- 
++    }
++    // Paper end - Username validation
++
      public static String filterText(String string) {
+         return filterText(string, false);
+     }
