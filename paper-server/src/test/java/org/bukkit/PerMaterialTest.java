@@ -101,17 +101,13 @@ public class PerMaterialTest {
 
         final ItemStack bukkit = new ItemStack(material);
         final CraftItemStack craft = CraftItemStack.asCraftCopy(bukkit);
-        if (material == Material.AIR) {
-            final int MAX_AIR_STACK = 0 /* Why can't I hold all of these AIR? */;
-            assertThat(material.getMaxStackSize(), is(MAX_AIR_STACK));
-            assertThat(bukkit.getMaxStackSize(), is(MAX_AIR_STACK));
-            assertThat(craft.getMaxStackSize(), is(MAX_AIR_STACK));
-        } else {
+
+        // Paper - remove air exception
             int max = CraftMagicNumbers.getItem(material).components().getOrDefault(DataComponents.MAX_STACK_SIZE, 64);
             assertThat(material.getMaxStackSize(), is(max));
             assertThat(bukkit.getMaxStackSize(), is(max));
             assertThat(craft.getMaxStackSize(), is(max));
-        }
+        // Paper - remove air exception
     }
 
     @ParameterizedTest

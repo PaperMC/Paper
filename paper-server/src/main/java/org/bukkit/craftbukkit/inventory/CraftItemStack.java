@@ -20,13 +20,11 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
-import org.bukkit.craftbukkit.util.CraftLegacy;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
-import org.jetbrains.annotations.ApiStatus;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
@@ -206,7 +204,7 @@ public final class CraftItemStack extends ItemStack {
                 this.adjustTagForItemMeta(oldType); // Paper
             }
         }
-        this.setData(null);
+        this.setData((MaterialData) null); // Paper
     }
 
     @Override
@@ -245,7 +243,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public int getMaxStackSize() {
-        return (this.handle == null) ? Material.AIR.getMaxStackSize() : this.handle.getMaxStackSize();
+        return (this.handle == null) ? Item.DEFAULT_MAX_STACK_SIZE : this.handle.getMaxStackSize(); // Paper - air stacks to 64
     }
 
     // Paper start
@@ -267,12 +265,14 @@ public final class CraftItemStack extends ItemStack {
     public void addUnsafeEnchantment(Enchantment ench, int level) {
         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
 
-        // Paper start - Replace whole method
-        final ItemMeta itemMeta = this.getItemMeta();
-        if (itemMeta != null) {
-            itemMeta.addEnchant(ench, level, true);
-            this.setItemMeta(itemMeta);
+        // Paper start
+        if (this.handle == null) {
+            return;
         }
+
+        EnchantmentHelper.updateEnchantments(this.handle, mutable -> { // data component api doesn't really support mutable things once already set yet
+            mutable.set(CraftEnchantment.bukkitToMinecraftHolder(ench), level);
+        });
         // Paper end
     }
 
@@ -302,17 +302,28 @@ public final class CraftItemStack extends ItemStack {
     public int removeEnchantment(Enchantment ench) {
         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
 
-        // Paper start - replace entire method
-        int level = getEnchantmentLevel(ench);
-        if (level > 0) {
-            final ItemMeta itemMeta = this.getItemMeta();
-            if (itemMeta == null) return 0;
-            itemMeta.removeEnchant(ench);
-            this.setItemMeta(itemMeta);
+        // Paper start
+        if (this.handle == null) {
+            return 0;
         }
-        // Paper end
 
-        return level;
+        ItemEnchantments itemEnchantments = this.handle.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        if (itemEnchantments.isEmpty()) {
+            return 0;
+        }
+
+        Holder<net.minecraft.world.item.enchantment.Enchantment> removedEnchantment = CraftEnchantment.bukkitToMinecraftHolder(ench);
+        if (itemEnchantments.keySet().contains(removedEnchantment)) {
+            int previousLevel = itemEnchantments.getLevel(removedEnchantment);
+
+            ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(itemEnchantments); // data component api doesn't really support mutable things once already set yet
+            mutable.removeIf(enchantment -> enchantment.equals(removedEnchantment));
+            this.handle.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
+            return previousLevel;
+        }
+
+        return 0;
+        // Paper end
     }
 
     @Override
@@ -324,7 +335,13 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public Map<Enchantment, Integer> getEnchantments() {
-        return this.hasItemMeta() ? this.getItemMeta().getEnchants() : ImmutableMap.<Enchantment, Integer>of(); // Paper - use Item Meta
+        // Paper start
+        io.papermc.paper.datacomponent.item.ItemEnchantments itemEnchantments = this.getData(io.papermc.paper.datacomponent.DataComponentTypes.ENCHANTMENTS); // empty constant might be useful here
+        if (itemEnchantments == null) {
+            return java.util.Collections.emptyMap();
+        }
+        return itemEnchantments.enchantments();
+        // Paper end
     }
 
     static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
@@ -526,4 +543,119 @@ public final class CraftItemStack extends ItemStack {
         return this.pdcView;
     }
     // Paper end - pdc
+    // Paper start - data component API
+    @Override
+    public <T> T getData(final io.papermc.paper.datacomponent.DataComponentType.Valued<T> type) {
+        if (this.isEmpty()) {
+            return null;
+        }
+        return io.papermc.paper.datacomponent.PaperDataComponentType.convertDataComponentValue(this.handle.getComponents(), (io.papermc.paper.datacomponent.PaperDataComponentType.ValuedImpl<T, ?>) type);
+    }
+
+    @Override
+    public boolean hasData(final io.papermc.paper.datacomponent.DataComponentType type) {
+        if (this.isEmpty()) {
+            return false;
+        }
+        return this.handle.has(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
+    }
+
+    @Override
+    public java.util.Set<io.papermc.paper.datacomponent.DataComponentType> getDataTypes() {
+        if (this.isEmpty()) {
+            return java.util.Collections.emptySet();
+        }
+        return io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(this.handle.getComponents().keySet());
+    }
+
+    @Override
+    public <T> void setData(final io.papermc.paper.datacomponent.DataComponentType.Valued<T> type, final T value) {
+        Preconditions.checkArgument(value != null, "value cannot be null");
+        if (this.isEmpty()) {
+            return;
+        }
+        this.setDataInternal((io.papermc.paper.datacomponent.PaperDataComponentType.ValuedImpl<T, ?>) type, value);
+    }
+
+    @Override
+    public void setData(final io.papermc.paper.datacomponent.DataComponentType.NonValued type) {
+        if (this.isEmpty()) {
+            return;
+        }
+        this.setDataInternal((io.papermc.paper.datacomponent.PaperDataComponentType.NonValuedImpl<?, ?>) type, null);
+    }
+
+    private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperDataComponentType<A, V> type, final A value) {
+        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value));
+    }
+
+    @Override
+    public void unsetData(final io.papermc.paper.datacomponent.DataComponentType type) {
+        if (this.isEmpty()) {
+            return;
+        }
+        this.handle.remove(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
+    }
+
+    @Override
+    public void resetData(final io.papermc.paper.datacomponent.DataComponentType type) {
+        if (this.isEmpty()) {
+            return;
+        }
+        this.resetData((io.papermc.paper.datacomponent.PaperDataComponentType<?, ?>) type);
+    }
+
+    private <M> void resetData(final io.papermc.paper.datacomponent.PaperDataComponentType<?, M> type) {
+        final net.minecraft.core.component.DataComponentType<M> nms = io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type);
+        final M nmsValue = this.handle.getItem().components().get(nms);
+        // if nmsValue is null, it will clear any set patch
+        // if nmsValue is not null, it will still clear any set patch because it will equal the default value
+        this.handle.set(nms, nmsValue);
+    }
+
+    @Override
+    public boolean isDataOverridden(final io.papermc.paper.datacomponent.DataComponentType type) {
+        if (this.isEmpty()) {
+            return false;
+        }
+        final net.minecraft.core.component.DataComponentType<?> nms = io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type);
+        // maybe a more efficient way is to expose the "patch" map in PatchedDataComponentMap and just check if the type exists as a key
+        return !java.util.Objects.equals(this.handle.get(nms), this.handle.getPrototype().get(nms));
+    }
+
+    @Override
+    public boolean matchesWithoutData(final ItemStack item, final java.util.Set<io.papermc.paper.datacomponent.DataComponentType> exclude, final boolean ignoreCount) {
+        // Extracted from base equals
+        final CraftItemStack craftStack = getCraftStack(item);
+        if (this.handle == craftStack.handle) return true;
+        if (this.handle == null || craftStack.handle == null) return false;
+        if (this.handle.isEmpty() && craftStack.handle.isEmpty()) return true;
+
+        net.minecraft.world.item.ItemStack left = this.handle;
+        net.minecraft.world.item.ItemStack right = craftStack.handle;
+        if (!ignoreCount && left.getCount() != right.getCount()) {
+            return false;
+        }
+        if (!left.is(right.getItem())) {
+            return false;
+        }
+
+        // It can be assumed that the prototype is equal since the type is the same. This way all we need to check is the patch
+
+        // Fast path when excluded types is empty
+        if (exclude.isEmpty()) {
+            return left.getComponentsPatch().equals(right.getComponentsPatch());
+        }
+
+        // Collect all the NMS types into a set
+        java.util.Set<net.minecraft.core.component.DataComponentType<?>> skippingTypes = new java.util.HashSet<>(exclude.size());
+        for (io.papermc.paper.datacomponent.DataComponentType api : exclude) {
+            skippingTypes.add(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(api));
+        }
+
+        // Check the patch by first stripping excluded types and then compare the trimmed patches
+        return left.getComponentsPatch().forget(skippingTypes::contains).equals(right.getComponentsPatch().forget(skippingTypes::contains));
+    }
+
+    // Paper end - data component API
 }

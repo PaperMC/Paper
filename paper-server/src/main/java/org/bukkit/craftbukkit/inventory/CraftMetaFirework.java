@@ -91,7 +91,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         this.safelyAddEffects(effects, false); // Paper - limit firework effects
     }
 
-    static FireworkEffect getEffect(FireworkExplosion explosion) {
+    public static FireworkEffect getEffect(FireworkExplosion explosion) { // Paper
         FireworkEffect.Builder effect = FireworkEffect.builder()
                 .flicker(explosion.hasTwinkle())
                 .trail(explosion.hasTrail())
@@ -111,7 +111,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         return effect.build();
     }
 
-    static FireworkExplosion getExplosion(FireworkEffect effect) {
+    public static FireworkExplosion getExplosion(FireworkEffect effect) { // Paper
         IntList colors = CraftMetaFirework.addColors(effect.getColors());
         IntList fadeColors = CraftMetaFirework.addColors(effect.getFadeColors());
 

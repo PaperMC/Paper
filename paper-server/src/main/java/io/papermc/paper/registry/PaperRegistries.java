@@ -2,6 +2,8 @@ package io.papermc.paper.registry;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
@@ -93,6 +95,7 @@ public final class PaperRegistries {
             start(Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE).craft(Attribute.class, CraftAttribute::new).build(),
             start(Registries.FLUID, RegistryKey.FLUID).craft(Fluid.class, CraftFluid::new).build(),
             start(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT).craft(Sound.class, CraftSound::new).build(),
+            start(Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE).craft(DataComponentTypes.class, PaperDataComponentType::of).build(),
 
             // data-drivens
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),

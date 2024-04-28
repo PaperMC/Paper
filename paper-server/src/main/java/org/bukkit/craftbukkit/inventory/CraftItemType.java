@@ -150,7 +150,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     public int getMaxStackSize() {
         // Based of the material enum air is only 0, in PerMaterialTest it is also set as special case
         // the item info itself would return 64
-        if (this == AIR) {
+        if (false && this == AIR) { // Paper - air stacks to 64
             return 0;
         }
         return this.item.components().getOrDefault(DataComponents.MAX_STACK_SIZE, 64);
@@ -270,4 +270,20 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
         return rarity == null ? null : org.bukkit.inventory.ItemRarity.valueOf(rarity.name());
     }
     // Paper end - expand ItemRarity API
+    // Paper start - data component API
+    @Override
+    public <T> T getDefaultData(final io.papermc.paper.datacomponent.DataComponentType.Valued<T> type) {
+        return io.papermc.paper.datacomponent.PaperDataComponentType.convertDataComponentValue(this.item.components(), ((io.papermc.paper.datacomponent.PaperDataComponentType.ValuedImpl<T, ?>) type));
+    }
+
+    @Override
+    public boolean hasDefaultData(final io.papermc.paper.datacomponent.DataComponentType type) {
+        return this.item.components().has(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
+    }
+
+    @Override
+    public java.util.Set<io.papermc.paper.datacomponent.DataComponentType> getDefaultDataTypes() {
+        return io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(this.item.components().keySet());
+    }
+    // Paper end - data component API
 }
