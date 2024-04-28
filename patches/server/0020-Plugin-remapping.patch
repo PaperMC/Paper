@@ -302,10 +302,10 @@ index 0000000000000000000000000000000000000000..99e658e3a0f08dbd90b3cf48609613e8
 +}
 diff --git a/src/main/java/io/papermc/paper/pluginremap/InsertManifestAttribute.java b/src/main/java/io/papermc/paper/pluginremap/InsertManifestAttribute.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3a5bb5d2a45654385ca0bc15c81ef95315b922b4
+index 0000000000000000000000000000000000000000..d738b31f0005aca352a511c1a57e76b627fca2dd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/pluginremap/InsertManifestAttribute.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,69 @@
 +package io.papermc.paper.pluginremap;
 +
 +import java.io.ByteArrayInputStream;
@@ -313,6 +313,7 @@ index 0000000000000000000000000000000000000000..3a5bb5d2a45654385ca0bc15c81ef953
 +import java.io.IOException;
 +import java.util.Collection;
 +import java.util.List;
++import java.util.Set;
 +import java.util.jar.Attributes;
 +import java.util.jar.Manifest;
 +import net.neoforged.art.api.Transformer;
@@ -322,6 +323,7 @@ index 0000000000000000000000000000000000000000..3a5bb5d2a45654385ca0bc15c81ef953
 +    static final String MOJANG_NAMESPACE = "mojang";
 +    static final String MOJANG_PLUS_YARN_NAMESPACE = "mojang+yarn";
 +    static final String SPIGOT_NAMESPACE = "spigot";
++    static final Set<String> KNOWN_NAMESPACES = Set.of(MOJANG_NAMESPACE, MOJANG_PLUS_YARN_NAMESPACE, SPIGOT_NAMESPACE);
 +
 +    private final String mainAttributesKey;
 +    private final String namespace;
@@ -375,10 +377,10 @@ index 0000000000000000000000000000000000000000..3a5bb5d2a45654385ca0bc15c81ef953
 +}
 diff --git a/src/main/java/io/papermc/paper/pluginremap/PluginRemapper.java b/src/main/java/io/papermc/paper/pluginremap/PluginRemapper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a1ce1307b2834f2415bdddbf42d80e2d69a480e1
+index 0000000000000000000000000000000000000000..f3f7849412f4fd762fb044223b9fc25f6a8a0774
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/pluginremap/PluginRemapper.java
-@@ -0,0 +1,433 @@
+@@ -0,0 +1,438 @@
 +package io.papermc.paper.pluginremap;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -502,7 +504,7 @@ index 0000000000000000000000000000000000000000..a1ce1307b2834f2415bdddbf42d80e2d
 +        for (final Path lib : libraries) {
 +            if (!lib.getFileName().toString().endsWith(".jar")) {
 +                if (DEBUG_LOGGING) {
-+                    LOGGER.info("Library '{}' is not a jar.", libraries);
++                    LOGGER.info("Library '{}' is not a jar.", lib);
 +                }
 +                tasks.add(CompletableFuture.completedFuture(lib));
 +                continue;
@@ -510,7 +512,7 @@ index 0000000000000000000000000000000000000000..a1ce1307b2834f2415bdddbf42d80e2d
 +            final @Nullable Path cached = this.libraries.getIfPresent(lib);
 +            if (cached != null) {
 +                if (DEBUG_LOGGING) {
-+                    LOGGER.info("Library '{}' has not changed since last remap.", libraries);
++                    LOGGER.info("Library '{}' has not changed since last remap.", lib);
 +                }
 +                tasks.add(CompletableFuture.completedFuture(cached));
 +                continue;
@@ -681,6 +683,11 @@ index 0000000000000000000000000000000000000000..a1ce1307b2834f2415bdddbf42d80e2d
 +            } else {
 +                ns = null;
 +            }
++
++            if (ns != null && !InsertManifestAttribute.KNOWN_NAMESPACES.contains(ns)) {
++                throw new RuntimeException("Failed to remap plugin " + inputFile + " with unknown mapping namespace '" + ns + "'");
++            }
++
 +            final boolean mojangMappedManifest = ns != null && (ns.equals(InsertManifestAttribute.MOJANG_NAMESPACE) || ns.equals(InsertManifestAttribute.MOJANG_PLUS_YARN_NAMESPACE));
 +            if (library) {
 +                if (mojangMappedManifest) {
