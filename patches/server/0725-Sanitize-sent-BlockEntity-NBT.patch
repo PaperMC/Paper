@@ -5,15 +5,15 @@ Subject: [PATCH] Sanitize sent BlockEntity NBT
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java
-index 1970c0fa24764f6bbd0cc360b7d32d7906eaf808..db03254682b827d650160d6f2c1a18cf12c861d7 100644
+index 4f3ba61f13dbe5773034a19e749b7c4f5dc3d291..5d3e739d28d394ed59fe0003245cc55ac62e6087 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java
-@@ -23,7 +23,7 @@ public class ClientboundBlockEntityDataPacket implements Packet<ClientGamePacket
-     public static ClientboundBlockEntityDataPacket create(BlockEntity blockEntity, BiFunction<BlockEntity, RegistryAccess, CompoundTag> nbtGetter) {
-         RegistryAccess iregistrycustom = blockEntity.getLevel().registryAccess();
+@@ -29,7 +29,7 @@ public class ClientboundBlockEntityDataPacket implements Packet<ClientGamePacket
  
--        return new ClientboundBlockEntityDataPacket(blockEntity.getBlockPos(), blockEntity.getType(), (CompoundTag) nbtGetter.apply(blockEntity, iregistrycustom));
-+        return new ClientboundBlockEntityDataPacket(blockEntity.getBlockPos(), blockEntity.getType(), (CompoundTag) blockEntity.sanitizeSentNbt(nbtGetter.apply(blockEntity, iregistrycustom)));  // Paper - Sanitize sent data
+     public static ClientboundBlockEntityDataPacket create(BlockEntity blockEntity, BiFunction<BlockEntity, RegistryAccess, CompoundTag> nbtGetter) {
+         RegistryAccess registryAccess = blockEntity.getLevel().registryAccess();
+-        return new ClientboundBlockEntityDataPacket(blockEntity.getBlockPos(), blockEntity.getType(), nbtGetter.apply(blockEntity, registryAccess));
++        return new ClientboundBlockEntityDataPacket(blockEntity.getBlockPos(), blockEntity.getType(), blockEntity.sanitizeSentNbt(nbtGetter.apply(blockEntity, registryAccess)));  // Paper - Sanitize sent data
      }
  
      public static ClientboundBlockEntityDataPacket create(BlockEntity blockEntity) {
@@ -30,10 +30,10 @@ index ac900dfdc5c90e9e60d47efa734be8f0a5b20dca..ec1cb034d840633240f2b379b09f7d2f
          }
      }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index df945a152747bea0452ec18c09d59598903aa91f..a7dfad2696e7145af1355a5db132af14d09a6f30 100644
+index 978125c69b2a9ea465595c7eef10a1aea7ccf26c..30a75492a4b25450c194b4cc44deb665711db5af 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -357,6 +357,14 @@ public abstract class BlockEntity {
+@@ -368,6 +368,14 @@ public abstract class BlockEntity {
      }
      // CraftBukkit end
  

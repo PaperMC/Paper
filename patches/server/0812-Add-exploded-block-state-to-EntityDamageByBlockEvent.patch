@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 22 Oct 2021 16:25:07 -0700
+Subject: [PATCH] Add exploded block state to EntityDamageByBlockEvent
+
+== AT ==
+public org.bukkit.craftbukkit.block.CraftBlockStates getBlockState(Lorg/bukkit/World;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/entity/BlockEntity;)Lorg/bukkit/craftbukkit/block/CraftBlockState;
+
+diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSources.java b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
+index 89928dad3182a0131c3fba19c9c131d6997028eb..349d1683458ec5d641c9823aa7a68dec8820a664 100644
+--- a/src/main/java/net/minecraft/world/damagesource/DamageSources.java
++++ b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
+@@ -265,6 +265,7 @@ public class DamageSources {
+         return this.source(DamageTypes.SONIC_BOOM, attacker);
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - add exploded state
+     public DamageSource badRespawnPointExplosion(Vec3 position) {
+         // CraftBukkit start
+         return this.badRespawnPointExplosion(position, null, null, null);
+@@ -273,7 +274,7 @@ public class DamageSources {
+     public DamageSource badRespawnPointExplosion(Vec3 vec3d, net.minecraft.world.level.Level world, net.minecraft.world.level.block.state.BlockState blockData, net.minecraft.core.BlockPos position) {
+         DamageSource damageSource = new DamageSource(this.damageTypes.getHolderOrThrow(DamageTypes.BAD_RESPAWN_POINT), vec3d);
+         if (world != null && blockData != null && position != null) {
+-            damageSource.blockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(world, position, blockData, null);
++            damageSource.blockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(world.getWorld(), position, blockData, world.getBlockEntity(position)); // Paper
+         }
+         return damageSource;
+         // CraftBukkit end
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index c52cb55cd1da988ec646e4e1484ec1a72513291d..0ab1cf162016422007426698dec60ffd875631a0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1070,7 +1070,7 @@ public class CraftEventFactory {
+         Entity damager = (bukkitDamageSource.isIndirect() && source.getDirectEntity() != null) ? source.getDirectEntity() : source.getCausingEntity();
+         if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+             if (damager == null) {
+-                return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
++                return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.blockState); // Paper - Include BlockState for damage
+             }
+             DamageCause damageCause = (damager.getBukkitEntity() instanceof org.bukkit.entity.TNTPrimed) ? DamageCause.BLOCK_EXPLOSION : DamageCause.ENTITY_EXPLOSION;
+             return CraftEventFactory.callEntityDamageEvent(damager, entity, damageCause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.isCritical()); // Paper - add critical damage API
+@@ -1117,7 +1117,7 @@ public class CraftEventFactory {
+             } else {
+                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, source.getDirectBlock(), source.getMsgId()));
+             }
+-            return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
++            return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.blockState); // Paper - Include BlockState for damage
+         }
+ 
+         DamageCause cause;
+@@ -1170,8 +1170,13 @@ public class CraftEventFactory {
+         return CraftEventFactory.callEntityDamageEvent(event, damagee, cancelled);
+     }
+ 
+-    private static EntityDamageEvent callEntityDamageEvent(Block damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
+-        EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions);
++    // Paper start
++    private static EntityDamageEvent callEntityDamageEvent(Block damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) { // Paper
++        return callEntityDamageEvent(damager, damagee, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, null);
++    }
++    private static EntityDamageEvent callEntityDamageEvent(Block damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled, @Nullable org.bukkit.block.BlockState explodedBlockState) {
++        EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions, explodedBlockState);
++        // Paper end
+         return CraftEventFactory.callEntityDamageEvent(event, damagee, cancelled);
+     }
+ 
