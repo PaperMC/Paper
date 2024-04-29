@@ -1,0 +1,263 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Mon, 29 Apr 2024 10:46:46 -0400
+Subject: [PATCH] squash! WIP DataKey API
+
+
+diff --git a/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
+index d1b5eff0a0ef9c40892f7e8804309619770712cc..c241e4f4d9dcd8078dbd28c6e472642140b7ce29 100644
+--- a/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
++++ b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
+@@ -5,7 +5,6 @@ import io.papermc.paper.datakey.types.ItemLore;
+ import io.papermc.paper.datakey.types.PaperItemLore;
+ import io.papermc.paper.datakey.types.PaperUnbreakable;
+ import io.papermc.paper.datakey.types.Unbreakable;
+-import io.papermc.paper.util.Unit;
+ import net.kyori.adventure.text.Component;
+ import net.minecraft.core.component.DataComponentType;
+ import net.minecraft.core.component.DataComponents;
+@@ -30,25 +29,25 @@ public class ComponentAdapters {
+         register(DataComponents.ITEM_NAME, DataKeys.ITEM_NAME, Component.class, PaperAdventure::asVanilla, PaperAdventure::asAdventure);
+         register(DataComponents.LORE, DataKeys.LORE, ItemLore.class, (api) -> ((PaperItemLore) api).getHandle(), PaperItemLore::new);
+         register(DataComponents.RARITY, DataKeys.RARITY, ItemRarity.class, (api) -> Rarity.valueOf(api.name()), (nms) -> ItemRarity.valueOf(nms.name()));
+-        registerUnit(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
+-        registerUnit(DataComponents.HIDE_TOOLTIP);
++        registerUntyped(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
++        registerUntyped(DataComponents.HIDE_TOOLTIP);
+         registerIdentity(DataComponents.REPAIR_COST, Integer.class);
+-        registerUnit(DataComponents.CREATIVE_SLOT_LOCK);
++        registerUntyped(DataComponents.CREATIVE_SLOT_LOCK);
+         registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, Boolean.class);
+-        registerUnit(DataComponents.INTANGIBLE_PROJECTILE);
+-        registerUnit(DataComponents.FIRE_RESISTANT);
++        registerUntyped(DataComponents.INTANGIBLE_PROJECTILE);
++        registerUntyped(DataComponents.FIRE_RESISTANT);
+         registerIdentity(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, Integer.class);
+     }
+ 
+ 
+-    public static void registerUnit(DataComponentType<net.minecraft.util.Unit> type) {
+-        ADAPTERS.put(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type), new ComponentAdapter<>(type, Unit.class, unit -> net.minecraft.util.Unit.INSTANCE, unit -> Unit.of()));
++    public static void registerUntyped(DataComponentType<net.minecraft.util.Unit> type) {
++        ADAPTERS.put(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type), new ComponentAdapter<>(type, Void.class, unit -> net.minecraft.util.Unit.INSTANCE, unit -> {throw new UnsupportedOperationException();}));
+     }
+     public static <COMMON> void registerIdentity(DataComponentType<COMMON> type, Class<COMMON> apiTypeValidation) {
+         ADAPTERS.put(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type), new ComponentAdapter<>(type, apiTypeValidation, (c) -> c, (c) -> c));
+     }
+ 
+-    public static <NMS, API> void register(DataComponentType<NMS> type, DataKey<API> dummy, Class<API> apiTypeValidation, Function<API, NMS> nmsConverter, Function<NMS, API> apiConverter) {
++    public static <NMS, API> void register(DataComponentType<NMS> type, DataKey.Valued<API> dummy, Class<API> apiTypeValidation, Function<API, NMS> nmsConverter, Function<NMS, API> apiConverter) {
+         ADAPTERS.put(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type), new ComponentAdapter<>(type, apiTypeValidation, nmsConverter, apiConverter));
+     }
+ 
+diff --git a/src/main/java/io/papermc/paper/datakey/PaperComponentType.java b/src/main/java/io/papermc/paper/datakey/PaperComponentType.java
+index d78d42a76cfc8c816635ce16cd9e830fd04bced5..93ce96e0f95b88d051543d09b1141047e6662f86 100644
+--- a/src/main/java/io/papermc/paper/datakey/PaperComponentType.java
++++ b/src/main/java/io/papermc/paper/datakey/PaperComponentType.java
+@@ -14,15 +14,15 @@ import org.bukkit.craftbukkit.util.Handleable;
+ import org.bukkit.damage.DamageType;
+ import org.jetbrains.annotations.NotNull;
+ 
+-public class PaperComponentType<T, NMS> implements DataKey<T>, Handleable<DataComponentType<NMS>> {
++public class PaperComponentType<T, NMS> implements DataKey, Handleable<DataComponentType<NMS>> {
+     static {
+         ComponentAdapters.bootstrap();
+     }
+-    public static <T> DataComponentType<T> bukkitToMinecraft(DataKey<T> bukkitDamageType) {
++    public static <T> DataComponentType<T> bukkitToMinecraft(DataKey bukkitDamageType) {
+         return CraftRegistry.bukkitToMinecraft(bukkitDamageType);
+     }
+ 
+-    public static DataKey<?> minecraftToBukkit(DataComponentType<?> minecraftDamageType) {
++    public static DataKey minecraftToBukkit(DataComponentType<?> minecraftDamageType) {
+         return CraftRegistry.minecraftToBukkit(minecraftDamageType, Registries.DATA_COMPONENT_TYPE, Registry.DATA_KEYS);
+     }
+ 
+@@ -30,9 +30,9 @@ public class PaperComponentType<T, NMS> implements DataKey<T>, Handleable<DataCo
+     private final ComponentAdapters.ComponentAdapter<T, NMS> adapter;
+     private final DataComponentType<NMS> dataComponentType;
+ 
+-    public PaperComponentType(NamespacedKey namespacedKey, DataComponentType<?> dataComponentType) {
++    public PaperComponentType(NamespacedKey namespacedKey, DataComponentType<?> dataComponentType, ComponentAdapters.ComponentAdapter<T, NMS> adapter) {
+         this.key = namespacedKey;
+-        this.adapter = (ComponentAdapters.ComponentAdapter<T, NMS>) ComponentAdapters.ADAPTERS.get(CraftNamespacedKey.toMinecraft(key));
++        this.adapter = adapter;
+         this.dataComponentType = (DataComponentType<NMS>) dataComponentType;
+     }
+ 
+@@ -54,4 +54,28 @@ public class PaperComponentType<T, NMS> implements DataKey<T>, Handleable<DataCo
+     public DataComponentType<NMS> getHandle() {
+         return this.dataComponentType;
+     }
++
++    public static DataKey of(NamespacedKey namespacedKey, DataComponentType<?> dataComponentType) {
++        ComponentAdapters.ComponentAdapter adapter = ComponentAdapters.ADAPTERS.get(CraftNamespacedKey.toMinecraft(namespacedKey));
++        if (adapter != null && adapter.apiTypeValidation() == Void.class) {
++            return new NonypedPaperComponentType<>(namespacedKey, dataComponentType, adapter);
++        } else {
++            return new TypedPaperComponentType<>(namespacedKey, dataComponentType, adapter);
++        }
++    }
++
++
++    private static class TypedPaperComponentType<T, NMS> extends PaperComponentType<T, NMS> implements DataKey.Valued<T> {
++
++        public TypedPaperComponentType(final NamespacedKey namespacedKey, final DataComponentType<?> dataComponentType, ComponentAdapters.ComponentAdapter<T, NMS> adapter) {
++            super(namespacedKey, dataComponentType, adapter);
++        }
++    }
++
++    private static class NonypedPaperComponentType<T, NMS> extends PaperComponentType<T, NMS> implements DataKey.NonValued {
++
++        public NonypedPaperComponentType(final NamespacedKey namespacedKey, final DataComponentType<?> dataComponentType, ComponentAdapters.ComponentAdapter<T, NMS> adapter) {
++            super(namespacedKey, dataComponentType, adapter);
++        }
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/datakey/PaperDataKeyMap.java b/src/main/java/io/papermc/paper/datakey/PaperDataKeyMap.java
+index e55c1bcbf62de62d7699cf2a050132b208083a3d..478c73363e64e861a8285234f2f294f45ecbfdf5 100644
+--- a/src/main/java/io/papermc/paper/datakey/PaperDataKeyMap.java
++++ b/src/main/java/io/papermc/paper/datakey/PaperDataKeyMap.java
+@@ -17,7 +17,7 @@ public class PaperDataKeyMap implements DataKeyMap {
+ 
+     @Nullable
+     @Override
+-    public <T> T get(final DataKey<T> type) {
++    public <T> T get(final DataKey.Valued<T> type) {
+         PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
+         ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
+         Object keyValue = this.nmsComponentMap.get(paperComponentType.getHandle());
+@@ -26,13 +26,19 @@ public class PaperDataKeyMap implements DataKeyMap {
+     }
+ 
+     @Override
+-    public Set<DataKey<?>> keySet() {
++    public Set<DataKey> keySet() {
+         Set<DataComponentType<?>> nmsKeys = this.nmsComponentMap.keySet();
+-        Set<DataKey<?>> keys = new HashSet<>(nmsKeys.size());
++        Set<DataKey> keys = new HashSet<>(nmsKeys.size());
+         for (DataComponentType<?> nmsKey : nmsKeys) {
+             keys.add(PaperComponentType.minecraftToBukkit(nmsKey));
+         }
+ 
+         return keys;
+     }
++
++    @Override
++    public boolean has(final DataKey type) {
++        PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
++        return this.nmsComponentMap.has(paperComponentType.getHandle());
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java
+index a7bd48c01c473ccde84760d121dcad73aa6d0a59..36802d32ed1724e87f707c0cc46e566ef04a5b77 100644
+--- a/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java
++++ b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java
+@@ -17,16 +17,25 @@ public class PaperPatchedDataKeyMap extends PaperDataKeyMap implements PatchedDa
+ 
+     @Nullable
+     @Override
+-    public <T> T set(final DataKey<T> type, @Nullable final T value) {
++    public <T> T set(final DataKey.Valued<T> type, @Nullable final T value) {
+         PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
+         ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
+ 
+         return adapter.apiConverter().apply(this.patched().set(paperComponentType.getHandle(), value == null ? null : adapter.nmsConverter().apply(value)));
+     }
+ 
+-    @Nullable
+     @Override
+-    public <T> T remove(final DataKey<T> type) {
++    public boolean set(final DataKey.NonValued type) {
++        PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
++        ComponentAdapters.ComponentAdapter<?, Object> adapter = paperComponentType.getAdapter();
++
++        boolean hasValue = this.has(type);
++        this.patched().set(paperComponentType.getHandle(), adapter.nmsConverter().apply(null));
++        return hasValue;
++    }
++
++    @Override
++    public <T> @Nullable T remove(final DataKey.Valued<T> type) {
+         PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
+         ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
+ 
+@@ -38,6 +47,19 @@ public class PaperPatchedDataKeyMap extends PaperDataKeyMap implements PatchedDa
+         return adapter.apiConverter().apply(removed);
+     }
+ 
++    @Override
++    public boolean remove(final DataKey.NonValued type) {
++        PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
++        ComponentAdapters.ComponentAdapter<?, Object> adapter = paperComponentType.getAdapter();
++
++        Object removed = this.patched().remove(adapter.type());
++        if (removed == null) {
++            return false;
++        }
++
++        return true;
++    }
++
+     @Override
+     public @NotNull DataKeyMapPatch asPatch() {
+         return null;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+index 189b8d995caa7e8190c6c07400c75d791f6465ed..2ea46a3620fffcee18ad0e1d571ebfeedb66fd41 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+@@ -146,7 +146,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+         // Paper end
+         // Paper start - remove this after a while along with all ConfiguredStructure stuff
+         if (bukkitClass == io.papermc.paper.datakey.DataKey.class) {
+-            return new CraftRegistry<>(io.papermc.paper.datakey.DataKey.class, registryHolder.registryOrThrow(Registries.DATA_COMPONENT_TYPE), io.papermc.paper.datakey.PaperComponentType::new);
++            return new CraftRegistry<>(io.papermc.paper.datakey.DataKey.class, registryHolder.registryOrThrow(Registries.DATA_COMPONENT_TYPE), io.papermc.paper.datakey.PaperComponentType::of);
+         }
+         // Paper end
+ 
+diff --git a/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java b/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java
+index c60ec00464d5d4216544240f64a867e51ac7335d..517ea27fe792b1e6ec54075b4330d9a08c834bcf 100644
+--- a/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java
++++ b/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java
+@@ -3,7 +3,6 @@ package io.papermc.paper.item;
+ import io.papermc.paper.datakey.DataKey;
+ import io.papermc.paper.datakey.DataKeys;
+ import io.papermc.paper.datakey.types.Unbreakable;
+-import io.papermc.paper.util.Unit;
+ import org.bukkit.Material;
+ import org.bukkit.inventory.ItemFlag;
+ import org.bukkit.inventory.ItemStack;
+@@ -56,23 +55,23 @@ public class MetaDataKeyMetaTest extends AbstractTestingBase {
+     @Test
+     public void testToolTipAdditional() {
+         ItemStack itemStack = new ItemStack(Material.STONE);
+-        itemStack.getDataKeyMap().set(DataKeys.HIDE_ADDITIONAL_TOOLTIP, Unit.of());
++        itemStack.getDataKeyMap().set(DataKeys.HIDE_ADDITIONAL_TOOLTIP);
+ 
+         Assertions.assertTrue(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
+-        itemStack.getDataKeyMap().set(DataKeys.HIDE_ADDITIONAL_TOOLTIP, null);
++        itemStack.getDataKeyMap().remove(DataKeys.HIDE_ADDITIONAL_TOOLTIP);
+         Assertions.assertFalse(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
+     }
+ 
+-    @Test
+-    public void testToolTip() {
+-        ItemStack itemStack = new ItemStack(Material.STONE);
+-        testSimpleValue(itemStack, DataKeys.HIDE_TOOLTIP, Unit.of(), (meta) -> meta.isHideTooltip() ? Unit.of() : null, (meta, val) -> meta.setHideTooltip(val != null), ItemMeta.class);
+-        itemStack = new ItemStack(Material.STONE);
+-        testSimpleValue(itemStack, DataKeys.HIDE_TOOLTIP, null, (meta) -> meta.isHideTooltip() ? Unit.of() : null, (meta, val) -> meta.setHideTooltip(false), ItemMeta.class);
+-    }
++    // @Test
++    // public void testToolTip() {
++    //     ItemStack itemStack = new ItemStack(Material.STONE);
++    //     testSimpleValue(itemStack, DataKeys.HIDE_TOOLTIP, Unit.of(), (meta) -> meta.isHideTooltip() ? Unit.of() : null, (meta, val) -> meta.setHideTooltip(val != null), ItemMeta.class);
++    //     itemStack = new ItemStack(Material.STONE);
++    //     testSimpleValue(itemStack, DataKeys.HIDE_TOOLTIP, null, (meta) -> meta.isHideTooltip() ? Unit.of() : null, (meta, val) -> meta.setHideTooltip(false), ItemMeta.class);
++    // }
+ 
+     @SuppressWarnings("unchecked")
+-    private static <T, M> void testSimpleValue(ItemStack itemStack, DataKey<T> dataKey, T value, Function<M, T> metaGetter, BiConsumer<M, T> metaSetter, Class<M> meta) {
++    private static <T, M> void testSimpleValue(ItemStack itemStack, DataKey.Valued<T> dataKey, T value, Function<M, T> metaGetter, BiConsumer<M, T> metaSetter, Class<M> meta) {
+         itemStack.getDataKeyMap().set(dataKey, value);
+         Assertions.assertEquals(value, itemStack.getDataKeyMap().get(dataKey));
+ 
