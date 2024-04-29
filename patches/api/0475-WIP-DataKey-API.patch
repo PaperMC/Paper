@@ -6,30 +6,37 @@ Subject: [PATCH] WIP DataKey API
 
 diff --git a/src/main/java/io/papermc/paper/datakey/DataKey.java b/src/main/java/io/papermc/paper/datakey/DataKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..805926c7f8158680587e543e0f643d1e45d1a94a
+index 0000000000000000000000000000000000000000..3cfe90cb65723e306792803d115a5309914e43ae
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/DataKey.java
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,17 @@
 +package io.papermc.paper.datakey;
 +
 +import net.kyori.adventure.key.Key;
 +import org.bukkit.Keyed;
 +
-+public interface DataKey<T> extends Keyed {
++public interface DataKey extends Keyed {
 +
 +    Key key();
++
++    interface Valued<T> extends DataKey {
++
++    }
++
++    interface NonValued extends DataKey {
++
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/DataKeys.java b/src/main/java/io/papermc/paper/datakey/DataKeys.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..26b83069907bbf6dfae98f1a687a982855283b8e
+index 0000000000000000000000000000000000000000..6d227528930c4d25ebfcc8829057cbacd442683b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/DataKeys.java
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,77 @@
 +package io.papermc.paper.datakey;
 +
 +import io.papermc.paper.datakey.types.ItemLore;
 +import io.papermc.paper.datakey.types.Unbreakable;
-+import io.papermc.paper.util.Unit;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
@@ -37,27 +44,27 @@ index 0000000000000000000000000000000000000000..26b83069907bbf6dfae98f1a687a9828
 +
 +public class DataKeys {
 +
-+    public static final DataKey<Integer> MAX_STACK_SIZE = register("max_stack_size");
-+    public static final DataKey<Integer> MAX_DAMAGE = register("max_damage");
-+    public static final DataKey<Integer> DAMAGE = register("damage");
-+    public static final DataKey<Unbreakable> UNBREAKABLE = register("unbreakable");
-+    public static final DataKey<Component> CUSTOM_NAME = register("custom_name");
-+    public static final DataKey<Component> ITEM_NAME = register("item_name");
-+    public static final DataKey<ItemLore> LORE = register("lore");
-+    public static final DataKey<ItemRarity> RARITY = register("rarity");
++    public static final DataKey.Valued<Integer> MAX_STACK_SIZE = typed("max_stack_size");
++    public static final DataKey.Valued<Integer> MAX_DAMAGE = typed("max_damage");
++    public static final DataKey.Valued<Integer> DAMAGE = typed("damage");
++    public static final DataKey.Valued<Unbreakable> UNBREAKABLE = typed("unbreakable");
++    public static final DataKey.Valued<Component> CUSTOM_NAME = typed("custom_name");
++    public static final DataKey.Valued<Component> ITEM_NAME = typed("item_name");
++    public static final DataKey.Valued<ItemLore> LORE = typed("lore");
++    public static final DataKey.Valued<ItemRarity> RARITY = typed("rarity");
 +    // enchantments
 +    // can_place_on
 +    // can_break
 +    // attribute_modifiers
 +    // custom_model_data
-+    public static final DataKey<Unit> HIDE_ADDITIONAL_TOOLTIP = register("hide_additional_tooltip");
-+    public static final DataKey<Unit> HIDE_TOOLTIP = register("hide_tooltip");
-+    public static final DataKey<Integer> REPAIR_COST = register("repair_cost");
-+    public static final DataKey<Unit> CREATIVE_SLOT_LOCK = register("creative_slot_lock");
-+    public static final DataKey<Boolean> ENCHANTMENT_GLINT_OVERRIDE = register("enchantment_glint_override");
-+    public static final DataKey<Unit> INTANGIBLE_PROJECTILE = register("intangible_projectile");
++    public static final DataKey.NonValued HIDE_ADDITIONAL_TOOLTIP = nonTyped("hide_additional_tooltip");
++    public static final DataKey.NonValued  HIDE_TOOLTIP = nonTyped("hide_tooltip");
++    public static final DataKey.Valued<Integer> REPAIR_COST = typed("repair_cost");
++    public static final DataKey.NonValued  CREATIVE_SLOT_LOCK = nonTyped("creative_slot_lock");
++    public static final DataKey.Valued<Boolean> ENCHANTMENT_GLINT_OVERRIDE = typed("enchantment_glint_override");
++    public static final DataKey.NonValued INTANGIBLE_PROJECTILE = nonTyped("intangible_projectile");
 +    // food
-+    public static final DataKey<Unit> FIRE_RESISTANT = register("fire_resistant");
++    public static final DataKey.NonValued FIRE_RESISTANT = nonTyped("fire_resistant");
 +    // tool
 +    // stored_enchantments
 +    // dyed_color
@@ -77,7 +84,7 @@ index 0000000000000000000000000000000000000000..26b83069907bbf6dfae98f1a687a9828
 +    // bucket_entity_data
 +    // block_entity_data
 +    // instrument
-+    public static final DataKey<Integer> OMINOUS_BOTTLE_AMPLIFIER = register("ominous_bottle_amplifier");
++    public static final DataKey.Valued<Integer> OMINOUS_BOTTLE_AMPLIFIER = typed("ominous_bottle_amplifier");
 +    // recipes
 +    // lodestone_tracker
 +    // firework_explosion
@@ -94,16 +101,48 @@ index 0000000000000000000000000000000000000000..26b83069907bbf6dfae98f1a687a9828
 +    // container_loot
 +
 +    @SuppressWarnings("unchecked")
-+    private static <T> DataKey<T> register(String name) {
-+        return (DataKey<T>) Registry.DATA_KEYS.get(NamespacedKey.minecraft(name));
++    private static DataKey.NonValued nonTyped(String name) {
++        return (DataKey.NonValued) Registry.DATA_KEYS.get(NamespacedKey.minecraft(name));
 +    }
++
++    @SuppressWarnings("unchecked")
++    private static <T> DataKey.Valued<T> typed(String name) {
++        return (DataKey.Valued<T>) Registry.DATA_KEYS.get(NamespacedKey.minecraft(name));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/PatchedDataComponentHolder.java b/src/main/java/io/papermc/paper/datakey/PatchedDataComponentHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a226c4d1d901ea6086ac49263a0f21867328e36f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/PatchedDataComponentHolder.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.datakey;
++
++import io.papermc.paper.datakey.map.DataKeyMap;
++import org.jetbrains.annotations.Nullable;
++
++public interface PatchedDataComponentHolder {
++
++    DataKeyMap data();
++
++    @Nullable
++    <T> T setData(DataKey.Valued<T> type, @Nullable T value);
++
++    @Nullable
++    <T> T setData(DataKey.NonValued type);
++
++    @Nullable
++    <T> T removeData(DataKey type);
++
++    boolean hasData(DataKey type);
++
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/DataKeyMap.java b/src/main/java/io/papermc/paper/datakey/map/DataKeyMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c542860ee47cdd02d55b39aa6f1fe29f4e85773a
+index 0000000000000000000000000000000000000000..75d07bd3ec9b51f039715590881272eced13ea4f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/DataKeyMap.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.datakey.map;
 +
 +import io.papermc.paper.datakey.DataKey;
@@ -117,15 +156,13 @@ index 0000000000000000000000000000000000000000..c542860ee47cdd02d55b39aa6f1fe29f
 +    }
 +
 +    @Nullable
-+    <T> T get(DataKey<T> type);
++    <T> T get(DataKey.Valued<T> type);
 +
-+    Set<DataKey<?>> keySet();
++    Set<DataKey> keySet();
 +
-+    default boolean has(DataKey<?> type) {
-+        return this.get(type) != null;
-+    }
++    boolean has(DataKey type);
 +
-+    default <T> T getOrDefault(DataKey<? extends T> type, T fallback) {
++    default <T> T getOrDefault(DataKey.Valued<T> type, T fallback) {
 +        T object = this.get(type);
 +        return object != null ? object : fallback;
 +    }
@@ -165,10 +202,10 @@ index 0000000000000000000000000000000000000000..9da6ab689eb43eb960429fe9a752c0c6
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMap.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4a3c74320909d5dadf4fdd48fceeb60da111c311
+index 0000000000000000000000000000000000000000..3340e13d6f161c521af5bca7a57c173bc0bdfead
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMap.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,36 @@
 +package io.papermc.paper.datakey.map;
 +
 +import io.papermc.paper.datakey.DataKey;
@@ -187,10 +224,16 @@ index 0000000000000000000000000000000000000000..4a3c74320909d5dadf4fdd48fceeb60d
 +    }
 +
 +    @Nullable
-+    <T> T set(DataKey<T> type, @Nullable T value);
++    <T> T set(DataKey.Valued<T> type, @Nullable T value);
++
++    // Returns if this value was previously set
++    boolean set(DataKey.NonValued type);
 +
 +    @Nullable
-+    <T> T remove(DataKey<T> type);
++    <T> T remove(DataKey.Valued<T> type);
++
++    // Returns if this value was previously set
++    boolean remove(DataKey.NonValued type);
 +
 +    @NotNull
 +    DataKeyMapPatch asPatch();
@@ -277,34 +320,17 @@ index 0000000000000000000000000000000000000000..d6dc5fa334679767096da9f80740bbc9
 +    @Contract("_ -> new")
 +    Unbreakable showInTooltip(boolean hideInTooltip);
 +}
-diff --git a/src/main/java/io/papermc/paper/util/Unit.java b/src/main/java/io/papermc/paper/util/Unit.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..540bf0c6f3f33bd3b7282ce9b51d32707d8ffc63
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/util/Unit.java
-@@ -0,0 +1,8 @@
-+package io.papermc.paper.util;
-+
-+public interface Unit {
-+
-+    static Unit of() {
-+        return UnitHolder.UNIT;
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/util/UnitHolder.java b/src/main/java/io/papermc/paper/util/UnitHolder.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..5312745cb67d48e2370251fb45aa2c5c93c52107
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/util/UnitHolder.java
-@@ -0,0 +1,8 @@
-+package io.papermc.paper.util;
-+
-+
-+class UnitHolder {
-+
-+    static final Unit UNIT = new Unit() {
-+    };
-+}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+index c4b30b16ce4db754b958c493ad86d0863592c263..a16f0a3c426598990066f1527ce808ae9c214fc7 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.datakey.DataKey;
+ import net.kyori.adventure.key.Keyed;
+ import org.bukkit.GameEvent;
+ import org.bukkit.block.Biome;
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
 index 82d009c0bbe4b3026a535e02d6e0ed20c7bd525d..2e829272171761da93c8d44d3c04e23e3c25516a 100644
 --- a/src/main/java/org/bukkit/Material.java
@@ -319,7 +345,7 @@ index 82d009c0bbe4b3026a535e02d6e0ed20c7bd525d..2e829272171761da93c8d44d3c04e23e
      GRANITE(21091),
      POLISHED_GRANITE(5477),
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index 542c0516e19b6177ff8007ca6f8955dc9082da95..329480202c35908bb2ce6970d23f486b9666652c 100644
+index 542c0516e19b6177ff8007ca6f8955dc9082da95..3b6f3bccf7b009c35065d94532f0d0b4b606e015 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
 @@ -317,6 +317,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
@@ -327,7 +353,7 @@ index 542c0516e19b6177ff8007ca6f8955dc9082da95..329480202c35908bb2ce6970d23f486b
          }
      };
 +
-+    Registry<io.papermc.paper.datakey.DataKey<?>> DATA_KEYS = (Registry) Bukkit.getRegistry(io.papermc.paper.datakey.DataKey.class);
++    Registry<io.papermc.paper.datakey.DataKey> DATA_KEYS = (Registry) Bukkit.getRegistry(io.papermc.paper.datakey.DataKey.class);
      // Paper end
  
      /**
