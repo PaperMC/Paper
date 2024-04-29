@@ -300,7 +300,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
 +            this.verifyWorldConfigVersion(contextMap, node);
 +        }
-+        this.applyWorldConfigTransformations(contextMap, node);
++        this.applyWorldConfigTransformations(contextMap, node, null);
 +        final W instance = node.require(this.worldConfigClass);
 +        node.set(this.worldConfigClass, instance);
 +        this.trySaveFileNode(loader, node, configFile.toString());
@@ -362,7 +362,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
 +            this.verifyWorldConfigVersion(contextMap, worldNode);
 +        }
-+        this.applyWorldConfigTransformations(contextMap, worldNode);
++        this.applyWorldConfigTransformations(contextMap, worldNode, defaultsNode);
 +        this.applyDefaultsAwareWorldConfigTransformations(contextMap, worldNode, defaultsNode);
 +        this.trySaveFileNode(worldLoader, worldNode, worldConfigFile.toString()); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
 +        worldNode.mergeFrom(defaultsNode);
@@ -390,7 +390,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
++    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node, final @Nullable ConfigurationNode defaultsNode) throws ConfigurateException {
 +    }
 +
 +    protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
@@ -869,9 +869,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
-+import io.papermc.paper.configuration.transformation.world.SpawnLoadedRangeToGameRule;
 +import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
 +import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
++import io.papermc.paper.configuration.transformation.world.versioned.V31_SpawnLoadedRangeToGameRule;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
 +import io.papermc.paper.configuration.type.DurationOrDisabled;
@@ -905,6 +905,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.apache.commons.lang3.RandomStringUtils;
 +import org.bukkit.configuration.ConfigurationSection;
 +import org.bukkit.configuration.file.YamlConfiguration;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.VisibleForTesting;
 +import org.slf4j.Logger;
 +import org.spigotmc.SpigotConfig;
@@ -1100,9 +1101,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
-+        ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
-+        for (NodePath path : RemovedConfigurations.REMOVED_WORLD_PATHS) {
++    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node, final @Nullable ConfigurationNode defaultsNode) throws ConfigurateException {
++        final ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
++        for (final NodePath path : RemovedConfigurations.REMOVED_WORLD_PATHS) {
 +            builder.addAction(path, TransformAction.remove());
 +        }
 +        builder.build().apply(node);
@@ -1110,6 +1111,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
 +        V29_ZeroWorldHeight.apply(versionedBuilder);
 +        V30_RenameFilterNbtFromSpawnEgg.apply(versionedBuilder);
++        V31_SpawnLoadedRangeToGameRule.apply(versionedBuilder, contextMap, defaultsNode);
 +        // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
 +        versionedBuilder.build().apply(node);
 +    }
@@ -1129,8 +1131,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private static final List<Transformations.DefaultsAware> DEFAULT_AWARE_TRANSFORMATIONS = List.of(
-+        FeatureSeedsGeneration::apply,
-+        SpawnLoadedRangeToGameRule::apply
++        FeatureSeedsGeneration::apply
 +    );
 +
 +    @Override
@@ -1466,7 +1467,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +public class WorldConfiguration extends ConfigurationPart {
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
-+    static final int CURRENT_VERSION = 30; // (when you change the version, change the comment, so it conflicts on rebases): rename filter bad nbt from spawn eggs
++    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): migrate spawn loaded configs to gamerule
 +
 +    private final transient SpigotWorldConfig spigotConfig;
 +    private final transient ResourceLocation worldKey;
@@ -3519,6 +3520,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.transformation.global.versioned;
 +
++import java.util.Properties;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.dedicated.DedicatedServer;
 +import org.checkerframework.checker.nullness.qual.Nullable;
@@ -3527,8 +3529,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.spongepowered.configurate.NodePath;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
-+
-+import java.util.Properties;
 +
 +import static org.spongepowered.configurate.NodePath.path;
 +
@@ -3541,17 +3541,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private V29_LogIPs() {
 +    }
 +
-+    public static void apply(ConfigurationTransformation.VersionedBuilder builder) {
++    public static void apply(final ConfigurationTransformation.VersionedBuilder builder) {
 +        builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(PATH, INSTANCE).build());
 +    }
 +
 +    @Override
 +    public Object @Nullable [] visitPath(final NodePath path, final ConfigurationNode value) throws ConfigurateException {
-+        DedicatedServer server = ((DedicatedServer) MinecraftServer.getServer());
++        final DedicatedServer server = ((DedicatedServer) MinecraftServer.getServer());
 +
-+        boolean val = value.getBoolean(server.settings.getProperties().logIPs);
++        final boolean val = value.getBoolean(server.settings.getProperties().logIPs);
 +        server.settings.update((config) -> {
-+            Properties newProps = new Properties(config.properties);
++            final Properties newProps = new Properties(config.properties);
 +            newProps.setProperty("log-ips", String.valueOf(val));
 +            return config.reload(server.registryAccess(), newProps, server.options);
 +        });
@@ -3967,63 +3967,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        moveFromRootAndRename(builder, path("game-mechanics", oldKey), newKey, parents);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/SpawnLoadedRangeToGameRule.java b/src/main/java/io/papermc/paper/configuration/transformation/world/SpawnLoadedRangeToGameRule.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/configuration/transformation/world/SpawnLoadedRangeToGameRule.java
-@@ -0,0 +0,0 @@
-+package io.papermc.paper.configuration.transformation.world;
-+
-+import io.papermc.paper.configuration.Configurations;
-+import net.minecraft.world.level.GameRules;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spongepowered.configurate.ConfigurateException;
-+import org.spongepowered.configurate.ConfigurationNode;
-+import org.spongepowered.configurate.NodePath;
-+import org.spongepowered.configurate.transformation.ConfigurationTransformation;
-+import org.spongepowered.configurate.transformation.TransformAction;
-+
-+import static org.spongepowered.configurate.NodePath.path;
-+
-+public final class SpawnLoadedRangeToGameRule implements TransformAction {
-+
-+    private static final String SPAWN = "spawn";
-+    private static final String KEEP_SPAWN_LOADED_RANGE = "keep-spawn-loaded-range";
-+    private static final String KEEP_SPAWN_LOADED = "keep-spawn-loaded";
-+
-+    private final GameRules gameRules;
-+    private final ConfigurationNode defaultsNode;
-+
-+    private SpawnLoadedRangeToGameRule(final GameRules gameRules, final ConfigurationNode defaultsNode) {
-+        this.gameRules = gameRules;
-+        this.defaultsNode = defaultsNode;
-+    }
-+
-+    @Override
-+    public Object @Nullable [] visitPath(final NodePath path, final ConfigurationNode value) {
-+        final ConfigurationNode worldSpawnNode = value.node(SPAWN);
-+        final ConfigurationNode worldLoadedNode = worldSpawnNode.node(KEEP_SPAWN_LOADED);
-+        final boolean keepLoaded = worldLoadedNode.getBoolean(this.defaultsNode.node(SPAWN, KEEP_SPAWN_LOADED).getBoolean());
-+        worldLoadedNode.raw(null);
-+        final ConfigurationNode worldRangeNode = worldSpawnNode.node(KEEP_SPAWN_LOADED_RANGE);
-+        final int range = worldRangeNode.getInt(this.defaultsNode.node(SPAWN, KEEP_SPAWN_LOADED_RANGE).getInt());
-+        worldRangeNode.raw(null);
-+        if (worldSpawnNode.empty()) {
-+            worldSpawnNode.raw(null);
-+        }
-+        if (!keepLoaded) {
-+            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, null);
-+        } else {
-+            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(range, null);
-+        }
-+        return null;
-+    }
-+
-+    public static void apply(final ConfigurationTransformation.Builder builder, final Configurations.ContextMap contextMap, final ConfigurationNode defaultsNode) {
-+        builder.addAction(path(), new SpawnLoadedRangeToGameRule(contextMap.require(Configurations.GAME_RULES), defaultsNode));
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V29_ZeroWorldHeight.java b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V29_ZeroWorldHeight.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -4108,6 +4051,67 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static void apply(ConfigurationTransformation.VersionedBuilder builder) {
 +        builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(OLD_PATH, rename(NEW_PATH)).build());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V31_SpawnLoadedRangeToGameRule.java b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V31_SpawnLoadedRangeToGameRule.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V31_SpawnLoadedRangeToGameRule.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration.transformation.world.versioned;
++
++import io.papermc.paper.configuration.Configurations;
++import net.minecraft.world.level.GameRules;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.NodePath;
++import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++import org.spongepowered.configurate.transformation.TransformAction;
++
++import static org.spongepowered.configurate.NodePath.path;
++
++public final class V31_SpawnLoadedRangeToGameRule implements TransformAction {
++
++    private static final int VERSION = 31;
++    private static final String SPAWN = "spawn";
++    private static final String KEEP_SPAWN_LOADED_RANGE = "keep-spawn-loaded-range";
++    private static final String KEEP_SPAWN_LOADED = "keep-spawn-loaded";
++
++    private final GameRules gameRules;
++    private final ConfigurationNode defaultsNode;
++
++    private V31_SpawnLoadedRangeToGameRule(final GameRules gameRules, final ConfigurationNode defaultsNode) {
++        this.gameRules = gameRules;
++        this.defaultsNode = defaultsNode;
++    }
++
++    @Override
++    public Object @Nullable [] visitPath(final NodePath path, final ConfigurationNode value) {
++        final ConfigurationNode worldSpawnNode = value.node(SPAWN);
++        final ConfigurationNode worldLoadedNode = worldSpawnNode.node(KEEP_SPAWN_LOADED);
++        final boolean keepLoaded = worldLoadedNode.getBoolean(this.defaultsNode.node(SPAWN, KEEP_SPAWN_LOADED).getBoolean());
++        worldLoadedNode.raw(null);
++        final ConfigurationNode worldRangeNode = worldSpawnNode.node(KEEP_SPAWN_LOADED_RANGE);
++        final int range = worldRangeNode.getInt(this.defaultsNode.node(SPAWN, KEEP_SPAWN_LOADED_RANGE).getInt());
++        worldRangeNode.raw(null);
++        if (worldSpawnNode.empty()) {
++            worldSpawnNode.raw(null);
++        }
++        if (!keepLoaded) {
++            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, null);
++        } else {
++            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(range, null);
++        }
++        return null;
++    }
++
++    public static void apply(final ConfigurationTransformation.VersionedBuilder builder, final Configurations.ContextMap contextMap, final @Nullable ConfigurationNode defaultsNode) {
++        if (defaultsNode != null) {
++            builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(path(), new V31_SpawnLoadedRangeToGameRule(contextMap.require(Configurations.GAME_RULES), defaultsNode)).build());
++        } else {
++            builder.addVersion(VERSION, ConfigurationTransformation.empty()); // increment version of default world config
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
