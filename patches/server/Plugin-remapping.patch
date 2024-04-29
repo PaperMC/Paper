@@ -313,6 +313,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.io.IOException;
 +import java.util.Collection;
 +import java.util.List;
++import java.util.Set;
 +import java.util.jar.Attributes;
 +import java.util.jar.Manifest;
 +import net.neoforged.art.api.Transformer;
@@ -322,6 +323,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final String MOJANG_NAMESPACE = "mojang";
 +    static final String MOJANG_PLUS_YARN_NAMESPACE = "mojang+yarn";
 +    static final String SPIGOT_NAMESPACE = "spigot";
++    static final Set<String> KNOWN_NAMESPACES = Set.of(MOJANG_NAMESPACE, MOJANG_PLUS_YARN_NAMESPACE, SPIGOT_NAMESPACE);
 +
 +    private final String mainAttributesKey;
 +    private final String namespace;
@@ -502,7 +504,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (final Path lib : libraries) {
 +            if (!lib.getFileName().toString().endsWith(".jar")) {
 +                if (DEBUG_LOGGING) {
-+                    LOGGER.info("Library '{}' is not a jar.", libraries);
++                    LOGGER.info("Library '{}' is not a jar.", lib);
 +                }
 +                tasks.add(CompletableFuture.completedFuture(lib));
 +                continue;
@@ -510,7 +512,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            final @Nullable Path cached = this.libraries.getIfPresent(lib);
 +            if (cached != null) {
 +                if (DEBUG_LOGGING) {
-+                    LOGGER.info("Library '{}' has not changed since last remap.", libraries);
++                    LOGGER.info("Library '{}' has not changed since last remap.", lib);
 +                }
 +                tasks.add(CompletableFuture.completedFuture(cached));
 +                continue;
@@ -681,6 +683,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            } else {
 +                ns = null;
 +            }
++
++            if (ns != null && !InsertManifestAttribute.KNOWN_NAMESPACES.contains(ns)) {
++                throw new RuntimeException("Failed to remap plugin " + inputFile + " with unknown mapping namespace '" + ns + "'");
++            }
++
 +            final boolean mojangMappedManifest = ns != null && (ns.equals(InsertManifestAttribute.MOJANG_NAMESPACE) || ns.equals(InsertManifestAttribute.MOJANG_PLUS_YARN_NAMESPACE));
 +            if (library) {
 +                if (mojangMappedManifest) {
