@@ -3,21 +3,29 @@ From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 Date: Sun, 28 Apr 2024 19:53:01 -0400
 Subject: [PATCH] WIP DataKey API
 
+squash! WIP DataKey API
 
 diff --git a/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8b46aea00d695704b42e265d374e61d6a6b0d2f7
+index 0000000000000000000000000000000000000000..d1b5eff0a0ef9c40892f7e8804309619770712cc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,60 @@
 +package io.papermc.paper.datakey;
 +
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.datakey.types.ItemLore;
++import io.papermc.paper.datakey.types.PaperItemLore;
 +import io.papermc.paper.datakey.types.PaperUnbreakable;
 +import io.papermc.paper.datakey.types.Unbreakable;
++import io.papermc.paper.util.Unit;
++import net.kyori.adventure.text.Component;
 +import net.minecraft.core.component.DataComponentType;
 +import net.minecraft.core.component.DataComponents;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.item.Rarity;
++import org.bukkit.inventory.ItemRarity;
 +import java.util.HashMap;
 +import java.util.Map;
 +import java.util.function.Function;
@@ -31,8 +39,24 @@ index 0000000000000000000000000000000000000000..8b46aea00d695704b42e265d374e61d6
 +        registerIdentity(DataComponents.MAX_DAMAGE, Integer.class);
 +        registerIdentity(DataComponents.MAX_STACK_SIZE, Integer.class);
 +        register(DataComponents.UNBREAKABLE, DataKeys.UNBREAKABLE, Unbreakable.class, (api) -> ((PaperUnbreakable) api).getHandle(), PaperUnbreakable::new);
++        register(DataComponents.CUSTOM_NAME, DataKeys.CUSTOM_NAME, Component.class, PaperAdventure::asVanilla, PaperAdventure::asAdventure);
++        register(DataComponents.ITEM_NAME, DataKeys.ITEM_NAME, Component.class, PaperAdventure::asVanilla, PaperAdventure::asAdventure);
++        register(DataComponents.LORE, DataKeys.LORE, ItemLore.class, (api) -> ((PaperItemLore) api).getHandle(), PaperItemLore::new);
++        register(DataComponents.RARITY, DataKeys.RARITY, ItemRarity.class, (api) -> Rarity.valueOf(api.name()), (nms) -> ItemRarity.valueOf(nms.name()));
++        registerUnit(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
++        registerUnit(DataComponents.HIDE_TOOLTIP);
++        registerIdentity(DataComponents.REPAIR_COST, Integer.class);
++        registerUnit(DataComponents.CREATIVE_SLOT_LOCK);
++        registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, Boolean.class);
++        registerUnit(DataComponents.INTANGIBLE_PROJECTILE);
++        registerUnit(DataComponents.FIRE_RESISTANT);
++        registerIdentity(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, Integer.class);
 +    }
 +
++
++    public static void registerUnit(DataComponentType<net.minecraft.util.Unit> type) {
++        ADAPTERS.put(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type), new ComponentAdapter<>(type, Unit.class, unit -> net.minecraft.util.Unit.INSTANCE, unit -> Unit.of()));
++    }
 +    public static <COMMON> void registerIdentity(DataComponentType<COMMON> type, Class<COMMON> apiTypeValidation) {
 +        ADAPTERS.put(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type), new ComponentAdapter<>(type, apiTypeValidation, (c) -> c, (c) -> c));
 +    }
@@ -49,26 +73,28 @@ index 0000000000000000000000000000000000000000..8b46aea00d695704b42e265d374e61d6
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/DataKeyBridgeImpl.java b/src/main/java/io/papermc/paper/datakey/DataKeyBridgeImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9df5dc277906248c2bdfd13d7ab14f3b2a001101
+index 0000000000000000000000000000000000000000..0a391811ef46087b6bc382da64c42d3b9383c3c6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/DataKeyBridgeImpl.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,61 @@
 +package io.papermc.paper.datakey;
 +
 +import com.mojang.authlib.GameProfile;
++import io.papermc.paper.datakey.map.DataKeyMap;
++import io.papermc.paper.datakey.map.DataKeyMapBridge;
++import io.papermc.paper.datakey.map.PatchedDataKeyMap;
 +import net.minecraft.core.component.DataComponentMap;
 +import net.minecraft.core.component.DataComponents;
 +import net.minecraft.core.component.PatchedDataComponentMap;
 +import net.minecraft.world.item.Item;
 +import net.minecraft.world.item.ItemStack;
-+import org.bukkit.Bukkit;
 +import org.bukkit.Material;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.inventory.CraftItemType;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
 +import org.bukkit.inventory.meta.ItemMeta;
 +
-+public class DataKeyBridgeImpl implements DataKeyBridge {
++public class DataKeyBridgeImpl implements DataKeyMapBridge {
 +    @Override
 +    public PatchedDataKeyMap of(final DataKeyMap keyMap) {
 +        return new PaperPatchedDataKeyMap(new PatchedDataComponentMap(((PaperDataKeyMap) keyMap).nmsComponentMap));
@@ -114,10 +140,10 @@ index 0000000000000000000000000000000000000000..9df5dc277906248c2bdfd13d7ab14f3b
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperComponentType.java b/src/main/java/io/papermc/paper/datakey/PaperComponentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..086b38f0f9d0c744dd5519c8f50b75d165c84bd5
+index 0000000000000000000000000000000000000000..d78d42a76cfc8c816635ce16cd9e830fd04bced5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/PaperComponentType.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,57 @@
 +package io.papermc.paper.datakey;
 +
 +import com.google.common.base.Preconditions;
@@ -142,11 +168,9 @@ index 0000000000000000000000000000000000000000..086b38f0f9d0c744dd5519c8f50b75d1
 +        return CraftRegistry.bukkitToMinecraft(bukkitDamageType);
 +    }
 +
-+    public static DataKey minecraftToBukkit(DataComponentType<?> minecraftDamageType) {
++    public static DataKey<?> minecraftToBukkit(DataComponentType<?> minecraftDamageType) {
 +        return CraftRegistry.minecraftToBukkit(minecraftDamageType, Registries.DATA_COMPONENT_TYPE, Registry.DATA_KEYS);
 +    }
-+
-+    private final Class<T> type;
 +
 +    private final NamespacedKey key;
 +    private final ComponentAdapters.ComponentAdapter<T, NMS> adapter;
@@ -155,18 +179,7 @@ index 0000000000000000000000000000000000000000..086b38f0f9d0c744dd5519c8f50b75d1
 +    public PaperComponentType(NamespacedKey namespacedKey, DataComponentType<?> dataComponentType) {
 +        this.key = namespacedKey;
 +        this.adapter = (ComponentAdapters.ComponentAdapter<T, NMS>) ComponentAdapters.ADAPTERS.get(CraftNamespacedKey.toMinecraft(key));
-+        if (this.adapter != null) {
-+            this.type = this.adapter.apiTypeValidation();
-+        } else {
-+            this.type = null;
-+        }
 +        this.dataComponentType = (DataComponentType<NMS>) dataComponentType;
-+    }
-+
-+    // TODO: should we even have type?
-+    @Override
-+    public Class<T> type() {
-+        return this.type;
 +    }
 +
 +    @Override
@@ -180,7 +193,7 @@ index 0000000000000000000000000000000000000000..086b38f0f9d0c744dd5519c8f50b75d1
 +    }
 +
 +    public ComponentAdapters.ComponentAdapter<T, NMS> getAdapter() {
-+        return adapter;
++        return this.adapter;
 +    }
 +
 +    @Override
@@ -190,19 +203,17 @@ index 0000000000000000000000000000000000000000..086b38f0f9d0c744dd5519c8f50b75d1
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperDataKeyMap.java b/src/main/java/io/papermc/paper/datakey/PaperDataKeyMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b04010b9dff6d86bc38ddeab199ac4fb5cc0b699
+index 0000000000000000000000000000000000000000..e55c1bcbf62de62d7699cf2a050132b208083a3d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/PaperDataKeyMap.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.datakey;
 +
-+import io.papermc.paper.datakey.patch.DataKeyMapPatch;
++import io.papermc.paper.datakey.map.DataKeyMap;
 +import java.util.HashSet;
 +import java.util.Set;
 +import net.minecraft.core.component.DataComponentMap;
 +import net.minecraft.core.component.DataComponentType;
-+import net.minecraft.core.component.PatchedDataComponentMap;
-+import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +public class PaperDataKeyMap implements DataKeyMap {
@@ -218,8 +229,9 @@ index 0000000000000000000000000000000000000000..b04010b9dff6d86bc38ddeab199ac4fb
 +    public <T> T get(final DataKey<T> type) {
 +        PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
 +        ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
++        Object keyValue = this.nmsComponentMap.get(paperComponentType.getHandle());
 +
-+        return adapter.apiConverter().apply(this.nmsComponentMap.get(paperComponentType.getHandle()));
++        return keyValue == null ? null : adapter.apiConverter().apply(keyValue);
 +    }
 +
 +    @Override
@@ -235,13 +247,13 @@ index 0000000000000000000000000000000000000000..b04010b9dff6d86bc38ddeab199ac4fb
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d1a361f8e472db9ae1bb10e0effc0679d067d57d
+index 0000000000000000000000000000000000000000..a7bd48c01c473ccde84760d121dcad73aa6d0a59
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,58 @@
 +package io.papermc.paper.datakey;
 +
-+import com.google.common.collect.Sets;
++import io.papermc.paper.datakey.map.PatchedDataKeyMap;
 +import io.papermc.paper.datakey.patch.DataKeyMapPatch;
 +import net.minecraft.core.component.DataComponentType;
 +import net.minecraft.core.component.PatchedDataComponentMap;
@@ -262,7 +274,7 @@ index 0000000000000000000000000000000000000000..d1a361f8e472db9ae1bb10e0effc0679
 +        PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
 +        ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
 +
-+        return adapter.apiConverter().apply(this.patched().set(paperComponentType.getHandle(), adapter.nmsConverter().apply(value)));
++        return adapter.apiConverter().apply(this.patched().set(paperComponentType.getHandle(), value == null ? null : adapter.nmsConverter().apply(value)));
 +    }
 +
 +    @Nullable
@@ -271,7 +283,12 @@ index 0000000000000000000000000000000000000000..d1a361f8e472db9ae1bb10e0effc0679
 +        PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
 +        ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
 +
-+        return adapter.apiConverter().apply(this.patched().remove(adapter.type()));
++        Object removed = this.patched().remove(adapter.type());
++        if (removed == null) {
++            return null;
++        }
++
++        return adapter.apiConverter().apply(removed);
 +    }
 +
 +    @Override
@@ -288,43 +305,69 @@ index 0000000000000000000000000000000000000000..d1a361f8e472db9ae1bb10e0effc0679
 +        return new PaperPatchedDataKeyMap(this.patched().copy());
 +    }
 +
-+    @Nullable
-+    @Override
-+    public <T> T get(final DataKey<T> type) {
-+        PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
-+        ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
-+
-+        return adapter.apiConverter().apply(this.nmsComponentMap.get(paperComponentType.getHandle()));
-+    }
-+
-+    @Override
-+    public Set<DataKey<?>> keySet() {
-+        Set<DataComponentType<?>> nmsKeys = this.nmsComponentMap.keySet();
-+        Set<DataKey<?>> keys = new HashSet<>(nmsKeys.size());
-+        for (DataComponentType<?> nmsKey : nmsKeys) {
-+            keys.add(PaperComponentType.minecraftToBukkit(nmsKey));
-+        }
-+
-+        return keys;
-+    }
-+
 +    public PatchedDataComponentMap patched() {
 +        return ((PatchedDataComponentMap) this.nmsComponentMap);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b70278f2abcdb3a64d3004fa56cb1bb96d48f73
+index 0000000000000000000000000000000000000000..318bc1876857e17c767057fac669442735af0a8c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,23 @@
 +package io.papermc.paper.datakey.types;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import net.kyori.adventure.text.Component;
++import java.util.ArrayList;
++import java.util.List;
 +
 +public class ComponentTypesBridgesImpl implements ComponentTypesBridge {
 +
 +    @Override
 +    public Unbreakable unbreakable(final boolean showInTooltip) {
 +        return new PaperUnbreakable(new net.minecraft.world.item.component.Unbreakable(showInTooltip));
++    }
++
++    @Override
++    public ItemLore lore(final List<Component> componentList) {
++        List<net.minecraft.network.chat.Component> nmsComponentList = new ArrayList<>(componentList.size());
++        for (Component adventure : componentList) {
++            nmsComponentList.add(PaperAdventure.asVanilla(adventure));
++        }
++        return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(nmsComponentList));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java b/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ecc799921c6dd62d13399d7f14315503f9f5a2e5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.datakey.types;
++
++import com.google.common.collect.Lists;
++import io.papermc.paper.adventure.PaperAdventure;
++import net.kyori.adventure.text.Component;
++import net.minecraft.world.item.component.ItemLore;
++import org.bukkit.craftbukkit.util.Handleable;
++import java.util.List;
++
++public record PaperItemLore(ItemLore itemLore) implements io.papermc.paper.datakey.types.ItemLore, Handleable<ItemLore> {
++
++    @Override
++    public ItemLore getHandle() {
++        return this.itemLore;
++    }
++
++    @Override
++    public List<Component> lines() {
++        return Lists.transform(this.itemLore.lines(), PaperAdventure::asAdventure);
++    }
++
++    @Override
++    public List<Component> styledLines() {
++        return Lists.transform(this.itemLore.styledLines(), PaperAdventure::asAdventure);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java b/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java
@@ -354,27 +397,6 @@ index 0000000000000000000000000000000000000000..0e7874ffecc62edf53498ae7502d57cf
 +        return this.unbreakable;
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 36e3415b9312d3a80c9f5e1c36b42b7ea30c31c5..64519e035a034dcb609b0c45066a75de089c00a8 100644
---- a/src/main/java/net/minecraft/world/item/ItemStack.java
-+++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -228,7 +228,7 @@ public final class ItemStack implements DataComponentHolder {
-     @Deprecated
-     @Nullable
-     private Item item;
--    final PatchedDataComponentMap components;
-+    PatchedDataComponentMap components; // Paper
-     @Nullable
-     private Entity entityRepresentation;
- 
-@@ -1251,6 +1251,7 @@ public final class ItemStack implements DataComponentHolder {
-     public void setItem(Item item) {
-         this.bukkitStack = null; // Paper
-         this.item = item;
-+        this.components = new PatchedDataComponentMap(item.asItem().components());
-     }
-     // CraftBukkit end
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 index 73472890e30180dc3cb6aa1bd9c5815087334682..189b8d995caa7e8190c6c07400c75d791f6465ed 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
@@ -392,18 +414,10 @@ index 73472890e30180dc3cb6aa1bd9c5815087334682..189b8d995caa7e8190c6c07400c75d79
          return null;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index eba5a27e452c4063567fb02d6aabdfb0446d5daf..7d8d7174d44d08752e90568cd06c1bea2831482f 100644
+index eba5a27e452c4063567fb02d6aabdfb0446d5daf..2ab8cc39ef9a039c620b5784d150bc519177b462 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -18,6 +18,7 @@ import org.bukkit.enchantments.Enchantment;
- import org.bukkit.inventory.ItemStack;
- import org.bukkit.inventory.meta.ItemMeta;
- import org.bukkit.material.MaterialData;
-+import org.jetbrains.annotations.NotNull;
- 
- @DelegateDeserialization(ItemStack.class)
- public final class CraftItemStack extends ItemStack {
-@@ -202,7 +203,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -202,7 +202,7 @@ public final class CraftItemStack extends ItemStack {
  
      @Override
      public int getMaxStackSize() {
@@ -412,7 +426,7 @@ index eba5a27e452c4063567fb02d6aabdfb0446d5daf..7d8d7174d44d08752e90568cd06c1bea
      }
  
      // Paper start
-@@ -329,7 +330,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -329,7 +329,7 @@ public final class CraftItemStack extends ItemStack {
          // Paper start - support updating profile after resolving it
          final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
              @Override
@@ -421,7 +435,7 @@ index eba5a27e452c4063567fb02d6aabdfb0446d5daf..7d8d7174d44d08752e90568cd06c1bea
                  itemStack.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
              }
          };
-@@ -697,7 +698,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -697,7 +697,7 @@ public final class CraftItemStack extends ItemStack {
              // Paper start - support updating profile after resolving it
              CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
                  @Override
@@ -430,7 +444,7 @@ index eba5a27e452c4063567fb02d6aabdfb0446d5daf..7d8d7174d44d08752e90568cd06c1bea
                      item.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
                  }
              };
-@@ -742,7 +743,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -742,7 +742,7 @@ public final class CraftItemStack extends ItemStack {
  
      @Override
      public boolean hasItemMeta() {
@@ -439,16 +453,15 @@ index eba5a27e452c4063567fb02d6aabdfb0446d5daf..7d8d7174d44d08752e90568cd06c1bea
      }
  
      static boolean hasItemMeta(net.minecraft.world.item.ItemStack item) {
-@@ -767,5 +768,15 @@ public final class CraftItemStack extends ItemStack {
+@@ -767,5 +767,14 @@ public final class CraftItemStack extends ItemStack {
          mirrored.setItemMeta(mirrored.getItemMeta());
          return mirrored;
      }
 +
-+    @NotNull
 +    @Override
-+    public io.papermc.paper.datakey.PatchedDataKeyMap getDataKeyMap() {
++    public io.papermc.paper.datakey.PaperPatchedDataKeyMap getDataKeyMap() {
 +        if (this.handle == null) {
-+            return  new io.papermc.paper.datakey.PaperPatchedDataKeyMap(new net.minecraft.core.component.PatchedDataComponentMap(net.minecraft.core.component.DataComponentMap.EMPTY)); // Paper
++            return new io.papermc.paper.datakey.PaperPatchedDataKeyMap(new net.minecraft.core.component.PatchedDataComponentMap(net.minecraft.core.component.DataComponentMap.EMPTY)); // Paper
 +        }
 +
 +        return new io.papermc.paper.datakey.PaperPatchedDataKeyMap((net.minecraft.core.component.PatchedDataComponentMap) this.handle.getComponents()); // Paper
@@ -497,11 +510,11 @@ index c2517ad00b6efba47e792a46e591038d79cb3a82..bae381c1a60fb25d271e49829b0a086f
          if (this.hasDisplayName()) {
              itemTag.put(CraftMetaItem.NAME, this.displayName);
          }
-diff --git a/src/main/resources/META-INF/services/io.papermc.paper.datakey.DataKeyBridge b/src/main/resources/META-INF/services/io.papermc.paper.datakey.DataKeyBridge
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.datakey.map.DataKeyMapBridge b/src/main/resources/META-INF/services/io.papermc.paper.datakey.map.DataKeyMapBridge
 new file mode 100644
 index 0000000000000000000000000000000000000000..2b625546a2053c9131124d983f1a8c0512e7c88c
 --- /dev/null
-+++ b/src/main/resources/META-INF/services/io.papermc.paper.datakey.DataKeyBridge
++++ b/src/main/resources/META-INF/services/io.papermc.paper.datakey.map.DataKeyMapBridge
 @@ -0,0 +1 @@
 +io.papermc.paper.datakey.DataKeyBridgeImpl
 diff --git a/src/main/resources/META-INF/services/io.papermc.paper.datakey.types.ComponentTypesBridge b/src/main/resources/META-INF/services/io.papermc.paper.datakey.types.ComponentTypesBridge
@@ -512,6 +525,386 @@ index 0000000000000000000000000000000000000000..d43e2b2d0e86ed585ba7bfd4e26d6259
 @@ -0,0 +1 @@
 +io.papermc.paper.datakey.types.ComponentTypesBridgesImpl
 \ No newline at end of file
+diff --git a/src/test/java/io/papermc/paper/item/MetaComparisonTest.java b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671d3045ffc
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
+@@ -0,0 +1,284 @@
++package io.papermc.paper.item;
++
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
++import com.destroystokyo.paper.profile.PlayerProfile;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.event.HoverEvent;
++import net.kyori.adventure.text.format.NamedTextColor;
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.Color;
++import org.bukkit.Material;
++import org.bukkit.craftbukkit.inventory.CraftItemFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.enchantments.Enchantment;
++import org.bukkit.inventory.ItemFactory;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.BookMeta;
++import org.bukkit.inventory.meta.ItemMeta;
++import org.bukkit.inventory.meta.PotionMeta;
++import org.bukkit.inventory.meta.SkullMeta;
++import org.bukkit.potion.PotionEffect;
++import org.bukkit.potion.PotionEffectType;
++import org.bukkit.support.AbstractTestingBase;
++import org.bukkit.util.Consumer;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
++
++import java.util.UUID;
++
++// TODO: This should technically be used to compare legacy meta vs the newly implemented
++public class MetaComparisonTest extends AbstractTestingBase {
++
++    private static final ItemFactory FACTORY = CraftItemFactory.instance();
++
++    @Test
++    public void testMetaApplication() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++
++        ItemMeta meta = itemStack.getItemMeta();
++        meta.setCustomModelData(1);
++
++        ItemMeta converted = FACTORY.asMetaFor(meta, Material.GOLD_INGOT);
++        Assertions.assertEquals(converted.getCustomModelData(), meta.getCustomModelData());
++
++        ItemMeta convertedAdvanced = FACTORY.asMetaFor(meta, Material.PLAYER_HEAD);
++        Assertions.assertEquals(convertedAdvanced.getCustomModelData(), meta.getCustomModelData());
++    }
++
++    @Test
++    public void testMetaApplicationDowngrading() {
++        ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
++        PlayerProfile profile = Bukkit.createProfile("Owen1212055");
++
++        SkullMeta meta = (SkullMeta) itemStack.getItemMeta();
++        meta.setPlayerProfile(profile);
++
++        SkullMeta converted = (SkullMeta) FACTORY.asMetaFor(meta, Material.PLAYER_HEAD);
++        Assertions.assertEquals(converted.getPlayerProfile(), meta.getPlayerProfile());
++
++        SkullMeta downgraded = (SkullMeta) FACTORY.asMetaFor(FACTORY.asMetaFor(meta, Material.STONE), Material.PLAYER_HEAD);
++        Assertions.assertNull(downgraded.getPlayerProfile());
++    }
++
++    @Test
++    public void testMetaApplicationDowngradingPotion() {
++        ItemStack itemStack = new ItemStack(Material.POTION);
++        Color color = Color.BLUE;
++
++        PotionMeta meta = (PotionMeta) itemStack.getItemMeta();
++        meta.setColor(color);
++
++        PotionMeta converted = (PotionMeta) FACTORY.asMetaFor(meta, Material.POTION);
++        Assertions.assertEquals(converted.getColor(), color);
++
++        PotionMeta downgraded = (PotionMeta) FACTORY.asMetaFor(FACTORY.asMetaFor(meta, Material.STONE), Material.POTION);
++        Assertions.assertNull(downgraded.getColor());
++    }
++
++
++    @Test
++    public void testNullMeta() {
++        ItemStack itemStack = new ItemStack(Material.AIR);
++
++        //Assertions.assertFalse(itemStack.hasItemMeta());
++        Assertions.assertNull(itemStack.getItemMeta());
++    }
++
++    @Test
++    public void testPotionMeta() {
++        PotionEffect potionEffect = new PotionEffect(PotionEffectType.SPEED, 10, 10, false);
++        ItemStack nmsItemStack = new ItemStack(Material.POTION, 1);
++
++        testSetAndGet(nmsItemStack,
++            (meta) -> ((PotionMeta) meta).addCustomEffect(potionEffect, true),
++            (meta) -> Assertions.assertEquals(potionEffect, ((PotionMeta) meta).getCustomEffects().get(0))
++        );
++    }
++
++    @Test
++    public void testEnchantment() {
++        ItemStack stack = new ItemStack(Material.STICK, 1);
++
++        testSetAndGet(stack,
++            (meta) -> Assertions.assertTrue(meta.addEnchant(Enchantment.SHARPNESS, 1, true)),
++            (meta) -> Assertions.assertEquals(1, meta.getEnchantLevel(Enchantment.SHARPNESS))
++        );
++    }
++
++
++    //@Test
++    public void testPlayerHead() {
++        PlayerProfile profile = new CraftPlayerProfile(UUID.randomUUID(), "Owen1212055");
++        ItemStack stack = new ItemStack(Material.PLAYER_HEAD, 1);
++
++        testSetAndGet(stack,
++            (meta) -> ((SkullMeta) meta).setPlayerProfile(profile),
++            (meta) -> {
++                Assertions.assertTrue(((SkullMeta) meta).hasOwner());
++                Assertions.assertEquals(profile, ((SkullMeta) meta).getPlayerProfile());
++            }
++        );
++
++        testSetAndGet(stack,
++            (meta) -> ((SkullMeta) meta).setOwner("Owen1212055"),
++            (meta) -> {
++                Assertions.assertTrue(((SkullMeta) meta).hasOwner());
++                Assertions.assertEquals("Owen1212055", ((SkullMeta) meta).getOwner());
++            }
++        );
++    }
++
++    @Test
++    public void testBookMetaAuthor() {
++        ItemStack stack = new ItemStack(Material.WRITTEN_BOOK, 1);
++
++        // Legacy string
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).setAuthor("Owen1212055"),
++            (meta) -> Assertions.assertEquals("Owen1212055", ((BookMeta) meta).getAuthor())
++        );
++
++        // Component Colored
++        Component coloredName = Component.text("Owen1212055", NamedTextColor.DARK_GRAY);
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).author(coloredName),
++            (meta) -> Assertions.assertEquals(coloredName, ((BookMeta) meta).author())
++        );
++
++        // Simple text
++        Component name = Component.text("Owen1212055");
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).author(name),
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).author())
++        );
++    }
++
++    @Test
++    public void testBookMetaTitle() {
++        ItemStack stack = new ItemStack(Material.WRITTEN_BOOK, 1);
++
++        // Legacy string
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).setTitle("Owen1212055"),
++            (meta) -> Assertions.assertEquals("Owen1212055", ((BookMeta) meta).getTitle())
++        );
++
++        // Component Colored
++        Component coloredName = Component.text("Owen1212055", NamedTextColor.DARK_GRAY);
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).title(coloredName),
++            (meta) -> Assertions.assertEquals(coloredName, ((BookMeta) meta).title())
++        );
++
++        // Simple text
++        Component name = Component.text("Owen1212055");
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).title(name),
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).title())
++        );
++    }
++
++
++    @Test
++    public void testWriteableBookPages() {
++        ItemStack stack = new ItemStack(Material.WRITABLE_BOOK, 1);
++
++        // Writeable books are serialized as plain text, but has weird legacy color support.
++        // So, we need to test to make sure that all works here.
++
++        // Legacy string
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPage("Owen1212055"),
++            (meta) -> Assertions.assertEquals("Owen1212055", ((BookMeta) meta).getPage(1))
++        );
++
++        // Legacy string colored
++        String translatedLegacy = ChatColor.translateAlternateColorCodes('&', "&7Owen1212055");
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPage(translatedLegacy),
++            (meta) -> Assertions.assertEquals(translatedLegacy, ((BookMeta) meta).getPage(1))
++        );
++
++        // Component Colored
++        Component coloredName = Component.text("Owen1212055", NamedTextColor.DARK_GRAY);
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPages(coloredName),
++            (meta) -> Assertions.assertEquals(coloredName, ((BookMeta) meta).page(1))
++        );
++
++        // Simple text
++        Component name = Component.text("Owen1212055");
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPages(name),
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).page(1))
++        );
++
++        // Simple text + hover... should NOT be saved
++        // As this is plain text
++        Component nameWithHover = Component.text("Owen1212055")
++            .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Hover")));
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPages(nameWithHover),
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).page(1))
++        );
++    }
++
++    @Test
++    public void testWrittenBookPages() {
++        ItemStack stack = new ItemStack(Material.WRITTEN_BOOK, 1);
++
++        // Writeable books are serialized as plain text, but has weird legacy color support.
++        // So, we need to test to make sure that all works here.
++
++        // Legacy string
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPage("Owen1212055"),
++            (meta) -> Assertions.assertEquals("Owen1212055", ((BookMeta) meta).getPage(1))
++        );
++
++        // Legacy string colored
++        String translatedLegacy = ChatColor.translateAlternateColorCodes('&', "&7Owen1212055");
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPage(translatedLegacy),
++            (meta) -> Assertions.assertEquals(translatedLegacy, ((BookMeta) meta).getPage(1))
++        );
++
++        // Component Colored
++        Component coloredName = Component.text("Owen1212055", NamedTextColor.DARK_GRAY);
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPages(coloredName),
++            (meta) -> Assertions.assertEquals(coloredName, ((BookMeta) meta).page(1))
++        );
++
++        // Simple text
++        Component name = Component.text("Owen1212055");
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPages(name),
++            (meta) -> Assertions.assertEquals(name, ((BookMeta) meta).page(1))
++        );
++
++        // Simple text + hover... should be saved
++        Component nameWithHover = Component.text("Owen1212055")
++            .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Hover")));
++        testSetAndGet(stack,
++            (meta) -> ((BookMeta) meta).addPages(nameWithHover),
++            (meta) -> Assertions.assertEquals(nameWithHover, ((BookMeta) meta).page(1))
++        );
++    }
++
++    private void testSetAndGet(org.bukkit.inventory.ItemStack itemStack,
++                               Consumer<ItemMeta> set,
++                               Consumer<ItemMeta> get) {
++        ItemMeta craftMeta = CraftItemStack.getItemMeta(CraftItemStack.asNMSCopy(itemStack)); // TODO: This should be converted to use the old meta when this is added.
++        ItemMeta paperMeta = CraftItemStack.getItemMeta(CraftItemStack.asNMSCopy(itemStack));
++        // Test craft meta
++        set.accept(craftMeta);
++        get.accept(craftMeta);
++
++        // Test paper meta
++        set.accept(paperMeta);
++        get.accept(paperMeta);
++    }
++
++}
+diff --git a/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java b/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c60ec00464d5d4216544240f64a867e51ac7335d
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java
+@@ -0,0 +1,84 @@
++package io.papermc.paper.item;
++
++import io.papermc.paper.datakey.DataKey;
++import io.papermc.paper.datakey.DataKeys;
++import io.papermc.paper.datakey.types.Unbreakable;
++import io.papermc.paper.util.Unit;
++import org.bukkit.Material;
++import org.bukkit.inventory.ItemFlag;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.Damageable;
++import org.bukkit.inventory.meta.ItemMeta;
++import org.bukkit.inventory.meta.Repairable;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
++import java.util.function.BiConsumer;
++import java.util.function.Function;
++
++public class MetaDataKeyMetaTest extends AbstractTestingBase {
++
++    @Test
++    public void testMaxStackSizeIntegrity() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++        testSimpleValue(itemStack, DataKeys.MAX_STACK_SIZE, 32, ItemMeta::getMaxStackSize, ItemMeta::setMaxStackSize, ItemMeta.class);
++    }
++
++    @Test
++    public void testMaxDamageIntegrity() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++        testSimpleValue(itemStack, DataKeys.MAX_DAMAGE, 120, Damageable::getMaxDamage, Damageable::setMaxDamage, Damageable.class);
++    }
++
++    @Test
++    public void testDamageIntegrity() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++        testSimpleValue(itemStack, DataKeys.DAMAGE, 120, Damageable::getDamage, Damageable::setDamage, Damageable.class);
++    }
++
++    @Test
++    public void testRepairCost() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++        testSimpleValue(itemStack, DataKeys.REPAIR_COST, 120, Repairable::getRepairCost, Repairable::setRepairCost, Repairable.class);
++    }
++
++    @Test
++    public void testUnbreakable() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++        itemStack.getDataKeyMap().set(DataKeys.UNBREAKABLE, Unbreakable.of(false));
++
++        Assertions.assertTrue(itemStack.getItemMeta().isUnbreakable());
++        Assertions.assertTrue(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_UNBREAKABLE));
++        itemStack.getDataKeyMap().set(DataKeys.UNBREAKABLE, null);
++        Assertions.assertFalse(itemStack.getItemMeta().isUnbreakable());
++    }
++
++    @Test
++    public void testToolTipAdditional() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++        itemStack.getDataKeyMap().set(DataKeys.HIDE_ADDITIONAL_TOOLTIP, Unit.of());
++
++        Assertions.assertTrue(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
++        itemStack.getDataKeyMap().set(DataKeys.HIDE_ADDITIONAL_TOOLTIP, null);
++        Assertions.assertFalse(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
++    }
++
++    @Test
++    public void testToolTip() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++        testSimpleValue(itemStack, DataKeys.HIDE_TOOLTIP, Unit.of(), (meta) -> meta.isHideTooltip() ? Unit.of() : null, (meta, val) -> meta.setHideTooltip(val != null), ItemMeta.class);
++        itemStack = new ItemStack(Material.STONE);
++        testSimpleValue(itemStack, DataKeys.HIDE_TOOLTIP, null, (meta) -> meta.isHideTooltip() ? Unit.of() : null, (meta, val) -> meta.setHideTooltip(false), ItemMeta.class);
++    }
++
++    @SuppressWarnings("unchecked")
++    private static <T, M> void testSimpleValue(ItemStack itemStack, DataKey<T> dataKey, T value, Function<M, T> metaGetter, BiConsumer<M, T> metaSetter, Class<M> meta) {
++        itemStack.getDataKeyMap().set(dataKey, value);
++        Assertions.assertEquals(value, itemStack.getDataKeyMap().get(dataKey));
++
++        Assertions.assertEquals(metaGetter.apply((M) itemStack.getItemMeta()), value);
++
++    }
++
++
++}
 diff --git a/src/test/java/org/bukkit/PerMaterialTest.java b/src/test/java/org/bukkit/PerMaterialTest.java
 index 702a0c29dc2a7fc435fa590c5c66347aea0e014b..419a7dbbe9c50099a4d35c564f7e9c2ba652be75 100644
 --- a/src/test/java/org/bukkit/PerMaterialTest.java
