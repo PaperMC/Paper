@@ -339,10 +339,10 @@ index 0000000000000000000000000000000000000000..cde09884fa94ceedc8cae2884b901ade
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a2c7c3b1f5534ad3e0e3ee953e4b858d4bc85a38
+index 0000000000000000000000000000000000000000..5ed6167736270d6a746911ebb1e80dcf63608fca
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,19 @@
 +package io.papermc.paper.datakey.types;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
@@ -358,20 +358,16 @@ index 0000000000000000000000000000000000000000..a2c7c3b1f5534ad3e0e3ee953e4b858d
 +    }
 +
 +    @Override
-+    public ItemLore lore(final List<Component> componentList) {
-+        List<net.minecraft.network.chat.Component> nmsComponentList = new ArrayList<>(componentList.size());
-+        for (Component adventure : componentList) {
-+            nmsComponentList.add(PaperAdventure.asVanilla(adventure));
-+        }
-+        return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(nmsComponentList));
++    public ItemLore.Builder lore() {
++        return new PaperItemLore.Builder();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java b/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ecc799921c6dd62d13399d7f14315503f9f5a2e5
+index 0000000000000000000000000000000000000000..cb25cfc64cb950d5049f2aac2d425e8454c76750
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,52 @@
 +package io.papermc.paper.datakey.types;
 +
 +import com.google.common.collect.Lists;
@@ -379,6 +375,8 @@ index 0000000000000000000000000000000000000000..ecc799921c6dd62d13399d7f14315503
 +import net.kyori.adventure.text.Component;
 +import net.minecraft.world.item.component.ItemLore;
 +import org.bukkit.craftbukkit.util.Handleable;
++import org.jetbrains.annotations.NotNull;
++import java.util.ArrayList;
 +import java.util.List;
 +
 +public record PaperItemLore(ItemLore itemLore) implements io.papermc.paper.datakey.types.ItemLore, Handleable<ItemLore> {
@@ -397,13 +395,37 @@ index 0000000000000000000000000000000000000000..ecc799921c6dd62d13399d7f14315503
 +    public List<Component> styledLines() {
 +        return Lists.transform(this.itemLore.styledLines(), PaperAdventure::asAdventure);
 +    }
++
++    static class Builder implements io.papermc.paper.datakey.types.ItemLore.Builder {
++
++        private List<Component> componentList = null;
++
++        @Override
++        public io.papermc.paper.datakey.types.ItemLore.Builder lore(final List<Component> lore) {
++            this.componentList = lore;
++            return this;
++        }
++
++        @Override
++        public io.papermc.paper.datakey.types.@NotNull ItemLore build() {
++            if (this.componentList == null) {
++                throw new IllegalStateException("Cannot build lore with unset lore!");
++            }
++
++            List<net.minecraft.network.chat.Component> nmsComponentList = new ArrayList<>(componentList.size());
++            for (Component adventure : componentList) {
++                nmsComponentList.add(PaperAdventure.asVanilla(adventure));
++            }
++            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(nmsComponentList));
++        }
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java b/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6b4b7b09b211fc4e93989d4cb1589022ce557726
+index 0000000000000000000000000000000000000000..58087f382b27bb9e609d71fcec7e9080eabaa0d4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.datakey.types;
 +
 +import org.bukkit.craftbukkit.util.Handleable;
@@ -425,7 +447,6 @@ index 0000000000000000000000000000000000000000..6b4b7b09b211fc4e93989d4cb1589022
 +    public net.minecraft.world.item.component.Unbreakable getHandle() {
 +        return this.unbreakable;
 +    }
-+
 +
 +    static class Builder implements Unbreakable.Builder {
 +
