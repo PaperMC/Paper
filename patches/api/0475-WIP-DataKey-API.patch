@@ -239,10 +239,10 @@ index 0000000000000000000000000000000000000000..616f0cbf465adf9eff2daca1080c4a70
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMapHolder.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMapHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4740a2bb7936e229e02c3e61aa5f28e8e39442ab
+index 0000000000000000000000000000000000000000..35c931516f168d57e9ad667ac6ad57a0ffbcd1d5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMapHolder.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,31 @@
 +package io.papermc.paper.datakey.map;
 +
 +import io.papermc.paper.datakey.DataComponentType;
@@ -255,18 +255,22 @@ index 0000000000000000000000000000000000000000..4740a2bb7936e229e02c3e61aa5f28e8
 +public interface PatchedDataKeyMapHolder {
 +
 +    @NotNull
-+    PatchedDataComponentMap data();
++    PatchedDataComponentMap components();
++
++    default <T> T getData(final DataComponentType.@NotNull Valued<T> dataKey) {
++        return this.components().get(dataKey);
++    }
 +
 +    default <T> void setData(final DataComponentType.@NotNull Valued<T> dataKey, final @Nullable T value) {
-+        this.data().set(dataKey, value);
++        this.components().set(dataKey, value);
 +    }
 +
 +    default void setData(final DataComponentType.@NotNull NonValued dataKey) {
-+        this.data().set(dataKey);
++        this.components().set(dataKey);
 +    }
 +
 +    default <T> void removeData(final @NotNull DataComponentType dataComponentType) {
-+        this.data().unset(dataComponentType);
++        this.components().unset(dataComponentType);
 +    }
 +
 +}
@@ -411,7 +415,7 @@ index 98a970a6582dca22e719a31559c7becea4725cb2..84708afee2316108babbd64c9c667146
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d0f074eb1c7bff4077db045218c8d86e6b6ec541 100644
+index 84a7bf0936d35bf42b5ed038d295d5c31740f472..e20cef9ad49e515da8947e6fd7658e5f86d075da 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -25,11 +25,11 @@ import org.jetbrains.annotations.Nullable;
@@ -463,7 +467,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d0f074eb1c7bff4077db045218c8d86e
 -            if (this.meta != null) {
 -                itemStack.meta = this.meta.clone();
 -            }
-+            itemStack.dataKeyMap =  this.data().copy(); // Paper
++            itemStack.dataKeyMap =  this.components().copy(); // Paper
  
              if (this.data != null) {
                  itemStack.data = this.data.clone();
@@ -547,7 +551,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d0f074eb1c7bff4077db045218c8d86e
      @UndefinedNullability // Paper
      public ItemMeta getItemMeta() {
 -        return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
-+        return io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.toItemMeta(this.type, this.data());
++        return io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.toItemMeta(this.type, this.components());
      }
  
      /**
@@ -592,7 +596,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d0f074eb1c7bff4077db045218c8d86e
 +    // Paper start
 +    @NotNull
 +    @Override
-+    public io.papermc.paper.datakey.map.PatchedDataComponentMap data() {
++    public io.papermc.paper.datakey.map.PatchedDataComponentMap components() {
 +        return this.dataKeyMap;
 +    }
 +    // Paper end
