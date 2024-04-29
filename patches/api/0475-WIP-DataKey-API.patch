@@ -110,33 +110,6 @@ index 0000000000000000000000000000000000000000..6d227528930c4d25ebfcc8829057cbac
 +        return (DataKey.Valued<T>) Registry.DATA_KEYS.get(NamespacedKey.minecraft(name));
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/PatchedDataComponentHolder.java b/src/main/java/io/papermc/paper/datakey/PatchedDataComponentHolder.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..a226c4d1d901ea6086ac49263a0f21867328e36f
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/PatchedDataComponentHolder.java
-@@ -0,0 +1,21 @@
-+package io.papermc.paper.datakey;
-+
-+import io.papermc.paper.datakey.map.DataKeyMap;
-+import org.jetbrains.annotations.Nullable;
-+
-+public interface PatchedDataComponentHolder {
-+
-+    DataKeyMap data();
-+
-+    @Nullable
-+    <T> T setData(DataKey.Valued<T> type, @Nullable T value);
-+
-+    @Nullable
-+    <T> T setData(DataKey.NonValued type);
-+
-+    @Nullable
-+    <T> T removeData(DataKey type);
-+
-+    boolean hasData(DataKey type);
-+
-+}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/DataKeyMap.java b/src/main/java/io/papermc/paper/datakey/map/DataKeyMap.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..75d07bd3ec9b51f039715590881272eced13ea4f
@@ -170,10 +143,10 @@ index 0000000000000000000000000000000000000000..75d07bd3ec9b51f039715590881272ec
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/DataKeyMapBridge.java b/src/main/java/io/papermc/paper/datakey/map/DataKeyMapBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9da6ab689eb43eb960429fe9a752c0c6c4183232
+index 0000000000000000000000000000000000000000..889439e91b4785b1090894815bb6ba739363244f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/DataKeyMapBridge.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.datakey.map;
 +
 +import net.kyori.adventure.util.Services;
@@ -194,6 +167,7 @@ index 0000000000000000000000000000000000000000..9da6ab689eb43eb960429fe9a752c0c6
 +
 +    ItemMeta toMeta(Material material, PatchedDataKeyMap dataKeyMap);
 +
++    @ApiStatus.Internal
 +    class Holder {
 +
 +        public static DataKeyMapBridge BRIDGE = Services.service(DataKeyMapBridge.class)
@@ -202,10 +176,10 @@ index 0000000000000000000000000000000000000000..9da6ab689eb43eb960429fe9a752c0c6
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMap.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3340e13d6f161c521af5bca7a57c173bc0bdfead
+index 0000000000000000000000000000000000000000..5aa31b3d178f5b3453d6f864a243ca5933fe88cc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMap.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.datakey.map;
 +
 +import io.papermc.paper.datakey.DataKey;
@@ -223,17 +197,14 @@ index 0000000000000000000000000000000000000000..3340e13d6f161c521af5bca7a57c173b
 +        return DataKeyMapBridge.Holder.BRIDGE.of(map);
 +    }
 +
-+    @Nullable
-+    <T> T set(DataKey.Valued<T> type, @Nullable T value);
++    <T> void set(DataKey.Valued<T> type, @Nullable T value);
++
++    void set(DataKey.NonValued type);
++
++    <T> void remove(DataKey.Valued<T> type);
 +
 +    // Returns if this value was previously set
-+    boolean set(DataKey.NonValued type);
-+
-+    @Nullable
-+    <T> T remove(DataKey.Valued<T> type);
-+
-+    // Returns if this value was previously set
-+    boolean remove(DataKey.NonValued type);
++    void remove(DataKey.NonValued type);
 +
 +    @NotNull
 +    DataKeyMapPatch asPatch();
@@ -241,6 +212,41 @@ index 0000000000000000000000000000000000000000..3340e13d6f161c521af5bca7a57c173b
 +    void applyPatch(@NotNull DataKeyMapPatch patch);
 +
 +    PatchedDataKeyMap clone();
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMapHolder.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMapHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..aa37cdc7b0628870e4a2013900632ea36fa3597c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMapHolder.java
+@@ -0,0 +1,29 @@
++package io.papermc.paper.datakey.map;
++
++import io.papermc.paper.datakey.DataKey;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@ApiStatus.NonExtendable
++@ApiStatus.Experimental
++public interface PatchedDataKeyMapHolder {
++
++    @NotNull PatchedDataKeyMap data();
++
++    default <T> void setData(final DataKey.@NotNull Valued<T> dataKey, final @Nullable T value) {
++        this.data().set(dataKey, value);
++    }
++
++    default void setData(final DataKey.@NotNull NonValued dataKey) {
++        this.data().set(dataKey);
++    }
++
++    default <T> void removeData(final DataKey.@NotNull Valued<T> dataKey) {
++        this.data().remove(dataKey);
++    }
++
++    default void removeData(final DataKey.@NotNull NonValued dataKey) {
++        this.data().remove(dataKey);
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java b/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java
 new file mode 100644
@@ -370,7 +376,7 @@ index 98a970a6582dca22e719a31559c7becea4725cb2..84708afee2316108babbd64c9c667146
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d036e24e602d086e962723cb96a5e3896172e1b9 100644
+index 84a7bf0936d35bf42b5ed038d295d5c31740f472..4625bc9194f03d3aff5e90aaf536b32109c364fa 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
@@ -381,7 +387,12 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d036e24e602d086e962723cb96a5e389
  import org.bukkit.Bukkit;
  import org.bukkit.Material;
  import org.bukkit.Translatable;
-@@ -29,7 +30,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -25,11 +26,11 @@ import org.jetbrains.annotations.Nullable;
+  * use this class to encapsulate Materials for which {@link Material#isItem()}
+  * returns false.</b>
+  */
+-public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable { // Paper
++public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.datakey.map.PatchedDataKeyMapHolder { // Paper
      private Material type = Material.AIR;
      private int amount = 0;
      private MaterialData data = null;
@@ -425,7 +436,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d036e24e602d086e962723cb96a5e389
 -            if (this.meta != null) {
 -                itemStack.meta = this.meta.clone();
 -            }
-+            itemStack.dataKeyMap =  this.getDataKeyMap().clone(); // Paper
++            itemStack.dataKeyMap =  this.data().clone(); // Paper
  
              if (this.data != null) {
                  itemStack.data = this.data.clone();
@@ -509,7 +520,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d036e24e602d086e962723cb96a5e389
      @UndefinedNullability // Paper
      public ItemMeta getItemMeta() {
 -        return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
-+        return io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.toMeta(this.type, this.getDataKeyMap());
++        return io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.toMeta(this.type, this.data());
      }
  
      /**
@@ -547,13 +558,14 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d036e24e602d086e962723cb96a5e389
  
          return true;
      }
-@@ -1073,4 +1060,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1073,4 +1060,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
 +    // Paper start
 +    @NotNull
-+    public PatchedDataKeyMap getDataKeyMap() {
++    @Override
++    public PatchedDataKeyMap data() {
 +        return this.dataKeyMap;
 +    }
 +    // Paper end
