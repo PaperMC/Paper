@@ -150,58 +150,64 @@ index e55c1bcbf62de62d7699cf2a050132b208083a3d..478c73363e64e861a8285234f2f294f4
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java
-index a7bd48c01c473ccde84760d121dcad73aa6d0a59..36802d32ed1724e87f707c0cc46e566ef04a5b77 100644
+index a7bd48c01c473ccde84760d121dcad73aa6d0a59..c218949484a1f9484a1e0fd41fb0f10bddfe1c11 100644
 --- a/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java
 +++ b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataKeyMap.java
-@@ -17,16 +17,25 @@ public class PaperPatchedDataKeyMap extends PaperDataKeyMap implements PatchedDa
- 
-     @Nullable
-     @Override
--    public <T> T set(final DataKey<T> type, @Nullable final T value) {
-+    public <T> T set(final DataKey.Valued<T> type, @Nullable final T value) {
-         PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
-         ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
- 
-         return adapter.apiConverter().apply(this.patched().set(paperComponentType.getHandle(), value == null ? null : adapter.nmsConverter().apply(value)));
+@@ -15,27 +15,40 @@ public class PaperPatchedDataKeyMap extends PaperDataKeyMap implements PatchedDa
+         super(patchedDataKeyMap);
      }
  
 -    @Nullable
++    @SuppressWarnings("unchecked")
      @Override
--    public <T> T remove(final DataKey<T> type) {
-+    public boolean set(final DataKey.NonValued type) {
-+        PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
-+        ComponentAdapters.ComponentAdapter<?, Object> adapter = paperComponentType.getAdapter();
-+
-+        boolean hasValue = this.has(type);
-+        this.patched().set(paperComponentType.getHandle(), adapter.nmsConverter().apply(null));
-+        return hasValue;
-+    }
-+
-+    @Override
-+    public <T> @Nullable T remove(final DataKey.Valued<T> type) {
-         PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
-         ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
+-    public <T> T set(final DataKey<T> type, @Nullable final T value) {
+-        PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
+-        ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
++    public <T> void set(final DataKey.Valued<T> type, @Nullable final T value) {
++        final PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
++        final ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
  
-@@ -38,6 +47,19 @@ public class PaperPatchedDataKeyMap extends PaperDataKeyMap implements PatchedDa
-         return adapter.apiConverter().apply(removed);
+-        return adapter.apiConverter().apply(this.patched().set(paperComponentType.getHandle(), value == null ? null : adapter.nmsConverter().apply(value)));
++        this.patched().set(paperComponentType.getHandle(), value == null ? null : adapter.nmsConverter().apply(value));
      }
  
-+    @Override
-+    public boolean remove(final DataKey.NonValued type) {
-+        PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
-+        ComponentAdapters.ComponentAdapter<?, Object> adapter = paperComponentType.getAdapter();
-+
-+        Object removed = this.patched().remove(adapter.type());
-+        if (removed == null) {
-+            return false;
-+        }
-+
-+        return true;
+-    @Nullable
++    @SuppressWarnings("unchecked")
+     @Override
+-    public <T> T remove(final DataKey<T> type) {
+-        PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
+-        ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
++    public void set(final DataKey.NonValued type) {
++        final PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
++        final ComponentAdapters.ComponentAdapter<?, Object> adapter = paperComponentType.getAdapter();
+ 
+-        Object removed = this.patched().remove(adapter.type());
+-        if (removed == null) {
+-            return null;
+-        }
++        this.patched().set(paperComponentType.getHandle(), adapter.nmsConverter().apply(null));
 +    }
 +
++    @SuppressWarnings("unchecked")
++    @Override
++    public <T> void remove(final DataKey.Valued<T> type) {
++        final PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
++        final ComponentAdapters.ComponentAdapter<T, Object> adapter = paperComponentType.getAdapter();
++
++        this.patched().remove(adapter.type());
++    }
++
++    @SuppressWarnings("unchecked")
++    @Override
++    public void remove(final DataKey.NonValued type) {
++        final PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
++        final ComponentAdapters.ComponentAdapter<?, Object> adapter = paperComponentType.getAdapter();
+ 
+-        return adapter.apiConverter().apply(removed);
++        this.patched().remove(adapter.type());
+     }
+ 
      @Override
-     public @NotNull DataKeyMapPatch asPatch() {
-         return null;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 index 189b8d995caa7e8190c6c07400c75d791f6465ed..2ea46a3620fffcee18ad0e1d571ebfeedb66fd41 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
@@ -215,8 +221,21 @@ index 189b8d995caa7e8190c6c07400c75d791f6465ed..2ea46a3620fffcee18ad0e1d571ebfee
          }
          // Paper end
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 2ab8cc39ef9a039c620b5784d150bc519177b462..78e76bb3d21eacbe59fe7959de5ba8489aaa1693 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -769,7 +769,7 @@ public final class CraftItemStack extends ItemStack {
+     }
+ 
+     @Override
+-    public io.papermc.paper.datakey.PaperPatchedDataKeyMap getDataKeyMap() {
++    public io.papermc.paper.datakey.PaperPatchedDataKeyMap data() {
+         if (this.handle == null) {
+             return new io.papermc.paper.datakey.PaperPatchedDataKeyMap(new net.minecraft.core.component.PatchedDataComponentMap(net.minecraft.core.component.DataComponentMap.EMPTY)); // Paper
+         }
 diff --git a/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java b/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java
-index c60ec00464d5d4216544240f64a867e51ac7335d..517ea27fe792b1e6ec54075b4330d9a08c834bcf 100644
+index c60ec00464d5d4216544240f64a867e51ac7335d..a97e1d5612f900f15fca468877428a0eda21a2c3 100644
 --- a/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java
 +++ b/src/test/java/io/papermc/paper/item/MetaDataKeyMetaTest.java
 @@ -3,7 +3,6 @@ package io.papermc.paper.item;
@@ -227,16 +246,29 @@ index c60ec00464d5d4216544240f64a867e51ac7335d..517ea27fe792b1e6ec54075b4330d9a0
  import org.bukkit.Material;
  import org.bukkit.inventory.ItemFlag;
  import org.bukkit.inventory.ItemStack;
-@@ -56,23 +55,23 @@ public class MetaDataKeyMetaTest extends AbstractTestingBase {
+@@ -45,36 +44,36 @@ public class MetaDataKeyMetaTest extends AbstractTestingBase {
+     @Test
+     public void testUnbreakable() {
+         ItemStack itemStack = new ItemStack(Material.STONE);
+-        itemStack.getDataKeyMap().set(DataKeys.UNBREAKABLE, Unbreakable.of(false));
++        itemStack.data().set(DataKeys.UNBREAKABLE, Unbreakable.of(false));
+ 
+         Assertions.assertTrue(itemStack.getItemMeta().isUnbreakable());
+         Assertions.assertTrue(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_UNBREAKABLE));
+-        itemStack.getDataKeyMap().set(DataKeys.UNBREAKABLE, null);
++        itemStack.data().set(DataKeys.UNBREAKABLE, null);
+         Assertions.assertFalse(itemStack.getItemMeta().isUnbreakable());
+     }
+ 
      @Test
      public void testToolTipAdditional() {
          ItemStack itemStack = new ItemStack(Material.STONE);
 -        itemStack.getDataKeyMap().set(DataKeys.HIDE_ADDITIONAL_TOOLTIP, Unit.of());
-+        itemStack.getDataKeyMap().set(DataKeys.HIDE_ADDITIONAL_TOOLTIP);
++        itemStack.data().set(DataKeys.HIDE_ADDITIONAL_TOOLTIP);
  
          Assertions.assertTrue(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
 -        itemStack.getDataKeyMap().set(DataKeys.HIDE_ADDITIONAL_TOOLTIP, null);
-+        itemStack.getDataKeyMap().remove(DataKeys.HIDE_ADDITIONAL_TOOLTIP);
++        itemStack.data().remove(DataKeys.HIDE_ADDITIONAL_TOOLTIP);
          Assertions.assertFalse(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
      }
  
@@ -257,7 +289,11 @@ index c60ec00464d5d4216544240f64a867e51ac7335d..517ea27fe792b1e6ec54075b4330d9a0
  
      @SuppressWarnings("unchecked")
 -    private static <T, M> void testSimpleValue(ItemStack itemStack, DataKey<T> dataKey, T value, Function<M, T> metaGetter, BiConsumer<M, T> metaSetter, Class<M> meta) {
+-        itemStack.getDataKeyMap().set(dataKey, value);
+-        Assertions.assertEquals(value, itemStack.getDataKeyMap().get(dataKey));
 +    private static <T, M> void testSimpleValue(ItemStack itemStack, DataKey.Valued<T> dataKey, T value, Function<M, T> metaGetter, BiConsumer<M, T> metaSetter, Class<M> meta) {
-         itemStack.getDataKeyMap().set(dataKey, value);
-         Assertions.assertEquals(value, itemStack.getDataKeyMap().get(dataKey));
++        itemStack.data().set(dataKey, value);
++        Assertions.assertEquals(value, itemStack.data().get(dataKey));
+ 
+         Assertions.assertEquals(metaGetter.apply((M) itemStack.getItemMeta()), value);
  
