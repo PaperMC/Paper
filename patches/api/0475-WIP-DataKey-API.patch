@@ -1,0 +1,534 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 28 Apr 2024 19:53:06 -0400
+Subject: [PATCH] WIP DataKey API
+
+
+diff --git a/src/main/java/io/papermc/paper/datakey/DataKey.java b/src/main/java/io/papermc/paper/datakey/DataKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..805926c7f8158680587e543e0f643d1e45d1a94a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/DataKey.java
+@@ -0,0 +1,9 @@
++package io.papermc.paper.datakey;
++
++import net.kyori.adventure.key.Key;
++import org.bukkit.Keyed;
++
++public interface DataKey<T> extends Keyed {
++
++    Key key();
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/DataKeys.java b/src/main/java/io/papermc/paper/datakey/DataKeys.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..26b83069907bbf6dfae98f1a687a982855283b8e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/DataKeys.java
+@@ -0,0 +1,73 @@
++package io.papermc.paper.datakey;
++
++import io.papermc.paper.datakey.types.ItemLore;
++import io.papermc.paper.datakey.types.Unbreakable;
++import io.papermc.paper.util.Unit;
++import net.kyori.adventure.text.Component;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.bukkit.inventory.ItemRarity;
++
++public class DataKeys {
++
++    public static final DataKey<Integer> MAX_STACK_SIZE = register("max_stack_size");
++    public static final DataKey<Integer> MAX_DAMAGE = register("max_damage");
++    public static final DataKey<Integer> DAMAGE = register("damage");
++    public static final DataKey<Unbreakable> UNBREAKABLE = register("unbreakable");
++    public static final DataKey<Component> CUSTOM_NAME = register("custom_name");
++    public static final DataKey<Component> ITEM_NAME = register("item_name");
++    public static final DataKey<ItemLore> LORE = register("lore");
++    public static final DataKey<ItemRarity> RARITY = register("rarity");
++    // enchantments
++    // can_place_on
++    // can_break
++    // attribute_modifiers
++    // custom_model_data
++    public static final DataKey<Unit> HIDE_ADDITIONAL_TOOLTIP = register("hide_additional_tooltip");
++    public static final DataKey<Unit> HIDE_TOOLTIP = register("hide_tooltip");
++    public static final DataKey<Integer> REPAIR_COST = register("repair_cost");
++    public static final DataKey<Unit> CREATIVE_SLOT_LOCK = register("creative_slot_lock");
++    public static final DataKey<Boolean> ENCHANTMENT_GLINT_OVERRIDE = register("enchantment_glint_override");
++    public static final DataKey<Unit> INTANGIBLE_PROJECTILE = register("intangible_projectile");
++    // food
++    public static final DataKey<Unit> FIRE_RESISTANT = register("fire_resistant");
++    // tool
++    // stored_enchantments
++    // dyed_color
++    // map_color
++    // map_id
++    // map_decorations
++    // map_post_processing
++    // charged_projectiles
++    // bundle_contents
++    // potion_contents
++    // suspicious_stew_effects
++    // writable_book_content
++    // written_book_content
++    // trim
++    // debug_stick_state
++    // entity_data
++    // bucket_entity_data
++    // block_entity_data
++    // instrument
++    public static final DataKey<Integer> OMINOUS_BOTTLE_AMPLIFIER = register("ominous_bottle_amplifier");
++    // recipes
++    // lodestone_tracker
++    // firework_explosion
++    // fireworks
++    // profile
++    // note_block_sound
++    // banner_patterns
++    // base_color
++    // pot_decorations
++    // container
++    // block_state
++    // bees
++    // lock
++    // container_loot
++
++    @SuppressWarnings("unchecked")
++    private static <T> DataKey<T> register(String name) {
++        return (DataKey<T>) Registry.DATA_KEYS.get(NamespacedKey.minecraft(name));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/map/DataKeyMap.java b/src/main/java/io/papermc/paper/datakey/map/DataKeyMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c542860ee47cdd02d55b39aa6f1fe29f4e85773a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/map/DataKeyMap.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.datakey.map;
++
++import io.papermc.paper.datakey.DataKey;
++import org.jetbrains.annotations.Nullable;
++import java.util.Set;
++
++public interface DataKeyMap {
++
++    static DataKeyMap empty() {
++        return DataKeyMapBridge.Holder.BRIDGE.empty();
++    }
++
++    @Nullable
++    <T> T get(DataKey<T> type);
++
++    Set<DataKey<?>> keySet();
++
++    default boolean has(DataKey<?> type) {
++        return this.get(type) != null;
++    }
++
++    default <T> T getOrDefault(DataKey<? extends T> type, T fallback) {
++        T object = this.get(type);
++        return object != null ? object : fallback;
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/map/DataKeyMapBridge.java b/src/main/java/io/papermc/paper/datakey/map/DataKeyMapBridge.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9da6ab689eb43eb960429fe9a752c0c6c4183232
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/map/DataKeyMapBridge.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.datakey.map;
++
++import net.kyori.adventure.util.Services;
++import org.bukkit.Material;
++import org.bukkit.inventory.meta.ItemMeta;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++public interface DataKeyMapBridge {
++
++    PatchedDataKeyMap of(DataKeyMap keyMap);
++
++    DataKeyMap empty();
++
++    DataKeyMap itemStack(Material material);
++
++    PatchedDataKeyMap meta(Material material, ItemMeta itemMeta);
++
++    ItemMeta toMeta(Material material, PatchedDataKeyMap dataKeyMap);
++
++    class Holder {
++
++        public static DataKeyMapBridge BRIDGE = Services.service(DataKeyMapBridge.class)
++            .orElseThrow();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMap.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4a3c74320909d5dadf4fdd48fceeb60da111c311
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataKeyMap.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.datakey.map;
++
++import io.papermc.paper.datakey.DataKey;
++import io.papermc.paper.datakey.patch.DataKeyMapPatch;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public interface PatchedDataKeyMap extends DataKeyMap {
++
++    static PatchedDataKeyMap empty() {
++        return DataKeyMapBridge.Holder.BRIDGE.of(DataKeyMapBridge.Holder.BRIDGE.empty());
++    }
++
++    static PatchedDataKeyMap of(DataKeyMap map) {
++        return DataKeyMapBridge.Holder.BRIDGE.of(map);
++    }
++
++    @Nullable
++    <T> T set(DataKey<T> type, @Nullable T value);
++
++    @Nullable
++    <T> T remove(DataKey<T> type);
++
++    @NotNull
++    DataKeyMapPatch asPatch();
++
++    void applyPatch(@NotNull DataKeyMapPatch patch);
++
++    PatchedDataKeyMap clone();
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java b/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..325a597b8d3e0c574b7bc80b7c9d0deeb3b28037
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java
+@@ -0,0 +1,5 @@
++package io.papermc.paper.datakey.patch;
++
++// TODO: Do we want this?
++public interface DataKeyMapPatch {
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7f76327b085f3857739d328cffc441f745f32209
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java
+@@ -0,0 +1,19 @@
++package io.papermc.paper.datakey.types;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.util.Services;
++import org.jetbrains.annotations.ApiStatus;
++import java.util.List;
++
++@ApiStatus.Internal
++public interface ComponentTypesBridge {
++
++    Unbreakable unbreakable(boolean showInTooltip);
++
++    ItemLore lore(List<Component> componentList);
++
++    public static class Holder {
++        public static ComponentTypesBridge BRIDGE = Services.service(ComponentTypesBridge.class)
++            .orElseThrow();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/ItemLore.java b/src/main/java/io/papermc/paper/datakey/types/ItemLore.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b300d11642bb0c0bf5b68556cd211e31120d9af0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/ItemLore.java
+@@ -0,0 +1,15 @@
++package io.papermc.paper.datakey.types;
++
++import net.kyori.adventure.text.Component;
++import java.util.List;
++
++public interface ItemLore {
++
++    static ItemLore lore(List<Component> showInTooltip) {
++        return ComponentTypesBridge.Holder.BRIDGE.lore(showInTooltip);
++    }
++
++    List<Component> lines();
++
++    List<Component> styledLines();
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java b/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d6dc5fa334679767096da9f80740bbc9d9630617
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java
+@@ -0,0 +1,15 @@
++package io.papermc.paper.datakey.types;
++
++import org.jetbrains.annotations.Contract;
++
++public interface Unbreakable {
++
++    static Unbreakable of(boolean showInTooltip) {
++        return ComponentTypesBridge.Holder.BRIDGE.unbreakable(showInTooltip);
++    }
++
++    boolean isShownInTooltip();
++
++    @Contract("_ -> new")
++    Unbreakable showInTooltip(boolean hideInTooltip);
++}
+diff --git a/src/main/java/io/papermc/paper/util/Unit.java b/src/main/java/io/papermc/paper/util/Unit.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..540bf0c6f3f33bd3b7282ce9b51d32707d8ffc63
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/Unit.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.util;
++
++public interface Unit {
++
++    static Unit of() {
++        return UnitHolder.UNIT;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/UnitHolder.java b/src/main/java/io/papermc/paper/util/UnitHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5312745cb67d48e2370251fb45aa2c5c93c52107
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/UnitHolder.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.util;
++
++
++class UnitHolder {
++
++    static final Unit UNIT = new Unit() {
++    };
++}
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 82d009c0bbe4b3026a535e02d6e0ed20c7bd525d..2e829272171761da93c8d44d3c04e23e3c25516a 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -128,7 +128,7 @@ import org.jetbrains.annotations.Nullable;
+ @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
+ public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
+     //<editor-fold desc="Materials" defaultstate="collapsed">
+-    AIR(9648, 0),
++    AIR(9648, 64), // Paper - air technically stacks to 64
+     STONE(22948),
+     GRANITE(21091),
+     POLISHED_GRANITE(5477),
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 542c0516e19b6177ff8007ca6f8955dc9082da95..329480202c35908bb2ce6970d23f486b9666652c 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -317,6 +317,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+             return StreamSupport.stream(this.spliterator(), false);
+         }
+     };
++
++    Registry<io.papermc.paper.datakey.DataKey<?>> DATA_KEYS = (Registry) Bukkit.getRegistry(io.papermc.paper.datakey.DataKey.class);
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index 98a970a6582dca22e719a31559c7becea4725cb2..84708afee2316108babbd64c9c66714646cc7546 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -162,6 +162,7 @@ public interface ItemFactory {
+      */
+     @ApiStatus.Internal
+     @NotNull
++    @Deprecated // Paper - This seems to be flawed-- this is not good anymore
+     Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 84a7bf0936d35bf42b5ed038d295d5c31740f472..d036e24e602d086e962723cb96a5e3896172e1b9 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
+ import java.util.LinkedHashMap;
+ import java.util.List; // Paper
+ import java.util.Map;
++import io.papermc.paper.datakey.map.PatchedDataKeyMap;
+ import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.Translatable;
+@@ -29,7 +30,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     private Material type = Material.AIR;
+     private int amount = 0;
+     private MaterialData data = null;
+-    private ItemMeta meta;
++    private PatchedDataKeyMap dataKeyMap; // Paper
+ 
+     @Utility
+     protected ItemStack() {}
+@@ -86,6 +87,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         Preconditions.checkArgument(type != null, "Material cannot be null");
+         this.type = type;
+         this.amount = amount;
++        this.dataKeyMap = io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.of(io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.itemStack(type)); // Paper
+         if (damage != 0) {
+             setDurability(damage);
+         }
+@@ -148,10 +150,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     @Deprecated // Paper
+     public void setType(@NotNull Material type) {
+         Preconditions.checkArgument(type != null, "Material cannot be null");
++        this.dataKeyMap = io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.meta(type, Bukkit.getItemFactory().asMetaFor(this.getItemMeta(), type)); // Paper - update type first too, we need the old context to resolve the meta from the type
+         this.type = type;
+-        if (this.meta != null) {
+-            this.meta = Bukkit.getItemFactory().asMetaFor(meta, type);
+-        }
+         if (type.isLegacy()) {
+             createData((byte) 0);
+         } else {
+@@ -275,6 +275,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      */
+     @Utility
+     public int getMaxStackSize() {
++        ItemMeta meta = getItemMeta();
+         if (meta != null && meta.hasMaxStackSize()) {
+             return meta.getMaxStackSize();
+         }
+@@ -335,9 +336,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         try {
+             ItemStack itemStack = (ItemStack) super.clone();
+ 
+-            if (this.meta != null) {
+-                itemStack.meta = this.meta.clone();
+-            }
++            itemStack.dataKeyMap =  this.getDataKeyMap().clone(); // Paper
+ 
+             if (this.data != null) {
+                 itemStack.data = this.data.clone();
+@@ -357,7 +356,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         hash = hash * 31 + getType().hashCode();
+         hash = hash * 31 + getAmount();
+         hash = hash * 31 + (getDurability() & 0xffff);
+-        hash = hash * 31 + (hasItemMeta() ? (meta == null ? getItemMeta().hashCode() : meta.hashCode()) : 0);
++        hash = hash * 31 + dataKeyMap.hashCode(); // Paper
+ 
+         return hash;
+     }
+@@ -369,7 +368,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      * @return True if this has the given enchantment
+      */
+     public boolean containsEnchantment(@NotNull Enchantment ench) {
+-        return meta == null ? false : meta.hasEnchant(ench);
++        return this.getItemMeta().hasEnchant(ench); // Paper
+     }
+ 
+     /**
+@@ -379,7 +378,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      * @return Level of the enchantment, or 0
+      */
+     public int getEnchantmentLevel(@NotNull Enchantment ench) {
+-        return meta == null ? 0 : meta.getEnchantLevel(ench);
++        return this.getItemMeta().getEnchantLevel(ench); // Paper
+     }
+ 
+     /**
+@@ -389,7 +388,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      */
+     @NotNull
+     public Map<Enchantment, Integer> getEnchantments() {
+-        return meta == null ? ImmutableMap.<Enchantment, Integer>of() : meta.getEnchants();
++        return this.getItemMeta().getEnchants(); // Paper
+     }
+ 
+     /**
+@@ -465,10 +464,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      * @param level Level of the enchantment
+      */
+     public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
+-        ItemMeta itemMeta = (meta == null ? meta = Bukkit.getItemFactory().getItemMeta(type) : meta);
++        editMeta((itemMeta) -> { // Paper
+         if (itemMeta != null) {
+             itemMeta.addEnchant(ench, level, true);
+         }
++        }); // Paper
+     }
+ 
+     /**
+@@ -480,10 +480,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      */
+     public int removeEnchantment(@NotNull Enchantment ench) {
+         int level = getEnchantmentLevel(ench);
+-        if (level == 0 || meta == null) {
++        if (level == 0) { // Paper
+             return level;
+         }
+-        meta.removeEnchant(ench);
++        editMeta((itemMeta) -> itemMeta.removeEnchant(ench)); // Paper
+         return level;
+     }
+ 
+@@ -491,11 +491,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      * Removes all enchantments on this ItemStack.
+      */
+     public void removeEnchantments() {
+-        if (meta == null) {
+-            return;
+-        }
+-
+-        meta.removeEnchantments();
++        editMeta(ItemMeta::removeEnchantments); // Paper
+     }
+ 
+     @Override
+@@ -647,7 +643,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      */
+     @UndefinedNullability // Paper
+     public ItemMeta getItemMeta() {
+-        return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
++        return io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.toMeta(this.type, this.getDataKeyMap());
+     }
+ 
+     /**
+@@ -656,7 +652,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      * @return Returns true if some meta data has been set for this item
+      */
+     public boolean hasItemMeta() {
+-        return !Bukkit.getItemFactory().equals(meta, null);
++        return true; // Paper - every item now has meta!
+     }
+ 
+     /**
+@@ -677,22 +673,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+      */
+     private boolean setItemMeta0(@Nullable ItemMeta itemMeta, @NotNull Material material) {
+         if (itemMeta == null) {
+-            this.meta = null;
++            this.dataKeyMap = PatchedDataKeyMap.of(io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.itemStack(material));
+             return true;
+         }
+         if (!Bukkit.getItemFactory().isApplicable(itemMeta, material)) {
+             return false;
+         }
+-        this.meta = Bukkit.getItemFactory().asMetaFor(itemMeta, material);
+-
+-        Material newType = Bukkit.getItemFactory().updateMaterial(meta, material);
+-        if (this.type != newType) {
+-            this.type = newType;
+-        }
+-
+-        if (this.meta == itemMeta) {
+-            this.meta = itemMeta.clone();
+-        }
++        this.dataKeyMap = io.papermc.paper.datakey.map.DataKeyMapBridge.Holder.BRIDGE.meta(material, itemMeta);
+ 
+         return true;
+     }
+@@ -1073,4 +1060,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
+     }
+     // Paper end - expose itemstack tooltip lines
++    // Paper start
++    @NotNull
++    public PatchedDataKeyMap getDataKeyMap() {
++        return this.dataKeyMap;
++    }
++    // Paper end
+ }
