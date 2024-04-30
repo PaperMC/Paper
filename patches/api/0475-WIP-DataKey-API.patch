@@ -32,13 +32,15 @@ index 0000000000000000000000000000000000000000..fcabc30aaf05c3bc0cc4ef38b5df9978
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/DataComponentTypes.java b/src/main/java/io/papermc/paper/datakey/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..83f396a9b427eb87c82a68bb1d3fbe7d1ca0e32b
+index 0000000000000000000000000000000000000000..cbb8413356b0991e844ea443607b9561fcf298c6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/DataComponentTypes.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,78 @@
 +package io.papermc.paper.datakey;
 +
++import io.papermc.paper.datakey.types.ChargedProjectiles;
 +import io.papermc.paper.datakey.types.ItemLore;
++import io.papermc.paper.datakey.types.PotDecorations;
 +import io.papermc.paper.datakey.types.Unbreakable;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.NamespacedKey;
@@ -75,14 +77,14 @@ index 0000000000000000000000000000000000000000..83f396a9b427eb87c82a68bb1d3fbe7d
 +    // map_id
 +    // map_decorations
 +    // map_post_processing
-+    // charged_projectiles
++    public static final DataComponentType.Valued<ChargedProjectiles> CHARGED_PROJECTILES = valued("charged_projectiles");
 +    // bundle_contents
 +    // potion_contents
 +    // suspicious_stew_effects
 +    // writable_book_content
 +    // written_book_content
 +    // trim
-+    // debug_stick_state
++    // debug_stick_state - Block Property API
 +    // entity_data
 +    // bucket_entity_data
 +    // block_entity_data
@@ -96,7 +98,7 @@ index 0000000000000000000000000000000000000000..83f396a9b427eb87c82a68bb1d3fbe7d
 +    // note_block_sound
 +    // banner_patterns
 +    // base_color
-+    // pot_decorations
++    public static final DataComponentType.Valued<PotDecorations> POT_DECORATIONS = valued("pot_decorations");
 +    // container
 +    // block_state
 +    // bees
@@ -302,29 +304,58 @@ index 0000000000000000000000000000000000000000..325a597b8d3e0c574b7bc80b7c9d0dee
 +// TODO: Do we want this?
 +public interface DataKeyMapPatch {
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/AbstractShownInTooltip.java b/src/main/java/io/papermc/paper/datakey/types/AbstractShownInTooltip.java
+diff --git a/src/main/java/io/papermc/paper/datakey/types/ChargedProjectiles.java b/src/main/java/io/papermc/paper/datakey/types/ChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7fe764cde13fcac1f3ceadd55bbb84a6692d866a
+index 0000000000000000000000000000000000000000..6023de387df8075e355b16ce4978998e6c885fb5
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/AbstractShownInTooltip.java
-@@ -0,0 +1,11 @@
++++ b/src/main/java/io/papermc/paper/datakey/types/ChargedProjectiles.java
+@@ -0,0 +1,40 @@
 +package io.papermc.paper.datakey.types;
 +
++import org.bukkit.Material;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.UnmodifiableView;
++import java.util.List;
 +
-+public interface AbstractShownInTooltip<T> {
-+    @Contract(pure = true)
-+    boolean showInTooltip();
++@ApiStatus.NonExtendable
++public interface ChargedProjectiles {
 +
-+    @Contract(value = "_ -> new", pure = true)
-+    T showInTooltip(boolean showInTooltip);
++    @Contract(value = "-> new", pure = true)
++    static ChargedProjectiles.@NotNull Builder chargedProjectiles() {
++        return ComponentTypesBridge.Holder.bridge().chargedProjectiles();
++    }
++
++    @NotNull
++    @UnmodifiableView
++    List<ItemStack> getItems();
++
++    @ApiStatus.NonExtendable
++    interface Builder {
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NotNull
++        Builder add(@NotNull ItemStack itemStack);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NotNull
++        Builder addAll(@NotNull List<ItemStack> itemStack);
++
++        @Contract(value = "-> new", pure = true)
++        @NotNull
++        ChargedProjectiles build();
++
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..60a49ecb5788de79d3a130fd0ddd7c4c56855553
+index 0000000000000000000000000000000000000000..a45e7e6060ebb4b32122badf56935bd484efaba1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,26 @@
 +package io.papermc.paper.datakey.types;
 +
 +import java.util.Optional;
@@ -333,6 +364,10 @@ index 0000000000000000000000000000000000000000..60a49ecb5788de79d3a130fd0ddd7c4c
 +
 +@ApiStatus.Internal
 +public interface ComponentTypesBridge {
++
++    ChargedProjectiles.Builder chargedProjectiles();
++
++    PotDecorations.Builder potDecorations();
 +
 +    Unbreakable.Builder unbreakable();
 +
@@ -393,9 +428,81 @@ index 0000000000000000000000000000000000000000..0caeec1f2d3609a07e1c4ab47f82e9c7
 +
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/PotDecorations.java b/src/main/java/io/papermc/paper/datakey/types/PotDecorations.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f2cfdafca42fa39eca38f5fac76e70cce23b195c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/PotDecorations.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.datakey.types;
++
++import org.bukkit.Material;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@ApiStatus.NonExtendable
++public interface PotDecorations {
++
++    @Contract(value = "-> new", pure = true)
++    static PotDecorations.@NotNull Builder potDecorations() {
++        return ComponentTypesBridge.Holder.bridge().potDecorations();
++    }
++
++    @Nullable
++    Material back();
++
++    @Nullable
++    Material left();
++
++    @Nullable
++    Material right();
++
++    @Nullable
++    Material front();
++
++    @ApiStatus.NonExtendable
++    interface Builder {
++
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder back(@Nullable Material item);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder left(@Nullable Material item);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder right(@Nullable Material item);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder front(@Nullable Material item);
++
++        @Contract(value = "-> new", pure = true)
++        @NotNull
++        PotDecorations build();
++
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/ShownInTooltip.java b/src/main/java/io/papermc/paper/datakey/types/ShownInTooltip.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f20952bdb5be029ca1cd6e4db561fcbb1d219939
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/ShownInTooltip.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.datakey.types;
++
++import org.jetbrains.annotations.Contract;
++
++public interface ShownInTooltip<T> {
++    @Contract(pure = true)
++    boolean showInTooltip();
++
++    @Contract(value = "_ -> new", pure = true)
++    T showInTooltip(boolean showInTooltip);
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java b/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1f366f4ef4ba81ffef95619376de0b25694b3ac8
+index 0000000000000000000000000000000000000000..b58a49d8431240cdfd38453819c45c09ab5e2744
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java
 @@ -0,0 +1,30 @@
@@ -406,7 +513,7 @@ index 0000000000000000000000000000000000000000..1f366f4ef4ba81ffef95619376de0b25
 +import org.jetbrains.annotations.NotNull;
 +
 +@ApiStatus.NonExtendable
-+public interface Unbreakable extends AbstractShownInTooltip<Unbreakable> {
++public interface Unbreakable extends ShownInTooltip<Unbreakable> {
 +
 +    @Contract(value = "-> new", pure = true)
 +    static Unbreakable.@NotNull Builder unbreakable() {
