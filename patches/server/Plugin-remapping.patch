@@ -723,7 +723,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        return this.reobf.remapped().thenApplyAsync(reobfServer -> {
-+            LOGGER.info("Remapping plugin '{}'...", inputFile);
++            LOGGER.info("Remapping {} '{}'...", library ? "library" : "plugin", inputFile);
 +            final long start = System.currentTimeMillis();
 +            try (final DebugLogger logger = DebugLogger.forOutputFile(destination)) {
 +                try (final Renamer renamer = Renamer.builder()
@@ -1915,32 +1915,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -0,0 +0,0 @@ import org.bukkit.potion.PotionType;
- 
- @SuppressWarnings("deprecation")
- public final class CraftMagicNumbers implements UnsafeValues {
-+    public static final boolean DISABLE_PLUGIN_REWRITING = Boolean.getBoolean("paper.disable-plugin-rewriting");
-     public static final UnsafeValues INSTANCE = new CraftMagicNumbers();
- 
-     private CraftMagicNumbers() {}
-@@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
-             throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
-         }
- 
--        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
-+        if (!DISABLE_PLUGIN_REWRITING && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
-             CraftLegacy.init();
-         }
- 
-@@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
- 
-     @Override
-     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
-+        if (DISABLE_PLUGIN_REWRITING) return clazz; // Paper
-         try {
-             clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()));
-         } catch (Exception ex) {

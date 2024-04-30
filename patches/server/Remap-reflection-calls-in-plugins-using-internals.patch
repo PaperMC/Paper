@@ -56,6 +56,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.io.InputStream;
 +import java.io.UncheckedIOException;
 +import java.net.JarURLConnection;
++import java.net.URI;
 +import java.net.URL;
 +import java.net.URLClassLoader;
 +import java.security.CodeSigner;
@@ -133,17 +134,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            String pkgname = name.substring(0, i);
 +            // Check if package already loaded.
 +            final @Nullable Manifest man = this.manifestFor(url);
-+            if (this.getAndVerifyPackage(pkgname, man, url) == null) {
++            final URL jarUrl = URI.create(jarName(url)).toURL();
++            if (this.getAndVerifyPackage(pkgname, man, jarUrl) == null) {
 +                try {
 +                    if (man != null) {
-+                        this.definePackage(pkgname, man, url);
++                        this.definePackage(pkgname, man, jarUrl);
 +                    } else {
 +                        this.definePackage(pkgname, null, null, null, null, null, null, null);
 +                    }
 +                } catch (IllegalArgumentException iae) {
 +                    // parallel-capable class loaders: re-verify in case of a
 +                    // race condition
-+                    if (this.getAndVerifyPackage(pkgname, man, url) == null) {
++                    if (this.getAndVerifyPackage(pkgname, man, jarUrl) == null) {
 +                        // Should never happen
 +                        throw new AssertionError("Cannot find package " +
 +                            pkgname);
@@ -273,6 +275,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
 -import org.jetbrains.annotations.NotNull;
 -
++import io.papermc.paper.util.MappingEnvironment;
  import java.io.IOException;
  import java.net.MalformedURLException;
  import java.net.URL;
@@ -289,7 +292,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          try {
 -            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), new URLClassLoader(urls, getClass().getClassLoader()));
-+            final URLClassLoader libraryLoader = new BytecodeModifyingURLClassLoader(urls, this.getClass().getClassLoader());
++            final URLClassLoader libraryLoader = MappingEnvironment.DISABLE_PLUGIN_REWRITING
++                ? new URLClassLoader(urls, this.getClass().getClassLoader())
++                : new BytecodeModifyingURLClassLoader(urls, this.getClass().getClassLoader());
 +            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), libraryLoader);
          } catch (IOException exception) {
              throw new RuntimeException(exception);
@@ -304,6 +309,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
  import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
  import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
++import io.papermc.paper.util.MappingEnvironment;
  import org.bukkit.plugin.InvalidDescriptionException;
  import org.bukkit.plugin.PluginDescriptionFile;
 +import org.bukkit.plugin.java.LibraryLoader;
@@ -315,7 +321,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  class SpigotPluginProviderFactory implements PluginTypeFactory<SpigotPluginProvider, PluginDescriptionFile> {
  
 +    static {
-+        LibraryLoader.LIBRARY_LOADER_FACTORY = BytecodeModifyingURLClassLoader::new;
++        if (!MappingEnvironment.DISABLE_PLUGIN_REWRITING) {
++			LibraryLoader.LIBRARY_LOADER_FACTORY = BytecodeModifyingURLClassLoader::new;
++		}
 +    }
 +
      @Override
@@ -607,6 +615,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
  @DefaultQualifier(NonNull.class)
  public final class MappingEnvironment {
++    public static final boolean DISABLE_PLUGIN_REWRITING = Boolean.getBoolean("paper.disable-plugin-rewriting");
 +    public static final String LEGACY_CB_VERSION = "v1_20_R4";
      private static final @Nullable String MAPPINGS_HASH = readMappingsHash();
      private static final boolean REOBF = checkReobf();
@@ -696,3 +705,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
              String className;
              boolean isInterface;
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
+             throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
+         }
+ 
+-        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
++        if (!io.papermc.paper.util.MappingEnvironment.DISABLE_PLUGIN_REWRITING && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
+             CraftLegacy.init();
+         }
+ 
+@@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
+ 
+     @Override
+     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
++        if (io.papermc.paper.util.MappingEnvironment.DISABLE_PLUGIN_REWRITING) return clazz; // Paper
+         try {
+             clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()));
+         } catch (Exception ex) {
