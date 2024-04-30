@@ -7,26 +7,63 @@ Subject: [PATCH] Add exploded block state to EntityDamageByBlockEvent
 public org.bukkit.craftbukkit.block.CraftBlockStates getBlockState(Lorg/bukkit/World;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/entity/BlockEntity;)Lorg/bukkit/craftbukkit/block/CraftBlockState;
 
 diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSources.java b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
-index 89928dad3182a0131c3fba19c9c131d6997028eb..349d1683458ec5d641c9823aa7a68dec8820a664 100644
+index 89928dad3182a0131c3fba19c9c131d6997028eb..a1c53f04c2dd505e6af72e512e111d7994786035 100644
 --- a/src/main/java/net/minecraft/world/damagesource/DamageSources.java
 +++ b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
-@@ -265,6 +265,7 @@ public class DamageSources {
+@@ -265,15 +265,16 @@ public class DamageSources {
          return this.source(DamageTypes.SONIC_BOOM, attacker);
      }
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - add exploded state
      public DamageSource badRespawnPointExplosion(Vec3 position) {
          // CraftBukkit start
-         return this.badRespawnPointExplosion(position, null, null, null);
-@@ -273,7 +274,7 @@ public class DamageSources {
-     public DamageSource badRespawnPointExplosion(Vec3 vec3d, net.minecraft.world.level.Level world, net.minecraft.world.level.block.state.BlockState blockData, net.minecraft.core.BlockPos position) {
+-        return this.badRespawnPointExplosion(position, null, null, null);
++        return this.badRespawnPointExplosion(position, null, null, null, null); // Paper - pass possible BlockEntity
+     }
+ 
+-    public DamageSource badRespawnPointExplosion(Vec3 vec3d, net.minecraft.world.level.Level world, net.minecraft.world.level.block.state.BlockState blockData, net.minecraft.core.BlockPos position) {
++    public DamageSource badRespawnPointExplosion(Vec3 vec3d, net.minecraft.world.level.Level world, net.minecraft.world.level.block.state.BlockState blockData, net.minecraft.core.BlockPos position, @Nullable net.minecraft.world.level.block.entity.BlockEntity blockEntity) { // Paper - pass possible BlockEntity
          DamageSource damageSource = new DamageSource(this.damageTypes.getHolderOrThrow(DamageTypes.BAD_RESPAWN_POINT), vec3d);
          if (world != null && blockData != null && position != null) {
 -            damageSource.blockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(world, position, blockData, null);
-+            damageSource.blockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(world.getWorld(), position, blockData, world.getBlockEntity(position)); // Paper
++            damageSource.blockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(null, position, blockData, blockEntity); // Paper - pass possible BlockEntity (null world for unplaced)
          }
          return damageSource;
          // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/block/BedBlock.java b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+index c353643a9c9b400d351ef49e1b7d4f516ed0b0eb..a2379aa9337df13f17f0ebb05c50a710cb19a5ad 100644
+--- a/src/main/java/net/minecraft/world/level/block/BedBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+@@ -146,6 +146,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+     private InteractionResult explodeBed(BlockState iblockdata, Level world, BlockPos blockposition) {
+         {
+             {
++                final BlockEntity blockEntity = world.getBlockEntity(blockposition); // Paper - capture BlockEntity
+                 world.removeBlock(blockposition, false);
+                 BlockPos blockposition1 = blockposition.relative(((Direction) iblockdata.getValue(BedBlock.FACING)).getOpposite());
+ 
+@@ -155,7 +156,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+ 
+                 Vec3 vec3d = blockposition.getCenter();
+ 
+-                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, world, iblockdata, blockposition), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state
++                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, world, iblockdata, blockposition, blockEntity), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state // Paper - add BlockEntity
+                 return InteractionResult.SUCCESS;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
+index be85535767bc79875c38da78a209d33d4be87c8a..0699211428f182d8d56a2ba019d89ce05c920430 100644
+--- a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
+@@ -149,7 +149,7 @@ public class RespawnAnchorBlock extends Block {
+         };
+         Vec3 vec3d = explodedPos.getCenter();
+ 
+-        world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, world, state, explodedPos), explosiondamagecalculator, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state
++        world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, world, state, explodedPos, null), explosiondamagecalculator, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state // Paper
+     }
+ 
+     public static boolean canSetSpawn(Level world) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index c52cb55cd1da988ec646e4e1484ec1a72513291d..0ab1cf162016422007426698dec60ffd875631a0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
