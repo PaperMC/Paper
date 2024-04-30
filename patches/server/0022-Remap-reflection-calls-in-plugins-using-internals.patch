@@ -45,10 +45,10 @@ index 893ad5e7c2d32ccd64962d95d146bbd317c28ab8..3d73ea0e63c97b2b08e719b7be7af389
          }
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/BytecodeModifyingURLClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/BytecodeModifyingURLClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..405416dc3d1c8c58b4e0c880d8751ca319188f62
+index 0000000000000000000000000000000000000000..1240c061c121e8d5eb9add4e5e21955ee6df9368
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/BytecodeModifyingURLClassLoader.java
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,187 @@
 +package io.papermc.paper.plugin.entrypoint.classloader;
 +
 +import io.papermc.paper.pluginremap.reflect.ReflectionRemapper;
@@ -56,6 +56,7 @@ index 0000000000000000000000000000000000000000..405416dc3d1c8c58b4e0c880d8751ca3
 +import java.io.InputStream;
 +import java.io.UncheckedIOException;
 +import java.net.JarURLConnection;
++import java.net.URI;
 +import java.net.URL;
 +import java.net.URLClassLoader;
 +import java.security.CodeSigner;
@@ -133,17 +134,18 @@ index 0000000000000000000000000000000000000000..405416dc3d1c8c58b4e0c880d8751ca3
 +            String pkgname = name.substring(0, i);
 +            // Check if package already loaded.
 +            final @Nullable Manifest man = this.manifestFor(url);
-+            if (this.getAndVerifyPackage(pkgname, man, url) == null) {
++            final URL jarUrl = URI.create(jarName(url)).toURL();
++            if (this.getAndVerifyPackage(pkgname, man, jarUrl) == null) {
 +                try {
 +                    if (man != null) {
-+                        this.definePackage(pkgname, man, url);
++                        this.definePackage(pkgname, man, jarUrl);
 +                    } else {
 +                        this.definePackage(pkgname, null, null, null, null, null, null, null);
 +                    }
 +                } catch (IllegalArgumentException iae) {
 +                    // parallel-capable class loaders: re-verify in case of a
 +                    // race condition
-+                    if (this.getAndVerifyPackage(pkgname, man, url) == null) {
++                    if (this.getAndVerifyPackage(pkgname, man, jarUrl) == null) {
 +                        // Should never happen
 +                        throw new AssertionError("Cannot find package " +
 +                            pkgname);
@@ -258,10 +260,10 @@ index f9a2c55a354c877749db3f92956de802ae575788..39182cdd17473da0123dc7172dce507e
      }
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
-index f576060c8fe872772bbafe2016fc9b83a3c095f1..82032370e7896b621e37ee3726016440e177619f 100644
+index f576060c8fe872772bbafe2016fc9b83a3c095f1..f9d4b33050a6fe8c2dabe8e5eec075d95dc513e0 100644
 --- a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
 +++ b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
-@@ -2,12 +2,11 @@ package io.papermc.paper.plugin.loader;
+@@ -2,12 +2,12 @@ package io.papermc.paper.plugin.loader;
  
  import io.papermc.paper.plugin.PluginInitializerManager;
  import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
@@ -273,10 +275,11 @@ index f576060c8fe872772bbafe2016fc9b83a3c095f1..82032370e7896b621e37ee3726016440
  import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
 -import org.jetbrains.annotations.NotNull;
 -
++import io.papermc.paper.util.MappingEnvironment;
  import java.io.IOException;
  import java.net.MalformedURLException;
  import java.net.URL;
-@@ -17,6 +16,7 @@ import java.util.ArrayList;
+@@ -17,6 +17,7 @@ import java.util.ArrayList;
  import java.util.List;
  import java.util.jar.JarFile;
  import java.util.logging.Logger;
@@ -284,38 +287,43 @@ index f576060c8fe872772bbafe2016fc9b83a3c095f1..82032370e7896b621e37ee3726016440
  
  public class PaperClasspathBuilder implements PluginClasspathBuilder {
  
-@@ -60,7 +60,8 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
+@@ -60,7 +61,10 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
          }
  
          try {
 -            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), new URLClassLoader(urls, getClass().getClassLoader()));
-+            final URLClassLoader libraryLoader = new BytecodeModifyingURLClassLoader(urls, this.getClass().getClassLoader());
++            final URLClassLoader libraryLoader = MappingEnvironment.DISABLE_PLUGIN_REWRITING
++                ? new URLClassLoader(urls, this.getClass().getClassLoader())
++                : new BytecodeModifyingURLClassLoader(urls, this.getClass().getClassLoader());
 +            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), libraryLoader);
          } catch (IOException exception) {
              throw new RuntimeException(exception);
          }
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
-index bdd9bc8a414719b9f1d6f01f90539ddb8603a878..31f05a7336ea124d24a5059652a2950a9f672758 100644
+index bdd9bc8a414719b9f1d6f01f90539ddb8603a878..fdb52ad85cfaa1d53aadcad72cec3d3c8c12c058 100644
 --- a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
-@@ -1,9 +1,11 @@
+@@ -1,9 +1,12 @@
  package io.papermc.paper.plugin.provider.type.spigot;
  
 +import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
  import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
  import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
++import io.papermc.paper.util.MappingEnvironment;
  import org.bukkit.plugin.InvalidDescriptionException;
  import org.bukkit.plugin.PluginDescriptionFile;
 +import org.bukkit.plugin.java.LibraryLoader;
  import org.yaml.snakeyaml.error.YAMLException;
  
  import java.io.IOException;
-@@ -15,6 +17,10 @@ import java.util.jar.JarFile;
+@@ -15,6 +18,12 @@ import java.util.jar.JarFile;
  
  class SpigotPluginProviderFactory implements PluginTypeFactory<SpigotPluginProvider, PluginDescriptionFile> {
  
 +    static {
-+        LibraryLoader.LIBRARY_LOADER_FACTORY = BytecodeModifyingURLClassLoader::new;
++        if (!MappingEnvironment.DISABLE_PLUGIN_REWRITING) {
++			LibraryLoader.LIBRARY_LOADER_FACTORY = BytecodeModifyingURLClassLoader::new;
++		}
 +    }
 +
      @Override
@@ -600,13 +608,14 @@ index 0000000000000000000000000000000000000000..5fa5868e82d1f00498d0c5771369e171
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MappingEnvironment.java b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
-index 8e4229634d41a42b3d93948eebb77def7c0c72b1..38745299ea49f253a410e77557100903ecb472b0 100644
+index 8e4229634d41a42b3d93948eebb77def7c0c72b1..4d57213c9917ea965bfe06a5d242e61422457ee2 100644
 --- a/src/main/java/io/papermc/paper/util/MappingEnvironment.java
 +++ b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
-@@ -10,6 +10,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
+@@ -10,6 +10,8 @@ import org.checkerframework.framework.qual.DefaultQualifier;
  
  @DefaultQualifier(NonNull.class)
  public final class MappingEnvironment {
++    public static final boolean DISABLE_PLUGIN_REWRITING = Boolean.getBoolean("paper.disable-plugin-rewriting");
 +    public static final String LEGACY_CB_VERSION = "v1_20_R4";
      private static final @Nullable String MAPPINGS_HASH = readMappingsHash();
      private static final boolean REOBF = checkReobf();
@@ -696,3 +705,24 @@ index 8420a53672cfb0f060d9c85c445d200b6701f521..fc04bfcb8b5dfa6d093c8d75b2f20c50
              final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
              String className;
              boolean isInterface;
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index c8c66f78335868100adbb4d044037168872d5f94..beffeedee0afdb885558c832f8801cd713d741a3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -356,7 +356,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+             throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
+         }
+ 
+-        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
++        if (!io.papermc.paper.util.MappingEnvironment.DISABLE_PLUGIN_REWRITING && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
+             CraftLegacy.init();
+         }
+ 
+@@ -371,6 +371,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+ 
+     @Override
+     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
++        if (io.papermc.paper.util.MappingEnvironment.DISABLE_PLUGIN_REWRITING) return clazz; // Paper
+         try {
+             clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()));
+         } catch (Exception ex) {
