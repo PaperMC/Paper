@@ -37,7 +37,7 @@ index 0000000000000000000000000000000000000000..264a8a14d2a778ef4eaa5937342b5978
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..269b49fd9eceed44a0c8fc0baf10b8bfe4e9ead7
+index 0000000000000000000000000000000000000000..2b7ebce80662774f751d930c0e7df1f446d2dc8d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
 @@ -0,0 +1,71 @@
@@ -64,7 +64,7 @@ index 0000000000000000000000000000000000000000..269b49fd9eceed44a0c8fc0baf10b8bf
 +public final class ComponentAdapters {
 +
 +    private static final Function<Unit, Void> UNIT_TO_API_CONVERTER = $ -> {
-+        throw new UnsupportedOperationException("Cannot convert the UNIT type to an api value");
++        throw new UnsupportedOperationException("Cannot convert the Unit type to an API value");
 +    };
 +
 +    static final Map<ResourceKey<DataComponentType<?>>, ComponentAdapter<?, ?>> ADAPTERS = new HashMap<>();
@@ -114,10 +114,10 @@ index 0000000000000000000000000000000000000000..269b49fd9eceed44a0c8fc0baf10b8bf
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/DataComponentPatchBridgeImpl.java b/src/main/java/io/papermc/paper/datakey/DataComponentPatchBridgeImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..12804b65e4c3732cf2347fbb18c99896265331f4
+index 0000000000000000000000000000000000000000..af78395dc718a3947ae1001daa48f68fddd135a6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/DataComponentPatchBridgeImpl.java
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,57 @@
 +package io.papermc.paper.datakey;
 +
 +import com.mojang.authlib.GameProfile;
@@ -134,8 +134,8 @@ index 0000000000000000000000000000000000000000..12804b65e4c3732cf2347fbb18c99896
 +
 +public class DataComponentPatchBridgeImpl implements io.papermc.paper.datakey.map.DataComponentPatchMapBridge {
 +    @Override
-+    public PatchedDataComponentMap of(final DataComponentMap keyMap) {
-+        return new PaperPatchedDataComponentMap(new net.minecraft.core.component.PatchedDataComponentMap(((PaperDataComponentMap) keyMap).nmsComponentMap));
++    public PatchedDataComponentMap of(final DataComponentMap map) {
++        return new PaperPatchedDataComponentMap(new net.minecraft.core.component.PatchedDataComponentMap(((PaperDataComponentMap) map).map));
 +    }
 +
 +    @Override
@@ -145,35 +145,34 @@ index 0000000000000000000000000000000000000000..12804b65e4c3732cf2347fbb18c99896
 +
 +    @Override
 +    public DataComponentMap fromItem(final Material material) {
-+        Item item = CraftItemType.bukkitToMinecraft(material);
-+        if (item == null) { // Because people can make non item itemstacks still..
-+            return new PaperDataComponentMap(net.minecraft.core.component.DataComponentMap.EMPTY);
++        final Item item = CraftItemType.bukkitToMinecraft(material);
++        if (item == null) {
++            // Because people can make non-item itemstacks still..
++            return this.empty();
 +        }
 +        return new PaperDataComponentMap(item.components());
 +    }
 +
 +    @Override
-+    public PatchedDataComponentMap fromItemMeta(final Material material, final ItemMeta itemMeta) {
-+
++    public PatchedDataComponentMap fromItemAndMeta(final Material material, final ItemMeta meta) {
 +        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
-+
 +            @Override
 +            public void skullCallback(final GameProfile gameProfile) {
-+                builder.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
++                this.builder.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
 +            }
 +        };
-+        ((CraftMetaItem) itemMeta).applyToItemPublic(tag);
++        ((CraftMetaItem) meta).applyToItemPublic(tag);
 +
-+        net.minecraft.core.component.PatchedDataComponentMap patchedMap = new net.minecraft.core.component.PatchedDataComponentMap(CraftItemType.bukkitToMinecraft(material).components());
-+        patchedMap.applyPatch(tag.builder.build());
-+        return new PaperPatchedDataComponentMap(patchedMap);
++        final net.minecraft.core.component.PatchedDataComponentMap map = new net.minecraft.core.component.PatchedDataComponentMap(CraftItemType.bukkitToMinecraft(material).components());
++        map.applyPatch(tag.builder.build());
++        return new PaperPatchedDataComponentMap(map);
 +    }
 +
 +    @Override
-+    public ItemMeta toItemMeta(final Material material, final PatchedDataComponentMap dataKeyMap) {
-+        ItemStack itemStack = new ItemStack(CraftItemType.bukkitToMinecraft(material));
-+        itemStack.restorePatch(((PaperPatchedDataComponentMap) dataKeyMap).patched().asPatch());
-+        return CraftItemStack.getItemMeta(itemStack, material);
++    public ItemMeta toItemMeta(final Material material, final PatchedDataComponentMap map) {
++        final ItemStack stack = new ItemStack(CraftItemType.bukkitToMinecraft(material));
++        stack.restorePatch(((PaperPatchedDataComponentMap) map).patched().asPatch());
++        return CraftItemStack.getItemMeta(stack, material);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/NonValuedDataComponentTypeImpl.java b/src/main/java/io/papermc/paper/datakey/NonValuedDataComponentTypeImpl.java
@@ -198,7 +197,7 @@ index 0000000000000000000000000000000000000000..67ce3b2960396c86c1ba2cb568b76a98
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperComponentType.java b/src/main/java/io/papermc/paper/datakey/PaperComponentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..332b49c1763342d2f7964fdcbefe5b440e762778
+index 0000000000000000000000000000000000000000..c5f6005b57e77061900b6c1b145f33f373834247
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/PaperComponentType.java
 @@ -0,0 +1,71 @@
@@ -223,12 +222,12 @@ index 0000000000000000000000000000000000000000..332b49c1763342d2f7964fdcbefe5b44
 +        ComponentAdapters.bootstrap();
 +    }
 +
-+    public static <T> net.minecraft.core.component.DataComponentType<T> bukkitToMinecraft(final DataComponentType bukkitDamageType) {
-+        return CraftRegistry.bukkitToMinecraft(bukkitDamageType);
++    public static <T> net.minecraft.core.component.DataComponentType<T> bukkitToMinecraft(final DataComponentType type) {
++        return CraftRegistry.bukkitToMinecraft(type);
 +    }
 +
-+    public static DataComponentType minecraftToBukkit(final net.minecraft.core.component.DataComponentType<?> minecraftDataComponentType) {
-+        return CraftRegistry.minecraftToBukkit(minecraftDataComponentType, Registries.DATA_COMPONENT_TYPE, Registry.DATA_COMPONENT_TYPE);
++    public static DataComponentType minecraftToBukkit(final net.minecraft.core.component.DataComponentType<?> type) {
++        return CraftRegistry.minecraftToBukkit(type, Registries.DATA_COMPONENT_TYPE, Registry.DATA_COMPONENT_TYPE);
 +    }
 +
 +    private final NamespacedKey key;
@@ -261,24 +260,24 @@ index 0000000000000000000000000000000000000000..332b49c1763342d2f7964fdcbefe5b44
 +    }
 +
 +    @SuppressWarnings("unchecked")
-+    public static <NMS> DataComponentType of(final NamespacedKey key, final net.minecraft.core.component.DataComponentType<NMS> dataComponentType) {
++    public static <NMS> DataComponentType of(final NamespacedKey key, final net.minecraft.core.component.DataComponentType<NMS> type) {
 +        final ComponentAdapter<NMS, ?> adapter = (ComponentAdapter<NMS, ?>) ComponentAdapters.ADAPTERS.get(ResourceKey.create(Registries.DATA_COMPONENT_TYPE, CraftNamespacedKey.toMinecraft(key)));
 +        if (adapter == null) {
 +            throw new IllegalArgumentException("No adapter found for " + key);
 +        }
 +        if (adapter.isValued()) {
-+            return new ValuedDataComponentTypeImpl<>(key, dataComponentType, adapter);
++            return new ValuedDataComponentTypeImpl<>(key, type, adapter);
 +        } else {
-+            return new NonValuedDataComponentTypeImpl<>(key, dataComponentType, adapter);
++            return new NonValuedDataComponentTypeImpl<>(key, type, adapter);
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperDataComponentMap.java b/src/main/java/io/papermc/paper/datakey/PaperDataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4f03c45dd8855486e7efc1c21c5d43979ca02b87
+index 0000000000000000000000000000000000000000..9480d70d41bd53f8d91b72da8506d2862fb771fd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/PaperDataComponentMap.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,46 @@
 +package io.papermc.paper.datakey;
 +
 +import io.papermc.paper.datakey.map.DataComponentMap;
@@ -291,10 +290,10 @@ index 0000000000000000000000000000000000000000..4f03c45dd8855486e7efc1c21c5d4397
 +@DefaultQualifier(NonNull.class)
 +public class PaperDataComponentMap implements DataComponentMap {
 +
-+    protected final net.minecraft.core.component.DataComponentMap nmsComponentMap;
++    protected final net.minecraft.core.component.DataComponentMap map;
 +
-+    public PaperDataComponentMap(final net.minecraft.core.component.DataComponentMap patchedDataComponentMap) {
-+        this.nmsComponentMap = patchedDataComponentMap;
++    public PaperDataComponentMap(final net.minecraft.core.component.DataComponentMap map) {
++        this.map = map;
 +    }
 +
 +    @Override
@@ -302,14 +301,14 @@ index 0000000000000000000000000000000000000000..4f03c45dd8855486e7efc1c21c5d4397
 +        @SuppressWarnings("unchecked")
 +        final PaperComponentType<T, Object> typeAsImpl = (PaperComponentType<T, Object>) type;
 +        final ComponentAdapter<Object, T> adapter = typeAsImpl.getAdapter();
-+        final @Nullable Object value = this.nmsComponentMap.get(typeAsImpl.getHandle());
++        final @Nullable Object value = this.map.get(typeAsImpl.getHandle());
 +
 +        return value == null ? null : adapter.fromVanilla(value);
 +    }
 +
 +    @Override
 +    public Set<DataComponentType> keySet() {
-+        final Set<net.minecraft.core.component.DataComponentType<?>> nmsKeys = this.nmsComponentMap.keySet();
++        final Set<net.minecraft.core.component.DataComponentType<?>> nmsKeys = this.map.keySet();
 +        final Set<DataComponentType> keys = new HashSet<>(nmsKeys.size());
 +        for (final net.minecraft.core.component.DataComponentType<?> nmsKey : nmsKeys) {
 +            keys.add(PaperComponentType.minecraftToBukkit(nmsKey));
@@ -320,13 +319,14 @@ index 0000000000000000000000000000000000000000..4f03c45dd8855486e7efc1c21c5d4397
 +
 +    @Override
 +    public boolean has(final DataComponentType type) {
-+        final PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
-+        return this.nmsComponentMap.has(paperComponentType.getHandle());
++        @SuppressWarnings("unchecked")
++        final PaperComponentType<?, Object> typeAsImpl = (PaperComponentType<?, Object>) type;
++        return this.map.has(typeAsImpl.getHandle());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperPatchedDataComponentMap.java b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1433bc7e982d56788469bceafe6663e4136889d2
+index 0000000000000000000000000000000000000000..4fcb07685f4ad84821332dba390f8d4b2246d0f0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataComponentMap.java
 @@ -0,0 +1,71 @@
@@ -339,8 +339,8 @@ index 0000000000000000000000000000000000000000..1433bc7e982d56788469bceafe6663e4
 +
 +public class PaperPatchedDataComponentMap extends PaperDataComponentMap implements PatchedDataComponentMap {
 +
-+    public PaperPatchedDataComponentMap(final net.minecraft.core.component.PatchedDataComponentMap patchedDataKeyMap) {
-+        super(patchedDataKeyMap);
++    public PaperPatchedDataComponentMap(final net.minecraft.core.component.PatchedDataComponentMap map) {
++        super(map);
 +    }
 +
 +    @Override
@@ -379,8 +379,8 @@ index 0000000000000000000000000000000000000000..1433bc7e982d56788469bceafe6663e4
 +        @SuppressWarnings("unchecked")
 +        final PaperComponentType<?, Object> typeAsImpl = (PaperComponentType<?, Object>) type;
 +
-+        final net.minecraft.core.component.PatchedDataComponentMap patchedDataComponentMap = this.patched();
-+        patchedDataComponentMap.applyPatch(patchedDataComponentMap.asPatch().forget((forgetType) -> forgetType == typeAsImpl.getHandle())); // Apply patch with type removed
++        final net.minecraft.core.component.PatchedDataComponentMap map = this.patched();
++        map.applyPatch(map.asPatch().forget((forgetType) -> forgetType == typeAsImpl.getHandle())); // Apply patch with type removed
 +    }
 +
 +    @Override
@@ -398,7 +398,7 @@ index 0000000000000000000000000000000000000000..1433bc7e982d56788469bceafe6663e4
 +    }
 +
 +    public net.minecraft.core.component.PatchedDataComponentMap patched() {
-+        return ((net.minecraft.core.component.PatchedDataComponentMap) this.nmsComponentMap);
++        return ((net.minecraft.core.component.PatchedDataComponentMap) this.map);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/ValuedDataComponentTypeImpl.java b/src/main/java/io/papermc/paper/datakey/ValuedDataComponentTypeImpl.java
@@ -443,10 +443,10 @@ index 0000000000000000000000000000000000000000..38e350b17f0fccb9dbc7353084c70d66
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java b/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a98a4e064604b5f589bd220ed5b41c26fb3c00de
+index 0000000000000000000000000000000000000000..02db3e26cbbcfe4b564a9699168de4d27005a1a0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,66 @@
 +package io.papermc.paper.datakey.types;
 +
 +import com.google.common.collect.Lists;
@@ -460,26 +460,24 @@ index 0000000000000000000000000000000000000000..a98a4e064604b5f589bd220ed5b41c26
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static java.util.Collections.unmodifiableList;
-+
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemLore(
-+    net.minecraft.world.item.component.ItemLore itemLore,
++    net.minecraft.world.item.component.ItemLore impl,
 +    List<Component> lines,
 +    List<Component> styledLines
 +) implements ItemLore, Handleable<net.minecraft.world.item.component.ItemLore> {
 +
-+    public PaperItemLore(final net.minecraft.world.item.component.ItemLore itemLore) {
++    public PaperItemLore(final net.minecraft.world.item.component.ItemLore impl) {
 +        this(
-+            itemLore,
-+            unmodifiableList(Lists.transform(itemLore.lines(), PaperAdventure::asAdventure)),
-+            unmodifiableList(Lists.transform(itemLore.styledLines(), PaperAdventure::asAdventure))
++            impl,
++            Collections.unmodifiableList(Lists.transform(impl.lines(), PaperAdventure::asAdventure)),
++            Collections.unmodifiableList(Lists.transform(impl.styledLines(), PaperAdventure::asAdventure))
 +        );
 +    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.ItemLore getHandle() {
-+        return this.itemLore;
++        return this.impl;
 +    }
 +
 +    @Override
@@ -497,8 +495,8 @@ index 0000000000000000000000000000000000000000..a98a4e064604b5f589bd220ed5b41c26
 +        private List<? extends ComponentLike> lines = Collections.emptyList();
 +
 +        @Override
-+        public ItemLore.Builder lore(final List<? extends ComponentLike> lore) {
-+            this.lines = List.copyOf(lore);
++        public ItemLore.Builder lines(final List<? extends ComponentLike> lines) {
++            this.lines = List.copyOf(lines);
 +            return this;
 +        }
 +
@@ -511,13 +509,13 @@ index 0000000000000000000000000000000000000000..a98a4e064604b5f589bd220ed5b41c26
 +            for (final ComponentLike line : this.lines) {
 +                lines.add(PaperAdventure.asVanilla(line.asComponent()));
 +            }
-+            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(unmodifiableList(lines)));
++            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(Collections.unmodifiableList(lines)));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java b/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..90cd022e6472d161f14db5f2eae0110fa2617fab
+index 0000000000000000000000000000000000000000..8af596088fe4dd7d81f6d4d4ebf4c37121b442cb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java
 @@ -0,0 +1,40 @@
@@ -528,21 +526,21 @@ index 0000000000000000000000000000000000000000..90cd022e6472d161f14db5f2eae0110f
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +@DefaultQualifier(NonNull.class)
-+public record PaperUnbreakable(net.minecraft.world.item.component.Unbreakable unbreakable) implements Unbreakable, Handleable<net.minecraft.world.item.component.Unbreakable> {
++public record PaperUnbreakable(net.minecraft.world.item.component.Unbreakable impl) implements Unbreakable, Handleable<net.minecraft.world.item.component.Unbreakable> {
 +
 +    @Override
 +    public boolean showInTooltip() {
-+        return this.unbreakable.showInTooltip();
++        return this.impl.showInTooltip();
 +    }
 +
 +    @Override
 +    public Unbreakable showInTooltip(final boolean showInTooltip) {
-+        return new PaperUnbreakable(this.unbreakable.withTooltip(showInTooltip));
++        return new PaperUnbreakable(this.impl.withTooltip(showInTooltip));
 +    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.Unbreakable getHandle() {
-+        return this.unbreakable;
++        return this.impl;
 +    }
 +
 +    static final class BuilderImpl implements Unbreakable.Builder {
@@ -698,6 +696,104 @@ index 0000000000000000000000000000000000000000..d43e2b2d0e86ed585ba7bfd4e26d6259
 @@ -0,0 +1 @@
 +io.papermc.paper.datakey.types.ComponentTypesBridgesImpl
 \ No newline at end of file
+diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..96a336cb1e291782d0d524c794bf370e05e064a0
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
+@@ -0,0 +1,92 @@
++package io.papermc.paper.item;
++
++import io.papermc.paper.datakey.DataComponentType;
++import io.papermc.paper.datakey.DataComponentTypes;
++import io.papermc.paper.datakey.types.Unbreakable;
++import org.bukkit.Material;
++import org.bukkit.inventory.ItemFlag;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.Damageable;
++import org.bukkit.inventory.meta.ItemMeta;
++import org.bukkit.inventory.meta.Repairable;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
++import java.util.function.BiConsumer;
++import java.util.function.Function;
++
++class ItemStackDataComponentTest extends AbstractTestingBase {
++
++    @Test
++    void testMaxStackSize() {
++        final ItemStack stack = new ItemStack(Material.STONE);
++        testWithMeta(stack, DataComponentTypes.MAX_STACK_SIZE, 32, ItemMeta.class, ItemMeta::getMaxStackSize, ItemMeta::setMaxStackSize);
++    }
++
++    @Test
++    void testMaxDamage() {
++        final ItemStack stack = new ItemStack(Material.STONE);
++        testWithMeta(stack, DataComponentTypes.MAX_DAMAGE, 120, Damageable.class, Damageable::getMaxDamage, Damageable::setMaxDamage);
++    }
++
++    @Test
++    void testDamage() {
++        final ItemStack stack = new ItemStack(Material.STONE);
++        testWithMeta(stack, DataComponentTypes.DAMAGE, 120, Damageable.class, Damageable::getDamage, Damageable::setDamage);
++    }
++
++    @Test
++    void testUnbreakable() {
++        final ItemStack stack = new ItemStack(Material.STONE);
++        stack.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable().showInTooltip(false).build());
++
++        Assertions.assertTrue(stack.getItemMeta().isUnbreakable());
++        Assertions.assertTrue(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_UNBREAKABLE));
++        stack.setData(DataComponentTypes.UNBREAKABLE, null);
++        Assertions.assertFalse(stack.getItemMeta().isUnbreakable());
++    }
++
++    @Test
++    void testHideAdditionalTooltip() {
++        final ItemStack stack = new ItemStack(Material.STONE);
++        stack.setData(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
++
++        Assertions.assertTrue(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
++        stack.removeData(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
++        Assertions.assertFalse(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
++    }
++
++    @Test
++    void testHideTooltip() {
++        ItemStack stack = new ItemStack(Material.STONE);
++        stack.setData(DataComponentTypes.HIDE_TOOLTIP);
++
++        Assertions.assertEquals(stack.getItemMeta().isHideTooltip(), stack.hasData(DataComponentTypes.HIDE_TOOLTIP));
++        Assertions.assertTrue(stack.getItemMeta().isHideTooltip());
++        stack.removeData(DataComponentTypes.HIDE_TOOLTIP);
++        Assertions.assertFalse(stack.getItemMeta().isHideTooltip());
++        stack = new ItemStack(Material.STONE);
++
++        stack.removeData(DataComponentTypes.HIDE_TOOLTIP);
++        Assertions.assertFalse(stack.getItemMeta().isHideTooltip());
++        Assertions.assertEquals(stack.getItemMeta().isHideTooltip(), stack.hasData(DataComponentTypes.HIDE_TOOLTIP));
++    }
++
++    @Test
++    void testRepairCost() {
++        final ItemStack stack = new ItemStack(Material.STONE);
++        testWithMeta(stack, DataComponentTypes.REPAIR_COST, 120, Repairable.class, Repairable::getRepairCost, Repairable::setRepairCost);
++    }
++
++    @SuppressWarnings("unchecked")
++    private static <T, M> void testWithMeta(final ItemStack stack, final DataComponentType.Valued<T> type, final T value, final Class<M> metaType, final Function<M, T> metaGetter, final BiConsumer<M, T> metaSetter) {
++        stack.setData(type, value);
++
++        Assertions.assertEquals(value, stack.getData(type));
++
++        final ItemMeta meta = stack.getItemMeta();
++        final M typedMeta = Assertions.assertInstanceOf(metaType, meta);
++
++        Assertions.assertEquals(metaGetter.apply(typedMeta), value);
++    }
++}
 diff --git a/src/test/java/io/papermc/paper/item/MetaComparisonTest.java b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671d3045ffc
@@ -986,103 +1082,6 @@ index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671
 +        set.accept(paperMeta);
 +        get.accept(paperMeta);
 +    }
-+
-+}
-diff --git a/src/test/java/io/papermc/paper/item/MetaDataComponentTypeMetaTest.java b/src/test/java/io/papermc/paper/item/MetaDataComponentTypeMetaTest.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..8d17b0c368901323fec48c2d828d5d96caa4e413
---- /dev/null
-+++ b/src/test/java/io/papermc/paper/item/MetaDataComponentTypeMetaTest.java
-@@ -0,0 +1,91 @@
-+package io.papermc.paper.item;
-+
-+import io.papermc.paper.datakey.DataComponentType;
-+import io.papermc.paper.datakey.DataComponentTypes;
-+import io.papermc.paper.datakey.types.Unbreakable;
-+import org.bukkit.Material;
-+import org.bukkit.inventory.ItemFlag;
-+import org.bukkit.inventory.ItemStack;
-+import org.bukkit.inventory.meta.Damageable;
-+import org.bukkit.inventory.meta.ItemMeta;
-+import org.bukkit.inventory.meta.Repairable;
-+import org.bukkit.support.AbstractTestingBase;
-+import org.junit.jupiter.api.Assertions;
-+import org.junit.jupiter.api.Test;
-+import java.util.function.BiConsumer;
-+import java.util.function.Function;
-+
-+public class MetaDataComponentTypeMetaTest extends AbstractTestingBase {
-+
-+    @Test
-+    public void testMaxStackSizeIntegrity() {
-+        ItemStack itemStack = new ItemStack(Material.STONE);
-+        testSimpleValue(itemStack, DataComponentTypes.MAX_STACK_SIZE, 32, ItemMeta::getMaxStackSize, ItemMeta::setMaxStackSize, ItemMeta.class);
-+    }
-+
-+    @Test
-+    public void testMaxDamageIntegrity() {
-+        ItemStack itemStack = new ItemStack(Material.STONE);
-+        testSimpleValue(itemStack, DataComponentTypes.MAX_DAMAGE, 120, Damageable::getMaxDamage, Damageable::setMaxDamage, Damageable.class);
-+    }
-+
-+    @Test
-+    public void testDamageIntegrity() {
-+        ItemStack itemStack = new ItemStack(Material.STONE);
-+        testSimpleValue(itemStack, DataComponentTypes.DAMAGE, 120, Damageable::getDamage, Damageable::setDamage, Damageable.class);
-+    }
-+
-+    @Test
-+    public void testRepairCost() {
-+        ItemStack itemStack = new ItemStack(Material.STONE);
-+        testSimpleValue(itemStack, DataComponentTypes.REPAIR_COST, 120, Repairable::getRepairCost, Repairable::setRepairCost, Repairable.class);
-+    }
-+
-+    @Test
-+    public void testUnbreakable() {
-+        ItemStack itemStack = new ItemStack(Material.STONE);
-+        itemStack.components().set(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable().showInTooltip(false).build());
-+
-+        Assertions.assertTrue(itemStack.getItemMeta().isUnbreakable());
-+        Assertions.assertTrue(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_UNBREAKABLE));
-+        itemStack.components().set(DataComponentTypes.UNBREAKABLE, null);
-+        Assertions.assertFalse(itemStack.getItemMeta().isUnbreakable());
-+    }
-+
-+    @Test
-+    public void testToolTipAdditional() {
-+        ItemStack itemStack = new ItemStack(Material.STONE);
-+        itemStack.components().set(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
-+
-+        Assertions.assertTrue(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
-+        itemStack.components().unset(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
-+        Assertions.assertFalse(itemStack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
-+    }
-+
-+    @Test
-+    public void testToolTip() {
-+        ItemStack itemStack = new ItemStack(Material.STONE);
-+        itemStack.components().set(DataComponentTypes.HIDE_TOOLTIP);
-+
-+        Assertions.assertEquals(itemStack.getItemMeta().isHideTooltip(), itemStack.components().has(DataComponentTypes.HIDE_TOOLTIP));
-+        Assertions.assertTrue(itemStack.getItemMeta().isHideTooltip());
-+        itemStack.components().unset(DataComponentTypes.HIDE_TOOLTIP);
-+        Assertions.assertFalse(itemStack.getItemMeta().isHideTooltip());
-+        itemStack = new ItemStack(Material.STONE);
-+
-+        itemStack.components().unset(DataComponentTypes.HIDE_TOOLTIP);
-+        Assertions.assertFalse(itemStack.getItemMeta().isHideTooltip());
-+        Assertions.assertEquals(itemStack.getItemMeta().isHideTooltip(), itemStack.components().has(DataComponentTypes.HIDE_TOOLTIP));
-+    }
-+
-+    @SuppressWarnings("unchecked")
-+    private static <T, M> void testSimpleValue(ItemStack itemStack, DataComponentType.Valued<T> dataKey, T value, Function<M, T> metaGetter, BiConsumer<M, T> metaSetter, Class<M> meta) {
-+        itemStack.components().set(dataKey, value);
-+        Assertions.assertEquals(value, itemStack.components().get(dataKey));
-+
-+        Assertions.assertEquals(metaGetter.apply((M) itemStack.getItemMeta()), value);
-+
-+    }
-+
 +
 +}
 diff --git a/src/test/java/org/bukkit/PerMaterialTest.java b/src/test/java/org/bukkit/PerMaterialTest.java
