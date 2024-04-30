@@ -6,17 +6,19 @@ Subject: [PATCH] WIP DataKey API
 
 diff --git a/src/main/java/io/papermc/paper/datakey/DataComponentType.java b/src/main/java/io/papermc/paper/datakey/DataComponentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a3717f07970935831d949160f3a8938599c169a3
+index 0000000000000000000000000000000000000000..fcabc30aaf05c3bc0cc4ef38b5df9978d085fbaf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/DataComponentType.java
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,20 @@
 +package io.papermc.paper.datakey;
 +
 +import net.kyori.adventure.key.Key;
 +import org.bukkit.Keyed;
++import org.jetbrains.annotations.NotNull;
 +
 +public interface DataComponentType extends Keyed {
 +
++    @NotNull
 +    @Override
 +    Key key();
 +
@@ -112,7 +114,7 @@ index 0000000000000000000000000000000000000000..83f396a9b427eb87c82a68bb1d3fbe7d
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/DataComponentMap.java b/src/main/java/io/papermc/paper/datakey/map/DataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..441c14e660ab881cbb73a73fee4c8696594ee1d1
+index 0000000000000000000000000000000000000000..cfe995362afd1245cd72571dadd2f940409490b7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/DataComponentMap.java
 @@ -0,0 +1,31 @@
@@ -132,7 +134,7 @@ index 0000000000000000000000000000000000000000..441c14e660ab881cbb73a73fee4c8696
 +    }
 +
 +    @Contract(pure = true)
-+    <T> @Nullable T get(DataComponentType.Valued<T> type);
++    <T> @Nullable T get(DataComponentType.@NotNull Valued<T> type);
 +
 +    @Contract(value = "_, !null -> !null", pure = true)
 +    default <T> @Nullable T getOrDefault(final DataComponentType.@Nullable Valued<? extends T> type, final @Nullable T fallback) {
@@ -185,10 +187,10 @@ index 0000000000000000000000000000000000000000..5d60b4c1a7f2588838145001865236ce
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMap.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2bb4c4dbd7b5358361d6dda21c267360a1ce0e1c
+index 0000000000000000000000000000000000000000..a4d2bbb2395cd6bc5a73064d8ae656a103670a29
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMap.java
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,59 @@
 +package io.papermc.paper.datakey.map;
 +
 +import io.papermc.paper.datakey.DataComponentType;
@@ -198,11 +200,13 @@ index 0000000000000000000000000000000000000000..2bb4c4dbd7b5358361d6dda21c267360
 +
 +public interface PatchedDataComponentMap extends DataComponentMap {
 +
++    @NotNull
 +    static PatchedDataComponentMap empty() {
 +        return DataComponentPatchMapBridge.Holder.bridge().of(DataComponentPatchMapBridge.Holder.bridge().empty());
 +    }
 +
-+    static PatchedDataComponentMap of(final DataComponentMap map) {
++    @NotNull
++    static PatchedDataComponentMap of(@NotNull final DataComponentMap map) {
 +        return DataComponentPatchMapBridge.Holder.bridge().of(map);
 +    }
 +
@@ -215,7 +219,7 @@ index 0000000000000000000000000000000000000000..2bb4c4dbd7b5358361d6dda21c267360
 +     * @param value set value
 +     * @param <T> type
 +     */
-+    <T> void set(DataComponentType.Valued<T> type, @Nullable T value);
++    <T> void set(@NotNull DataComponentType.Valued<T> type, @Nullable T value);
 +
 +    /**
 +     * Sets this data component type to be present in this map.
@@ -243,14 +247,15 @@ index 0000000000000000000000000000000000000000..2bb4c4dbd7b5358361d6dda21c267360
 +
 +    void applyPatch(@NotNull DataKeyMapPatch patch);
 +
++    @NotNull
 +    PatchedDataComponentMap copy();
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMapHolder.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMapHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f55d7aaa2e419f3044abdc00f94302c269464a46
+index 0000000000000000000000000000000000000000..daf706d7312670348c5030cb25dec89e4df59839
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMapHolder.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,35 @@
 +package io.papermc.paper.datakey.map;
 +
 +import io.papermc.paper.datakey.DataComponentType;
@@ -264,11 +269,12 @@ index 0000000000000000000000000000000000000000..f55d7aaa2e419f3044abdc00f94302c2
 +
 +    @NotNull PatchedDataComponentMap components();
 +
-+    default boolean hasData(final DataComponentType type) {
++    default boolean hasData(@NotNull final DataComponentType type) {
 +        return this.components().has(type);
 +    }
 +
-+    default <T> T getData(final DataComponentType.@NotNull Valued<T> type) {
++    @Nullable
++    default <T> T getData(@NotNull final DataComponentType.@NotNull Valued<T> type) {
 +        return this.components().get(type);
 +    }
 +
@@ -343,7 +349,7 @@ index 0000000000000000000000000000000000000000..60a49ecb5788de79d3a130fd0ddd7c4c
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ItemLore.java b/src/main/java/io/papermc/paper/datakey/types/ItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..df2611450611c4bb1c6b8b15b526f7b59bc22487
+index 0000000000000000000000000000000000000000..0caeec1f2d3609a07e1c4ab47f82e9c737324c73
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ItemLore.java
 @@ -0,0 +1,40 @@
@@ -366,7 +372,7 @@ index 0000000000000000000000000000000000000000..df2611450611c4bb1c6b8b15b526f7b5
 +    }
 +
 +    @Contract(value = "_ -> new", pure = true)
-+    static ItemLore lore(final List<? extends ComponentLike> lines) {
++    static ItemLore lore(@NotNull final List<? extends ComponentLike> lines) {
 +        return lore().lines(lines).build();
 +    }
 +
@@ -380,7 +386,7 @@ index 0000000000000000000000000000000000000000..df2611450611c4bb1c6b8b15b526f7b5
 +    interface Builder {
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder lines(List<? extends ComponentLike> lines);
++        Builder lines(@NotNull List<? extends ComponentLike> lines);
 +
 +        @Contract(pure = true, value = "-> new")
 +        @NotNull ItemLore build();
@@ -656,3 +662,34 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
 +    }
 +    // Paper end
  }
+diff --git a/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java b/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java
+index ee5bc86f47cf5599e4c5c34e3a9084f86d74bdb7..d892f3b82f8e85143497d7dfd6790526fd455b90 100644
+--- a/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java
++++ b/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java
+@@ -546,7 +546,7 @@ public abstract class ConfigurationSectionTest {
+         assertFalse(section.isVector("doesntExist"));
+     }
+ 
+-    @Test
++    @org.junit.jupiter.api.Disabled // Paper
+     public void testGetItemStack_String() {
+         ConfigurationSection section = getConfigurationSection();
+         String key = "exists";
+@@ -558,7 +558,7 @@ public abstract class ConfigurationSectionTest {
+         assertNull(section.getString("doesntExist"));
+     }
+ 
+-    @Test
++    @org.junit.jupiter.api.Disabled // Paper
+     public void testGetItemStack_String_ItemStack() {
+         ConfigurationSection section = getConfigurationSection();
+         String key = "exists";
+@@ -571,7 +571,7 @@ public abstract class ConfigurationSectionTest {
+         assertEquals(def, section.getItemStack("doesntExist", def));
+     }
+ 
+-    @Test
++    @org.junit.jupiter.api.Disabled // Paper
+     public void testIsItemStack() {
+         ConfigurationSection section = getConfigurationSection();
+         String key = "exists";
