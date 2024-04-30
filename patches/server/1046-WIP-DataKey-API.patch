@@ -37,14 +37,16 @@ index 0000000000000000000000000000000000000000..264a8a14d2a778ef4eaa5937342b5978
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2b7ebce80662774f751d930c0e7df1f446d2dc8d
+index 0000000000000000000000000000000000000000..d25c3fcb97f89760f60469e25e1f85c105cc115e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,75 @@
 +package io.papermc.paper.datakey;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.datakey.types.PaperChargedProjectiles;
 +import io.papermc.paper.datakey.types.PaperItemLore;
++import io.papermc.paper.datakey.types.PaperPotDecorations;
 +import io.papermc.paper.datakey.types.PaperUnbreakable;
 +import java.util.HashMap;
 +import java.util.Map;
@@ -86,6 +88,8 @@ index 0000000000000000000000000000000000000000..2b7ebce80662774f751d930c0e7df1f4
 +        registerUntyped(DataComponents.CREATIVE_SLOT_LOCK);
 +        registerUntyped(DataComponents.INTANGIBLE_PROJECTILE);
 +        registerUntyped(DataComponents.FIRE_RESISTANT);
++        register(DataComponents.POT_DECORATIONS, PaperPotDecorations::new);
++        register(DataComponents.CHARGED_PROJECTILES, PaperChargedProjectiles::new);
 +    }
 +
 +    public static void registerUntyped(final DataComponentType<Unit> type) {
@@ -423,13 +427,23 @@ index 0000000000000000000000000000000000000000..e6ebc39e96c9eb6f9869cfff258d4e25
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..38e350b17f0fccb9dbc7353084c70d664bcfad81
+index 0000000000000000000000000000000000000000..d77c11e4022939ada8b3ee13b6d7cd147e03bd94
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.datakey.types;
 +
 +public final class ComponentTypesBridgesImpl implements ComponentTypesBridge {
++
++    @Override
++    public ChargedProjectiles.Builder chargedProjectiles() {
++        return new PaperChargedProjectiles.BuilderImpl();
++    }
++
++    @Override
++    public PotDecorations.Builder potDecorations() {
++        return new PaperPotDecorations.BuilderImpl();
++    }
 +
 +    @Override
 +    public Unbreakable.Builder unbreakable() {
@@ -441,6 +455,72 @@ index 0000000000000000000000000000000000000000..38e350b17f0fccb9dbc7353084c70d66
 +        return new PaperItemLore.BuilderImpl();
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperChargedProjectiles.java b/src/main/java/io/papermc/paper/datakey/types/PaperChargedProjectiles.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..414e89666d0b2ba741c14113a6155fcef33b194e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/PaperChargedProjectiles.java
+@@ -0,0 +1,60 @@
++package io.papermc.paper.datakey.types;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Optional;
++import net.minecraft.world.item.Item;
++import org.bukkit.Material;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.inventory.CraftItemType;
++import org.bukkit.craftbukkit.util.Handleable;
++import org.bukkit.inventory.ItemStack;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.UnmodifiableView;
++
++@DefaultQualifier(NonNull.class)
++public record PaperChargedProjectiles(net.minecraft.world.item.component.ChargedProjectiles impl) implements ChargedProjectiles, Handleable<net.minecraft.world.item.component.ChargedProjectiles> {
++
++    @Override
++    public net.minecraft.world.item.component.ChargedProjectiles getHandle() {
++        return this.impl;
++    }
++
++    @Override
++    public @NotNull @UnmodifiableView List<ItemStack> getItems() {
++        List<net.minecraft.world.item.ItemStack> nmsItemStacks = this.impl.getItems();
++        List<ItemStack> apiItemStacks = new ArrayList<>(nmsItemStacks.size());
++        for (net.minecraft.world.item.ItemStack nmsItemStack : nmsItemStacks) {
++            apiItemStacks.add(CraftItemStack.asCraftMirror(nmsItemStack));
++        }
++
++        return apiItemStacks;
++    }
++
++    static final class BuilderImpl implements Builder {
++
++        private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
++
++        @Override
++        public Builder add(final ItemStack itemStack) {
++            this.items.add(CraftItemStack.asNMSCopy(itemStack));
++            return this;
++        }
++
++        @Override
++        public Builder addAll(final List<ItemStack> itemStack) {
++            for (ItemStack item : itemStack) {
++                this.items.add(CraftItemStack.asNMSCopy(item));
++            }
++            return this;
++        }
++
++        @Override
++        public @NotNull ChargedProjectiles build() {
++            return new PaperChargedProjectiles(net.minecraft.world.item.component.ChargedProjectiles.of(this.items));
++        }
++    }
++ }
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java b/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..02db3e26cbbcfe4b564a9699168de4d27005a1a0
@@ -513,6 +593,98 @@ index 0000000000000000000000000000000000000000..02db3e26cbbcfe4b564a9699168de4d2
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperPotDecorations.java b/src/main/java/io/papermc/paper/datakey/types/PaperPotDecorations.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..57fad01b4bc929577a54997ca3983519399d22fe
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/PaperPotDecorations.java
+@@ -0,0 +1,86 @@
++package io.papermc.paper.datakey.types;
++
++import org.bukkit.Material;
++import org.bukkit.craftbukkit.inventory.CraftItemType;
++import org.bukkit.craftbukkit.util.Handleable;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import java.util.Optional;
++
++@DefaultQualifier(NonNull.class)
++public record PaperPotDecorations(
++    net.minecraft.world.level.block.entity.PotDecorations impl) implements PotDecorations, Handleable<net.minecraft.world.level.block.entity.PotDecorations> {
++
++    @Override
++    public @Nullable Material back() {
++        return this.impl.back().map(CraftItemType::minecraftToBukkit).orElse(null);
++    }
++
++    @Override
++    public @Nullable Material left() {
++        return this.impl.left().map(CraftItemType::minecraftToBukkit).orElse(null);
++    }
++
++    @Override
++    public @Nullable Material right() {
++        return this.impl.right().map(CraftItemType::minecraftToBukkit).orElse(null);
++    }
++
++    @Override
++    public @Nullable Material front() {
++        return this.impl.front().map(CraftItemType::minecraftToBukkit).orElse(null);
++    }
++
++    @Override
++    public net.minecraft.world.level.block.entity.PotDecorations getHandle() {
++        return this.impl;
++    }
++
++    static final class BuilderImpl implements Builder {
++
++        @Nullable
++        private Material back;
++        @Nullable
++        private Material left;
++        @Nullable
++        private Material right;
++        @Nullable
++        private Material front;
++
++        @Override
++        public Builder back(@Nullable final Material item) {
++            this.back = item;
++            return this;
++        }
++
++        @Override
++        public Builder left(@Nullable final Material item) {
++            this.left = item;
++            return this;
++        }
++
++        @Override
++        public Builder right(@Nullable final Material item) {
++            this.right = item;
++            return this;
++        }
++
++        @Override
++        public Builder front(@Nullable final Material item) {
++            this.front = item;
++            return this;
++        }
++
++        @Override
++        public @NotNull PotDecorations build() {
++            return new PaperPotDecorations(new net.minecraft.world.level.block.entity.PotDecorations(
++                Optional.ofNullable(this.back).map(CraftItemType::bukkitToMinecraft),
++                Optional.ofNullable(this.left).map(CraftItemType::bukkitToMinecraft),
++                Optional.ofNullable(this.right).map(CraftItemType::bukkitToMinecraft),
++                Optional.ofNullable(this.front).map(CraftItemType::bukkitToMinecraft))
++            );
++        }
++    }
++ }
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java b/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..8af596088fe4dd7d81f6d4d4ebf4c37121b442cb
@@ -698,24 +870,31 @@ index 0000000000000000000000000000000000000000..d43e2b2d0e86ed585ba7bfd4e26d6259
 \ No newline at end of file
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..96a336cb1e291782d0d524c794bf370e05e064a0
+index 0000000000000000000000000000000000000000..023f0f0cf3b0220b143b43f3484459ac2f853108
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,127 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.datakey.DataComponentType;
 +import io.papermc.paper.datakey.DataComponentTypes;
++import io.papermc.paper.datakey.types.ChargedProjectiles;
++import io.papermc.paper.datakey.types.PotDecorations;
 +import io.papermc.paper.datakey.types.Unbreakable;
 +import org.bukkit.Material;
++import org.bukkit.block.BlockState;
++import org.bukkit.block.DecoratedPot;
 +import org.bukkit.inventory.ItemFlag;
 +import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.BlockStateMeta;
++import org.bukkit.inventory.meta.CrossbowMeta;
 +import org.bukkit.inventory.meta.Damageable;
 +import org.bukkit.inventory.meta.ItemMeta;
 +import org.bukkit.inventory.meta.Repairable;
 +import org.bukkit.support.AbstractTestingBase;
 +import org.junit.jupiter.api.Assertions;
 +import org.junit.jupiter.api.Test;
++import java.util.List;
 +import java.util.function.BiConsumer;
 +import java.util.function.Function;
 +
@@ -780,6 +959,34 @@ index 0000000000000000000000000000000000000000..96a336cb1e291782d0d524c794bf370e
 +    void testRepairCost() {
 +        final ItemStack stack = new ItemStack(Material.STONE);
 +        testWithMeta(stack, DataComponentTypes.REPAIR_COST, 120, Repairable.class, Repairable::getRepairCost, Repairable::setRepairCost);
++    }
++
++    @Test
++    void testChargedProjectiles() {
++        final ItemStack stack = new ItemStack(Material.CROSSBOW);
++        ItemStack projectile = new ItemStack(Material.FIREWORK_ROCKET);
++        stack.setData(DataComponentTypes.CHARGED_PROJECTILES, ChargedProjectiles.chargedProjectiles().add(projectile).build());
++
++        CrossbowMeta meta = (CrossbowMeta) stack.getItemMeta();
++        Assertions.assertEquals(meta.getChargedProjectiles().get(0), projectile);
++
++        stack.removeData(DataComponentTypes.CHARGED_PROJECTILES);
++        meta = (CrossbowMeta) stack.getItemMeta();
++        Assertions.assertTrue(meta.getChargedProjectiles().isEmpty());
++    }
++
++    @Test
++    void testPot() {
++        final ItemStack stack = new ItemStack(Material.DECORATED_POT);
++        stack.setData(DataComponentTypes.POT_DECORATIONS, PotDecorations.potDecorations().back(Material.DANGER_POTTERY_SHERD).build());
++
++        BlockState state = ((BlockStateMeta) stack.getItemMeta()).getBlockState();
++        DecoratedPot decoratedPot = (DecoratedPot) state;
++
++        Assertions.assertEquals(decoratedPot.getSherd(DecoratedPot.Side.BACK), Material.DANGER_POTTERY_SHERD);
++        stack.removeData(DataComponentTypes.POT_DECORATIONS);
++        decoratedPot = (DecoratedPot) ((BlockStateMeta) stack.getItemMeta()).getBlockState();
++        Assertions.assertTrue(decoratedPot.getSherds().values().stream().allMatch((m) -> m == Material.BRICK));
 +    }
 +
 +    @SuppressWarnings("unchecked")
