@@ -508,10 +508,10 @@ index 0000000000000000000000000000000000000000..9e293468778a8e1b8d489e239936ffbc
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..13571c20cd837fad8d4275bd2a31002c51fe5b5a
+index 0000000000000000000000000000000000000000..b429f5d2034614c41a22a50b7e942f0089397a20
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
-@@ -0,0 +1,159 @@
+@@ -0,0 +1,167 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.google.common.base.Preconditions;
@@ -531,11 +531,13 @@ index 0000000000000000000000000000000000000000..13571c20cd837fad8d4275bd2a31002c
 +import net.minecraft.commands.CommandBuildContext;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.ReloadableServerResources;
++import net.minecraft.world.flag.FeatureFlagSet;
 +import org.apache.commons.lang3.StringUtils;
 +import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.TestOnly;
 +
 +import static java.util.Objects.requireNonNull;
 +
@@ -554,7 +556,13 @@ index 0000000000000000000000000000000000000000..13571c20cd837fad8d4275bd2a31002c
 +        this.currentContext = context;
 +    }
 +
++
 +    public void setResources(final ReloadableServerResources resources) {
++        setResources(resources, MinecraftServer.getServer().getWorldData().enabledFeatures());
++    }
++
++    @TestOnly
++    public void setResources(final ReloadableServerResources resources, final FeatureFlagSet featureFlagSet) {
 +        this.invalid = false;
 +        this.dispatcher = new CommandDispatcher<>(new ApiMirrorRootNode() {
 +            @Override
@@ -562,7 +570,7 @@ index 0000000000000000000000000000000000000000..13571c20cd837fad8d4275bd2a31002c
 +                return resources.getCommands().getDispatcher();
 +            }
 +        });
-+        this.buildContext = CommandBuildContext.simple(resources.registryLookup, MinecraftServer.getServer().getWorldData().enabledFeatures());
++        this.buildContext = CommandBuildContext.simple(resources.registryLookup, featureFlagSet);
 +    }
 +
 +    @Override
@@ -2356,10 +2364,10 @@ index 0000000000000000000000000000000000000000..b2fdb8351c2abb55283850a929d2a87a
 +io.papermc.paper.command.brigadier.argument.VanillaArgumentProviderImpl
 diff --git a/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java b/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..815c7901492b666cd1713d5c9438325a796df0f3
+index 0000000000000000000000000000000000000000..83074a70b1008d4149c886f90c3f99038bc49b67
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,114 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.CommandDispatcher;
@@ -2370,6 +2378,7 @@ index 0000000000000000000000000000000000000000..815c7901492b666cd1713d5c9438325a
 +import com.mojang.brigadier.tree.CommandNode;
 +import io.papermc.paper.command.brigadier.bukkit.BukkitBrigForwardingMap;
 +import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.flag.FeatureFlags;
 +import org.apache.logging.log4j.core.util.Assert;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Location;
@@ -2403,10 +2412,10 @@ index 0000000000000000000000000000000000000000..815c7901492b666cd1713d5c9438325a
 +    public void test() throws CommandSyntaxException {
 +        CommandSender sender = this.getSender();
 +        CommandSourceStack object = Mockito.mock(CommandSourceStack.class);
-+        Mockito.when(object.getLocation()).thenReturn(new Location(null, 0, 0, 0));
++        Mockito.when(object.getLocation()).thenReturn(new Location(null, 0, 0, 0));;
 +
 +        CommandDispatcher dispatcher = DATA_PACK.commands.getDispatcher();
-+        PaperCommands.INSTANCE.setResources(DATA_PACK);
++        PaperCommands.INSTANCE.setResources(DATA_PACK, FeatureFlags.REGISTRY.allFlags());
 +        dispatcher.setConsumer((context, success, result) -> {});
 +        CommandMap commandMap = new SimpleCommandMap(Bukkit.getServer(), new BukkitBrigForwardingMap());
 +        Map<String, Command> stringCommandMap = commandMap.getKnownCommands();
