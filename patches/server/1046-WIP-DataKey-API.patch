@@ -6,23 +6,41 @@ Subject: [PATCH] WIP DataKey API
 
 diff --git a/src/main/java/io/papermc/paper/datakey/ComponentAdapter.java b/src/main/java/io/papermc/paper/datakey/ComponentAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..acf512f3d6a8d6ffadff54341e3e2e57379226c4
+index 0000000000000000000000000000000000000000..264a8a14d2a778ef4eaa5937342b5978d8856dca
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/ComponentAdapter.java
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.datakey;
 +
 +import java.util.function.Function;
 +import net.minecraft.core.component.DataComponentType;
++import net.minecraft.util.Unit;
 +
-+public record ComponentAdapter<NMS, API>(DataComponentType<NMS> type, Function<API, NMS> nmsConverter, Function<NMS, API> apiConverter) {
++public record ComponentAdapter<NMS, API>(
++    DataComponentType<NMS> type,
++    Function<API, NMS> apiToVanilla,
++    Function<NMS, API> vanillaToApi
++) {
++    static final Function<Void, Unit> API_TO_UNIT_CONVERTER = $ -> Unit.INSTANCE;
++
++    public boolean isValued() {
++        return this.apiToVanilla != API_TO_UNIT_CONVERTER;
++    }
++
++    public NMS toVanilla(final API value) {
++        return this.apiToVanilla.apply(value);
++    }
++
++    public API fromVanilla(final NMS value) {
++        return this.vanillaToApi.apply(value);
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0d7fa2a3926fcedebc292c7bdd10aeac36234f72
+index 0000000000000000000000000000000000000000..269b49fd9eceed44a0c8fc0baf10b8bfe4e9ead7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,71 @@
 +package io.papermc.paper.datakey;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
@@ -45,73 +63,53 @@ index 0000000000000000000000000000000000000000..0d7fa2a3926fcedebc292c7bdd10aeac
 +@DefaultQualifier(NonNull.class)
 +public final class ComponentAdapters {
 +
-+    static final Map<ResourceKey<DataComponentType<?>>, ComponentAdapter<?, ?>> ADAPTERS = new HashMap<>();
-+
-+    public static void bootstrap() {
-+        registerIdentity(
-+            DataComponents.MAX_STACK_SIZE,
-+            DataComponents.MAX_DAMAGE,
-+            DataComponents.DAMAGE,
-+            DataComponents.REPAIR_COST,
-+            DataComponents.OMINOUS_BOTTLE_AMPLIFIER
-+        );
-+        registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
-+        register(PaperUnbreakable::new, DataComponents.UNBREAKABLE);
-+        register(
-+            PaperAdventure::asAdventure,
-+            PaperAdventure::asVanilla,
-+            DataComponents.CUSTOM_NAME,
-+            DataComponents.ITEM_NAME
-+        );
-+        register(PaperItemLore::new, DataComponents.LORE);
-+        register((nms) -> ItemRarity.valueOf(nms.name()), (api) -> Rarity.valueOf(api.name()), DataComponents.RARITY);
-+        registerUntyped(
-+            DataComponents.HIDE_ADDITIONAL_TOOLTIP,
-+            DataComponents.HIDE_TOOLTIP,
-+            DataComponents.CREATIVE_SLOT_LOCK,
-+            DataComponents.INTANGIBLE_PROJECTILE,
-+            DataComponents.FIRE_RESISTANT
-+        );
-+    }
-+
 +    private static final Function<Unit, Void> UNIT_TO_API_CONVERTER = $ -> {
 +        throw new UnsupportedOperationException("Cannot convert the UNIT type to an api value");
 +    };
 +
-+    static final Function<Void, Unit> API_TO_UNIT_CONVERTER = $ -> Unit.INSTANCE;
++    static final Map<ResourceKey<DataComponentType<?>>, ComponentAdapter<?, ?>> ADAPTERS = new HashMap<>();
 +
-+    @SafeVarargs
-+    public static void registerUntyped(final DataComponentType<Unit>...types) {
-+        for (final DataComponentType<Unit> type : types) {
-+            registerInternal(type, UNIT_TO_API_CONVERTER, API_TO_UNIT_CONVERTER);
-+        }
++    public static void bootstrap() {
++        registerIdentity(DataComponents.MAX_STACK_SIZE);
++        registerIdentity(DataComponents.MAX_DAMAGE);
++        registerIdentity(DataComponents.DAMAGE);
++        registerIdentity(DataComponents.REPAIR_COST);
++        registerIdentity(DataComponents.OMINOUS_BOTTLE_AMPLIFIER);
++        registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
++        register(DataComponents.UNBREAKABLE, PaperUnbreakable::new);
++        register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
++        register(DataComponents.ITEM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
++        register(DataComponents.LORE, PaperItemLore::new);
++        register(DataComponents.RARITY, nms -> ItemRarity.valueOf(nms.name()), api -> Rarity.valueOf(api.name()));
++        registerUntyped(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
++        registerUntyped(DataComponents.HIDE_TOOLTIP);
++        registerUntyped(DataComponents.CREATIVE_SLOT_LOCK);
++        registerUntyped(DataComponents.INTANGIBLE_PROJECTILE);
++        registerUntyped(DataComponents.FIRE_RESISTANT);
 +    }
 +
-+    @SafeVarargs
-+    private static <COMMON> void registerIdentity(final DataComponentType<COMMON> ...types) {
-+        for (final DataComponentType<COMMON> type : types) {
-+            registerInternal(type, Function.identity(), Function.identity());
-+        }
++    public static void registerUntyped(final DataComponentType<Unit> type) {
++        registerInternal(type, UNIT_TO_API_CONVERTER, ComponentAdapter.API_TO_UNIT_CONVERTER);
 +    }
 +
-+    @SafeVarargs
-+    private static <NMS, API extends Handleable<NMS>> void register(final Function<NMS, API> toApiConverter, final DataComponentType<NMS> ...type) {
-+        register(toApiConverter, Handleable::getHandle, type);
++    private static <COMMON> void registerIdentity(final DataComponentType<COMMON> type) {
++        registerInternal(type, Function.identity(), Function.identity());
 +    }
 +
-+    @SafeVarargs
-+    private static <NMS, API> void register(final Function<NMS, API> toApiConverter, final Function<API, NMS> toNmsConverter, final DataComponentType<NMS> ...types) {
-+        for (final DataComponentType<NMS> type : types) {
-+            registerInternal(type, toApiConverter, toNmsConverter);
-+        }
++    private static <NMS, API extends Handleable<NMS>> void register(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi) {
++        register(type, vanillaToApi, Handleable::getHandle);
 +    }
 +
-+    private static <NMS, API> void registerInternal(final DataComponentType<NMS> type, final Function<NMS, API> toApiConverter, final Function<API, NMS> toNmsConverter) {
++    private static <NMS, API> void register(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla) {
++        registerInternal(type, vanillaToApi, apiToVanilla);
++    }
++
++    private static <NMS, API> void registerInternal(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla) {
 +        final ResourceKey<DataComponentType<?>> key = BuiltInRegistries.DATA_COMPONENT_TYPE.getResourceKey(type).orElseThrow();
 +        if (ADAPTERS.containsKey(key)) {
 +            throw new IllegalStateException("Duplicate adapter registration for " + key);
 +        }
-+        ADAPTERS.put(key, new ComponentAdapter<>(type, toNmsConverter, toApiConverter));
++        ADAPTERS.put(key, new ComponentAdapter<>(type, apiToVanilla, vanillaToApi));
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/DataComponentPatchBridgeImpl.java b/src/main/java/io/papermc/paper/datakey/DataComponentPatchBridgeImpl.java
@@ -178,12 +176,32 @@ index 0000000000000000000000000000000000000000..12804b65e4c3732cf2347fbb18c99896
 +        return CraftItemStack.getItemMeta(itemStack, material);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datakey/NonValuedDataComponentTypeImpl.java b/src/main/java/io/papermc/paper/datakey/NonValuedDataComponentTypeImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..67ce3b2960396c86c1ba2cb568b76a982c608e58
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/NonValuedDataComponentTypeImpl.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.datakey;
++
++import org.bukkit.NamespacedKey;
++
++final class NonValuedDataComponentTypeImpl<T, NMS> extends PaperComponentType<T, NMS> implements DataComponentType.NonValued {
++
++    NonValuedDataComponentTypeImpl(
++        final NamespacedKey key,
++        final net.minecraft.core.component.DataComponentType<NMS> type,
++        final ComponentAdapter<NMS, T> adapter
++    ) {
++        super(key, type, adapter);
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperComponentType.java b/src/main/java/io/papermc/paper/datakey/PaperComponentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4b2cf38e83b022b7aad83fc0c48cd9bd38b542ff
+index 0000000000000000000000000000000000000000..332b49c1763342d2f7964fdcbefe5b440e762778
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/PaperComponentType.java
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,71 @@
 +package io.papermc.paper.datakey;
 +
 +import net.kyori.adventure.key.Key;
@@ -214,13 +232,13 @@ index 0000000000000000000000000000000000000000..4b2cf38e83b022b7aad83fc0c48cd9bd
 +    }
 +
 +    private final NamespacedKey key;
++    private final net.minecraft.core.component.DataComponentType<NMS> type;
 +    private final ComponentAdapter<NMS, T> adapter;
-+    private final net.minecraft.core.component.DataComponentType<NMS> dataComponentType;
 +
-+    public PaperComponentType(final NamespacedKey key, final net.minecraft.core.component.DataComponentType<NMS> dataComponentType, final ComponentAdapter<NMS, T> adapter) {
++    public PaperComponentType(final NamespacedKey key, final net.minecraft.core.component.DataComponentType<NMS> type, final ComponentAdapter<NMS, T> adapter) {
 +        this.key = key;
++        this.type = type;
 +        this.adapter = adapter;
-+        this.dataComponentType = dataComponentType;
 +    }
 +
 +    @Override
@@ -239,7 +257,7 @@ index 0000000000000000000000000000000000000000..4b2cf38e83b022b7aad83fc0c48cd9bd
 +
 +    @Override
 +    public net.minecraft.core.component.DataComponentType<NMS> getHandle() {
-+        return this.dataComponentType;
++        return this.type;
 +    }
 +
 +    @SuppressWarnings("unchecked")
@@ -248,33 +266,19 @@ index 0000000000000000000000000000000000000000..4b2cf38e83b022b7aad83fc0c48cd9bd
 +        if (adapter == null) {
 +            throw new IllegalArgumentException("No adapter found for " + key);
 +        }
-+        if (adapter.apiConverter() == ComponentAdapters.API_TO_UNIT_CONVERTER) {
-+            return new PaperNonValued<>(key, dataComponentType, adapter);
++        if (adapter.isValued()) {
++            return new ValuedDataComponentTypeImpl<>(key, dataComponentType, adapter);
 +        } else {
-+            return new PaperValued<>(key, dataComponentType, adapter);
-+        }
-+    }
-+
-+    private static class PaperValued<T, NMS> extends PaperComponentType<T, NMS> implements DataComponentType.Valued<T> {
-+
-+        public PaperValued(final NamespacedKey namespacedKey, final net.minecraft.core.component.DataComponentType<NMS> dataComponentType, final ComponentAdapter<NMS, T> adapter) {
-+            super(namespacedKey, dataComponentType, adapter);
-+        }
-+    }
-+
-+    private static class PaperNonValued<T, NMS> extends PaperComponentType<T, NMS> implements DataComponentType.NonValued {
-+
-+        public PaperNonValued(final NamespacedKey namespacedKey, final net.minecraft.core.component.DataComponentType<NMS> dataComponentType, final ComponentAdapter<NMS, T> adapter) {
-+            super(namespacedKey, dataComponentType, adapter);
++            return new NonValuedDataComponentTypeImpl<>(key, dataComponentType, adapter);
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperDataComponentMap.java b/src/main/java/io/papermc/paper/datakey/PaperDataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..75a1fa58c9d34ef936b7d288e56c354a1f2cbfdf
+index 0000000000000000000000000000000000000000..4f03c45dd8855486e7efc1c21c5d43979ca02b87
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/PaperDataComponentMap.java
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.datakey;
 +
 +import io.papermc.paper.datakey.map.DataComponentMap;
@@ -295,18 +299,19 @@ index 0000000000000000000000000000000000000000..75a1fa58c9d34ef936b7d288e56c354a
 +
 +    @Override
 +    public <T> @Nullable T get(final DataComponentType.Valued<T> type) {
-+        PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
-+        ComponentAdapter<Object, T> adapter = paperComponentType.getAdapter();
-+        Object keyValue = this.nmsComponentMap.get(paperComponentType.getHandle());
++        @SuppressWarnings("unchecked")
++        final PaperComponentType<T, Object> typeAsImpl = (PaperComponentType<T, Object>) type;
++        final ComponentAdapter<Object, T> adapter = typeAsImpl.getAdapter();
++        final @Nullable Object value = this.nmsComponentMap.get(typeAsImpl.getHandle());
 +
-+        return keyValue == null ? null : adapter.apiConverter().apply(keyValue);
++        return value == null ? null : adapter.fromVanilla(value);
 +    }
 +
 +    @Override
 +    public Set<DataComponentType> keySet() {
-+        Set<net.minecraft.core.component.DataComponentType<?>> nmsKeys = this.nmsComponentMap.keySet();
-+        Set<DataComponentType> keys = new HashSet<>(nmsKeys.size());
-+        for (net.minecraft.core.component.DataComponentType<?> nmsKey : nmsKeys) {
++        final Set<net.minecraft.core.component.DataComponentType<?>> nmsKeys = this.nmsComponentMap.keySet();
++        final Set<DataComponentType> keys = new HashSet<>(nmsKeys.size());
++        for (final net.minecraft.core.component.DataComponentType<?> nmsKey : nmsKeys) {
 +            keys.add(PaperComponentType.minecraftToBukkit(nmsKey));
 +        }
 +
@@ -315,16 +320,16 @@ index 0000000000000000000000000000000000000000..75a1fa58c9d34ef936b7d288e56c354a
 +
 +    @Override
 +    public boolean has(final DataComponentType type) {
-+        PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
++        final PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
 +        return this.nmsComponentMap.has(paperComponentType.getHandle());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/PaperPatchedDataComponentMap.java b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..13a12ccd8ae2cf43fee2c2ef5a7ff79466269fc0
+index 0000000000000000000000000000000000000000..1433bc7e982d56788469bceafe6663e4136889d2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/PaperPatchedDataComponentMap.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,71 @@
 +package io.papermc.paper.datakey;
 +
 +import io.papermc.paper.datakey.map.PatchedDataComponentMap;
@@ -338,40 +343,44 @@ index 0000000000000000000000000000000000000000..13a12ccd8ae2cf43fee2c2ef5a7ff794
 +        super(patchedDataKeyMap);
 +    }
 +
-+    @SuppressWarnings("unchecked")
 +    @Override
-+    public <T> void set(final DataComponentType.Valued<T> type, @Nullable final T value) {
-+        final PaperComponentType<T, Object> paperComponentType = (PaperComponentType<T, Object>) type;
-+        final ComponentAdapter<Object, T> adapter = paperComponentType.getAdapter();
-+
-+        this.patched().set(paperComponentType.getHandle(), value == null ? null : adapter.nmsConverter().apply(value));
++    public <T> void set(final DataComponentType.Valued<T> type, final @Nullable T value) {
++        @SuppressWarnings("unchecked")
++        final PaperComponentType<T, Object> typeAsImpl = ((PaperComponentType<T, Object>) type);
++        this.setInternal(typeAsImpl, value);
 +    }
 +
-+    @SuppressWarnings("unchecked")
 +    @Override
 +    public void set(final DataComponentType.NonValued type) {
-+        final PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
-+        final ComponentAdapter<Object, ?> adapter = paperComponentType.getAdapter();
-+
-+        this.patched().set(paperComponentType.getHandle(), adapter.nmsConverter().apply(null));
++        @SuppressWarnings("unchecked")
++        final PaperComponentType<?, Object> typeAsImpl = ((PaperComponentType<?, Object>) type);
++        this.setInternal(typeAsImpl, null);
 +    }
 +
-+    @SuppressWarnings("unchecked")
++    private <A, V> void setInternal(final PaperComponentType<A, V> type, final @Nullable A value) {
++        final ComponentAdapter<V, A> adapter = type.getAdapter();
++
++        if (adapter.isValued()) {
++            this.patched().set(type.getHandle(), value == null ? null : adapter.toVanilla(value));
++        } else {
++            this.patched().set(type.getHandle(), adapter.toVanilla(value));
++        }
++    }
++
 +    @Override
 +    public void unset(final DataComponentType type) {
-+        final PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
-+        final ComponentAdapter<Object, ?> adapter = paperComponentType.getAdapter();
-+
-+        this.patched().remove(adapter.type());
++        @SuppressWarnings("unchecked")
++        final PaperComponentType<?, Object> typeAsImpl = ((PaperComponentType<?, Object>) type);
++        this.patched().remove(typeAsImpl.getHandle());
 +    }
 +
 +    @Override
 +    public void reset(@NotNull final DataComponentType type) {
-+        final PaperComponentType<?, Object> paperComponentType = (PaperComponentType<?, Object>) type;
-+        final ComponentAdapter<Object, ?> adapter = paperComponentType.getAdapter();
++        @SuppressWarnings("unchecked")
++        final PaperComponentType<?, Object> typeAsImpl = (PaperComponentType<?, Object>) type;
 +
-+        net.minecraft.core.component.PatchedDataComponentMap patchedDataComponentMap = this.patched();
-+        patchedDataComponentMap.applyPatch(patchedDataComponentMap.asPatch().forget((forgetType) -> forgetType == adapter.type())); // Apply patch with type removed
++        final net.minecraft.core.component.PatchedDataComponentMap patchedDataComponentMap = this.patched();
++        patchedDataComponentMap.applyPatch(patchedDataComponentMap.asPatch().forget((forgetType) -> forgetType == typeAsImpl.getHandle())); // Apply patch with type removed
 +    }
 +
 +    @Override
@@ -392,15 +401,35 @@ index 0000000000000000000000000000000000000000..13a12ccd8ae2cf43fee2c2ef5a7ff794
 +        return ((net.minecraft.core.component.PatchedDataComponentMap) this.nmsComponentMap);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datakey/ValuedDataComponentTypeImpl.java b/src/main/java/io/papermc/paper/datakey/ValuedDataComponentTypeImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e6ebc39e96c9eb6f9869cfff258d4e25f28f8878
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/ValuedDataComponentTypeImpl.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.datakey;
++
++import org.bukkit.NamespacedKey;
++
++final class ValuedDataComponentTypeImpl<T, NMS> extends PaperComponentType<T, NMS> implements DataComponentType.Valued<T> {
++
++    ValuedDataComponentTypeImpl(
++        final NamespacedKey key,
++        final net.minecraft.core.component.DataComponentType<NMS> type,
++        final ComponentAdapter<NMS, T> adapter
++    ) {
++        super(key, type, adapter);
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cc40b0f3e300e97ff26b0c5e98c46ab455aebe51
+index 0000000000000000000000000000000000000000..38e350b17f0fccb9dbc7353084c70d664bcfad81
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
 @@ -0,0 +1,14 @@
 +package io.papermc.paper.datakey.types;
 +
-+public class ComponentTypesBridgesImpl implements ComponentTypesBridge {
++public final class ComponentTypesBridgesImpl implements ComponentTypesBridge {
 +
 +    @Override
 +    public Unbreakable.Builder unbreakable() {
@@ -414,7 +443,7 @@ index 0000000000000000000000000000000000000000..cc40b0f3e300e97ff26b0c5e98c46ab4
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java b/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2129824c82f12d20b77b4d98aa7d62265ac9a540
+index 0000000000000000000000000000000000000000..a98a4e064604b5f589bd220ed5b41c26fb3c00de
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperItemLore.java
 @@ -0,0 +1,68 @@
@@ -465,24 +494,24 @@ index 0000000000000000000000000000000000000000..2129824c82f12d20b77b4d98aa7d6226
 +
 +    static final class BuilderImpl implements ItemLore.Builder {
 +
-+        private List<? extends ComponentLike> componentList = Collections.emptyList();
++        private List<? extends ComponentLike> lines = Collections.emptyList();
 +
 +        @Override
 +        public ItemLore.Builder lore(final List<? extends ComponentLike> lore) {
-+            this.componentList = List.copyOf(lore);
++            this.lines = List.copyOf(lore);
 +            return this;
 +        }
 +
 +        @Override
 +        public ItemLore build() {
-+            if (this.componentList.isEmpty()) {
++            if (this.lines.isEmpty()) {
 +                return new PaperItemLore(net.minecraft.world.item.component.ItemLore.EMPTY);
 +            }
-+            final List<net.minecraft.network.chat.Component> nmsComponentList = new ArrayList<>(this.componentList.size());
-+            for (final ComponentLike adventure : this.componentList) {
-+                nmsComponentList.add(PaperAdventure.asVanilla(adventure.asComponent()));
++            final List<net.minecraft.network.chat.Component> lines = new ArrayList<>(this.lines.size());
++            for (final ComponentLike line : this.lines) {
++                lines.add(PaperAdventure.asVanilla(line.asComponent()));
 +            }
-+            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(unmodifiableList(nmsComponentList)));
++            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(unmodifiableList(lines)));
 +        }
 +    }
 +}
@@ -961,7 +990,7 @@ index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671
 +}
 diff --git a/src/test/java/io/papermc/paper/item/MetaDataComponentTypeMetaTest.java b/src/test/java/io/papermc/paper/item/MetaDataComponentTypeMetaTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b59409454f23f79a4773b025f712043101d8a282
+index 0000000000000000000000000000000000000000..8d17b0c368901323fec48c2d828d5d96caa4e413
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/MetaDataComponentTypeMetaTest.java
 @@ -0,0 +1,91 @@
@@ -1036,7 +1065,7 @@ index 0000000000000000000000000000000000000000..b59409454f23f79a4773b025f7120431
 +
 +        Assertions.assertEquals(itemStack.getItemMeta().isHideTooltip(), itemStack.components().has(DataComponentTypes.HIDE_TOOLTIP));
 +        Assertions.assertTrue(itemStack.getItemMeta().isHideTooltip());
-+        itemStack.components().unset(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
++        itemStack.components().unset(DataComponentTypes.HIDE_TOOLTIP);
 +        Assertions.assertFalse(itemStack.getItemMeta().isHideTooltip());
 +        itemStack = new ItemStack(Material.STONE);
 +
