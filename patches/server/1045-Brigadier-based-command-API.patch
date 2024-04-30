@@ -6,7 +6,8 @@ Subject: [PATCH] Brigadier based command API
 == AT ==
 public net.minecraft.commands.arguments.blocks.BlockInput tag
 public net.minecraft.commands.arguments.DimensionArgument ERROR_INVALID_VALUE
-public net.minecraft.server.ReloadableServerResources commandBuildContext
+public net.minecraft.server.ReloadableServerResources registryLookup
+public net.minecraft.server.ReloadableServerResources
 
 diff --git a/src/main/java/com/mojang/brigadier/CommandDispatcher.java b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
 index 4b4f812eb13d5f03bcf3f8724d8aa8dbbc724e8b..a4d5d7017e0be79844b996de85a63cad5f8488bc 100644
@@ -31,13 +32,13 @@ index 4b4f812eb13d5f03bcf3f8724d8aa8dbbc724e8b..a4d5d7017e0be79844b996de85a63cad
                      final String usage = this.getSmartUsage(children.iterator().next(), source, childOptional, childOptional);
                      if (usage != null) {
 diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
-index b02fb15c98ab873fa78635d7a23706ddff8cc94d..7438c31ac70cf7394146cbc7e7a0d37282a8896a 100644
+index 1f4963bf4681a771130abc1da179819626ecfc1f..03ce8a2abb6dceaa922dcce7f3adbc228bbde4bc 100644
 --- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 +++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 @@ -35,6 +35,8 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
      private final boolean forks;
      private Command<S> command;
-     public LiteralCommandNode<CommandSourceStack> clientNode; // Paper - Brigadier API
+     public CommandNode<CommandSourceStack> clientNode; // Paper - Brigadier API
 +    public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> unwrappedCached = null; // Paper - Brigadier Command API
 +    public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> wrappedCached = null; // Paper - Brigadier Command API
      // CraftBukkit start
@@ -507,10 +508,10 @@ index 0000000000000000000000000000000000000000..9e293468778a8e1b8d489e239936ffbc
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2c17d57a95aaf48ff7fee6818d3616d5c6da0ece
+index 0000000000000000000000000000000000000000..13571c20cd837fad8d4275bd2a31002c51fe5b5a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
-@@ -0,0 +1,158 @@
+@@ -0,0 +1,159 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.google.common.base.Preconditions;
@@ -528,6 +529,7 @@ index 0000000000000000000000000000000000000000..2c17d57a95aaf48ff7fee6818d3616d5
 +import java.util.List;
 +import java.util.Locale;
 +import net.minecraft.commands.CommandBuildContext;
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.ReloadableServerResources;
 +import org.apache.commons.lang3.StringUtils;
 +import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
@@ -544,7 +546,7 @@ index 0000000000000000000000000000000000000000..2c17d57a95aaf48ff7fee6818d3616d5
 +
 +    private @Nullable LifecycleEventOwner currentContext;
 +    private @MonotonicNonNull CommandDispatcher<CommandSourceStack> dispatcher;
-+    private CommandBuildContext.@MonotonicNonNull Configurable buildContext;
++    private @MonotonicNonNull CommandBuildContext buildContext;
 +    private boolean invalid = false;
 +
 +    @Override
@@ -560,7 +562,7 @@ index 0000000000000000000000000000000000000000..2c17d57a95aaf48ff7fee6818d3616d5
 +                return resources.getCommands().getDispatcher();
 +            }
 +        });
-+        this.buildContext = resources.commandBuildContext;
++        this.buildContext = CommandBuildContext.simple(resources.registryLookup, MinecraftServer.getServer().getWorldData().enabledFeatures());
 +    }
 +
 +    @Override
@@ -574,7 +576,7 @@ index 0000000000000000000000000000000000000000..2c17d57a95aaf48ff7fee6818d3616d5
 +        return this.dispatcher;
 +    }
 +
-+    public CommandBuildContext.Configurable getBuildContext() {
++    public CommandBuildContext getBuildContext() {
 +        Preconditions.checkState(this.buildContext != null, "the build context hasn't been set yet");
 +        return this.buildContext;
 +    }
@@ -855,7 +857,7 @@ index 0000000000000000000000000000000000000000..adc0df7c3a762d99e7ad458576d4be68
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0e59060730269b9c97376e518e906bc82b602a0e
+index 0000000000000000000000000000000000000000..5a7e587f5772a8b314cf93f50486c4df78c998e3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
 @@ -0,0 +1,311 @@
@@ -1030,7 +1032,7 @@ index 0000000000000000000000000000000000000000..0e59060730269b9c97376e518e906bc8
 +
 +    @Override
 +    public ArgumentType<Component> component() {
-+        return this.of(ComponentArgument.textComponent(), PaperAdventure::asAdventure);
++        return this.of(ComponentArgument.textComponent(PaperCommands.INSTANCE.getBuildContext()), PaperAdventure::asAdventure);
 +    }
 +
 +    @Override
@@ -1721,7 +1723,7 @@ index f84c9c80e701231e5c33ac3c5573f1093e80f38b..6c072e44a8144de6658b4eb818c996f0
      public static final LifecycleEventRunner INSTANCE = new LifecycleEventRunner();
  
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index f341813e9713e39bfe142ca34b751de3d8efd25b..5110f8c23d199157404655e94a75588805144c3e 100644
+index e6c7f62ed379a78645933670299e4fcda8540ed1..59d7e8a3d83d3ab7aa28606401bb129ccaeff240 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 @@ -45,8 +45,7 @@ import net.minecraft.world.phys.Vec2;
@@ -1761,7 +1763,7 @@ index f341813e9713e39bfe142ca34b751de3d8efd25b..5110f8c23d199157404655e94a755888
      @Override
      public boolean hasPermission(int level) {
          // CraftBukkit start
-@@ -461,6 +440,12 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
+@@ -457,6 +436,12 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
          return this.silent;
      }
  
@@ -1775,29 +1777,19 @@ index f341813e9713e39bfe142ca34b751de3d8efd25b..5110f8c23d199157404655e94a755888
      public org.bukkit.command.CommandSender getBukkitSender() {
          return this.source.getBukkitSender(this);
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index b7f338e982d0dcab99137ab6dc200b82ac6b7cba..feab1133e4ec9da0d687dbca48ca6c5d0349e7c9 100644
+index aa2fca6917fb67fe0e9ba067d11487c3a274f675..2b33c5f5a7c5c87cf975c5237a2c9ba8cc0d2bdf 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
-@@ -152,10 +152,8 @@ public class Commands {
-     public static final int LEVEL_ADMINS = 3;
-     public static final int LEVEL_OWNERS = 4;
+@@ -156,7 +156,7 @@ public class Commands {
      private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
--    public final java.util.List<CommandNode<CommandSourceStack>> vanillaCommandNodes = new java.util.ArrayList<>(); // Paper - Add UnknownCommandEvent
  
      public Commands(Commands.CommandSelection environment, CommandBuildContext commandRegistryAccess) {
 -        this(); // CraftBukkit
++        // Paper
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, commandRegistryAccess);
          ExecuteCommand.register(this.dispatcher, commandRegistryAccess);
-@@ -255,7 +253,6 @@ public class Commands {
-         if (environment.includeIntegrated) {
-             PublishCommand.register(this.dispatcher);
-         }
--        this.vanillaCommandNodes.addAll(this.dispatcher.getRoot().getChildren()); // Paper - Add UnknownCommandEvent
- 
-         // Paper start - Vanilla command permission fixes
-         for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
-@@ -264,11 +261,17 @@ public class Commands {
+@@ -265,11 +265,17 @@ public class Commands {
              }
          }
          // Paper end - Vanilla command permission fixes
@@ -1820,7 +1812,7 @@ index b7f338e982d0dcab99137ab6dc200b82ac6b7cba..feab1133e4ec9da0d687dbca48ca6c5d
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -324,6 +327,11 @@ public class Commands {
+@@ -325,6 +331,11 @@ public class Commands {
      }
  
      public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label) { // CraftBukkit
@@ -1832,7 +1824,7 @@ index b7f338e982d0dcab99137ab6dc200b82ac6b7cba..feab1133e4ec9da0d687dbca48ca6c5d
          CommandSourceStack commandlistenerwrapper = (CommandSourceStack) parseresults.getContext().getSource();
  
          commandlistenerwrapper.getServer().getProfiler().push(() -> {
-@@ -338,6 +346,7 @@ public class Commands {
+@@ -339,6 +350,7 @@ public class Commands {
                  });
              }
          } catch (Exception exception) {
@@ -1840,16 +1832,7 @@ index b7f338e982d0dcab99137ab6dc200b82ac6b7cba..feab1133e4ec9da0d687dbca48ca6c5d
              MutableComponent ichatmutablecomponent = Component.literal(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
  
              if (commandlistenerwrapper.getServer().isDebugging() || Commands.LOGGER.isDebugEnabled()) { // Paper - Debugging
-@@ -372,7 +381,7 @@ public class Commands {
-         } catch (CommandSyntaxException commandsyntaxexception) {
-             // Paper start - Add UnknownCommandEvent
-             final net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
--            if ((parseresults.getContext().getNodes().isEmpty() || !this.vanillaCommandNodes.contains(parseresults.getContext().getNodes().get(0).getNode()))) {
-+            if (parseresults.getContext().getNodes().isEmpty() || ((CommandNode<?>) parseresults.getContext().getNodes().get(0).getNode()) instanceof io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode) {
-                 if (!org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty()) {
-                     builder.append(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.unknownCommandMessage));
-                 }
-@@ -482,7 +491,7 @@ public class Commands {
+@@ -477,7 +489,7 @@ public class Commands {
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
          RootCommandNode vanillaRoot = new RootCommandNode();
  
@@ -1858,7 +1841,7 @@ index b7f338e982d0dcab99137ab6dc200b82ac6b7cba..feab1133e4ec9da0d687dbca48ca6c5d
          map.put(vanilla, vanillaRoot);
          this.fillUsableCommands(vanilla, vanillaRoot, player.createCommandSourceStack(), (Map) map);
  
-@@ -520,6 +529,7 @@ public class Commands {
+@@ -515,6 +527,7 @@ public class Commands {
      }
  
      private void fillUsableCommands(CommandNode<CommandSourceStack> tree, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
@@ -1866,7 +1849,7 @@ index b7f338e982d0dcab99137ab6dc200b82ac6b7cba..feab1133e4ec9da0d687dbca48ca6c5d
          Iterator iterator = tree.getChildren().iterator();
  
          boolean registeredAskServerSuggestionsForTree = false; // Paper - tell clients to ask server for suggestions for EntityArguments
-@@ -534,6 +544,42 @@ public class Commands {
+@@ -529,6 +542,42 @@ public class Commands {
  
              if (commandnode2.canUse(source)) {
                  ArgumentBuilder argumentbuilder = commandnode2.createBuilder(); // CraftBukkit - decompile error
@@ -1910,10 +1893,10 @@ index b7f338e982d0dcab99137ab6dc200b82ac6b7cba..feab1133e4ec9da0d687dbca48ca6c5d
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
 diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
-index 23f6b833e71002c648e20744ed0beb344efbe8b9..3cfb8314d623de47c3f19bee17d39f2393e9b767 100644
+index 982b2bab27e3d55d0ba07060862c0c3183ad91b0..5fa8a3343ffc11e82c20b78a73205fd8a42d3c5d 100644
 --- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 +++ b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
-@@ -36,6 +36,11 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
+@@ -39,6 +39,11 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
  
      public static void resolveChatMessage(CommandContext<CommandSourceStack> context, String name, Consumer<PlayerChatMessage> callback) throws CommandSyntaxException {
          MessageArgument.Message message = context.getArgument(name, MessageArgument.Message.class);
@@ -1926,10 +1909,10 @@ index 23f6b833e71002c648e20744ed0beb344efbe8b9..3cfb8314d623de47c3f19bee17d39f23
          Component component = message.resolveComponent(commandSourceStack);
          CommandSigningContext commandSigningContext = commandSourceStack.getSigningContext();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2dc07e5ef249636e85ad9c78e3729e9e066a8fe8..231f90ce796ff270da79362fc1ab54c2c3c10aaf 100644
+index 8dc2f9df367c849ca333bf1a1fd92ff91617b548..d3e031441e0bd519236c64669fc6f5cc68abb1f6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -295,7 +295,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -302,7 +302,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public static int currentTick; // Paper - improve tick loop
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
@@ -1938,7 +1921,7 @@ index 2dc07e5ef249636e85ad9c78e3729e9e066a8fe8..231f90ce796ff270da79362fc1ab54c2
      public boolean forceTicks; // Paper
      // CraftBukkit end
      // Spigot start
-@@ -383,7 +383,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -393,7 +393,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // CraftBukkit start
          this.options = options;
          this.worldLoader = worldLoader;
@@ -1946,17 +1929,16 @@ index 2dc07e5ef249636e85ad9c78e3729e9e066a8fe8..231f90ce796ff270da79362fc1ab54c2
          // Paper start - Handled by TerminalConsoleAppender
          // Try to see if we're actually running in a terminal, disable jline if not
          /*
-@@ -670,6 +669,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
- 
+@@ -682,6 +681,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
          this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
 +        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setResources(this.resources.managers()); // Paper - reset invalid state
-+        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - call commands event for regular plugins
 +        this.server.initializeHelpMapCommands(); // Paper
          this.connection.acceptConnections();
      }
  
-@@ -2242,9 +2244,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2302,9 +2303,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  return new MinecraftServer.ReloadableResources(resourcemanager, datapackresources);
              });
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
@@ -1965,9 +1947,9 @@ index 2dc07e5ef249636e85ad9c78e3729e9e066a8fe8..231f90ce796ff270da79362fc1ab54c2
              this.resources = minecraftserver_reloadableresources;
 -            this.server.syncCommands(); // SPIGOT-5884: Lost on reload
              this.packRepository.setSelected(dataPacks);
-             WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository), this.worldData.enabledFeatures());
+             WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -2263,8 +2265,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2323,8 +2324,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.getPlayerList().reloadResources();
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
@@ -1982,7 +1964,7 @@ index 2dc07e5ef249636e85ad9c78e3729e9e066a8fe8..231f90ce796ff270da79362fc1ab54c2
  
          if (this.isSameThread()) {
 diff --git a/src/main/java/net/minecraft/server/ServerFunctionManager.java b/src/main/java/net/minecraft/server/ServerFunctionManager.java
-index df0c15f6b5b2224d53e4f8fad42b9a1e5f33dc25..093715af08924a0777a3798cd59d2ea066685ab6 100644
+index a0ec6c3d122ad28d65d37f1b9f82541997b37d37..c6d7ee0d498bd92d4321acd30ade10abea611e42 100644
 --- a/src/main/java/net/minecraft/server/ServerFunctionManager.java
 +++ b/src/main/java/net/minecraft/server/ServerFunctionManager.java
 @@ -36,7 +36,7 @@ public class ServerFunctionManager {
@@ -1995,10 +1977,10 @@ index df0c15f6b5b2224d53e4f8fad42b9a1e5f33dc25..093715af08924a0777a3798cd59d2ea0
  
      public void tick() {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 68d268b6fff126e8645b6deec3fb549ea2286b77..80009f2835c2b220d79464dba09f8a0623e0af6c 100644
+index eb4fc900164d1fb3a78653ae8bc42ea30323f5b7..2eb9c584cc77237f1c82d880a51a3f8b51008d73 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -220,7 +220,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -233,7 +233,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
@@ -2007,10 +1989,10 @@ index 68d268b6fff126e8645b6deec3fb549ea2286b77..80009f2835c2b220d79464dba09f8a06
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index fe2ef36ab5dc4b933abf24dbfd0e811c53239cf0..20d88d5949f6acfe63d4d0f120e19ae97182c875 100644
+index 8e67853a7a93fa736c147e8b2df537746dc8e94f..9e313e7bd35cd512be4a8d4b5e667fcd6e034129 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2392,33 +2392,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2462,33 +2462,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
      }
  
@@ -2057,10 +2039,10 @@ index fe2ef36ab5dc4b933abf24dbfd0e811c53239cf0..20d88d5949f6acfe63d4d0f120e19ae9
      // CraftBukkit end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c490a29bcf7410bc54959ee71375605964379ed5..562fc91973df3cbddaac4e9abedf08557ef4e7f6 100644
+index 05e304f9fc8d0291fa779da589bd060ef4165b49..f0e38a1484ed46d3f5468282ec10fe97686e3cd9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -272,11 +272,11 @@ public final class CraftServer implements Server {
+@@ -274,11 +274,11 @@ public final class CraftServer implements Server {
      private final Logger logger = Logger.getLogger("Minecraft");
      private final ServicesManager servicesManager = new SimpleServicesManager();
      private final CraftScheduler scheduler = new CraftScheduler();
@@ -2075,7 +2057,7 @@ index c490a29bcf7410bc54959ee71375605964379ed5..562fc91973df3cbddaac4e9abedf0855
      private final StructureManager structureManager;
      protected final DedicatedServer console;
      protected final DedicatedPlayerList playerList;
-@@ -400,6 +400,13 @@ public final class CraftServer implements Server {
+@@ -403,6 +403,13 @@ public final class CraftServer implements Server {
          this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
  
          Bukkit.setServer(this);
@@ -2089,7 +2071,7 @@ index c490a29bcf7410bc54959ee71375605964379ed5..562fc91973df3cbddaac4e9abedf0855
  
          CraftRegistry.setMinecraftRegistry(console.registryAccess());
  
-@@ -571,49 +578,16 @@ public final class CraftServer implements Server {
+@@ -572,48 +579,16 @@ public final class CraftServer implements Server {
      }
  
      private void setVanillaCommands(boolean first) { // Spigot
@@ -2135,7 +2117,6 @@ index c490a29bcf7410bc54959ee71375605964379ed5..562fc91973df3cbddaac4e9abedf0855
 -                    }
 -                    node = clone;
 -                }
--                dispatcher.vanillaCommandNodes.add(node); // Paper
 -
 -                dispatcher.getDispatcher().getRoot().addChild(node);
 -            } else {
@@ -2146,7 +2127,7 @@ index c490a29bcf7410bc54959ee71375605964379ed5..562fc91973df3cbddaac4e9abedf0855
  
          // Refresh commands
          for (ServerPlayer player : this.getHandle().players) {
-@@ -1000,17 +974,31 @@ public final class CraftServer implements Server {
+@@ -1000,17 +975,31 @@ public final class CraftServer implements Server {
              return true;
          }
  
@@ -2188,7 +2169,7 @@ index c490a29bcf7410bc54959ee71375605964379ed5..562fc91973df3cbddaac4e9abedf0855
  
          return false;
      }
-@@ -1072,8 +1060,9 @@ public final class CraftServer implements Server {
+@@ -1072,8 +1061,9 @@ public final class CraftServer implements Server {
          }
  
          Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
@@ -2199,11 +2180,12 @@ index c490a29bcf7410bc54959ee71375605964379ed5..562fc91973df3cbddaac4e9abedf0855
          // Paper start
          for (Plugin plugin : pluginClone) {
              entityMetadata.removeAll(plugin);
-@@ -1113,6 +1102,9 @@ public final class CraftServer implements Server {
+@@ -1113,7 +1103,10 @@ public final class CraftServer implements Server {
          this.enablePlugins(PluginLoadOrder.STARTUP);
          this.enablePlugins(PluginLoadOrder.POSTWORLD);
          this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
 +        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setResources(this.console.resources.managers()); // Paper - to clear invalid state
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
 +        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // Paper - call commands event for regular plugins
 +        this.syncCommands(); // Paper - Refresh commands after event
          org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
@@ -2235,7 +2217,7 @@ index 4b1ac1fe7ea07f419ae2818251900e7ba434ee16..90ed57a7fbcd0625b64084347460e986
  
      public Map<String, Command> getKnownCommands() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
-index 61115db85b81e627d11a0de21691a2ca69aafe2c..8c49ed07737f841717833d944e15df8353650925 100644
+index ba2a2ca0c36e61cb3cc00fafc7a5dd9f7050388f..006561010dac5f34cb82a0905c5cbe100c2669a5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
 @@ -23,14 +23,26 @@ import org.bukkit.craftbukkit.entity.CraftMinecartCommand;
@@ -2290,7 +2272,7 @@ index 61115db85b81e627d11a0de21691a2ca69aafe2c..8c49ed07737f841717833d944e15df83
              suggestions.getList().forEach((s) -> results.add(s.getText()));
          });
  
-@@ -113,4 +125,15 @@ public final class VanillaCommandWrapper extends BukkitCommand {
+@@ -116,4 +128,15 @@ public final class VanillaCommandWrapper extends BukkitCommand {
      private String toDispatcher(String[] args, String name) {
          return name + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
      }
@@ -2492,10 +2474,10 @@ index 0000000000000000000000000000000000000000..815c7901492b666cd1713d5c9438325a
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
-index 3b3e44c5ed24f653f7dc1e5d3d4f0ff76084f277..48463a50963f50b1fc8fc0ae7cb79037756463fa 100644
+index 7a4681155f740a98ecafa0b992eae1fb5524551f..efc03dcbf07ba680aae531d570981410f3d9da91 100644
 --- a/src/test/java/org/bukkit/support/DummyServer.java
 +++ b/src/test/java/org/bukkit/support/DummyServer.java
-@@ -52,7 +52,7 @@ public final class DummyServer {
+@@ -54,7 +54,7 @@ public final class DummyServer {
              final Thread currentThread = Thread.currentThread();
              when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
  
