@@ -100,4 +100,11 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
         }
         return original != hash ? CraftMetaColorableArmor.class.hashCode() ^ hash : hash;
     }
+
+    // Paper start - Expose #hasColor to leather armor
+    @Override
+    public boolean isDyed() {
+        return hasColor();
+    }
+    // Paper end - Expose #hasColor to leather armor
 }

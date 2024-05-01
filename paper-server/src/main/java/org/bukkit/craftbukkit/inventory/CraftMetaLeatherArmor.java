@@ -156,4 +156,11 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
             builder.put(CraftMetaLeatherArmor.COLOR.BUKKIT, meta.getColor());
         }
     }
+
+    // Paper start - Expose #hasColor to leather armor
+    @Override
+    public boolean isDyed() {
+        return hasColor();
+    }
+    // Paper end - Expose #hasColor to leather armor
 }
