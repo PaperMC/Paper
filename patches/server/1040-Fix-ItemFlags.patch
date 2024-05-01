@@ -33,7 +33,7 @@ index fca0cfba14dd2cc6f24b56eaf269594b2d87fd04..8734f0b777432cd8639094b75a3da1b9
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index ba58f0f2f4f9cb99fb6cecfe772ae5781f976b63..9cd528a70ef3e6053a7103a6f9df5e93bb8550a4 100644
+index dd17d7d88ad43e0c426a7a508709fc8993d3a5c9..58de351fd2a4008296aa87f231396d272a1362c3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -224,6 +224,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -60,8 +60,8 @@ index ba58f0f2f4f9cb99fb6cecfe772ae5781f976b63..9cd528a70ef3e6053a7103a6f9df5e93
      }
  
      CraftMetaItem(DataComponentPatch tag) {
-@@ -384,6 +394,20 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-                 }
+@@ -388,6 +398,20 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 this.customTag = null;
              }
          });
 +        // Paper start - fix ItemFlags
@@ -81,7 +81,7 @@ index ba58f0f2f4f9cb99fb6cecfe772ae5781f976b63..9cd528a70ef3e6053a7103a6f9df5e93
  
          Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = tag.entrySet();
          for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
-@@ -565,10 +589,19 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -569,10 +593,19 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
          String unhandled = SerializableMeta.getString(map, "unhandled", true);
          if (unhandled != null) {
@@ -103,23 +103,23 @@ index ba58f0f2f4f9cb99fb6cecfe772ae5781f976b63..9cd528a70ef3e6053a7103a6f9df5e93
              } catch (IOException ex) {
                  Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
              }
-@@ -786,6 +819,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -788,6 +821,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              itemTag.put(CraftMetaItem.MAX_DAMAGE, this.maxDamage);
          }
  
 +        // Paper start
-+        if (this.canPlaceOnPredicates != null || this.hasItemFlag(ItemFlag.HIDE_PLACED_ON)) {
-+            itemTag.put(CraftMetaItem.CAN_PLACE_ON, new net.minecraft.world.item.AdventureModePredicate(this.canPlaceOnPredicates != null ? this.canPlaceOnPredicates : Collections.emptyList(), !this.hasItemFlag(ItemFlag.HIDE_PLACED_ON)));
++        if (this.canPlaceOnPredicates != null && !this.canPlaceOnPredicates.isEmpty()) {
++            itemTag.put(CraftMetaItem.CAN_PLACE_ON, new net.minecraft.world.item.AdventureModePredicate(this.canPlaceOnPredicates, !this.hasItemFlag(ItemFlag.HIDE_PLACED_ON)));
 +        }
-+        if (this.canBreakPredicates != null || this.hasItemFlag(ItemFlag.HIDE_DESTROYS)) {
-+            itemTag.put(CraftMetaItem.CAN_BREAK, new net.minecraft.world.item.AdventureModePredicate(this.canBreakPredicates != null ? this.canBreakPredicates : Collections.emptyList(), !this.hasItemFlag(ItemFlag.HIDE_DESTROYS)));
++        if (this.canBreakPredicates != null && !this.canBreakPredicates.isEmpty()) {
++            itemTag.put(CraftMetaItem.CAN_BREAK, new net.minecraft.world.item.AdventureModePredicate(this.canBreakPredicates, !this.hasItemFlag(ItemFlag.HIDE_DESTROYS)));
 +        }
 +        // Paper end
 +
          for (Map.Entry<DataComponentType<?>, Optional<?>> e : this.unhandledTags.build().entrySet()) {
              e.getValue().ifPresentOrElse((value) -> {
                  itemTag.builder.set((DataComponentType) e.getKey(), value);
-@@ -858,7 +900,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -859,7 +901,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Overridden
      boolean isEmpty() {
@@ -128,7 +128,7 @@ index ba58f0f2f4f9cb99fb6cecfe772ae5781f976b63..9cd528a70ef3e6053a7103a6f9df5e93
      }
  
      // Paper start
-@@ -1455,6 +1497,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1468,6 +1510,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                  && (this.hasFood() ? that.hasFood() && this.food.equals(that.food) : !that.hasFood())
                  && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage())
                  && (this.hasMaxDamage() ? that.hasMaxDamage() && this.maxDamage.equals(that.maxDamage) : !that.hasMaxDamage())
@@ -137,7 +137,7 @@ index ba58f0f2f4f9cb99fb6cecfe772ae5781f976b63..9cd528a70ef3e6053a7103a6f9df5e93
                  && (this.version == that.version);
      }
  
-@@ -1497,6 +1541,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1510,6 +1554,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
          hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
          hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
@@ -146,7 +146,7 @@ index ba58f0f2f4f9cb99fb6cecfe772ae5781f976b63..9cd528a70ef3e6053a7103a6f9df5e93
          hash = 61 * hash + this.version;
          return hash;
      }
-@@ -1534,6 +1580,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1547,6 +1593,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              clone.damage = this.damage;
              clone.maxDamage = this.maxDamage;
              clone.version = this.version;
@@ -161,24 +161,24 @@ index ba58f0f2f4f9cb99fb6cecfe772ae5781f976b63..9cd528a70ef3e6053a7103a6f9df5e93
              return clone;
          } catch (CloneNotSupportedException e) {
              throw new Error(e);
-@@ -1643,6 +1697,16 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1656,6 +1710,16 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              }
          }
  
 +        // Paper start
-+        final boolean canBreakAddToUnhandled = this.canBreakPredicates != null || this.hasItemFlag(ItemFlag.HIDE_DESTROYS);
++        final boolean canBreakAddToUnhandled = this.canBreakPredicates != null && !this.canBreakPredicates.isEmpty();
 +        if (canBreakAddToUnhandled) {
-+            this.unhandledTags.set(DataComponents.CAN_BREAK, new net.minecraft.world.item.AdventureModePredicate(this.canBreakPredicates != null ? this.canBreakPredicates : Collections.emptyList(), !this.hasItemFlag(ItemFlag.HIDE_DESTROYS)));
++            this.unhandledTags.set(DataComponents.CAN_BREAK, new net.minecraft.world.item.AdventureModePredicate(this.canBreakPredicates, !this.hasItemFlag(ItemFlag.HIDE_DESTROYS)));
 +        }
-+        final boolean canPlaceOnAddToUnhandled = this.canPlaceOnPredicates != null || this.hasItemFlag(ItemFlag.HIDE_PLACED_ON);
++        final boolean canPlaceOnAddToUnhandled = this.canPlaceOnPredicates != null && !this.canPlaceOnPredicates.isEmpty();
 +        if (canPlaceOnAddToUnhandled) {
-+            this.unhandledTags.set(DataComponents.CAN_PLACE_ON, new net.minecraft.world.item.AdventureModePredicate(this.canPlaceOnPredicates != null ? this.canPlaceOnPredicates : Collections.emptyList(), !this.hasItemFlag(ItemFlag.HIDE_PLACED_ON)));
++            this.unhandledTags.set(DataComponents.CAN_PLACE_ON, new net.minecraft.world.item.AdventureModePredicate(this.canPlaceOnPredicates, !this.hasItemFlag(ItemFlag.HIDE_PLACED_ON)));
 +        }
 +        // Paper end
          if (!this.unhandledTags.isEmpty()) {
              Tag unhandled = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), this.unhandledTags.build()).getOrThrow(IllegalStateException::new);
              try {
-@@ -1653,6 +1717,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1666,6 +1730,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                  Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
              }
          }
@@ -193,7 +193,7 @@ index ba58f0f2f4f9cb99fb6cecfe772ae5781f976b63..9cd528a70ef3e6053a7103a6f9df5e93
  
          if (!this.persistentDataContainer.isEmpty()) { // Store custom tags, wrapped in their compound
              builder.put(CraftMetaItem.BUKKIT_CUSTOM_TAG.BUKKIT, this.persistentDataContainer.serialize());
-@@ -1794,6 +1866,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1807,6 +1879,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                          CraftMetaItem.MAX_DAMAGE.TYPE,
                          CraftMetaItem.CUSTOM_DATA.TYPE,
                          CraftMetaItem.ATTRIBUTES.TYPE,

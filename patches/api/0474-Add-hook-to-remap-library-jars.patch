@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sun, 28 Apr 2024 13:51:08 -0700
+Subject: [PATCH] Add hook to remap library jars
+
+
+diff --git a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+index 5b0203e908f84c531886b8ea8faeb591eb045636..8e1b6be2462aaa692efa1f72986921a6dc357196 100644
+--- a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+@@ -47,6 +47,7 @@ public class LibraryLoader
+     private final DefaultRepositorySystemSession session;
+     private final List<RemoteRepository> repositories;
+     public static java.util.function.BiFunction<URL[], ClassLoader, URLClassLoader> LIBRARY_LOADER_FACTORY; // Paper - rewrite reflection in libraries
++    public static java.util.function.Function<List<java.nio.file.Path>, List<java.nio.file.Path>> REMAPPER; // Paper - remap libraries
+ 
+     public LibraryLoader(@NotNull Logger logger)
+     {
+@@ -111,9 +112,18 @@ public class LibraryLoader
+         }
+ 
+         List<URL> jarFiles = new ArrayList<>();
++        List<java.nio.file.Path> jarPaths = new ArrayList<>(); // Paper - remap libraries
+         for ( ArtifactResult artifact : result.getArtifactResults() )
+         {
+-            File file = artifact.getArtifact().getFile();
++            // Paper start - remap libraries
++            jarPaths.add(artifact.getArtifact().getFile().toPath());
++        }
++        if (REMAPPER != null) {
++            jarPaths = REMAPPER.apply(jarPaths);
++        }
++        for (java.nio.file.Path path : jarPaths) {
++            File file = path.toFile();
++            // Paper end - remap libraries
+ 
+             URL url;
+             try

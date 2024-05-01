@@ -11,7 +11,7 @@ import kotlin.io.path.*
 plugins {
     java
     `maven-publish`
-    id("io.papermc.paperweight.core") version "1.6.2"
+    id("io.papermc.paperweight.core") version "1.6.3"
 }
 
 allprojects {
@@ -68,7 +68,7 @@ repositories {
 }
 
 dependencies {
-    paramMappings("net.fabricmc:yarn:1.20.5+build.1:mergedv2")
+    paramMappings("net.fabricmc:yarn:1.20.6+build.1:mergedv2")
     remapper("net.fabricmc:tiny-remapper:0.10.2:fat")
     decompiler("org.vineflower:vineflower:1.10.1")
     spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.13")

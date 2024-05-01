@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Mon, 29 Apr 2024 23:12:33 +0200
+Subject: [PATCH] Catch JsonParseException in block entity names
+
+As a result, data that no longer parses correctly will not crash the server
+instead just logging the exception and continuing (and in most cases should
+fix the data)
+
+Player data is fixed pretty much immediately but some block data (like
+Shulkers) may need to be changed in order for it to re-save properly
+
+No more crashing though.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+index 81d9a4e6bc1bc4f992ecb77b176daf89d645bbf2..e79b1ccbdf12006d72401b5be1ac25187033ec59 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+@@ -151,7 +151,7 @@ public class SkullBlockEntity extends BlockEntity {
+         }
+ 
+         if (nbt.contains("custom_name", 8)) {
+-            this.customName = Component.Serializer.fromJson(nbt.getString("custom_name"), registryLookup);
++            this.customName = BlockEntity.parseCustomNameSafe(nbt.getString("custom_name"), registryLookup); // Paper
+         } else {
+             this.customName = null;
+         }
