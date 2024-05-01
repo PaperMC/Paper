@@ -22,11 +22,10 @@
  public class FishingHook extends Projectile {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -67,6 +73,18 @@
-     public FishingHook.FishHookState currentState;
+@@ -68,6 +74,18 @@
      private final int luck;
      private final int lureSpeed;
-+
+ 
 +    // CraftBukkit start - Extra variables to enable modification of fishing wait time, values are minecraft defaults
 +    public int minWaitTime = 100;
 +    public int maxWaitTime = 600;
@@ -38,9 +37,10 @@
 +    public boolean rainInfluenced = true;
 +    public boolean skyInfluenced = true;
 +    // CraftBukkit end
- 
++
      private FishingHook(EntityType<? extends FishingHook> type, Level world, int luckBonus, int waitTimeReductionTicks) {
          super(type, world);
+         this.syncronizedRandom = RandomSource.create();
 @@ -75,13 +93,17 @@
          this.currentState = FishingHook.FishHookState.FLYING;
          this.luck = Math.max(0, luckBonus);
@@ -145,7 +145,7 @@
                      this.playSound(SoundEvents.FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                      double d3 = this.getY() + 0.5D;
  
-@@ -379,16 +412,25 @@
+@@ -379,16 +412,34 @@
                  }
  
                  if (this.timeUntilLured <= 0) {
@@ -155,6 +155,15 @@
 +                    this.fishAngle = Mth.nextFloat(this.random, this.minLureAngle, this.maxLureAngle);
 +                    this.timeUntilHooked = Mth.nextInt(this.random, this.minLureTime, this.maxLureTime);
 +                    // CraftBukkit end
++                    // Paper start - Add missing fishing event state
++                    if (this.getPlayerOwner() != null) {
++                        PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.getPlayerOwner().getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.LURED);
++                        if (!playerFishEvent.callEvent()) {
++                            this.timeUntilHooked = 0;
++                            return;
++                        }
++                    }
++                    // Paper end - Add missing fishing event state
                  }
              } else {
 -                this.timeUntilLured = Mth.nextInt(this.random, 100, 600);
@@ -175,7 +184,7 @@
  
      public boolean calculateOpenWater(BlockPos pos) {
          FishingHook.OpenWaterType entityfishinghook_waterposition = FishingHook.OpenWaterType.INVALID;
-@@ -445,17 +487,35 @@
+@@ -445,17 +496,35 @@
      @Override
      public void readAdditionalSaveData(CompoundTag nbt) {}
  
@@ -212,7 +221,7 @@
              } else if (this.nibble > 0) {
                  LootParams lootparams = (new LootParams.Builder((ServerLevel) this.level())).withParameter(LootContextParams.ORIGIN, this.position()).withParameter(LootContextParams.TOOL, usedItem).withParameter(LootContextParams.THIS_ENTITY, this).withLuck((float) this.luck + entityhuman.getLuck()).create(LootContextParamSets.FISHING);
                  LootTable loottable = this.level().getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING);
-@@ -466,15 +526,38 @@
+@@ -466,15 +535,38 @@
  
                  while (iterator.hasNext()) {
                      ItemStack itemstack1 = (ItemStack) iterator.next();
@@ -255,7 +264,7 @@
                      if (itemstack1.is(ItemTags.FISHES)) {
                          entityhuman.awardStat(Stats.FISH_CAUGHT, 1);
                      }
-@@ -484,10 +567,27 @@
+@@ -484,10 +576,27 @@
              }
  
              if (this.onGround()) {
@@ -284,7 +293,7 @@
              return i;
          } else {
              return 0;
-@@ -496,7 +596,7 @@
+@@ -496,7 +605,7 @@
  
      @Override
      public void handleEntityEvent(byte status) {
@@ -293,7 +302,7 @@
              this.pullEntity(this.hookedIn);
          }
  
-@@ -520,8 +620,15 @@
+@@ -520,8 +629,15 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -310,7 +319,7 @@
      }
  
      @Override
-@@ -536,7 +643,7 @@
+@@ -536,7 +652,7 @@
      }
  
      private void updateOwnerInfo(@Nullable FishingHook fishingBobber) {
@@ -319,7 +328,7 @@
  
          if (entityhuman != null) {
              entityhuman.fishing = fishingBobber;
-@@ -545,10 +652,10 @@
+@@ -545,10 +661,10 @@
      }
  
      @Nullable
@@ -332,7 +341,7 @@
      }
  
      @Nullable
-@@ -575,7 +682,7 @@
+@@ -575,7 +691,7 @@
              int i = packet.getData();
  
              FishingHook.LOGGER.error("Failed to recreate fishing hook on client. {} (id: {}) is not a valid owner.", this.level().getEntity(i), i);
