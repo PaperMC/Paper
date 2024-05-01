@@ -99,4 +99,29 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
         return getTileEntity().openersCounter.opened;
     }
     // Paper end - More Lidded Block API
+
+    // Paper start - More Chest Block API
+    @Override
+    public boolean isBlocked() {
+        // Method mimics vanilla logic in ChestBlock and DoubleBlockCombiner when trying to open chest's container
+        if (!isPlaced()) {
+            return false;
+        }
+        net.minecraft.world.level.LevelAccessor world = getWorldHandle();
+        if (ChestBlock.isChestBlockedAt(world, getPosition())) {
+            return true;
+        }
+        if (ChestBlock.getBlockType(this.data) == net.minecraft.world.level.block.DoubleBlockCombiner.BlockType.SINGLE) {
+            return false;
+        }
+        net.minecraft.core.Direction direction = ChestBlock.getConnectedDirection(this.data);
+        net.minecraft.core.BlockPos neighbourBlockPos = getPosition().relative(direction);
+        BlockState neighbourBlockState = world.getBlockStateIfLoaded(neighbourBlockPos);
+        return neighbourBlockState != null
+            && neighbourBlockState.is(this.data.getBlock())
+            && ChestBlock.getBlockType(neighbourBlockState) != net.minecraft.world.level.block.DoubleBlockCombiner.BlockType.SINGLE
+            && ChestBlock.getConnectedDirection(neighbourBlockState) == direction.getOpposite()
+            && ChestBlock.isChestBlockedAt(world, neighbourBlockPos);
+    }
+    // Paper end - More Chest Block API
 }
