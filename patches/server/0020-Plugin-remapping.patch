@@ -66,22 +66,24 @@ index 65fb16941fa7e3a9b300696fb6bd2b562bca48cd..5ffd1d7c130e01a4a7516b361e48bfaf
 +    mainClass.set(null as String?)
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
-index 708e5bb9bbf0476fcc2c4b92c6830b094703b43e..bb1cfa8ea8b11fc36ea72c8e382b8554bccd0ce5 100644
+index 708e5bb9bbf0476fcc2c4b92c6830b094703b43e..6f14cb9a73faa1d0ae2939d08809d9f6c2a99e1d 100644
 --- a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
-@@ -6,10 +6,10 @@ import io.papermc.paper.plugin.entrypoint.Entrypoint;
+@@ -6,10 +6,12 @@ import io.papermc.paper.plugin.entrypoint.Entrypoint;
  import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
  import io.papermc.paper.plugin.provider.PluginProvider;
  import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
 +import io.papermc.paper.pluginremap.PluginRemapper;
++import java.util.function.Function;
  import joptsimple.OptionSet;
  import net.minecraft.server.dedicated.DedicatedServer;
  import org.bukkit.configuration.file.YamlConfiguration;
 -import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.plugin.java.LibraryLoader;
  import org.jetbrains.annotations.NotNull;
  import org.jetbrains.annotations.Nullable;
  import org.slf4j.Logger;
-@@ -25,10 +25,14 @@ public class PluginInitializerManager {
+@@ -25,10 +27,15 @@ public class PluginInitializerManager {
      private static PluginInitializerManager impl;
      private final Path pluginDirectory;
      private final Path updateDirectory;
@@ -93,10 +95,11 @@ index 708e5bb9bbf0476fcc2c4b92c6830b094703b43e..bb1cfa8ea8b11fc36ea72c8e382b8554
 +        this.pluginRemapper = Boolean.getBoolean("paper.disable-plugin-rewriting")
 +            ? null
 +            : PluginRemapper.create(pluginDirectory);
++        LibraryLoader.REMAPPER = this.pluginRemapper == null ? Function.identity() : this.pluginRemapper::remapLibraries;
      }
  
      private static PluginInitializerManager parse(@NotNull final OptionSet minecraftOptionSet) throws Exception {
-@@ -96,6 +100,7 @@ public class PluginInitializerManager {
+@@ -96,6 +103,7 @@ public class PluginInitializerManager {
      public static void load(OptionSet optionSet) throws Exception {
          // We have to load the bukkit configuration inorder to get the update folder location.
          io.papermc.paper.plugin.PluginInitializerManager pluginSystem = io.papermc.paper.plugin.PluginInitializerManager.init(optionSet);
@@ -104,6 +107,31 @@ index 708e5bb9bbf0476fcc2c4b92c6830b094703b43e..bb1cfa8ea8b11fc36ea72c8e382b8554
  
          // Register the default plugin directory
          io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.DirectoryProviderSource.INSTANCE, pluginSystem.pluginDirectoryPath());
+diff --git a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
+index f38ecd7f65dc24e4a3f0bc675e3730287ac353f1..f576060c8fe872772bbafe2016fc9b83a3c095f1 100644
+--- a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
++++ b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.plugin.loader;
+ 
++import io.papermc.paper.plugin.PluginInitializerManager;
+ import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
+ import io.papermc.paper.plugin.loader.library.ClassPathLibrary;
+ import io.papermc.paper.plugin.loader.library.PaperLibraryStore;
+@@ -45,9 +46,12 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
+         }
+ 
+         List<Path> paths = paperLibraryStore.getPaths();
++        if (PluginInitializerManager.instance().pluginRemapper != null) {
++            paths = PluginInitializerManager.instance().pluginRemapper.remapLibraries(paths);
++        }
+         URL[] urls = new URL[paths.size()];
+         for (int i = 0; i < paths.size(); i++) {
+-            Path path = paperLibraryStore.getPaths().get(i);
++            Path path = paths.get(i);
+             try {
+                 urls[i] = path.toUri().toURL();
+             } catch (MalformedURLException e) {
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
 index 226f457db6c1461c943c157b2b91e7450abc9dc6..0846d3a904e470ae1920c5c8be3df9c5dfc3de27 100644
 --- a/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
@@ -274,10 +302,10 @@ index 0000000000000000000000000000000000000000..99e658e3a0f08dbd90b3cf48609613e8
 +}
 diff --git a/src/main/java/io/papermc/paper/pluginremap/InsertManifestAttribute.java b/src/main/java/io/papermc/paper/pluginremap/InsertManifestAttribute.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3a5bb5d2a45654385ca0bc15c81ef95315b922b4
+index 0000000000000000000000000000000000000000..d738b31f0005aca352a511c1a57e76b627fca2dd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/pluginremap/InsertManifestAttribute.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,69 @@
 +package io.papermc.paper.pluginremap;
 +
 +import java.io.ByteArrayInputStream;
@@ -285,6 +313,7 @@ index 0000000000000000000000000000000000000000..3a5bb5d2a45654385ca0bc15c81ef953
 +import java.io.IOException;
 +import java.util.Collection;
 +import java.util.List;
++import java.util.Set;
 +import java.util.jar.Attributes;
 +import java.util.jar.Manifest;
 +import net.neoforged.art.api.Transformer;
@@ -294,6 +323,7 @@ index 0000000000000000000000000000000000000000..3a5bb5d2a45654385ca0bc15c81ef953
 +    static final String MOJANG_NAMESPACE = "mojang";
 +    static final String MOJANG_PLUS_YARN_NAMESPACE = "mojang+yarn";
 +    static final String SPIGOT_NAMESPACE = "spigot";
++    static final Set<String> KNOWN_NAMESPACES = Set.of(MOJANG_NAMESPACE, MOJANG_PLUS_YARN_NAMESPACE, SPIGOT_NAMESPACE);
 +
 +    private final String mainAttributesKey;
 +    private final String namespace;
@@ -347,10 +377,10 @@ index 0000000000000000000000000000000000000000..3a5bb5d2a45654385ca0bc15c81ef953
 +}
 diff --git a/src/main/java/io/papermc/paper/pluginremap/PluginRemapper.java b/src/main/java/io/papermc/paper/pluginremap/PluginRemapper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097237505c0
+index 0000000000000000000000000000000000000000..265c636abfd63f9ba0b0f0198867a10401c14da1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/pluginremap/PluginRemapper.java
-@@ -0,0 +1,370 @@
+@@ -0,0 +1,438 @@
 +package io.papermc.paper.pluginremap;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -397,6 +427,7 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +    public static final boolean DEBUG_LOGGING = Boolean.getBoolean("Paper.PluginRemapperDebug");
 +    private static final String PAPER_REMAPPED = ".paper-remapped";
 +    private static final String UNKNOWN_ORIGIN = "unknown-origin";
++    private static final String LIBRARIES = "libraries";
 +    private static final String EXTRA_PLUGINS = "extra-plugins";
 +    private static final String REMAP_CLASSPATH = "remap-classpath";
 +    private static final String REVERSED_MAPPINGS = "mappings/reversed";
@@ -407,6 +438,7 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +    private final RemappedPluginIndex remappedPlugins;
 +    private final RemappedPluginIndex extraPlugins;
 +    private final UnknownOriginRemappedPluginIndex unknownOrigin;
++    private final UnknownOriginRemappedPluginIndex libraries;
 +    private @Nullable CompletableFuture<IMappingFile> reversedMappings;
 +
 +    public PluginRemapper(final Path pluginsDir) {
@@ -418,6 +450,7 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +        this.remappedPlugins = new RemappedPluginIndex(remappedPlugins, false);
 +        this.extraPlugins = new RemappedPluginIndex(this.remappedPlugins.dir().resolve(EXTRA_PLUGINS), true);
 +        this.unknownOrigin = new UnknownOriginRemappedPluginIndex(this.remappedPlugins.dir().resolve(UNKNOWN_ORIGIN));
++        this.libraries = new UnknownOriginRemappedPluginIndex(this.remappedPlugins.dir().resolve(LIBRARIES));
 +    }
 +
 +    public static @Nullable PluginRemapper create(final Path pluginsDir) {
@@ -446,6 +479,7 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +        this.remappedPlugins.write();
 +        this.extraPlugins.write();
 +        this.unknownOrigin.write(clean);
++        this.libraries.write(clean);
 +    }
 +
 +    // Called on startup and reload
@@ -463,6 +497,29 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +    public void pluginsEnabled() {
 +        this.reversedMappings = null;
 +        this.save(false);
++    }
++
++    public List<Path> remapLibraries(final List<Path> libraries) {
++        final List<CompletableFuture<Path>> tasks = new ArrayList<>();
++        for (final Path lib : libraries) {
++            if (!lib.getFileName().toString().endsWith(".jar")) {
++                if (DEBUG_LOGGING) {
++                    LOGGER.info("Library '{}' is not a jar.", lib);
++                }
++                tasks.add(CompletableFuture.completedFuture(lib));
++                continue;
++            }
++            final @Nullable Path cached = this.libraries.getIfPresent(lib);
++            if (cached != null) {
++                if (DEBUG_LOGGING) {
++                    LOGGER.info("Library '{}' has not changed since last remap.", lib);
++                }
++                tasks.add(CompletableFuture.completedFuture(cached));
++                continue;
++            }
++            tasks.add(this.remapLibrary(this.libraries, lib));
++        }
++        return waitForAll(tasks);
 +    }
 +
 +    public Path rewritePlugin(final Path plugin) {
@@ -585,6 +642,20 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +        }, executor).thenCompose(f -> f);
 +    }
 +
++    private CompletableFuture<Path> remapPlugin(
++        final RemappedPluginIndex index,
++        final Path inputFile
++    ) {
++        return this.remap(index, inputFile, false);
++    }
++
++    private CompletableFuture<Path> remapLibrary(
++        final RemappedPluginIndex index,
++        final Path inputFile
++    ) {
++        return this.remap(index, inputFile, true);
++    }
++
 +    /**
 +     * Returns the remapped file if remapping was necessary, otherwise null.
 +     *
@@ -592,7 +663,11 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +     * @param inputFile input file
 +     * @return remapped file, or inputFile if no remapping was necessary
 +     */
-+    private CompletableFuture<Path> remapPlugin(final RemappedPluginIndex index, final Path inputFile) {
++    private CompletableFuture<Path> remap(
++        final RemappedPluginIndex index,
++        final Path inputFile,
++        final boolean library
++    ) {
 +        final Path destination = index.input(inputFile);
 +
 +        try (final FileSystem fs = FileSystems.newFileSystem(inputFile, new HashMap<>())) {
@@ -608,25 +683,47 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +            } else {
 +                ns = null;
 +            }
-+            if (ns != null && (ns.equals(InsertManifestAttribute.MOJANG_NAMESPACE) || ns.equals(InsertManifestAttribute.MOJANG_PLUS_YARN_NAMESPACE))) {
-+                if (DEBUG_LOGGING) {
-+                    LOGGER.info("Plugin '{}' is already Mojang mapped.", inputFile);
++
++            if (ns != null && !InsertManifestAttribute.KNOWN_NAMESPACES.contains(ns)) {
++                throw new RuntimeException("Failed to remap plugin " + inputFile + " with unknown mapping namespace '" + ns + "'");
++            }
++
++            final boolean mojangMappedManifest = ns != null && (ns.equals(InsertManifestAttribute.MOJANG_NAMESPACE) || ns.equals(InsertManifestAttribute.MOJANG_PLUS_YARN_NAMESPACE));
++            if (library) {
++                if (mojangMappedManifest) {
++                    if (DEBUG_LOGGING) {
++                        LOGGER.info("Library '{}' is already Mojang mapped.", inputFile);
++                    }
++                    index.skip(inputFile);
++                    return CompletableFuture.completedFuture(inputFile);
++                } else if (ns == null) {
++                    if (DEBUG_LOGGING) {
++                        LOGGER.info("Library '{}' does not specify a mappings namespace (not remapping).", inputFile);
++                    }
++                    index.skip(inputFile);
++                    return CompletableFuture.completedFuture(inputFile);
 +                }
-+                index.skip(inputFile);
-+                return CompletableFuture.completedFuture(inputFile);
-+            } else if (ns == null && Files.exists(fs.getPath(PluginFileType.PAPER_PLUGIN_YML))) {
-+                if (DEBUG_LOGGING) {
-+                    LOGGER.info("Plugin '{}' is a Paper plugin with no namespace specified.", inputFile);
++            } else {
++                if (mojangMappedManifest) {
++                    if (DEBUG_LOGGING) {
++                        LOGGER.info("Plugin '{}' is already Mojang mapped.", inputFile);
++                    }
++                    index.skip(inputFile);
++                    return CompletableFuture.completedFuture(inputFile);
++                } else if (ns == null && Files.exists(fs.getPath(PluginFileType.PAPER_PLUGIN_YML))) {
++                    if (DEBUG_LOGGING) {
++                        LOGGER.info("Plugin '{}' is a Paper plugin with no namespace specified.", inputFile);
++                    }
++                    index.skip(inputFile);
++                    return CompletableFuture.completedFuture(inputFile);
 +                }
-+                index.skip(inputFile);
-+                return CompletableFuture.completedFuture(inputFile);
 +            }
 +        } catch (final IOException ex) {
 +            throw new RuntimeException("Failed to open plugin jar " + inputFile, ex);
 +        }
 +
 +        return this.reobf.remapped().thenApplyAsync(reobfServer -> {
-+            LOGGER.info("Remapping plugin '{}'...", inputFile);
++            LOGGER.info("Remapping {} '{}'...", library ? "library" : "plugin", inputFile);
 +            final long start = System.currentTimeMillis();
 +            try (final DebugLogger logger = DebugLogger.forOutputFile(destination)) {
 +                try (final Renamer renamer = Renamer.builder()
@@ -643,7 +740,7 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +            } catch (final Exception ex) {
 +                throw new RuntimeException("Failed to remap plugin jar '" + inputFile + "'", ex);
 +            }
-+            LOGGER.info("Done remapping plugin '{}' in {}ms.", inputFile, System.currentTimeMillis() - start);
++            LOGGER.info("Done remapping {} '{}' in {}ms.", library ? "library" : "plugin", inputFile, System.currentTimeMillis() - start);
 +            return destination;
 +        }, this.threadPool);
 +    }
@@ -701,7 +798,8 @@ index 0000000000000000000000000000000000000000..06dbaf0c77333f4d0d8ac462edd52097
 +        try {
 +            collector.throwIfPresent();
 +        } catch (final Exception ex) {
-+            throw new RuntimeException("Encountered exception remapping plugins", ex);
++            // Don't hard fail during bootstrap/plugin loading. The plugin(s) in question will be skipped
++            LOGGER.error("Encountered exception remapping plugins", ex);
 +        }
 +        return ret;
 +    }
@@ -1817,32 +1915,3 @@ index 45160b93a24dc74f6368441e2a4fe659ceaf5bf5..6573e72d041714ccc2bf0e3c8734bc21
      }
  
      @Override
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index fb8d14a2bdaaa25a2237fa4161388439ea8cfc0f..fdeec67b7f71700f88714b8ad734a5525fb119fd 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -72,6 +72,7 @@ import org.bukkit.potion.PotionType;
- 
- @SuppressWarnings("deprecation")
- public final class CraftMagicNumbers implements UnsafeValues {
-+    public static final boolean DISABLE_PLUGIN_REWRITING = Boolean.getBoolean("paper.disable-plugin-rewriting");
-     public static final UnsafeValues INSTANCE = new CraftMagicNumbers();
- 
-     private CraftMagicNumbers() {}
-@@ -356,7 +357,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
-             throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
-         }
- 
--        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
-+        if (!DISABLE_PLUGIN_REWRITING && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
-             CraftLegacy.init();
-         }
- 
-@@ -371,6 +372,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
- 
-     @Override
-     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
-+        if (DISABLE_PLUGIN_REWRITING) return clazz; // Paper
-         try {
-             clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()));
-         } catch (Exception ex) {

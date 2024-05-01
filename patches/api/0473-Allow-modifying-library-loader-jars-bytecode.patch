@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sun, 28 Apr 2024 11:11:26 -0700
+Subject: [PATCH] Allow modifying library loader jars bytecode
+
+
+diff --git a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+index f4d655a158410039305ac68cebe0d79000f73df8..5b0203e908f84c531886b8ea8faeb591eb045636 100644
+--- a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+@@ -46,6 +46,7 @@ public class LibraryLoader
+     private final RepositorySystem repository;
+     private final DefaultRepositorySystemSession session;
+     private final List<RemoteRepository> repositories;
++    public static java.util.function.BiFunction<URL[], ClassLoader, URLClassLoader> LIBRARY_LOADER_FACTORY; // Paper - rewrite reflection in libraries
+ 
+     public LibraryLoader(@NotNull Logger logger)
+     {
+@@ -130,7 +131,14 @@ public class LibraryLoader
+             } );
+         }
+ 
+-        URLClassLoader loader = new URLClassLoader( jarFiles.toArray( new URL[ jarFiles.size() ] ), getClass().getClassLoader() );
++        // Paper start - rewrite reflection in libraries
++        URLClassLoader loader;
++        if (LIBRARY_LOADER_FACTORY == null) {
++            loader = new URLClassLoader( jarFiles.toArray( new URL[ jarFiles.size() ] ), getClass().getClassLoader() );
++        } else {
++            loader = LIBRARY_LOADER_FACTORY.apply(jarFiles.toArray( new URL[ jarFiles.size() ] ), getClass().getClassLoader());
++        }
++        // Paper end - rewrite reflection in libraries
+ 
+         return loader;
+     }

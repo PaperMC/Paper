@@ -43,6 +43,199 @@ index 893ad5e7c2d32ccd64962d95d146bbd317c28ab8..3d73ea0e63c97b2b08e719b7be7af389
          if (mojName == null && MOJANG_TO_OBF.containsKey(name)) {
              mojName = name;
          }
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/BytecodeModifyingURLClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/BytecodeModifyingURLClassLoader.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1240c061c121e8d5eb9add4e5e21955ee6df9368
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/BytecodeModifyingURLClassLoader.java
+@@ -0,0 +1,187 @@
++package io.papermc.paper.plugin.entrypoint.classloader;
++
++import io.papermc.paper.pluginremap.reflect.ReflectionRemapper;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.UncheckedIOException;
++import java.net.JarURLConnection;
++import java.net.URI;
++import java.net.URL;
++import java.net.URLClassLoader;
++import java.security.CodeSigner;
++import java.security.CodeSource;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.function.Function;
++import java.util.jar.Attributes;
++import java.util.jar.Manifest;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.ClassVisitor;
++import org.objectweb.asm.ClassWriter;
++
++import static java.util.Objects.requireNonNullElse;
++
++public final class BytecodeModifyingURLClassLoader extends URLClassLoader {
++    static {
++        ClassLoader.registerAsParallelCapable();
++    }
++
++    private static final Object MISSING_MANIFEST = new Object();
++
++    private final Function<byte[], byte[]> modifier;
++    private final Map<String, Object> manifests = new ConcurrentHashMap<>();
++
++    public BytecodeModifyingURLClassLoader(
++        final URL[] urls,
++        final ClassLoader parent,
++        final Function<byte[], byte[]> modifier
++    ) {
++        super(urls, parent);
++        this.modifier = modifier;
++    }
++
++    public BytecodeModifyingURLClassLoader(
++        final URL[] urls,
++        final ClassLoader parent
++    ) {
++        this(urls, parent, bytes -> {
++            final ClassReader classReader = new ClassReader(bytes);
++            final ClassWriter classWriter = new ClassWriter(classReader, 0);
++            final ClassVisitor visitor = ReflectionRemapper.visitor(classWriter);
++            if (visitor == classWriter) {
++                return bytes;
++            }
++            classReader.accept(visitor, 0);
++            return classWriter.toByteArray();
++        });
++    }
++
++    @Override
++    protected Class<?> findClass(final String name) throws ClassNotFoundException {
++        final Class<?> result;
++        final String path = name.replace('.', '/').concat(".class");
++        final URL url = this.findResource(path);
++        if (url != null) {
++            try {
++                result = this.defineClass(name, url);
++            } catch (final IOException e) {
++                throw new ClassNotFoundException(name, e);
++            }
++        } else {
++            result = null;
++        }
++        if (result == null) {
++            throw new ClassNotFoundException(name);
++        }
++        return result;
++    }
++
++    private Class<?> defineClass(String name, URL url) throws IOException {
++        int i = name.lastIndexOf('.');
++        if (i != -1) {
++            String pkgname = name.substring(0, i);
++            // Check if package already loaded.
++            final @Nullable Manifest man = this.manifestFor(url);
++            final URL jarUrl = URI.create(jarName(url)).toURL();
++            if (this.getAndVerifyPackage(pkgname, man, jarUrl) == null) {
++                try {
++                    if (man != null) {
++                        this.definePackage(pkgname, man, jarUrl);
++                    } else {
++                        this.definePackage(pkgname, null, null, null, null, null, null, null);
++                    }
++                } catch (IllegalArgumentException iae) {
++                    // parallel-capable class loaders: re-verify in case of a
++                    // race condition
++                    if (this.getAndVerifyPackage(pkgname, man, jarUrl) == null) {
++                        // Should never happen
++                        throw new AssertionError("Cannot find package " +
++                            pkgname);
++                    }
++                }
++            }
++        }
++        final byte[] bytes;
++        try (final InputStream is = url.openStream()) {
++            bytes = is.readAllBytes();
++        }
++
++        final byte[] modified = this.modifier.apply(bytes);
++
++        final CodeSource cs = new CodeSource(url, (CodeSigner[]) null);
++        return this.defineClass(name, modified, 0, modified.length, cs);
++    }
++
++    private Package getAndVerifyPackage(
++        String pkgname,
++        Manifest man, URL url
++    ) {
++        Package pkg = getDefinedPackage(pkgname);
++        if (pkg != null) {
++            // Package found, so check package sealing.
++            if (pkg.isSealed()) {
++                // Verify that code source URL is the same.
++                if (!pkg.isSealed(url)) {
++                    throw new SecurityException(
++                        "sealing violation: package " + pkgname + " is sealed");
++                }
++            } else {
++                // Make sure we are not attempting to seal the package
++                // at this code source URL.
++                if ((man != null) && this.isSealed(pkgname, man)) {
++                    throw new SecurityException(
++                        "sealing violation: can't seal package " + pkgname +
++                            ": already loaded");
++                }
++            }
++        }
++        return pkg;
++    }
++
++    private boolean isSealed(String name, Manifest man) {
++        Attributes attr = man.getAttributes(name.replace('.', '/').concat("/"));
++        String sealed = null;
++        if (attr != null) {
++            sealed = attr.getValue(Attributes.Name.SEALED);
++        }
++        if (sealed == null) {
++            if ((attr = man.getMainAttributes()) != null) {
++                sealed = attr.getValue(Attributes.Name.SEALED);
++            }
++        }
++        return "true".equalsIgnoreCase(sealed);
++    }
++
++    private @Nullable Manifest manifestFor(final URL url) throws IOException {
++        Manifest man = null;
++        if (url.getProtocol().equals("jar")) {
++            try {
++                final Object computedManifest = this.manifests.computeIfAbsent(jarName(url), $ -> {
++                    try {
++                        final Manifest m = ((JarURLConnection) url.openConnection()).getManifest();
++                        return requireNonNullElse(m, MISSING_MANIFEST);
++                    } catch (final IOException e) {
++                        throw new UncheckedIOException(e);
++                    }
++                });
++                if (computedManifest instanceof Manifest found) {
++                    man = found;
++                }
++            } catch (final UncheckedIOException e) {
++                throw e.getCause();
++            } catch (final IllegalArgumentException e) {
++                throw new IOException(e);
++            }
++        }
++        return man;
++    }
++
++    private static String jarName(final URL sourceUrl) {
++        final int exclamationIdx = sourceUrl.getPath().lastIndexOf('!');
++        if (exclamationIdx != -1) {
++            return sourceUrl.getPath().substring(0, exclamationIdx);
++        }
++        throw new IllegalArgumentException("Could not find jar for URL " + sourceUrl);
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java
 index f9a2c55a354c877749db3f92956de802ae575788..39182cdd17473da0123dc7172dce507eab29fedc 100644
 --- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java
@@ -66,6 +259,76 @@ index f9a2c55a354c877749db3f92956de802ae575788..39182cdd17473da0123dc7172dce507e
 +        return classWriter.toByteArray();
      }
  }
+diff --git a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
+index f576060c8fe872772bbafe2016fc9b83a3c095f1..f9d4b33050a6fe8c2dabe8e5eec075d95dc513e0 100644
+--- a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
++++ b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
+@@ -2,12 +2,12 @@ package io.papermc.paper.plugin.loader;
+ 
+ import io.papermc.paper.plugin.PluginInitializerManager;
+ import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
++import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
++import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
+ import io.papermc.paper.plugin.loader.library.ClassPathLibrary;
+ import io.papermc.paper.plugin.loader.library.PaperLibraryStore;
+-import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
+ import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
+-import org.jetbrains.annotations.NotNull;
+-
++import io.papermc.paper.util.MappingEnvironment;
+ import java.io.IOException;
+ import java.net.MalformedURLException;
+ import java.net.URL;
+@@ -17,6 +17,7 @@ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.jar.JarFile;
+ import java.util.logging.Logger;
++import org.jetbrains.annotations.NotNull;
+ 
+ public class PaperClasspathBuilder implements PluginClasspathBuilder {
+ 
+@@ -60,7 +61,10 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
+         }
+ 
+         try {
+-            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), new URLClassLoader(urls, getClass().getClassLoader()));
++            final URLClassLoader libraryLoader = MappingEnvironment.DISABLE_PLUGIN_REWRITING
++                ? new URLClassLoader(urls, this.getClass().getClassLoader())
++                : new BytecodeModifyingURLClassLoader(urls, this.getClass().getClassLoader());
++            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), libraryLoader);
+         } catch (IOException exception) {
+             throw new RuntimeException(exception);
+         }
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
+index bdd9bc8a414719b9f1d6f01f90539ddb8603a878..fdb52ad85cfaa1d53aadcad72cec3d3c8c12c058 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
+@@ -1,9 +1,12 @@
+ package io.papermc.paper.plugin.provider.type.spigot;
+ 
++import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
+ import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
+ import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
++import io.papermc.paper.util.MappingEnvironment;
+ import org.bukkit.plugin.InvalidDescriptionException;
+ import org.bukkit.plugin.PluginDescriptionFile;
++import org.bukkit.plugin.java.LibraryLoader;
+ import org.yaml.snakeyaml.error.YAMLException;
+ 
+ import java.io.IOException;
+@@ -15,6 +18,12 @@ import java.util.jar.JarFile;
+ 
+ class SpigotPluginProviderFactory implements PluginTypeFactory<SpigotPluginProvider, PluginDescriptionFile> {
+ 
++    static {
++        if (!MappingEnvironment.DISABLE_PLUGIN_REWRITING) {
++			LibraryLoader.LIBRARY_LOADER_FACTORY = BytecodeModifyingURLClassLoader::new;
++		}
++    }
++
+     @Override
+     public SpigotPluginProvider build(JarFile file, PluginDescriptionFile configuration, Path source) throws InvalidDescriptionException {
+         // Copied from SimplePluginManager#loadPlugins
 diff --git a/src/main/java/io/papermc/paper/pluginremap/reflect/PaperReflection.java b/src/main/java/io/papermc/paper/pluginremap/reflect/PaperReflection.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..c653d1f5af8b407cfba715e6027dbb695046892a
@@ -345,13 +608,14 @@ index 0000000000000000000000000000000000000000..5fa5868e82d1f00498d0c5771369e171
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MappingEnvironment.java b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
-index 8e4229634d41a42b3d93948eebb77def7c0c72b1..38745299ea49f253a410e77557100903ecb472b0 100644
+index 8e4229634d41a42b3d93948eebb77def7c0c72b1..4d57213c9917ea965bfe06a5d242e61422457ee2 100644
 --- a/src/main/java/io/papermc/paper/util/MappingEnvironment.java
 +++ b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
-@@ -10,6 +10,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
+@@ -10,6 +10,8 @@ import org.checkerframework.framework.qual.DefaultQualifier;
  
  @DefaultQualifier(NonNull.class)
  public final class MappingEnvironment {
++    public static final boolean DISABLE_PLUGIN_REWRITING = Boolean.getBoolean("paper.disable-plugin-rewriting");
 +    public static final String LEGACY_CB_VERSION = "v1_20_R4";
      private static final @Nullable String MAPPINGS_HASH = readMappingsHash();
      private static final boolean REOBF = checkReobf();
@@ -441,3 +705,24 @@ index 8420a53672cfb0f060d9c85c445d200b6701f521..fc04bfcb8b5dfa6d093c8d75b2f20c50
              final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
              String className;
              boolean isInterface;
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index c8c66f78335868100adbb4d044037168872d5f94..beffeedee0afdb885558c832f8801cd713d741a3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -356,7 +356,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+             throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
+         }
+ 
+-        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
++        if (!io.papermc.paper.util.MappingEnvironment.DISABLE_PLUGIN_REWRITING && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
+             CraftLegacy.init();
+         }
+ 
+@@ -371,6 +371,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+ 
+     @Override
+     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
++        if (io.papermc.paper.util.MappingEnvironment.DISABLE_PLUGIN_REWRITING) return clazz; // Paper
+         try {
+             clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()));
+         } catch (Exception ex) {
