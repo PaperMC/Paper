@@ -5,6 +5,7 @@ Subject: [PATCH] More Projectile API
 
 == AT ==
 public net.minecraft.world.entity.projectile.FishingHook timeUntilLured
+public net.minecraft.world.entity.projectile.FishingHook fishAngle
 public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaX
 public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaY
 public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaZ
@@ -19,6 +20,7 @@ public net.minecraft.world.entity.projectile.Projectile canHitEntity(Lnet/minecr
 public net.minecraft.world.entity.projectile.FireworkRocketEntity getDefaultItem()Lnet/minecraft/world/item/ItemStack;
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 index 40348e45b02be9a0b397a883940a476fb6738ef4..ccb7aa341e3087255bce1f6fb953d33584147fd3 100644
@@ -351,10 +353,10 @@ index c9e15a9d82dee935293b2e7e233f5b9b2d822448..3c31ff72f3e77ee0d9231fec5f15267c
 +    // Paper end - Expose firework item directly + manually setting flight
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
-index 6e2f91423371ead9890095cf4b1e2299c4dcba28..ad1aeea80877f2cdb9e8ad9c5b46f95dd76b3335 100644
+index 6e2f91423371ead9890095cf4b1e2299c4dcba28..9938584d832d2bc29d7af48749b83b7f820d75d5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
-@@ -196,4 +196,15 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
+@@ -196,4 +196,33 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
      public HookState getState() {
          return HookState.values()[this.getHandle().currentState.ordinal()];
      }
@@ -367,6 +369,24 @@ index 6e2f91423371ead9890095cf4b1e2299c4dcba28..ad1aeea80877f2cdb9e8ad9c5b46f95d
 +    @Override
 +    public void setWaitTime(int ticks) {
 +        this.getHandle().timeUntilLured = ticks;
++    }
++
++    @Override
++    public int getTimeUntilBite() {
++        return this.getHandle().timeUntilHooked;
++    }
++
++    @Override
++    public void setTimeUntilBite(int ticks) {
++        FishingHook hook = this.getHandle();
++        if (ticks > 0) {
++            hook.fishAngle = net.minecraft.util.Mth.nextFloat(hook.random, hook.minLureAngle, hook.maxLureAngle);
++        } else {
++            // Vanilla sets timeUntilHooked only when timeUntilLured <= 0
++            // This makes sure the API won't have wait time > 0 when it's now past the wait phase
++            hook.timeUntilLured = 0;
++        }
++        hook.timeUntilHooked = ticks;
 +    }
 +    // Paper end
  }
