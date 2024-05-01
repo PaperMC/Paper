@@ -79,4 +79,16 @@ public enum GameMode implements net.kyori.adventure.translation.Translatable { /
             BY_ID.put(mode.getValue(), mode);
         }
     }
+
+    // Paper start - Add GameMode#isInvulnerable
+    /**
+     * Checks whether this game mode is invulnerable
+     * (i.e. is either {@link #CREATIVE} or {@link #SPECTATOR})
+     *
+     * @return whether this game mode is invulnerable
+     */
+    public boolean isInvulnerable() {
+        return this == CREATIVE || this == SPECTATOR;
+    }
+    // Paper end - Add GameMode#isInvulnerable
 }
