@@ -2,12 +2,14 @@ package org.bukkit.craftbukkit.util;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.stream.Stream;
+import net.minecraft.SharedConstants;
+import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class ApiVersionTest {
+public class ApiVersionTest extends AbstractTestingBase {
 
     public static Stream<Arguments> parseData() {
         return Stream.of(
@@ -60,6 +62,14 @@ public class ApiVersionTest {
                 Arguments.of("1.12", "1.12.2", true),
                 Arguments.of("1.12.2", "1.12", false)
         );
+    }
+
+    @Test
+    public void testCurrentVersionUpdated() {
+        ApiVersion apiVersionOne = ApiVersion.getOrCreateVersion(SharedConstants.getCurrentVersion().getName());
+        ApiVersion apiVersionTwo = ApiVersion.CURRENT;
+
+        assertEquals(apiVersionOne, apiVersionTwo, "The current version in ApiVersion not match current minecraft version");
     }
 
     @ParameterizedTest
