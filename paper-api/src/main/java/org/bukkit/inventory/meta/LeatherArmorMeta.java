@@ -36,4 +36,13 @@ public interface LeatherArmorMeta extends ItemMeta {
     @Override
     @NotNull
     LeatherArmorMeta clone();
+
+    // Paper start - Expose #hasColor to leather armor
+    /**
+     * Checks whether this leather armor is dyed.
+     *
+     * @return whether this leather armor is dyed
+     */
+    boolean isDyed();
+    // Paper end - Expose #hasColor to leather armor
 }
