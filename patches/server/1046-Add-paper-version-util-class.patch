@@ -6,14 +6,16 @@ Subject: [PATCH] Add paper version util class
 
 diff --git a/src/main/java/io/papermc/paper/util/misc/ServerInfoProviderImpl.java b/src/main/java/io/papermc/paper/util/misc/ServerInfoProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..40ea612034c21fc4abc95cc4dcd7439b56fd9033
+index 0000000000000000000000000000000000000000..3c0de7f103c6e733f4c3353da465634dfdae9934
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/misc/ServerInfoProviderImpl.java
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,196 @@
 +package io.papermc.paper.util.misc;
 +
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.ImmutableList;
++import com.google.gson.JsonArray;
++import com.google.gson.JsonElement;
 +import com.google.gson.JsonParser;
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.util.ServerInfoProvider;
@@ -81,7 +83,7 @@ index 0000000000000000000000000000000000000000..40ea612034c21fc4abc95cc4dcd7439b
 +    }
 +
 +    @Override
-+    public boolean isStable() {
++    public boolean isRelease() {
 +        return SharedConstants.getCurrentVersion().isStable();
 +    }
 +
@@ -168,9 +170,9 @@ index 0000000000000000000000000000000000000000..40ea612034c21fc4abc95cc4dcd7439b
 +                    .uri(URI.create(manifestURL))
 +                    .build();
 +                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-+                var parsed = JsonParser.parseString(response.body());
-+                var versionArray = parsed.getAsJsonObject().getAsJsonArray("versions");
-+                for (var version : versionArray) {
++                JsonElement parsed = JsonParser.parseString(response.body());
++                JsonArray versionArray = parsed.getAsJsonObject().getAsJsonArray("versions");
++                for (JsonElement version : versionArray) {
 +                    versionList.add(version.getAsJsonObject().get("id").getAsString());
 +                }
 +            } catch (IOException | InterruptedException e) {
@@ -194,12 +196,12 @@ index 0000000000000000000000000000000000000000..40ea612034c21fc4abc95cc4dcd7439b
 +            if (version.length == 0) {
 +                return true;
 +            }
-+            var builder = new StringBuilder();
++            StringBuilder builder = new StringBuilder();
 +            builder.append(version[0]);
 +            for (int i = 1; i < version.length; i++) {
 +                builder.append('.').append(version[i]);
 +            }
-+            var versionString = builder.toString();
++            String versionString = builder.toString();
 +            return this.versionList.join().indexOf(versionString) > this.versionList.join().indexOf(this.id);
 +        }
 +    }
