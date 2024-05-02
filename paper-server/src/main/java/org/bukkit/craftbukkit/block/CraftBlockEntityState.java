@@ -1,8 +1,10 @@
 package org.bukkit.craftbukkit.block;
 
+import java.util.Set;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.PacketListenerPlayOut;
@@ -60,9 +62,10 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         return snapshot;
     }
 
-    public void applyComponents(DataComponentMap datacomponentmap, DataComponentPatch datacomponentpatch) {
-        snapshot.applyComponents(datacomponentmap, datacomponentpatch);
+    public Set<DataComponentType<?>> applyComponents(DataComponentMap datacomponentmap, DataComponentPatch datacomponentpatch) {
+        Set<DataComponentType<?>> result = snapshot.applyComponentsSet(datacomponentmap, datacomponentpatch);
         load(snapshot);
+        return result;
     }
 
     public DataComponentMap collectComponents() {

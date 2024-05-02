@@ -4,8 +4,6 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.core.BlockPosition;
@@ -137,32 +135,6 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             Material.VAULT
     );
 
-    private static final class TrackedDataComponentMap implements DataComponentMap {
-
-        private final Set<DataComponentType<?>> seen = new HashSet<>();
-        private final DataComponentMap handle;
-
-        public TrackedDataComponentMap(DataComponentMap map) {
-            this.handle = map;
-        }
-
-        @Override
-        public <T> T get(DataComponentType<? extends T> type) {
-            seen.add(type);
-            return handle.get(type);
-        }
-
-        @Override
-        public Set<DataComponentType<?>> keySet() {
-            return handle.keySet();
-        }
-
-        @Override
-        public Iterator<TypedDataComponent<?>> iterator() {
-            return handle.iterator();
-        }
-    }
-
     static {
         // Add shulker boxes to the list of block state materials too
         BLOCK_STATE_MATERIALS.addAll(SHULKER_BOX_MATERIALS);
@@ -198,6 +170,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         });
 
         if (!tag.isEmpty()) {
+            CraftBlockEntityState<?> blockEntityTag = this.blockEntityTag;
             if (blockEntityTag == null) {
                 blockEntityTag = getBlockState(material, null);
             }
@@ -205,13 +178,15 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             // Convert to map
             PatchedDataComponentMap map = new PatchedDataComponentMap(DataComponentMap.EMPTY);
             map.applyPatch(tag);
-            // Setup tracking
-            TrackedDataComponentMap track = new TrackedDataComponentMap(map);
             // Apply
-            blockEntityTag.applyComponents(track, tag);
+            Set<DataComponentType<?>> applied = blockEntityTag.applyComponents(map, tag);
             // Mark applied components as handled
-            for (DataComponentType<?> seen : track.seen) {
+            for (DataComponentType<?> seen : applied) {
                 unhandledTags.clear(seen);
+            }
+            // Only set blockEntityTag if something was applied
+            if (!applied.isEmpty()) {
+                this.blockEntityTag = blockEntityTag;
             }
         }
     }
