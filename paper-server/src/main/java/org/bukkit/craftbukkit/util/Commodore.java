@@ -271,14 +271,6 @@ public class Commodore {
                             }
                         }
 
-                        if (owner.equals("org/bukkit/Particle")) {
-                            switch (name) {
-                                case "SPELL_MOB_AMBIENT":
-                                    super.visitFieldInsn(opcode, owner, "SPELL_MOB", desc);
-                                    return;
-                            }
-                        }
-
                         super.visitFieldInsn(opcode, owner, name, desc);
                     }
 

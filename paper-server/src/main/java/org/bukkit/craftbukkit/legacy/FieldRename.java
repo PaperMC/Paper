@@ -275,7 +275,6 @@ public class FieldRename {
             .change("SPELL", "EFFECT")
             .change("SPELL_INSTANT", "INSTANT_EFFECT")
             .change("SPELL_MOB", "ENTITY_EFFECT")
-            .change("SPELL_MOB_AMBIENT", "AMBIENT_ENTITY_EFFECT")
             .change("SPELL_WITCH", "WITCH")
             .change("DRIP_WATER", "DRIPPING_WATER")
             .change("DRIP_LAVA", "DRIPPING_LAVA")
