@@ -821,6 +821,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     void applyModifiers(Multimap<Attribute, AttributeModifier> modifiers, CraftMetaItem.Applicator tag) {
         if (modifiers == null || modifiers.isEmpty()) {
+            if (hasItemFlag(ItemFlag.HIDE_ATTRIBUTES)) {
+                tag.put(ATTRIBUTES, new ItemAttributeModifiers(Collections.emptyList(), false));
+            }
             return;
         }
 
