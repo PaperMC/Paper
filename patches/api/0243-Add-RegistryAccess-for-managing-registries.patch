@@ -6,7 +6,7 @@ Subject: [PATCH] Add RegistryAccess for managing registries
 
 diff --git a/src/main/java/io/papermc/paper/registry/Reference.java b/src/main/java/io/papermc/paper/registry/Reference.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..92ec13c2bd515fedfd5057201ae4ba15c184bacd
+index 0000000000000000000000000000000000000000..d8656772e0c983df7c40ddc367a73ce473348339
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/Reference.java
 @@ -0,0 +1,47 @@
@@ -24,7 +24,7 @@ index 0000000000000000000000000000000000000000..92ec13c2bd515fedfd5057201ae4ba15
 + *
 + * @param <T> type of the value
 + */
-+@Deprecated(forRemoval = true, since = "1.20.4")
++@Deprecated(forRemoval = true, since = "1.20.6")
 +public interface Reference<T extends Keyed> extends Keyed {
 +
 +    /**
@@ -33,7 +33,7 @@ index 0000000000000000000000000000000000000000..92ec13c2bd515fedfd5057201ae4ba15
 +     * @return the value
 +     * @throws java.util.NoSuchElementException if there is no value with this key
 +     */
-+    @Deprecated(forRemoval = true, since = "1.20.4")
++    @Deprecated(forRemoval = true, since = "1.20.6")
 +    @NotNull T value();
 +
 +    /**
@@ -41,7 +41,7 @@ index 0000000000000000000000000000000000000000..92ec13c2bd515fedfd5057201ae4ba15
 +     *
 +     * @return the value or null if it doesn't exist
 +     */
-+    @Deprecated(forRemoval = true, since = "1.20.4")
++    @Deprecated(forRemoval = true, since = "1.20.6")
 +    @Nullable T valueOrNull();
 +
 +    /**
@@ -52,7 +52,7 @@ index 0000000000000000000000000000000000000000..92ec13c2bd515fedfd5057201ae4ba15
 +     * @param <T> the type of the value
 +     * @return a reference
 +     */
-+    @Deprecated(forRemoval = true, since = "1.20.4")
++    @Deprecated(forRemoval = true, since = "1.20.6")
 +    static <T extends Keyed> @NotNull Reference<T> create(@NotNull Registry<T> registry, @NotNull NamespacedKey key) {
 +        return new ReferenceImpl<>(registry, key);
 +    }
@@ -96,7 +96,7 @@ index 0000000000000000000000000000000000000000..f29e76a6b66ddfec12ddf8db6dcb2df6
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryAccess.java b/src/main/java/io/papermc/paper/registry/RegistryAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e3034bd90443f355201d72c2fc9a2960c98d2649
+index 0000000000000000000000000000000000000000..54b0041e6b9b7aaa077d764e671e386e762ba25c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryAccess.java
 @@ -0,0 +1,45 @@
@@ -129,7 +129,7 @@ index 0000000000000000000000000000000000000000..e3034bd90443f355201d72c2fc9a2960
 +     * @param <T> the type
 +     * @deprecated use {@link #getRegistry(RegistryKey)} with keys from {@link RegistryKey}
 +     */
-+    @Deprecated(since = "1.20.4", forRemoval = true)
++    @Deprecated(since = "1.20.6", forRemoval = true)
 +    <T extends Keyed> @Nullable Registry<T> getRegistry(@NotNull Class<T> type);
 +
 +    /**
@@ -163,106 +163,8 @@ index 0000000000000000000000000000000000000000..b89e19c070f97c9662f1e16309446494
 +    private RegistryAccessHolder() {
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-index c4b30b16ce4db754b958c493ad86d0863592c263..e376c95ac4db43a1c5233287f01b20b9c8b614bc 100644
---- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
-+++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-@@ -2,11 +2,16 @@ package io.papermc.paper.registry;
- 
- import net.kyori.adventure.key.Keyed;
- import org.bukkit.GameEvent;
-+import org.bukkit.MusicInstrument;
- import org.bukkit.block.Biome;
-+import org.bukkit.damage.DamageType;
-+import org.bukkit.enchantments.Enchantment;
-+import org.bukkit.entity.Wolf;
- import org.bukkit.generator.structure.Structure;
- import org.bukkit.generator.structure.StructureType;
- import org.bukkit.inventory.meta.trim.TrimMaterial;
- import org.bukkit.inventory.meta.trim.TrimPattern;
-+import org.bukkit.potion.PotionEffectType;
- import org.jetbrains.annotations.ApiStatus;
- 
- import static io.papermc.paper.registry.RegistryKeyImpl.create;
-@@ -40,6 +45,19 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
-      * @see io.papermc.paper.registry.keys.StructureTypeKeys
-      */
-     RegistryKey<StructureType> STRUCTURE_TYPE = create("worldgen/structure_type");
-+    /**
-+     * Built-in registry for instruments.
-+     */
-+    RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
-+    /**
-+     * Built-in registry for enchantments.
-+     */
-+    RegistryKey<Enchantment> ENCHANTMENT = create("enchantment");
-+    /**
-+     * Built-in registry for potion effect types (mob effects).
-+     */
-+    RegistryKey<PotionEffectType> MOB_EFFECT = create("mob_effect");
-+
- 
-     /* ********************** *
-      * Data-driven Registries *
-@@ -64,4 +82,12 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
-      * @see io.papermc.paper.registry.keys.TrimPatternKeys
-      */
-     RegistryKey<TrimPattern> TRIM_PATTERN = create("trim_pattern");
-+    /**
-+     * Data-driven registry for damage types.
-+     */
-+    RegistryKey<DamageType> DAMAGE_TYPE = create("damage_type");
-+    /**
-+     * Data-driven registry for wolf variants
-+     */
-+    RegistryKey<Wolf.Variant> WOLF_VARIANT = create("wolf_variant");
- }
-diff --git a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
-index 9ad300fa1668cb59bbd85ff8091591db69b8c9dc..791813220b2504214b1adecc69093cd600fb0f8c 100644
---- a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
-+++ b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
-@@ -11,9 +11,14 @@ record RegistryKeyImpl<T>(@NotNull Key key) implements RegistryKey<T> {
-     static final Set<RegistryKey<?>> REGISTRY_KEYS = Sets.newIdentityHashSet();
- 
-     static <T> RegistryKey<T> create(@Subst("some_key") final String key) {
--        final RegistryKey<T> registryKey = new RegistryKeyImpl<>(Key.key(Key.MINECRAFT_NAMESPACE, key));
-+        final RegistryKey<T> registryKey = createInternal(key);
-         REGISTRY_KEYS.add(registryKey);
-         return registryKey;
-     }
- 
-+    // creates the key without adding to the internal set of keys
-+    static <T> RegistryKey<T> createInternal(@Subst("some_key") final String key) {
-+        return new RegistryKeyImpl<>(Key.key(Key.MINECRAFT_NAMESPACE, key));
-+    }
-+
- }
-diff --git a/src/main/java/io/papermc/paper/registry/TypedKey.java b/src/main/java/io/papermc/paper/registry/TypedKey.java
-index 271454cd1b92ada4301025b57348ea77da9116a1..6f5a062ba7ee7173468ecea3c1855a233bf3855e 100644
---- a/src/main/java/io/papermc/paper/registry/TypedKey.java
-+++ b/src/main/java/io/papermc/paper/registry/TypedKey.java
-@@ -38,7 +38,7 @@ public sealed interface TypedKey<T> extends Keyed permits TypedKeyImpl {
-      * @return a new key for the value key and registry key
-      */
-     @ApiStatus.Experimental
--    static <T extends Keyed> @NotNull TypedKey<T> create(final @NotNull RegistryKey<T> registryKey, final @NotNull Key key) {
-+    static <T> @NotNull TypedKey<T> create(final @NotNull RegistryKey<T> registryKey, final @NotNull Key key) {
-         return new TypedKeyImpl<>(key, registryKey);
-     }
- }
-diff --git a/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
-index 3c3fd73f7742bb8602e2f9164dd4c1208a412255..1a97b3359c4ece5c29131da7c3f208aaa8fab66e 100644
---- a/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
-+++ b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
-@@ -4,5 +4,5 @@ import net.kyori.adventure.key.Key;
- import net.kyori.adventure.key.Keyed;
- import org.jetbrains.annotations.NotNull;
- 
--record TypedKeyImpl<T extends Keyed>(@NotNull Key key, @NotNull RegistryKey<T> registryKey) implements TypedKey<T> {
-+record TypedKeyImpl<T>(@NotNull Key key, @NotNull RegistryKey<T> registryKey) implements TypedKey<T> {
- }
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 732ed3724e784ad659cb4411dbd73b42a8330a2c..cbf660db860e73df21be426e63928f8aeec0ac90 100644
+index 732ed3724e784ad659cb4411dbd73b42a8330a2c..7be6710d28dea19bd0f9054c1c2e32dacd355c45 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -2398,8 +2398,11 @@ public final class Bukkit {
@@ -273,12 +175,12 @@ index 732ed3724e784ad659cb4411dbd73b42a8330a2c..cbf660db860e73df21be426e63928f8a
 +     * with keys from {@link io.papermc.paper.registry.RegistryKey}
       */
      @Nullable
-+    @Deprecated(since = "1.20.4")
++    @Deprecated(since = "1.20.6")
      public static <T extends Keyed> Registry<T> getRegistry(@NotNull Class<T> tClass) {
          return server.getRegistry(tClass);
      }
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index a04d279561676e825905f5512c399d14a3d8f828..e2aea210de4f37f6ca1afe3e6fdbc790410539ac 100644
+index a04d279561676e825905f5512c399d14a3d8f828..7aee2cee892492c523ae06902c6582b0ab827ffa 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
 @@ -129,7 +129,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
@@ -315,7 +217,7 @@ index a04d279561676e825905f5512c399d14a3d8f828..e2aea210de4f37f6ca1afe3e6fdbc790
 +     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}
       */
 -    Registry<Structure> STRUCTURE = Bukkit.getRegistry(Structure.class);
-+    @Deprecated(since = "1.20.4") // Paper
++    @Deprecated(since = "1.20.6") // Paper
 +    Registry<Structure> STRUCTURE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Structure.class); // Paper
      /**
       * Server structure types.
@@ -327,14 +229,14 @@ index a04d279561676e825905f5512c399d14a3d8f828..e2aea210de4f37f6ca1afe3e6fdbc790
      /**
       * Sound keys.
       *
-@@ -200,21 +202,25 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -200,21 +202,26 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
       * Trim materials.
       *
       * @see TrimMaterial
 +     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#TRIM_MATERIAL}
       */
 -    Registry<TrimMaterial> TRIM_MATERIAL = Bukkit.getRegistry(TrimMaterial.class);
-+    @Deprecated(since = "1.20.4") // Paper
++    @Deprecated(since = "1.20.6") // Paper
 +    Registry<TrimMaterial> TRIM_MATERIAL = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(TrimMaterial.class); // Paper
      /**
       * Trim patterns.
@@ -343,29 +245,34 @@ index a04d279561676e825905f5512c399d14a3d8f828..e2aea210de4f37f6ca1afe3e6fdbc790
 +     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#TRIM_PATTERN}
       */
 -    Registry<TrimPattern> TRIM_PATTERN = Bukkit.getRegistry(TrimPattern.class);
-+    @Deprecated(since = "1.20.4")
++    @Deprecated(since = "1.20.6")
 +    Registry<TrimPattern> TRIM_PATTERN = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(TrimPattern.class); // Paper
      /**
       * Damage types.
       *
       * @see DamageType
++     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#DAMAGE_TYPE}
       */
-     @ApiStatus.Experimental
+-    @ApiStatus.Experimental
 -    Registry<DamageType> DAMAGE_TYPE = Objects.requireNonNull(Bukkit.getRegistry(DamageType.class), "No registry present for DamageType. This is a bug.");
++    @Deprecated(since = "1.20.6")
 +    Registry<DamageType> DAMAGE_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(DamageType.class); // Paper
      /**
       * Villager profession.
       *
-@@ -269,7 +275,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -268,8 +275,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      * Wolf variants.
       *
       * @see Wolf.Variant
++     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#WOLF_VARIANT}
       */
 -    Registry<Wolf.Variant> WOLF_VARIANT = Objects.requireNonNull(Bukkit.getRegistry(Wolf.Variant.class), "No registry present for Wolf Variant. This is a bug.");
++    @Deprecated(since = "1.20.6")
 +    Registry<Wolf.Variant> WOLF_VARIANT = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Wolf.Variant.class); // Paper
      /**
       * Map cursor types.
       *
-@@ -282,7 +288,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -282,7 +291,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
       *
       * @see GameEvent
       */
@@ -375,7 +282,7 @@ index a04d279561676e825905f5512c399d14a3d8f828..e2aea210de4f37f6ca1afe3e6fdbc790
       * Get the object by its key.
       *
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 395f7910f535bfd33a5676b011ab62a53e30e140..84397dd36027fffcb3e7216c877be29c31da560f 100644
+index 395f7910f535bfd33a5676b011ab62a53e30e140..5644af8154373923791e3ed5f8b01c3f5d357b9c 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -2046,8 +2046,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
@@ -386,13 +293,13 @@ index 395f7910f535bfd33a5676b011ab62a53e30e140..84397dd36027fffcb3e7216c877be29c
 +     * with keys from {@link io.papermc.paper.registry.RegistryKey}
       */
      @Nullable
-+    @Deprecated(since = "1.20.4") // Paper
++    @Deprecated(since = "1.20.6") // Paper
      <T extends Keyed> Registry<T> getRegistry(@NotNull Class<T> tClass);
  
      /**
 diff --git a/src/test/java/io/papermc/paper/registry/TestRegistryAccess.java b/src/test/java/io/papermc/paper/registry/TestRegistryAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5e99d7d84150664f16cbbd6f58eb3a316017fe5f
+index 0000000000000000000000000000000000000000..f5ece852f97017f71bc129e194cb212979b2537b
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/registry/TestRegistryAccess.java
 @@ -0,0 +1,20 @@
@@ -406,7 +313,7 @@ index 0000000000000000000000000000000000000000..5e99d7d84150664f16cbbd6f58eb3a31
 +public class TestRegistryAccess implements RegistryAccess {
 +
 +    @Override
-+    @Deprecated(since = "1.20.4", forRemoval = true)
++    @Deprecated(since = "1.20.6", forRemoval = true)
 +    public @Nullable <T extends Keyed> Registry<T> getRegistry(final @NotNull Class<T> type) {
 +        throw new UnsupportedOperationException("Not supported");
 +    }
