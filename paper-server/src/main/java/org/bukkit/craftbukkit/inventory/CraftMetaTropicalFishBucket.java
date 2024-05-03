@@ -18,7 +18,7 @@ import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishBucketMeta {
     static final ItemMetaKey VARIANT = new ItemMetaKey("BucketVariantTag", "fish-variant");
-    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
+    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.BUCKET_ENTITY_DATA, "entity-tag");
 
     private Integer variant;
     private NBTTagCompound entityTag;
