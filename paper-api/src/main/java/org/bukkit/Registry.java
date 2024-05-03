@@ -322,6 +322,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
 
     static final class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> {
 
+        private final Class<T> type;
         private final Map<NamespacedKey, T> map;
 
         protected SimpleRegistry(@NotNull Class<T> type) {
@@ -338,6 +339,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             }
 
             map = builder.build();
+            this.type = type;
         }
 
         @Nullable
@@ -356,6 +358,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public Iterator<T> iterator() {
             return map.values().iterator();
+        }
+
+        @ApiStatus.Internal
+        @Deprecated(since = "1.20.6", forRemoval = true)
+        public Class<T> getType() {
+            return this.type;
         }
     }
 }

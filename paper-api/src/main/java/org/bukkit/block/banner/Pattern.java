@@ -1,9 +1,13 @@
 package org.bukkit.block.banner;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +40,17 @@ public class Pattern implements ConfigurationSerializable {
      */
     public Pattern(@NotNull Map<String, Object> map) {
         color = DyeColor.legacyValueOf(getString(map, COLOR));
-        pattern = PatternType.getByIdentifier(getString(map, PATTERN));
+
+        String value = getString(map, PATTERN);
+        PatternType patternType = PatternType.getByIdentifier(value);
+
+        if (patternType == null) {
+            patternType = Bukkit.getUnsafe().get(Registry.BANNER_PATTERN, NamespacedKey.fromString(value));
+        }
+
+        Preconditions.checkNotNull(patternType, "Pattern type for key %s cannot be null", value);
+
+        pattern = patternType;
     }
 
     private static String getString(@NotNull Map<?, ?> map, @NotNull Object key) {
@@ -52,7 +66,7 @@ public class Pattern implements ConfigurationSerializable {
     public Map<String, Object> serialize() {
         return ImmutableMap.<String, Object>of(
             COLOR, color.toString(),
-            PATTERN, pattern.getIdentifier()
+            PATTERN, pattern.getKey().toString()
         );
     }
 

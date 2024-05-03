@@ -105,6 +105,8 @@ public interface UnsafeValues {
      * @param key of the potion type
      * @return an internal potion data
      */
+    @ApiStatus.Internal
+    @Deprecated(since = "1.20.2", forRemoval = true)
     PotionType.InternalPotionData getInternalPotionData(NamespacedKey key);
 
     @ApiStatus.Internal
@@ -120,4 +122,10 @@ public interface UnsafeValues {
     @ApiStatus.Internal
     @NotNull
     DamageSource.Builder createDamageSourceBuilder(@NotNull DamageType damageType);
+
+    @ApiStatus.Internal
+    String get(Class<?> aClass, String value);
+
+    @ApiStatus.Internal
+    <B extends Keyed> B get(Registry<B> registry, NamespacedKey key);
 }

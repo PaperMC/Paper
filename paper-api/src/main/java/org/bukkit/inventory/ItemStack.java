@@ -3,9 +3,12 @@ package org.bukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Translatable;
 import org.bukkit.Utility;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -530,7 +533,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
                 Map<?, ?> map = (Map<?, ?>) raw;
 
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
-                    Enchantment enchantment = Enchantment.getByName(entry.getKey().toString());
+                    String stringKey = entry.getKey().toString();
+                    stringKey = Bukkit.getUnsafe().get(Enchantment.class, stringKey);
+                    NamespacedKey key = NamespacedKey.fromString(stringKey.toLowerCase(Locale.ROOT));
+
+                    Enchantment enchantment = Bukkit.getUnsafe().get(Registry.ENCHANTMENT, key);
 
                     if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
                         result.addUnsafeEnchantment(enchantment, (Integer) entry.getValue());
