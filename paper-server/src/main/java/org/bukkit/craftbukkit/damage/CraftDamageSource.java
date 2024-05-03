@@ -41,13 +41,13 @@ public class CraftDamageSource implements DamageSource {
 
     @Override
     public org.bukkit.entity.Entity getCausingEntity() {
-        net.minecraft.world.entity.Entity entity = this.getHandle().getCausingEntity();
+        net.minecraft.world.entity.Entity entity = this.getHandle().getEntity();
         return (entity != null) ? entity.getBukkitEntity() : null;
     }
 
     @Override
     public org.bukkit.entity.Entity getDirectEntity() {
-        net.minecraft.world.entity.Entity entity = this.getHandle().getDirectEntity();
+        net.minecraft.world.entity.Entity entity = this.getHandle().getDamager();
         return (entity != null) ? entity.getBukkitEntity() : null;
     }
 
@@ -65,7 +65,7 @@ public class CraftDamageSource implements DamageSource {
 
     @Override
     public boolean isIndirect() {
-        return this.getHandle().getCausingEntity() != this.getHandle().getDirectEntity();
+        return this.getHandle().getEntity() != this.getHandle().getDamager();
     }
 
     @Override
