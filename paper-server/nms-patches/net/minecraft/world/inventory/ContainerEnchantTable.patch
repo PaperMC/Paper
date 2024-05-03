@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/ContainerEnchantTable.java
 +++ b/net/minecraft/world/inventory/ContainerEnchantTable.java
-@@ -25,6 +25,21 @@
+@@ -25,6 +25,22 @@
  import net.minecraft.world.level.block.BlockEnchantmentTable;
  import net.minecraft.world.level.block.Blocks;
  
@@ -9,6 +9,7 @@
 +import net.minecraft.world.item.enchantment.Enchantment;
 +import org.bukkit.Location;
 +import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 +import org.bukkit.craftbukkit.inventory.CraftInventoryEnchanting;
 +import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -22,7 +23,7 @@
  public class ContainerEnchantTable extends Container {
  
      static final MinecraftKey EMPTY_SLOT_LAPIS_LAZULI = new MinecraftKey("item/empty_slot_lapis_lazuli");
-@@ -35,6 +50,10 @@
+@@ -35,6 +51,10 @@
      public final int[] costs;
      public final int[] enchantClue;
      public final int[] levelClue;
@@ -33,7 +34,7 @@
  
      public ContainerEnchantTable(int i, PlayerInventory playerinventory) {
          this(i, playerinventory, ContainerAccess.NULL);
-@@ -48,6 +67,13 @@
+@@ -48,6 +68,13 @@
                  super.setChanged();
                  ContainerEnchantTable.this.slotsChanged(this);
              }
@@ -47,7 +48,7 @@
          };
          this.random = RandomSource.create();
          this.enchantmentSeed = ContainerProperty.standalone();
-@@ -55,13 +81,13 @@
+@@ -55,13 +82,13 @@
          this.enchantClue = new int[]{-1, -1, -1};
          this.levelClue = new int[]{-1, -1, -1};
          this.access = containeraccess;
@@ -63,7 +64,7 @@
              @Override
              public boolean mayPlace(ItemStack itemstack) {
                  return itemstack.is(Items.LAPIS_LAZULI);
-@@ -95,6 +121,9 @@
+@@ -95,6 +122,9 @@
          this.addDataSlot(ContainerProperty.shared(this.levelClue, 0));
          this.addDataSlot(ContainerProperty.shared(this.levelClue, 1));
          this.addDataSlot(ContainerProperty.shared(this.levelClue, 2));
@@ -73,7 +74,7 @@
      }
  
      @Override
-@@ -102,7 +131,7 @@
+@@ -102,7 +132,7 @@
          if (iinventory == this.enchantSlots) {
              ItemStack itemstack = iinventory.getItem(0);
  
@@ -82,7 +83,7 @@
                  this.access.execute((world, blockposition) -> {
                      int i = 0;
                      Iterator iterator = BlockEnchantmentTable.BOOKSHELF_OFFSETS.iterator();
-@@ -141,6 +170,41 @@
+@@ -141,6 +171,41 @@
                          }
                      }
  
@@ -90,7 +91,7 @@
 +                    CraftItemStack item = CraftItemStack.asCraftMirror(itemstack);
 +                    org.bukkit.enchantments.EnchantmentOffer[] offers = new EnchantmentOffer[3];
 +                    for (j = 0; j < 3; ++j) {
-+                        org.bukkit.enchantments.Enchantment enchantment = (this.enchantClue[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(BuiltInRegistries.ENCHANTMENT.byId(this.enchantClue[j])))) : null;
++                        org.bukkit.enchantments.Enchantment enchantment = (this.enchantClue[j] >= 0) ? CraftEnchantment.minecraftToBukkit(Enchantment.byId(this.enchantClue[j])) : null;
 +                        offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, this.levelClue[j], this.costs[j]) : null;
 +                    }
 +
@@ -111,7 +112,7 @@
 +                        EnchantmentOffer offer = event.getOffers()[j];
 +                        if (offer != null) {
 +                            this.costs[j] = offer.getCost();
-+                            this.enchantClue[j] = BuiltInRegistries.ENCHANTMENT.getId(BuiltInRegistries.ENCHANTMENT.get(CraftNamespacedKey.toMinecraft(offer.getEnchantment().getKey())));
++                            this.enchantClue[j] = BuiltInRegistries.ENCHANTMENT.getId(CraftEnchantment.bukkitToMinecraft(offer.getEnchantment()));
 +                            this.levelClue[j] = offer.getEnchantmentLevel();
 +                        } else {
 +                            this.costs[j] = 0;
@@ -124,7 +125,7 @@
                      this.broadcastChanges();
                  });
              } else {
-@@ -168,21 +232,46 @@
+@@ -168,21 +233,46 @@
                      ItemStack itemstack2 = itemstack;
                      List<WeightedRandomEnchant> list = this.getEnchantmentList(world.enabledFeatures(), itemstack, i, this.costs[i]);
  
@@ -135,11 +136,11 @@
 +                        // entityhuman.onEnchantmentPerformed(itemstack, j); // Moved down
 +                        Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<org.bukkit.enchantments.Enchantment, Integer>();
 +                        for (WeightedRandomEnchant instance : list) {
-+                            enchants.put(org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(instance.enchantment))), instance.level);
++                            enchants.put(CraftEnchantment.minecraftToBukkit(instance.enchantment), instance.level);
 +                        }
 +                        CraftItemStack item = CraftItemStack.asCraftMirror(itemstack2);
 +
-+                        org.bukkit.enchantments.Enchantment hintedEnchantment = org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(Enchantment.byId(enchantClue[i]))));
++                        org.bukkit.enchantments.Enchantment hintedEnchantment = CraftEnchantment.minecraftToBukkit(Enchantment.byId(enchantClue[i]));
 +                        int hintedEnchantmentLevel = levelClue[i];
 +                        EnchantItemEvent event = new EnchantItemEvent((Player) entityhuman.getBukkitEntity(), this.getBukkitView(), access.getLocation().getBlock(), item, this.costs[i], enchants, hintedEnchantment, hintedEnchantmentLevel, i);
 +                        world.getCraftServer().getPluginManager().callEvent(event);
@@ -177,7 +178,7 @@
                          if (!entityhuman.hasInfiniteMaterials()) {
                              itemstack1.shrink(j);
                              if (itemstack1.isEmpty()) {
-@@ -245,6 +334,7 @@
+@@ -245,6 +335,7 @@
  
      @Override
      public boolean stillValid(EntityHuman entityhuman) {
@@ -185,7 +186,7 @@
          return stillValid(this.access, entityhuman, Blocks.ENCHANTING_TABLE);
      }
  
-@@ -295,4 +385,17 @@
+@@ -295,4 +386,17 @@
  
          return itemstack;
      }

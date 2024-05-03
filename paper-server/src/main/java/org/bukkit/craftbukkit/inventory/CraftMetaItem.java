@@ -62,7 +62,6 @@ import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.Unbreakable;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.block.state.IBlockData;
-import org.apache.commons.lang3.EnumUtils;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -493,7 +492,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             for (Object hideFlagObject : hideFlags) {
                 String hideFlagString = (String) hideFlagObject;
                 try {
-                    ItemFlag hideFlatEnum = ItemFlag.valueOf(hideFlagString);
+                    ItemFlag hideFlatEnum = CraftItemFlag.stringToBukkit(hideFlagString);
                     addItemFlags(hideFlatEnum);
                 } catch (IllegalArgumentException ex) {
                     // Ignore when we got a old String which does not map to a Enum value anymore
@@ -656,13 +655,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(ench.size());
         for (Map.Entry<?, ?> entry : ench.entrySet()) {
-            // Doctor older enchants
-            String enchantKey = entry.getKey().toString();
-            if (enchantKey.equals("SWEEPING")) {
-                enchantKey = "SWEEPING_EDGE";
-            }
-
-            Enchantment enchantment = Enchantment.getByName(enchantKey);
+            Enchantment enchantment = CraftEnchantment.stringToBukkit(entry.getKey().toString());
             if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
                 enchantments.put(enchantment, (Integer) entry.getValue());
             }
@@ -696,7 +689,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     continue;
                 }
                 AttributeModifier modifier = (AttributeModifier) o;
-                Attribute attribute = EnumUtils.getEnum(Attribute.class, attributeName.toUpperCase(Locale.ROOT));
+                Attribute attribute = CraftAttribute.stringToBukkit(attributeName);
                 if (attribute == null) {
                     continue;
                 }
@@ -1520,7 +1513,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         List<String> hideFlags = new ArrayList<String>();
         for (ItemFlag hideFlagEnum : getItemFlags()) {
-            hideFlags.add(hideFlagEnum.name());
+            hideFlags.add(CraftItemFlag.bukkitToString(hideFlagEnum));
         }
         if (!hideFlags.isEmpty()) {
             builder.put(HIDEFLAGS.BUKKIT, hideFlags);
@@ -1620,7 +1613,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         ImmutableMap.Builder<String, Integer> enchants = ImmutableMap.builder();
         for (Map.Entry<? extends Enchantment, Integer> enchant : enchantments.entrySet()) {
-            enchants.put(enchant.getKey().getName(), enchant.getValue());
+            enchants.put(CraftEnchantment.bukkitToString(enchant.getKey()), enchant.getValue());
         }
 
         builder.put(key.BUKKIT, enchants.build());
@@ -1640,7 +1633,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             if (modCollection == null || modCollection.isEmpty()) {
                 continue;
             }
-            mods.put(entry.getKey().name(), new ArrayList<>(modCollection));
+            mods.put(CraftAttribute.bukkitToString(entry.getKey()), new ArrayList<>(modCollection));
         }
         builder.put(key.BUKKIT, mods);
     }

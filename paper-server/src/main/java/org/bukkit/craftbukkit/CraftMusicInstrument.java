@@ -38,6 +38,18 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
                 + ", this can happen if a plugin creates its own instrument without properly registering it.");
     }
 
+    public static String bukkitToString(MusicInstrument bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit.getKey().toString();
+    }
+
+    public static MusicInstrument stringToBukkit(String string) {
+        Preconditions.checkArgument(string != null);
+
+        return Registry.INSTRUMENT.get(NamespacedKey.fromString(string));
+    }
+
     private final NamespacedKey key;
     private final Instrument handle;
 

@@ -8,8 +8,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Instrument;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
 import org.bukkit.inventory.meta.MusicInstrumentMeta;
@@ -42,7 +40,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
 
         String instrumentString = SerializableMeta.getString(map, GOAT_HORN_INSTRUMENT.BUKKIT, true);
         if (instrumentString != null) {
-            this.instrument = Registry.INSTRUMENT.get(NamespacedKey.fromString(instrumentString));
+            this.instrument = CraftMusicInstrument.stringToBukkit(instrumentString);
         }
     }
 
@@ -110,7 +108,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
         super.serialize(builder);
 
         if (hasInstrument()) {
-            builder.put(GOAT_HORN_INSTRUMENT.BUKKIT, instrument.getKey().toString());
+            builder.put(GOAT_HORN_INSTRUMENT.BUKKIT, CraftMusicInstrument.bukkitToString(instrument));
         }
 
         return builder;

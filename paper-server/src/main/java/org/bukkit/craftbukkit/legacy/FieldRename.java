@@ -1,9 +1,14 @@
 package org.bukkit.craftbukkit.legacy;
 
+import java.util.function.BiFunction;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
+import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.legacy.fieldrename.FieldRenameData;
 import org.bukkit.craftbukkit.legacy.reroute.DoNotReroute;
 import org.bukkit.craftbukkit.legacy.reroute.InjectPluginVersion;
@@ -36,11 +41,21 @@ public class FieldRename {
             case "org/bukkit/MusicInstrument" -> convertMusicInstrumentName(apiVersion, from);
             case "org/bukkit/Particle" -> convertParticleName(apiVersion, from);
             case "org/bukkit/loot/LootTables" -> convertLootTablesName(apiVersion, from);
-            case "org/bukkit/attribute/Attribute" -> convertAttributeName(apiVersion, from);
+            case "org/bukkit/attribute/Attribute" -> convertAttributeName(apiVersion, from).replace('.', '_');
             case "org/bukkit/map/MapCursor$Type" -> convertMapCursorTypeName(apiVersion, from);
             case "org/bukkit/inventory/ItemFlag" -> convertItemFlagName(apiVersion, from);
             default -> from;
         };
+    }
+
+    @RerouteStatic("java/lang/Enum")
+    public static <T extends Enum<T>> T valueOf(Class<T> enumClass, String name, @InjectPluginVersion ApiVersion apiVersion) {
+        return Enum.valueOf(enumClass, rename(apiVersion, enumClass.getName().replace('.', '/'), name));
+    }
+
+    public static <T extends Keyed> T get(Registry<T> registry, NamespacedKey namespacedKey) {
+        // We don't have version-specific changes, so just use current, and don't inject a version
+        return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
     }
 
     // PatternType
@@ -82,16 +97,19 @@ public class FieldRename {
             .change("DAMAGE_UNDEAD", "SMITE")
             .change("DAMAGE_ARTHROPODS", "BANE_OF_ARTHROPODS")
             .change("LOOT_BONUS_MOBS", "LOOTING")
-            .change("SWEEPING_EDGE", "SWEEPING")
             .change("DIG_SPEED", "EFFICIENCY")
             .change("DURABILITY", "UNBREAKING")
             .change("LOOT_BONUS_BLOCKS", "FORTUNE")
             .change("ARROW_DAMAGE", "POWER")
             .change("ARROW_KNOCKBACK", "PUNCH")
             .change("ARROW_FIRE", "FLAME")
-            .change("ARROW_INFINITY", "INFINITY")
+            .change("ARROW_INFINITE", "INFINITY")
             .change("LUCK", "LUCK_OF_THE_SEA")
+            .withKeyRename()
+            .change("SWEEPING", "SWEEPING_EDGE")
             .build();
+
+    public static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> ENCHANTMENT_RENAME = ENCHANTMENT_DATA::getReplacement;
 
     @DoNotReroute
     public static String convertEnchantmentName(ApiVersion version, String from) {
@@ -108,6 +126,7 @@ public class FieldRename {
     // Biome
     private static final FieldRenameData BIOME_DATA = FieldRenameData.Builder.newBuilder()
             .forAllVersions()
+            .withKeyRename()
             .change("NETHER", "NETHER_WASTES")
             .change("TALL_BIRCH_FOREST", "OLD_GROWTH_BIRCH_FOREST")
             .change("GIANT_TREE_TAIGA", "OLD_GROWTH_PINE_TAIGA")
@@ -122,6 +141,8 @@ public class FieldRename {
             .change("WOODED_BADLANDS_PLATEAU", "WOODED_BADLANDS")
             .build();
 
+    public static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> BIOME_RENAME = BIOME_DATA::getReplacement;
+
     @DoNotReroute
     public static String convertBiomeName(ApiVersion version, String from) {
         return BIOME_DATA.getReplacement(version, from);
@@ -134,23 +155,9 @@ public class FieldRename {
         return Biome.valueOf(convertBiomeName(ApiVersion.CURRENT, name));
     }
 
-
     // EntityType
     private static final FieldRenameData ENTITY_TYPE_DATA = FieldRenameData.Builder.newBuilder()
             .forAllVersions()
-            .change("XP_ORB", "EXPERIENCE_ORB")
-            .change("EYE_OF_ENDER_SIGNAL", "EYE_OF_ENDER")
-            .change("XP_BOTTLE", "EXPERIENCE_BOTTLE")
-            .change("FIREWORKS_ROCKET", "FIREWORK_ROCKET")
-            .change("EVOCATION_FANGS", "EVOKER_FANGS")
-            .change("EVOCATION_ILLAGER", "EVOKER")
-            .change("VINDICATION_ILLAGER", "VINDICATOR")
-            .change("ILLUSION_ILLAGER", "ILLUSIONER")
-            .change("COMMANDBLOCK_MINECART", "COMMAND_BLOCK_MINECART")
-            .change("SNOWMAN", "SNOW_GOLEM")
-            .change("VILLAGER_GOLEM", "IRON_GOLEM")
-            .change("ENDER_CRYSTAL", "END_CRYSTAL")
-            .change("ZOMBIE_PIGMAN", "ZOMBIFIED_PIGLIN")
             .change("PIG_ZOMBIE", "ZOMBIFIED_PIGLIN")
             .change("DROPPED_ITEM", "ITEM")
             .change("LEASH_HITCH", "LEASH_KNOT")
@@ -167,10 +174,25 @@ public class FieldRename {
             .change("MINECART_MOB_SPAWNER", "SPAWNER_MINECART")
             .change("MUSHROOM_COW", "MOOSHROOM")
             .change("SNOWMAN", "SNOW_GOLEM")
-            .change("ENDER_CRYSTAL", "END_CRYSTAL")
             .change("FISHING_HOOK", "FISHING_BOBBER")
             .change("LIGHTNING", "LIGHTNING_BOLT")
+            .withKeyRename()
+            .change("XP_ORB", "EXPERIENCE_ORB")
+            .change("EYE_OF_ENDER_SIGNAL", "EYE_OF_ENDER")
+            .change("XP_BOTTLE", "EXPERIENCE_BOTTLE")
+            .change("FIREWORKS_ROCKET", "FIREWORK_ROCKET")
+            .change("EVOCATION_FANGS", "EVOKER_FANGS")
+            .change("EVOCATION_ILLAGER", "EVOKER")
+            .change("VINDICATION_ILLAGER", "VINDICATOR")
+            .change("ILLUSION_ILLAGER", "ILLUSIONER")
+            .change("COMMANDBLOCK_MINECART", "COMMAND_BLOCK_MINECART")
+            .change("SNOWMAN", "SNOW_GOLEM")
+            .change("VILLAGER_GOLEM", "IRON_GOLEM")
+            .change("ENDER_CRYSTAL", "END_CRYSTAL")
+            .change("ZOMBIE_PIGMAN", "ZOMBIFIED_PIGLIN")
             .build();
+
+    public static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> ENTITY_TYPE_RENAME = ENTITY_TYPE_DATA::getReplacement;
 
     @DoNotReroute
     public static String convertEntityTypeName(ApiVersion version, String from) {
@@ -220,7 +242,6 @@ public class FieldRename {
     // PotionType
     private static final FieldRenameData POTION_TYPE_DATA = FieldRenameData.Builder.newBuilder()
             .forAllVersions()
-            .change("UNCRAFTABLE", "EMPTY")
             .change("JUMP", "LEAPING")
             .change("SPEED", "SWIFTNESS")
             .change("INSTANT_HEAL", "HEALING")
@@ -292,7 +313,11 @@ public class FieldRename {
             .change("WATER_DROP", "RAIN")
             .change("MOB_APPEARANCE", "ELDER_GUARDIAN")
             .change("TOTEM", "TOTEM_OF_UNDYING")
+            .withKeyRename()
+            .change("GUST_EMITTER", "GUST_EMITTER_LARGE")
             .build();
+
+    public static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> PARTICLE_TYPE_RENAME = PARTICLE_DATA::getReplacement;
 
     @DoNotReroute
     public static String convertParticleName(ApiVersion version, String from) {
@@ -327,8 +352,11 @@ public class FieldRename {
     // Attribute
     private static final FieldRenameData ATTRIBUTE_DATA = FieldRenameData.Builder.newBuilder()
             .forAllVersions()
-            .change("HORSE_JUMP_STRENGTH", "GENERIC_JUMP_STRENGTH")
+            .withKeyRename()
+            .change("HORSE.JUMP_STRENGTH", "GENERIC.JUMP_STRENGTH")
             .build();
+
+    public static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> ATTRIBUTE_RENAME = ATTRIBUTE_DATA::getReplacement;
 
     @DoNotReroute
     public static String convertAttributeName(ApiVersion version, String from) {
@@ -339,7 +367,7 @@ public class FieldRename {
     @RerouteStatic("org/bukkit/attribute/Attribute")
     public static Attribute valueOf_Attribute(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return Attribute.valueOf(convertAttributeName(ApiVersion.CURRENT, name));
+        return Attribute.valueOf(convertAttributeName(ApiVersion.CURRENT, name).replace('.', '_'));
     }
 
     // MapCursor Type

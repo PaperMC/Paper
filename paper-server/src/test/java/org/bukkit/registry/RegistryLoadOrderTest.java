@@ -58,7 +58,7 @@ public class RegistryLoadOrderTest extends AbstractTestingBase {
         minecraftRegistry.register(ResourceKey.create(resourceKey, MinecraftKey.tryBuild("bukkit", "test-two")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
         minecraftRegistry.freeze();
 
-        registry = new CraftRegistry<>(keyedClass, minecraftRegistry, minecraftToBukkit);
+        registry = new CraftRegistry<>(keyedClass, minecraftRegistry, minecraftToBukkit, (namespacedKey, apiVersion) -> namespacedKey);
         testClassNotLoaded(init.get());
 
         Object testOne = registry.get(new NamespacedKey("bukkit", "test-one"));

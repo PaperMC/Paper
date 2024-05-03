@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.potion;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
@@ -11,6 +12,8 @@ import net.minecraft.world.item.alchemy.PotionRegistry;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.craftbukkit.legacy.FieldRename;
+import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -53,16 +56,23 @@ public class CraftPotionType implements PotionType.InternalPotionData {
                 + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
     }
 
-    public static String bukkitToString(PotionType potionType) {
-        Preconditions.checkArgument(potionType != null);
+    public static String bukkitToString(PotionType bukkit) {
+        Preconditions.checkArgument(bukkit != null);
 
-        return potionType.getKey().toString();
+        return bukkit.getKey().toString();
     }
 
     public static PotionType stringToBukkit(String string) {
         Preconditions.checkArgument(string != null);
 
-        return Registry.POTION.get(NamespacedKey.fromString(string));
+        // We currently do not have any version-dependent remapping, so we can use current version
+        // First convert from when only the names where saved
+        string = FieldRename.convertPotionTypeName(ApiVersion.CURRENT, string);
+        string = string.toLowerCase(Locale.ROOT);
+        NamespacedKey key = NamespacedKey.fromString(string);
+
+        // Now also convert from when keys where saved
+        return CraftRegistry.get(Registry.POTION, key, ApiVersion.CURRENT);
     }
 
     private final NamespacedKey key;
