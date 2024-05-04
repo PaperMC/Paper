@@ -94,10 +94,10 @@ index dd6012b6a097575b2d1471be5069eccee4537c0a..00000000000000000000000000000000
 -}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/ApiMirrorRootNode.java b/src/main/java/io/papermc/paper/command/brigadier/ApiMirrorRootNode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7c7a281ec145c9ffdc8a16739579435f3899f33a
+index 0000000000000000000000000000000000000000..fdca7b774e3465bd8625cb4129ddaedfa75ab28c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/ApiMirrorRootNode.java
-@@ -0,0 +1,251 @@
+@@ -0,0 +1,256 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.google.common.collect.Collections2;
@@ -169,44 +169,49 @@ index 0000000000000000000000000000000000000000..7c7a281ec145c9ffdc8a16739579435f
 +     * This logic is responsible for unwrapping an API node to be supported by NMS.
 +     * See the method implementation for detailed steps.
 +     *
-+     * @param wrapped api provided node / node to be "wrapped"
++     * @param maybeWrappedNode api provided node / node to be "wrapped"
 +     * @return wrapped node
 +     */
 +    @SuppressWarnings({"rawtypes", "unchecked"})
-+    private @NotNull CommandNode<CommandSourceStack> unwrapNode(CommandNode<CommandSourceStack> wrapped) {
++    private @NotNull CommandNode<CommandSourceStack> unwrapNode(final CommandNode<CommandSourceStack> maybeWrappedNode) {
 +        /*
 +        If the type is a shadow node we can assume that the type that it represents is an already supported NMS node.
 +        This is because these are typically minecraft command nodes.
 +         */
-+        if (wrapped instanceof ShadowBrigNode shadowBrigNode) {
++        if (maybeWrappedNode instanceof final ShadowBrigNode shadowBrigNode) {
 +            return (CommandNode) shadowBrigNode.getHandle();
 +        }
 +
 +        /*
 +        This node already has had an unwrapped node created, so we can assume that it's safe to reuse that cached copy.
 +         */
-+        if (wrapped.unwrappedCached != null) {
-+            return wrapped.unwrappedCached;
++        if (maybeWrappedNode.unwrappedCached != null) {
++            return maybeWrappedNode.unwrappedCached;
 +        }
 +
++        // convert the pure brig node into one compatible with the nms dispatcher
++        return this.convertFromPureBrigNode(maybeWrappedNode);
++    }
++
++    private @NotNull CommandNode<CommandSourceStack> convertFromPureBrigNode(final CommandNode<CommandSourceStack> pureNode) {
 +        /*
-+        Logic for wrapping each node.
++        Logic for converting a node.
 +         */
-+        CommandNode<CommandSourceStack> unwrapped;
-+        if (wrapped instanceof LiteralCommandNode<CommandSourceStack> node) {
++        final CommandNode<CommandSourceStack> converted;
++        if (pureNode instanceof final LiteralCommandNode<CommandSourceStack> node) {
 +            /*
 +            Remap the literal node, we only have to account
 +            for the redirect in this case.
 +             */
-+            unwrapped = this.simpleUnwrap(node);
-+        } else if (wrapped instanceof ArgumentCommandNode original) {
-+            ArgumentType<?> unwrappedArgType = original.getType();
++            converted = this.simpleUnwrap(node);
++        } else if (pureNode instanceof final ArgumentCommandNode<CommandSourceStack, ?> pureArgumentNode) {
++            final ArgumentType<?> pureArgumentType = pureArgumentNode.getType();
 +            /*
 +            Check to see if this argument type is a wrapped type, if so we know that
 +            we can unwrap the node to get an NMS type.
 +             */
-+            if (unwrappedArgType instanceof CustomArgumentType<?, ?> customArgumentType) {
-+                final SuggestionProvider suggestionProvider;
++            if (pureArgumentType instanceof final CustomArgumentType<?, ?> customArgumentType) {
++                final SuggestionProvider<?> suggestionProvider;
 +                try {
 +                    final Method listSuggestions = customArgumentType.getClass().getMethod("listSuggestions", CommandContext.class, SuggestionsBuilder.class);
 +                    if (listSuggestions.getDeclaringClass() != CustomArgumentType.class) {
@@ -218,22 +223,22 @@ index 0000000000000000000000000000000000000000..7c7a281ec145c9ffdc8a16739579435f
 +                    throw new IllegalStateException("Could not determine if the custom argument type " + customArgumentType + " overrides listSuggestions", ex);
 +                }
 +
-+                unwrapped = this.unwrapArgumentWrapper(original, customArgumentType, customArgumentType.getNativeType(), suggestionProvider);
-+            } else if (unwrappedArgType instanceof VanillaArgumentProviderImpl.NativeWrapperArgumentType<?,?> nativeWrapperArgumentType) {
-+                unwrapped = this.unwrapArgumentWrapper(original, nativeWrapperArgumentType, nativeWrapperArgumentType, null); // "null" for suggestion provider so it uses the argument type's suggestion provider
++                converted = this.unwrapArgumentWrapper(pureArgumentNode, customArgumentType, customArgumentType.getNativeType(), suggestionProvider);
++            } else if (pureArgumentType instanceof final VanillaArgumentProviderImpl.NativeWrapperArgumentType<?,?> nativeWrapperArgumentType) {
++                converted = this.unwrapArgumentWrapper(pureArgumentNode, nativeWrapperArgumentType, nativeWrapperArgumentType, null); // "null" for suggestion provider so it uses the argument type's suggestion provider
 +
 +            /*
 +            If it's not a wrapped type, it either has to be a primitive or an already
 +            defined NMS type.
 +            This method allows us to check if this is recognized by vanilla.
 +             */
-+            } else if (ArgumentTypeInfos.isClassRecognized(unwrappedArgType.getClass())) {
-+                if (ARGUMENT_WHITELIST.contains(unwrappedArgType.getClass())) {
++            } else if (ArgumentTypeInfos.isClassRecognized(pureArgumentType.getClass())) {
++                if (ARGUMENT_WHITELIST.contains(pureArgumentType.getClass())) {
 +                    // If this argument is whitelisted simply unwrap it and ignore the argument type.
-+                    unwrapped = this.simpleUnwrap(original);
++                    converted = this.simpleUnwrap(pureArgumentNode);
 +                } else {
 +                    // If this was an NMS type but not a primitive
-+                    throw new IllegalArgumentException("NMS argument type was passed (%s), should be wrapped inside an CustomArgumentType. Don't add NMS args here!".formatted(unwrappedArgType));
++                    throw new IllegalArgumentException("NMS argument type was passed (%s), should be wrapped inside an CustomArgumentType. Don't add NMS args here!".formatted(pureArgumentType));
 +                }
 +            } else {
 +                // Unknown argument type was passed
@@ -246,14 +251,14 @@ index 0000000000000000000000000000000000000000..7c7a281ec145c9ffdc8a16739579435f
 +        /*
 +        Add the children to the node, unwrapping each child in the process.
 +         */
-+        for (CommandNode<CommandSourceStack> child : wrapped.getChildren()) {
-+            unwrapped.addChild(this.unwrapNode(child));
++        for (final CommandNode<CommandSourceStack> child : pureNode.getChildren()) {
++            converted.addChild(this.unwrapNode(child));
 +        }
 +
-+        unwrapped.wrappedCached = wrapped;
-+        wrapped.unwrappedCached = unwrapped;
++        converted.wrappedCached = pureNode;
++        pureNode.unwrappedCached = converted;
 +
-+        return unwrapped;
++        return converted;
 +    }
 +
 +    /**
@@ -268,7 +273,7 @@ index 0000000000000000000000000000000000000000..7c7a281ec145c9ffdc8a16739579435f
 +     * @param unwrapped argument node
 +     * @return wrapped node
 +     */
-+    private @Nullable CommandNode<CommandSourceStack> wrapNode(@Nullable CommandNode<net.minecraft.commands.CommandSourceStack> unwrapped) {
++    private @Nullable CommandNode<CommandSourceStack> wrapNode(@Nullable final CommandNode<net.minecraft.commands.CommandSourceStack> unwrapped) {
 +        if (unwrapped == null) {
 +            return null;
 +        }
@@ -332,17 +337,17 @@ index 0000000000000000000000000000000000000000..7c7a281ec145c9ffdc8a16739579435f
 +    }
 +
 +    @SuppressWarnings({"rawtypes", "unchecked"})
-+    private CommandNode<CommandSourceStack> unwrapArgumentWrapper(final ArgumentCommandNode node, final ArgumentType wrappedArgumentType, final ArgumentType possiblyWrappedNativeArgumentType, @Nullable SuggestionProvider argumentTypeSuggestionProvider) {
++    private CommandNode<CommandSourceStack> unwrapArgumentWrapper(final ArgumentCommandNode pureNode, final ArgumentType pureArgumentType, final ArgumentType possiblyWrappedNativeArgumentType, @Nullable SuggestionProvider argumentTypeSuggestionProvider) {
 +        validatePrimitiveType(possiblyWrappedNativeArgumentType);
-+        final CommandNode redirectNode = node.getRedirect() == null ? null : this.unwrapNode(node.getRedirect());
++        final CommandNode redirectNode = pureNode.getRedirect() == null ? null : this.unwrapNode(pureNode.getRedirect());
 +        // If there is already a custom suggestion provider, ignore the suggestion provider from the argument type
-+        final SuggestionProvider suggestionProvider = node.getCustomSuggestions() != null ? node.getCustomSuggestions() : argumentTypeSuggestionProvider;
++        final SuggestionProvider suggestionProvider = pureNode.getCustomSuggestions() != null ? pureNode.getCustomSuggestions() : argumentTypeSuggestionProvider;
 +
-+        ArgumentType nativeArgumentType = possiblyWrappedNativeArgumentType instanceof VanillaArgumentProviderImpl.NativeWrapperArgumentType<?,?> nativeWrapperArgumentType ? nativeWrapperArgumentType.nativeNmsArgumentType() : possiblyWrappedNativeArgumentType;
-+        return new WrappedArgumentCommandNode<>(node.getName(), wrappedArgumentType, nativeArgumentType, node.getCommand(), node.getRequirement(), redirectNode, node.getRedirectModifier(), node.isFork(), suggestionProvider);
++        final ArgumentType nativeArgumentType = possiblyWrappedNativeArgumentType instanceof final VanillaArgumentProviderImpl.NativeWrapperArgumentType<?,?> nativeWrapperArgumentType ? nativeWrapperArgumentType.nativeNmsArgumentType() : possiblyWrappedNativeArgumentType;
++        return new WrappedArgumentCommandNode<>(pureNode.getName(), pureArgumentType, nativeArgumentType, pureNode.getCommand(), pureNode.getRequirement(), redirectNode, pureNode.getRedirectModifier(), pureNode.isFork(), suggestionProvider);
 +    }
 +
-+    private CommandNode<CommandSourceStack> simpleUnwrap(CommandNode<CommandSourceStack> node) {
++    private CommandNode<CommandSourceStack> simpleUnwrap(final CommandNode<CommandSourceStack> node) {
 +        return node.createBuilder()
 +            .redirect(node.getRedirect() == null ? null : this.unwrapNode(node.getRedirect()))
 +            .build();
@@ -377,7 +382,7 @@ index 0000000000000000000000000000000000000000..0b33c6cf2366568641e6f2fd7f74fb74
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java b/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..82a57ffc048454fbc4c705adbac83d16c44c5054
+index 0000000000000000000000000000000000000000..44715db12d6be06a7655f1bbb5ebb35ea904eb3b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java
 @@ -0,0 +1,56 @@
@@ -398,7 +403,7 @@ index 0000000000000000000000000000000000000000..82a57ffc048454fbc4c705adbac83d16
 +
 +import java.util.Map;
 +
-+public class PaperBrigadier {
++public final class PaperBrigadier {
 +
 +    @SuppressWarnings({"unchecked", "rawtypes"})
 +    public static Command wrapNode(CommandNode node) {
@@ -1187,10 +1192,10 @@ index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0ed
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/WrappedArgumentCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/argument/WrappedArgumentCommandNode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7a838bab16b33025b9a2eae8325f353ad9689e1b
+index 0000000000000000000000000000000000000000..c59bbd90fdf04db837366218b312e7fb80366707
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/WrappedArgumentCommandNode.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,55 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.Command;
@@ -1213,23 +1218,33 @@ index 0000000000000000000000000000000000000000..7a838bab16b33025b9a2eae8325f353a
 + */
 +public class WrappedArgumentCommandNode<NMS, API> extends ArgumentCommandNode<CommandSourceStack, NMS> {
 +
-+    private final ArgumentType<API> argument;
++    private final ArgumentType<API> pureArgumentType;
 +
-+    public WrappedArgumentCommandNode(String name, ArgumentType<API> argument, ArgumentType<NMS> nms, Command<CommandSourceStack> command, Predicate<CommandSourceStack> requirement, CommandNode<CommandSourceStack> redirect, RedirectModifier<CommandSourceStack> modifier, boolean forks, SuggestionProvider<CommandSourceStack> customSuggestions) {
-+        super(name, nms, command, requirement, redirect, modifier, forks, customSuggestions);
-+        if (!ArgumentTypeInfos.isClassRecognized(nms.getClass())) {
++    public WrappedArgumentCommandNode(
++        final String name,
++        final ArgumentType<API> pureArgumentType,
++        final ArgumentType<NMS> nmsNativeType,
++        final Command<CommandSourceStack> command,
++        final Predicate<CommandSourceStack> requirement,
++        final CommandNode<CommandSourceStack> redirect,
++        final RedirectModifier<CommandSourceStack> modifier,
++        final boolean forks,
++        final SuggestionProvider<CommandSourceStack> customSuggestions
++    ) {
++        super(name, nmsNativeType, command, requirement, redirect, modifier, forks, customSuggestions);
++        if (!ArgumentTypeInfos.isClassRecognized(nmsNativeType.getClass())) {
 +            // Is this argument an NMS argument?
-+            throw new IllegalArgumentException("Unexpected argument type was passed. This should be an NMS type!");
++            throw new IllegalArgumentException("Unexpected argument type was passed: " + nmsNativeType.getClass() + ". This should be an NMS type!");
 +        }
 +
-+        this.argument = argument;
++        this.pureArgumentType = pureArgumentType;
 +    }
 +
 +    // See ArgumentCommandNode#parse
 +    @Override
-+    public void parse(StringReader reader, CommandContextBuilder<CommandSourceStack> contextBuilder) throws CommandSyntaxException {
++    public void parse(final StringReader reader, final CommandContextBuilder<CommandSourceStack> contextBuilder) throws CommandSyntaxException {
 +        final int start = reader.getCursor();
-+        API result = this.argument.parse(reader); // Use the api argument parser
++        final API result = this.pureArgumentType.parse(reader); // Use the api argument parser
 +        final ParsedArgument<CommandSourceStack, API> parsed = new ParsedArgument<>(start, reader.getCursor(), result); // Return an API parsed argument instead.
 +
 +        contextBuilder.withArgument(this.getName(), parsed);
@@ -1238,7 +1253,7 @@ index 0000000000000000000000000000000000000000..7a838bab16b33025b9a2eae8325f353a
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..685b3da3f294d8c6ab0fe74d1485a81b03f3215a
+index 0000000000000000000000000000000000000000..f0cc27640bb3db275295a298d608c9d9f88df617
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
 @@ -0,0 +1,332 @@
@@ -1305,8 +1320,8 @@ index 0000000000000000000000000000000000000000..685b3da3f294d8c6ab0fe74d1485a81b
 +    }
 +
 +    @Override
-+    public boolean containsValue(Object value) {
-+        if (value == null) {
++    public boolean containsValue(@Nullable final Object value) {
++        if (!(value instanceof Command)) {
 +            return false;
 +        }
 +

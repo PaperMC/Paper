@@ -394,10 +394,10 @@ index 0000000000000000000000000000000000000000..2db12952461c92a64505d6646f6f49f8
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java b/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a3fc1fd8ae82da1ef69e3de97d6181bb1b0404f2
+index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010aa4fa0f5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java
-@@ -0,0 +1,316 @@
+@@ -0,0 +1,315 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.arguments.ArgumentType;
@@ -440,10 +440,6 @@ index 0000000000000000000000000000000000000000..a3fc1fd8ae82da1ef69e3de97d6181bb
 +
 +    static final Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class)
 +        .findFirst();
-+
-+    @ApiStatus.Internal
-+    ArgumentTypes() {
-+    }
 +
 +    /**
 +     * Represents a selector that can capture any
@@ -712,14 +708,17 @@ index 0000000000000000000000000000000000000000..a3fc1fd8ae82da1ef69e3de97d6181bb
 +
 +    private static VanillaArgumentProvider provider() {
 +        return PROVIDER.orElseThrow();
-+    } 
++    }
++
++    private ArgumentTypes() {
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/CustomArgumentType.java b/src/main/java/io/papermc/paper/command/brigadier/argument/CustomArgumentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5d33e1e04b1f279d6ad6371d0cfd9f129fcd8370
+index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012bc112961
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/CustomArgumentType.java
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,106 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.StringReader;
@@ -735,28 +734,28 @@ index 0000000000000000000000000000000000000000..5d33e1e04b1f279d6ad6371d0cfd9f12
 +
 +/**
 + * An argument type that wraps around a native-to-vanilla argument type.
-+ * This argument type is special in that the underlying native argument type will
-+ * be sent to the client.
++ * This argument receives special handling in that the native argument type will
++ * be sent to the client for possible client-side completions and syntax validation.
 + * <p>
-+ * When extending this class, you have to implement your own parsing logic. If
-+ * you want to have the command value parsed into the native type and then
-+ * converted to your custom type, use {@link Converted}.
++ * When implementing this class, you have to create your own parsing logic from a
++ * {@link StringReader}. If only want to convert from the native type ({@code N}) to the custom
++ * type ({@code T}), implement {@link Converted} instead.
 + *
 + * @param <T> custom type
-+ * @param <N> type with an argument native to minecraft
++ * @param <N> type with an argument native to vanilla Minecraft (from {@link ArgumentTypes})
 + */
 +@ApiStatus.Experimental
 +public interface CustomArgumentType<T, N> extends ArgumentType<T> {
 +
 +    /**
-+     * Parses the argument using the native argument type. Keep in mind
++     * Parses the argument into the custom type ({@code T}). Keep in mind
 +     * that this parsing will be done on the server. This means that if
 +     * you throw a {@link CommandSyntaxException} during parsing, this
-+     * will only show on the server after the user has executed the command
-+     * not while they are still typing it in.
++     * will only show up to the user after the user has executed the command
++     * not while they are still entering it.
 +     *
-+     * @param reader string reader
-+     * @return value
++     * @param reader string reader input
++     * @return parsed value
 +     * @throws CommandSyntaxException if an error occurs while parsing
 +     */
 +    @Override
@@ -764,7 +763,7 @@ index 0000000000000000000000000000000000000000..5d33e1e04b1f279d6ad6371d0cfd9f12
 +
 +    /**
 +     * Gets the native type that this argument uses,
-+     * or the type that is sent to the client.
++     * the type that is sent to the client.
 +     *
 +     * @return native argument type
 +     */
@@ -798,15 +797,14 @@ index 0000000000000000000000000000000000000000..5d33e1e04b1f279d6ad6371d0cfd9f12
 +
 +    /**
 +     * An argument type that wraps around a native-to-vanilla argument type.
-+     * This argument is special in that the underlying native argument type
-+     * will be sent to the client.
++     * This argument receives special handling in that the native argument type will
++     * be sent to the client for possible client-side completions and syntax validation.
 +     * <p>
-+     * The parsed native type will be converted via the implementation of
-+     * {@link #convert(Object)}. Use {@link CustomArgumentType} if you want
-+     * to handle parsing the type yourself.
++     * The parsed native type will be converted via {@link #convert(Object)}.
++     * Implement {@link CustomArgumentType} if you want to handle parsing the type manually.
 +     *
 +     * @param <T> custom type
-+     * @param <N> native type (has an argument native to vanilla Minecraft).
++     * @param <N> type with an argument native to vanilla Minecraft (from {@link ArgumentTypes})
 +     */
 +    @ApiStatus.Experimental
 +    interface Converted<T, N> extends CustomArgumentType<T, N> {
@@ -818,7 +816,7 @@ index 0000000000000000000000000000000000000000..5d33e1e04b1f279d6ad6371d0cfd9f12
 +        }
 +
 +        /**
-+         * Converts the value from the native type to this argument type.
++         * Converts the value from the native type to the custom argument type.
 +         *
 +         * @param nativeType native argument provided value
 +         * @return converted value
