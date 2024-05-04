@@ -12,10 +12,10 @@ public net.minecraft.server.RegistryLayer STATIC_ACCESS
 
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5fc4c41ec2089d4f69861c5da17e0bef8a203401
+index 0000000000000000000000000000000000000000..cc7d4924098eab9663cc52917e4b30d6ef4b02c7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,101 @@
 +package io.papermc.paper.registry;
 +
 +import io.papermc.paper.registry.entry.RegistryEntry;
@@ -43,6 +43,7 @@ index 0000000000000000000000000000000000000000..5fc4c41ec2089d4f69861c5da17e0bef
 +import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 +import org.bukkit.damage.DamageType;
 +import org.bukkit.entity.Wolf;
++import org.bukkit.entity.memory.MemoryKey;
 +import org.bukkit.generator.structure.StructureType;
 +import org.bukkit.inventory.meta.trim.TrimMaterial;
 +import org.bukkit.inventory.meta.trim.TrimPattern;
@@ -51,6 +52,7 @@ index 0000000000000000000000000000000000000000..5fc4c41ec2089d4f69861c5da17e0bef
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import static io.papermc.paper.registry.entry.RegistryEntry.apiOnly;
 +import static io.papermc.paper.registry.entry.RegistryEntry.entry;
 +
 +@DefaultQualifier(NonNull.class)
@@ -73,7 +75,24 @@ index 0000000000000000000000000000000000000000..5fc4c41ec2089d4f69861c5da17e0bef
 +            entry(Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL, TrimMaterial.class, CraftTrimMaterial::new).delayed(),
 +            entry(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN, TrimPattern.class, CraftTrimPattern::new).delayed(),
 +            entry(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, DamageType.class, CraftDamageType::new).delayed(),
-+            entry(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, Wolf.Variant.class, CraftWolf.CraftVariant::new).delayed()
++            entry(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, Wolf.Variant.class, CraftWolf.CraftVariant::new).delayed(),
++
++            // api-only
++            apiOnly(Registries.BIOME, RegistryKey.BIOME, () -> org.bukkit.Registry.BIOME),
++            apiOnly(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, () -> org.bukkit.Registry.ART),
++            apiOnly(Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, () -> org.bukkit.Registry.ATTRIBUTE),
++            apiOnly(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, () -> org.bukkit.Registry.BANNER_PATTERN),
++            apiOnly(Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT, () -> org.bukkit.Registry.CAT_VARIANT),
++            apiOnly(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE, () -> org.bukkit.Registry.ENTITY_TYPE),
++            apiOnly(Registries.PARTICLE_TYPE, RegistryKey.PARTICLE_TYPE, () -> org.bukkit.Registry.PARTICLE_TYPE),
++            apiOnly(Registries.POTION, RegistryKey.POTION, () -> org.bukkit.Registry.POTION),
++            apiOnly(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, () -> org.bukkit.Registry.SOUNDS),
++            apiOnly(Registries.VILLAGER_PROFESSION, RegistryKey.VILLAGER_PROFESSION, () -> org.bukkit.Registry.VILLAGER_PROFESSION),
++            apiOnly(Registries.VILLAGER_TYPE, RegistryKey.VILLAGER_TYPE, () -> org.bukkit.Registry.VILLAGER_TYPE),
++            apiOnly(Registries.MEMORY_MODULE_TYPE, RegistryKey.MEMORY_MODULE_TYPE, () -> (org.bukkit.Registry<MemoryKey<?>>) (org.bukkit.Registry) org.bukkit.Registry.MEMORY_MODULE_TYPE),
++            apiOnly(Registries.FLUID, RegistryKey.FLUID, () -> org.bukkit.Registry.FLUID),
++            apiOnly(Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT, () -> org.bukkit.Registry.FROG_VARIANT),
++            apiOnly(Registries.MAP_DECORATION_TYPE, RegistryKey.MAP_DECORATION_TYPE, () -> org.bukkit.Registry.MAP_DECORATION_TYPE)
 +        );
 +        final Map<RegistryKey<?>, RegistryEntry<?, ?, ?>> byRegistryKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
 +        final Map<ResourceKey<?>, RegistryEntry<?, ?, ?>> byResourceKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
@@ -280,33 +299,60 @@ index 0000000000000000000000000000000000000000..02402ef647c3e78ed56fd6b2687bf7c6
 +        }
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java
+diff --git a/src/main/java/io/papermc/paper/registry/entry/ApiRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/ApiRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8cb8630304f2b7604f420fe9dbdee9c460ee7bda
+index 0000000000000000000000000000000000000000..b2281a21eafd1f22f0ce261787e29af8a8637147
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java
-@@ -0,0 +1,38 @@
++++ b/src/main/java/io/papermc/paper/registry/entry/ApiRegistryEntry.java
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.registry.entry;
 +
++import io.papermc.paper.registry.RegistryHolder;
 +import io.papermc.paper.registry.RegistryKey;
-+import java.util.function.BiFunction;
++import java.util.function.Supplier;
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceKey;
 +import org.bukkit.Keyed;
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.craftbukkit.CraftRegistry;
 +
-+public abstract class BaseRegistryEntry<M, B extends Keyed, R extends CraftRegistry<B, M>> implements RegistryEntry<M, B, R> { // TODO remove Keyed
++public class ApiRegistryEntry<M, B extends Keyed> extends BaseRegistryEntry<M, B, org.bukkit.Registry<B>> {
++
++    private final Supplier<org.bukkit.Registry<B>> registrySupplier;
++
++    protected ApiRegistryEntry(
++        final ResourceKey<? extends Registry<M>> mcKey,
++        final RegistryKey<B> apiKey,
++        final Supplier<org.bukkit.Registry<B>> registrySupplier
++    ) {
++        super(mcKey, apiKey);
++        this.registrySupplier = registrySupplier;
++    }
++
++    @Override
++    public RegistryHolder<B> createRegistryHolder(final Registry<M> nmsRegistry) {
++        return new RegistryHolder.Memoized<>(this.registrySupplier);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1be8a5feccd27779fcd8ebb2c362f17d78d307da
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.registry.entry;
++
++import io.papermc.paper.registry.RegistryKey;
++import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceKey;
++import org.bukkit.Keyed;
++
++public abstract class BaseRegistryEntry<M, B extends Keyed, R extends org.bukkit.Registry<B>> implements RegistryEntry<M, B, R> { // TODO remove Keyed
++
 +    private final ResourceKey<? extends Registry<M>> minecraftRegistryKey;
 +    private final RegistryKey<B> apiRegistryKey;
-+    private final Class<?> classToPreload;
-+    protected final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
 +
-+    protected BaseRegistryEntry(final ResourceKey<? extends Registry<M>> minecraftRegistryKey, final RegistryKey<B> apiRegistryKey, final Class<?> classToPreload, final BiFunction<NamespacedKey, M, B> minecraftToBukkit) {
++    protected BaseRegistryEntry(final ResourceKey<? extends Registry<M>> minecraftRegistryKey, final RegistryKey<B> apiRegistryKey) {
 +        this.minecraftRegistryKey = minecraftRegistryKey;
 +        this.apiRegistryKey = apiRegistryKey;
-+        this.classToPreload = classToPreload;
-+        this.minecraftToBukkit = minecraftToBukkit;
 +    }
 +
 +    @Override
@@ -318,18 +364,13 @@ index 0000000000000000000000000000000000000000..8cb8630304f2b7604f420fe9dbdee9c4
 +    public final RegistryKey<B> apiKey() {
 +        return this.apiRegistryKey;
 +    }
-+
-+    @Override
-+    public final Class<?> classToPreload() {
-+        return this.classToPreload;
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..03ffc325c008af97e848e747d8860c58e308bdf3
+index 0000000000000000000000000000000000000000..d0023caafdb33d2f76bdd7bf6dfb3204069f52a0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,39 @@
 +package io.papermc.paper.registry.entry;
 +
 +import io.papermc.paper.registry.RegistryHolder;
@@ -346,13 +387,18 @@ index 0000000000000000000000000000000000000000..03ffc325c008af97e848e747d8860c58
 +@DefaultQualifier(NonNull.class)
 +public class CraftRegistryEntry<M, B extends Keyed> extends BaseRegistryEntry<M, B, CraftRegistry<B, M>> { // TODO remove Keyed
 +
++    protected final Class<?> classToPreload;
++    protected final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
++
 +    protected CraftRegistryEntry(
 +        final ResourceKey<? extends Registry<M>> mcKey,
 +        final RegistryKey<B> apiKey,
-+        final Class<?> toPreload,
++        final Class<?> classToPreload,
 +        final BiFunction<NamespacedKey, M, B> minecraftToBukkit
 +    ) {
-+        super(mcKey, apiKey, toPreload, minecraftToBukkit);
++        super(mcKey, apiKey);
++        this.classToPreload = classToPreload;
++        this.minecraftToBukkit = minecraftToBukkit;
 +    }
 +
 +    @Override
@@ -361,21 +407,22 @@ index 0000000000000000000000000000000000000000..03ffc325c008af97e848e747d8860c58
 +    }
 +
 +    private CraftRegistry<B, M> createApiRegistry(final Registry<M> nmsRegistry) {
-+        return new CraftRegistry<>(this.classToPreload(), nmsRegistry, this.minecraftToBukkit);
++        return new CraftRegistry<>(this.classToPreload, nmsRegistry, this.minecraftToBukkit);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8daafa1bc3c1dbbc9c902633c61e093668b2f049
+index 0000000000000000000000000000000000000000..3ca3938267bea86df1077c0ebeb8859a634cd042
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,47 @@
 +package io.papermc.paper.registry.entry;
 +
 +import io.papermc.paper.registry.RegistryHolder;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.legacy.DelayedRegistryEntry;
 +import java.util.function.BiFunction;
++import java.util.function.Supplier;
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceKey;
 +import org.bukkit.Keyed;
@@ -399,16 +446,29 @@ index 0000000000000000000000000000000000000000..8daafa1bc3c1dbbc9c902633c61e0936
 +        return new DelayedRegistryEntry<>(this);
 +    }
 +
-+    static <M, B extends Keyed> RegistryEntry<M, B, CraftRegistry<B, M>> entry(final ResourceKey<? extends Registry<M>> minecraftRegistryKey, final RegistryKey<B> apiRegistryKey, final Class<?> classToPreload, final BiFunction<NamespacedKey, M, B> minecraftToBukkit) {
-+        return new CraftRegistryEntry<>(minecraftRegistryKey, apiRegistryKey, classToPreload, minecraftToBukkit);
++    static <M, B extends Keyed> RegistryEntry<M, B, CraftRegistry<B, M>> entry(
++        final ResourceKey<? extends Registry<M>> mcKey,
++        final RegistryKey<B> apiKey,
++        final Class<?> classToPreload,
++        final BiFunction<NamespacedKey, M, B> minecraftToBukkit
++    ) {
++        return new CraftRegistryEntry<>(mcKey, apiKey, classToPreload, minecraftToBukkit);
++    }
++
++    static <M, B extends Keyed> RegistryEntry<M, B, org.bukkit.Registry<B>> apiOnly(
++        final ResourceKey<? extends Registry<M>> mcKey,
++        final RegistryKey<B> apiKey,
++        final Supplier<org.bukkit.Registry<B>> apiRegistrySupplier
++    ) {
++        return new ApiRegistryEntry<>(mcKey, apiKey, apiRegistrySupplier);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntryInfo.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntryInfo.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8b8c273b7fb60998a53cf1ce67632315e94599cd
+index 0000000000000000000000000000000000000000..0ae855e80fc9fddfc1feb33c7a9748204828b7cc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntryInfo.java
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,12 @@
 +package io.papermc.paper.registry.entry;
 +
 +import io.papermc.paper.registry.RegistryKey;
@@ -420,8 +480,6 @@ index 0000000000000000000000000000000000000000..8b8c273b7fb60998a53cf1ce67632315
 +    ResourceKey<? extends Registry<M>> mcKey();
 +
 +    RegistryKey<B> apiKey();
-+
-+    Class<?> classToPreload();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/package-info.java b/src/main/java/io/papermc/paper/registry/entry/package-info.java
 new file mode 100644
@@ -497,10 +555,10 @@ index 0000000000000000000000000000000000000000..5562e8da5ebaef2a3add46e88d64358b
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aa85e32961ea258745dc8ed68328528b3458c042
+index 0000000000000000000000000000000000000000..5f615f50ac0cdbc47cf7a39b630b653e0d30cdf5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,26 @@
 +package io.papermc.paper.registry.legacy;
 +
 +import io.papermc.paper.registry.RegistryHolder;
@@ -523,24 +581,20 @@ index 0000000000000000000000000000000000000000..aa85e32961ea258745dc8ed68328528b
 +    }
 +
 +    @Override
-+    public Class<?> classToPreload() {
-+        return this.delegate.classToPreload();
-+    }
-+
-+    @Override
 +    public RegistryHolder<T> createRegistryHolder(final Registry<M> nmsRegistry) {
 +        return this.delegate.createRegistryHolder(nmsRegistry);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/legacy/LegacyRegistryIdentifiers.java b/src/main/java/io/papermc/paper/registry/legacy/LegacyRegistryIdentifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..18dab3d1a5c873cfef09a8eba69d1e6d228b62eb
+index 0000000000000000000000000000000000000000..83870816cd4c54f94a3c603ffe41c11e457f3dec
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/legacy/LegacyRegistryIdentifiers.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.registry.legacy;
 +
 +import com.google.common.collect.ImmutableMap;
++import io.leangen.geantyref.GenericTypeReflector;
 +import io.papermc.paper.registry.RegistryKey;
 +import java.lang.reflect.Field;
 +import java.lang.reflect.ParameterizedType;
@@ -557,7 +611,7 @@ index 0000000000000000000000000000000000000000..18dab3d1a5c873cfef09a8eba69d1e6d
 +            for (final Field field : RegistryKey.class.getFields()) {
 +                if (field.getType() == RegistryKey.class) {
 +                    // get the legacy type from the RegistryKey generic parameter on the field
-+                    final Class<?> legacyType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
++                    final Class<?> legacyType = GenericTypeReflector.erase(((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]);
 +                    builder.put(legacyType, (RegistryKey<?>) field.get(null));
 +                }
 +            }
@@ -735,6 +789,42 @@ index 0000000000000000000000000000000000000000..b9d00e65639521eecd44bd2be3e01226
 +        assertSame(RegistryKey.INSTRUMENT, PaperRegistryAccess.byType(MusicInstrument.class));
 +    }
 +}
+diff --git a/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java b/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java
+index e070aa1bb69859224493d958621389ee757f8752..311837ac7cea6b75eedee01bf893317a8763cdf9 100644
+--- a/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java
++++ b/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java
+@@ -1,15 +1,18 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.registry.entry.RegistryEntry;
+ import java.util.Optional;
+ import java.util.stream.Stream;
+ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.resources.ResourceLocation;
++import org.bukkit.Keyed;
+ import org.bukkit.support.AbstractTestingBase;
+ import org.junit.jupiter.api.BeforeAll;
+ import org.junit.jupiter.params.ParameterizedTest;
+ import org.junit.jupiter.params.provider.MethodSource;
+ 
++import static org.junit.jupiter.api.Assertions.assertNotNull;
+ import static org.junit.jupiter.api.Assertions.assertTrue;
+ 
+ class RegistryKeyTest extends AbstractTestingBase {
+@@ -28,6 +31,12 @@ class RegistryKeyTest extends AbstractTestingBase {
+     void testApiRegistryKeysExist(final RegistryKey<?> key) {
+         final Optional<Registry<Object>> registry = AbstractTestingBase.REGISTRY_CUSTOM.registry(ResourceKey.createRegistryKey(new ResourceLocation(key.key().asString())));
+         assertTrue(registry.isPresent(), "Missing vanilla registry for " + key.key().asString());
++    }
+ 
++    @ParameterizedTest
++    @MethodSource("data")
++    void testRegistryEntryExists(final RegistryKey<?> key) {
++        final RegistryEntry<?, ?, ?> entry = PaperRegistries.getEntry(key);
++        assertNotNull(entry, "Missing PaperRegistries entry for " + key);
+     }
+ }
 diff --git a/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java b/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
 index 4adaafafb7140e983a4e90f0ff0deaaf0887a9a5..848ad252c06031d33e659f6116e911f966810442 100644
 --- a/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
