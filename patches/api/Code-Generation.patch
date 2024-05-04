@@ -92,13 +92,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.registry;
 +
 +import net.kyori.adventure.key.Keyed;
++import org.bukkit.Art;
++import org.bukkit.Fluid;
 +import org.bukkit.GameEvent;
++import org.bukkit.MusicInstrument;
++import org.bukkit.Particle;
++import org.bukkit.Sound;
++import org.bukkit.attribute.Attribute;
 +import org.bukkit.block.Biome;
++import org.bukkit.block.banner.PatternType;
++import org.bukkit.damage.DamageType;
++import org.bukkit.enchantments.Enchantment;
++import org.bukkit.entity.Cat;
++import org.bukkit.entity.EntityType;
++import org.bukkit.entity.Frog;
++import org.bukkit.entity.Villager;
++import org.bukkit.entity.Wolf;
++import org.bukkit.entity.memory.MemoryKey;
 +import org.bukkit.generator.structure.Structure;
 +import org.bukkit.generator.structure.StructureType;
 +import org.bukkit.inventory.meta.trim.TrimMaterial;
 +import org.bukkit.inventory.meta.trim.TrimPattern;
-+import org.jetbrains.annotations.ApiStatus;
++import org.bukkit.map.MapCursor;
++import org.bukkit.potion.PotionEffectType;
++import org.bukkit.potion.PotionType;
 +
 +import static io.papermc.paper.registry.RegistryKeyImpl.create;
 +
@@ -115,7 +132,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @param <T> the value type
 + */
 +@SuppressWarnings("unused")
-+@ApiStatus.Experimental
 +public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
 +
 +    /* ******************* *
@@ -131,6 +147,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @see io.papermc.paper.registry.keys.StructureTypeKeys
 +     */
 +    RegistryKey<StructureType> STRUCTURE_TYPE = create("worldgen/structure_type");
++    /**
++     * Built-in registry for instruments.
++     * @see io.papermc.paper.registry.keys.InstrumentKeys
++     */
++    RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
++    /**
++     * Built-in registry for enchantments.
++     * @see io.papermc.paper.registry.keys.EnchantmentKeys
++     */
++    RegistryKey<Enchantment> ENCHANTMENT = create("enchantment");
++    /**
++     * Built-in registry for potion effect types (mob effects).
++     * @see io.papermc.paper.registry.keys.MobEffectKeys
++     */
++    RegistryKey<PotionEffectType> MOB_EFFECT = create("mob_effect");
++
 +
 +    /* ********************** *
 +     * Data-driven Registries *
@@ -155,6 +187,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @see io.papermc.paper.registry.keys.TrimPatternKeys
 +     */
 +    RegistryKey<TrimPattern> TRIM_PATTERN = create("trim_pattern");
++    /**
++     * Data-driven registry for damage types.
++     * @see io.papermc.paper.registry.keys.DamageTypeKeys
++     */
++    RegistryKey<DamageType> DAMAGE_TYPE = create("damage_type");
++    /**
++     * Data-driven registry for wolf variants
++     * @see io.papermc.paper.registry.keys.WolfVariantKeys
++     */
++    RegistryKey<Wolf.Variant> WOLF_VARIANT = create("wolf_variant");
++
++
++    /* ******************* *
++     * API-only Registries *
++     * ******************* */
++    RegistryKey<Art> PAINTING_VARIANT = create("painting_variant");
++    RegistryKey<Attribute> ATTRIBUTE = create("attribute");
++    RegistryKey<PatternType> BANNER_PATTERN = create("banner_pattern");
++    RegistryKey<Cat.Type> CAT_VARIANT = create("cat_variant");
++    RegistryKey<EntityType> ENTITY_TYPE = create("entity_type");
++    RegistryKey<Particle> PARTICLE_TYPE = create("particle_type");
++    RegistryKey<PotionType> POTION = create("potion");
++    RegistryKey<Sound> SOUND_EVENT = create("sound_event");
++    RegistryKey<Villager.Profession> VILLAGER_PROFESSION = create("villager_profession");
++    RegistryKey<Villager.Type> VILLAGER_TYPE = create("villager_type");
++    RegistryKey<MemoryKey<?>> MEMORY_MODULE_TYPE = create("memory_module_type");
++    RegistryKey<Fluid> FLUID = create("fluid");
++    RegistryKey<Frog.Variant> FROG_VARIANT = create("frog_variant");
++    RegistryKey<MapCursor.Type> MAP_DECORATION_TYPE = create("map_decoration_type");
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
 new file mode 100644
@@ -175,9 +236,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final Set<RegistryKey<?>> REGISTRY_KEYS = Sets.newIdentityHashSet();
 +
 +    static <T> RegistryKey<T> create(@Subst("some_key") final String key) {
-+        final RegistryKey<T> registryKey = new RegistryKeyImpl<>(Key.key(Key.MINECRAFT_NAMESPACE, key));
++        final RegistryKey<T> registryKey = createInternal(key);
 +        REGISTRY_KEYS.add(registryKey);
 +        return registryKey;
++    }
++
++    // creates the key without adding to the internal set of keys
++    static <T> RegistryKey<T> createInternal(@Subst("some_key") final String key) {
++        return new RegistryKeyImpl<>(Key.key(Key.MINECRAFT_NAMESPACE, key));
 +    }
 +
 +}
@@ -227,7 +293,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return a new key for the value key and registry key
 +     */
 +    @ApiStatus.Experimental
-+    static <T extends Keyed> @NotNull TypedKey<T> create(final @NotNull RegistryKey<T> registryKey, final @NotNull Key key) {
++    static <T> @NotNull TypedKey<T> create(final @NotNull RegistryKey<T> registryKey, final @NotNull Key key) {
 +        return new TypedKeyImpl<>(key, registryKey);
 +    }
 +}
@@ -243,7 +309,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.key.Keyed;
 +import org.jetbrains.annotations.NotNull;
 +
-+record TypedKeyImpl<T extends Keyed>(@NotNull Key key, @NotNull RegistryKey<T> registryKey) implements TypedKey<T> {
++record TypedKeyImpl<T>(@NotNull Key key, @NotNull RegistryKey<T> registryKey) implements TypedKey<T> {
 +}
 diff --git a/src/main/java/org/bukkit/MinecraftExperimental.java b/src/main/java/org/bukkit/MinecraftExperimental.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644

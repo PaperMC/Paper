@@ -449,14 +449,7 @@ public final class GameEventKeys {
     private GameEventKeys() {
     }
 
-    /**
-     * Creates a key for {@link GameEvent} in a registry.
-     *
-     * @param key the value's key in the registry
-     * @return a new typed key
-     */
-    @ApiStatus.Experimental
-    public static @NotNull TypedKey<GameEvent> create(final @NotNull Key key) {
+    private static @NotNull TypedKey<GameEvent> create(final @NotNull Key key) {
         return TypedKey.create(RegistryKey.GAME_EVENT, key);
     }
 }
