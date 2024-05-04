@@ -119,21 +119,22 @@ index 0000000000000000000000000000000000000000..cc7d4924098eab9663cc52917e4b30d6
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..00a49ae2f0c89b129301e226794fc9c29d4c0ddd
+index 0000000000000000000000000000000000000000..9f2bcfe0d9e479466a1e46e503071d1151310e6a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,124 @@
 +package io.papermc.paper.registry;
 +
++import io.papermc.paper.registry.entry.ApiRegistryEntry;
 +import io.papermc.paper.registry.entry.RegistryEntry;
 +import io.papermc.paper.registry.legacy.DelayedRegistry;
 +import io.papermc.paper.registry.legacy.DelayedRegistryEntry;
 +import io.papermc.paper.registry.legacy.LegacyRegistryIdentifiers;
-+import java.util.Collections;
 +import java.util.Map;
 +import java.util.NoSuchElementException;
 +import java.util.Set;
 +import java.util.concurrent.ConcurrentHashMap;
++import java.util.stream.Collectors;
 +import net.minecraft.resources.ResourceKey;
 +import org.bukkit.Keyed;
 +import org.bukkit.Registry;
@@ -159,8 +160,8 @@ index 0000000000000000000000000000000000000000..00a49ae2f0c89b129301e226794fc9c2
 +    }
 +
 +    @VisibleForTesting
-+    public Set<RegistryKey<?>> loadedRegistryKeys() {
-+        return Collections.unmodifiableSet(this.registries.keySet());
++    public Set<RegistryKey<?>> getLoadedServerBackedRegistries() {
++        return this.registries.keySet().stream().filter(registryHolder -> !(PaperRegistries.getEntry(registryHolder) instanceof ApiRegistryEntry)).collect(Collectors.toUnmodifiableSet());
 +    }
 +
 +    @SuppressWarnings("unchecked")
@@ -826,7 +827,7 @@ index e070aa1bb69859224493d958621389ee757f8752..311837ac7cea6b75eedee01bf893317a
      }
  }
 diff --git a/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java b/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
-index 4adaafafb7140e983a4e90f0ff0deaaf0887a9a5..848ad252c06031d33e659f6116e911f966810442 100644
+index 4adaafafb7140e983a4e90f0ff0deaaf0887a9a5..0dd775ad1bd0bf9ba7ea05255d543a9df8b5fcfd 100644
 --- a/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
 +++ b/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
 @@ -21,14 +21,17 @@ public class RegistryArgumentAddedTest extends AbstractTestingBase {
@@ -837,7 +838,7 @@ index 4adaafafb7140e983a4e90f0ff0deaaf0887a9a5..848ad252c06031d33e659f6116e911f9
 -        Set<Class<?>> notFound = new HashSet<>();
 +        // Paper start
 +        Set<io.papermc.paper.registry.RegistryKey<?>> loadedRegistries = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
-+        loadedRegistries.addAll(io.papermc.paper.registry.PaperRegistryAccess.instance().loadedRegistryKeys());
++        loadedRegistries.addAll(io.papermc.paper.registry.PaperRegistryAccess.instance().getLoadedServerBackedRegistries());
 +        // Paper end
 +        Set<io.papermc.paper.registry.RegistryKey<?>> notFound = new HashSet<>(); // Paper
  
