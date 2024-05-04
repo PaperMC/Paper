@@ -55,7 +55,22 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
     @Override
     public void setDirection(Vector direction) {
         Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
+        if (direction.isZero()) {
+            setVelocity(direction);
+            return;
+        }
         getHandle().assignPower(direction.getX(), direction.getY(), direction.getZ());
+        update(); // SPIGOT-6579
+    }
+
+    @Override
+    public void setVelocity(Vector velocity) {
+        Preconditions.checkArgument(velocity != null, "Vector velocity cannot be null");
+        // SPIGOT-6993: Allow power to be higher / lower than the normalized direction enforced by #setDirection(Vector)
+        // Note: Because of MC-80142 the fireball will stutter on the client when setting the velocity to something other than 0 or the normalized vector * 0.1
+        getHandle().xPower = velocity.getX();
+        getHandle().yPower = velocity.getY();
+        getHandle().zPower = velocity.getZ();
         update(); // SPIGOT-6579
     }
 
