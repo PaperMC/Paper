@@ -508,10 +508,10 @@ index 0000000000000000000000000000000000000000..1b1642f306771f029e6214a2e2ebebb6
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b7a0b33a66d4cea9dc5d8f1816b67151948605ea
+index 0000000000000000000000000000000000000000..6940f775dcfbe098a704f02020fb5836e0d46ab1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
-@@ -0,0 +1,165 @@
+@@ -0,0 +1,167 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.google.common.base.Preconditions;
@@ -600,17 +600,17 @@ index 0000000000000000000000000000000000000000..b7a0b33a66d4cea9dc5d8f1816b67151
 +
 +    @Override
 +    public boolean register(final PluginMeta pluginMeta, final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description, final List<String> aliases) {
-+        String identifier = pluginMeta.getName().toLowerCase(Locale.ROOT);
++        final String identifier = pluginMeta.getName().toLowerCase(Locale.ROOT);
 +        final String literal = node.getLiteral();
 +        boolean registeredNode = false;
-+        PluginCommandNode pluginLiteral = new PluginCommandNode(identifier + ":" + literal, pluginMeta, node, description);  // Treat the keyed version of the command as the root
++        final PluginCommandNode pluginLiteral = new PluginCommandNode(identifier + ":" + literal, pluginMeta, node, description);  // Treat the keyed version of the command as the root
 +
 +        registeredNode |= this.registerIntoDispatcher(pluginLiteral, true);
 +        registeredNode |= this.registerRedirect(literal, pluginMeta, pluginLiteral, description, true); // Plugin commands should override vanilla commands
 +
 +        // Add aliases
-+        List<String> registeredAliases = new ArrayList<>();
-+        for (String alias : aliases) {
++        final List<String> registeredAliases = new ArrayList<>();
++        for (final String alias : aliases) {
 +            if (registeredNode |= this.registerRedirect(alias, pluginMeta, pluginLiteral, description, false)) {
 +                registeredAliases.add(alias);
 +            }
@@ -627,7 +627,7 @@ index 0000000000000000000000000000000000000000..b7a0b33a66d4cea9dc5d8f1816b67151
 +    }
 +
 +    private boolean registerRedirect(final String aliasLiteral, final PluginMeta plugin, final PluginCommandNode redirectTo, final @Nullable String description, final boolean override) {
-+        LiteralCommandNode<CommandSourceStack> redirect = Commands.literal(aliasLiteral)
++        final LiteralCommandNode<CommandSourceStack> redirect = Commands.literal(aliasLiteral)
 +            .redirect(redirectTo)
 +            .executes(redirectTo.getCommand())
 +            .requires(redirectTo.getRequirement())
@@ -636,7 +636,7 @@ index 0000000000000000000000000000000000000000..b7a0b33a66d4cea9dc5d8f1816b67151
 +    }
 +
 +    private boolean registerIntoDispatcher(final PluginCommandNode node, final boolean override) {
-+        boolean hasChild = this.getDispatcher().getRoot().getChild(node.getLiteral()) != null;
++        final boolean hasChild = this.getDispatcher().getRoot().getChild(node.getLiteral()) != null;
 +        if (!hasChild || override) { // Avoid merging behavior. Maybe something to look into in the future
 +            if (override) {
 +                this.getDispatcher().getRoot().removeCommand(node.getLiteral());
@@ -655,23 +655,25 @@ index 0000000000000000000000000000000000000000..b7a0b33a66d4cea9dc5d8f1816b67151
 +
 +    @Override
 +    public boolean register(final PluginMeta pluginMeta, final String label, final @Nullable String description, final List<String> aliases, final BasicCommand basicCommand) {
-+        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(label)
++        final LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(label)
 +            .then(
 +                RequiredArgumentBuilder.<CommandSourceStack, String>argument("args", StringArgumentType.greedyString())
 +                    .suggests((context, suggestionsBuilder) -> {
-+                        String[] args = suggestionsBuilder.getRemaining().split(" ", -1); // We need the command included -- Set limit to -1, allow for trailing spaces
-+                        SuggestionsBuilder offsetSuggestionsBuilder = suggestionsBuilder.createOffset(suggestionsBuilder.getInput().lastIndexOf(' ') + 1);;
++                        final String[] args = StringUtils.split(suggestionsBuilder.getRemaining());
++                        final SuggestionsBuilder offsetSuggestionsBuilder = suggestionsBuilder.createOffset(suggestionsBuilder.getInput().lastIndexOf(' ') + 1);;
 +
 +                        final Collection<String> suggestions = basicCommand.suggest(context.getSource(), args);
 +                        suggestions.forEach(offsetSuggestionsBuilder::suggest);
 +                        return offsetSuggestionsBuilder.buildFuture();
 +                    })
 +                    .executes((stack) -> {
-+                        return basicCommand.execute(stack.getSource(), StringUtils.split(stack.getArgument("args", String.class), ' '));
++                        basicCommand.execute(stack.getSource(), StringUtils.split(stack.getArgument("args", String.class), ' '));
++                        return com.mojang.brigadier.Command.SINGLE_SUCCESS;
 +                    })
 +            )
 +            .executes((stack) -> {
-+                return basicCommand.execute(stack.getSource(), new String[0]);
++                basicCommand.execute(stack.getSource(), new String[0]);
++                return com.mojang.brigadier.Command.SINGLE_SUCCESS;
 +            });
 +
 +        return this.register(pluginMeta, builder.build(), description, aliases);
@@ -826,12 +828,12 @@ index 0000000000000000000000000000000000000000..895addef908e09d527e4bc9210599e88
 +        return this.handle;
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/MessageArgumentImpl.java b/src/main/java/io/papermc/paper/command/brigadier/argument/MessageArgumentImpl.java
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolverImpl.java b/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolverImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1f3c8bb21bb7f6e3cfbb6a0fd87a1a17e9b69ab8
+index 0000000000000000000000000000000000000000..72966584089d3fee9778f572727c9b7f4a4d4302
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/command/brigadier/argument/MessageArgumentImpl.java
-@@ -0,0 +1,29 @@
++++ b/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolverImpl.java
+@@ -0,0 +1,30 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.context.CommandContext;
@@ -843,7 +845,8 @@ index 0000000000000000000000000000000000000000..1f3c8bb21bb7f6e3cfbb6a0fd87a1a17
 +
 +import java.util.concurrent.CompletableFuture;
 +
-+public record MessageArgumentImpl(MessageArgument.Message message) implements MessageArgumentResponse {
++public record SignedMessageResolverImpl(MessageArgument.Message message) implements SignedMessageResolver {
++
 +    @Override
 +    public String content() {
 +        return this.message.text();
@@ -854,7 +857,7 @@ index 0000000000000000000000000000000000000000..1f3c8bb21bb7f6e3cfbb6a0fd87a1a17
 +        final CommandContext<CommandSourceStack> type = erased;
 +        final CompletableFuture<SignedMessage> future = new CompletableFuture<>();
 +
-+        final MessageArgument.Message response = type.getArgument(argumentName, MessageArgumentImpl.class).message;
++        final MessageArgument.Message response = type.getArgument(argumentName, SignedMessageResolverImpl.class).message;
 +        MessageArgument.resolveChatMessage(response, type, argumentName, (message) -> {
 +            future.complete(message.adventureView());
 +        });
@@ -863,10 +866,10 @@ index 0000000000000000000000000000000000000000..1f3c8bb21bb7f6e3cfbb6a0fd87a1a17
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d1432bbcbd1f6e0e1a62525bc6dbe482e97990b9
+index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0edf5e3e47e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
-@@ -0,0 +1,319 @@
+@@ -0,0 +1,315 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
@@ -880,7 +883,6 @@ index 0000000000000000000000000000000000000000..d1432bbcbd1f6e0e1a62525bc6dbe482
 +import com.mojang.brigadier.suggestion.Suggestions;
 +import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 +import io.papermc.paper.adventure.PaperAdventure;
-+import io.papermc.paper.command.brigadier.ApiMirrorRootNode;
 +import io.papermc.paper.command.brigadier.PaperCommands;
 +import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 +import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
@@ -897,7 +899,6 @@ index 0000000000000000000000000000000000000000..d1432bbcbd1f6e0e1a62525bc6dbe482
 +import java.util.UUID;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.function.Function;
-+import io.papermc.paper.util.Tick;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.NamedTextColor;
@@ -924,7 +925,6 @@ index 0000000000000000000000000000000000000000..d1432bbcbd1f6e0e1a62525bc6dbe482
 +import net.minecraft.commands.arguments.UuidArgument;
 +import net.minecraft.commands.arguments.blocks.BlockStateArgument;
 +import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
-+import net.minecraft.commands.arguments.coordinates.RotationArgument;
 +import net.minecraft.commands.arguments.item.ItemArgument;
 +import net.minecraft.commands.arguments.item.ItemPredicateArgument;
 +import net.minecraft.core.BlockPos;
@@ -937,7 +937,6 @@ index 0000000000000000000000000000000000000000..d1432bbcbd1f6e0e1a62525bc6dbe482
 +import org.bukkit.GameMode;
 +import org.bukkit.HeightMap;
 +import org.bukkit.NamespacedKey;
-+import org.bukkit.Rotation;
 +import org.bukkit.World;
 +import org.bukkit.block.BlockState;
 +import org.bukkit.block.structure.Mirror;
@@ -1000,7 +999,7 @@ index 0000000000000000000000000000000000000000..d1432bbcbd1f6e0e1a62525bc6dbe482
 +    }
 +
 +    @Override
-+    public ArgumentType<BlockPositionResolver> blockPos() {
++    public ArgumentType<BlockPositionResolver> blockPosition() {
 +        return this.of(BlockPosArgument.blockPos(), (result) -> sourceStack -> {
 +            BlockPos pos = result.getBlockPos((CommandSourceStack) sourceStack);
 +
@@ -1050,8 +1049,8 @@ index 0000000000000000000000000000000000000000..d1432bbcbd1f6e0e1a62525bc6dbe482
 +    }
 +
 +    @Override
-+    public ArgumentType<MessageArgumentResponse> signedMessage() {
-+        return this.of(MessageArgument.message(), MessageArgumentImpl::new);
++    public ArgumentType<SignedMessageResolver> signedMessage() {
++        return this.of(MessageArgument.message(), SignedMessageResolverImpl::new);
 +    }
 +
 +    @Override

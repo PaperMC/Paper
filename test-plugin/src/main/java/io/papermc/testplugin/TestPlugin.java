@@ -62,9 +62,8 @@ public final class TestPlugin extends JavaPlugin implements Listener {
 
             commands.register(this.getPluginMeta(), "example", "test", Collections.emptyList(), new BasicCommand() {
                 @Override
-                public int execute(@NotNull final CommandSourceStack commandSourceStack, final @NotNull String[] args) {
+                public void execute(@NotNull final CommandSourceStack commandSourceStack, final @NotNull String[] args) {
                     System.out.println(Arrays.toString(args));
-                    return Command.SINGLE_SUCCESS;
                 }
 
                 @Override

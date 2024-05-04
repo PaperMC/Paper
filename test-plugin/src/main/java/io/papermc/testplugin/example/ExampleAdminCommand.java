@@ -3,7 +3,7 @@ package io.papermc.testplugin.example;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.command.brigadier.argument.MessageArgumentResponse;
+import io.papermc.paper.command.brigadier.argument.SignedMessageResolver;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
@@ -86,7 +86,7 @@ public class ExampleAdminCommand {
             .then(
                 Commands.literal("signed_message").then(
                     Commands.argument("msg", ArgumentTypes.signedMessage()).executes((context) -> {
-                        MessageArgumentResponse argumentResponse = context.getArgument("msg", MessageArgumentResponse.class); // Gets the raw argument
+                        SignedMessageResolver argumentResponse = context.getArgument("msg", SignedMessageResolver.class); // Gets the raw argument
 
                         // This is a better way of getting signed messages, includes the concept of "disguised" messages.
                         argumentResponse.resolveSignedMessage("msg", context)
@@ -101,7 +101,7 @@ public class ExampleAdminCommand {
             .then(
                 Commands.literal("setblock").then(
                     Commands.argument("block", ArgumentTypes.blockState())
-                        .then(Commands.argument("pos", ArgumentTypes.blockPos())
+                        .then(Commands.argument("pos", ArgumentTypes.blockPosition())
                             .executes((context) -> {
                                 CommandSourceStack sourceStack = context.getSource();
                                 BlockPosition position = context.getArgument("pos", BlockPositionResolver.class).resolve(sourceStack);
