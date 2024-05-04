@@ -163,6 +163,28 @@ index 0000000000000000000000000000000000000000..b89e19c070f97c9662f1e16309446494
 +    private RegistryAccessHolder() {
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
+index 791813220b2504214b1adecc69093cd600fb0f8c..47fe5b0d5d031110c27210a0a256c260b35d9ba1 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
+@@ -10,6 +10,17 @@ record RegistryKeyImpl<T>(@NotNull Key key) implements RegistryKey<T> {
+ 
+     static final Set<RegistryKey<?>> REGISTRY_KEYS = Sets.newIdentityHashSet();
+ 
++    // override equals and hashCode to this can be used to simulate an "identity" hashmap
++    @Override
++    public boolean equals(final Object obj) {
++        return obj == this;
++    }
++
++    @Override
++    public int hashCode() {
++        return System.identityHashCode(this);
++    }
++
+     static <T> RegistryKey<T> create(@Subst("some_key") final String key) {
+         final RegistryKey<T> registryKey = createInternal(key);
+         REGISTRY_KEYS.add(registryKey);
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
 index 732ed3724e784ad659cb4411dbd73b42a8330a2c..7be6710d28dea19bd0f9054c1c2e32dacd355c45 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
@@ -180,7 +202,7 @@ index 732ed3724e784ad659cb4411dbd73b42a8330a2c..7be6710d28dea19bd0f9054c1c2e32da
          return server.getRegistry(tClass);
      }
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index a04d279561676e825905f5512c399d14a3d8f828..7aee2cee892492c523ae06902c6582b0ab827ffa 100644
+index a04d279561676e825905f5512c399d14a3d8f828..91117cad12eee0bdaac8e0398a0f7f288ba27a40 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
 @@ -129,7 +129,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
@@ -218,7 +240,7 @@ index a04d279561676e825905f5512c399d14a3d8f828..7aee2cee892492c523ae06902c6582b0
       */
 -    Registry<Structure> STRUCTURE = Bukkit.getRegistry(Structure.class);
 +    @Deprecated(since = "1.20.6") // Paper
-+    Registry<Structure> STRUCTURE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Structure.class); // Paper
++    Registry<Structure> STRUCTURE = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Structure.class), "No registry present for Structure. This is a bug."); // Paper
      /**
       * Server structure types.
       *
@@ -237,7 +259,7 @@ index a04d279561676e825905f5512c399d14a3d8f828..7aee2cee892492c523ae06902c6582b0
       */
 -    Registry<TrimMaterial> TRIM_MATERIAL = Bukkit.getRegistry(TrimMaterial.class);
 +    @Deprecated(since = "1.20.6") // Paper
-+    Registry<TrimMaterial> TRIM_MATERIAL = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(TrimMaterial.class); // Paper
++    Registry<TrimMaterial> TRIM_MATERIAL = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(TrimMaterial.class), "No registry present for TrimMaterial. This is a bug."); // Paper
      /**
       * Trim patterns.
       *
@@ -246,7 +268,7 @@ index a04d279561676e825905f5512c399d14a3d8f828..7aee2cee892492c523ae06902c6582b0
       */
 -    Registry<TrimPattern> TRIM_PATTERN = Bukkit.getRegistry(TrimPattern.class);
 +    @Deprecated(since = "1.20.6")
-+    Registry<TrimPattern> TRIM_PATTERN = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(TrimPattern.class); // Paper
++    Registry<TrimPattern> TRIM_PATTERN = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(TrimPattern.class), "No registry present for TrimPattern. This is a bug."); // Paper
      /**
       * Damage types.
       *
@@ -256,7 +278,7 @@ index a04d279561676e825905f5512c399d14a3d8f828..7aee2cee892492c523ae06902c6582b0
 -    @ApiStatus.Experimental
 -    Registry<DamageType> DAMAGE_TYPE = Objects.requireNonNull(Bukkit.getRegistry(DamageType.class), "No registry present for DamageType. This is a bug.");
 +    @Deprecated(since = "1.20.6")
-+    Registry<DamageType> DAMAGE_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(DamageType.class); // Paper
++    Registry<DamageType> DAMAGE_TYPE = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(DamageType.class), "No registry present for DamageType. This is a bug."); // Paper
      /**
       * Villager profession.
       *
@@ -268,7 +290,7 @@ index a04d279561676e825905f5512c399d14a3d8f828..7aee2cee892492c523ae06902c6582b0
       */
 -    Registry<Wolf.Variant> WOLF_VARIANT = Objects.requireNonNull(Bukkit.getRegistry(Wolf.Variant.class), "No registry present for Wolf Variant. This is a bug.");
 +    @Deprecated(since = "1.20.6")
-+    Registry<Wolf.Variant> WOLF_VARIANT = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Wolf.Variant.class); // Paper
++    Registry<Wolf.Variant> WOLF_VARIANT = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Wolf.Variant.class), "No registry present for Wolf$Variant. This is a bug."); // Paper
      /**
       * Map cursor types.
       *

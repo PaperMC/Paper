@@ -100,10 +100,10 @@ index 0000000000000000000000000000000000000000..5fc4c41ec2089d4f69861c5da17e0bef
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9480dafb2de09ac883e997c41e8a16b77f5f7082
+index 0000000000000000000000000000000000000000..00a49ae2f0c89b129301e226794fc9c29d4c0ddd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,123 @@
 +package io.papermc.paper.registry;
 +
 +import io.papermc.paper.registry.entry.RegistryEntry;
@@ -111,9 +111,10 @@ index 0000000000000000000000000000000000000000..9480dafb2de09ac883e997c41e8a16b7
 +import io.papermc.paper.registry.legacy.DelayedRegistryEntry;
 +import io.papermc.paper.registry.legacy.LegacyRegistryIdentifiers;
 +import java.util.Collections;
-+import java.util.IdentityHashMap;
 +import java.util.Map;
++import java.util.NoSuchElementException;
 +import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
 +import net.minecraft.resources.ResourceKey;
 +import org.bukkit.Keyed;
 +import org.bukkit.Registry;
@@ -132,7 +133,7 @@ index 0000000000000000000000000000000000000000..9480dafb2de09ac883e997c41e8a16b7
 +    // We want to do registration there, so we have access to the nms.Registry instance in order to wrap it in a CraftRegistry instance.
 +    // The memoized Supplier is needed because we *can't* instantiate any CraftRegistry class until **all** the BuiltInRegistries have been added
 +    // to this map because that would class-load org.bukkit.Registry which would query this map.
-+    private final Map<RegistryKey<?>, RegistryHolder<?, ?>> registries = Collections.synchronizedMap(new IdentityHashMap<>());
++    private final Map<RegistryKey<?>, RegistryHolder<?>> registries = new ConcurrentHashMap<>(); // is "identity" because RegistryKey overrides equals and hashCode
 +
 +    public static PaperRegistryAccess instance() {
 +        return (PaperRegistryAccess) RegistryAccessHolder.INSTANCE.orElseThrow(() -> new IllegalStateException("No RegistryAccess implementation found"));
@@ -151,7 +152,7 @@ index 0000000000000000000000000000000000000000..9480dafb2de09ac883e997c41e8a16b7
 +        final @Nullable RegistryEntry<?, T, ?> entry;
 +        registryKey = requireNonNull(byType(type), () -> type + " is not a valid registry type");
 +        entry = PaperRegistries.getEntry(registryKey);
-+        final @Nullable RegistryHolder<T, ?> registry = (RegistryHolder<T, ?>) this.registries.get(registryKey);
++        final @Nullable RegistryHolder<T> registry = (RegistryHolder<T>) this.registries.get(registryKey);
 +        if (registry != null) {
 +            // if the registry exists, return right away. Since this is the "legacy" method, we return DelayedRegistry
 +            // for the non-builtin Registry instances stored as fields in Registry.
@@ -160,7 +161,7 @@ index 0000000000000000000000000000000000000000..9480dafb2de09ac883e997c41e8a16b7
 +            // if the registry doesn't exist and the entry is marked as "delayed", we create a registry holder that is empty
 +            // which will later be filled with the actual registry. This is so the fields on org.bukkit.Registry can be populated with
 +            // registries that don't exist at the time org.bukkit.Registry is statically initialized.
-+            final RegistryHolder<T, ?> delayedHolder = new RegistryHolder.Delayed<>();
++            final RegistryHolder<T> delayedHolder = new RegistryHolder.Delayed<>();
 +            this.registries.put(registryKey, delayedHolder);
 +            return delayedHolder.get();
 +        } else {
@@ -172,9 +173,12 @@ index 0000000000000000000000000000000000000000..9480dafb2de09ac883e997c41e8a16b7
 +    @SuppressWarnings("unchecked")
 +    @Override
 +    public <T extends Keyed> Registry<T> getRegistry(final RegistryKey<T> key) {
-+        final @Nullable RegistryHolder<T, ?> registryHolder = (RegistryHolder<T, ?>) this.registries.get(key);
++        if (PaperRegistries.getEntry(key) == null) {
++            throw new NoSuchElementException(key + " is not a valid registry key");
++        }
++        final @Nullable RegistryHolder<T> registryHolder = (RegistryHolder<T>) this.registries.get(key);
 +        if (registryHolder == null) {
-+            throw new IllegalArgumentException(key + " is not a valid registry key or that registry is not available yet");
++            throw new IllegalArgumentException(key + " points to a registry that is not available yet");
 +        }
 +        // since this is the getRegistry method that uses the modern RegistryKey, we unwrap any DelayedRegistry instances
 +        // that might be returned here. I don't think reference equality is required when doing getRegistry(RegistryKey.WOLF_VARIANT) == Registry.WOLF_VARIANT
@@ -202,14 +206,14 @@ index 0000000000000000000000000000000000000000..9480dafb2de09ac883e997c41e8a16b7
 +        if (entry == null) { // skip registries that don't have API entries
 +            return;
 +        }
-+        final @Nullable RegistryHolder<B, R> registryHolder = (RegistryHolder<B, R>) this.registries.get(entry.apiKey());
++        final @Nullable RegistryHolder<B> registryHolder = (RegistryHolder<B>) this.registries.get(entry.apiKey());
 +        if (registryHolder == null || replace) {
 +            // if the holder doesn't exist yet, or is marked as "replaceable", put it in the map.
 +            this.registries.put(entry.apiKey(), entry.createRegistryHolder(registry));
 +        } else {
-+            if (registryHolder instanceof final RegistryHolder.Delayed<B, R> delayedHolder && entry instanceof final DelayedRegistryEntry<M, B, R> delayedEntry) {
++            if (registryHolder instanceof RegistryHolder.Delayed<?, ?> && entry instanceof final DelayedRegistryEntry<M, B, R> delayedEntry) {
 +                // if the registry holder is delayed, and the entry is marked as "delayed", then load the holder with the CraftRegistry instance that wraps the actual nms Registry.
-+                delayedHolder.loadFrom(delayedEntry, registry);
++                ((RegistryHolder.Delayed<B, R>) registryHolder).loadFrom(delayedEntry, registry);
 +            } else {
 +                throw new IllegalArgumentException(resourceKey + " has already been created");
 +            }
@@ -225,13 +229,12 @@ index 0000000000000000000000000000000000000000..9480dafb2de09ac883e997c41e8a16b7
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryHolder.java b/src/main/java/io/papermc/paper/registry/RegistryHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f750325fa980d4c49b92573ac4650f2b53c26e7b
+index 0000000000000000000000000000000000000000..02402ef647c3e78ed56fd6b2687bf7c67448f891
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryHolder.java
 @@ -0,0 +1,47 @@
 +package io.papermc.paper.registry;
 +
-+import com.google.common.base.Preconditions;
 +import com.google.common.base.Suppliers;
 +import io.papermc.paper.registry.legacy.DelayedRegistry;
 +import io.papermc.paper.registry.legacy.DelayedRegistryEntry;
@@ -239,46 +242,47 @@ index 0000000000000000000000000000000000000000..f750325fa980d4c49b92573ac4650f2b
 +import org.bukkit.Keyed;
 +import org.bukkit.Registry;
 +import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +@DefaultQualifier(NonNull.class)
-+public class RegistryHolder<B extends Keyed, R extends Registry<B>> {
++public interface RegistryHolder<B extends Keyed> {
 +
-+    private final @Nullable Supplier<R> memoizedSupplier;
++    Registry<B> get();
 +
-+    public RegistryHolder(final Supplier<? extends R> supplier) {
-+        this.memoizedSupplier = Suppliers.memoize(supplier::get);
++    final class Memoized<B extends Keyed, R extends Registry<B>> implements RegistryHolder<B> {
++
++        private final Supplier<R> memoizedSupplier;
++
++        public Memoized(final Supplier<? extends R> supplier) {
++            this.memoizedSupplier = Suppliers.memoize(supplier::get);
++        }
++
++        public Registry<B> get() {
++            return this.memoizedSupplier.get();
++        }
 +    }
 +
-+    protected RegistryHolder() {
-+        this.memoizedSupplier = null;
-+    }
-+
-+    public Registry<B> get() {
-+        Preconditions.checkState(this.memoizedSupplier != null, "Must provide a supplier or override this method!");
-+        return this.memoizedSupplier.get();
-+    }
-+
-+    public static final class Delayed<B extends Keyed, R extends Registry<B>> extends RegistryHolder<B, R> {
++    final class Delayed<B extends Keyed, R extends Registry<B>> implements RegistryHolder<B> {
 +
 +        private final DelayedRegistry<B, R> delayedRegistry = new DelayedRegistry<>();
 +
 +        @Override
-+        public Registry<B> get() {
++        public DelayedRegistry<B, R> get() {
 +            return this.delayedRegistry;
 +        }
 +
 +        <M> void loadFrom(final DelayedRegistryEntry<M, B, R> delayedEntry, final net.minecraft.core.Registry<M> registry) {
-+            final RegistryHolder<B, R> delegateHolder = delayedEntry.delegate().createRegistryHolder(registry);
-+            Preconditions.checkState(delegateHolder.memoizedSupplier != null, "delegateHolder must have a memoized supplier!");
-+            this.delayedRegistry.load(delegateHolder.memoizedSupplier);
++            final RegistryHolder<B> delegateHolder = delayedEntry.delegate().createRegistryHolder(registry);
++            if (!(delegateHolder instanceof RegistryHolder.Memoized<B, ?>)) {
++                throw new IllegalArgumentException(delegateHolder + " must be a memoized holder");
++            }
++            this.delayedRegistry.load(((Memoized<B, R>) delegateHolder).memoizedSupplier);
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6ce94c2399817a74771ade0bb82905763a8e9df2
+index 0000000000000000000000000000000000000000..8cb8630304f2b7604f420fe9dbdee9c460ee7bda
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java
 @@ -0,0 +1,38 @@
@@ -316,13 +320,13 @@ index 0000000000000000000000000000000000000000..6ce94c2399817a74771ade0bb8290576
 +    }
 +
 +    @Override
-+    public final Class<?> toPreload() {
++    public final Class<?> classToPreload() {
 +        return this.classToPreload;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1639380c9db4249f9e49b23588720d5cec2d63fd
+index 0000000000000000000000000000000000000000..03ffc325c008af97e848e747d8860c58e308bdf3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
 @@ -0,0 +1,34 @@
@@ -352,17 +356,17 @@ index 0000000000000000000000000000000000000000..1639380c9db4249f9e49b23588720d5c
 +    }
 +
 +    @Override
-+    public RegistryHolder<B, CraftRegistry<B, M>> createRegistryHolder(final Registry<M> nmsRegistry) {
-+        return new RegistryHolder<>(() -> this.createApiRegistry(nmsRegistry));
++    public RegistryHolder<B> createRegistryHolder(final Registry<M> nmsRegistry) {
++        return new RegistryHolder.Memoized<>(() -> this.createApiRegistry(nmsRegistry));
 +    }
 +
 +    private CraftRegistry<B, M> createApiRegistry(final Registry<M> nmsRegistry) {
-+        return new CraftRegistry<>(this.toPreload(), nmsRegistry, this.minecraftToBukkit);
++        return new CraftRegistry<>(this.classToPreload(), nmsRegistry, this.minecraftToBukkit);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9cda87cd03a04998cb527a4be9d3950523646cd3
+index 0000000000000000000000000000000000000000..8daafa1bc3c1dbbc9c902633c61e093668b2f049
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
 @@ -0,0 +1,33 @@
@@ -383,7 +387,7 @@ index 0000000000000000000000000000000000000000..9cda87cd03a04998cb527a4be9d39505
 +@DefaultQualifier(NonNull.class)
 +public interface RegistryEntry<M, B extends Keyed, R extends org.bukkit.Registry<B>> extends RegistryEntryInfo<M, B> { // TODO remove Keyed
 +
-+    RegistryHolder<B, R> createRegistryHolder(Registry<M> nmsRegistry);
++    RegistryHolder<B> createRegistryHolder(Registry<M> nmsRegistry);
 +
 +    /**
 +     * This should only be used if the registry instance needs to exist early due to the need
@@ -401,7 +405,7 @@ index 0000000000000000000000000000000000000000..9cda87cd03a04998cb527a4be9d39505
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntryInfo.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntryInfo.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..abb24093dc81c0ba8a761700be59d4c9a67f4b00
+index 0000000000000000000000000000000000000000..8b8c273b7fb60998a53cf1ce67632315e94599cd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntryInfo.java
 @@ -0,0 +1,14 @@
@@ -417,7 +421,7 @@ index 0000000000000000000000000000000000000000..abb24093dc81c0ba8a761700be59d4c9
 +
 +    RegistryKey<B> apiKey();
 +
-+    Class<?> toPreload();
++    Class<?> classToPreload();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/package-info.java b/src/main/java/io/papermc/paper/registry/entry/package-info.java
 new file mode 100644
@@ -493,7 +497,7 @@ index 0000000000000000000000000000000000000000..5562e8da5ebaef2a3add46e88d64358b
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0ca04fac46b2ec6aa8481ad867264050bfda630c
+index 0000000000000000000000000000000000000000..aa85e32961ea258745dc8ed68328528b3458c042
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java
 @@ -0,0 +1,31 @@
@@ -519,12 +523,12 @@ index 0000000000000000000000000000000000000000..0ca04fac46b2ec6aa8481ad867264050
 +    }
 +
 +    @Override
-+    public Class<?> toPreload() {
-+        return this.delegate.toPreload();
++    public Class<?> classToPreload() {
++        return this.delegate.classToPreload();
 +    }
 +
 +    @Override
-+    public RegistryHolder<T, R> createRegistryHolder(final Registry<M> nmsRegistry) {
++    public RegistryHolder<T> createRegistryHolder(final Registry<M> nmsRegistry) {
 +        return this.delegate.createRegistryHolder(nmsRegistry);
 +    }
 +}
