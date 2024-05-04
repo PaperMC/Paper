@@ -28,10 +28,10 @@ import org.jetbrains.annotations.NotNull;
  * <p>If your logic is not safe to run asynchronously, only react to the synchronous version.</p>
  *
  * <p>This is a draft/experimental API and is subject to change.</p>
- * @deprecated For removal, use the new brigadier api.
+ * @deprecated For removal, see {@link io.papermc.paper.command.brigadier.Commands} on how to use the new Brigadier API.
  */
 @ApiStatus.Experimental
-@Deprecated
+@Deprecated(forRemoval = true)
 public class AsyncPlayerSendCommandsEvent <S extends BukkitBrigadierCommandSource> extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();

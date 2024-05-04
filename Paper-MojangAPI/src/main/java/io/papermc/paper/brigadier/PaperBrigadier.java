@@ -9,7 +9,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Helper methods to bridge the gaps between Brigadier and Paper-MojangAPI.
- * @deprecated For removal, use the new brigadier api.
+ * @deprecated For removal, see {@link io.papermc.paper.command.brigadier.Commands} on how to use the new Brigadier API.
  */
 @Deprecated(forRemoval = true) // Paper
 public final class PaperBrigadier {

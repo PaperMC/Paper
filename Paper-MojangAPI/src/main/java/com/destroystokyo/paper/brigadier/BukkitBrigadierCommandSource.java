@@ -7,7 +7,7 @@ import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @deprecated For removal, use the new brigadier api.
+ * @deprecated For removal, see {@link io.papermc.paper.command.brigadier.Commands} on how to use the new Brigadier API.
  */
 @Deprecated(forRemoval = true) // Paper
 public interface BukkitBrigadierCommandSource {

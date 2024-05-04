@@ -18,7 +18,6 @@ import java.util.concurrent.CompletableFuture;
 
 public class IceCreamTypeArgument implements CustomArgumentType.Converted<IceCreamType, String> {
 
-
     @Override
     public @NotNull IceCreamType convert(String nativeType) throws CommandSyntaxException {
         try {
