@@ -317,7 +317,7 @@ index 0000000000000000000000000000000000000000..5747ea03aef2f2a464bd6b30aba3a536
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..10de213a52edec495e0dc3202193a3c74aa1dd92
+index 0000000000000000000000000000000000000000..40bdc1e4da3234f4ba7ec3476fc18c8811c0fe54
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java
 @@ -0,0 +1,24 @@
@@ -342,33 +342,33 @@ index 0000000000000000000000000000000000000000..10de213a52edec495e0dc3202193a3c7
 +     * @return serializer instance
 +     */
 +    static @NotNull MessageComponentSerializer message() {
-+        return MessageComponentSerializerHolder.PROVIDER;
++        return MessageComponentSerializerHolder.PROVIDER.orElseThrow();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializerHolder.java b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializerHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c30a6e6924c0d515f6ba1eef635113676f7efff9
+index 0000000000000000000000000000000000000000..2db12952461c92a64505d6646f6f49f824e83050
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializerHolder.java
 @@ -0,0 +1,12 @@
 +package io.papermc.paper.command.brigadier;
 +
++import java.util.Optional;
 +import java.util.ServiceLoader;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +@ApiStatus.Internal
 +final class MessageComponentSerializerHolder {
 +
-+    public static final MessageComponentSerializer PROVIDER = ServiceLoader.load(MessageComponentSerializer.class)
-+        .findFirst()
-+        .orElseThrow();
++    static final Optional<MessageComponentSerializer> PROVIDER = ServiceLoader.load(MessageComponentSerializer.class)
++        .findFirst();
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java b/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9df8d23c0
+index 0000000000000000000000000000000000000000..37ba7db7514e466460a8c923b0fa69fb43ee88e6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java
-@@ -0,0 +1,304 @@
+@@ -0,0 +1,317 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.arguments.ArgumentType;
@@ -380,11 +380,13 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 +import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 +import io.papermc.paper.entity.LookAnchor;
++import java.util.Optional;
 +import java.util.ServiceLoader;
 +import java.util.UUID;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.Style;
 +import org.bukkit.GameMode;
 +import org.bukkit.HeightMap;
 +import org.bukkit.NamespacedKey;
@@ -408,9 +410,8 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +@ApiStatus.Experimental
 +public final class ArgumentTypes {
 +
-+    static final @NotNull VanillaArgumentProvider PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class)
-+        .findFirst()
-+        .orElseThrow();
++    static final Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class)
++        .findFirst();
 +
 +    @ApiStatus.Internal
 +    ArgumentTypes() {
@@ -423,7 +424,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument that takes one entity
 +     */
 +    public static @NotNull ArgumentType<EntitySelectorArgumentResolver> entity() {
-+        return PROVIDER.entity();
++        return provider().entity();
 +    }
 +
 +    /**
@@ -433,7 +434,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument that takes multiple entities
 +     */
 +    public static @NotNull ArgumentType<EntitySelectorArgumentResolver> entities() {
-+        return PROVIDER.entities();
++        return provider().entities();
 +    }
 +
 +    /**
@@ -443,7 +444,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument that takes one player
 +     */
 +    public static @NotNull ArgumentType<PlayerSelectorArgumentResolver> player() {
-+        return PROVIDER.player();
++        return provider().player();
 +    }
 +
 +    /**
@@ -453,7 +454,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument that takes multiple players
 +     */
 +    public static @NotNull ArgumentType<PlayerSelectorArgumentResolver> players() {
-+        return PROVIDER.players();
++        return provider().players();
 +    }
 +
 +    /**
@@ -463,7 +464,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return player profile arguments
 +     */
 +    public static @NotNull ArgumentType<PlayerProfileListResolver> playerProfiles() {
-+        return PROVIDER.playerProfiles();
++        return provider().playerProfiles();
 +    }
 +
 +    /**
@@ -472,7 +473,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<BlockPositionResolver> blockPos() {
-+        return PROVIDER.blockPos();
++        return provider().blockPos();
 +    }
 +
 +    /**
@@ -482,7 +483,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<BlockState> blockState() {
-+        return PROVIDER.blockState();
++        return provider().blockState();
 +    }
 +
 +    /**
@@ -492,7 +493,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<ItemStack> itemStack() {
-+        return PROVIDER.itemStack();
++        return provider().itemStack();
 +    }
 +
 +    /**
@@ -501,7 +502,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<ItemStackPredicate> itemPredicate() {
-+        return PROVIDER.itemStackPredicate();
++        return provider().itemStackPredicate();
 +    }
 +
 +    /**
@@ -510,7 +511,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<NamedTextColor> namedColor() {
-+        return PROVIDER.namedColor();
++        return provider().namedColor();
 +    }
 +
 +    /**
@@ -519,7 +520,16 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<Component> component() {
-+        return PROVIDER.component();
++        return provider().component();
++    }
++
++    /**
++     * A style argument.
++     *
++     * @return argument
++     */
++    public static @NotNull ArgumentType<Style> style() {
++        return provider().style();
 +    }
 +
 +    /**
@@ -530,7 +540,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<MessageArgumentResponse> signedMessage() {
-+        return PROVIDER.signedMessage();
++        return provider().signedMessage();
 +    }
 +
 +    /**
@@ -539,7 +549,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<DisplaySlot> scoreboardDisplaySlot() {
-+        return PROVIDER.scoreboardDisplaySlot();
++        return provider().scoreboardDisplaySlot();
 +    }
 +
 +    /**
@@ -548,7 +558,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<NamespacedKey> namespacedKey() {
-+        return PROVIDER.namespacedKey();
++        return provider().namespacedKey();
 +    }
 +
 +    /**
@@ -558,7 +568,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     */
 +    // include both key types as we are slowly moving to use adventure's key
 +    public static @NotNull ArgumentType<Key> key() {
-+        return PROVIDER.key();
++        return provider().key();
 +    }
 +
 +    /**
@@ -567,7 +577,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<IntegerRangeProvider> integerRange() {
-+        return PROVIDER.integerRange();
++        return provider().integerRange();
 +    }
 +
 +    /**
@@ -576,7 +586,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<DoubleRangeProvider> doubleRange() {
-+        return PROVIDER.doubleRange();
++        return provider().doubleRange();
 +    }
 +
 +    /**
@@ -585,7 +595,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<World> world() {
-+        return PROVIDER.world();
++        return provider().world();
 +    }
 +
 +    /**
@@ -594,7 +604,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<GameMode> gameMode() {
-+        return PROVIDER.gameMode();
++        return provider().gameMode();
 +    }
 +
 +    /**
@@ -603,7 +613,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<HeightMap> heightMap() {
-+        return PROVIDER.heightMap();
++        return provider().heightMap();
 +    }
 +
 +    /**
@@ -612,7 +622,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<UUID> uuid() {
-+        return PROVIDER.uuid();
++        return provider().uuid();
 +    }
 +
 +    /**
@@ -621,7 +631,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<Criteria> objectiveCriteria() {
-+        return PROVIDER.objectiveCriteria();
++        return provider().objectiveCriteria();
 +    }
 +
 +    /**
@@ -630,7 +640,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<LookAnchor> entityAnchor() {
-+        return PROVIDER.entityAnchor();
++        return provider().entityAnchor();
 +    }
 +
 +    /**
@@ -651,7 +661,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<Integer> time(int mintime) {
-+        return PROVIDER.time(mintime);
++        return provider().time(mintime);
 +    }
 +
 +    /**
@@ -660,7 +670,7 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<Mirror> templateMirror() {
-+        return PROVIDER.templateMirror();
++        return provider().templateMirror();
 +    }
 +
 +    /**
@@ -669,9 +679,12 @@ index 0000000000000000000000000000000000000000..7aaa70648f26c3aa5ad5b4b9942b78c9
 +     * @return argument
 +     */
 +    public static @NotNull ArgumentType<StructureRotation> templateRotation() {
-+        return PROVIDER.templateRotation();
++        return provider().templateRotation();
 +    }
 +
++    private static VanillaArgumentProvider provider() {
++        return PROVIDER.orElseThrow();
++    } 
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/CustomArgumentType.java b/src/main/java/io/papermc/paper/command/brigadier/argument/CustomArgumentType.java
 new file mode 100644
@@ -833,10 +846,10 @@ index 0000000000000000000000000000000000000000..07051125a3b4963fb5c7b45bd1d5e93f
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProvider.java b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a9bf62827d46c795f0b3b12de5bcdd825f4f546a
+index 0000000000000000000000000000000000000000..53966ed8e1e4658ed35c94bdb738932f9c3b572a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProvider.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,90 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.arguments.ArgumentType;
@@ -852,6 +865,7 @@ index 0000000000000000000000000000000000000000..a9bf62827d46c795f0b3b12de5bcdd82
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.Style;
 +import org.bukkit.GameMode;
 +import org.bukkit.HeightMap;
 +import org.bukkit.NamespacedKey;
@@ -892,6 +906,8 @@ index 0000000000000000000000000000000000000000..a9bf62827d46c795f0b3b12de5bcdd82
 +    ArgumentType<NamedTextColor> namedColor();
 +
 +    ArgumentType<Component> component();
++
++    ArgumentType<Style> style();
 +
 +    ArgumentType<MessageArgumentResponse> signedMessage();
 +
