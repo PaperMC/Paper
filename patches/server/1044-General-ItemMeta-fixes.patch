@@ -116,10 +116,10 @@ index 2d6abecc94683f92da6be26b72ea829663b16d76..6a3b0c7f0cc3ffb17a231383ad103fa7
  
          for (Pattern p : this.patterns) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index a1e10c14375b81f97e37105df43ab8f13461474c..88a48b7bd1ae7381ddd63052b02f03dcc6671411 100644
+index a1e10c14375b81f97e37105df43ab8f13461474c..99ee41e79891d6017f065492efab5af95b1b4c38 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-@@ -209,7 +209,15 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -209,9 +209,18 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          super.applyToItem(tag);
  
          if (this.blockEntityTag != null) {
@@ -135,7 +135,24 @@ index a1e10c14375b81f97e37105df43ab8f13461474c..88a48b7bd1ae7381ddd63052b02f03dc
 +            // Paper end
  
              for (TypedDataComponent<?> component : this.blockEntityTag.collectComponents()) {
++                if (CraftMetaItem.DEFAULT_HANDLED_DCTS.contains(component.type())) continue; // Paper - if the component type was already handled by CraftMetaItem, don't add it again
                  tag.builder.set(component);
+             }
+         }
+@@ -332,6 +341,13 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         Preconditions.checkArgument(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for " + this.material);
+ 
+         this.blockEntityTag = (CraftBlockEntityState<?>) blockState;
++        // Paper start - when a new BlockState is set, the components from that block entity
++        // have to be used to update the fields on CraftMetaItem
++        final PatchedDataComponentMap patchedMap = new net.minecraft.core.component.PatchedDataComponentMap(this.blockEntityTag.getHandle().getBlock().asItem().components());
++        final net.minecraft.core.component.DataComponentMap map = this.blockEntityTag.collectComponents();
++        patchedMap.setAll(map);
++        this.updateFromPatch(patchedMap.asPatch(), null);
++        // Paper end
+     }
+ 
+     private static Material shieldToBannerHack() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 index 7f3733c29f2e79bffa24631efb20de49fde857f2..6a6e9a1478a2ead20467bc711d0ad4a9ab3010cb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
@@ -243,7 +260,7 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 0bc100430483f88bc7edf17645250b2862ccc1d5..ab23597a099a2785c803e08c93ff9f046a4af677 100644
+index 0bc100430483f88bc7edf17645250b2862ccc1d5..03f9fff7c06bf5f166d6277e3aa6adb5f646042d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -165,9 +165,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -258,7 +275,19 @@ index 0bc100430483f88bc7edf17645250b2862ccc1d5..ab23597a099a2785c803e08c93ff9f04
  
          <T> Applicator put(ItemMetaKeyType<T> key, T value) {
              this.builder.set(key.TYPE, value);
-@@ -880,9 +881,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -309,6 +310,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     }
+ 
+     CraftMetaItem(DataComponentPatch tag, Set<DataComponentType<?>> extraHandledTags) { // Paper - improve handled tags on type changes
++        // Paper start - properly support data components in BlockEntity
++        this.updateFromPatch(tag, extraHandledTags);
++    }
++    protected final void updateFromPatch(DataComponentPatch tag, Set<DataComponentType<?>> extraHandledTags) {
++        // Paper end - properly support data components in BlockEntity
+         CraftMetaItem.getOrEmpty(tag, CraftMetaItem.NAME).ifPresent((component) -> {
+             this.displayName = component;
+         });
+@@ -880,9 +886,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      void applyModifiers(Multimap<Attribute, AttributeModifier> modifiers, CraftMetaItem.Applicator tag) {
          if (modifiers == null || modifiers.isEmpty()) {
@@ -269,7 +298,7 @@ index 0bc100430483f88bc7edf17645250b2862ccc1d5..ab23597a099a2785c803e08c93ff9f04
              return;
          }
  
-@@ -1007,6 +1006,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1007,6 +1011,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public void lore(final List<? extends net.kyori.adventure.text.Component> lore) {
@@ -277,7 +306,7 @@ index 0bc100430483f88bc7edf17645250b2862ccc1d5..ab23597a099a2785c803e08c93ff9f04
          this.lore = lore != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(lore) : null;
      }
      // Paper end
-@@ -1131,6 +1131,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1131,6 +1136,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      // Paper end
      @Override
      public void setLore(List<String> lore) {
@@ -285,7 +314,7 @@ index 0bc100430483f88bc7edf17645250b2862ccc1d5..ab23597a099a2785c803e08c93ff9f04
          if (lore == null || lore.isEmpty()) {
              this.lore = null;
          } else {
-@@ -1146,6 +1147,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1146,6 +1152,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      // Paper start
      @Override
      public void setLoreComponents(List<net.md_5.bungee.api.chat.BaseComponent[]> lore) {
@@ -293,7 +322,7 @@ index 0bc100430483f88bc7edf17645250b2862ccc1d5..ab23597a099a2785c803e08c93ff9f04
          if (lore == null) {
              this.lore = null;
          } else {
-@@ -1413,7 +1415,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1413,7 +1420,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public String getAsString() {
@@ -302,6 +331,15 @@ index 0bc100430483f88bc7edf17645250b2862ccc1d5..ab23597a099a2785c803e08c93ff9f04
          this.applyToItem(tag);
          DataComponentPatch patch = tag.build();
          Tag nbt = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
+@@ -1869,7 +1876,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     // Paper start - improve checking handled tags
+     @org.jetbrains.annotations.VisibleForTesting
+     public static final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> HANDLED_DCTS_PER_TYPE = new HashMap<>();
+-    private static final Set<DataComponentType<?>> DEFAULT_HANDLED_DCTS = Set.of(
++    protected static final Set<DataComponentType<?>> DEFAULT_HANDLED_DCTS = Set.of(
+         CraftMetaItem.NAME.TYPE,
+         CraftMetaItem.ITEM_NAME.TYPE,
+         CraftMetaItem.LORE.TYPE,
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 index c769d2a210060f6829a6cbe739d6d9ab2f602644..1feffe289a1e714084bd37b5c5ad23a37dd58325 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
