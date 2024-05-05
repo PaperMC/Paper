@@ -22,6 +22,31 @@ public net.minecraft.world.entity.projectile.FireworkRocketEntity getDefaultItem
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+index 7d557c7ec6fb1763395f4920a170bd4e4ba6747f..e603307871b623ce437f4b1b68ab306fbdd9919d 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+@@ -413,13 +413,18 @@ public class FishingHook extends Projectile {
+                 }
+             } else {
+                 // CraftBukkit start - logic to modify fishing wait time
+-                this.timeUntilLured = Mth.nextInt(this.random, this.minWaitTime, this.maxWaitTime);
+-                this.timeUntilLured -= (this.applyLure) ? (this.lureSpeed * 20 * 5 >= this.maxWaitTime ? this.timeUntilLured - 1 : this.lureSpeed * 20 * 5) : 0; // Paper - Fix Lure infinite loop
++                resetTimeUntilLured(); // Paper - more projectile api - extract time until lured reset logic
+                 // CraftBukkit end
+             }
+         }
+ 
+     }
++    // Paper start - more projectile api - extract time until lured reset logic
++    public void resetTimeUntilLured() {
++        this.timeUntilLured = Mth.nextInt(this.random, this.minWaitTime, this.maxWaitTime);
++        this.timeUntilLured -= (this.applyLure) ? (this.lureSpeed * 20 * 5 >= this.maxWaitTime ? this.timeUntilLured - 1 : this.lureSpeed * 20 * 5) : 0; // Paper - Fix Lure infinite loop
++    }
++    // Paper end - more projectile api - extract time until lured reset logic
+ 
+     public boolean calculateOpenWater(BlockPos pos) {
+         FishingHook.OpenWaterType entityfishinghook_waterposition = FishingHook.OpenWaterType.INVALID;
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 index 40348e45b02be9a0b397a883940a476fb6738ef4..ccb7aa341e3087255bce1f6fb953d33584147fd3 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
@@ -353,10 +378,18 @@ index c9e15a9d82dee935293b2e7e233f5b9b2d822448..3c31ff72f3e77ee0d9231fec5f15267c
 +    // Paper end - Expose firework item directly + manually setting flight
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
-index 6e2f91423371ead9890095cf4b1e2299c4dcba28..9938584d832d2bc29d7af48749b83b7f820d75d5 100644
+index 6e2f91423371ead9890095cf4b1e2299c4dcba28..60f3d293926b56503c97604954068bcff308706a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
-@@ -196,4 +196,33 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
+@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
+ 
+ import com.google.common.base.Preconditions;
+ import net.minecraft.core.BlockPos;
++import net.minecraft.util.Mth;
+ import net.minecraft.world.entity.projectile.FishingHook;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Entity;
+@@ -196,4 +197,42 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
      public HookState getState() {
          return HookState.values()[this.getHandle().currentState.ordinal()];
      }
@@ -377,16 +410,25 @@ index 6e2f91423371ead9890095cf4b1e2299c4dcba28..9938584d832d2bc29d7af48749b83b7f
 +    }
 +
 +    @Override
-+    public void setTimeUntilBite(int ticks) {
-+        FishingHook hook = this.getHandle();
-+        if (ticks > 0) {
++    public void setTimeUntilBite(final int ticks) {
++        com.google.common.base.Preconditions.checkArgument(ticks >= 1, "Cannot set time until bite to less than 1 (%s<1)", ticks);
++        final FishingHook hook = this.getHandle();
++
++        // Reset the fish angle hook only when this call "enters" the fish into the lure stage.
++        final boolean alreadyInLuringPhase = hook.timeUntilHooked > 0 && hook.timeUntilLured <= 0;
++        if (!alreadyInLuringPhase) {
 +            hook.fishAngle = net.minecraft.util.Mth.nextFloat(hook.random, hook.minLureAngle, hook.maxLureAngle);
-+        } else {
-+            // Vanilla sets timeUntilHooked only when timeUntilLured <= 0
-+            // This makes sure the API won't have wait time > 0 when it's now past the wait phase
 +            hook.timeUntilLured = 0;
 +        }
++
 +        hook.timeUntilHooked = ticks;
++    }
++
++    @Override
++    public void resetFishingState() {
++        final FishingHook hook = this.getHandle();
++        hook.resetTimeUntilLured();
++        hook.timeUntilHooked = 0; // Reset time until hooked, will be repopulated once lured time is ticked down.
 +    }
 +    // Paper end
  }
