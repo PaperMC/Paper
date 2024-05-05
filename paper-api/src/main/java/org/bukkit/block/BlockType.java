@@ -3448,7 +3448,7 @@ public interface BlockType extends Keyed, Translatable {
      *
      * @return the corresponding ItemType
      * @see #hasItemType()
-     * @see BlockData#getPlacementType()
+     * @see BlockData#getPlacementMaterial()
      */
     @NotNull
     ItemType getItemType();
