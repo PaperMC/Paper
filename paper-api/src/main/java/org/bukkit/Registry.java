@@ -12,6 +12,7 @@ import java.util.stream.StreamSupport;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.damage.DamageType;
@@ -24,6 +25,7 @@ import org.bukkit.entity.Wolf;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.loot.LootTables;
@@ -93,6 +95,14 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     Registry<Biome> BIOME = new SimpleRegistry<>(Biome.class);
     /**
+     * Server block types.
+     *
+     * @see BlockType
+     * @apiNote BlockType is not ready for public usage yet
+     */
+    @ApiStatus.Internal
+    Registry<BlockType> BLOCK = Objects.requireNonNull(Bukkit.getRegistry(BlockType.class), "No registry present for BlockType. This is a bug.");
+    /**
      * Custom boss bars.
      *
      * @see Bukkit#getBossBar(org.bukkit.NamespacedKey)
@@ -142,6 +152,14 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see MusicInstrument
      */
     Registry<MusicInstrument> INSTRUMENT = Objects.requireNonNull(Bukkit.getRegistry(MusicInstrument.class), "No registry present for MusicInstrument. This is a bug.");
+    /**
+     * Server item types.
+     *
+     * @see ItemType
+     * @apiNote ItemType is not ready for public usage yet
+     */
+    @ApiStatus.Internal
+    Registry<ItemType> ITEM = Objects.requireNonNull(Bukkit.getRegistry(ItemType.class), "No registry present for ItemType. This is a bug.");
     /**
      * Default server loot tables.
      *
