@@ -192,7 +192,7 @@ public final class CraftLegacy {
             }
         }
 
-        if (mappedData == null && material.isBlock()) {
+        if (mappedData == null) {
             // Try exact match first
             IBlockData iblock = materialToData.get(materialData);
             if (iblock != null) {

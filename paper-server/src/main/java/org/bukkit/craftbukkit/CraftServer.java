@@ -121,6 +121,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Registry;
@@ -2364,14 +2365,14 @@ public final class CraftServer implements Server {
     public BlockData createBlockData(String data) throws IllegalArgumentException {
         Preconditions.checkArgument(data != null, "data cannot be null");
 
-        return createBlockData(null, data);
+        return createBlockData((Material) null, data);
     }
 
     @Override
     public BlockData createBlockData(org.bukkit.Material material, String data) {
         Preconditions.checkArgument(material != null || data != null, "Must provide one of material or data");
 
-        return CraftBlockData.newData(material, data);
+        return CraftBlockData.newData((material != null) ? material.asBlockType() : null, data);
     }
 
     @Override

@@ -31,6 +31,9 @@ public class RegistryConversionTest extends AbstractTestingBase {
     private static final String MINECRAFT_TO_BUKKIT = "minecraftToBukkit";
     private static final String BUKKIT_TO_MINECRAFT = "bukkitToMinecraft";
 
+    private static final String MINECRAFT_TO_BUKKIT_NEW = "minecraftToBukkitNew";
+    private static final String BUKKIT_TO_MINECRAFT_NEW = "bukkitToMinecraftNew";
+
     private static final Map<Class<? extends Keyed>, Method> MINECRAFT_TO_BUKKIT_METHODS = new HashMap<>();
     private static final Map<Class<? extends Keyed>, Method> BUKKIT_TO_MINECRAFT_METHODS = new HashMap<>();
 
@@ -61,17 +64,18 @@ public class RegistryConversionTest extends AbstractTestingBase {
     @Order(2)
     @RegistriesTest
     public void testMinecraftToBukkitPresent(Class<? extends Keyed> clazz, ResourceKey<IRegistry<?>> registryKey,
-                                             Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) {
+                                             Class<? extends Keyed> craftClazz, Class<?> minecraftClazz, boolean newMethod) {
+        String methodName = (newMethod) ? MINECRAFT_TO_BUKKIT_NEW : MINECRAFT_TO_BUKKIT;
         Method method = null;
         try {
-            method = craftClazz.getDeclaredMethod(MINECRAFT_TO_BUKKIT, minecraftClazz);
+            method = craftClazz.getDeclaredMethod(methodName, minecraftClazz);
         } catch (NoSuchMethodException e) {
             fail(String.format("""
                     The class %s does not have a public static method to convert a minecraft value to a bukkit value.
 
                     Following method should be add which, returns the bukkit value based on the minecraft value.
                     %s
-                    """, craftClazz, buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
+                    """, craftClazz, buildMinecraftToBukkitMethod(clazz, methodName, minecraftClazz)));
         }
 
         assertTrue(Modifier.isPublic(method.getModifiers()), String.format("""
@@ -79,47 +83,48 @@ public class RegistryConversionTest extends AbstractTestingBase {
 
                 The method should be made public, method structure:
                 %s
-                """, MINECRAFT_TO_BUKKIT, craftClazz, buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
+                """, methodName, craftClazz, buildMinecraftToBukkitMethod(clazz, methodName, minecraftClazz)));
 
         assertTrue(Modifier.isStatic(method.getModifiers()), String.format("""
                 The method %s in class %s is not static.
 
                 The method should be made static, method structure:
                 %s
-                """, MINECRAFT_TO_BUKKIT, craftClazz, buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
+                """, methodName, craftClazz, buildMinecraftToBukkitMethod(clazz, methodName, minecraftClazz)));
 
         assertSame(clazz, method.getReturnType(), String.format("""
                 The method %s in class %s has the wrong return value.
 
                 The method should have the correct return value, method structure:
                 %s
-                """, MINECRAFT_TO_BUKKIT, craftClazz, buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
+                """, methodName, craftClazz, buildMinecraftToBukkitMethod(clazz, methodName, minecraftClazz)));
 
         MINECRAFT_TO_BUKKIT_METHODS.put(clazz, method);
     }
 
-    private String buildMinecraftToBukkitMethod(Class<? extends Keyed> clazz, Class<?> minecraftClazz) {
+    private String buildMinecraftToBukkitMethod(Class<? extends Keyed> clazz, String methodName, Class<?> minecraftClazz) {
         return String.format("""
-                public static %s minecraftToBukkit(%s minecraft) {
+                public static %s %s(%s minecraft) {
                     [...]
                 }
-                """, clazz.getSimpleName(), minecraftClazz.getName());
+                """, clazz.getSimpleName(), methodName, minecraftClazz.getName());
     }
 
     @Order(2)
     @RegistriesTest
     public void testBukkitToMinecraftPresent(Class<? extends Keyed> clazz, ResourceKey<IRegistry<?>> registryKey,
-                                             Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) {
+                                             Class<? extends Keyed> craftClazz, Class<?> minecraftClazz, boolean newMethod) {
+        String methodName = (newMethod) ? BUKKIT_TO_MINECRAFT_NEW : BUKKIT_TO_MINECRAFT;
         Method method = null;
         try {
-            method = craftClazz.getDeclaredMethod(BUKKIT_TO_MINECRAFT, clazz);
+            method = craftClazz.getDeclaredMethod(methodName, clazz);
         } catch (NoSuchMethodException e) {
             fail(String.format("""
                     The class %s does not have a public static method to convert a bukkit value to a minecraft value.
 
                     Following method should be add which, returns the minecraft value based on the bukkit value.
                     %s
-                    """, craftClazz, buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
+                    """, craftClazz, buildBukkitToMinecraftMethod(clazz, methodName, minecraftClazz)));
         }
 
         assertTrue(Modifier.isPublic(method.getModifiers()), String.format("""
@@ -127,31 +132,31 @@ public class RegistryConversionTest extends AbstractTestingBase {
 
                 The method should be made public, method structure:
                 %s
-                """, BUKKIT_TO_MINECRAFT, craftClazz, buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
+                """, methodName, craftClazz, buildBukkitToMinecraftMethod(clazz, methodName, minecraftClazz)));
 
         assertTrue(Modifier.isStatic(method.getModifiers()), String.format("""
                 The method %s in class %s is not static.
 
                 The method should be made static, method structure:
                 %s
-                """, BUKKIT_TO_MINECRAFT, craftClazz, buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
+                """, methodName, craftClazz, buildBukkitToMinecraftMethod(clazz, methodName, minecraftClazz)));
 
         assertSame(minecraftClazz, method.getReturnType(), String.format("""
                 The method %s in class %s has the wrong return value.
 
                 The method should have the correct return value, method structure:
                 %s
-                """, BUKKIT_TO_MINECRAFT, craftClazz, buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
+                """, methodName, craftClazz, buildBukkitToMinecraftMethod(clazz, methodName, minecraftClazz)));
 
         BUKKIT_TO_MINECRAFT_METHODS.put(clazz, method);
     }
 
-    private String buildBukkitToMinecraftMethod(Class<? extends Keyed> clazz, Class<?> minecraftClazz) {
+    private String buildBukkitToMinecraftMethod(Class<? extends Keyed> clazz, String methodName, Class<?> minecraftClazz) {
         return String.format("""
-                public static %s bukkitToMinecraft(%s bukkit) {
+                public static %s %s(%s bukkit) {
                     [...]
                 }
-                """, minecraftClazz.getName(), clazz.getSimpleName());
+                """, minecraftClazz.getName(), methodName, clazz.getSimpleName());
     }
 
     @Order(2)

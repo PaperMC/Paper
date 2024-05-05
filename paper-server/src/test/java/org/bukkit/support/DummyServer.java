@@ -40,7 +40,7 @@ public final class DummyServer {
 
             when(instance.getUnsafe()).then(mock -> CraftMagicNumbers.INSTANCE);
 
-            when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.newData(mock.getArgument(0), null));
+            when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.newData(((Material) mock.getArgument(0)).asBlockType(), null));
 
             when(instance.getLootTable(any())).then(mock -> new CraftLootTable(mock.getArgument(0),
                     AbstractTestingBase.DATA_PACK.fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));

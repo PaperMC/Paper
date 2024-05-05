@@ -22,6 +22,7 @@ import org.bukkit.FireworkEffect.Type;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.banner.Pattern;
@@ -35,6 +36,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
 import org.bukkit.inventory.meta.BannerMeta;
@@ -450,6 +452,29 @@ public class ItemMetaTest extends AbstractTestingBase {
         BlockDataMeta itemMeta = (BlockDataMeta) Bukkit.getItemFactory().getItemMeta(Material.CHEST);
         itemMeta.setBlockData(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]"));
         assertThat(itemMeta.getBlockData(Material.CHEST), is(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
+    }
+
+    @Test
+    public void testMetaClasses() {
+        Registry.ITEM.forEach(itemType -> {
+            if (itemType == ItemType.AIR) {
+                return;
+            }
+
+            ItemMeta meta = new ItemStack(itemType.asMaterial()).getItemMeta();
+            Class<?> internal = meta == null ? CraftMetaItem.class : meta.getClass();
+            Class<?>[] interfaces = internal.getInterfaces();
+            Class<?> expected;
+            if (interfaces.length > 0) {
+                expected = interfaces[0];
+            } else {
+                expected = ItemMeta.class;
+            }
+
+            // Currently the expected and actual for AIR are ItemMeta rather than null
+            Class<?> actual = itemType.getItemMetaClass();
+            assertThat(actual, is(expected));
+        });
     }
 
     private void downCastTest(final StackWrapper provider) {

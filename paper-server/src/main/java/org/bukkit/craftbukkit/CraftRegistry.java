@@ -20,11 +20,14 @@ import org.bukkit.Particle;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
+import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.entity.CraftWolf;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructureType;
+import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 import org.bukkit.craftbukkit.legacy.FieldRename;
@@ -38,6 +41,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Wolf;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffectType;
@@ -115,7 +119,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
      * @param registryHolder the minecraft registry holder
      * @return the bukkit registry of the provided class
      */
-    public static <B extends Keyed> Registry<?> createRegistry(Class<B> bukkitClass, IRegistryCustom registryHolder) {
+    public static <B extends Keyed> Registry<?> createRegistry(Class<? super B> bukkitClass, IRegistryCustom registryHolder) {
         if (bukkitClass == Enchantment.class) {
             return new CraftRegistry<>(Enchantment.class, registryHolder.registryOrThrow(Registries.ENCHANTMENT), CraftEnchantment::new, FieldRename.ENCHANTMENT_RENAME);
         }
@@ -145,6 +149,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         }
         if (bukkitClass == Wolf.Variant.class) {
             return new CraftRegistry<>(Wolf.Variant.class, registryHolder.registryOrThrow(Registries.WOLF_VARIANT), CraftWolf.CraftVariant::new, NONE);
+        }
+        if (bukkitClass == BlockType.class) {
+            return new CraftRegistry<>(BlockType.class, registryHolder.registryOrThrow(Registries.BLOCK), CraftBlockType::new, NONE);
+        }
+        if (bukkitClass == ItemType.class) {
+            return new CraftRegistry<>(ItemType.class, registryHolder.registryOrThrow(Registries.ITEM), CraftItemType::new, NONE);
         }
 
         return null;
