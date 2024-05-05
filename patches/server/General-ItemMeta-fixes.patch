@@ -135,7 +135,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
  
              for (TypedDataComponent<?> component : this.blockEntityTag.collectComponents()) {
++                if (CraftMetaItem.DEFAULT_HANDLED_DCTS.contains(component.type())) continue; // Paper - if the component type was already handled by CraftMetaItem, don't add it again
                  tag.builder.set(component);
+             }
+         }
+@@ -0,0 +0,0 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         Preconditions.checkArgument(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for " + this.material);
+ 
+         this.blockEntityTag = (CraftBlockEntityState<?>) blockState;
++        // Paper start - when a new BlockState is set, the components from that block entity
++        // have to be used to update the fields on CraftMetaItem
++        final PatchedDataComponentMap patchedMap = new net.minecraft.core.component.PatchedDataComponentMap(this.blockEntityTag.getHandle().getBlock().asItem().components());
++        final net.minecraft.core.component.DataComponentMap map = this.blockEntityTag.collectComponents();
++        patchedMap.setAll(map);
++        this.updateFromPatch(patchedMap.asPatch(), null);
++        // Paper end
+     }
+ 
+     private static Material shieldToBannerHack() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
@@ -259,6 +276,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          <T> Applicator put(ItemMetaKeyType<T> key, T value) {
              this.builder.set(key.TYPE, value);
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     }
+ 
+     CraftMetaItem(DataComponentPatch tag, Set<DataComponentType<?>> extraHandledTags) { // Paper - improve handled tags on type changes
++        // Paper start - properly support data components in BlockEntity
++        this.updateFromPatch(tag, extraHandledTags);
++    }
++    protected final void updateFromPatch(DataComponentPatch tag, Set<DataComponentType<?>> extraHandledTags) {
++        // Paper end - properly support data components in BlockEntity
+         CraftMetaItem.getOrEmpty(tag, CraftMetaItem.NAME).ifPresent((component) -> {
+             this.displayName = component;
+         });
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      void applyModifiers(Multimap<Attribute, AttributeModifier> modifiers, CraftMetaItem.Applicator tag) {
          if (modifiers == null || modifiers.isEmpty()) {
@@ -302,6 +331,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.applyToItem(tag);
          DataComponentPatch patch = tag.build();
          Tag nbt = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     // Paper start - improve checking handled tags
+     @org.jetbrains.annotations.VisibleForTesting
+     public static final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> HANDLED_DCTS_PER_TYPE = new HashMap<>();
+-    private static final Set<DataComponentType<?>> DEFAULT_HANDLED_DCTS = Set.of(
++    protected static final Set<DataComponentType<?>> DEFAULT_HANDLED_DCTS = Set.of(
+         CraftMetaItem.NAME.TYPE,
+         CraftMetaItem.ITEM_NAME.TYPE,
+         CraftMetaItem.LORE.TYPE,
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
