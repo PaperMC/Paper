@@ -1047,13 +1047,18 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> ITEMS_SHOVELS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("shovels"), Material.class);
     /**
-     * Vanilla item tag representing all tools.
-     */
-    Tag<Material> ITEMS_TOOLS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("tools"), Material.class);
-    /**
      * Vanilla item tag representing all items which break decorated pots.
      */
     Tag<Material> ITEMS_BREAKS_DECORATED_POTS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("breaks_decorated_pots"), Material.class);
+    /**
+     * Vanilla item tag representing all tools.
+     *
+     * @deprecated removed in Minecraft 1.20.5. Do not use. Will be removed at a later date. Until then,
+     * this constant now acts as a reference to {@link #ITEMS_BREAKS_DECORATED_POTS} which largely shares
+     * the same contents of the old "minecraft:tools" tag.
+     */
+    @Deprecated(forRemoval = true)
+    Tag<Material> ITEMS_TOOLS = ITEMS_BREAKS_DECORATED_POTS;
     /**
      * Vanilla item tag representing all seeds planteable by villagers.
      */
