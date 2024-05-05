@@ -14,6 +14,7 @@ import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.Arrow;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
@@ -88,6 +89,16 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
         PotionContents old = getHandle().getPotionContents();
         getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), old.customEffects().stream().filter((mobEffect) -> !mobEffect.getEffect().equals(minecraft)).toList()));
         return true;
+    }
+
+    @Override
+    public void setBasePotionData(PotionData data) {
+        setBasePotionType(CraftPotionUtil.fromBukkit(data));
+    }
+
+    @Override
+    public PotionData getBasePotionData() {
+        return CraftPotionUtil.toBukkit(getBasePotionType());
     }
 
     @Override

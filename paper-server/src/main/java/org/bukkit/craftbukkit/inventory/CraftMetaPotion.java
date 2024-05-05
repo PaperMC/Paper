@@ -22,7 +22,9 @@ import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
@@ -158,6 +160,16 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
             clone.customEffects = new ArrayList<>(this.customEffects);
         }
         return clone;
+    }
+
+    @Override
+    public void setBasePotionData(PotionData data) {
+        setBasePotionType(CraftPotionUtil.fromBukkit(data));
+    }
+
+    @Override
+    public PotionData getBasePotionData() {
+        return CraftPotionUtil.toBukkit(getBasePotionType());
     }
 
     @Override
