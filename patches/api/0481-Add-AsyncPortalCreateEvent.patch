@@ -1,0 +1,181 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 16 May 2021 13:40:23 -0700
+Subject: [PATCH] Add AsyncPortalCreateEvent
+
+calls AsyncPortalCreateEvent in more places than
+PortalCreateEvent and with more reasons
+
+diff --git a/src/main/java/io/papermc/paper/event/world/AsyncPortalCreateEvent.java b/src/main/java/io/papermc/paper/event/world/AsyncPortalCreateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..140e914626855d39376088761aaab6194f09bc3d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/world/AsyncPortalCreateEvent.java
+@@ -0,0 +1,145 @@
++package io.papermc.paper.event.world;
++
++import java.util.List;
++import org.bukkit.RegionAccessor;
++import org.bukkit.block.BlockState;
++import org.bukkit.entity.Entity;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.server.ServerEvent;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * Called when a portal is created.
++ * <p>
++ * May be triggered asynchronously. Use {@link Event#isAsynchronous()} to check.
++ * </p>
++ */
++public class AsyncPortalCreateEvent extends ServerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final RegionAccessor regionAccessor;
++    private final List<BlockState> blocks;
++    private final Entity entity;
++    private final CreateReason reason;
++    private boolean cancel;
++
++    @ApiStatus.Internal
++    public AsyncPortalCreateEvent(final boolean isAsync, final @NonNull RegionAccessor regionAccessor, final @NonNull List<BlockState> blocks, final @Nullable Entity entity, final @NonNull CreateReason reason) {
++        super(isAsync);
++        this.regionAccessor = regionAccessor;
++        this.blocks = blocks;
++        this.entity = entity;
++        this.reason = reason;
++    }
++
++    /**
++     * Get the region accessor which may be a {@link org.bukkit.World} or
++     * a {@link org.bukkit.generator.LimitedRegion}.
++     *
++     * @return the region accessor
++     */
++    public @NonNull RegionAccessor getRegionAccessor() {
++        return this.regionAccessor;
++    }
++
++    /**
++     * Gets an array list of all the blocks associated with the created portal
++     *
++     * @return array list of all the blocks associated with the created portal
++     */
++    public @NonNull List<BlockState> getBlocks() {
++        return this.blocks;
++    }
++
++    /**
++     * Returns the Entity that triggered this portal creation (if available)
++     *
++     * @return Entity involved in this event
++     */
++    public @Nullable Entity getEntity() {
++        return this.entity;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancel;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancel = cancel;
++    }
++
++    /**
++     * Gets the reason for the portal's creation
++     *
++     * @return CreateReason for the portal's creation
++     */
++    public @NonNull CreateReason getReason() {
++        return this.reason;
++    }
++
++    @Override
++    public @NonNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NonNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    /**
++     * An enum to specify the various reasons for a portal's creation
++     */
++    public enum CreateReason {
++        /**
++         * When the blocks inside a portal are created due to a portal frame
++         * being set on fire.
++         */
++        FIRE,
++        /**
++         * When a nether portal frame and portal is created at the exit of an
++         * entered nether portal.
++         */
++        NETHER_PAIR,
++        /**
++         * When the target end platform is created as a result of a player
++         * entering an end portal.
++         */
++        END_PLATFORM,
++        /**
++         * When the ender dragon is defeated and a new end gateway
++         * is generated on the main end island.
++         */
++        END_GATEWAY_DRAGON_DEFEAT,
++
++        /**
++         * When an entity causes the generation of an end gateway
++         * by going through one that does not have a linked gateway.
++         */
++        END_GATEWAY_PAIR,
++
++        /**
++         * When an inactive end portal is generated on the main end
++         * island in the end dimension. This can happen in normal world generation or
++         * when a new dragon is spawned, replacing the active portal with a inactive one.
++         */
++        END_PORTAL,
++
++        /**
++         * When an active end portal is generated on the main end
++         * island in the end dimension.
++         */
++        ACTIVE_END_PORTAL,
++
++        /**
++         * Fallback reason
++         */
++        UNKNOWN,
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/world/PortalCreateEvent.java b/src/main/java/org/bukkit/event/world/PortalCreateEvent.java
+index 579f017474ff22f0991ca884c35cdde7e14a94dc..8e6450d14a6ad16a22f8725f623944b83ebc4580 100644
+--- a/src/main/java/org/bukkit/event/world/PortalCreateEvent.java
++++ b/src/main/java/org/bukkit/event/world/PortalCreateEvent.java
+@@ -11,7 +11,9 @@ import org.jetbrains.annotations.Nullable;
+ 
+ /**
+  * Called when a portal is created
++ * @deprecated use {@link io.papermc.paper.event.world.AsyncPortalCreateEvent}
+  */
++@Deprecated(since = "1.21")
+ public class PortalCreateEvent extends WorldEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private boolean cancel = false;
+@@ -26,7 +28,6 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
+ 
+     public PortalCreateEvent(@NotNull final List<BlockState> blocks, @NotNull final World world, @Nullable Entity entity, @NotNull CreateReason reason) {
+         super(world);
+-
+         this.blocks = blocks;
+         this.entity = entity;
+         this.reason = reason;
