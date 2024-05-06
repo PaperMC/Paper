@@ -1,0 +1,152 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DerToaster98 <38782719+DerToaster98@users.noreply.github.com>
+Date: Mon, 6 May 2024 12:27:04 +0200
+Subject: [PATCH] Add event to fire when a dispenser will spawn a entity
+ (mostly projectiles!)
+
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java b/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
+index 309ad5a1da6b3a297d5526cd9247359ac5f49406..af760d764319134efc37d30745d23e4808f703d4 100644
+--- a/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/AbstractProjectileDispenseBehavior.java
+@@ -1,9 +1,10 @@
+ package net.minecraft.core.dispenser;
+ 
+-import net.minecraft.world.item.ItemStack;
+-import net.minecraft.world.level.Level;
+-import net.minecraft.world.level.block.DispenserBlock;
+-import net.minecraft.world.level.block.entity.DispenserBlockEntity;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseEvent;
++// CraftBukkit end
++import org.bukkit.event.block.DispenserSpawnEntityEvent;
++
+ import net.minecraft.core.BlockSource;
+ import net.minecraft.core.Direction;
+ import net.minecraft.core.Position;
+@@ -11,9 +12,10 @@ import net.minecraft.server.level.ServerLevel;
+ // CraftBukkit start
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.projectile.Projectile;
+-import org.bukkit.craftbukkit.inventory.CraftItemStack;
+-import org.bukkit.event.block.BlockDispenseEvent;
+-// CraftBukkit end
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.DispenserBlock;
++import net.minecraft.world.level.block.entity.DispenserBlockEntity;
+ 
+ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispenseItemBehavior {
+ 
+@@ -53,6 +55,14 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
+                 return stack;
+             }
+         }
++        
++        DispenserSpawnEntityEvent spawnEvent = new DispenserSpawnEntityEvent(block, iprojectile.getBukkitEntity());
++        if (!DispenserBlock.eventFired) {
++            worldserver.getCraftServer().getPluginManager().callEvent(spawnEvent);
++        }
++        if (spawnEvent.isCancelled()) {
++        	return stack;
++        }
+ 
+         iprojectile.shoot(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.getPower(), this.getUncertainty());
+         ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource((DispenserBlockEntity) pointer.getEntity());
+diff --git a/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
+index 958134519befadc27a5b647caf64acf272ee2db4..8d0a8bfeed2a138ecc96af774beace402b9d0df2 100644
+--- a/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
+@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.DispenserBlock;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.event.block.BlockDispenseEvent;
+ // CraftBukkit end
++import org.bukkit.event.block.DispenserSpawnEntityEvent;
+ 
+ public class BoatDispenseItemBehavior extends DefaultDispenseItemBehavior {
+ 
+@@ -80,6 +81,14 @@ public class BoatDispenseItemBehavior extends DefaultDispenseItemBehavior {
+         }
+ 
+         Object object = this.isChestBoat ? new ChestBoat(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ()) : new Boat(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
++       
++        DispenserSpawnEntityEvent spawnEvent = new DispenserSpawnEntityEvent(block, ((Entity)object).getBukkitEntity());
++        if (!DispenserBlock.eventFired) {
++            worldserver.getCraftServer().getPluginManager().callEvent(spawnEvent);
++        }
++        if (spawnEvent.isCancelled()) {
++        	return stack;
++        }
+         // CraftBukkit end
+ 
+         ((Boat) object).setVariant(this.type);
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index 88d18d18d69876c98e199acb647c6cca9448d55d..f845afbb73d2c339d575e793aaedffff7808ef19 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -89,6 +89,7 @@ import org.bukkit.craftbukkit.util.DummyGeneratorAccess;
+ import org.bukkit.event.block.BlockDispenseArmorEvent;
+ import org.bukkit.event.block.BlockDispenseEvent;
+ import org.bukkit.event.block.BlockFertilizeEvent;
++import org.bukkit.event.block.DispenserSpawnEntityEvent;
+ import org.bukkit.event.world.StructureGrowEvent;
+ // CraftBukkit end
+ 
+@@ -298,13 +299,24 @@ public interface DispenseItemBehavior {
+                         return stack;
+                     }
+                 }
+-                // CraftBukkit end
+-
++                
+                 Consumer<ArmorStand> consumer = EntityType.appendDefaultStackConfig((entityarmorstand) -> {
+                     entityarmorstand.setYRot(enumdirection.toYRot());
+                 }, worldserver, stack, (Player) null);
+                 ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, stack.getTag(), consumer, blockposition, MobSpawnType.DISPENSER, false, false);
+ 
++                DispenserSpawnEntityEvent spawnEvent = new DispenserSpawnEntityEvent(block, entityarmorstand.getBukkitEntity());
++                if (!DispenserBlock.eventFired) {
++                    worldserver.getCraftServer().getPluginManager().callEvent(spawnEvent);
++                }
++                if (spawnEvent.isCancelled()) {
++                	if (entityarmorstand != null) {
++                		entityarmorstand.discard();
++                	}
++                	return stack;
++                }
++                // CraftBukkit end
++                
+                 if (entityarmorstand != null) {
+                     if (shrink) stack.shrink(1); // Paper - actually handle here
+                 }
+@@ -585,6 +597,14 @@ public interface DispenseItemBehavior {
+                 SmallFireball entitysmallfireball = new SmallFireball(worldserver, d0, d1, d2, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
+                 entitysmallfireball.setItem(itemstack1);
+                 entitysmallfireball.projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource((DispenserBlockEntity) pointer.getEntity());
++                
++                DispenserSpawnEntityEvent spawnEvent = new DispenserSpawnEntityEvent(block, entitysmallfireball.getBukkitEntity());
++                if (!DispenserBlock.eventFired) {
++                    worldserver.getCraftServer().getPluginManager().callEvent(spawnEvent);
++                }
++                if (spawnEvent.isCancelled()) {
++                	return stack;
++                }
+ 
+                 worldserver.addFreshEntity(entitysmallfireball);
+                 if (shrink) stack.shrink(1); // Paper - actually handle here
+@@ -906,6 +926,15 @@ public interface DispenseItemBehavior {
+                 }
+ 
+                 PrimedTnt entitytntprimed = new PrimedTnt(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), (LivingEntity) null);
++                
++                DispenserSpawnEntityEvent spawnEvent = new DispenserSpawnEntityEvent(block, entitytntprimed.getBukkitEntity());
++                if (!DispenserBlock.eventFired) {
++                    worldserver.getCraftServer().getPluginManager().callEvent(spawnEvent);
++                }
++                if (spawnEvent.isCancelled()) {
++                	return stack;
++                }
++                
+                 // CraftBukkit end
+ 
+                 worldserver.addFreshEntity(entitytntprimed);
