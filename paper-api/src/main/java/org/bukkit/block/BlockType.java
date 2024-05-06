@@ -128,10 +128,11 @@ import org.jetbrains.annotations.Nullable;
 public interface BlockType extends Keyed, Translatable {
 
     /**
-     * Typed represents a subtype of {@link ItemType}s that have a known item meta type
-     * at compile time.
+     * Typed represents a subtype of {@link BlockType}s that have a known block
+     * data type at compile time.
      *
-     * @param <B> the generic type of the item meta that represents the item type.
+     * @param <B> the generic type of the block data that represents the block
+     * type.
      */
     interface Typed<B extends BlockData> extends BlockType {
 
