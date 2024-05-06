@@ -137,10 +137,10 @@ public interface ItemFactory {
      * Create a new {@link ItemStack} given the supplied input.
      * <p>
      * The input should match the same input as expected by Minecraft's {@code /give}
-     * command. For example, "minecraft:diamond_sword{Enchantments:[{id:"minecraft:sharpness", lvl:3}]}"
+     * command. For example,
+     * <pre>"minecraft:diamond_sword[minecraft:enchantments={levels:{"minecraft:sharpness": 3}}]"</pre>
      * would yield an ItemStack of {@link Material#DIAMOND_SWORD} with an {@link ItemMeta}
-     * containing a level 3 {@link Enchantment#SHARPNESS}
-     * enchantment.
+     * containing a level 3 {@link Enchantment#SHARPNESS} enchantment.
      *
      * @param input the item input string
      * @return the created ItemStack

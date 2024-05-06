@@ -10,6 +10,7 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemRarity;
 import org.bukkit.inventory.meta.components.FoodComponent;
@@ -537,16 +538,55 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     boolean removeAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier);
 
     /**
-     * Get this ItemMeta as an NBT string.
+     * Get this ItemMeta as an NBT string. If this ItemMeta does not have any
+     * NBT, then {@code "{}"} will be returned.
      * <p>
-     * This string should not be relied upon as a serializable value. If
-     * serialization is desired, the {@link ConfigurationSerializable} API
-     * should be used instead.
+     * This string should <strong>NEVER</strong> be relied upon as a serializable value. If
+     * serialization is desired, the {@link ConfigurationSerializable} API should be used
+     * instead.
      *
      * @return the NBT string
      */
     @NotNull
     String getAsString();
+
+    /**
+     * Get this ItemMeta as a component-compliant string. If this ItemMeta does
+     * not contain any components, then {@code "[]"} will be returned.
+     * <p>
+     * The result of this method should yield a string representing the components
+     * altered by this ItemMeta instance. When passed to {@link ItemFactory#createItemStack(String)}
+     * with a prepended item type, it will create an ItemStack that has an ItemMeta
+     * matching this ItemMeta instance exactly. Note that this method returns <strong>
+     * ONLY</strong> the components and cannot be passed to createItemStack() alone.
+     * An example may look something like this:
+     * <pre>
+     * ItemStack itemStack = // ... an item stack obtained from somewhere
+     * ItemMeta itemMeta = itemStack.getItemMeta();
+     *
+     * String components = itemMeta.getAsComponentString(); // example: "[minecraft:damage=53]"
+     * String itemTypeKey = itemStack.getType().getKey().toString(); // example: "minecraft:diamond_sword"
+     * String itemAsString = itemTypeKey + components; // results in: "minecraft:diamond_sword[minecraft:damage=53]"
+     *
+     * ItemStack recreatedItemStack = Bukkit.getItemFactory().createItemStack(itemAsString);
+     * assert itemStack.isSimilar(recreatedItemStack); // Should be true*
+     * </pre>
+     * <p>
+     * *Components not represented or explicitly overridden by this ItemMeta instance
+     * will not be included in the resulting string and therefore may result in ItemStacks
+     * that do not match <em>exactly</em>. For example, if {@link #setDisplayName(String)}
+     * is not set, then the custom name component will not be included. Or if this ItemMeta
+     * is a PotionMeta, it will not include any components related to lodestone compasses,
+     * banners, or books, etc., only components modifiable by a PotionMeta instance.
+     * <p>
+     * This string should <strong>NEVER</strong> be relied upon as a serializable value. If
+     * serialization is desired, the {@link ConfigurationSerializable} API should be used
+     * instead.
+     *
+     * @return the component-compliant string
+     */
+    @NotNull
+    String getAsComponentString();
 
     /**
      * Returns a public custom tag container capable of storing tags on the
