@@ -94,10 +94,10 @@ index dd6012b6a097575b2d1471be5069eccee4537c0a..00000000000000000000000000000000
 -}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/ApiMirrorRootNode.java b/src/main/java/io/papermc/paper/command/brigadier/ApiMirrorRootNode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fdca7b774e3465bd8625cb4129ddaedfa75ab28c
+index 0000000000000000000000000000000000000000..2b1cf02f32506187ed0783ae4732ae0f0bdbfc0e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/ApiMirrorRootNode.java
-@@ -0,0 +1,256 @@
+@@ -0,0 +1,252 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.google.common.collect.Collections2;
@@ -233,13 +233,9 @@ index 0000000000000000000000000000000000000000..fdca7b774e3465bd8625cb4129ddaedf
 +            This method allows us to check if this is recognized by vanilla.
 +             */
 +            } else if (ArgumentTypeInfos.isClassRecognized(pureArgumentType.getClass())) {
-+                if (ARGUMENT_WHITELIST.contains(pureArgumentType.getClass())) {
-+                    // If this argument is whitelisted simply unwrap it and ignore the argument type.
-+                    converted = this.simpleUnwrap(pureArgumentNode);
-+                } else {
-+                    // If this was an NMS type but not a primitive
-+                    throw new IllegalArgumentException("NMS argument type was passed (%s), should be wrapped inside an CustomArgumentType. Don't add NMS args here!".formatted(pureArgumentType));
-+                }
++                // Allow any type of argument, as long as it's recognized by the client (but in most cases, this should be API only types)
++                // Previously we only allowed whitelisted types.
++                converted = this.simpleUnwrap(pureArgumentNode);
 +            } else {
 +                // Unknown argument type was passed
 +                throw new IllegalArgumentException("Custom unknown argument type was passed, should be wrapped inside an CustomArgumentType.");
@@ -513,10 +509,10 @@ index 0000000000000000000000000000000000000000..1b1642f306771f029e6214a2e2ebebb6
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6940f775dcfbe098a704f02020fb5836e0d46ab1
+index 0000000000000000000000000000000000000000..b7f1c15800f175760717fcea38a7256a6fba2a63
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
-@@ -0,0 +1,167 @@
+@@ -0,0 +1,179 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.google.common.base.Preconditions;
@@ -525,6 +521,7 @@ index 0000000000000000000000000000000000000000..6940f775dcfbe098a704f02020fb5836
 +import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 +import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 +import com.mojang.brigadier.suggestion.SuggestionsBuilder;
++import com.mojang.brigadier.tree.CommandNode;
 +import com.mojang.brigadier.tree.LiteralCommandNode;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
@@ -632,11 +629,22 @@ index 0000000000000000000000000000000000000000..6940f775dcfbe098a704f02020fb5836
 +    }
 +
 +    private boolean registerRedirect(final String aliasLiteral, final PluginMeta plugin, final PluginCommandNode redirectTo, final @Nullable String description, final boolean override) {
-+        final LiteralCommandNode<CommandSourceStack> redirect = Commands.literal(aliasLiteral)
-+            .redirect(redirectTo)
-+            .executes(redirectTo.getCommand())
-+            .requires(redirectTo.getRequirement())
-+            .build();
++        final LiteralCommandNode<CommandSourceStack> redirect;
++        if (redirectTo.getChildren().isEmpty()) {
++            redirect = Commands.literal(aliasLiteral)
++                .executes(redirectTo.getCommand())
++                .requires(redirectTo.getRequirement())
++                .build();
++            for (final CommandNode<CommandSourceStack> child : redirectTo.getChildren()) {
++                redirect.addChild(child);
++            }
++        } else {
++            redirect = Commands.literal(aliasLiteral)
++                .redirect(redirectTo)
++                .requires(redirectTo.getRequirement())
++                .build();
++        }
++
 +        return this.registerIntoDispatcher(new PluginCommandNode(aliasLiteral, plugin, redirect, description), override);
 +    }
 +
@@ -2045,10 +2053,10 @@ index eb4fc900164d1fb3a78653ae8bc42ea30323f5b7..2eb9c584cc77237f1c82d880a51a3f8b
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 8e67853a7a93fa736c147e8b2df537746dc8e94f..40ca86931b399afcb437eccaf55dd767872b47bb 100644
+index 5e9202bc7fc649764568b55d66ba0d684118c00c..379d87cdab68e161a71063af5cd47bd08daef119 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2462,33 +2462,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2464,33 +2464,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
      }
  
