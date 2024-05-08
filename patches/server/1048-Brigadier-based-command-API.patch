@@ -509,10 +509,10 @@ index 0000000000000000000000000000000000000000..1b1642f306771f029e6214a2e2ebebb6
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9410809ad964eb4ab67f6db67e63fa2fe78418d5
+index 0000000000000000000000000000000000000000..869eb90e676059ab93be55807d95632a71334a25
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,189 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.google.common.base.Preconditions;
@@ -530,6 +530,7 @@ index 0000000000000000000000000000000000000000..9410809ad964eb4ab67f6db67e63fa2f
 +import java.util.Collection;
 +import java.util.List;
 +import java.util.Locale;
++import java.util.Set;
 +import net.minecraft.commands.CommandBuildContext;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.ReloadableServerResources;
@@ -539,6 +540,7 @@ index 0000000000000000000000000000000000000000..9410809ad964eb4ab67f6db67e63fa2f
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.TestOnly;
 +
 +import static java.util.Objects.requireNonNull;
@@ -602,21 +604,27 @@ index 0000000000000000000000000000000000000000..9410809ad964eb4ab67f6db67e63fa2f
 +
 +    @Override
 +    public boolean register(final PluginMeta pluginMeta, final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description, final List<String> aliases) {
++        return registerWithFlags(pluginMeta, node, description, aliases, Set.of());
++    }
++
++    @Override
++    public boolean registerWithFlags(@NotNull final PluginMeta pluginMeta, @NotNull final LiteralCommandNode<CommandSourceStack> node, @org.jetbrains.annotations.Nullable final String description, @NotNull final List<String> aliases, @NotNull final Set<CommandRegistrationFlag> flags) {
++        final boolean hasFlattenRedirectFlag = flags.contains(CommandRegistrationFlag.FLATTEN_ALIASES);
 +        final String identifier = pluginMeta.getName().toLowerCase(Locale.ROOT);
 +        final String literal = node.getLiteral();
 +        boolean registeredNode = false;
 +        final PluginCommandNode pluginLiteral = new PluginCommandNode(identifier + ":" + literal, pluginMeta, node, description);  // Treat the keyed version of the command as the root
 +
 +        registeredNode |= this.registerIntoDispatcher(pluginLiteral, true);
-+        registeredNode |= this.registerRedirect(literal, pluginMeta, pluginLiteral, description, true); // Plugin commands should override vanilla commands
++        registeredNode |= this.registerRedirect(literal, pluginMeta, pluginLiteral, description, true, hasFlattenRedirectFlag); // Plugin commands should override vanilla commands
 +
 +        // Add aliases
 +        final List<String> registeredAliases = new ArrayList<>();
 +        for (final String alias : aliases) {
-+            if (registeredNode |= this.registerRedirect(alias, pluginMeta, pluginLiteral, description, false)) {
++            if (registeredNode |= this.registerRedirect(alias, pluginMeta, pluginLiteral, description, false, hasFlattenRedirectFlag)) {
 +                registeredAliases.add(alias);
 +            }
-+            if (registeredNode |= this.registerRedirect(identifier + ":" + alias, pluginMeta, pluginLiteral, description, false)) {
++            if (registeredNode |= this.registerRedirect(identifier + ":" + alias, pluginMeta, pluginLiteral, description, false, hasFlattenRedirectFlag)) {
 +                registeredAliases.add(identifier + ":" + alias);
 +            }
 +        }
@@ -628,13 +636,17 @@ index 0000000000000000000000000000000000000000..9410809ad964eb4ab67f6db67e63fa2f
 +        return registeredNode;
 +    }
 +
-+    private boolean registerRedirect(final String aliasLiteral, final PluginMeta plugin, final PluginCommandNode redirectTo, final @Nullable String description, final boolean override) {
++    private boolean registerRedirect(final String aliasLiteral, final PluginMeta plugin, final PluginCommandNode redirectTo, final @Nullable String description, final boolean override, boolean hasFlattenRedirectFlag) {
 +        final LiteralCommandNode<CommandSourceStack> redirect;
-+        if (redirectTo.getChildren().isEmpty()) {
++        if (redirectTo.getChildren().isEmpty() || hasFlattenRedirectFlag) {
 +            redirect = Commands.literal(aliasLiteral)
 +                .executes(redirectTo.getCommand())
 +                .requires(redirectTo.getRequirement())
 +                .build();
++
++            for (final CommandNode<CommandSourceStack> child : redirectTo.getChildren()) {
++                redirect.addChild(child);
++            }
 +        } else {
 +            redirect = Commands.literal(aliasLiteral)
 +                .executes(redirectTo.getCommand())
