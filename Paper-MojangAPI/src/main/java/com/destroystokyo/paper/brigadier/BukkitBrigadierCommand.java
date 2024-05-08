@@ -11,6 +11,6 @@ import java.util.function.Predicate;
  * @param <S> command source type
  * @deprecated For removal, see {@link io.papermc.paper.command.brigadier.Commands} on how to use the new Brigadier API.
  */
-@Deprecated(forRemoval = true) // Paper
+@Deprecated(forRemoval = true)
 public interface BukkitBrigadierCommand <S extends BukkitBrigadierCommandSource> extends Command<S>, Predicate<S>, SuggestionProvider<S> {
 }
