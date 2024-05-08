@@ -25,10 +25,10 @@ Other changes:
 Co-Authored-By: Emilia Kond <emilia@rymiel.space>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 18221614060ec945cb8b197acd276e45450f7394..90ca693814a82c30de238b0228750b769a9a9c80 100644
+index 18221614060ec945cb8b197acd276e45450f7394..129d29deb929b3a26913a5a1bf9e9d6633884189 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -5,9 +5,29 @@ plugins {
+@@ -5,9 +5,30 @@ plugins {
      `maven-publish`
  }
  
@@ -42,7 +42,8 @@ index 18221614060ec945cb8b197acd276e45450f7394..90ca693814a82c30de238b0228750b76
      implementation(project(":paper-api"))
 -    implementation("jline:jline:2.12.1")
 +    // Paper start
-+    implementation("org.jline:jline-terminal-jansi:3.21.0")
++    //implementation("org.jline:jline-terminal-ffm:3.26.1") TODO: Investigate if this is broken with java 21
++    implementation("org.jline:jline-terminal-jni:3.26.1")
 +    implementation("net.minecrell:terminalconsoleappender:1.3.0")
 +    implementation("net.kyori:adventure-text-serializer-ansi:4.17.0") // Keep in sync with adventureVersion from Paper-API build file
 +    /*
@@ -59,7 +60,7 @@ index 18221614060ec945cb8b197acd276e45450f7394..90ca693814a82c30de238b0228750b76
      implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") // Paper - remove exclusion
      implementation("org.ow2.asm:asm-commons:9.7")
      implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
-@@ -78,6 +98,19 @@ tasks.check {
+@@ -78,6 +99,19 @@ tasks.check {
      dependsOn(scanJar)
  }
  // Paper end
@@ -259,6 +260,39 @@ index 8323f135d6bf2e1f12525e05094ffa3f2420e7e1..a143ea1e58464a3122fbd8ccafe417bd
 +        return PaperAdventure.ANSI_SERIALIZER.serialize(GlobalTranslator.render(message, Locale.getDefault()));
      }
  }
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 5b4ac7b4fd0077e900e9f788963f1613bbc9a5d0..544354eec56b884e322185dc0c6d43f3fa090f15 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -152,6 +152,28 @@ public class Main {
+                 return;
+             }
+ 
++            // Paper start - Use TCA for console - hack for broken Windows Java versions
++            if (System.getProperty("os.name").startsWith("Windows 1")) {
++                boolean isBrokenJavaWindowsVersion = false;
++                try {
++                    final Integer javaSpec = Integer.getInteger("java.specification.version");
++                    if (javaSpec >= 22) {
++                        isBrokenJavaWindowsVersion = true;
++                    }
++                } catch (NumberFormatException ex) {
++                    Main.LOGGER.info("Unable to determine Java version, assuming broken Windows Java version");
++                    isBrokenJavaWindowsVersion = true;
++                }
++                if (isBrokenJavaWindowsVersion) {
++                    // TODO: Detect PS version
++                    Main.LOGGER.warn("You are using a version of java with a known terminal issue, We will attempt to mitigate this");
++                    Main.LOGGER.warn("However, you should update to powershell 7 to mitigate this");
++                    System.setProperty("jdk.console", "java.base");
++                }
++
++            }
++            // Paper end  - Use TCA for console - hack for broken Windows Java versions
++
+             // Spigot Start
+             boolean eulaAgreed = Boolean.getBoolean( "com.mojang.eula.agree" );
+             if ( eulaAgreed )
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 953e28f0cf60412a4ec9e311daa98f9d3cadea85..c25d80a1d5aa0f3cc2cbf1e9b94154c759aab36e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
