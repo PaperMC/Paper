@@ -18,7 +18,7 @@ index 65e67b8726f1e19a6bcb1fe2f448e4ab68df11d1..c252ce446cab6ff7ce530a591e40bf11
      api("com.google.code.gson:gson:2.10.1")
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..57fda822bd852e68f37a82452aa2312a95e61065
+index 0000000000000000000000000000000000000000..ffb1ecddcee876f36bd813f3f3fe59d8584be926
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
 @@ -0,0 +1,36 @@
@@ -30,8 +30,8 @@ index 0000000000000000000000000000000000000000..57fda822bd852e68f37a82452aa2312a
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * This represents a simple command implementation that is wrapped
-+ * around brigadier.
++ * Implementing this interface allows for easily creating "Bukkit-style" {@code String[] args} commands.
++ * The implementation handles converting the command to a representation compatible with Brigadier on registration, usually in the form of {@literal /commandlabel <greedy_string>}.
 + */
 +@ApiStatus.Experimental
 +@FunctionalInterface
@@ -81,10 +81,10 @@ index 0000000000000000000000000000000000000000..2b2f14cda4e83c65721a524c098f7f70
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/CommandSourceStack.java b/src/main/java/io/papermc/paper/command/brigadier/CommandSourceStack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..66960d317b608e1266d4de2a873a37913d901f2a
+index 0000000000000000000000000000000000000000..86912d38969982cb7655e0f2454ef5b61058f67f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/CommandSourceStack.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,40 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import org.bukkit.Location;
@@ -95,8 +95,11 @@ index 0000000000000000000000000000000000000000..66960d317b608e1266d4de2a873a3791
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
-+ * Represents a vanilla command source stack which is used
-+ * for command execution.
++ * The command source type for Brigadier commands registered using Paper API.
++ * <p>
++ * While the general use case for CommandSourceStack is similar to that of {@link CommandSender}, it provides access to important additional context for the command execution.
++ * Specifically, commands such as {@literal /execute} may alter the location or executor of the source stack before passing it to another command.
++ *
 + */
 +@ApiStatus.NonExtendable
 +@ApiStatus.Experimental
@@ -117,12 +120,14 @@ index 0000000000000000000000000000000000000000..66960d317b608e1266d4de2a873a3791
 +    /**
 +     * Gets the entity that triggered the execution of this command.
 +     * May not always be the command source.
++     *
++     * @return entity that triggered execution
 +     */
 +    @Nullable Entity getExecutor();
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/Commands.java b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5c6f063b95025117f91d046c44925aa7635f6ebd
+index 0000000000000000000000000000000000000000..dd543968dbc1e1c76c14c277777a7e227167505f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
 @@ -0,0 +1,254 @@
@@ -143,7 +148,7 @@ index 0000000000000000000000000000000000000000..5c6f063b95025117f91d046c44925aa7
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
-+ * The registrar for custom commands.
++ * The registrar for custom commands. Supports Brigadier commands and {@link BasicCommand}.
 + * <p>
 + * An example of a command being registered is below
 + * <pre>{@code
@@ -382,7 +387,7 @@ index 0000000000000000000000000000000000000000..5c6f063b95025117f91d046c44925aa7
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..40bdc1e4da3234f4ba7ec3476fc18c8811c0fe54
+index 0000000000000000000000000000000000000000..57061a3dd738416c2045e641b6080dc3f096de1a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java
 @@ -0,0 +1,24 @@
@@ -395,14 +400,14 @@ index 0000000000000000000000000000000000000000..40bdc1e4da3234f4ba7ec3476fc18c88
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * A component serializer that converts it to a brigadier compatible type.
++ * A component serializer for converting between {@link Message} and {@link Component}.
 + */
 +@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
 +public interface MessageComponentSerializer extends ComponentSerializer<Component, Component, Message> {
 +
 +    /**
-+     * A component serializer that converts it to a brigadier compatible type.
++     * A component serializer for converting between {@link Message} and {@link Component}.
 +     *
 +     * @return serializer instance
 +     */
@@ -430,10 +435,10 @@ index 0000000000000000000000000000000000000000..2db12952461c92a64505d6646f6f49f8
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java b/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010aa4fa0f5
+index 0000000000000000000000000000000000000000..88834702ea62e208942fc6540ea4ff7a5ef4d155
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java
-@@ -0,0 +1,315 @@
+@@ -0,0 +1,327 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.arguments.ArgumentType;
@@ -466,10 +471,12 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * Vanilla argument registry
-+ * <p>
-+ * These provide rich argument parsing on the client and
-+ * may also provide additional signing context.
++ * Vanilla Minecraft includes several custom {@link ArgumentType}s that are recognized by the client.
++ * Many of these argument types include client-side completions and validation, and some include command signing context.
++ *
++ * <p>This class allows creating instances of these types for use in plugin commands, with friendly API result types.</p>
++ *
++ * <p>{@link CustomArgumentType} is provided for customizing parsing or result types server-side, while sending the vanilla argument type to the client.</p>
 + */
 +@ApiStatus.Experimental
 +public final class ArgumentTypes {
@@ -479,7 +486,7 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +
 +    /**
 +     * Represents a selector that can capture any
-+     * entity.
++     * single entity.
 +     *
 +     * @return argument that takes one entity
 +     */
@@ -499,7 +506,7 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +
 +    /**
 +     * Represents a selector that can capture a
-+     * player entity.
++     * singular player entity.
 +     *
 +     * @return argument that takes one player
 +     */
@@ -518,8 +525,8 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +    }
 +
 +    /**
-+     * Represents a selector that provides list
-+     * of player profiles
++     * A selector argument that provides a list
++     * of player profiles.
 +     *
 +     * @return player profile arguments
 +     */
@@ -566,7 +573,7 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +    }
 +
 +    /**
-+     * A NamedTextColor argument which provides a color.
++     * An argument for parsing {@link NamedTextColor}s.
 +     *
 +     * @return argument
 +     */
@@ -632,7 +639,7 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +    }
 +
 +    /**
-+     * An inclusive range of integers that may be unbounded on either end
++     * An inclusive range of integers that may be unbounded on either end.
 +     *
 +     * @return argument
 +     */
@@ -641,7 +648,7 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +    }
 +
 +    /**
-+     * An inclusive range of doubles that may be unbounded on either end
++     * An inclusive range of doubles that may be unbounded on either end.
 +     *
 +     * @return argument
 +     */
@@ -695,7 +702,7 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +    }
 +
 +    /**
-+     * An entity anchor argument
++     * An entity anchor argument.
 +     *
 +     * @return argument
 +     */
@@ -705,7 +712,11 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +
 +    /**
 +     * A time argument, returning the number of ticks.
-+     * This parses things like "1d"
++     * Examples:
++     * - "1d"
++     * - "5s"
++     * - "2"
++     * - "6t"
 +     *
 +     * @return argument
 +     */
@@ -715,7 +726,11 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +
 +    /**
 +     * A time argument, returning the number of ticks.
-+     * This parses things like "1d"
++     * Examples:
++     * - "1d"
++     * - "5s"
++     * - "2"
++     * - "6t"
 +     *
 +     * @param mintime The minimum time required for this argument.
 +     * @return argument
@@ -726,6 +741,8 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +
 +    /**
 +     * A template mirror argument
++     * <p>
++     * See {@link Mirror} for more information.
 +     *
 +     * @return argument
 +     */
@@ -734,7 +751,7 @@ index 0000000000000000000000000000000000000000..8109abe46b166c335d05a2cc25e91010
 +    }
 +
 +    /**
-+     * A template mirror argument
++     * A template rotation argument.
 +     *
 +     * @return argument
 +     */
