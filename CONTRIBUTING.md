@@ -237,10 +237,10 @@ into most IDEs and formatters by default. There are a few notes, however:
 There are exceptions, especially in Spigot-related files
 - When in doubt or the code around your change is in a clearly different style,
 use the same style as the surrounding code.
-- `var` usage is heavily discouraged, as it makes reading patch files a lot harder
-and can lead to confusion during updates due to changed return types. The only
-exception to this is if a line would otherwise be way too long/filled with hard
-to parse generics in a case where the base type itself is already obvious
+- Usage of the `var` keyword is heavily discouraged, as it makes reading patch files
+a lot harder  and can lead to confusion during updates due to changed return types.
+The only exception to this is if a line would otherwise be way too long/filled with
+hard to parse generics in a case where the base type itself is already obvious
 
 ### Imports
 When adding new imports to a class in a file not created by the current patch, use the fully qualified class name
