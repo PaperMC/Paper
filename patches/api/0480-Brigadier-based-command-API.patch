@@ -127,10 +127,10 @@ index 0000000000000000000000000000000000000000..86912d38969982cb7655e0f2454ef5b6
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/Commands.java b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dd543968dbc1e1c76c14c277777a7e227167505f
+index 0000000000000000000000000000000000000000..0f17d209ddca8c7d3ce940c04a67730b2aa43922
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,251 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.CommandDispatcher;
@@ -140,8 +140,8 @@ index 0000000000000000000000000000000000000000..dd543968dbc1e1c76c14c277777a7e22
 +import com.mojang.brigadier.tree.LiteralCommandNode;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
++import java.util.Collection;
 +import java.util.Collections;
-+import java.util.List;
 +import java.util.Set;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
@@ -211,13 +211,13 @@ index 0000000000000000000000000000000000000000..dd543968dbc1e1c76c14c277777a7e22
 +     *
 +     * <p><b>Note:</b> This is a delicate API that must be used with care to ensure a consistent user experience.</p>
 +     *
-+     * <p>When registering commands, it should be preferred to use {@link #register(PluginMeta, LiteralCommandNode, String, List) register methods}
-+     * over directly registering to the dispatcher wherever possible. {@link #register(PluginMeta, LiteralCommandNode, String, List) Register methods}
++     * <p>When registering commands, it should be preferred to use {@link #register(PluginMeta, LiteralCommandNode, String, Collection) register methods}
++     * over directly registering to the dispatcher wherever possible. {@link #register(PluginMeta, LiteralCommandNode, String, Collection) Register methods}
 +     * automatically handle command namespacing, command help, plugin association with commands, and more.</p>
 +     *
 +     * <p>Example use cases for this method <b>may</b> include:
 +     * <ul>
-+     *   <li>Implementing integration between an external command framework and Paper (although {@link #register(PluginMeta, LiteralCommandNode, String, List) register methods} should still be preferred where possible)</li>
++     *   <li>Implementing integration between an external command framework and Paper (although {@link #register(PluginMeta, LiteralCommandNode, String, Collection) register methods} should still be preferred where possible)</li>
 +     *   <li>Registering new child nodes to an existing plugin command (for example an "addon" plugin to another plugin may want to do this)</li>
 +     *   <li>Retrieving existing command nodes to build redirects</li>
 +     * </ul>
@@ -236,9 +236,9 @@ index 0000000000000000000000000000000000000000..dd543968dbc1e1c76c14c277777a7e22
 +     * </ul>
 +     *
 +     * @param node the built literal command node
-+     * @return true if the command was registered successfully
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    default boolean register(final @NotNull LiteralCommandNode<CommandSourceStack> node) {
++    default @Nullable Set<String> register(final @NotNull LiteralCommandNode<CommandSourceStack> node) {
 +        return this.register(node, null, Collections.emptyList());
 +    }
 +
@@ -253,9 +253,9 @@ index 0000000000000000000000000000000000000000..dd543968dbc1e1c76c14c277777a7e22
 +     *
 +     * @param node the built literal command node
 +     * @param description the help description for the root literal node
-+     * @return true if the command was registered successfully
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    default boolean register(final @NotNull LiteralCommandNode<CommandSourceStack> node, final @Nullable String description) {
++    default @Nullable Set<String> register(final @NotNull LiteralCommandNode<CommandSourceStack> node, final @Nullable String description) {
 +        return this.register(node, description, Collections.emptyList());
 +    }
 +
@@ -270,9 +270,9 @@ index 0000000000000000000000000000000000000000..dd543968dbc1e1c76c14c277777a7e22
 +     *
 +     * @param node the built literal command node
 +     * @param aliases a collection of aliases to register the literal node's command to
-+     * @return true if the literal node or at least one alias was registered successfully
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    default boolean register(final @NotNull LiteralCommandNode<CommandSourceStack> node, final @NotNull List<String> aliases) {
++    default @Nullable Set<String> register(final @NotNull LiteralCommandNode<CommandSourceStack> node, final @NotNull Collection<String> aliases) {
 +        return this.register(node, null, aliases);
 +    }
 +
@@ -288,9 +288,9 @@ index 0000000000000000000000000000000000000000..dd543968dbc1e1c76c14c277777a7e22
 +     * @param node the built literal command node
 +     * @param description the help description for the root literal node
 +     * @param aliases a collection of aliases to register the literal node's command to
-+     * @return true if the literal node or at least one alias was registered successfully
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    boolean register(@NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull List<String> aliases);
++    @Nullable Set<String> register(@NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull Collection<String> aliases);
 +
 +    /**
 +     * Registers a command for a plugin.
@@ -305,84 +305,81 @@ index 0000000000000000000000000000000000000000..dd543968dbc1e1c76c14c277777a7e22
 +     * @param node the built literal command node
 +     * @param description the help description for the root literal node
 +     * @param aliases a collection of aliases to register the literal node's command to
-+     * @return true if the literal node or at least one alias was registered successfully
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    boolean register(@NotNull PluginMeta pluginMeta, @NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull List<String> aliases);
++    @Nullable Set<String> register(@NotNull PluginMeta pluginMeta, @NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull Collection<String> aliases);
 +
 +    /**
 +     * This allows configuring the registration of your command, which is not intended for public use.
-+     * See {@link Commands#register(PluginMeta, LiteralCommandNode, String, List)} for more information.
++     * See {@link Commands#register(PluginMeta, LiteralCommandNode, String, Collection)} for more information.
 +     *
 +     * @param pluginMeta meta
 +     * @param node node
 +     * @param description description
 +     * @param aliases aliases
 +     * @param flags flags
-+     * @return if command was registered
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
 +    @ApiStatus.Internal
-+    boolean registerWithFlags(@NotNull PluginMeta pluginMeta, @NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull List<String> aliases, @NotNull Set<CommandRegistrationFlag> flags);
++    @Nullable Set<String> registerWithFlags(@NotNull PluginMeta pluginMeta, @NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull Collection<String> aliases, @NotNull Set<CommandRegistrationFlag> flags);
 +
 +    /**
-+     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, List)}.
++     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, Collection)}.
 +     *
 +     * @param label command label
 +     * @param basicCommand command implementation
-+     * @return true if the command was registered
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    default boolean register(final @NotNull String label, final @NotNull BasicCommand basicCommand) {
++    default @Nullable Set<String> register(final @NotNull String label, final @NotNull BasicCommand basicCommand) {
 +        return this.register(label, null, Collections.emptyList(), basicCommand);
 +    }
 +
 +    /**
-+     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, List)}.
++     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, Collection)}.
 +     *
 +     * @param label command label
 +     * @param description the help description for the root literal node
 +     * @param basicCommand command implementation
-+     * @return true if the command was registered
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    default boolean register(final @NotNull String label, final @Nullable String description, final @NotNull BasicCommand basicCommand) {
++    default @Nullable Set<String> register(final @NotNull String label, final @Nullable String description, final @NotNull BasicCommand basicCommand) {
 +        return this.register(label, description, Collections.emptyList(), basicCommand);
 +    }
 +
 +    /**
-+     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, List)}.
++     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, Collection)}.
 +     *
 +     * @param label command label
 +     * @param aliases a collection of aliases
 +     * @param basicCommand command implementation
-+     * @return true if at least one label was properly registered
-+     * into the dispatcher
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    default boolean register(final @NotNull String label, final @NotNull List<String> aliases, final @NotNull BasicCommand basicCommand) {
++    default @Nullable Set<String> register(final @NotNull String label, final @NotNull Collection<String> aliases, final @NotNull BasicCommand basicCommand) {
 +        return this.register(label, null, aliases, basicCommand);
 +    }
 +
 +    /**
-+     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, List)}.
++     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, Collection)}.
 +     *
 +     * @param label command label
 +     * @param description the help description for the root literal node
 +     * @param aliases a collection of aliases
 +     * @param basicCommand command implementation
-+     * @return true if at least one label was properly registered
-+     * into the dispatcher
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    boolean register(@NotNull String label, @Nullable String description, @NotNull List<String> aliases, @NotNull BasicCommand basicCommand);
++    @Nullable Set<String> register(@NotNull String label, @Nullable String description, @NotNull Collection<String> aliases, @NotNull BasicCommand basicCommand);
 +
 +    /**
-+     * Registers a command under the same logic as {@link Commands#register(PluginMeta, LiteralCommandNode, String, List)}.
++     * Registers a command under the same logic as {@link Commands#register(PluginMeta, LiteralCommandNode, String, Collection)}.
 +     *
 +     * @param pluginMeta the owning plugin's meta
 +     * @param label command label
 +     * @param description the help description for the root literal node
 +     * @param aliases a collection of aliases
 +     * @param basicCommand command implementation
-+     * @return true if at least one label was properly registered
-+     * into the dispatcher
++     * @return successfully registered root command labels (including aliases and namespaced variants), or {@code null} if none
 +     */
-+    boolean register(@NotNull PluginMeta pluginMeta, @NotNull String label, @Nullable String description, @NotNull List<String> aliases, @NotNull BasicCommand basicCommand);
++    @Nullable Set<String> register(@NotNull PluginMeta pluginMeta, @NotNull String label, @Nullable String description, @NotNull Collection<String> aliases, @NotNull BasicCommand basicCommand);
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java
