@@ -573,6 +573,119 @@ index 0000000000000000000000000000000000000000..49028463ba47e760281545c2f7597e3d
 +        }
 +    }
 +}
+diff --git a/src/main/java/co/aikar/timings/TimingsWorldHistoryExtractor.java b/src/main/java/co/aikar/timings/TimingsWorldHistoryExtractor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e6870a32eadc6dcfd6b52ffe14e7dd9d0591ef1d
+--- /dev/null
++++ b/src/main/java/co/aikar/timings/TimingsWorldHistoryExtractor.java
+@@ -0,0 +1,107 @@
++package co.aikar.timings;
++
++import co.aikar.util.JSONUtil;
++import co.aikar.util.LoadingMap;
++import com.google.common.base.Function;
++import io.papermc.paper.chunk.system.ChunkSystem;
++import net.minecraft.server.level.ChunkHolder;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.chunk.LevelChunk;
++import org.bukkit.Bukkit;
++import org.bukkit.Material;
++import org.bukkit.World;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.block.CraftBlockType;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.EntityType;
++import org.jetbrains.annotations.NotNull;
++import java.util.List;
++import java.util.Map;
++
++import static co.aikar.timings.TimingHistory.worldMap;
++import static co.aikar.util.JSONUtil.pair;
++import static co.aikar.util.JSONUtil.toArray;
++import static co.aikar.util.JSONUtil.toArrayMapper;
++import static co.aikar.util.JSONUtil.toObjectMapper;
++
++/**
++ * Internal class for extracting information about the world
++ * without having to rely on generally slower/broken spigot API
++ */
++@SuppressWarnings("removal")
++public class TimingsWorldHistoryExtractor implements Function<World, JSONUtil.JSONPair> {
++
++    private final TimingHistory timingHistory;
++
++    public TimingsWorldHistoryExtractor(TimingHistory timingHistory) {
++        this.timingHistory = timingHistory;
++    }
++
++    @NotNull
++    @Override
++    public JSONUtil.JSONPair apply(World world) {
++        final ServerLevel level = ((CraftWorld) world).getHandle();
++        final Map<TimingHistory.RegionData.RegionId, TimingHistory.RegionData> regions = LoadingMap.newHashMap(TimingHistory.RegionData.LOADER);
++
++        final List<ChunkHolder> visibleChunkHolders = ChunkSystem.getVisibleChunkHolders(level);
++        for (ChunkHolder chunkHolder : visibleChunkHolders) {
++            final LevelChunk fullChunkNow = chunkHolder.getFullChunkNow();
++            if (fullChunkNow == null) continue;
++
++            TimingHistory.RegionData data = regions.get(new TimingHistory.RegionData.RegionId(chunkHolder.pos.x, chunkHolder.pos.z));
++
++            for (final Entity entity : level.getChunkEntities(chunkHolder.pos.x, chunkHolder.pos.z)) {
++                if (entity == null) {
++                    Bukkit.getLogger().warning("Null entity detected in chunk at position x: " + chunkHolder.pos.x + ", z: " + chunkHolder.pos.z);
++                    continue;
++                }
++                data.entityCounts.get(entity.getType()).increment();
++            }
++
++            fullChunkNow.getBlockEntities().forEach(((blockPos, blockEntity) -> {
++                final Material material = CraftBlockType.minecraftToBukkit(blockEntity.getBlockState().getBlock());
++                data.tileEntityCounts.get(material).increment();
++            }));
++
++        }
++        return pair(
++            worldMap.get(world.getName()),
++            toArrayMapper(regions.values(), new Function<TimingHistory.RegionData, Object>() {
++                @NotNull
++                @Override
++                public Object apply(TimingHistory.RegionData input) {
++                    return toArray(
++                        input.regionId.x,
++                        input.regionId.z,
++                        toObjectMapper(input.entityCounts.entrySet(),
++                            new Function<Map.Entry<EntityType, TimingHistory.Counter>, JSONUtil.JSONPair>() {
++                                @NotNull
++                                @Override
++                                public JSONUtil.JSONPair apply(Map.Entry<EntityType, TimingHistory.Counter> entry) {
++                                    timingHistory.entityTypeSet.add(entry.getKey());
++                                    return pair(
++                                        String.valueOf(entry.getKey().ordinal()),
++                                        entry.getValue().count()
++                                    );
++                                }
++                            }
++                        ),
++                        toObjectMapper(input.tileEntityCounts.entrySet(),
++                            new Function<Map.Entry<Material, TimingHistory.Counter>, JSONUtil.JSONPair>() {
++                                @NotNull
++                                @Override
++                                public JSONUtil.JSONPair apply(Map.Entry<Material, TimingHistory.Counter> entry) {
++                                    timingHistory.tileEntityTypeSet.add(entry.getKey());
++                                    return pair(
++                                        String.valueOf(entry.getKey().ordinal()),
++                                        entry.getValue().count()
++                                    );
++                                }
++                            }
++                        )
++                    );
++                }
++            })
++        );
++    }
++}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2f0d9b953802dee821cfde82d22b0567cce8ee91
@@ -1527,7 +1640,7 @@ index 991ebf07bc0608df0a12f1f26e581cc93255ae01..946001c57c326f2d2f0677bca954e855
      private String descriptionId;
      @Nullable
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index 099f85ec8b427392947e815e0b85d7ec49369bc3..fb495fcbf42be3825bfb785a9887148c54f5b00b 100644
+index f0b4b9828ec237e93d5a6bdf5cbea8b469ebff02..7fa49fcf5469276e25c40af4cd27943f665d8721 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 @@ -34,10 +34,12 @@ import org.bukkit.inventory.InventoryHolder;
@@ -2005,7 +2118,7 @@ index f97eccb6a17c7876e1e002d798eb67bbe80571a0..76effc345d362047e64d064eb64a5222
 +    } // Paper
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index beffeedee0afdb885558c832f8801cd713d741a3..beae45fb45eb0629ba36f8daabaf7d9cb9716b71 100644
+index beffeedee0afdb885558c832f8801cd713d741a3..ec8d64ff77367d28c1b9e2b8745e76588ed9e375 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -212,6 +212,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
@@ -2021,7 +2134,7 @@ index beffeedee0afdb885558c832f8801cd713d741a3..beae45fb45eb0629ba36f8daabaf7d9c
  
      public static byte toLegacyData(BlockState data) {
          return CraftLegacy.toLegacyData(data);
-@@ -462,6 +468,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -462,6 +468,18 @@ public final class CraftMagicNumbers implements UnsafeValues {
      public DamageSource.Builder createDamageSourceBuilder(DamageType damageType) {
          return new CraftDamageSourceBuilder(damageType);
      }
@@ -2030,6 +2143,12 @@ index beffeedee0afdb885558c832f8801cd713d741a3..beae45fb45eb0629ba36f8daabaf7d9c
 +    public String getTimingsServerName() {
 +        return io.papermc.paper.configuration.GlobalConfiguration.get().timings.serverName;
 +    }
++
++    @Override
++    public com.google.common.base.Function<org.bukkit.World, co.aikar.util.JSONUtil.JSONPair> getWorldTimingExtractor(final co.aikar.timings.TimingHistory timingHistory) {
++        return new co.aikar.timings.TimingsWorldHistoryExtractor(timingHistory);
++    }
++
 +    // Paper end
  
      /**

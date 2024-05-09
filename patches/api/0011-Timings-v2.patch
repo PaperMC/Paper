@@ -717,10 +717,10 @@ index 0000000000000000000000000000000000000000..199789d56d22fcb1b77ebd56805cc28a
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb9d58f8852e732a1284beeaf542989301d21b1c
+index 0000000000000000000000000000000000000000..7df5ca61fee4e19b08fceafdc44226328789e898
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistory.java
-@@ -0,0 +1,355 @@
+@@ -0,0 +1,284 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -746,15 +746,10 @@ index 0000000000000000000000000000000000000000..eb9d58f8852e732a1284beeaf5429893
 + */
 +package co.aikar.timings;
 +
-+import co.aikar.timings.TimingHistory.RegionData.RegionId;
 +import com.google.common.base.Function;
 +import com.google.common.collect.Sets;
 +import org.bukkit.Bukkit;
-+import org.bukkit.Chunk;
 +import org.bukkit.Material;
-+import org.bukkit.World;
-+import org.bukkit.block.BlockState;
-+import org.bukkit.entity.Entity;
 +import org.bukkit.entity.EntityType;
 +import org.bukkit.entity.Player;
 +import co.aikar.util.LoadingMap;
@@ -825,74 +820,8 @@ index 0000000000000000000000000000000000000000..eb9d58f8852e732a1284beeaf5429893
 +
 +        // Information about all loaded chunks/entities
 +        //noinspection unchecked
-+        this.worlds = toObjectMapper(Bukkit.getWorlds(), new Function<World, JSONPair>() {
-+            @NotNull
-+            @Override
-+            public JSONPair apply(World world) {
-+                Map<RegionId, RegionData> regions = LoadingMap.newHashMap(RegionData.LOADER);
 +
-+                for (Chunk chunk : world.getLoadedChunks()) {
-+                    RegionData data = regions.get(new RegionId(chunk.getX(), chunk.getZ()));
-+
-+                    for (Entity entity : chunk.getEntities()) {
-+                        if (entity == null) {
-+                            Bukkit.getLogger().warning("Null entity detected in chunk at position x: " + chunk.getX() + ", z: " + chunk.getZ());
-+                            continue;
-+                        }
-+
-+                        data.entityCounts.get(entity.getType()).increment();
-+                    }
-+
-+                    for (BlockState tileEntity : chunk.getTileEntities()) {
-+                        if (tileEntity == null) {
-+                            Bukkit.getLogger().warning("Null tileentity detected in chunk at position x: " + chunk.getX() + ", z: " + chunk.getZ());
-+                            continue;
-+                        }
-+
-+                        data.tileEntityCounts.get(tileEntity.getBlock().getType()).increment();
-+                    }
-+                }
-+                return pair(
-+                    worldMap.get(world.getName()),
-+                    toArrayMapper(regions.values(),new Function<RegionData, Object>() {
-+                        @NotNull
-+                        @Override
-+                        public Object apply(RegionData input) {
-+                            return toArray(
-+                                input.regionId.x,
-+                                input.regionId.z,
-+                                toObjectMapper(input.entityCounts.entrySet(),
-+                                    new Function<Map.Entry<EntityType, Counter>, JSONPair>() {
-+                                        @NotNull
-+                                        @Override
-+                                        public JSONPair apply(Map.Entry<EntityType, Counter> entry) {
-+                                            entityTypeSet.add(entry.getKey());
-+                                            return pair(
-+                                                    String.valueOf(entry.getKey().ordinal()),
-+                                                    entry.getValue().count()
-+                                            );
-+                                        }
-+                                    }
-+                                ),
-+                                toObjectMapper(input.tileEntityCounts.entrySet(),
-+                                    new Function<Map.Entry<Material, Counter>, JSONPair>() {
-+                                        @NotNull
-+                                        @Override
-+                                        public JSONPair apply(Map.Entry<Material, Counter> entry) {
-+                                            tileEntityTypeSet.add(entry.getKey());
-+                                            return pair(
-+                                                    String.valueOf(entry.getKey().ordinal()),
-+                                                    entry.getValue().count()
-+                                            );
-+                                        }
-+                                    }
-+                                )
-+                            );
-+                        }
-+                    })
-+                );
-+            }
-+        });
++        this.worlds = toObjectMapper(Bukkit.getWorlds(), Bukkit.getUnsafe().getWorldTimingExtractor(this) );
 +    }
 +    static class RegionData {
 +        final RegionId regionId;
@@ -1066,7 +995,7 @@ index 0000000000000000000000000000000000000000..eb9d58f8852e732a1284beeaf5429893
 +    }
 +
 +
-+    private static class Counter {
++    static class Counter {
 +        private int count = 0;
 +        public int increment() {
 +            return ++count;
@@ -2897,7 +2826,7 @@ index 3bf7db7eac81e3cc6f5c6700637d10d1b4b7a47b..77f8b0889cd7039bf041fc052fba33b6
           * Sends the component to the player
           *
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 6e46302c272b468375f2de3f7f992f55f13805b8..01e796e487cc16710f51b457466a37ba70e1e665 100644
+index 6e46302c272b468375f2de3f7f992f55f13805b8..b116bc3f7abd3f093145071407c45e43b1748bf3 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
 @@ -40,6 +40,7 @@ public interface UnsafeValues {
@@ -2908,7 +2837,7 @@ index 6e46302c272b468375f2de3f7f992f55f13805b8..01e796e487cc16710f51b457466a37ba
      Material toLegacy(Material material);
  
      Material fromLegacy(Material material);
-@@ -138,4 +139,12 @@ public interface UnsafeValues {
+@@ -138,4 +139,13 @@ public interface UnsafeValues {
          return !Bukkit.getUnsafe().isSupportedApiVersion(plugin.getDescription().getAPIVersion());
      }
      // Paper end
@@ -2919,6 +2848,7 @@ index 6e46302c272b468375f2de3f7f992f55f13805b8..01e796e487cc16710f51b457466a37ba
 +     * @return name
 +     */
 +    String getTimingsServerName();
++    com.google.common.base.Function<World, co.aikar.util.JSONUtil.JSONPair> getWorldTimingExtractor(final co.aikar.timings.TimingHistory timingHistory); // Paper - Timings hack
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
