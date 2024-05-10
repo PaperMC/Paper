@@ -14605,7 +14605,7 @@ index 0000000000000000000000000000000000000000..962d3cae6340fc11607b59355e291629
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index 5f59e733c00de9c0f5692b3b3c092a050a9f409f..b8a89bf8a7a0ef25f00ccc0e84ca64f4524fdc3e 100644
+index 4de88f74182bb596c6b5ad0351cc0dacefd0ce96..2874bc3001c4e7d9191e47ba512c5a68369c21f1 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 @@ -29,6 +29,45 @@ public class GlobalConfiguration extends ConfigurationPart {
@@ -18398,7 +18398,7 @@ index 2d9d4d06b75873f888ef4d8f5779a52706f821a8..f74efe41cd0da2f9749fc96fb9e0f7cf
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 4f15b9d7c706a9b11ce2df0fa3b67d49f2b73d09..60fd84819ea7aa96f351db743e8667334af9e96b 100644
+index b33bf957b1541756e3b983b87b1c83629757739a..0ccdc8d135dd3edb410fbc1d248c20a4a45b37fa 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -199,7 +199,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -20434,10 +20434,10 @@ index ce7f154b9dad4e78ee0189405cf57dcb3d5301b8..a5e8078b99161272b0f826b8c39e56d1
  
      static CompletableFuture<ChunkAccess> generateSpawn(WorldGenContext context, ChunkStatus status, Executor executor, ToFullChunk fullChunkConverter, List<ChunkAccess> chunks, ChunkAccess chunk) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..b2e8082dda0d0ca32bfc32cbf9d8ae9822febc30 100644
+index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..5f85d8d82212f9a8133304dc05bf2cd39da1f9e7 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -112,6 +112,17 @@ public class ChunkSerializer {
+@@ -112,7 +112,25 @@ public class ChunkSerializer {
          }
      }
      // Paper end - guard against serializing mismatching coordinates
@@ -20453,22 +20453,17 @@ index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..b2e8082dda0d0ca32bfc32cbf9d8ae98
 +        }
 +    }
      public static ProtoChunk read(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
-         // Paper start - Do not let the server load chunks from newer versions
-         if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
-@@ -122,6 +133,12 @@ public class ChunkSerializer {
-             }
-         }
-         // Paper end - Do not let the server load chunks from newer versions
++        // Paper start - rewrite chunk system
 +        InProgressChunkHolder holder = readInProgressChunkHolder(world, poiStorage, chunkPos, nbt);
 +        return holder.protoChunk;
 +    }
 +
 +    public static InProgressChunkHolder readInProgressChunkHolder(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
 +        // Paper end - rewrite chunk system
-         ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
- 
-         if (!Objects.equals(chunkPos, chunkcoordintpair1)) {
-@@ -178,7 +195,7 @@ public class ChunkSerializer {
+         // Paper start - Do not let the server load chunks from newer versions
+         if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
+             final int dataVersion = nbt.getInt("DataVersion");
+@@ -178,7 +196,7 @@ public class ChunkSerializer {
                  achunksection[k] = chunksection;
                  SectionPos sectionposition = SectionPos.of(chunkPos, b0);
  
@@ -20477,7 +20472,7 @@ index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..b2e8082dda0d0ca32bfc32cbf9d8ae98
              }
  
              boolean flag3 = nbttagcompound1.contains("BlockLight", 7);
-@@ -325,7 +342,7 @@ public class ChunkSerializer {
+@@ -325,7 +343,7 @@ public class ChunkSerializer {
          }
  
          if (chunktype == ChunkType.LEVELCHUNK) {
@@ -20486,7 +20481,7 @@ index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..b2e8082dda0d0ca32bfc32cbf9d8ae98
          } else {
              ProtoChunk protochunk1 = (ProtoChunk) object1;
  
-@@ -360,9 +377,41 @@ public class ChunkSerializer {
+@@ -360,9 +378,41 @@ public class ChunkSerializer {
                  protochunk1.setCarvingMask(worldgenstage_features, new CarvingMask(nbttagcompound5.getLongArray(s1), ((ChunkAccess) object1).getMinBuildHeight()));
              }
  
@@ -20529,7 +20524,7 @@ index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..b2e8082dda0d0ca32bfc32cbf9d8ae98
  
      private static void logErrors(ChunkPos chunkPos, int y, String message) {
          ChunkSerializer.LOGGER.error("Recoverable errors when loading section [" + chunkPos.x + ", " + y + ", " + chunkPos.z + "]: " + message);
-@@ -379,6 +428,11 @@ public class ChunkSerializer {
+@@ -379,6 +429,11 @@ public class ChunkSerializer {
      // CraftBukkit end
  
      public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
@@ -20541,7 +20536,7 @@ index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..b2e8082dda0d0ca32bfc32cbf9d8ae98
          // Paper start - rewrite light impl
          final int minSection = io.papermc.paper.util.WorldUtil.getMinLightSection(world);
          final int maxSection = io.papermc.paper.util.WorldUtil.getMaxLightSection(world);
-@@ -391,7 +445,7 @@ public class ChunkSerializer {
+@@ -391,7 +446,7 @@ public class ChunkSerializer {
          nbttagcompound.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound.putInt("yPos", chunk.getMinSection());
          nbttagcompound.putInt("zPos", chunkcoordintpair.z);
@@ -20550,7 +20545,7 @@ index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..b2e8082dda0d0ca32bfc32cbf9d8ae98
          nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
          nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(chunk.getStatus()).toString());
          BlendingData blendingdata = chunk.getBlendingData();
-@@ -485,8 +539,17 @@ public class ChunkSerializer {
+@@ -485,8 +540,17 @@ public class ChunkSerializer {
              nbttagcompound.putBoolean("isLightOn", false); // Paper - set to false but still store, this allows us to detect --eraseCache (as eraseCache _removes_)
          }
  
@@ -20570,7 +20565,7 @@ index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..b2e8082dda0d0ca32bfc32cbf9d8ae98
  
          CompoundTag nbttagcompound2;
  
-@@ -522,7 +585,14 @@ public class ChunkSerializer {
+@@ -522,7 +586,14 @@ public class ChunkSerializer {
              nbttagcompound.put("CarvingMasks", nbttagcompound2);
          }
  
@@ -20585,7 +20580,7 @@ index 01d6b8683a9fa30d05b03ebfef8ee2dca4e83a56..b2e8082dda0d0ca32bfc32cbf9d8ae98
          nbttagcompound.put("PostProcessing", ChunkSerializer.packOffsets(chunk.getPostProcessing()));
          CompoundTag nbttagcompound3 = new CompoundTag();
          Iterator iterator1 = chunk.getHeightmaps().iterator();
-@@ -578,7 +648,7 @@ public class ChunkSerializer {
+@@ -578,7 +649,7 @@ public class ChunkSerializer {
  
          return nbttaglist == null && nbttaglist1 == null ? null : (chunk) -> {
              if (nbttaglist != null) {
@@ -21612,7 +21607,7 @@ index 7dae8d91b74cc7df0745f0c121e3bea09b8d0b6d..1e2530c9e5212b6d2bdbc94817beddb4
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 271b376d51479a2adc42b41bb252e60234ddee5e..277a92c32e9f22974442b833700bc0f70bdb976a 100644
+index 8d148c72d9c3d04112451760919515fae83cffc8..859af2ce336f134dac0d97f916530e8e4e91a4e7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1406,7 +1406,6 @@ public final class CraftServer implements Server {
@@ -21744,7 +21739,7 @@ index 4b6a04e47f5d4c071607516519098fab317dcf12..01fc74e6cc8ea8808b821583afb26309
  
      // Paper start - implement pointers
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index e1af41a8d938420694a5342f08b811615dc46003..33c553d1558b3cdfac22948f3878e1a31d70f02b 100644
+index 031280d62196aee200a74f3e43191645f9ae4244..66bb18fddb8a3b35903c336a97cfea6014cf265d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -3457,31 +3457,31 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
