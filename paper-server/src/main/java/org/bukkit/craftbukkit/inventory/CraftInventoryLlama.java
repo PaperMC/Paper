@@ -6,17 +6,21 @@ import org.bukkit.inventory.LlamaInventory;
 
 public class CraftInventoryLlama extends CraftInventoryAbstractHorse implements LlamaInventory {
 
-    public CraftInventoryLlama(IInventory inventory) {
+    private final IInventory bodyArmorInventory;
+
+    public CraftInventoryLlama(IInventory inventory, IInventory bodyArmorInventory) {
         super(inventory);
+        this.bodyArmorInventory = bodyArmorInventory;
     }
 
     @Override
     public ItemStack getDecor() {
-        return getItem(1);
+        net.minecraft.world.item.ItemStack item = bodyArmorInventory.getItem(0);
+        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
     }
 
     @Override
     public void setDecor(ItemStack stack) {
-        setItem(1, stack);
+        bodyArmorInventory.setItem(0, CraftItemStack.asNMSCopy(stack));
     }
 }

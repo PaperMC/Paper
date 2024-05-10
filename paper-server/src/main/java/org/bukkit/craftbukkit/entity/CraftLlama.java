@@ -34,7 +34,7 @@ public class CraftLlama extends CraftChestedHorse implements Llama {
 
     @Override
     public LlamaInventory getInventory() {
-        return new CraftInventoryLlama(getHandle().inventory);
+        return new CraftInventoryLlama(getHandle().inventory, getHandle().getBodyArmorAccess());
     }
 
     @Override
