@@ -16,12 +16,13 @@ public org.bukkit.craftbukkit.profile.CraftPlayerProfile setProperty(Ljava/lang/
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a750ec2cde2c6b3942806241b2d972cef57f3d44
+index 0000000000000000000000000000000000000000..72e232791efa2154c6c95d2158734a86480cb40d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,416 @@
+@@ -0,0 +1,420 @@
 +package com.destroystokyo.paper.profile;
 +
++import com.google.common.base.Preconditions;
 +import com.mojang.authlib.yggdrasil.ProfileResult;
 +import io.papermc.paper.configuration.GlobalConfiguration;
 +import com.google.common.base.Charsets;
@@ -76,6 +77,8 @@ index 0000000000000000000000000000000000000000..a750ec2cde2c6b3942806241b2d972ce
 +        String name = property.getName();
 +        PropertyMap properties = profile.getProperties();
 +        properties.removeAll(name);
++
++        Preconditions.checkArgument(properties.size() < 16, "Cannot add more than 16 properties to a profile");
 +        properties.put(name, new Property(name, property.getValue(), property.getSignature()));
 +    }
 +
@@ -165,10 +168,10 @@ index 0000000000000000000000000000000000000000..a750ec2cde2c6b3942806241b2d972ce
 +    @Nullable
 +    @Override
 +    public void setProperty(@NotNull String propertyName, @Nullable Property property) {
-+        PropertyMap properties = profile.getProperties();
-+        properties.removeAll(propertyName);
 +        if (property != null) {
-+            properties.put(propertyName, property);
++            this.setProperty(new ProfileProperty(propertyName, property.value(), property.signature()));
++        } else {
++            profile.getProperties().removeAll(propertyName);
 +        }
 +    }
 +
@@ -288,6 +291,7 @@ index 0000000000000000000000000000000000000000..a750ec2cde2c6b3942806241b2d972ce
 +    }
 +
 +    private static GameProfile createAuthLibProfile(UUID uniqueId, String name) {
++        Preconditions.checkArgument(name == null || name.length() <= 16, "Name cannot be longer than 16 characters");
 +        return new GameProfile(
 +            uniqueId != null ? uniqueId : Util.NIL_UUID,
 +            name != null ? name : ""
@@ -684,7 +688,7 @@ index f6012feafe1dbbf9c52ac38965d9475896766657..a7554f2028f93867360c27a51c9580a8
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
-index edd340c66ea8cec1c76ba29f1deab14c4784a7e5..6f779c6f4422c5b5dc22f66e3e702c714d0e052b 100644
+index 6f0edd4d1c473179c03253326a3c7b5910ec53ad..e3a244dac35bf4d5d10e41c200aaa7f93e278ef9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 +++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 @@ -28,7 +28,7 @@ import org.bukkit.profile.PlayerProfile;
@@ -696,7 +700,7 @@ index edd340c66ea8cec1c76ba29f1deab14c4784a7e5..6f779c6f4422c5b5dc22f66e3e702c71
  
      @Nonnull
      public static GameProfile validateSkullProfile(@Nonnull GameProfile gameProfile) {
-@@ -93,8 +93,10 @@ public final class CraftPlayerProfile implements PlayerProfile {
+@@ -105,8 +105,10 @@ public final class CraftPlayerProfile implements PlayerProfile {
          }
      }
  
@@ -709,7 +713,7 @@ index edd340c66ea8cec1c76ba29f1deab14c4784a7e5..6f779c6f4422c5b5dc22f66e3e702c71
      }
  
      void rebuildDirtyProperties() {
-@@ -237,6 +239,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+@@ -249,6 +251,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
  
      @Override
      public Map<String, Object> serialize() {
@@ -717,7 +721,7 @@ index edd340c66ea8cec1c76ba29f1deab14c4784a7e5..6f779c6f4422c5b5dc22f66e3e702c71
          Map<String, Object> map = new LinkedHashMap<>();
          if (this.getUniqueId() != null) {
              map.put("uniqueId", this.getUniqueId().toString());
-@@ -252,10 +255,12 @@ public final class CraftPlayerProfile implements PlayerProfile {
+@@ -264,10 +267,12 @@ public final class CraftPlayerProfile implements PlayerProfile {
              });
              map.put("properties", propertiesData);
          }
@@ -730,7 +734,7 @@ index edd340c66ea8cec1c76ba29f1deab14c4784a7e5..6f779c6f4422c5b5dc22f66e3e702c71
          UUID uniqueId = ConfigSerializationUtil.getUuid(map, "uniqueId", true);
          String name = ConfigSerializationUtil.getString(map, "name", true);
  
-@@ -269,7 +274,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+@@ -281,7 +286,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
                  profile.properties.put(property.name(), property);
              }
          }
