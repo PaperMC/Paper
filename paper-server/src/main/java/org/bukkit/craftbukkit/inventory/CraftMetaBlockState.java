@@ -212,7 +212,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             tag.put(BLOCK_ENTITY_TAG, CustomData.of(blockEntityTag.getSnapshotNBTWithoutComponents()));
 
             for (TypedDataComponent<?> component : blockEntityTag.collectComponents()) {
-                tag.builder.set(component);
+                tag.putIfAbsent(component);
             }
         }
     }

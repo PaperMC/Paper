@@ -45,6 +45,7 @@ import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.DynamicOpsNBT;
 import net.minecraft.nbt.NBTBase;
@@ -173,10 +174,17 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     static final class Applicator {
 
-        final DataComponentPatch.a builder = DataComponentPatch.builder();
+        private final DataComponentPatch.a builder = DataComponentPatch.builder();
 
         <T> Applicator put(ItemMetaKeyType<T> key, T value) {
             builder.set(key.TYPE, value);
+            return this;
+        }
+
+        <T> Applicator putIfAbsent(TypedDataComponent<?> component) {
+            if (!builder.isSet(component.type())) {
+                builder.set(component);
+            }
             return this;
         }
 
