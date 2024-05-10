@@ -22,6 +22,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.profile;
 +
++import com.google.common.base.Preconditions;
 +import com.mojang.authlib.yggdrasil.ProfileResult;
 +import io.papermc.paper.configuration.GlobalConfiguration;
 +import com.google.common.base.Charsets;
@@ -76,6 +77,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        String name = property.getName();
 +        PropertyMap properties = profile.getProperties();
 +        properties.removeAll(name);
++
++        Preconditions.checkArgument(properties.size() < 16, "Cannot add more than 16 properties to a profile");
 +        properties.put(name, new Property(name, property.getValue(), property.getSignature()));
 +    }
 +
@@ -165,10 +168,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Nullable
 +    @Override
 +    public void setProperty(@NotNull String propertyName, @Nullable Property property) {
-+        PropertyMap properties = profile.getProperties();
-+        properties.removeAll(propertyName);
 +        if (property != null) {
-+            properties.put(propertyName, property);
++            this.setProperty(new ProfileProperty(propertyName, property.value(), property.signature()));
++        } else {
++            profile.getProperties().removeAll(propertyName);
 +        }
 +    }
 +
@@ -288,6 +291,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private static GameProfile createAuthLibProfile(UUID uniqueId, String name) {
++        Preconditions.checkArgument(name == null || name.length() <= 16, "Name cannot be longer than 16 characters");
 +        return new GameProfile(
 +            uniqueId != null ? uniqueId : Util.NIL_UUID,
 +            name != null ? name : ""
