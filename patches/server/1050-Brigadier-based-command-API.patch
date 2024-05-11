@@ -893,10 +893,10 @@ index 0000000000000000000000000000000000000000..72966584089d3fee9778f572727c9b7f
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0edf5e3e47e
+index 0000000000000000000000000000000000000000..5f0b46cb2b3f53a81a949fa64690133baa0a304b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
-@@ -0,0 +1,315 @@
+@@ -0,0 +1,321 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
@@ -917,7 +917,8 @@ index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0ed
 +import io.papermc.paper.command.brigadier.argument.range.RangeProvider;
 +import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 +import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
-+import io.papermc.paper.command.brigadier.argument.resolvers.selector.*;
++import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
++import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 +import io.papermc.paper.entity.LookAnchor;
 +import io.papermc.paper.math.Position;
 +import java.util.Collection;
@@ -969,6 +970,7 @@ index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0ed
 +import org.bukkit.block.structure.Mirror;
 +import org.bukkit.block.structure.StructureRotation;
 +import org.bukkit.craftbukkit.CraftHeightMap;
++import org.bukkit.craftbukkit.CraftRegistry;
 +import org.bukkit.craftbukkit.block.CraftBlockStates;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
@@ -988,35 +990,35 @@ index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0ed
 +
 +    @Override
 +    public ArgumentType<EntitySelectorArgumentResolver> entity() {
-+        return this.of(EntityArgument.entity(), (result) -> sourceStack -> {
++        return this.wrap(EntityArgument.entity(), (result) -> sourceStack -> {
 +            return List.of(result.findSingleEntity((CommandSourceStack) sourceStack).getBukkitEntity());
 +        });
 +    }
 +
 +    @Override
 +    public ArgumentType<EntitySelectorArgumentResolver> entities() {
-+        return this.of(EntityArgument.entities(), (result) -> sourceStack -> {
++        return this.wrap(EntityArgument.entities(), (result) -> sourceStack -> {
 +            return Lists.transform(result.findEntities((CommandSourceStack) sourceStack), net.minecraft.world.entity.Entity::getBukkitEntity);
 +        });
 +    }
 +
 +    @Override
 +    public ArgumentType<PlayerSelectorArgumentResolver> player() {
-+        return this.of(EntityArgument.player(), (result) -> sourceStack -> {
++        return this.wrap(EntityArgument.player(), (result) -> sourceStack -> {
 +            return List.of(result.findSinglePlayer((CommandSourceStack) sourceStack).getBukkitEntity());
 +        });
 +    }
 +
 +    @Override
 +    public ArgumentType<PlayerSelectorArgumentResolver> players() {
-+        return this.of(EntityArgument.players(), (result) -> sourceStack -> {
++        return this.wrap(EntityArgument.players(), (result) -> sourceStack -> {
 +            return Lists.transform(result.findPlayers((CommandSourceStack) sourceStack), ServerPlayer::getBukkitEntity);
 +        });
 +    }
 +
 +    @Override
 +    public ArgumentType<PlayerProfileListResolver> playerProfiles() {
-+        return this.of(GameProfileArgument.gameProfile(), result -> {
++        return this.wrap(GameProfileArgument.gameProfile(), result -> {
 +            if (result instanceof GameProfileArgument.SelectorResult) {
 +                return sourceStack -> Collections.unmodifiableCollection(Collections2.transform(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new));
 +            } else {
@@ -1027,8 +1029,8 @@ index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0ed
 +
 +    @Override
 +    public ArgumentType<BlockPositionResolver> blockPosition() {
-+        return this.of(BlockPosArgument.blockPos(), (result) -> sourceStack -> {
-+            BlockPos pos = result.getBlockPos((CommandSourceStack) sourceStack);
++        return this.wrap(BlockPosArgument.blockPos(), (result) -> sourceStack -> {
++            final BlockPos pos = result.getBlockPos((CommandSourceStack) sourceStack);
 +
 +            return Position.block(pos.getX(), pos.getY(), pos.getZ());
 +        });
@@ -1036,26 +1038,26 @@ index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0ed
 +
 +    @Override
 +    public ArgumentType<BlockState> blockState() {
-+        return this.of(BlockStateArgument.block(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
-+            return CraftBlockStates.getBlockState(result.getState(), result.tag);
++        return this.wrap(BlockStateArgument.block(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
++            return CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, result.getState(), result.tag);
 +        });
 +    }
 +
 +    @Override
 +    public ArgumentType<ItemStack> itemStack() {
-+        return this.of(ItemArgument.item(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
++        return this.wrap(ItemArgument.item(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
 +            return CraftItemStack.asBukkitCopy(result.createItemStack(1, true));
 +        });
 +    }
 +
 +    @Override
 +    public ArgumentType<ItemStackPredicate> itemStackPredicate() {
-+        return this.of(ItemPredicateArgument.itemPredicate(PaperCommands.INSTANCE.getBuildContext()), type -> itemStack -> type.test(CraftItemStack.asNMSCopy(itemStack)));
++        return this.wrap(ItemPredicateArgument.itemPredicate(PaperCommands.INSTANCE.getBuildContext()), type -> itemStack -> type.test(CraftItemStack.asNMSCopy(itemStack)));
 +    }
 +
 +    @Override
 +    public ArgumentType<NamedTextColor> namedColor() {
-+        return this.of(ColorArgument.color(), result ->
++        return this.wrap(ColorArgument.color(), result ->
 +            requireNonNull(
 +                NamedTextColor.namedColor(
 +                    requireNonNull(result.getColor(), () -> result + " didn't have a color")
@@ -1067,45 +1069,45 @@ index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0ed
 +
 +    @Override
 +    public ArgumentType<Component> component() {
-+        return this.of(ComponentArgument.textComponent(PaperCommands.INSTANCE.getBuildContext()), PaperAdventure::asAdventure);
++        return this.wrap(ComponentArgument.textComponent(PaperCommands.INSTANCE.getBuildContext()), PaperAdventure::asAdventure);
 +    }
 +
 +    @Override
 +    public ArgumentType<Style> style() {
-+        return this.of(StyleArgument.style(PaperCommands.INSTANCE.getBuildContext()), PaperAdventure::asAdventure);
++        return this.wrap(StyleArgument.style(PaperCommands.INSTANCE.getBuildContext()), PaperAdventure::asAdventure);
 +    }
 +
 +    @Override
 +    public ArgumentType<SignedMessageResolver> signedMessage() {
-+        return this.of(MessageArgument.message(), SignedMessageResolverImpl::new);
++        return this.wrap(MessageArgument.message(), SignedMessageResolverImpl::new);
 +    }
 +
 +    @Override
 +    public ArgumentType<DisplaySlot> scoreboardDisplaySlot() {
-+        return this.of(ScoreboardSlotArgument.displaySlot(), CraftScoreboardTranslations::toBukkitSlot);
++        return this.wrap(ScoreboardSlotArgument.displaySlot(), CraftScoreboardTranslations::toBukkitSlot);
 +    }
 +
 +    @Override
 +    public ArgumentType<NamespacedKey> namespacedKey() {
-+        return this.of(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
++        return this.wrap(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
 +    }
 +
 +    @Override
 +    public ArgumentType<Key> key() {
-+        return this.of(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
++        return this.wrap(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
 +    }
 +
 +    @Override
 +    public ArgumentType<IntegerRangeProvider> integerRange() {
-+        return this.of(RangeArgument.intRange(), type -> VanillaArgumentProviderImpl.convertToRange(type, integerRange -> () -> integerRange));
++        return this.wrap(RangeArgument.intRange(), type -> VanillaArgumentProviderImpl.convertToRange(type, integerRange -> () -> integerRange));
 +    }
 +
 +    @Override
 +    public ArgumentType<DoubleRangeProvider> doubleRange() {
-+        return this.of(RangeArgument.floatRange(), type -> VanillaArgumentProviderImpl.convertToRange(type, doubleRange -> () -> doubleRange));
++        return this.wrap(RangeArgument.floatRange(), type -> VanillaArgumentProviderImpl.convertToRange(type, doubleRange -> () -> doubleRange));
 +    }
 +
-+    private static <C extends Number & Comparable<C>, T extends RangeProvider<C>> T convertToRange(MinMaxBounds<C> bounds, Function<Range<C>, T> converter) {
++    private static <C extends Number & Comparable<C>, T extends RangeProvider<C>> T convertToRange(final MinMaxBounds<C> bounds, final Function<Range<C>, T> converter) {
 +        if (bounds.isAny()) {
 +            return converter.apply(Range.all());
 +        } else if (bounds.min().isPresent() && bounds.max().isPresent()) {
@@ -1120,10 +1122,10 @@ index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0ed
 +
 +    @Override
 +    public ArgumentType<World> world() {
-+        return this.of(DimensionArgument.dimension(), dimensionLocation -> {
++        return this.wrap(DimensionArgument.dimension(), dimensionLocation -> {
 +            // based on DimensionArgument#getDimension
-+            ResourceKey<Level> resourceKey = ResourceKey.create(Registries.DIMENSION, dimensionLocation);
-+            @Nullable ServerLevel serverLevel = MinecraftServer.getServer().getLevel(resourceKey);
++            final ResourceKey<Level> resourceKey = ResourceKey.create(Registries.DIMENSION, dimensionLocation);
++            @Nullable final ServerLevel serverLevel = MinecraftServer.getServer().getLevel(resourceKey);
 +            if (serverLevel == null) {
 +                throw DimensionArgument.ERROR_INVALID_VALUE.create(dimensionLocation);
 +            } else {
@@ -1134,45 +1136,49 @@ index 0000000000000000000000000000000000000000..5f4af57f2054aa278fcc34697fefa0ed
 +
 +    @Override
 +    public ArgumentType<GameMode> gameMode() {
-+        return this.of(GameModeArgument.gameMode(), type -> requireNonNull(GameMode.getByValue(type.getId())));
++        return this.wrap(GameModeArgument.gameMode(), type -> requireNonNull(GameMode.getByValue(type.getId())));
 +    }
 +
 +    @Override
 +    public ArgumentType<HeightMap> heightMap() {
-+        return this.of(HeightmapTypeArgument.heightmap(), CraftHeightMap::fromNMS);
++        return this.wrap(HeightmapTypeArgument.heightmap(), CraftHeightMap::fromNMS);
 +    }
 +
 +    @Override
 +    public ArgumentType<UUID> uuid() {
-+        return this.of(UuidArgument.uuid(), (identity) -> identity);
++        return this.wrap(UuidArgument.uuid());
 +    }
 +
 +    @Override
 +    public ArgumentType<Criteria> objectiveCriteria() {
-+        return this.of(ObjectiveCriteriaArgument.criteria(), CraftCriteria::getFromNMS);
++        return this.wrap(ObjectiveCriteriaArgument.criteria(), CraftCriteria::getFromNMS);
 +    }
 +
 +    @Override
 +    public ArgumentType<LookAnchor> entityAnchor() {
-+        return this.of(EntityAnchorArgument.anchor(), type -> LookAnchor.valueOf(type.name()));
++        return this.wrap(EntityAnchorArgument.anchor(), type -> LookAnchor.valueOf(type.name()));
 +    }
 +
 +    @Override
 +    public ArgumentType<Integer> time(final int minTicks) {
-+        return this.of(TimeArgument.time(minTicks), identity -> identity);
++        return this.wrap(TimeArgument.time(minTicks));
 +    }
 +
 +    @Override
 +    public ArgumentType<Mirror> templateMirror() {
-+        return this.of(TemplateMirrorArgument.templateMirror(), mirror -> Mirror.valueOf(mirror.name()));
++        return this.wrap(TemplateMirrorArgument.templateMirror(), mirror -> Mirror.valueOf(mirror.name()));
 +    }
 +
 +    @Override
 +    public ArgumentType<StructureRotation> templateRotation() {
-+        return this.of(TemplateRotationArgument.templateRotation(), mirror -> StructureRotation.valueOf(mirror.name()));
++        return this.wrap(TemplateRotationArgument.templateRotation(), mirror -> StructureRotation.valueOf(mirror.name()));
 +    }
 +
-+    private <B, C> ArgumentType<C> of(ArgumentType<B> base, ResultConverter<B, C> converter) {
++    private <T> ArgumentType<T> wrap(final ArgumentType<T> base) {
++        return this.wrap(base, identity -> identity);
++    }
++
++    private <B, C> ArgumentType<C> wrap(final ArgumentType<B> base, final ResultConverter<B, C> converter) {
 +        return new NativeWrapperArgumentType<>(base, converter);
 +    }
 +
@@ -2302,7 +2308,7 @@ index 4b1ac1fe7ea07f419ae2818251900e7ba434ee16..90ed57a7fbcd0625b64084347460e986
  
      public Map<String, Command> getKnownCommands() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
-index ba2a2ca0c36e61cb3cc00fafc7a5dd9f7050388f..006561010dac5f34cb82a0905c5cbe100c2669a5 100644
+index dd1507f65a7f1d84bc7f236f81a60ac1302a13b8..5b70f53bc4b27a715b8b7aa13586082adbc4bd16 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
 @@ -23,14 +23,26 @@ import org.bukkit.craftbukkit.entity.CraftMinecartCommand;
@@ -2357,7 +2363,7 @@ index ba2a2ca0c36e61cb3cc00fafc7a5dd9f7050388f..006561010dac5f34cb82a0905c5cbe10
              suggestions.getList().forEach((s) -> results.add(s.getText()));
          });
  
-@@ -116,4 +128,15 @@ public final class VanillaCommandWrapper extends BukkitCommand {
+@@ -114,4 +126,15 @@ public final class VanillaCommandWrapper extends BukkitCommand {
      private String toDispatcher(String[] args, String name) {
          return name + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
      }
