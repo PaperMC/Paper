@@ -5,7 +5,7 @@ Subject: [PATCH] Brigadier based command API
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index eecf458e1250ee9968630cf5c3c3287a1693e52e..538736cf17592829f0f26477c2bf8d80f3714d9a 100644
+index eecf458e1250ee9968630cf5c3c3287a1693e52e..fd39ed209b20c927054b8482c400beeeeab460a3 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -27,6 +27,7 @@ configurations.api {
@@ -16,6 +16,486 @@ index eecf458e1250ee9968630cf5c3c3287a1693e52e..538736cf17592829f0f26477c2bf8d80
      // api dependencies are listed transitively to API consumers
      api("com.google.guava:guava:32.1.2-jre")
      api("com.google.code.gson:gson:2.10.1")
+@@ -92,9 +93,29 @@ sourceSets {
+     }
+ }
+ // Paper end
++// Paper start - brigadier API
++val outgoingVariants = arrayOf("runtimeElements", "apiElements", "sourcesElements", "javadocElements")
++configurations {
++    val outgoing = outgoingVariants.map { named(it) }
++    for (config in outgoing) {
++        config {
++            outgoing {
++                capability("${project.group}:${project.name}:${project.version}")
++                capability("io.papermc.paper:paper-mojangapi:${project.version}")
++                capability("com.destroystokyo.paper:paper-mojangapi:${project.version}")
++            }
++        }
++    }
++}
++// Paper end
+ 
+ configure<PublishingExtension> {
+     publications.create<MavenPublication>("maven") {
++        // Paper start - brigadier API
++        outgoingVariants.forEach {
++            suppressPomMetadataWarningsFor(it)
++        }
++        // Paper end
+         from(components["java"])
+     }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/brigadier/BukkitBrigadierCommand.java b/src/main/java/com/destroystokyo/paper/brigadier/BukkitBrigadierCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..03a1078446f84b998cd7fe8d64abecb2e36bab0a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/brigadier/BukkitBrigadierCommand.java
+@@ -0,0 +1,16 @@
++package com.destroystokyo.paper.brigadier;
++
++import com.mojang.brigadier.Command;
++import com.mojang.brigadier.suggestion.SuggestionProvider;
++
++import java.util.function.Predicate;
++
++/**
++ * Brigadier {@link Command}, {@link SuggestionProvider}, and permission checker for Bukkit {@link Command}s.
++ *
++ * @param <S> command source type
++ * @deprecated For removal, see {@link io.papermc.paper.command.brigadier.Commands} on how to use the new Brigadier API.
++ */
++@Deprecated(forRemoval = true, since = "1.20.6")
++public interface BukkitBrigadierCommand <S extends BukkitBrigadierCommandSource> extends Command<S>, Predicate<S>, SuggestionProvider<S> {
++}
+diff --git a/src/main/java/com/destroystokyo/paper/brigadier/BukkitBrigadierCommandSource.java b/src/main/java/com/destroystokyo/paper/brigadier/BukkitBrigadierCommandSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..28b44789e3be586c4b680fff56e5d2ff095f9ac2
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/brigadier/BukkitBrigadierCommandSource.java
+@@ -0,0 +1,25 @@
++package com.destroystokyo.paper.brigadier;
++
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.command.CommandSender;
++import org.bukkit.entity.Entity;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * @deprecated For removal, see {@link io.papermc.paper.command.brigadier.Commands} on how to use the new Brigadier API.
++ */
++@Deprecated(forRemoval = true)
++public interface BukkitBrigadierCommandSource {
++
++    @Nullable
++    Entity getBukkitEntity();
++
++    @Nullable
++    World getBukkitWorld();
++
++    @Nullable
++    Location getBukkitLocation();
++
++    CommandSender getBukkitSender();
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/brigadier/AsyncPlayerSendCommandsEvent.java b/src/main/java/com/destroystokyo/paper/event/brigadier/AsyncPlayerSendCommandsEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a56ab5a031f8e254bf4e5ea063df0fad2e585206
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/brigadier/AsyncPlayerSendCommandsEvent.java
+@@ -0,0 +1,72 @@
++package com.destroystokyo.paper.event.brigadier;
++
++import com.mojang.brigadier.tree.RootCommandNode;
++import org.bukkit.Bukkit;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Fired any time a Brigadier RootCommandNode is generated for a player to inform the client of commands.
++ * You may manipulate this CommandNode to change what the client sees.
++ *
++ * <p>This event may fire on login, world change, and permission rebuilds, by plugin request, and potentially future means.</p>
++ *
++ * <p>This event will fire before {@link org.bukkit.event.player.PlayerCommandSendEvent}, so no filtering has been done by
++ * other plugins yet.</p>
++ *
++ * <p>WARNING: This event will potentially (and most likely) fire twice! Once for Async, and once again for Sync.
++ * It is important that you check event.isAsynchronous() and event.hasFiredAsync() to ensure you only act once.
++ * If for some reason we are unable to send this asynchronously in the future, only the sync method will fire.</p>
++ *
++ * <p>Your logic should look like this:
++ * {@code if (event.isAsynchronous() || !event.hasFiredAsync()) { // do stuff }}</p>
++ *
++ * <p>If your logic is not safe to run asynchronously, only react to the synchronous version.</p>
++ *
++ * <p>This is a draft/experimental API and is subject to change.</p>
++ */
++@ApiStatus.Experimental
++public class AsyncPlayerSendCommandsEvent <S extends com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource> extends PlayerEvent {
++
++    private static final HandlerList handlers = new HandlerList();
++    private final RootCommandNode<S> node;
++    private final boolean hasFiredAsync;
++
++    @ApiStatus.Internal
++    public AsyncPlayerSendCommandsEvent(@NotNull Player player, @NotNull RootCommandNode<S> node, boolean hasFiredAsync) {
++        super(player, !Bukkit.isPrimaryThread());
++        this.node = node;
++        this.hasFiredAsync = hasFiredAsync;
++    }
++
++    /**
++     * Gets the full Root Command Node being sent to the client, which is mutable.
++     *
++     * @return the root command node
++     */
++    public @NotNull RootCommandNode<S> getCommandNode() {
++        return node;
++    }
++
++    /**
++     * Gets if this event has already fired asynchronously.
++     *
++     * @return whether this event has already fired asynchronously
++     */
++    public boolean hasFiredAsync() {
++        return hasFiredAsync;
++    }
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/brigadier/AsyncPlayerSendSuggestionsEvent.java b/src/main/java/com/destroystokyo/paper/event/brigadier/AsyncPlayerSendSuggestionsEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ac205de582983863bd5b3c0fa70d4375dd751c5
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/brigadier/AsyncPlayerSendSuggestionsEvent.java
+@@ -0,0 +1,85 @@
++package com.destroystokyo.paper.event.brigadier;
++
++import com.mojang.brigadier.suggestion.Suggestions;
++import org.bukkit.Bukkit;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when sending {@link Suggestions} to the client. Will be called asynchronously if a plugin
++ * marks the {@link com.destroystokyo.paper.event.server.AsyncTabCompleteEvent} event handled asynchronously,
++ * otherwise called synchronously.
++ */
++public class AsyncPlayerSendSuggestionsEvent extends PlayerEvent implements Cancellable {
++
++    private static final HandlerList handlers = new HandlerList();
++    private boolean cancelled = false;
++
++    private Suggestions suggestions;
++    private final String buffer;
++
++    @ApiStatus.Internal
++    public AsyncPlayerSendSuggestionsEvent(@NotNull Player player, @NotNull Suggestions suggestions, @NotNull String buffer) {
++        super(player, !Bukkit.isPrimaryThread());
++        this.suggestions = suggestions;
++        this.buffer = buffer;
++    }
++
++    /**
++     * Gets the input buffer sent to request these suggestions.
++     *
++     * @return the input buffer
++     */
++    public @NotNull String getBuffer() {
++        return buffer;
++    }
++
++    /**
++     * Gets the suggestions to be sent to client.
++     *
++     * @return the suggestions
++     */
++    public @NotNull Suggestions getSuggestions() {
++        return suggestions;
++    }
++
++    /**
++     * Sets the suggestions to be sent to client.
++     *
++     * @param suggestions suggestions
++     */
++    public void setSuggestions(@NotNull Suggestions suggestions) {
++        this.suggestions = suggestions;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * Cancels sending suggestions to the client.
++     * {@inheritDoc}
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/brigadier/CommandRegisteredEvent.java b/src/main/java/com/destroystokyo/paper/event/brigadier/CommandRegisteredEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8a0c7266cc3fe63d3c6fd83bcd75c54de21038b4
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/brigadier/CommandRegisteredEvent.java
+@@ -0,0 +1,169 @@
++package com.destroystokyo.paper.event.brigadier;
++
++import com.destroystokyo.paper.brigadier.BukkitBrigadierCommand;
++import com.mojang.brigadier.tree.ArgumentCommandNode;
++import com.mojang.brigadier.tree.LiteralCommandNode;
++import com.mojang.brigadier.tree.RootCommandNode;
++import org.bukkit.command.Command;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.server.ServerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Fired anytime the server synchronizes Bukkit commands to Brigadier.
++ *
++ * <p>Allows a plugin to control the command node structure for its commands.
++ * This is done at Plugin Enable time after commands have been registered, but may also
++ * run at a later point in the server lifetime due to plugins, a server reload, etc.</p>
++ *
++ * <p>This is a draft/experimental API and is subject to change.</p>
++ * @deprecated For removal, use the new brigadier api.
++ */
++@ApiStatus.Experimental
++@Deprecated(since = "1.20.6")
++public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
++
++    private static final HandlerList handlers = new HandlerList();
++    private final String commandLabel;
++    private final Command command;
++    private final com.destroystokyo.paper.brigadier.BukkitBrigadierCommand<S> brigadierCommand;
++    private final RootCommandNode<S> root;
++    private final ArgumentCommandNode<S, String> defaultArgs;
++    private LiteralCommandNode<S> literal;
++    private boolean rawCommand = false;
++    private boolean cancelled = false;
++
++    public CommandRegisteredEvent(String commandLabel, com.destroystokyo.paper.brigadier.BukkitBrigadierCommand<S> brigadierCommand, Command command, RootCommandNode<S> root, LiteralCommandNode<S> literal, ArgumentCommandNode<S, String> defaultArgs) {
++        this.commandLabel = commandLabel;
++        this.brigadierCommand = brigadierCommand;
++        this.command = command;
++        this.root = root;
++        this.literal = literal;
++        this.defaultArgs = defaultArgs;
++    }
++
++    /**
++     * Gets the command label of the {@link Command} being registered.
++     *
++     * @return the command label
++     */
++    public String getCommandLabel() {
++        return this.commandLabel;
++    }
++
++    /**
++     * Gets the {@link BukkitBrigadierCommand} for the {@link Command} being registered. This can be used
++     * as the {@link com.mojang.brigadier.Command command executor} or
++     * {@link com.mojang.brigadier.suggestion.SuggestionProvider} of a {@link com.mojang.brigadier.tree.CommandNode}
++     * to delegate to the {@link Command} being registered.
++     *
++     * @return the {@link BukkitBrigadierCommand}
++     */
++    public BukkitBrigadierCommand<S> getBrigadierCommand() {
++        return this.brigadierCommand;
++    }
++
++    /**
++     * Gets the {@link Command} being registered.
++     *
++     * @return the {@link Command}
++     */
++    public Command getCommand() {
++        return this.command;
++    }
++
++    /**
++     * Gets the {@link RootCommandNode} which is being registered to.
++     *
++     * @return the {@link RootCommandNode}
++     */
++    public RootCommandNode<S> getRoot() {
++        return this.root;
++    }
++
++    /**
++     * Gets the Bukkit APIs default arguments node (greedy string), for if
++     * you wish to reuse it.
++     *
++     * @return default arguments node
++     */
++    public ArgumentCommandNode<S, String> getDefaultArgs() {
++        return this.defaultArgs;
++    }
++
++    /**
++     * Gets the {@link LiteralCommandNode} to be registered for the {@link Command}.
++     *
++     * @return the {@link LiteralCommandNode}
++     */
++    public LiteralCommandNode<S> getLiteral() {
++        return this.literal;
++    }
++
++    /**
++     * Sets the {@link LiteralCommandNode} used to register this command. The default literal is mutable, so
++     * this is primarily if you want to completely replace the object.
++     *
++     * @param literal new node
++     */
++    public void setLiteral(LiteralCommandNode<S> literal) {
++        this.literal = literal;
++    }
++
++    /**
++     * Gets whether this command should is treated as "raw".
++     *
++     * @see #setRawCommand(boolean)
++     * @return whether this command is treated as "raw"
++     */
++    public boolean isRawCommand() {
++        return this.rawCommand;
++    }
++
++    /**
++     * Sets whether this command should be treated as "raw".
++     *
++     * <p>A "raw" command will only use the node provided by this event for
++     * sending the command tree to the client. For execution purposes, the default
++     * greedy string execution of a standard Bukkit {@link Command} is used.</p>
++     *
++     * <p>On older versions of Paper, this was the default and only behavior of this
++     * event.</p>
++     *
++     * @param rawCommand whether this command should be treated as "raw"
++     */
++    public void setRawCommand(final boolean rawCommand) {
++        this.rawCommand = rawCommand;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * Cancels registering this command to Brigadier, but will remain in Bukkit Command Map. Can be used to hide a
++     * command from all players.
++     *
++     * {@inheritDoc}
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/brigadier/PaperBrigadier.java b/src/main/java/io/papermc/paper/brigadier/PaperBrigadier.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9df87708206e26167a2c4934deff7fc6f1657106
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/brigadier/PaperBrigadier.java
+@@ -0,0 +1,47 @@
++package io.papermc.paper.brigadier;
++
++import com.mojang.brigadier.Message;
++import io.papermc.paper.command.brigadier.MessageComponentSerializer;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.ComponentLike;
++import net.kyori.adventure.text.TextComponent;
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++/**
++ * Helper methods to bridge the gaps between Brigadier and Paper-MojangAPI.
++ * @deprecated for removal. See {@link MessageComponentSerializer} for a direct replacement of functionality found in
++ * this class.
++ * As a general entrypoint to brigadier on paper, see {@link io.papermc.paper.command.brigadier.Commands}.
++ */
++@Deprecated(forRemoval = true, since = "1.20.6")
++public final class PaperBrigadier {
++    private PaperBrigadier() {
++        throw new RuntimeException("PaperBrigadier is not to be instantiated!");
++    }
++
++    /**
++     * Create a new Brigadier {@link Message} from a {@link ComponentLike}.
++     *
++     * <p>Mostly useful for creating rich suggestion tooltips in combination with other Paper-MojangAPI APIs.</p>
++     *
++     * @param componentLike The {@link ComponentLike} to use for the {@link Message} contents
++     * @return A new Brigadier {@link Message}
++     */
++    public static @NonNull Message message(final @NonNull ComponentLike componentLike) {
++        return MessageComponentSerializer.message().serialize(componentLike.asComponent());
++    }
++
++    /**
++     * Create a new {@link Component} from a Brigadier {@link Message}.
++     *
++     * <p>If the {@link Message} was created from a {@link Component}, it will simply be
++     * converted back, otherwise a new {@link TextComponent} will be created with the
++     * content of {@link Message#getString()}</p>
++     *
++     * @param message The {@link Message} to create a {@link Component} from
++     * @return The created {@link Component}
++     */
++    public static @NonNull Component componentFromMessage(final @NonNull Message message) {
++        return MessageComponentSerializer.message().deserialize(message);
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0f6b921b4bcf983cf25188823f78a061eec5263d
