@@ -262,7 +262,7 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 12a193db7475870e5107c86c7611bb4b92feacb8..0f5feaba1c312e10c44d90d0e87859b4fa3cc469 100644
+index 12a193db7475870e5107c86c7611bb4b92feacb8..523e8c3184b9f93701e0d3b1e4e3fc9b4ca1a608 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -172,9 +172,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -278,6 +278,15 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..0f5feaba1c312e10c44d90d0e87859b4
  
          <T> Applicator put(ItemMetaKeyType<T> key, T value) {
              this.builder.set(key.TYPE, value);
+@@ -293,7 +294,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             this.enchantments = new EnchantmentMap(meta.enchantments); // Paper
+         }
+ 
+-        if (meta.hasAttributeModifiers()) {
++        if (meta.attributeModifiers != null) { // Paper
+             this.attributeModifiers = LinkedHashMultimap.create(meta.attributeModifiers);
+         }
+ 
 @@ -323,6 +324,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      }
  
@@ -290,6 +299,15 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..0f5feaba1c312e10c44d90d0e87859b4
          CraftMetaItem.getOrEmpty(tag, CraftMetaItem.NAME).ifPresent((component) -> {
              this.displayName = component;
          });
+@@ -733,7 +739,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         Map<?, ?> mods = SerializableMeta.getObject(Map.class, map, key.BUKKIT, true);
+         Multimap<Attribute, AttributeModifier> result = LinkedHashMultimap.create();
+         if (mods == null) {
+-            return result;
++            return null; // Paper - null is different from an empty map
+         }
+ 
+         for (Object obj : mods.keySet()) {
 @@ -887,10 +893,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      }
  
@@ -303,6 +321,15 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..0f5feaba1c312e10c44d90d0e87859b4
              return;
          }
  
+@@ -919,7 +923,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Overridden
+     boolean isEmpty() {
+-        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
++        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasDamage() || this.hasMaxDamage() || this.attributeModifiers != null || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
+     }
+ 
+     // Paper start
 @@ -1015,6 +1019,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
@@ -345,7 +372,42 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..0f5feaba1c312e10c44d90d0e87859b4
          this.applyToItem(tag);
          DataComponentPatch patch = tag.build();
  
-@@ -1905,7 +1912,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1470,6 +1477,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         if (first == null || second == null) {
+             return false;
+         }
++        if (first.isEmpty() && second.isEmpty()) return true; // Paper - empty modifiers are equivalent
+         for (Map.Entry<Attribute, AttributeModifier> entry : first.entries()) {
+             if (!second.containsEntry(entry.getKey(), entry.getValue())) {
+                 return false;
+@@ -1542,7 +1550,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 && (this.hasCustomModelData() ? that.hasCustomModelData() && this.customModelData.equals(that.customModelData) : !that.hasCustomModelData())
+                 && (this.hasBlockData() ? that.hasBlockData() && this.blockData.equals(that.blockData) : !that.hasBlockData())
+                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
+-                && (this.hasAttributeModifiers() ? that.hasAttributeModifiers() && CraftMetaItem.compareModifiers(this.attributeModifiers, that.attributeModifiers) : !that.hasAttributeModifiers())
++                && (this.attributeModifiers != null ? that.attributeModifiers != null && CraftMetaItem.compareModifiers(this.attributeModifiers, that.attributeModifiers) : that.attributeModifiers == null) // Paper - track only null modifiers
+                 && (this.unhandledTags.equals(that.unhandledTags))
+                 && (Objects.equals(this.customTag, that.customTag))
+                 && (this.persistentDataContainer.equals(that.persistentDataContainer))
+@@ -1599,7 +1607,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         hash = 61 * hash + (this.hasFood() ? this.food.hashCode() : 0);
+         hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
+         hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
+-        hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
++        hash = 61 * hash + (this.attributeModifiers != null ? this.attributeModifiers.hashCode() : 0); // Paper - track only null attributes
+         hash = 61 * hash + (this.canPlaceOnPredicates != null ? this.canPlaceOnPredicates.hashCode() : 0); // Paper
+         hash = 61 * hash + (this.canBreakPredicates != null ? this.canBreakPredicates.hashCode() : 0); // Paper
+         hash = 61 * hash + this.version;
+@@ -1823,7 +1831,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     }
+ 
+     static void serializeModifiers(Multimap<Attribute, AttributeModifier> modifiers, ImmutableMap.Builder<String, Object> builder, ItemMetaKey key) {
+-        if (modifiers == null || modifiers.isEmpty()) {
++        if (modifiers == null/* || modifiers.isEmpty()*/) { // Paper - null and an empty map have different behaviors
+             return;
+         }
+ 
+@@ -1905,7 +1913,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      // Paper start - improve checking handled tags
      @org.jetbrains.annotations.VisibleForTesting
      public static final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> HANDLED_DCTS_PER_TYPE = new HashMap<>();
