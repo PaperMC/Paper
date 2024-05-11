@@ -4,30 +4,119 @@ Date: Fri, 10 May 2024 20:56:42 +0200
 Subject: [PATCH] Added option to ignore entities when lightning is striking
 
 
-diff --git a/src/main/java/org/bukkit/entity/LightningStrike.java b/src/main/java/org/bukkit/entity/LightningStrike.java
-index 924ee7fcc3f87eb8553ef473a7d9671f0f469dd1..09fe749c3669117d3dc0eb9ec097fbe7ce010023 100644
---- a/src/main/java/org/bukkit/entity/LightningStrike.java
-+++ b/src/main/java/org/bukkit/entity/LightningStrike.java
-@@ -152,4 +152,22 @@ public interface LightningStrike extends Entity {
-     @org.jetbrains.annotations.Nullable
-     Entity getCausingEntity();
-     // Paper end
+diff --git a/src/main/java/io/papermc/paper/event/weather/PreLightningSelectionEvent.java b/src/main/java/io/papermc/paper/event/weather/PreLightningSelectionEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fdafd85416c9a4e15e206f90dc67fc9c4691de54
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/weather/PreLightningSelectionEvent.java
+@@ -0,0 +1,110 @@
++package io.papermc.paper.event.weather;
 +
-+    // Paper start - Added option to ignore entities when lightning is striking
-+    void addIgnoredType(EntityType type);
++import java.util.HashSet;
++import java.util.Set;
++import java.util.function.Predicate;
++import org.bukkit.World;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.EntityType;
++import org.bukkit.entity.LightningStrike;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.weather.WeatherEvent;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
-+    default void addIgnoredTypes(EntityType... types) {
-+        for (EntityType type : types) {
-+            addIgnoredType(type);
-+        }
++/**
++ * This event is called before searching for entities,
++ * if event is not cancelled, the code will continue in making lightning strike,
++ * adding entity as ignored will cause it to be ignored when searching for entities which would be hit
++ * same with entity type. If predicate is overridden, it will be used when filtering entities.
++ * <p>
++ * Default predicate format is:
++ * <pre>
++ * {@code
++ * !ignoredTypes.contains(entity.getType()) && !ignoredEntities.contains(entity);
++ * }
++ * </pre>
++ */
++public class PreLightningSelectionEvent extends WeatherEvent implements Cancellable {
++
++    private static final HandlerList handlers = new HandlerList();
++    private final LightningStrike bolt;
++    private boolean cancelled;
++    private final Set<EntityType> ignoredTypes;
++    private final Set<Entity> ignoredEntities;
++    private Predicate<Entity> predicate;
++
++    public PreLightningSelectionEvent(final @NotNull World world, LightningStrike bolt) {
++        super(world);
++        this.bolt = bolt;
++        this.ignoredTypes = new HashSet<>();
++        this.ignoredEntities = new HashSet<>();
 +    }
 +
-+    void addIgnoredEntity(Entity entity);
-+
-+    default void addIgnoredEntities(Entity... entities) {
-+        for (Entity entity : entities) {
-+            addIgnoredEntity(entity);
-+        }
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
 +    }
-+    // Paper end - Added option to ignore entities when lightning is striking
- }
++
++    @Override
++    public void setCancelled(final boolean cancelled) {
++        this.cancelled = cancelled;
++    }
++
++    /**
++     * Gets the bolt which will strike the earth.
++     *
++     * @return lightning entity
++     */
++    public LightningStrike getLightning() {
++        return bolt;
++    }
++
++    /**
++     * A set with all ignored entities, which won't be struck by lightning
++     *
++     * @return mutable set
++     */
++    public Set<Entity> getIgnoredEntities() {
++        return ignoredEntities;
++    }
++
++    /**
++     * A set with all ignored {@link EntityType} classes when striking, to better filter entities use {@link #getIgnoredEntities()}
++     *
++     * @return mutable set
++     */
++    public Set<EntityType> getIgnoredTypes() {
++        return ignoredTypes;
++    }
++
++    /**
++     * Overrides default predicate which is used to identify which entity should be hit by the striking, by setting null, current predicate will be removed and default will be used
++     *
++     * @param predicate predicate with entity
++     */
++    public void setPredicate(final Predicate<Entity> predicate) {
++        this.predicate = predicate;
++    }
++
++    /**
++     * Gets current predicate
++     *
++     * @return predicate
++     */
++    public @Nullable Predicate<Entity> getPredicate() {
++        return predicate;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}

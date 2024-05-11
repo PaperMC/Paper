@@ -5,71 +5,55 @@ Subject: [PATCH] Added option to ignore entities when lightning is striking
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
-index 4f701788bd21b61cad251a3a88f9bc416fb99051..cb4fa40e8a3d393f4cadacca90237fdf196c48a3 100644
+index 4f701788bd21b61cad251a3a88f9bc416fb99051..cb755f5e017e003d740f9944bb3617af5d839019 100644
 --- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
 +++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
-@@ -46,6 +46,10 @@ public class LightningBolt extends Entity {
-     @Nullable
-     private ServerPlayer cause;
-     private final Set<Entity> hitEntities = Sets.newHashSet();
-+    // Paper start - Added option to ignore entities when lightning is striking
-+    public final Set<EntityType<? extends Entity>> ignoredTypes = Sets.newHashSet();
-+    public final Set<Integer> ignoredEntities = Sets.newHashSet();
-+    // Paper end - Added option to ignore entities when lightning is striking
-     private int blocksSetOnFire;
-     public boolean isEffect; // Paper - Properly handle lightning effects api
+@@ -6,8 +6,10 @@ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Optional;
+ import java.util.Set;
++import java.util.function.Predicate;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
++import io.papermc.paper.event.weather.PreLightningSelectionEvent;
+ import net.minecraft.advancements.CriteriaTriggers;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+@@ -31,6 +33,7 @@ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.Vec3;
+ // CraftBukkit start
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.entity.LightningStrike;
+ import org.bukkit.event.entity.EntityRemoveEvent;
+ // CraftBukkit end
  
-@@ -145,6 +149,20 @@ public class LightningBolt extends Entity {
+@@ -106,6 +109,18 @@ public class LightningBolt extends Entity {
+         }
+ 
+         --this.life;
++        // Paper start - Added option to ignore entities when lightning is striking
++        PreLightningSelectionEvent event = new PreLightningSelectionEvent(this.level().getWorld(), (LightningStrike) getBukkitEntity());
++        event.callEvent();
++        if (event.isCancelled())
++            return;
++
++        Predicate<org.bukkit.entity.Entity> predicate = event.getPredicate() == null
++            ?
++            entity -> event.getIgnoredTypes().contains(entity.getType()) || event.getIgnoredEntities().contains(entity)
++            :
++            event.getPredicate();
++        // Paper end - Added option to ignore entities when lightning is striking
+         List list;
+         Iterator iterator;
+ 
+@@ -139,7 +154,9 @@ public class LightningBolt extends Entity {
+             if (!(this.level() instanceof ServerLevel)) {
+                 this.level().setSkyFlashTime(2);
+             } else if (!this.visualOnly) {
+-                list = this.level().getEntities((Entity) this, new AABB(this.getX() - 3.0D, this.getY() - 3.0D, this.getZ() - 3.0D, this.getX() + 3.0D, this.getY() + 6.0D + 3.0D, this.getZ() + 3.0D), Entity::isAlive);
++                list = this.level().getEntities((Entity) this, new AABB(this.getX() - 3.0D, this.getY() - 3.0D, this.getZ() - 3.0D, this.getX() + 3.0D, this.getY() + 6.0D + 3.0D, this.getZ() + 3.0D), entity -> {
++                    return entity.isAlive() && !predicate.test(entity.getBukkitEntity()); // Paper - Added option to ignore entities when lightning is striking
++                });
+                 iterator = list.iterator();
+ 
                  while (iterator.hasNext()) {
-                     Entity entity = (Entity) iterator.next();
- 
-+                    // Paper start - Added option to ignore entities when lightning is striking
-+                    EntityType<? extends Entity> entityType = entity.getType();
-+                    if (ignoredTypes.contains(entityType)) {
-+                        iterator.remove();
-+                        continue;
-+                    }
-+
-+                    int entityId = entity.getId();
-+                    if (ignoredEntities.contains(entityId)) {
-+                        iterator.remove();
-+                        continue;
-+                    }
-+                    // Paper end - Added option to ignore entities when lightning is striking
-+
-                     entity.thunderHit((ServerLevel) this.level(), this);
-                 }
- 
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
-index e9f471e60af0725ec34e2985d63ae9ea9f88590a..0f745e41195fae4228dcff6470cf5c33a47aecc2 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
-@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit.entity;
- import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.world.entity.LightningBolt;
- import org.bukkit.craftbukkit.CraftServer;
-+import org.bukkit.entity.Entity;
-+import org.bukkit.entity.EntityType;
- import org.bukkit.entity.LightningStrike;
- import org.bukkit.entity.Player;
- 
-@@ -85,4 +87,19 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
-         return cause == null ? null : cause.getBukkitEntity();
-     }
-     // Paper end
-+
-+    // Paper start - Added option to ignore entities when lightning is striking
-+    @Override
-+    public void addIgnoredType(final EntityType type) {
-+        com.google.common.base.Preconditions.checkArgument(type != null, "Entity is null");
-+        getHandle().ignoredTypes.add(CraftEntityType.bukkitToMinecraft(type));
-+    }
-+
-+    @Override
-+    public void addIgnoredEntity(final Entity entity) {
-+        com.google.common.base.Preconditions.checkArgument(entity != null, "Entity is null");
-+        CraftEntity craftEntity = (CraftEntity) entity;
-+        getHandle().ignoredEntities.add(craftEntity.getHandle().getId());
-+    }
-+    // Paper end - Added option to ignore entities when lightning is striking
- }
