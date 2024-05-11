@@ -276,6 +276,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          <T> Applicator put(ItemMetaKeyType<T> key, T value) {
              this.builder.set(key.TYPE, value);
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             this.enchantments = new EnchantmentMap(meta.enchantments); // Paper
+         }
+ 
+-        if (meta.hasAttributeModifiers()) {
++        if (meta.attributeModifiers != null) { // Paper
+             this.attributeModifiers = LinkedHashMultimap.create(meta.attributeModifiers);
+         }
+ 
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      }
  
      CraftMetaItem(DataComponentPatch tag, Set<DataComponentType<?>> extraHandledTags) { // Paper - improve handled tags on type changes
@@ -300,6 +309,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return;
          }
  
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Overridden
+     boolean isEmpty() {
+-        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
++        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasDamage() || this.hasMaxDamage() || this.attributeModifiers != null || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
+     }
+ 
+     // Paper start
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
@@ -333,6 +351,41 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.applyToItem(tag);
          DataComponentPatch patch = tag.build();
          Tag nbt = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         if (first == null || second == null) {
+             return false;
+         }
++        if (first.isEmpty() && second.isEmpty()) return true; // Paper - empty modifiers are equivalent
+         for (Map.Entry<Attribute, AttributeModifier> entry : first.entries()) {
+             if (!second.containsEntry(entry.getKey(), entry.getValue())) {
+                 return false;
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 && (this.hasCustomModelData() ? that.hasCustomModelData() && this.customModelData.equals(that.customModelData) : !that.hasCustomModelData())
+                 && (this.hasBlockData() ? that.hasBlockData() && this.blockData.equals(that.blockData) : !that.hasBlockData())
+                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
+-                && (this.hasAttributeModifiers() ? that.hasAttributeModifiers() && CraftMetaItem.compareModifiers(this.attributeModifiers, that.attributeModifiers) : !that.hasAttributeModifiers())
++                && (this.attributeModifiers != null ? that.attributeModifiers != null && CraftMetaItem.compareModifiers(this.attributeModifiers, that.attributeModifiers) : that.attributeModifiers == null) // Paper - track only null modifiers
+                 && (this.unhandledTags.equals(that.unhandledTags))
+                 && (Objects.equals(this.customTag, that.customTag))
+                 && (this.persistentDataContainer.equals(that.persistentDataContainer))
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         hash = 61 * hash + (this.hasFood() ? this.food.hashCode() : 0);
+         hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
+         hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
+-        hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
++        hash = 61 * hash + (this.attributeModifiers != null ? this.attributeModifiers.hashCode() : 0); // Paper - track only null attributes
+         hash = 61 * hash + (this.canPlaceOnPredicates != null ? this.canPlaceOnPredicates.hashCode() : 0); // Paper
+         hash = 61 * hash + (this.canBreakPredicates != null ? this.canBreakPredicates.hashCode() : 0); // Paper
+         hash = 61 * hash + this.version;
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             if (this.enchantments != null) {
+                 clone.enchantments = new EnchantmentMap(this.enchantments); // Paper
+             }
+-            if (this.hasAttributeModifiers()) {
++            if (this.attributeModifiers != null) { // Paper
+                 clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
+             }
+             if (this.customTag != null) {
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      // Paper start - improve checking handled tags
      @org.jetbrains.annotations.VisibleForTesting
