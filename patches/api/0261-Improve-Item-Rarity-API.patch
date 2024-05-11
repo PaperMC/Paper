@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 12 Mar 2021 17:09:40 -0800
+Subject: [PATCH] Improve Item Rarity API
+
+
+diff --git a/src/main/java/io/papermc/paper/inventory/ItemRarity.java b/src/main/java/io/papermc/paper/inventory/ItemRarity.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f1cd5a4f37eee8975ac3d0421b524afcf644fafd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/ItemRarity.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.inventory;
++
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.TextColor;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * @deprecated use {@link org.bukkit.inventory.ItemRarity} with {@link org.bukkit.inventory.meta.ItemMeta#getRarity()}
++ */
++@Deprecated(forRemoval = true, since = "1.20.5")
++public enum ItemRarity {
++
++    COMMON(NamedTextColor.WHITE),
++    UNCOMMON(NamedTextColor.YELLOW),
++    RARE(NamedTextColor.AQUA),
++    EPIC(NamedTextColor.LIGHT_PURPLE);
++
++    TextColor color;
++
++    ItemRarity(TextColor color) {
++        this.color = color;
++    }
++
++    /**
++     * Gets the color formatting associated with the rarity.
++     * @return
++     */
++    @NotNull
++    public TextColor getColor() {
++        return color;
++    }
++}
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index d6e2ec415eab4f55fd925a3b0982e869befbd088..044c563daee7898c676bd6ba58ee395c52eda121 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -4752,6 +4752,19 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+             return Bukkit.getUnsafe().getBlockTranslationKey(this);
+         }
+     }
++
++    /**
++     * Returns the item rarity for the item. The Material <b>MUST</b> be an Item not a block.
++     * Use {@link #isItem()} before this.
++     *
++     * @return the item rarity
++     * @deprecated use {@link org.bukkit.inventory.meta.ItemMeta#hasRarity()} and {@link org.bukkit.inventory.meta.ItemMeta#getRarity()}
++     */
++    @NotNull
++    @Deprecated(forRemoval = true, since = "1.20.5")
++    public io.papermc.paper.inventory.ItemRarity getItemRarity() {
++        return new org.bukkit.inventory.ItemStack(this).getRarity();
++    }
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/inventory/ItemRarity.java b/src/main/java/org/bukkit/inventory/ItemRarity.java
+index e7931f73f10fe35ebd5fe4a04b036d53bb117ebd..cbce835ed6d44e5b8c9aaae4e36a77f8e5bed45f 100644
+--- a/src/main/java/org/bukkit/inventory/ItemRarity.java
++++ b/src/main/java/org/bukkit/inventory/ItemRarity.java
+@@ -9,17 +9,32 @@ public enum ItemRarity {
+     /**
+      * White item name.
+      */
+-    COMMON,
++    COMMON(net.kyori.adventure.text.format.NamedTextColor.WHITE), // Paper
+     /**
+      * Yellow item name.
+      */
+-    UNCOMMON,
++    UNCOMMON(net.kyori.adventure.text.format.NamedTextColor.YELLOW), // Paper
+     /**
+      * Aqua item name.
+      */
+-    RARE,
++    RARE(net.kyori.adventure.text.format.NamedTextColor.AQUA), // Paper
+     /**
+      * Light purple item name.
+      */
+-    EPIC;
++    EPIC(net.kyori.adventure.text.format.NamedTextColor.LIGHT_PURPLE); // Paper
++    // Paper start - improve ItemRarity
++    private final net.kyori.adventure.text.format.NamedTextColor color;
++    ItemRarity(final net.kyori.adventure.text.format.NamedTextColor color) {
++        this.color = color;
++    }
++
++    /**
++     * Gets the color formatting associated with this rarity.
++     *
++     * @return the color
++     */
++    public net.kyori.adventure.text.format.@org.jetbrains.annotations.NotNull TextColor color() {
++        return this.color;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 23686519b8c1338dd6e9f1c5a0e73467c0b59a4f..f0221815cbd30f3ccaacc87a57403491b55de128 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -897,5 +897,17 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     public @NotNull String translationKey() {
+         return Bukkit.getUnsafe().getTranslationKey(this);
+     }
++
++    /**
++     * Gets the item rarity of the itemstack. The rarity can change based on enchantments.
++     *
++     * @return the itemstack rarity
++     * @deprecated Use {@link ItemMeta#hasRarity()} and {@link ItemMeta#getRarity()}
++     */
++    @NotNull
++    @Deprecated(forRemoval = true, since = "1.20.5")
++    public io.papermc.paper.inventory.ItemRarity getRarity() {
++        return io.papermc.paper.inventory.ItemRarity.valueOf(this.getItemMeta().getRarity().name());
++    }
+     // Paper end
+ }

@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 16 Mar 2022 20:35:13 -0700
+Subject: [PATCH] Add enchantWithLevels API
+
+Deprecate upstream's newer and poorly implemented similar
+API.
+
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index 53b8934cb829f37971cb3ecd5652c9974dec6ab0..e20f64828548c647a29dad5a475f4596cad88cd8 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -185,8 +185,11 @@ public interface ItemFactory {
+      * @param level the level to use, which is the level in the enchantment table
+      * @param allowTreasures allows treasure enchants, e.g. mending, if true.
+      * @return a new ItemStack containing the result of the Enchantment
++     * @deprecated use {@link #enchantWithLevels(ItemStack, int, boolean, java.util.Random)}. This method's implementation is poorly
++     * designed and was originally broken.
+      */
+     @NotNull
++    @Deprecated // Paper
+     ItemStack enchantItem(@NotNull final Entity entity, @NotNull final ItemStack item, final int level, final boolean allowTreasures);
+ 
+     /**
+@@ -199,8 +202,11 @@ public interface ItemFactory {
+      * @param level the level to use, which is the level in the enchantment table
+      * @param allowTreasures allow the treasure enchants, e.g. mending, if true.
+      * @return a new ItemStack containing the result of the Enchantment
++     * @deprecated use {@link #enchantWithLevels(ItemStack, int, boolean, java.util.Random)}. This method's implementation is poorly
++     * designed and was originally broken.
+      */
+     @NotNull
++    @Deprecated // Paper
+     ItemStack enchantItem(@NotNull final World world, @NotNull final ItemStack item, final int level, final boolean allowTreasures);
+ 
+     /**
+@@ -212,8 +218,11 @@ public interface ItemFactory {
+      * @param level the level to use, which is the level in the enchantment table
+      * @param allowTreasures allow treasure enchantments, e.g. mending, if true.
+      * @return a new ItemStack containing the result of the Enchantment
++     * @deprecated use {@link #enchantWithLevels(ItemStack, int, boolean, java.util.Random)}. This method's implementation is poorly
++     * designed and was originally broken.
+      */
+     @NotNull
++    @Deprecated // Paper
+     ItemStack enchantItem(@NotNull final ItemStack item, final int level, final boolean allowTreasures);
+ 
+     // Paper start - Adventure
+@@ -326,4 +335,22 @@ public interface ItemFactory {
+     @Deprecated
+     net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(@NotNull org.bukkit.entity.Entity entity, @NotNull net.md_5.bungee.api.chat.BaseComponent[] customName);
+     // Paper end - bungee hover events
++
++    // Paper start - enchantWithLevels API
++    /**
++     * Randomly enchants a copy of the provided {@link ItemStack} using the given experience levels.
++     *
++     * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
++     *
++     * <p>Levels must be in range {@code [1, 30]}.</p>
++     *
++     * @param itemStack ItemStack to enchant
++     * @param levels levels to use for enchanting
++     * @param allowTreasure whether to allow enchantments where {@link org.bukkit.enchantments.Enchantment#isTreasure()} returns true
++     * @param random {@link java.util.Random} instance to use for enchanting
++     * @return enchanted copy of the provided ItemStack
++     * @throws IllegalArgumentException on bad arguments
++     */
++    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, boolean allowTreasure, @NotNull java.util.Random random);
++    // Paper end - enchantWithLevels API
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 5fb8f7c1b79bd256925cb68cccfe0b974fb84043..105cf1bf6e8b44846cdd3a8881fed36007daaa22 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -676,6 +676,24 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     }
+ 
+     // Paper start
++    /**
++     * Randomly enchants a copy of this {@link ItemStack} using the given experience levels.
++     *
++     * <p>If this ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
++     *
++     * <p>Levels must be in range {@code [1, 30]}.</p>
++     *
++     * @param levels levels to use for enchanting
++     * @param allowTreasure whether to allow enchantments where {@link org.bukkit.enchantments.Enchantment#isTreasure()} returns true
++     * @param random {@link java.util.Random} instance to use for enchanting
++     * @return enchanted copy of the provided ItemStack
++     * @throws IllegalArgumentException on bad arguments
++     */
++    @NotNull
++    public ItemStack enchantWithLevels(final @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, final boolean allowTreasure, final @NotNull java.util.Random random) {
++        return Bukkit.getServer().getItemFactory().enchantWithLevels(this, levels, allowTreasure, random);
++    }
++
+     @NotNull
+     @Override
+     public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {

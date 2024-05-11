@@ -31,21 +31,17 @@ index fb72bdea520ccc0928cfbda0569e02a1917a7e86..6f6e19b7b57cb3070ef5b6810d844934
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
-index 6fd032dfb50f6051d6a0b5fbd9d76f42c23354d6..c52f64bb608b67ac7e30fec0c3c9bdef080fa716 100644
+index cc97638e038ea64ad180ebfded2528aa07d1809e..10e4318782107644f67818109784fff60d017e0a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
 +++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
-@@ -29,7 +29,10 @@ public class CraftAttribute {
-     public static Attribute stringToBukkit(String bukkit) {
-         Preconditions.checkArgument(bukkit != null);
+@@ -37,6 +37,7 @@ public class CraftAttribute {
+         string = FieldRename.convertAttributeName(ApiVersion.CURRENT, string);
+         string = string.toLowerCase(Locale.ROOT);
+         NamespacedKey key = NamespacedKey.fromString(string);
++        if (key == null) return null; // Paper - Fixup NamespacedKey handling
  
--        return Registry.ATTRIBUTE.get(NamespacedKey.fromString(bukkit));
-+        // Paper start - Fixup NamespacedKey handling
-+        final NamespacedKey key = NamespacedKey.fromString(bukkit);
-+        return key != null ? Registry.ATTRIBUTE.get(key) : null;
-+        // Paper end - Fixup NamespacedKey handling
-     }
- 
-     public static net.minecraft.world.entity.ai.attributes.Attribute bukkitToMinecraft(Attribute bukkit) {
+         // Now also convert from when keys where saved
+         return CraftRegistry.get(Registry.ATTRIBUTE, key, ApiVersion.CURRENT);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
 index 12b95c4455e741b65b844eab362f02bce54eb525..ac9279f7acb7077c08d7741435126adfef9e17b8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
@@ -75,19 +71,19 @@ index 12b95c4455e741b65b844eab362f02bce54eb525..ac9279f7acb7077c08d7741435126adf
      CraftMetaArmor(Map<String, Object> map) {
          super(map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
-index e17093289884b904fc3720600ffa3e772e0935b3..7032f07e3872c65bbebb905e9d50057a113100d4 100644
+index 67905f804ccc102faa942499f5ba218f710ab9cc..99bf6132184b1b7846270fc9a1b9e97048306a3b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
-@@ -33,9 +33,14 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
+@@ -31,9 +31,14 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
          super(tag);
  
          getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
 -            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrument);
-+            this.instrument = this.unwrapAndConvertHolder(Registry.INSTRUMENT, instrument); // Paper - fix upstream not handling custom instruments
++            this.instrument = this.unwrapAndConvertHolder(org.bukkit.Registry.INSTRUMENT, instrument); // Paper - fix upstream not handling custom instruments
          });
      }
 +    // Paper start - fixup upstream being dum
-+    private <T extends org.bukkit.Keyed, M> T unwrapAndConvertHolder(final Registry<T> registry, final net.minecraft.core.Holder<M> value) {
++    private <T extends org.bukkit.Keyed, M> T unwrapAndConvertHolder(final org.bukkit.Registry<T> registry, final net.minecraft.core.Holder<M> value) {
 +        return value.unwrap().map(key -> registry.get(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(key.location())), v -> null);
 +    }
 +    // Paper end - fixup upstream being dum
@@ -95,21 +91,17 @@ index e17093289884b904fc3720600ffa3e772e0935b3..7032f07e3872c65bbebb905e9d50057a
      CraftMetaMusicInstrument(Map<String, Object> map) {
          super(map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
-index 7dc83b02810490c21b68be962c5ef6eb45e32baf..71cc45c4ef9ab98d509b0f8bf7b033a2b32641db 100644
+index 82a50b06c08b632f77d73745e1fa9bd22dfd950a..f1d8ed4a2b8959873b02d57f6a40323a841f3d7f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
 +++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
-@@ -61,7 +61,10 @@ public class CraftPotionType implements PotionType.InternalPotionData {
-     public static PotionType stringToBukkit(String string) {
-         Preconditions.checkArgument(string != null);
+@@ -69,6 +69,7 @@ public class CraftPotionType implements PotionType.InternalPotionData {
+         string = FieldRename.convertPotionTypeName(ApiVersion.CURRENT, string);
+         string = string.toLowerCase(Locale.ROOT);
+         NamespacedKey key = NamespacedKey.fromString(string);
++        if (key == null) return null; // Paper - Fixup NamespacedKey handling
  
--        return Registry.POTION.get(NamespacedKey.fromString(string));
-+        // Paper start - Fixup NamespacedKey handling
-+        final NamespacedKey key = NamespacedKey.fromString(string);
-+        return key != null ? Registry.POTION.get(key) : null;
-+        // Paper end - Fixup NamespacedKey handling
-     }
- 
-     private final NamespacedKey key;
+         // Now also convert from when keys where saved
+         return CraftRegistry.get(Registry.POTION, key, ApiVersion.CURRENT);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java b/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java
 index 5f40d240b879e3989897b6e45725a8e5a6a7f194..5014192edb9616ce725fc1592832034789527b6f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java
