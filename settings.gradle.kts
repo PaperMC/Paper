@@ -33,7 +33,7 @@ if (!file(".git").exists()) {
 
 rootProject.name = "paper"
 
-for (name in listOf("Paper-API", "Paper-Server", "Paper-MojangAPI")) {
+for (name in listOf("Paper-API", "Paper-Server")) {
     val projName = name.lowercase(Locale.ENGLISH)
     include(projName)
     findProject(":$projName")!!.projectDir = file(name)
