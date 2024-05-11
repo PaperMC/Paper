@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Thu, 4 Jan 2024 13:49:14 +0100
+Subject: [PATCH] Validate ResourceLocation in NBT reading
+
+
+diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
+index 1d7c20fe14882fdeddf315a8923669e3385652f5..f88dd37783b3c155c23b547c360b8d3c16e030c0 100644
+--- a/src/main/java/net/minecraft/nbt/NbtUtils.java
++++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
+@@ -149,8 +149,10 @@ public final class NbtUtils {
+         if (!nbt.contains("Name", 8)) {
+             return Blocks.AIR.defaultBlockState();
+         } else {
+-            ResourceLocation resourceLocation = new ResourceLocation(nbt.getString("Name"));
+-            Optional<? extends Holder<Block>> optional = blockLookup.get(ResourceKey.create(Registries.BLOCK, resourceLocation));
++            // Paper start - Validate resource location
++            ResourceLocation resourceLocation = ResourceLocation.tryParse(nbt.getString("Name"));
++            Optional<? extends Holder<Block>> optional = resourceLocation != null ? blockLookup.get(ResourceKey.create(Registries.BLOCK, resourceLocation)) : Optional.empty();
++            // Paper end - Validate resource location
+             if (optional.isEmpty()) {
+                 return Blocks.AIR.defaultBlockState();
+             } else {
+diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
+index d93b623ce973b63d4f3a77bfe459f51af7cb3c1c..2c4553312f2f37f8613ac813708b4b95f9675e9f 100644
+--- a/src/main/java/net/minecraft/resources/ResourceLocation.java
++++ b/src/main/java/net/minecraft/resources/ResourceLocation.java
+@@ -37,6 +37,13 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+     private final String path;
+ 
+     protected ResourceLocation(String namespace, String path, @Nullable ResourceLocation.Dummy extraData) {
++        // Paper start - Validate ResourceLocation
++        // Check for the max network string length (capped at Short.MAX_VALUE) as well as the max bytes of a StringTag (length written as an unsigned short)
++        final String resourceLocation = namespace + ":" + path;
++        if (resourceLocation.length() > Short.MAX_VALUE || io.netty.buffer.ByteBufUtil.utf8MaxBytes(resourceLocation) > 2 * Short.MAX_VALUE + 1) {
++            throw new ResourceLocationException("Resource location too long: " + resourceLocation);
++        }
++        // Paper end - Validate ResourceLocation
+         this.namespace = namespace;
+         this.path = path;
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 8c7cc9c5af0b8d8bef9b6e2d3d3e723cd76f3212..56b51096ca4147363a843accf6ef2510f05e8f1a 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -623,7 +623,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+     }
+ 
+     public static Optional<EntityType<?>> by(CompoundTag nbt) {
+-        return BuiltInRegistries.ENTITY_TYPE.getOptional(new ResourceLocation(nbt.getString("id")));
++        return BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(nbt.getString("id"))); // Paper - Validate ResourceLocation
+     }
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 5a47752a1c7da9b9da692c34ef046988924b6266..480d7633016ac641d4318f7eb971e0c721c5397a 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -911,12 +911,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+         if (nbt.contains("SleepingX", 99) && nbt.contains("SleepingY", 99) && nbt.contains("SleepingZ", 99)) {
+             BlockPos blockposition = new BlockPos(nbt.getInt("SleepingX"), nbt.getInt("SleepingY"), nbt.getInt("SleepingZ"));
+-
++            if (this.position().distanceToSqr(blockposition.getX(), blockposition.getY(), blockposition.getZ()) < 16 * 16) { // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
+             this.setSleepingPos(blockposition);
+             this.entityData.set(LivingEntity.DATA_POSE, Pose.SLEEPING);
+             if (!this.firstTick) {
+                 this.setPosToBed(blockposition);
+             }
++            } // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
+         }
+ 
+         if (nbt.contains("Brain", 10)) {
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index bca70fff39409617e9c2b8ea66c1de4b9376d261..b5fd4feb44e5aca2b37f0e6b3c5317d6caf4b3d4 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -645,7 +645,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+ 
+         this.setLeftHanded(nbt.getBoolean("LeftHanded"));
+         if (nbt.contains("DeathLootTable", 8)) {
+-            this.lootTable = ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("DeathLootTable")));
++            this.lootTable = net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("DeathLootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl)); // Paper - Validate ResourceLocation
+             this.lootTableSeed = nbt.getLong("DeathLootTableSeed");
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index fc5913910f5614cd3e10cd9c1aa482a4b70ac260..31b8a8bf78d52b5f11b68e780ec09bf78e7bda84 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -561,7 +561,7 @@ public abstract class AbstractArrow extends Projectile {
+         this.setCritArrow(nbt.getBoolean("crit"));
+         this.setPierceLevel(nbt.getByte("PierceLevel"));
+         if (nbt.contains("SoundEvent", 8)) {
+-            this.soundEvent = (SoundEvent) BuiltInRegistries.SOUND_EVENT.getOptional(new ResourceLocation(nbt.getString("SoundEvent"))).orElse(this.getDefaultHitGroundSoundEvent());
++            this.soundEvent = (SoundEvent) BuiltInRegistries.SOUND_EVENT.getOptional(ResourceLocation.tryParse(nbt.getString("SoundEvent"))).orElse(this.getDefaultHitGroundSoundEvent()); // Paper - Validate resource location
+         }
+ 
+         this.setShotFromCrossbow(nbt.getBoolean("ShotFromCrossbow"));
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+index f33e5cf6d456e615050047e924d9b24268a2c51e..c660e9b1e9635011b32fa19cf64118d64408f158 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+@@ -72,7 +72,7 @@ public interface ContainerEntity extends Container, MenuProvider {
+     default void readChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registriesLookup) {
+         this.clearItemStacks();
+         if (nbt.contains("LootTable", 8)) {
+-            this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("LootTable"))));
++            this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
+             this.setLootTableSeed(nbt.getLong("LootTableSeed"));
+         }
+         ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registriesLookup); // Paper - always save the items, table may still remain
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+index f40b2582d9087f9dbb5cab950304698f33fdd879..a99fe191c429bb528209dd0f31b509acf9cccbb5 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+@@ -295,7 +295,12 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+         while (iterator.hasNext()) {
+             String s = (String) iterator.next();
+ 
+-            this.recipesUsed.put(new ResourceLocation(s), nbttagcompound1.getInt(s));
++            // Paper start - Validate ResourceLocation
++            final ResourceLocation resourceLocation = ResourceLocation.tryParse(s);
++            if (resourceLocation != null) {
++            this.recipesUsed.put(resourceLocation, nbttagcompound1.getInt(s));
++            }
++            // Paper end - Validate ResourceLocation
+         }
+ 
+         // Paper start - cook speed multiplier API
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
+index f78a9698afc87408fc46de2d3d00c923500885f4..dc02a3d84b397f634f77f4df9c06e245cc4dcb75 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
+@@ -202,7 +202,7 @@ public class BrushableBlockEntity extends BlockEntity {
+ 
+     private boolean tryLoadLootTable(CompoundTag nbt) {
+         if (nbt.contains("LootTable", 8)) {
+-            this.lootTable = ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("LootTable")));
++            this.lootTable = net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl)); // Paper - Validate ResourceLocation
+             this.lootTableSeed = nbt.getLong("LootTableSeed");
+             return true;
+         } else {

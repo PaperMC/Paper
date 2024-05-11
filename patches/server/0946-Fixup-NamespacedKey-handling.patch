@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Sat, 6 Jan 2024 14:31:00 +0100
+Subject: [PATCH] Fixup NamespacedKey handling
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java
+index 7f5283a8ee74253e326fe994f20ae00cf3c75e1b..183f31c81d9c0a966e6b20c2cff3d279dfc7e622 100644
+--- a/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java
++++ b/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java
+@@ -20,7 +20,7 @@ public class PaperContainerEntityLootableInventory implements PaperLootableEntit
+ 
+     @Override
+     public org.bukkit.loot.LootTable getLootTable() {
+-        return entity.getLootTable() != null ? Optionull.map(entity.getLootTable(), rk -> Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(rk.location()))) : null;
++        return entity.getLootTable() != null && !entity.getLootTable().location().getPath().isEmpty() ? Optionull.map(entity.getLootTable(), rk -> Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(rk.location()))) : null;
+     }
+ 
+     @Override
+diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java
+index fb72bdea520ccc0928cfbda0569e02a1917a7e86..6f6e19b7b57cb3070ef5b6810d8449344705af8c 100644
+--- a/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java
++++ b/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java
+@@ -17,7 +17,7 @@ public class PaperTileEntityLootableInventory implements PaperLootableBlockInven
+ 
+     @Override
+     public org.bukkit.loot.LootTable getLootTable() {
+-        return tileEntityLootable.lootTable != null ? Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(tileEntityLootable.lootTable.location())) : null;
++        return tileEntityLootable.lootTable != null && !tileEntityLootable.lootTable.location().getPath().isEmpty() ? Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(tileEntityLootable.lootTable.location())) : null;
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
+index cc97638e038ea64ad180ebfded2528aa07d1809e..10e4318782107644f67818109784fff60d017e0a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
++++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
+@@ -37,6 +37,7 @@ public class CraftAttribute {
+         string = FieldRename.convertAttributeName(ApiVersion.CURRENT, string);
+         string = string.toLowerCase(Locale.ROOT);
+         NamespacedKey key = NamespacedKey.fromString(string);
++        if (key == null) return null; // Paper - Fixup NamespacedKey handling
+ 
+         // Now also convert from when keys where saved
+         return CraftRegistry.get(Registry.ATTRIBUTE, key, ApiVersion.CURRENT);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
+index 12b95c4455e741b65b844eab362f02bce54eb525..ac9279f7acb7077c08d7741435126adfef9e17b8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
+@@ -69,8 +69,9 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
+         super(tag);
+ 
+         getOrEmpty(tag, CraftMetaArmor.TRIM).ifPresent((trimCompound) -> {
+-            TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(trimCompound.material());
+-            TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(trimCompound.pattern());
++            TrimMaterial trimMaterial = this.unwrapAndConvertHolder(Registry.TRIM_MATERIAL, trimCompound.material()); // Paper - fix upstream not being correct
++            TrimPattern trimPattern = this.unwrapAndConvertHolder(Registry.TRIM_PATTERN, trimCompound.pattern()); // Paper - fix upstream not being correct
++            if (trimMaterial == null || trimPattern == null) return; // Paper - just delete the trim because upstream is not doing this right
+ 
+             this.trim = new ArmorTrim(trimMaterial, trimPattern);
+ 
+@@ -79,6 +80,11 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
+             }
+         });
+     }
++    // Paper start - fixup upstream being dum
++    private <T extends org.bukkit.Keyed, M> T unwrapAndConvertHolder(final Registry<T> registry, final net.minecraft.core.Holder<M> value) {
++        return value.unwrap().map(key -> registry.get(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(key.location())), v -> null);
++    }
++    // Paper end - fixup upstream being dum
+ 
+     CraftMetaArmor(Map<String, Object> map) {
+         super(map);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
+index 67905f804ccc102faa942499f5ba218f710ab9cc..99bf6132184b1b7846270fc9a1b9e97048306a3b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
+@@ -31,9 +31,14 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
+         super(tag);
+ 
+         getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
+-            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrument);
++            this.instrument = this.unwrapAndConvertHolder(org.bukkit.Registry.INSTRUMENT, instrument); // Paper - fix upstream not handling custom instruments
+         });
+     }
++    // Paper start - fixup upstream being dum
++    private <T extends org.bukkit.Keyed, M> T unwrapAndConvertHolder(final org.bukkit.Registry<T> registry, final net.minecraft.core.Holder<M> value) {
++        return value.unwrap().map(key -> registry.get(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(key.location())), v -> null);
++    }
++    // Paper end - fixup upstream being dum
+ 
+     CraftMetaMusicInstrument(Map<String, Object> map) {
+         super(map);
+diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
+index 82a50b06c08b632f77d73745e1fa9bd22dfd950a..f1d8ed4a2b8959873b02d57f6a40323a841f3d7f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
++++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
+@@ -69,6 +69,7 @@ public class CraftPotionType implements PotionType.InternalPotionData {
+         string = FieldRename.convertPotionTypeName(ApiVersion.CURRENT, string);
+         string = string.toLowerCase(Locale.ROOT);
+         NamespacedKey key = NamespacedKey.fromString(string);
++        if (key == null) return null; // Paper - Fixup NamespacedKey handling
+ 
+         // Now also convert from when keys where saved
+         return CraftRegistry.get(Registry.POTION, key, ApiVersion.CURRENT);
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java b/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java
+index 5f40d240b879e3989897b6e45725a8e5a6a7f194..5014192edb9616ce725fc1592832034789527b6f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java
+@@ -13,7 +13,7 @@ public final class CraftNamespacedKey {
+             return null;
+         }
+         ResourceLocation minecraft = ResourceLocation.tryParse(string);
+-        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft);
++        return (minecraft == null || minecraft.getPath().isEmpty()) ? null : CraftNamespacedKey.fromMinecraft(minecraft); // Paper - Bukkit's parser does not match Vanilla for empty paths
+     }
+ 
+     public static NamespacedKey fromString(String string) {
