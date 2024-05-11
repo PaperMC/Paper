@@ -56,6 +56,163 @@ index 1f4963bf4681a771130abc1da179819626ecfc1f..03ce8a2abb6dceaa922dcce7f3adbc22
 +    }
 +    // Paper end - Brigadier Command API
  }
+diff --git a/src/main/java/io/papermc/paper/brigadier/NullCommandSender.java b/src/main/java/io/papermc/paper/brigadier/NullCommandSender.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..367ef7e0769537e8c13c7fd818a1249e15a28a65
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/brigadier/NullCommandSender.java
+@@ -0,0 +1,151 @@
++package io.papermc.paper.brigadier;
++
++import java.util.Set;
++import java.util.UUID;
++import net.kyori.adventure.text.Component;
++import net.md_5.bungee.api.chat.BaseComponent;
++import org.bukkit.Bukkit;
++import org.bukkit.Server;
++import org.bukkit.command.CommandSender;
++import org.bukkit.permissions.PermissibleBase;
++import org.bukkit.permissions.Permission;
++import org.bukkit.permissions.PermissionAttachment;
++import org.bukkit.permissions.PermissionAttachmentInfo;
++import org.bukkit.plugin.Plugin;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@DefaultQualifier(NonNull.class)
++public final class NullCommandSender implements CommandSender {
++
++    public static final CommandSender INSTANCE = new NullCommandSender();
++
++    private NullCommandSender() {
++    }
++
++    @Override
++    public void sendMessage(final String message) {
++    }
++
++    @Override
++    public void sendMessage(final String... messages) {
++    }
++
++    @Override
++    public void sendMessage(@Nullable final UUID sender, final String message) {
++    }
++
++    @Override
++    public void sendMessage(@Nullable final UUID sender, final String... messages) {
++    }
++
++    @SuppressWarnings("ConstantValue")
++    @Override
++    public Server getServer() {
++        final @Nullable Server server = Bukkit.getServer();
++        if (server == null) {
++            throw new UnsupportedOperationException("The server has not been created yet, you cannot access it at this time from the 'null' CommandSender");
++        }
++        return server;
++    }
++
++    @Override
++    public String getName() {
++        return "";
++    }
++
++    private final Spigot spigot = new Spigot();
++    @Override
++    public Spigot spigot() {
++        return this.spigot;
++    }
++
++    public final class Spigot extends CommandSender.Spigot {
++
++        @Override
++        public void sendMessage(@NotNull final BaseComponent component) {
++        }
++
++        @Override
++        public void sendMessage(@NonNull final @NotNull BaseComponent... components) {
++        }
++
++        @Override
++        public void sendMessage(@Nullable final UUID sender, @NotNull final BaseComponent component) {
++        }
++
++        @Override
++        public void sendMessage(@Nullable final UUID sender, @NonNull final @NotNull BaseComponent... components) {
++        }
++    }
++
++    @Override
++    public Component name() {
++        return Component.empty();
++    }
++
++    @Override
++    public boolean isPermissionSet(final String name) {
++        return false;
++    }
++
++    @Override
++    public boolean isPermissionSet(final Permission perm) {
++        return false;
++    }
++
++    @Override
++    public boolean hasPermission(final String name) {
++        return true;
++    }
++
++    @Override
++    public boolean hasPermission(final Permission perm) {
++        return true;
++    }
++
++    @Override
++    public PermissionAttachment addAttachment(final Plugin plugin, final String name, final boolean value) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public PermissionAttachment addAttachment(final Plugin plugin) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public @Nullable PermissionAttachment addAttachment(final Plugin plugin, final String name, final boolean value, final int ticks) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public @Nullable PermissionAttachment addAttachment(final Plugin plugin, final int ticks) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public void removeAttachment(final PermissionAttachment attachment) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public void recalculatePermissions() {
++    }
++
++    @Override
++    public Set<PermissionAttachmentInfo> getEffectivePermissions() {
++        throw new UnsupportedOperationException("Cannot remove attachments from the 'null' CommandSender");
++    }
++
++    @Override
++    public boolean isOp() {
++        return true;
++    }
++
++    @Override
++    public void setOp(final boolean value) {
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/brigadier/PaperBrigadierProviderImpl.java b/src/main/java/io/papermc/paper/brigadier/PaperBrigadierProviderImpl.java
 deleted file mode 100644
 index dd6012b6a097575b2d1471be5069eccee4537c0a..0000000000000000000000000000000000000000
@@ -378,10 +535,10 @@ index 0000000000000000000000000000000000000000..0b33c6cf2366568641e6f2fd7f74fb74
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java b/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..44715db12d6be06a7655f1bbb5ebb35ea904eb3b
+index 0000000000000000000000000000000000000000..4acf7c3bcfbe61431bfbfa3c8addb33f671eb498
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,73 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.CommandDispatcher;
@@ -389,8 +546,12 @@ index 0000000000000000000000000000000000000000..44715db12d6be06a7655f1bbb5ebb35e
 +import com.mojang.brigadier.tree.LiteralCommandNode;
 +import io.papermc.paper.command.brigadier.bukkit.BukkitBrigForwardingMap;
 +import io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode;
++import net.minecraft.commands.CommandSource;
 +import net.minecraft.commands.Commands;
++import net.minecraft.network.chat.CommonComponents;
 +import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.phys.Vec2;
++import net.minecraft.world.phys.Vec3;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Server;
 +import org.bukkit.command.Command;
@@ -400,6 +561,19 @@ index 0000000000000000000000000000000000000000..44715db12d6be06a7655f1bbb5ebb35e
 +import java.util.Map;
 +
 +public final class PaperBrigadier {
++
++    @SuppressWarnings("DataFlowIssue")
++    static final net.minecraft.commands.CommandSourceStack DUMMY = new net.minecraft.commands.CommandSourceStack(
++        CommandSource.NULL,
++        Vec3.ZERO,
++        Vec2.ZERO,
++        null,
++        4,
++        "",
++        CommonComponents.EMPTY,
++        null,
++        null
++    );
 +
 +    @SuppressWarnings({"unchecked", "rawtypes"})
 +    public static Command wrapNode(CommandNode node) {
@@ -415,7 +589,7 @@ index 0000000000000000000000000000000000000000..44715db12d6be06a7655f1bbb5ebb35e
 +            argumentCommandNode = argumentCommandNode.getRedirect();
 +        }
 +
-+        Map<CommandNode<CommandSourceStack>, String> map = PaperCommands.INSTANCE.getDispatcherInternal().getSmartUsage(argumentCommandNode, null);
++        Map<CommandNode<CommandSourceStack>, String> map = PaperCommands.INSTANCE.getDispatcherInternal().getSmartUsage(argumentCommandNode, DUMMY);
 +        String usage = map.isEmpty() ? pluginCommandNode.getUsageText() :  pluginCommandNode.getUsageText() + " " + String.join("\n" + pluginCommandNode.getUsageText() + " ", map.values());
 +        return new PluginVanillaCommandWrapper(pluginCommandNode.getName(), pluginCommandNode.getDescription(), usage, pluginCommandNode.getAliases(), node, pluginCommandNode.getPlugin());
 +    }
@@ -1778,6 +1952,19 @@ index f84c9c80e701231e5c33ac3c5573f1093e80f38b..6c072e44a8144de6658b4eb818c996f0
      ));
      public static final LifecycleEventRunner INSTANCE = new LifecycleEventRunner();
  
+diff --git a/src/main/java/net/minecraft/commands/CommandSource.java b/src/main/java/net/minecraft/commands/CommandSource.java
+index 5ba0ef6eda157c4e61d1de99c6b017ceb34430ec..bc5fc57018e347caa5ca453430a45669e086bb22 100644
+--- a/src/main/java/net/minecraft/commands/CommandSource.java
++++ b/src/main/java/net/minecraft/commands/CommandSource.java
+@@ -26,7 +26,7 @@ public interface CommandSource {
+         // CraftBukkit start
+         @Override
+         public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
+-            throw new UnsupportedOperationException("Not supported yet.");
++            return io.papermc.paper.brigadier.NullCommandSender.INSTANCE; // Paper - expose a no-op CommandSender
+         }
+         // CraftBukkit end
+     };
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 index e6c7f62ed379a78645933670299e4fcda8540ed1..59d7e8a3d83d3ab7aa28606401bb129ccaeff240 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
@@ -1965,7 +2152,7 @@ index 982b2bab27e3d55d0ba07060862c0c3183ad91b0..5fa8a3343ffc11e82c20b78a73205fd8
          Component component = message.resolveComponent(commandSourceStack);
          CommandSigningContext commandSigningContext = commandSourceStack.getSigningContext();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8dc2f9df367c849ca333bf1a1fd92ff91617b548..678000a7fa4f1c03ac5900bdd8fc8ff3b79a4c59 100644
+index cac41b5cea8c6362946c6bd5e50b449d033ab6a9..39303bb4e336732db0ab19dee0c1f8b609bbb134 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -302,7 +302,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -1985,16 +2172,16 @@ index 8dc2f9df367c849ca333bf1a1fd92ff91617b548..678000a7fa4f1c03ac5900bdd8fc8ff3
          // Paper start - Handled by TerminalConsoleAppender
          // Try to see if we're actually running in a terminal, disable jline if not
          /*
-@@ -682,6 +681,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -681,6 +680,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
-         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
          if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
 +        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
 +        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - call commands event for regular plugins
-+        this.server.initializeHelpMapCommands(); // Paper
++        ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
+         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
          this.connection.acceptConnections();
      }
- 
 @@ -2302,9 +2304,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  return new MinecraftServer.ReloadableResources(resourcemanager, datapackresources);
              });
@@ -2006,17 +2193,23 @@ index 8dc2f9df367c849ca333bf1a1fd92ff91617b548..678000a7fa4f1c03ac5900bdd8fc8ff3
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -2323,8 +2325,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2323,8 +2325,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.getPlayerList().reloadResources();
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
 -            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings; they can be defined by datapacks so refresh it here
 -            new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - Add ServerResourcesReloadedEvent; fire after everything has been reloaded
 +            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
++            // Paper start - brigadier command API
++            io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // reset invalid state for event fire below
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // call commands event for regular plugins
++            final org.bukkit.craftbukkit.help.SimpleHelpMap helpMap = (org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap();
++            helpMap.clear();
++            helpMap.initializeGeneralTopics();
++            helpMap.initializeCommands();
++            this.server.syncCommands(); // Refresh commands after event
++            // Paper end
 +            new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - fire after everything has been reloaded
-+            io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
-+            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // Paper - call commands event for regular plugins
-+            this.server.syncCommands(); // Paper - Refresh commands after event
          }, this);
  
          if (this.isSameThread()) {
@@ -2123,7 +2316,7 @@ index 5e9202bc7fc649764568b55d66ba0d684118c00c..379d87cdab68e161a71063af5cd47bd0
      // CraftBukkit end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 57db399bc1d3b6b015740b059987bc8d9bcc3101..e5b7b6f6480745d0a3593c5eac7b76c47e2d65e8 100644
+index 10622ba2f035c183b709748818b6de1a1a8d9ed0..7c165ed8b1fd8072bbfbed7b4f865b72f677a2a3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -274,11 +274,11 @@ public final class CraftServer implements Server {
@@ -2154,7 +2347,7 @@ index 57db399bc1d3b6b015740b059987bc8d9bcc3101..e5b7b6f6480745d0a3593c5eac7b76c4
  
          CraftRegistry.setMinecraftRegistry(console.registryAccess());
  
-@@ -572,48 +578,16 @@ public final class CraftServer implements Server {
+@@ -572,48 +578,11 @@ public final class CraftServer implements Server {
      }
  
      private void setVanillaCommands(boolean first) { // Spigot
@@ -2174,12 +2367,7 @@ index 57db399bc1d3b6b015740b059987bc8d9bcc3101..e5b7b6f6480745d0a3593c5eac7b76c4
 -            // Spigot end
 -        }
 +        // Paper - Replace implementation
-+    }
-+    // Paper start
-+    public void initializeHelpMapCommands() {
-+        this.helpMap.initializeCommands();
      }
-+    // Paper end
  
      public void syncCommands() {
 -        // Clear existing commands
@@ -2210,7 +2398,7 @@ index 57db399bc1d3b6b015740b059987bc8d9bcc3101..e5b7b6f6480745d0a3593c5eac7b76c4
  
          // Refresh commands
          for (ServerPlayer player : this.getHandle().players) {
-@@ -1000,17 +974,31 @@ public final class CraftServer implements Server {
+@@ -1000,17 +969,31 @@ public final class CraftServer implements Server {
              return true;
          }
  
@@ -2252,7 +2440,7 @@ index 57db399bc1d3b6b015740b059987bc8d9bcc3101..e5b7b6f6480745d0a3593c5eac7b76c4
  
          return false;
      }
-@@ -1019,7 +1007,7 @@ public final class CraftServer implements Server {
+@@ -1019,7 +1002,7 @@ public final class CraftServer implements Server {
      public void reload() {
          // Paper start - lifecycle events
          if (io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.blocksPluginReloading()) {
@@ -2261,7 +2449,7 @@ index 57db399bc1d3b6b015740b059987bc8d9bcc3101..e5b7b6f6480745d0a3593c5eac7b76c4
          }
          // Paper end - lifecycle events
          org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
-@@ -1072,8 +1060,9 @@ public final class CraftServer implements Server {
+@@ -1072,8 +1055,9 @@ public final class CraftServer implements Server {
          }
  
          Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
@@ -2272,16 +2460,19 @@ index 57db399bc1d3b6b015740b059987bc8d9bcc3101..e5b7b6f6480745d0a3593c5eac7b76c4
          // Paper start
          for (Plugin plugin : pluginClone) {
              entityMetadata.removeAll(plugin);
-@@ -1114,6 +1103,9 @@ public final class CraftServer implements Server {
+@@ -1113,6 +1097,12 @@ public final class CraftServer implements Server {
+         this.enablePlugins(PluginLoadOrder.STARTUP);
          this.enablePlugins(PluginLoadOrder.POSTWORLD);
-         this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
          if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
-+        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - to clear invalid state for event fire below
-+        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // Paper - call commands event for regular plugins
-+        this.syncCommands(); // Paper - Refresh commands after event
++        // Paper start - brigadier command API
++        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // to clear invalid state for event fire below
++        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // call commands event for regular plugins
++        this.helpMap.initializeCommands();
++        this.syncCommands(); // Refresh commands after event
++        // Paper end - brigadier command API
+         this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
          org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
      }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
 index 21b6f90cf5bd7087d1a0f512289d971f2c3e1afa..a3c02200da9e793de79a74fe7e0cd72634150f64 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java

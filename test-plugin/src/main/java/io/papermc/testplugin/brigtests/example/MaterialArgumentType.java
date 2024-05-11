@@ -1,4 +1,4 @@
-package io.papermc.testplugin.example;
+package io.papermc.testplugin.brigtests.example;
 
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;

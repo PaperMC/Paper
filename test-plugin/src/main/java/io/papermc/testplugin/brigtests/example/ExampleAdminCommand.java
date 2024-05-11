@@ -1,4 +1,4 @@
-package io.papermc.testplugin.example;
+package io.papermc.testplugin.brigtests.example;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -18,13 +18,14 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 public class ExampleAdminCommand {
 
-    public static void register(TestPlugin plugin, Commands commands) {
+    public static void register(JavaPlugin plugin, Commands commands) {
         final LiteralArgumentBuilder<CommandSourceStack> adminBuilder = Commands.literal("admin")
             .executes((ct) -> {
                 ct.getSource().getSender().sendPlainMessage("root admin");

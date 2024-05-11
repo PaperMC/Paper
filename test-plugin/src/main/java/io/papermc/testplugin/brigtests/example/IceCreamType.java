@@ -1,4 +1,4 @@
-package io.papermc.testplugin.example;
+package io.papermc.testplugin.brigtests.example;
 
 public enum IceCreamType {
     VANILLA,
