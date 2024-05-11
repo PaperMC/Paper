@@ -213,7 +213,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
 @@ -0,0 +0,0 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
-         this.entityTag = bucket.entityTag;
+         this.bucketEntityTag = bucket.bucketEntityTag;
      }
  
 -    CraftMetaAxolotlBucket(DataComponentPatch tag) {
@@ -485,7 +485,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE,
 -                        CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE,
 -                        CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE,
+-                        CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE,
 -                        CraftMetaAxolotlBucket.ENTITY_TAG.TYPE,
+-                        CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE,
 -                        CraftMetaCrossbow.CHARGED_PROJECTILES.TYPE,
 -                        CraftMetaSuspiciousStew.EFFECTS.TYPE,
 -                        CraftMetaCompass.LODESTONE_TARGET.TYPE,
@@ -493,6 +495,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE,
 -                        CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE
 -                ));
+-            }
+-            return CraftMetaItem.HANDLED_TAGS;
 +    // Paper start - improve checking handled tags
 +    @org.jetbrains.annotations.VisibleForTesting
 +    public static final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> HANDLED_DCTS_PER_TYPE = new HashMap<>();
@@ -525,7 +529,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> map = new HashMap<>();
 +                map.put(CraftMetaArmor.class, Set.of(CraftMetaArmor.TRIM.TYPE));
 +                map.put(CraftMetaArmorStand.class, Set.of(CraftMetaArmorStand.ENTITY_TAG.TYPE));
-+                map.put(CraftMetaAxolotlBucket.class, Set.of(CraftMetaAxolotlBucket.ENTITY_TAG.TYPE));
++                map.put(CraftMetaAxolotlBucket.class, Set.of(CraftMetaAxolotlBucket.ENTITY_TAG.TYPE, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE));
 +                map.put(CraftMetaBanner.class, Set.of(/*CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT, */CraftMetaBanner.PATTERNS.TYPE)); // banner uses same tag as block state
 +                map.put(CraftMetaBlockState.class, Set.of(CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE));
 +                map.put(CraftMetaBook.class, Set.of(CraftMetaBook.BOOK_CONTENT.TYPE));
@@ -547,7 +551,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                map.put(CraftMetaSkull.class, Set.of(CraftMetaSkull.SKULL_PROFILE.TYPE, CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE));
 +                map.put(CraftMetaSpawnEgg.class, Set.of(CraftMetaSpawnEgg.ENTITY_TAG.TYPE));
 +                map.put(CraftMetaSuspiciousStew.class, Set.of(CraftMetaSuspiciousStew.EFFECTS.TYPE));
-+                map.put(CraftMetaTropicalFishBucket.class, Set.of(CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE));
++                map.put(CraftMetaTropicalFishBucket.class, Set.of(CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE));
 +
 +                for (final Map.Entry<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> entry : map.entrySet()) {
 +                    final ArrayList<DataComponentType<?>> topLevelTags = new ArrayList<>(entry.getValue());
@@ -555,8 +559,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    topLevelTags.addAll(DEFAULT_HANDLED_DCTS);
 +                    HANDLED_DCTS_PER_TYPE.put(entry.getKey(), Set.copyOf(topLevelTags));
 +                }
-             }
--            return CraftMetaItem.HANDLED_TAGS;
++            }
 +            return HANDLED_DCTS_PER_TYPE.getOrDefault(clazz, DEFAULT_HANDLED_DCTS);
          }
      }
@@ -623,7 +626,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        super(tag, extraHandledDcts); // Paper
  
          getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
-             this.instrument = this.unwrapAndConvertHolder(Registry.INSTRUMENT, instrument); // Paper - fix upstream not handling custom instruments
+             this.instrument = this.unwrapAndConvertHolder(org.bukkit.Registry.INSTRUMENT, instrument); // Paper - fix upstream not handling custom instruments
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java
@@ -704,7 +707,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
 @@ -0,0 +0,0 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
-         this.entityTag = bucket.entityTag;
+         this.bucketEntityTag = bucket.bucketEntityTag;
      }
  
 -    CraftMetaTropicalFishBucket(DataComponentPatch tag) {

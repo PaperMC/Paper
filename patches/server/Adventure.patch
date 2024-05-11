@@ -2721,8 +2721,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          String deathmessage = defaultMessage.getString();
          this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
--        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
-+        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
+-        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, damageSource, loot, deathmessage, keepInventory);
++        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, damageSource, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
  
          // SPIGOT-943 - only call if they have an inventory open
          if (this.containerMenu != this.inventoryMenu) {
@@ -2938,19 +2938,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
- 
-     public void sendPlayerChatMessage(PlayerChatMessage message, ChatType.Bound params) {
-         // CraftBukkit start - SPIGOT-7262: if hidden we have to send as disguised message. Query whether we should send at all (but changing this may not be expected).
--        if (!this.getCraftPlayer().canSee(message.link().sender())) {
-+        // Paper start - Do not query the world for players, if they're not in the player list, then they're not in the world - don't query world state
-+        // Also, mirror the logic for canSee in terms of "missing" players
-+        final ServerPlayer sender = this.server.getPlayerList().getPlayer(message.link().sender());
-+        if (sender == null || !this.getCraftPlayer().canSee(sender.getBukkitEntity())) {
-+        // Paper end
-             this.sendDisguisedChatMessage(message.decoratedContent(), params);
-             return;
-         }
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -4647,11 +4634,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return event;
      }
  
--    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<org.bukkit.inventory.ItemStack> drops, String deathMessage, boolean keepInventory) {
-+    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<org.bukkit.inventory.ItemStack> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure
+-    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<org.bukkit.inventory.ItemStack> drops, String deathMessage, boolean keepInventory) {
++    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<org.bukkit.inventory.ItemStack> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure
          CraftPlayer entity = victim.getBukkitEntity();
-         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
-         event.setKeepInventory(keepInventory);
+         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(), 0, deathMessage);
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
       * Server methods
       */

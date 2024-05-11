@@ -45,7 +45,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
          String deathmessage = defaultMessage.getString();
          this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
-         org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
+         org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, damageSource, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
 +        // Paper start - cancellable death event
 +        if (event.isCancelled()) {
 +            // make compatible with plugins that might have already set the health in an event listener
@@ -215,8 +215,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.clearEquipmentSlots = prev; // Paper
          }
          // CraftBukkit start - Call death event
--        CraftEventFactory.callEntityDeathEvent(this, this.drops);
-+        org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, this.drops); // Paper
+-        CraftEventFactory.callEntityDeathEvent(this, source, this.drops);
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, source, this.drops); // Paper
 +        this.postDeathDropItems(deathEvent); // Paper
          this.drops = new ArrayList<>();
          // CraftBukkit end
@@ -347,10 +347,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  // CraftBukkit end
                  if (source.is(DamageTypeTags.IS_EXPLOSION)) {
 -                    this.brokenByAnything(source);
--                    this.kill();
+-                    this.kill(source); // CraftBukkit
 +                    // Paper start - avoid duplicate event call
 +                    org.bukkit.event.entity.EntityDeathEvent event = this.brokenByAnything(source);
-+                    if (!event.isCancelled()) this.kill(false);
++                    if (!event.isCancelled()) this.kill(source, false); // CraftBukkit
 +                    // Paper end
                      return false;
                  } else if (source.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
@@ -363,7 +363,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                                org.bukkit.event.entity.EntityDeathEvent event = this.brokenByPlayer(source); // Paper
                                  this.showBreakingParticles();
 -                                this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - SPIGOT-4890: remain as this.discard() since above damagesource method will call death event
-+                                if (!event.isCancelled()) this.kill(false); // Paper - we still need to kill to follow vanilla logic (emit the game event etc...)
++                                if (!event.isCancelled()) this.kill(source, false); // Paper - we still need to kill to follow vanilla logic (emit the game event etc...)
                              }
  
                              return true;
@@ -372,10 +372,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          f1 -= amount;
          if (f1 <= 0.5F) {
 -            this.brokenByAnything(damageSource);
--            this.kill();
+-            this.kill(damageSource); // CraftBukkit
 +            // Paper start - avoid duplicate event call
 +            org.bukkit.event.entity.EntityDeathEvent event = this.brokenByAnything(damageSource);
-+            if (!event.isCancelled()) this.kill(false);
++            if (!event.isCancelled()) this.kill(damageSource, false); // CraftBukkit
 +            // Paper end
          } else {
              this.setHealth(f1);
@@ -409,23 +409,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
- 
-     @Override
-     public void kill() {
--        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.drops); // CraftBukkit - call event
-+        // Paper start
-+        kill(true);
-+    }
-+
-+    public void kill(boolean callEvent) {
-+        if (callEvent) {
-+        // Paper end
-+        org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.drops); // CraftBukkit - call event // Paper - make cancellable
-+        if (event.isCancelled()) return; // Paper - make cancellable
-+        } // Paper
-         this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
-         this.gameEvent(GameEvent.ENTITY_DIE);
      }
+ 
+     public void kill(DamageSource damageSource) {
+-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, (damageSource == null ? this.damageSources().genericKill() : damageSource), this.drops); // CraftBukkit - call event
++        // Paper start - make cancellable
++        this.kill(damageSource, true);
++    }
++    public void kill(DamageSource damageSource, boolean callEvent) {
++        if (callEvent) {
++            org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, (damageSource == null ? this.damageSources().genericKill() : damageSource), this.drops); // CraftBukkit - call event
++            if (event.isCancelled()) return;
++        }
++        // Paper end
+         this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
+         // CraftBukkit end
+         this.gameEvent(GameEvent.ENTITY_DIE);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
@@ -451,9 +450,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
-     public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops) {
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
-         EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward());
+         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
+         EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward());
 +        populateFields(victim, event); // Paper - make cancellable
          CraftWorld world = (CraftWorld) entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
@@ -468,7 +467,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
-         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(), 0, deathMessage);
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
 +        populateFields(victim, event); // Paper - make cancellable
