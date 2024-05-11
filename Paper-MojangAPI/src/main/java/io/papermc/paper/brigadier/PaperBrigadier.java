@@ -9,9 +9,11 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Helper methods to bridge the gaps between Brigadier and Paper-MojangAPI.
- * @deprecated For removal, see {@link io.papermc.paper.command.brigadier.Commands} on how to use the new Brigadier API.
+ * @deprecated for removal. See {@link MessageComponentSerializer} for a direct replacement of functionality found in
+ * this class.
+ * As a general entrypoint to brigadier on paper, see {@link io.papermc.paper.command.brigadier.Commands}.
  */
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "1.20.6")
 public final class PaperBrigadier {
     private PaperBrigadier() {
         throw new RuntimeException("PaperBrigadier is not to be instantiated!");

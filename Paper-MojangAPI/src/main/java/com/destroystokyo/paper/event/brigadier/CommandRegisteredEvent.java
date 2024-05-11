@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated For removal, use the new brigadier api.
  */
 @ApiStatus.Experimental
-@Deprecated
+@Deprecated(since = "1.20.6")
 public class CommandRegisteredEvent<S extends BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

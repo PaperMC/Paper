@@ -5,20 +5,20 @@ Subject: [PATCH] Brigadier based command API
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index eecf458e1250ee9968630cf5c3c3287a1693e52e..f0b811fde02d79c958af624d34674ae089d0c88c 100644
+index eecf458e1250ee9968630cf5c3c3287a1693e52e..538736cf17592829f0f26477c2bf8d80f3714d9a 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -27,6 +27,7 @@ configurations.api {
  }
  
  dependencies {
-+    api("com.mojang:brigadier:1.1.8") // Paper - Brigadier command api
++    api("com.mojang:brigadier:1.2.9") // Paper - Brigadier command api
      // api dependencies are listed transitively to API consumers
      api("com.google.guava:guava:32.1.2-jre")
      api("com.google.code.gson:gson:2.10.1")
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ffb1ecddcee876f36bd813f3f3fe59d8584be926
+index 0000000000000000000000000000000000000000..0f6b921b4bcf983cf25188823f78a061eec5263d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
 @@ -0,0 +1,36 @@
@@ -40,7 +40,7 @@ index 0000000000000000000000000000000000000000..ffb1ecddcee876f36bd813f3f3fe59d8
 +    /**
 +     * Executes the command with the given {@link CommandSourceStack} and arguments.
 +     *
-+     * @param commandSourceStack the commandSourceStack of the command.
++     * @param commandSourceStack the commandSourceStack of the command
 +     * @param args the arguments of the command ignoring repeated spaces
 +     */
 +    @ApiStatus.OverrideOnly
@@ -49,7 +49,7 @@ index 0000000000000000000000000000000000000000..ffb1ecddcee876f36bd813f3f3fe59d8
 +    /**
 +     * Suggests possible completions for the given command {@link CommandSourceStack} and arguments.
 +     *
-+     * @param commandSourceStack the commandSourceStack of the command.
++     * @param commandSourceStack the commandSourceStack of the command
 +     * @param args the arguments of the command including repeated spaces
 +     * @return a collection of suggestions
 +     */
@@ -81,10 +81,10 @@ index 0000000000000000000000000000000000000000..2b2f14cda4e83c65721a524c098f7f70
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/CommandSourceStack.java b/src/main/java/io/papermc/paper/command/brigadier/CommandSourceStack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..86912d38969982cb7655e0f2454ef5b61058f67f
+index 0000000000000000000000000000000000000000..f7685aeef9d7306d8b2f7e62315b99acc87d9202
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/CommandSourceStack.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,46 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import org.bukkit.Location;
@@ -97,9 +97,10 @@ index 0000000000000000000000000000000000000000..86912d38969982cb7655e0f2454ef5b6
 +/**
 + * The command source type for Brigadier commands registered using Paper API.
 + * <p>
-+ * While the general use case for CommandSourceStack is similar to that of {@link CommandSender}, it provides access to important additional context for the command execution.
-+ * Specifically, commands such as {@literal /execute} may alter the location or executor of the source stack before passing it to another command.
-+ *
++ * While the general use case for CommandSourceStack is similar to that of {@link CommandSender}, it provides access to
++ * important additional context for the command execution.
++ * Specifically, commands such as {@literal /execute} may alter the location or executor of the source stack before
++ * passing it to another command.
 + */
 +@ApiStatus.NonExtendable
 +@ApiStatus.Experimental
@@ -107,30 +108,35 @@ index 0000000000000000000000000000000000000000..86912d38969982cb7655e0f2454ef5b6
 +
 +    /**
 +     * Gets the location that this command is being executed at.
-+     * @return location
++     *
++     * @return a cloned location instance.
 +     */
 +    @NotNull Location getLocation();
 +
 +    /**
-+     * Gets the sender that executed this command.
-+     * @return source type
++     * Gets the command sender that executed this command.
++     * The sender of a command source stack is the one that initiated/triggered the execution of a command.
++     * It differs to {@link #getExecutor()} as the executor can be changed by a command, e.g. {@literal /execute}.
++     *
++     * @return the command sender instance
 +     */
 +    @NotNull CommandSender getSender();
 +
 +    /**
-+     * Gets the entity that triggered the execution of this command.
-+     * May not always be the command source.
++     * Gets the entity that executes this command.
++     * May not always be {@link #getSender()} as the executor of a command can be changed to a different entity
++     * than the one that triggered the command.
 +     *
-+     * @return entity that triggered execution
++     * @return entity that executes this command
 +     */
 +    @Nullable Entity getExecutor();
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/Commands.java b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d32800e75632
+index 0000000000000000000000000000000000000000..5890bc3ec6d7278cb46173902b0fd7f1b089efd5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
-@@ -0,0 +1,252 @@
+@@ -0,0 +1,263 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.CommandDispatcher;
@@ -138,7 +144,10 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 +import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 +import com.mojang.brigadier.tree.LiteralCommandNode;
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
 +import java.util.Collection;
 +import java.util.Collections;
@@ -153,33 +162,36 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 + * <p>
 + * An example of a command being registered is below
 + * <pre>{@code
-+ *  class YourPluginClass extends JavaPlugin {
++ * class YourPluginClass extends JavaPlugin {
 + *
-+ *      @Override
-+ *      public void onEnable() {
-+ *          LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
-+ *          manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-+ *              final Commands commands = event.registrar();
-+ *              commands.register(
-+ *                  Commands.literal("new-command")
-+ *                      .executes(ctx -> {
-+ *                          ctx.getSource().getSender().sendPlainMessage("some message");
-+ *                          return Command.SINGLE_SUCCESS;
-+ *                      })
-+ *                      .build(),
-+ *                  "some bukkit help description string",
-+ *                  List.of("an-alias")
-+ *              );
-+ *          });
-+ *      }
-+ *  }
++ *     @Override
++ *     public void onEnable() {
++ *         LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
++ *         manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
++ *             final Commands commands = event.registrar();
++ *             commands.register(
++ *                 Commands.literal("new-command")
++ *                     .executes(ctx -> {
++ *                         ctx.getSource().getSender().sendPlainMessage("some message");
++ *                         return Command.SINGLE_SUCCESS;
++ *                     })
++ *                     .build(),
++ *                 "some bukkit help description string",
++ *                 List.of("an-alias")
++ *             );
++ *         });
++ *     }
++ * }
 + * }</pre>
 + * <p>
-+ * You can also register commands in {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap} getting the
-+ * {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager} from {@link io.papermc.paper.plugin.bootstrap.BootstrapContext}.
-+ * Commands registered in the {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap} will be available for datapack's
-+ * command function parsing. Note that commands registered via {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap} with the same
-+ * literals as a vanilla command will override that command within all loaded datapacks.
++ * You can also register commands in {@link PluginBootstrap} by getting the {@link LifecycleEventManager} from
++ * {@link BootstrapContext}.
++ * Commands registered in the {@link PluginBootstrap} will be available for datapack's
++ * command function parsing.
++ * Note that commands registered via {@link PluginBootstrap} with the same literals as a vanilla command will override
++ * that command within all loaded datapacks.
++ *
++ * @see io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents#COMMANDS
 + */
 +@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
@@ -189,7 +201,7 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +     * Utility to create a literal command node builder with the correct generic.
 +     *
 +     * @param literal literal name
-+     * @return builder
++     * @return a new builder instance
 +     */
 +    static @NotNull LiteralArgumentBuilder<CommandSourceStack> literal(final @NotNull String literal) {
 +        return LiteralArgumentBuilder.literal(literal);
@@ -198,10 +210,10 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +    /**
 +     * Utility to create a required argument builder with the correct generic.
 +     *
-+     * @param name name
-+     * @param argumentType type
-+     * @return value
-+     * @param <T> argument type
++     * @param name         the name of th argument
++     * @param argumentType the type of the argument
++     * @param <T>          the generic type of the argument value
++     * @return a new required argument builder
 +     */
 +    static <T> @NotNull RequiredArgumentBuilder<CommandSourceStack, T> argument(final @NotNull String name, final @NotNull ArgumentType<T> argumentType) {
 +        return RequiredArgumentBuilder.argument(name, argumentType);
@@ -212,9 +224,10 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +     *
 +     * <p><b>Note:</b> This is a delicate API that must be used with care to ensure a consistent user experience.</p>
 +     *
-+     * <p>When registering commands, it should be preferred to use {@link #register(PluginMeta, LiteralCommandNode, String, Collection) register methods}
-+     * over directly registering to the dispatcher wherever possible. {@link #register(PluginMeta, LiteralCommandNode, String, Collection) Register methods}
-+     * automatically handle command namespacing, command help, plugin association with commands, and more.</p>
++     * <p>When registering commands, it should be preferred to use the {@link #register(PluginMeta, LiteralCommandNode, String, Collection) register methods}
++     * over directly registering to the dispatcher wherever possible.
++     * {@link #register(PluginMeta, LiteralCommandNode, String, Collection) Register methods} automatically handle
++     * command namespacing, command help, plugin association with commands, and more.</p>
 +     *
 +     * <p>Example use cases for this method <b>may</b> include:
 +     * <ul>
@@ -222,7 +235,8 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +     *   <li>Registering new child nodes to an existing plugin command (for example an "addon" plugin to another plugin may want to do this)</li>
 +     *   <li>Retrieving existing command nodes to build redirects</li>
 +     * </ul>
-+     * @return dispatcher
++     *
++     * @return the dispatcher instance
 +     */
 +    @ApiStatus.Experimental
 +    @NotNull CommandDispatcher<CommandSourceStack> getDispatcher();
@@ -252,7 +266,7 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +     *   <li>The main command/namespaced label will override already existing commands</li>
 +     * </ul>
 +     *
-+     * @param node the built literal command node
++     * @param node        the built literal command node
 +     * @param description the help description for the root literal node
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
@@ -286,9 +300,9 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +     *   <li>The main command/namespaced label will override already existing commands</li>
 +     * </ul>
 +     *
-+     * @param node the built literal command node
++     * @param node        the built literal command node
 +     * @param description the help description for the root literal node
-+     * @param aliases a collection of aliases to register the literal node's command to
++     * @param aliases     a collection of aliases to register the literal node's command to
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
 +    @Unmodifiable @NotNull Set<String> register(@NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull Collection<String> aliases);
@@ -302,10 +316,10 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +     *   <li>The main command/namespaced label will override already existing commands</li>
 +     * </ul>
 +     *
-+     * @param pluginMeta the owning plugin's meta
-+     * @param node the built literal command node
++     * @param pluginMeta  the owning plugin's meta
++     * @param node        the built literal command node
 +     * @param description the help description for the root literal node
-+     * @param aliases a collection of aliases to register the literal node's command to
++     * @param aliases     a collection of aliases to register the literal node's command to
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
 +    @Unmodifiable @NotNull Set<String> register(@NotNull PluginMeta pluginMeta, @NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull Collection<String> aliases);
@@ -314,12 +328,15 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +     * This allows configuring the registration of your command, which is not intended for public use.
 +     * See {@link Commands#register(PluginMeta, LiteralCommandNode, String, Collection)} for more information.
 +     *
-+     * @param pluginMeta meta
-+     * @param node node
-+     * @param description description
-+     * @param aliases aliases
-+     * @param flags flags
++     * @param pluginMeta  the owning plugin's meta
++     * @param node        the built literal command node
++     * @param description the help description for the root literal node
++     * @param aliases     a collection of aliases to register the literal node's command to
++     * @param flags       a collection of registration flags that control registration behaviour.
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
++     *
++     * @apiNote This method is not guaranteed to be stable as it is not intended for public use.
++     * See {@link CommandRegistrationFlag} for a more indepth explanation of this method's use-case.
 +     */
 +    @ApiStatus.Internal
 +    @Unmodifiable @NotNull Set<String> registerWithFlags(@NotNull PluginMeta pluginMeta, @NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull Collection<String> aliases, @NotNull Set<CommandRegistrationFlag> flags);
@@ -327,8 +344,8 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +    /**
 +     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, Collection)}.
 +     *
-+     * @param label command label
-+     * @param basicCommand command implementation
++     * @param label        the label of the to-be-registered command
++     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
 +    default @Unmodifiable @NotNull Set<String> register(final @NotNull String label, final @NotNull BasicCommand basicCommand) {
@@ -338,9 +355,9 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +    /**
 +     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, Collection)}.
 +     *
-+     * @param label command label
-+     * @param description the help description for the root literal node
-+     * @param basicCommand command implementation
++     * @param label        the label of the to-be-registered command
++     * @param description  the help description for the root literal node
++     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
 +    default @Unmodifiable @NotNull Set<String> register(final @NotNull String label, final @Nullable String description, final @NotNull BasicCommand basicCommand) {
@@ -350,9 +367,9 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +    /**
 +     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, Collection)}.
 +     *
-+     * @param label command label
-+     * @param aliases a collection of aliases
-+     * @param basicCommand command implementation
++     * @param label        the label of the to-be-registered command
++     * @param aliases      a collection of aliases to register the basic command under.
++     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
 +    default @Unmodifiable @NotNull Set<String> register(final @NotNull String label, final @NotNull Collection<String> aliases, final @NotNull BasicCommand basicCommand) {
@@ -362,10 +379,10 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +    /**
 +     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, Collection)}.
 +     *
-+     * @param label command label
-+     * @param description the help description for the root literal node
-+     * @param aliases a collection of aliases
-+     * @param basicCommand command implementation
++     * @param label        the label of the to-be-registered command
++     * @param description  the help description for the root literal node
++     * @param aliases      a collection of aliases to register the basic command under.
++     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
 +    @Unmodifiable @NotNull Set<String> register(@NotNull String label, @Nullable String description, @NotNull Collection<String> aliases, @NotNull BasicCommand basicCommand);
@@ -373,11 +390,11 @@ index 0000000000000000000000000000000000000000..0b07ff388b03722d0398ec728f20d328
 +    /**
 +     * Registers a command under the same logic as {@link Commands#register(PluginMeta, LiteralCommandNode, String, Collection)}.
 +     *
-+     * @param pluginMeta the owning plugin's meta
-+     * @param label command label
-+     * @param description the help description for the root literal node
-+     * @param aliases a collection of aliases
-+     * @param basicCommand command implementation
++     * @param pluginMeta   the owning plugin's meta
++     * @param label        the label of the to-be-registered command
++     * @param description  the help description for the root literal node
++     * @param aliases      a collection of aliases to register the basic command under.
++     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
 +    @Unmodifiable @NotNull Set<String> register(@NotNull PluginMeta pluginMeta, @NotNull String label, @Nullable String description, @NotNull Collection<String> aliases, @NotNull BasicCommand basicCommand);
