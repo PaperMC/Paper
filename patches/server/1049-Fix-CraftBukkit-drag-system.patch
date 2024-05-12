@@ -1,0 +1,263 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sun, 12 May 2024 12:08:07 +0200
+Subject: [PATCH] Fix CraftBukkit drag system
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index 32910f677b0522ac8ec513fa0d00b714b52cfae4..8d2de2e2822c5179901454d5a58d74a391dcb4b6 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -379,7 +379,7 @@ public abstract class AbstractContainerMenu {
+ 
+     public void clicked(int slotIndex, int button, ClickType actionType, Player player) {
+         try {
+-            this.doClick(slotIndex, button, actionType, player);
++            this.doClick(slotIndex, button, actionType, player, false); // Paper - Fix CraftBukkit drag system
+         } catch (Exception exception) {
+             CrashReport crashreport = CrashReport.forThrowable(exception, "Container click");
+             CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Click info");
+@@ -398,7 +398,7 @@ public abstract class AbstractContainerMenu {
+         }
+     }
+ 
+-    private void doClick(int slotIndex, int button, ClickType actionType, Player player) {
++    private void doClick(int slotIndex, int button, ClickType actionType, Player player, boolean isSingleSlotDrag) { // Paper - Fix CraftBukkit drag system
+         Inventory playerinventory = player.getInventory();
+         Slot slot;
+         ItemStack itemstack;
+@@ -431,10 +431,10 @@ public abstract class AbstractContainerMenu {
+                 }
+             } else if (this.quickcraftStatus == 2) {
+                 if (!this.quickcraftSlots.isEmpty()) {
+-                    if (false && this.quickcraftSlots.size() == 1) { // CraftBukkit - treat everything as a drag since we are unable to easily call InventoryClickEvent instead
++                    if (this.quickcraftSlots.size() == 1) { // Paper - Fix CraftBukkit drag system
+                         k = ((Slot) this.quickcraftSlots.iterator().next()).index;
+                         this.resetQuickCraft();
+-                        this.doClick(k, this.quickcraftType, ClickType.PICKUP, player);
++                        this.doClick(k, this.quickcraftType, ClickType.PICKUP, player, true); // Paper - Fix CraftBukkit drag system
+                         return;
+                     }
+ 
+@@ -549,11 +549,11 @@ public abstract class AbstractContainerMenu {
+                     ItemStack itemstack3 = this.getCarried();
+ 
+                     player.updateTutorialInventoryAction(itemstack3, slot.getItem(), clickaction);
+-                    if (!this.tryItemClickBehaviourOverride(player, clickaction, slot, itemstack, itemstack3)) {
++                    if (!this.tryItemClickBehaviourOverride(player, clickaction, slot, itemstack, itemstack3, isSingleSlotDrag)) { // Paper - Fix CraftBukkit drag system
+                         if (itemstack.isEmpty()) {
+                             if (!itemstack3.isEmpty()) {
+                                 i2 = clickaction == ClickAction.PRIMARY ? itemstack3.getCount() : 1;
+-                                this.setCarried(slot.safeInsert(itemstack3, i2));
++                                this.setCarried(slot.safeInsert(this, itemstack3, i2, isSingleSlotDrag)); // Paper - Fix CraftBukkit drag system
+                             }
+                         } else if (slot.mayPickup(player)) {
+                             if (itemstack3.isEmpty()) {
+@@ -567,7 +567,7 @@ public abstract class AbstractContainerMenu {
+                             } else if (slot.mayPlace(itemstack3)) {
+                                 if (ItemStack.isSameItemSameComponents(itemstack, itemstack3)) {
+                                     i2 = clickaction == ClickAction.PRIMARY ? itemstack3.getCount() : 1;
+-                                    this.setCarried(slot.safeInsert(itemstack3, i2));
++                                    this.setCarried(slot.safeInsert(this, itemstack3, i2, isSingleSlotDrag)); // Paper - Fix CraftBukkit drag system
+                                 } else if (itemstack3.getCount() <= slot.getMaxStackSize(itemstack3)) {
+                                     this.setCarried(itemstack);
+                                     slot.setByPlayer(itemstack3);
+@@ -680,10 +680,10 @@ public abstract class AbstractContainerMenu {
+ 
+     }
+ 
+-    private boolean tryItemClickBehaviourOverride(Player player, ClickAction clickType, Slot slot, ItemStack stack, ItemStack cursorStack) {
++    private boolean tryItemClickBehaviourOverride(Player player, ClickAction clickType, Slot slot, ItemStack stack, ItemStack cursorStack, boolean isSingleSlotDrag) { // Paper - Fix CraftBukkit drag system
+         FeatureFlagSet featureflagset = player.level().enabledFeatures();
+ 
+-        return cursorStack.isItemEnabled(featureflagset) && cursorStack.overrideStackedOnOther(slot, clickType, player) ? true : stack.isItemEnabled(featureflagset) && stack.overrideOtherStackedOnMe(cursorStack, slot, clickType, player, this.createCarriedSlotAccess());
++        return cursorStack.isItemEnabled(featureflagset) && cursorStack.overrideStackedOnOther(slot, clickType, player, isSingleSlotDrag) ? true : stack.isItemEnabled(featureflagset) && stack.overrideOtherStackedOnMe(cursorStack, slot, clickType, player, this.createCarriedSlotAccess()); // Paper - Fix CraftBukkit drag system
+     }
+ 
+     private SlotAccess createCarriedSlotAccess() {
+diff --git a/src/main/java/net/minecraft/world/inventory/Slot.java b/src/main/java/net/minecraft/world/inventory/Slot.java
+index c39c773112fb8b534b926f2f2b47fe6fbb69fcb2..6c8a4d8ba0d27e6e5e58ec1f39b03ac6cd1f17ae 100644
+--- a/src/main/java/net/minecraft/world/inventory/Slot.java
++++ b/src/main/java/net/minecraft/world/inventory/Slot.java
+@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.world.Container;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
++import org.bukkit.craftbukkit.inventory.CraftItemStack; // Paper - Fix CraftBukkit drag system
+ 
+ public class Slot {
+     public final int slot;
+@@ -127,21 +128,39 @@ public class Slot {
+     }
+ 
+     public ItemStack safeInsert(ItemStack stack, int count) {
++        // Paper start - Fix CraftBukkit drag system
++        return this.safeInsert(null, stack, count, false);
++    }
++
++    public ItemStack safeInsert(AbstractContainerMenu container, ItemStack stack, int count, boolean isSingleSlotDrag) {
+         if (!stack.isEmpty() && this.mayPlace(stack)) {
+             ItemStack itemStack = this.getItem();
+             int i = Math.min(Math.min(count, stack.getCount()), this.getMaxStackSize(stack) - itemStack.getCount());
+-            if (itemStack.isEmpty()) {
+-                this.setByPlayer(stack.split(i));
+-            } else if (ItemStack.isSameItemSameComponents(itemStack, stack)) {
+-                stack.shrink(i);
+-                itemStack.grow(i);
+-                this.setByPlayer(itemStack);
++            ItemStack newCursor = stack.copy();
++            newCursor.shrink(i);
++            if (isSingleSlotDrag) {
++                container.setCarried(newCursor);
++
++                org.bukkit.event.inventory.InventoryDragEvent event = new org.bukkit.event.inventory.InventoryDragEvent(
++                    container.getBukkitView(),
++                    CraftItemStack.asCraftMirror(newCursor),
++                    CraftItemStack.asBukkitCopy(stack),
++                    count == 1,
++                    java.util.Map.of(this.index, CraftItemStack.asBukkitCopy(stack.copyWithCount(this.getItem().getCount() + i)))
++                    );
++
++                if (event.callEvent()) {
++                    this.setByPlayer(stack.copyWithCount(this.getItem().getCount() + i));
++                    return CraftItemStack.asNMSCopy(event.getCursor());
++                } else {
++                    return stack;
++                }
+             }
+-
+-            return stack;
+-        } else {
+-            return stack;
++            this.setByPlayer(stack.copyWithCount(this.getItem().getCount() + i));
++            return newCursor;
+         }
++        return stack;
++        // Paper end - Fix CraftBukkit drag system
+     }
+ 
+     public boolean allowModification(Player player) {
+diff --git a/src/main/java/net/minecraft/world/item/BundleItem.java b/src/main/java/net/minecraft/world/item/BundleItem.java
+index 233c50af05085c1ecb069dd2e90d17c85f27e5ab..a19e58a627107b80a7f97bcfa6a74da7ff908820 100644
+--- a/src/main/java/net/minecraft/world/item/BundleItem.java
++++ b/src/main/java/net/minecraft/world/item/BundleItem.java
+@@ -22,6 +22,7 @@ import net.minecraft.world.inventory.tooltip.TooltipComponent;
+ import net.minecraft.world.item.component.BundleContents;
+ import net.minecraft.world.level.Level;
+ import org.apache.commons.lang3.math.Fraction;
++import org.bukkit.craftbukkit.inventory.CraftItemStack; // Paper - Fix CraftBukkit drag system
+ 
+ public class BundleItem extends Item {
+     private static final int BAR_COLOR = Mth.color(0.4F, 0.4F, 1.0F);
+@@ -37,7 +38,7 @@ public class BundleItem extends Item {
+     }
+ 
+     @Override
+-    public boolean overrideStackedOnOther(ItemStack stack, Slot slot, ClickAction clickType, Player player) {
++    public boolean overrideStackedOnOther(ItemStack stack, Slot slot, ClickAction clickType, Player player, boolean isSingleSlotDrag) { // Paper - Fix CraftBukkit drag system
+         if (clickType != ClickAction.SECONDARY) {
+             return false;
+         } else {
+@@ -46,26 +47,64 @@ public class BundleItem extends Item {
+                 return false;
+             } else {
+                 ItemStack itemStack = slot.getItem();
+-                BundleContents.Mutable mutable = new BundleContents.Mutable(bundleContents);
++                // Paper start - Fix CraftBukkit drag system
+                 if (itemStack.isEmpty()) {
+                     this.playRemoveOneSound(player);
+-                    ItemStack itemStack2 = mutable.removeOne();
+-                    if (itemStack2 != null) {
+-                        ItemStack itemStack3 = slot.safeInsert(itemStack2);
+-                        mutable.tryInsert(itemStack3);
+-                    }
++                    ItemStack itemStack3 = this.safeInsert(player.containerMenu, stack, slot, isSingleSlotDrag);
++                    player.containerMenu.setCarried(itemStack3);
+                 } else if (itemStack.getItem().canFitInsideContainerItems()) {
++                    BundleContents.Mutable mutable = new BundleContents.Mutable(bundleContents);
+                     int i = mutable.tryTransfer(slot, player);
+                     if (i > 0) {
+                         this.playInsertSound(player);
+                     }
++                    stack.set(DataComponents.BUNDLE_CONTENTS, mutable.toImmutable());
+                 }
+-
+-                stack.set(DataComponents.BUNDLE_CONTENTS, mutable.toImmutable());
++                // Paper end - Fix CraftBukkit drag system
+                 return true;
+             }
+         }
+     }
++    // Paper start - Fix CraftBukkit drag system
++    public ItemStack safeInsert(net.minecraft.world.inventory.AbstractContainerMenu container, ItemStack bundle, Slot slot, boolean isSingleSlotDrag) {
++        ItemStack newCursor = bundle.copy();
++        BundleContents bundleContents = newCursor.get(DataComponents.BUNDLE_CONTENTS);
++        if (bundleContents == null)
++            return bundle;
++        BundleContents.Mutable mutable = new BundleContents.Mutable(bundleContents);
++        ItemStack stack = mutable.removeOne();
++        if (!(stack == null) && !stack.isEmpty() && slot.mayPlace(stack)) {
++            int count = stack.getCount();
++            ItemStack newContent = stack.copy();
++            ItemStack itemStack = slot.getItem();
++            int i = Math.min(Math.min(count, stack.getCount()), slot.getMaxStackSize(stack) - itemStack.getCount());
++            newContent.shrink(i);
++            mutable.tryInsert(newContent);
++            newCursor.set(DataComponents.BUNDLE_CONTENTS, mutable.toImmutable());
++            if (isSingleSlotDrag) {
++                container.setCarried(newCursor);
++
++                org.bukkit.event.inventory.InventoryDragEvent event = new org.bukkit.event.inventory.InventoryDragEvent(
++                    container.getBukkitView(),
++                    CraftItemStack.asCraftMirror(newCursor),
++                    CraftItemStack.asBukkitCopy(bundle),
++                    count == 1,
++                    java.util.Map.of(slot.index, CraftItemStack.asBukkitCopy(stack.copyWithCount(slot.getItem().getCount() + i)))
++                    );
++
++                if (event.callEvent()) {
++                    slot.setByPlayer(stack.copyWithCount(slot.getItem().getCount() + i));
++                    return CraftItemStack.asNMSCopy(event.getCursor());
++                } else {
++                    return bundle;
++                }
++            }
++            slot.setByPlayer(stack.copyWithCount(slot.getItem().getCount() + i));
++            return newCursor;
++        }
++        return bundle;
++    }
++    // Paper end - Fix CraftBukkit drag system
+ 
+     @Override
+     public boolean overrideOtherStackedOnMe(
+diff --git a/src/main/java/net/minecraft/world/item/Item.java b/src/main/java/net/minecraft/world/item/Item.java
+index 00d2819494d60b54aa268bbe2ccf57be605ceb30..8220912814b5ee9c1269dca0e0bb2c8481080655 100644
+--- a/src/main/java/net/minecraft/world/item/Item.java
++++ b/src/main/java/net/minecraft/world/item/Item.java
+@@ -168,7 +168,7 @@ public class Item implements FeatureElement, ItemLike {
+         return Mth.hsvToRgb(f / 3.0F, 1.0F, 1.0F);
+     }
+ 
+-    public boolean overrideStackedOnOther(ItemStack stack, Slot slot, ClickAction clickType, Player player) {
++    public boolean overrideStackedOnOther(ItemStack stack, Slot slot, ClickAction clickType, Player player, boolean isSingleSlotDrag) { // Paper - Fix CraftBukkit drag system
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 893efb2c4a07c33d41e934279dd914a9dbd4ef79..e25bd331128ea0aef48bf743ae75278729235544 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -757,8 +757,10 @@ public final class ItemStack implements DataComponentHolder {
+         return this.getItem().getBarColor(this);
+     }
+ 
+-    public boolean overrideStackedOnOther(Slot slot, ClickAction clickType, net.minecraft.world.entity.player.Player player) {
+-        return this.getItem().overrideStackedOnOther(this, slot, clickType, player);
++    // Paper start - Fix CraftBukkit drag system
++    public boolean overrideStackedOnOther(Slot slot, ClickAction clickType, net.minecraft.world.entity.player.Player player, boolean isSingleSlotDrag) {
++        return this.getItem().overrideStackedOnOther(this, slot, clickType, player, isSingleSlotDrag);
++        // Paper end - Fix CraftBukkit drag system
+     }
+ 
+     public boolean overrideOtherStackedOnMe(ItemStack stack, Slot slot, ClickAction clickType, net.minecraft.world.entity.player.Player player, SlotAccess cursorStackReference) {
