@@ -1,0 +1,227 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 11 May 2024 19:26:18 -0700
+Subject: [PATCH] RegistrySet API
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
+index 5562e8da5ebaef2a3add46e88d64358b7737b59e..e5880f76cdb8ebf01fcefdf77ba9b95674b997a8 100644
+--- a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
++++ b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
+@@ -1,12 +1,13 @@
+ package io.papermc.paper.registry.legacy;
+ 
++import io.papermc.paper.registry.tag.Tag;
++import io.papermc.paper.registry.tag.TagKey;
+ import java.util.Iterator;
+ import java.util.function.Supplier;
+ import java.util.stream.Stream;
+ import org.bukkit.Keyed;
+ import org.bukkit.NamespacedKey;
+ import org.bukkit.Registry;
+-import org.bukkit.craftbukkit.CraftRegistry;
+ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+ import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.jetbrains.annotations.NotNull;
+@@ -52,4 +53,14 @@ public final class DelayedRegistry<T extends Keyed, R extends Registry<T>> imple
+     public NamespacedKey getKey(final T value) {
+         return this.delegate().getKey(value);
+     }
++
++    @Override
++    public boolean hasTag(final TagKey<T> key) {
++        return this.delegate().hasTag(key);
++    }
++
++    @Override
++    public @NotNull Tag<T> getTag(final TagKey<T> key) {
++        return this.delegate().getTag(key);
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java b/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..918d80542a1185988fcda3d7642548c7935f73af
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java
+@@ -0,0 +1,75 @@
++package io.papermc.paper.registry.set;
++
++import com.google.common.collect.ImmutableList;
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.registry.RegistryAccess;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.tag.Tag;
++import io.papermc.paper.registry.tag.TagKey;
++import java.util.Collection;
++import java.util.Set;
++import net.kyori.adventure.key.Key;
++import net.minecraft.core.Holder;
++import net.minecraft.core.HolderSet;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++@DefaultQualifier(NonNull.class)
++public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
++    TagKey<T> tagKey,
++    HolderSet.Named<M> namedSet
++) implements Tag<T>, org.bukkit.Tag<T> {
++
++    @Override
++    public @Unmodifiable Collection<TypedKey<T>> values() {
++        final ImmutableList.Builder<TypedKey<T>> builder = ImmutableList.builder();
++        for (final Holder<M> holder : this.namedSet) {
++            builder.add(TypedKey.create(this.tagKey.registryKey(), CraftNamespacedKey.fromMinecraft(((Holder.Reference<?>) holder).key().location())));
++        }
++        return builder.build();
++    }
++
++    @Override
++    public RegistryKey<T> registryKey() {
++        return this.tagKey.registryKey();
++    }
++
++    @Override
++    public boolean contains(final TypedKey<T> valueKey) {
++        return this.namedSet.stream().anyMatch(h -> {
++            return ((Holder.Reference<?>) h).key().location().equals(PaperAdventure.asVanilla(valueKey.key()));
++        });
++    }
++
++    @Override
++    public @Unmodifiable Collection<T> resolve(final Registry<T> registry) {
++        final ImmutableList.Builder<T> builder = ImmutableList.builder();
++        for (final Holder<M> holder : this.namedSet) {
++            builder.add(registry.getOrThrow(CraftNamespacedKey.fromMinecraft(((Holder.Reference<?>) holder).key().location())));
++        }
++        return builder.build();
++    }
++
++    @Override
++    public boolean isTagged(final T item) {
++        return this.getValues().contains(item);
++    }
++
++    @Override
++    public Set<T> getValues() {
++        return Set.copyOf(this.resolve(RegistryAccess.registryAccess().getRegistry(this.registryKey())));
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        final Key key = this.tagKey().key();
++        return new NamespacedKey(key.namespace(), key.value());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java b/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c3d5545824189f83308f5a62e3a237efaea2bfe1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java
+@@ -0,0 +1,52 @@
++package io.papermc.paper.registry.set;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.registry.PaperRegistries;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.tag.TagKey;
++import java.util.ArrayList;
++import java.util.List;
++import net.minecraft.core.Holder;
++import net.minecraft.core.HolderSet;
++import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceKey;
++import org.bukkit.Keyed;
++import org.bukkit.craftbukkit.CraftRegistry;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperRegistrySets {
++
++    public static <A extends Keyed, M> HolderSet<M> convertToNms(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryKeySet<A> registryKeySet) { // TODO remove Keyed
++        if (registryKeySet instanceof NamedRegistryKeySetImpl<A, ?>) {
++            return ((NamedRegistryKeySetImpl<A, M>) registryKeySet).namedSet();
++        } else {
++            final Registry<M> registry = CraftRegistry.getMinecraftRegistry().registryOrThrow(resourceKey);
++            return HolderSet.direct(key -> {
++                return registry.getHolderOrThrow(ResourceKey.create(resourceKey, PaperAdventure.asVanilla(key.key())));
++            }, registryKeySet.values());
++        }
++    }
++
++    public static <A extends Keyed, M> RegistryKeySet<A> convertToApi(final RegistryKey<A> registryKey, final HolderSet<M> holders) { // TODO remove Keyed
++        if (holders instanceof final HolderSet.Named<M> named) {
++            final RegistryKey<A> apiRegistryKey = PaperRegistries.fromNms(named.key().registry());
++            return new NamedRegistryKeySetImpl<>(TagKey.create(apiRegistryKey, CraftNamespacedKey.fromMinecraft(named.key().location())), named);
++        } else {
++            final List<TypedKey<A>> keys = new ArrayList<>();
++            for (final Holder<M> holder : holders) {
++                if (!(holder instanceof final Holder.Reference<M> reference)) {
++                    throw new UnsupportedOperationException("Cannot convert a holder set containing direct holders");
++                }
++                keys.add(TypedKey.create(registryKey, CraftNamespacedKey.fromMinecraft(reference.key().location())));
++            }
++            return RegistrySet.keySet(registryKey, keys);
++        }
++    }
++
++    private PaperRegistrySets() {
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+index 43d686a9958cff96f5b15d93e920c8f2313aa65b..f0248e3d3782b1f6b4ff209502f626d66c05647b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+@@ -233,4 +233,17 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+         return this.byValue.get(value);
+     }
+     // Paper end - improve Registry
++
++    // Paper start - RegistrySet API
++    @Override
++    public boolean hasTag(final io.papermc.paper.registry.tag.TagKey<B> key) {
++        return this.minecraftRegistry.getTag(net.minecraft.tags.TagKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(key.key()))).isPresent();
++    }
++
++    @Override
++    public io.papermc.paper.registry.tag.Tag<B> getTag(final io.papermc.paper.registry.tag.TagKey<B> key) {
++        final net.minecraft.core.HolderSet.Named<M> namedHolderSet = this.minecraftRegistry.getTag(net.minecraft.tags.TagKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(key.key()))).orElseThrow();
++        return new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(key, namedHolderSet);
++    }
++    // Paper end - RegistrySet API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 5a04134973dd1db7f778a57ec5f185feec370990..1571fe0513c37a55d6934c1eea5359ec46719466 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -685,6 +685,21 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     }
+     // Paper end - lifecycle event API
+ 
++    // Paper start - hack to get tags for non server-backed registries
++    @Override
++    public <A extends Keyed, M> io.papermc.paper.registry.tag.Tag<A> getTag(final io.papermc.paper.registry.tag.TagKey<A> tagKey) { // TODO remove Keyed
++        if (tagKey.registryKey() != io.papermc.paper.registry.RegistryKey.ENTITY_TYPE || tagKey.registryKey() != io.papermc.paper.registry.RegistryKey.FLUID) {
++            throw new UnsupportedOperationException(tagKey.registryKey() + " doesn't have tags");
++        }
++        final net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<M>> nmsKey = io.papermc.paper.registry.PaperRegistries.toNms(tagKey.registryKey());
++        final net.minecraft.core.Registry<M> nmsRegistry = org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().registryOrThrow(nmsKey);
++        return nmsRegistry
++            .getTag(net.minecraft.tags.TagKey.create(nmsKey, io.papermc.paper.adventure.PaperAdventure.asVanilla(tagKey.key())))
++            .map(named -> new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(tagKey, named))
++            .orElse(null);
++    }
++    // Paper end - hack to get tags for non server-backed registries
++
+     /**
+      * This helper class represents the different NBT Tags.
+      * <p>
