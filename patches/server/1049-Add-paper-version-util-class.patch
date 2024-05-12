@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: masmc05 <masmc05@gmail.com>
+Date: Fri, 16 Feb 2024 14:13:29 +0200
+Subject: [PATCH] Add paper version util class
+
+
+diff --git a/src/main/java/io/papermc/paper/util/misc/ServerInfoImpl.java b/src/main/java/io/papermc/paper/util/misc/ServerInfoImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dbd63f65c69f6ba97f4b2e264292d1229e2bb31a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/misc/ServerInfoImpl.java
+@@ -0,0 +1,100 @@
++package io.papermc.paper.util.misc;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.util.ServerInfo;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.KeyPattern;
++import net.minecraft.SharedConstants;
++import org.bukkit.craftbukkit.util.Versioning;
++import org.jetbrains.annotations.NotNull;
++import java.util.HashSet;
++import java.util.Locale;
++import java.util.Set;
++import java.util.regex.Pattern;
++import java.util.stream.Stream;
++
++public class ServerInfoImpl implements ServerInfo {
++    private final String bukkitVersion = Versioning.getBukkitVersion();
++    private final String version = SharedConstants.getCurrentVersion().getId();
++    private final int[] versionArr = this.parseReleaseVersion(this.version);
++    private final Pattern release = Pattern.compile("[0-9](\\.[0-9]+)+");
++    private final Set<Key> implementedAPIs;
++    private final String serverBrand;
++
++    public ServerInfoImpl() {
++        ServerImplementationInfo info = new ServerImplementationInfo();
++        this.serverBrand = info.latestBrand;
++        this.implementedAPIs = info.implementedAPIs;
++    }
++
++    @Override
++    public @NotNull String version() {
++        return this.version;
++    }
++
++    @Override
++    public @NotNull String versionName() {
++        return SharedConstants.getCurrentVersion().getName();
++    }
++
++    @Override
++    public @NotNull String apiVersion() {
++        return this.bukkitVersion;
++    }
++
++    @Override
++    public @NotNull String serverBrand() {
++        return this.serverBrand;
++    }
++
++    @Override
++    public boolean is(@NotNull final String version) {
++        Preconditions.checkNotNull(version, "The version cannot be null");
++        return this.version.equals(version);
++    }
++
++    @Override
++    public boolean isAtLeast(final @NotNull String version) {
++        if (release.matcher(version).matches()) {
++            return this.isAtLeast(this.parseReleaseVersion(version));
++        } else {
++            return false;
++        }
++    }
++
++    private int[] parseReleaseVersion(final String version) {
++        return Stream.of(version.split("\\.")).mapToInt(Integer::parseInt).toArray();
++    }
++
++    private boolean isAtLeast(final int[] version) {
++        int maxLen = Math.max(this.versionArr.length, version.length);
++        for (int i = 0; i < maxLen; i++) {
++            int our = i < this.versionArr.length ? this.versionArr[i] : 0;
++            int requested = i < version.length ? version[i] : 0;
++            if (our != requested) {
++                return our > requested;
++            }
++        }
++        return true;
++    }
++
++    @Override
++    public boolean isImplementing(final @NotNull Key api) {
++        Preconditions.checkNotNull(api, "The API cannot be null");
++        return this.implementedAPIs.contains(api);
++    }
++
++    private static class ServerImplementationInfo {
++        private final Set<Key> implementedAPIs = new HashSet<>();
++        private String latestBrand;
++        private ServerImplementationInfo() {
++            this.add("minecraft", "Vanilla");
++            this.add("papermc", "Paper");
++        }
++        @SuppressWarnings("PatternValidation")
++        private void add(@KeyPattern.Namespace String namespace, String name) {
++            this.implementedAPIs.add(Key.key(namespace, name.toLowerCase(Locale.ROOT)));
++            this.latestBrand = name;
++        }
++    }
++}
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.util.ServerInfo b/src/main/resources/META-INF/services/io.papermc.paper.util.ServerInfo
+new file mode 100644
+index 0000000000000000000000000000000000000000..726333c3565c7cfb9840d66ba52c78f28429541e
+--- /dev/null
++++ b/src/main/resources/META-INF/services/io.papermc.paper.util.ServerInfo
+@@ -0,0 +1 @@
++io.papermc.paper.util.misc.ServerInfoImpl
