@@ -92,6 +92,15 @@ public final class DummyServerHelper {
         // Paper end - testing additions
 
         io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper - configuration files - setup global configuration test base
+
+        // Paper start - add test for recipe conversion
+        when(instance.recipeIterator()).thenAnswer(ignored ->
+            com.google.common.collect.Iterators.transform(
+                RegistryHelper.getDataPack().getRecipeManager().recipes.byType.entries().iterator(),
+                input -> input.getValue().toBukkitRecipe()
+            )
+        );
+        // Paper end - add test for recipe conversion
         return instance;
     }
 }
